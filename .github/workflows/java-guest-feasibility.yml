@@ -135,7 +135,11 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/compiler-logs/**
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/logs/**
             ${{ runner.temp }}/java-capsule-authoring/node/**
+            ${{ runner.temp }}/java-capsule-authoring/node-my-server/**
+            ${{ runner.temp }}/java-capsule-authoring/node-my-server-helper/**
             ${{ runner.temp }}/java-capsule-authoring/releases/**
+            ${{ runner.temp }}/java-capsule-authoring/release-my-server/**
+            ${{ runner.temp }}/java-capsule-authoring/release-my-server-helper/**
             ${{ runner.temp }}/java-capsule-authoring/guide/guide.json
             ${{ runner.temp }}/java-capsule-authoring/guide/guide.sh
             ${{ runner.temp }}/java-capsule-authoring/guide/logs/**

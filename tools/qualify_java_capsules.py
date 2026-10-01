@@ -18,17 +18,20 @@ if __package__ in {None, ""}: sys.path.insert(0, str(Path(__file__).resolve().pa
 from tools.build_observation import build_environment, resolve_tools
 from tools.java_capsule_build import build
 from tools.java_capsule_project import create
+from tools.java_server_project import create_server
+from tools.java_server_node import run as server_workflow
 from tools.phase3_resource_identity import file_identity, inventory, source_identity
 from tools.qualify_rust_capsules import HELPERS, guide
 from tools.run_rust_capsule_workflow import run as node_workflow
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, read_json, write_json
+from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, read_file, read_json, write_json
 
 JAVA_HELPERS = (*HELPERS, "java_capsule.py", "java_capsule_project.py", "java_capsule_build.py",
     "qualify_java_capsules.py", "qualify_java_bridge.py", "build_java_guest_capsules.py",
     "java_guest/compiler.py", "java_guest/bindings.py", "java_guest/model.py", "java_guest/java.py",
     "java_guest/c.py", "java_guest/lock.py", "java_guest/surface.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
-    "build_snapshot.py", "../.cargo/managed-guest.toml")
+    "build_snapshot.py", "java_server_project.py", "java_server_source.py", "java_server_node.py",
+    "server_source.py", "server_routes.py", "server_capsule.py", "../.cargo/managed-guest.toml")
 
 
 def inputs():
@@ -113,6 +116,24 @@ def qualify(output: Path, wasi_sdk: Path):
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language="java")
         stage = "printed-guide"
         result["guide"] = guide(output / "guide", environment, "java")
+        stage = "ordinary-source-shared-listener"
+        result["servers"] = {}
+        for helper in (False, True):
+            name = "my-server-helper" if helper else "my-server"
+            project = create_server(output / "projects" / name, name)
+            if helper:
+                fixtures = ROOT / "sdk/java-guest/tests/server"
+                (project / "src/dev/latent/app/Server.java").write_bytes(read_file(fixtures / "Server.java"))
+                source = project / "src/outside/developer/routes/Router.java"
+                source.parent.mkdir(parents=True)
+                source.write_bytes(read_file(fixtures / "Router.java"))
+            artifact = build(project, output / "builds" / name, binaries["examples/capsule_contracts"],
+                binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric", wasi_sdk,
+                timeout=min(900, commands.deadline - time.monotonic()))
+            commands.run("sign-" + name, binaries["examples/capsule_authoring"], "demo-sign", output / ("release-" + name), artifact)
+            result["servers"][name] = server_workflow(binaries["latent"], binaries["latentd"],
+                output / ("release-" + name), artifact, output / ("node-" + name), helper=helper,
+                tls_tool=binaries["examples/capsule_authoring"])
         stage = "final-integrity"
         verify_inputs(output, before, binaries, result["binaries"])
         if time.monotonic() >= commands.deadline: raise ValueError("Java qualification deadline exceeded")

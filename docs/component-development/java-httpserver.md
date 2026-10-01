@@ -7,11 +7,14 @@ static `main(String[])`, ordinary imports and source helpers. The compiler suppl
 the `latent:web/application@0.1.0` bridge. There is no application-authored LSF
 adapter, listener or deployed JVM.
 
-This implementation has native AST/JDK/kernel conformance and an actual component
-compilation probe. Signed admission, authenticated route-tool execution, complete
-shared-listener failure/cleanup qualification and packaged frontend scaffolding
-are still required by #728. The profile is not a completed milestone gate, general
-JDK networking support or an executor-enabled server profile.
+This implementation has native AST/JDK/kernel conformance, normal component
+compilation and signed normal-node routing/HEAD probes. The maintained Java
+qualification also builds two outside-checkout server projects and exercises
+authenticated route tooling, bounded responses and original-ledger retirement.
+Complete failure, TLS, redeploy/rollback, cancellation/disconnect and packaged
+frontend qualification remain required by #728. The profile is not a completed
+milestone gate, general JDK networking support or an executor-enabled server
+profile.
 
 ## Create and build
 
@@ -124,6 +127,23 @@ requests. It observes that an application static initializer never executes on
 the compiler host. Those checks do not prove signed component admission, real
 LSF listener dispatch, dormant Store ownership, cancellation, disconnect or
 cross-tenant isolation. Those node-level requirements remain tracked in #728.
+
+The existing `tools/qualify_java_capsules.py` command retains its source-only,
+direct SDK, signed-node and printed-guide checks and adds ordinary-source shared
+listener cases. The helper project uses original Java source outside the runtime
+checkout, checks that code after `start()` runs, and observes fresh static state
+on each request. Its repeated-cookie case uses the normal node's TLS listener:
+the current browser policy rejects cookies on cleartext HTTP and requires distinct
+`__Host-` names with `Secure`, `HttpOnly`, `SameSite=Strict` and `Path=/`. POST
+fixtures carry the matching same-origin header. The private fixture certificate
+is verified against its exact ephemeral CA; no production trust is installed.
+
+Receipts retain exact component, declaration, profile, source, CLI, node and
+workflow identities, routing/security denials, raw bytes, repeated headers,
+handler failures and observed owner/quota retirement. A failed case retains its
+own receipt and audit observations. A passing native/source check or the addition
+of this lane is not evidence that the complete signed-node lane passed; use the
+actual `node-my-server*/conformance.json` artifacts from that exact CI source.
 
 A literal `ServerSocket.accept` loop returns a byte connection, not a handler
 registration. This profile cannot identify an arbitrary protocol boundary or
