@@ -19,6 +19,26 @@ pub struct TransactionInstallation {
     pub(super) result_policy: ResultPolicy,
 }
 impl TransactionInstallation {
+    /// Validate the descriptive caller choice against this trusted binding.
+    /// Namespace/policy admission still seals the actual permission separately.
+    pub fn check_recovery_scope(
+        &self,
+        principal: &latent_core::InvocationPrincipal,
+        selected: Option<&str>,
+    ) -> Result<(), PlatformError> {
+        let caller =
+            latent_capabilities::namespace::CallerScope::derive(principal, &self.recovery)?;
+        let matches = match &self.recovery {
+            RecoverySelection::OriginalCaller => selected.is_none(),
+            _ => selected == Some(caller.scope.as_str()),
+        };
+        if matches {
+            Ok(())
+        } else {
+            Err(super::authorization::denied())
+        }
+    }
+
     /// Descriptive selection from the trusted installed manifest and companion.
     /// Actual admission still resolves and seals this publication and policy.
     #[must_use]

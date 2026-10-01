@@ -34,14 +34,17 @@ pub(super) fn value(bytes: &[u8]) -> Value {
 fn schema() -> String {
     format!("sha256:{}", "1".repeat(64))
 }
-struct Clock;
+struct Clock {
+    millis: std::sync::atomic::AtomicU64,
+    continuity: std::sync::atomic::AtomicBool,
+}
 impl EffectTimeSource for Clock {
     fn observe(&self) -> EffectTime {
         // This fixture positively owns one uninterrupted process. Production
         // startup uses the admitted continuity/checkpoint owner.
         EffectTime {
-            unix_millis: 1000,
-            continuity_proven: true,
+            unix_millis: self.millis.load(std::sync::atomic::Ordering::SeqCst),
+            continuity_proven: self.continuity.load(std::sync::atomic::Ordering::SeqCst),
         }
     }
 }
@@ -61,6 +64,7 @@ pub(super) struct Fixture {
     cancellations: crate::ActivationCancellationRegistry,
     registrations: std::sync::Mutex<Vec<crate::CancellationRegistration>>,
     pub native: latent_core::native_capacity::NativeCapacityOwner,
+    clock: Arc<Clock>,
 }
 impl Fixture {
     pub async fn new() -> Self {
@@ -90,12 +94,16 @@ impl Fixture {
         let namespaces = Arc::new(NamespaceCatalog::new());
         Self::create_namespace(&store, &namespaces).await;
         let effects = EffectAuthorityOwner::new(128, 16, 100).unwrap();
+        let clock = Arc::new(Clock {
+            millis: std::sync::atomic::AtomicU64::new(1000),
+            continuity: std::sync::atomic::AtomicBool::new(true),
+        });
         let dispatcher = DispatcherOwner::start(
             DispatcherConfig::default(),
             Arc::clone(&store),
             effects.clone(),
             Vec::new(),
-            Arc::new(Clock),
+            clock.clone(),
             None,
         )
         .await
@@ -148,7 +156,17 @@ impl Fixture {
             cancellations: crate::ActivationCancellationRegistry::default(),
             registrations: std::sync::Mutex::new(Vec::new()),
             native,
+            clock,
         }
+    }
+
+    pub fn set_result_time(&self, millis: u64, continuity: bool) {
+        self.clock
+            .millis
+            .store(millis, std::sync::atomic::Ordering::SeqCst);
+        self.clock
+            .continuity
+            .store(continuity, std::sync::atomic::Ordering::SeqCst);
     }
     async fn create_namespace(store: &ProtectedStoreOwner, namespaces: &Arc<NamespaceCatalog>) {
         let namespaces = Arc::clone(namespaces);
