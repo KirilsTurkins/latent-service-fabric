@@ -29,7 +29,7 @@ pub const SNAPSHOT_NAMESPACES: usize = 128;
 pub const SNAPSHOT_ARTIFACTS: usize = 128;
 pub const SNAPSHOT_DURATION: Duration = Duration::from_mins(1);
 const PAGE_BYTES: usize = 4 * 1024 * 1024;
-const FAMILIES: [Family; 10] = [
+pub(super) const FAMILIES: [Family; 10] = [
     Family::Namespace,
     Family::State,
     Family::Tombstone,
@@ -453,7 +453,10 @@ fn require_schema_artifacts(
     Ok(())
 }
 
-fn capture_namespaces(view: &ReadView, tenant: &str) -> Result<Vec<NamespaceSnapshot>, StoreError> {
+pub(super) fn capture_namespaces(
+    view: &ReadView,
+    tenant: &str,
+) -> Result<Vec<NamespaceSnapshot>, StoreError> {
     let page = view.scan_after(
         Family::Namespace,
         b"ns-v1\0",
@@ -500,14 +503,14 @@ fn row_header(key: &RowKey, value: &[u8]) -> Result<[u8; 8], StoreError> {
     Ok(header)
 }
 
-fn checkpoint(deadline: Instant) -> Result<(), StoreError> {
+pub(super) fn checkpoint(deadline: Instant) -> Result<(), StoreError> {
     if Instant::now() >= deadline {
         return Err(StoreError::SnapshotExpired);
     }
     Ok(())
 }
 
-fn validate_deadline(deadline: Instant) -> Result<(), StoreError> {
+pub(super) fn validate_deadline(deadline: Instant) -> Result<(), StoreError> {
     checkpoint(deadline)?;
     if deadline.saturating_duration_since(Instant::now()) > SNAPSHOT_DURATION {
         return Err(StoreError::Capacity);
@@ -616,4 +619,4 @@ impl<W: Write> SnapshotWriter<'_, W> {
 }
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;

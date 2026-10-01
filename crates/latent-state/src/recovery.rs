@@ -11,6 +11,7 @@ use crate::{
 };
 use latent_core::{StateNamespaceId, TenantId};
 
+pub mod restore;
 pub mod snapshot;
 
 pub const GUARD_KEY: &[u8] = b"recovery-control-v1\0";
