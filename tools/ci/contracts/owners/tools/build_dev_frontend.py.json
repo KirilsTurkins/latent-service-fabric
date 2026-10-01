@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Package captured dependency verifier and its import closure in the Linux developer helper",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b86e895abc7baf6f191c6ce2cf059f14d754c933c5d2f59bb6a75693a9ebf0b8"
+  "sha256": "55da00ed813a1c2e905541a6b0b26e4280ffa13992279cfb3c24cbc9709af2fd"
 }
