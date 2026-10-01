@@ -8,7 +8,7 @@ import pwd
 import re
 import sys
 
-from . import build, effects, paths, project, protocol, snapshot, state
+from . import build, dependencies, effects, paths, project, protocol, snapshot, state
 from .client import Client, successful
 from .common import DevError, MAX_DEPLOY_SECONDS, MAX_SNAPSHOT, decode, digest, encode, members, require
 from .journal import Journal
@@ -86,6 +86,7 @@ def sync(root: Path, arguments: dict) -> dict:
         prune_snapshots(root, incoming=record["identity"])
         require(sum(1 for _ in snapshots.iterdir()) < 4, "snapshot-retention-full-explicit-clean-required")
         snapshot.materialize(destination, record, content)
+    dependencies.verify(destination, descriptor)
     state.atomic(root, "project.json", {"descriptor": descriptor, "trust": arguments["trustedRecipe"],
                                         "source": str(destination), "snapshot": record["identity"]})
     return {"snapshot": record["identity"], "sourceBytes": record["bytes"], "files": len(record["files"])}
