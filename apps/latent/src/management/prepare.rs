@@ -9,8 +9,8 @@ use latent_wire::management::{deployment_to_proto, proto};
 use serde_json::json;
 
 use crate::args::{
-    Command, DeploymentCommand, NodeCommand, PublishArgs, ReleaseCommand, RouteCommand,
-    ValidateCommand,
+    ActivationCommand, Command, DeploymentCommand, NodeCommand, PublishArgs, ReleaseCommand,
+    RouteCommand, ValidateCommand,
 };
 use crate::config::ResolvedConfig;
 use crate::error::Failure;
@@ -22,27 +22,7 @@ use super::invalid_manifest;
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
-        Command::Activation(crate::args::ActivationCommand::Tree(args)) => {
-            identifier(&args.id)?;
-            Ok(Operation::InspectActivationTree(
-                proto::InspectActivationTreeRequest {
-                    activation_id: args.id.clone(),
-                    page: Some(page(args.page_size, args.page_token.as_deref())?),
-                    ..proto::InspectActivationTreeRequest::default()
-                },
-            ))
-        }
-        Command::Activation(crate::args::ActivationCommand::Roots(args)) => {
-            identifier(&args.service)?;
-            Ok(Operation::InspectActivationTree(
-                proto::InspectActivationTreeRequest {
-                    activation_id: String::new(),
-                    service: Some(args.service.clone()),
-                    from_unix_millis: args.from_unix_millis,
-                    page: Some(page(args.page_size, args.page_token.as_deref())?),
-                },
-            ))
-        }
+        Command::Activation(command) => activation(command),
         Command::Web(command) => super::web::prepare(command, config),
         Command::Trigger(command) => super::triggers::prepare(command, config),
         Command::Capability(command) => super::capabilities::prepare(command),
@@ -132,6 +112,36 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
             }))
         }
         _ => Err(Failure::local(
+            "invalid-operation",
+            "This is not a management operation.",
+        )),
+    }
+}
+
+fn activation(command: &ActivationCommand) -> Result<Operation, Failure> {
+    match command {
+        ActivationCommand::Tree(args) => {
+            identifier(&args.id)?;
+            Ok(Operation::InspectActivationTree(
+                proto::InspectActivationTreeRequest {
+                    activation_id: args.id.clone(),
+                    page: Some(page(args.page_size, args.page_token.as_deref())?),
+                    ..proto::InspectActivationTreeRequest::default()
+                },
+            ))
+        }
+        ActivationCommand::Roots(args) => {
+            identifier(&args.service)?;
+            Ok(Operation::InspectActivationTree(
+                proto::InspectActivationTreeRequest {
+                    activation_id: String::new(),
+                    service: Some(args.service.clone()),
+                    from_unix_millis: args.from_unix_millis,
+                    page: Some(page(args.page_size, args.page_token.as_deref())?),
+                },
+            ))
+        }
+        ActivationCommand::Get(_) | ActivationCommand::Cancel(_) => Err(Failure::local(
             "invalid-operation",
             "This is not a management operation.",
         )),
