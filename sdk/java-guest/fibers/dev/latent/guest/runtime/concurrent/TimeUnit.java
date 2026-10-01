@@ -5,10 +5,10 @@ public enum TimeUnit {
     NANOSECONDS(1), MICROSECONDS(1000), MILLISECONDS(1_000_000),
     SECONDS(1_000_000_000), MINUTES(60_000_000_000L),
     HOURS(3_600_000_000_000L), DAYS(86_400_000_000_000L);
-    private final long nanos;
-    TimeUnit(long nanos) { this.nanos = nanos; }
+    private final long nanoseconds;
+    TimeUnit(long nanoseconds) { this.nanoseconds = nanoseconds; }
     public long convert(long value, java.util.concurrent.TimeUnit source) {
-        return convertScale(value, valueOf(source.name()).nanos, nanos);
+        return convertScale(value, valueOf(source.name()).nanoseconds, nanoseconds);
     }
     public long convert(java.time.Duration duration) {
         long seconds = duration.getSeconds();
@@ -16,8 +16,8 @@ public enum TimeUnit {
         // Duration normalizes a negative fraction into the preceding second;
         // conversions truncate toward zero and saturate the final whole value.
         if (seconds < 0 && fraction > 0) { seconds++; fraction -= 1_000_000_000; }
-        long whole = convertScale(seconds, 1_000_000_000, nanos);
-        long part = convertScale(fraction, 1, nanos);
+        long whole = convertScale(seconds, 1_000_000_000, nanoseconds);
+        long part = convertScale(fraction, 1, nanoseconds);
         if (part > 0 && whole > Long.MAX_VALUE - part) return Long.MAX_VALUE;
         if (part < 0 && whole < Long.MIN_VALUE - part) return Long.MIN_VALUE;
         return whole + part;
@@ -53,13 +53,13 @@ public enum TimeUnit {
         if (value < Long.MIN_VALUE / multiplier) return Long.MIN_VALUE;
         return value * multiplier;
     }
-    public long toNanos(long value) { return convertScale(value, nanos, 1); }
-    public long toMicros(long value) { return convertScale(value, nanos, 1000); }
-    public long toMillis(long value) { return convertScale(value, nanos, 1_000_000); }
-    public long toSeconds(long value) { return convertScale(value, nanos, 1_000_000_000); }
-    public long toMinutes(long value) { return convertScale(value, nanos, 60_000_000_000L); }
-    public long toHours(long value) { return convertScale(value, nanos, 3_600_000_000_000L); }
-    public long toDays(long value) { return convertScale(value, nanos, 86_400_000_000_000L); }
+    public long toNanos(long value) { return convertScale(value, nanoseconds, 1); }
+    public long toMicros(long value) { return convertScale(value, nanoseconds, 1000); }
+    public long toMillis(long value) { return convertScale(value, nanoseconds, 1_000_000); }
+    public long toSeconds(long value) { return convertScale(value, nanoseconds, 1_000_000_000); }
+    public long toMinutes(long value) { return convertScale(value, nanoseconds, 60_000_000_000L); }
+    public long toHours(long value) { return convertScale(value, nanoseconds, 3_600_000_000_000L); }
+    public long toDays(long value) { return convertScale(value, nanoseconds, 86_400_000_000_000L); }
     private int excessNanos(long timeout, long millis) {
         if (this == NANOSECONDS) return (int)(timeout - millis * 1_000_000);
         if (this == MICROSECONDS) return (int)((timeout - millis * 1000) * 1000);

@@ -103,12 +103,27 @@ modes. All selected SDK sources compiled against pinned TeaVM 0.15.0 APIs, and
 nine actual maintained/SDK class bodies passed the compiler's transformation
 against that pinned class model. These are source and model controls.
 
+TeaVM's maintained classlib supplies `TimeUnit` before the SDK substitution
+policy. The compiler therefore installs the 16 reviewed conversion and wait
+method bodies onto that actual standard class, preserving its enum constants,
+constructor and `values()` identity. An unexpected scale-field layout fails
+compilation. A control using nine lock-verified TeaVM 0.15.0 JARs proves the
+original missing declarations, installed method bodies and reference closure,
+preserved enum owners, layout rejection and unchanged application class identity.
+The SDK source also passed 1661 conversion comparisons against the installed
+JDK 25.0.3, including signed saturation and Duration/ChronoUnit boundaries.
+These controls do not establish C-backend continuation or signed guest behavior.
+
 The last attempted expanded executor component passed its thread-only mode but
 failed in its signed executor mode with a closed host `resource-exhausted` cause
 ([retained CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36811904043)).
-The subsequent default-factory and wait/sleep changes have not completed pinned
-component and signed-node execution; the executor, root-return and cached modes
-remain unqualified. Reference-JDK success and successful
+Replaying the retained executor component with the corrected resource-free
+result lowering removes that immediate admission failure, but reaches its
+unchanged 120-second deadline during physical pool retirement. The cached-mode
+attempt stopped at the missing standard TimeUnit declarations before component
+generation. The subsequent compiler repair and default-factory/wait changes
+have not completed pinned component and signed-node execution; the executor,
+root-return and cached modes remain unqualified. Reference-JDK success and successful
 component generation do not establish their guest behavior. Complete failed
 attempts are retained separately.
 
@@ -128,5 +143,5 @@ cross-tenant reuse, late wakes and node stop remain open. General generated host
 I/O still uses the existing synchronous lowering and does not establish sibling
 progress while an accepted socket operation waits. Published library/default
 factory qualification, dependency safe-point coverage and measured active/parked
-owner plateaus are also required for #741. This first thread slice does not close
-#741, #736, #695 or the SDK Library milestone.
+owner plateaus are also required for #741. Issues #741, #736 and #695 and the SDK
+Library milestone remain open.
