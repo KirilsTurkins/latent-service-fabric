@@ -159,12 +159,13 @@ impl HttpRequirements {
             || !(1..=60_000).contains(&self.retry_delay_millis)
             || c.maximum_payload_bytes != self.maximum_body_bytes as u64
             || payload_bytes as u64 > c.maximum_payload_bytes
-            || !(1024..=4096).contains(&c.maximum_response_bytes)
+            // The actual put-once adapter retains both bounded receipt buffers.
+            || !(2048..=4096).contains(&c.maximum_response_bytes)
             || !(1..=16).contains(&c.maximum_attempts)
             || c.maximum_age_millis == 0
             || c.maximum_age_millis > self.retention_horizon_millis
             || c.attempt_timeout_millis == 0
-            || c.attempt_timeout_millis > c.maximum_age_millis.min(300_000)
+            || c.attempt_timeout_millis > c.maximum_age_millis.min(60_000)
         {
             return Err(super::denied());
         }

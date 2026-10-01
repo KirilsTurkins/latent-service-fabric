@@ -70,6 +70,8 @@ fn claims_crossed_companions_ambiguous_payloads_and_unsigned_overflow_never_inst
         ("/contract/retentionHorizonMillis", "0600000".into()),
         ("/contract/retryDelayMillis", "18446744073709551616".into()),
         ("/ceiling/attemptTimeoutMillis", "600001".into()),
+        ("/ceiling/attemptTimeoutMillis", "60001".into()),
+        ("/ceiling/maximumResponseBytes", "2047".into()),
         ("/ceiling/maximumAgeMillis", "600001".into()),
         ("/intent/payload/bytes", "***".into()),
         ("/intent/payload/mediaType", "text/html".into()),
