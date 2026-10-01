@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+/// Complete envelopes over the selected engine; descriptors are never grants.
+pub mod atomic;
 /// Executable ADR-0062 reference model; this is not a storage or runtime backend.
 pub mod model;
 
