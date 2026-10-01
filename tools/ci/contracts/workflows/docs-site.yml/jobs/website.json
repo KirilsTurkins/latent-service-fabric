@@ -21,6 +21,10 @@
         "run": "git config --system --add safe.directory \"$GITHUB_WORKSPACE\""
       },
       {
+        "name": "Create a private native compiler cache inside the owned container",
+        "run": "native_cache=$(mktemp -d /tmp/lsf-swc-native.XXXXXX)\nprintf 'SWC_NATIVE_BINDING_CACHE=%s\\n' \"$native_cache\" >> \"$GITHUB_ENV\"\n"
+      },
+      {
         "uses": "actions/setup-node",
         "with": {
           "node-version": "24.19.0"
@@ -77,7 +81,7 @@
   },
   "jobId": "website",
   "kind": "job",
-  "reviewReason": "Preserve complete workspace tests and every metadata/security qualification command, separating qualification onto a required fresh-inventory lane. Preserve both website builds and all five browser suites while using the digest-pinned official matching Noble image for preinstalled system libraries and fonts; exact project browser installation remains mandatory. Trust only the checkout workspace in this ephemeral container so Git operations work across the runner/container UID boundary; preserve repository path validation.",
+  "reviewReason": "Preserve complete workspace tests and every metadata/security qualification command, separating qualification onto a required fresh-inventory lane. Preserve both website builds and all five browser suites while using the digest-pinned official matching Noble image for preinstalled system libraries and fonts; exact project browser installation remains mandatory. Trust only the checkout workspace in this ephemeral container so Git operations work across the runner/container UID boundary; preserve repository path validation. Create a private mode-0700 SWC native materialization cache below the trusted sticky container temporary directory; retain native payload permission validation instead of using the host-mounted GitHub home.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-site.yml"
 }
