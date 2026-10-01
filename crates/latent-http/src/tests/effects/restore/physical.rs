@@ -153,12 +153,8 @@ pub(super) async fn restore(
     let mut incompatible = request.clone();
     incompatible.review.runtime_digest = [1; 32];
     assert_eq!(
-        source
-            .restore_to(incompatible, deadline())
-            .unwrap()
-            .await
-            .err(),
-        Some(OfflineRecoveryError::Input(StoreError::UnsupportedFormat))
+        source.restore_to(incompatible, deadline()).err(),
+        Some(OfflineRecoveryError::InvalidConfiguration)
     );
     assert!(!destination.join("transaction-state.redb").exists());
     request.review.window_acknowledgement = inspected.window.digest().unwrap();
@@ -199,6 +195,10 @@ pub(super) async fn deliver(
             let record = store.record(authority).await;
             if record.disposition() == Disposition::ProviderAcknowledged {
                 assert_eq!(record.attempts(), 1);
+                assert_eq!(
+                    record.owner_epoch(),
+                    if checkpoint.is_some() { 2 } else { 1 }
+                );
                 assert!(record.send_started());
                 break record.latest().unwrap().provider_receipt.clone().unwrap();
             }

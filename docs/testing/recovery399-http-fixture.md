@@ -22,6 +22,8 @@ loses its reply, and the existing bounded lookup recovers its receipt. Restoring
 the older snapshot preserves the original effect ID, request bytes, body hash,
 business incarnation, command/result/inbox identities and remote horizon. It
 increments the local recovery epoch and leaves the restored history paused.
+The eventual approved delivery checks the new dispatcher boot epoch while
+retaining the original effect identity.
 
 An explicit recovery-window review alone leaves the namespace paused. The test
 installs the actual unpaused dispatcher and checks its bounded candidate page,
