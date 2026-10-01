@@ -89,8 +89,8 @@ quota. Pending history slots remain visible as a bounded diagnostic count, never
 as completed receipts. These reservations do not promise disk-free space or
 eliminate an uncertain physical flush failure.
 
-Startup advances the process epoch under exclusive store ownership, then checks
-cross-row linkage and recovers finite outbox pages. A persisted send marker means
+Startup checks cross-row linkage under exclusive store ownership, then advances
+the process epoch and recovers finite outbox pages. A persisted send marker means
 uncertain provider acceptance. Recovery before that marker is known nonexecution
 only after affirmative old-process physical retirement. An admitted protected
 external checkpoint rejects epoch/clock rollback on restore; wall time alone
@@ -100,11 +100,72 @@ incarnation or command identity.
 The focused tests prove canonical identity/tamper rejection, bounded malformed
 decoding, due ordering, actual atomic snapshot/reopen, stale receipt fencing,
 send/claim restart boundaries, qualified retry, bounded history, policy/expiry,
-clock regression and older-checkpoint rejection. Fixed provider workers and
-standalone node lifecycle remain the ongoing #391 implementation.
+clock regression and older-checkpoint rejection.
 
 Measured on 2026-10-01: all 40 effect tests passed on Windows and the pinned
 Linux Rust 1.97.1 image, with strict all-target/all-feature Clippy on both hosts.
 All 73 state tests and strict Clippy also passed on Linux. This includes the
 native full-store receipt pressure schedule and the shared engine reservation
 port from `fbe2c8e2`. Exact Linux discovery is registered in the workspace suite.
+
+## Fixed dispatcher and node lifecycle
+
+`DispatcherOwner` uses the transaction runtime's same `Arc<ProtectedStoreOwner>`.
+It acquires the store's exclusive dispatcher registration before validation,
+epoch advancement or recovery. An alias cannot overlap a dispatcher with live
+provider work. Persisted owner history requires an admitted external minimum
+epoch/clock checkpoint; a monotonic-looking wall clock does not approve restore.
+The node handles a missing checkpoint as paused recovery readiness before claims.
+
+The default profile has two fixed provider workers with 1 MiB stacks, four queue
+slots, 16 accepted jobs, one accepted job per active tenant, 80 MiB retained work
+and a 4 MiB reservation per accepted attempt. Due pages contain at most 16 rows
+or 1 MiB; at most four pages are scanned per scheduling tick. Configuration has
+finite ceilings for every field. The selected unordered contract rejects ordered
+mode rather than fabricating predecessor or global-order promises. Empty/cold
+tenants have no worker, timer, connection or retained admission metadata.
+
+One shared scheduling task rotates the durable due cursor, skips saturated active
+tenants and prioritizes the finite receipt queue. No task or timer is allocated
+per durable intent. Provider jobs are reserved before claims. The native claim,
+current fenced adapter admission and persisted send marker run inside one accepted
+storage job; the owned provider future remains unpolled until the marker commits.
+It then runs on a fixed provider worker through actual physical cleanup. Immutable
+profile matching prevents redirecting old work through a new decoder/provider.
+Missing decoders are recorded as blocked, while paged profile inventory retains
+the original command, commit, namespace incarnation and unresolved status.
+
+The provider's authority owner retires after actual I/O/buffer cleanup. Its
+storage operation pin and accepted job reservation remain live until the durable
+receipt CAS finishes. Store queue pressure keeps one pending receipt plus the
+bounded receipt channel, without resending network work or allocating a second
+worker pool. Claim reserves both terminal logical bytes and the actual future
+history row. Disk/flush failure remains recovery uncertainty.
+
+Pause stops new claims. Resume requires current safe clock state and no sticky
+failure. Close is nonblocking. Shutdown applies one absolute cutoff to provider
+workers and the scheduling owner, observes actual fixed thread joins, and preserves
+root pins when physical work remains. A later observation can prove retirement
+while still reporting unclean after the original deadline. Drop closes admission;
+the scheduling task retains the role until all actual accepted work retires.
+
+The standalone `EffectRuntime` owns these ports. `StandaloneNode::install_effects`
+accepts the trusted state composition before readiness; `effects_snapshot` returns
+bounded observations and `ShutdownReport.effects` participates in clean teardown.
+Standalone shutdown closes effect admission first and uses its original drain
+cutoff before state-store retirement. The state composition supplies existing
+provider adapters, authority and protected clock/checkpoint evidence. Stateless
+compositions retain an absent optional effect runtime.
+
+Measured on the pinned Linux image: all 48 effect cases passed with strict
+all-target/all-feature Clippy; all 75 state cases and combined strict Clippy also
+passed. Actual schedules cover a live provider through expired drain, dropped
+dispatcher owner, forbidden alias recovery, native queue saturation, current
+revocation, paused/unsafe clock, hot-tenant fairness, old/new decoder compatibility,
+bounded required-profile pages and external-checkpoint recovery after real store
+close/reopen. Provider doubles witness physical payload destruction through
+shared rendezvous; these cases are native dispatcher tests, not broker, HTTP
+endpoint or packaged guest qualification. Concrete transports and their controlled
+real endpoint evidence belong to #392/#393; ordinary state-runtime composition,
+management authorization and terminal payload retirement also consume their
+respective Phase 4 ports before aggregate delivery is complete.
