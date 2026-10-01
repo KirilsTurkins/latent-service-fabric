@@ -1,5 +1,10 @@
 {
   "cases": [
+    "CapturedCompilerSelection.test_captured_nuget_selection_preserves_authoritative_wit_imports",
+    "CapturedCompilerSelection.test_final_component_cannot_introduce_undeclared_authority",
+    "CapturedCompilerSelection.test_offline_asset_drift_still_fails_before_native_aot",
+    "CapturedCompilerSelection.test_oversized_raw_wit_is_rejected_before_diagnostic_publication",
+    "CapturedCompilerSelection.test_profile_rejection_retains_raw_component_and_wit_after_workspace_cleanup",
     "NativeAotRuntimeCoverage.test_failure_report_rechecks_raw_bytes_and_does_not_invent_source_identity",
     "NativeAotRuntimeCoverage.test_malformed_world_tables_type_indices_and_function_names_fail",
     "NativeAotRuntimeCoverage.test_missing_http_is_not_a_clock_grant_or_catalogue_decision",
@@ -31,6 +36,66 @@
     "RuntimeAdapterCapture.test_missing_or_additional_runtime_profiles_fail_before_staging"
   ],
   "guards": {
+    "CapturedCompilerSelection.test_captured_nuget_selection_preserves_authoritative_wit_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompilerSelection.test_final_component_cannot_introduce_undeclared_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompilerSelection.test_offline_asset_drift_still_fails_before_native_aot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompilerSelection.test_oversized_raw_wit_is_rejected_before_diagnostic_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompilerSelection.test_profile_rejection_retains_raw_component_and_wit_after_workspace_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
     "NativeAotRuntimeCoverage.test_failure_report_rechecks_raw_bytes_and_does_not_invent_source_identity": {
       "bases": [
         "unittest.TestCase"
@@ -385,6 +450,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_application_dependencies.py",
-  "reviewReason": "Preserve all NuGet and generator guards and capture exact finite runtime adapters in the compiler namespace",
+  "reviewReason": "Exercise captured NuGet compiler selection without overwriting declared WIT authority and retain bounded raw output before rejected composition",
   "schemaVersion": "latent.ci.contracts.v1"
 }

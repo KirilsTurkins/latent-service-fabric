@@ -504,5 +504,176 @@ class RuntimeAdapterCapture(unittest.TestCase):
                     stage_adapters(original, root / 'private-adapters')
 
 
+class CapturedCompilerSelection(unittest.TestCase):
+    def setUp(self):
+        from types import SimpleNamespace
+        from tools.dotnet_guest.compiler import Compiler
+        from tools.dotnet_guest import runtime
+        self.namespace = SimpleNamespace
+        self.compiler_type = Compiler
+        self.runtime_profiles = runtime
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.evidence = self.root / 'evidence'
+        self.evidence.mkdir()
+        self.stages = []
+
+    def graph(self, imports):
+        interfaces, packages = [], [{'name': 'examples:greeting@1.0.0'}]
+        for identity in imports:
+            base, version = identity.split('@')
+            package, name = base.rsplit('/', 1)
+            packages.append({'name': package + '@' + version})
+            interfaces.append({'name': name, 'package': len(packages) - 1, 'functions': {}, 'types': {}})
+        return {'worlds': [{'name': 'service', 'package': 0,
+                'imports': {str(index): {'interface': {'id': index}} for index in range(len(interfaces))},
+                'exports': {}}], 'interfaces': interfaces, 'types': [], 'packages': packages}
+
+    def application(self, workspace, *, emitted=None, final=None):
+        from unittest.mock import Mock
+        from tools.rust_capsule_project import write_json
+        compiler = self.compiler_type.__new__(self.compiler_type)
+        work = create(workspace / 'application', 'greeting')
+        project_xml = work / 'Capsule.csproj'
+        project_xml.write_bytes(project_xml.read_bytes().replace(b'</Project>',
+            b'<ItemGroup><PackageReference Include="Outside.Library" Version="[2.0.0]" /></ItemGroup></Project>'))
+        compiler.sdk = work / 'vendor/lsf/sdk/dotnet-guest'
+        baseline = json.loads((compiler.sdk / 'probes/smoke/packages.lock.json').read_bytes())
+        lock = copy.deepcopy(baseline)
+        lock['dependencies']['net10.0']['Outside.Library'] = {
+            'type': 'Direct', 'resolved': '2.0.0', 'contentHash': HASH}
+        libraries = {name + '/' + row['resolved']: {'type': 'package',
+            'path': (name + '/' + row['resolved']).lower(), 'sha512': row['contentHash'],
+            'files': ['lib/net10.0/Outside.dll'] if name == 'Outside.Library' else []}
+            for rows in lock['dependencies'].values() for name, row in rows.items()}
+        targets = {name: {'compile': {'lib/net10.0/Outside.dll': {}}} if name.startswith('Outside.Library/')
+            else {} for name in libraries}
+        assets = {'version': 3, 'targets': {name: targets for name in ('net10.0', 'net10.0/wasi-wasm')},
+                  'libraries': libraries}
+        selected = analyze(lock, assets, baseline, declarations(snapshot(work)))
+        write_json(work / 'packages.lock.json', lock)
+        write_json(work / 'nuget-resolved.lock.json', selected)
+        compiler.package_cache = workspace / 'packages'
+        compiler.package_cache.mkdir()
+        compiler.application_closure, compiler.offline = object(), True
+        compiler.commands = self.namespace(output=self.evidence, environment={})
+        compiler.isolation = self.namespace(workspace=workspace, read_only_inputs=[])
+        compiler.isolation.protect_inputs = lambda *paths: compiler.isolation.read_only_inputs.extend(paths)
+        compiler.dotnet = compiler.wasm = compiler.python = compiler.wac = workspace / 'compiler-tool'
+        compiler.runtimes = {}
+        for profile, (_example, filename) in self.runtime_profiles.ADAPTERS.items():
+            adapter = workspace / filename
+            adapter.write_bytes(b'\0asm\x0d\0\x01\0')
+            compiler.runtimes[profile] = adapter
+        raw_graph = self.graph(emitted if emitted is not None else [self.runtime_profiles.CLOCK])
+        final_graph = self.graph(final if final is not None else [self.runtime_profiles.CLOCK])
+        receipt = {'outputs': {'ServiceWorld.cs': 'reviewed-binding'}}
+        compiled = workspace / 'compiled'
+
+        def run(stage, executable, *arguments):
+            self.stages.append(stage)
+            if stage == 'declared-runtime-wit':
+                return json.dumps(self.graph([self.runtime_profiles.CLOCK])).encode()
+            if stage == 'bindings':
+                generated = compiled / 'generated'
+                generated.mkdir()
+                write_json(generated / 'bindings.json', receipt)
+                (generated / 'ServiceWorld.cs').write_text('namespace ServiceWorld.wit.Exports.examples.greeting;\n')
+            if stage == 'canonical-wit' or stage == 'surface':
+                return (work / 'wit/world.wit').read_bytes()
+            if stage == 'locked-restore':
+                objects = compiled / 'project/obj'
+                objects.mkdir()
+                write_json(objects / 'project.assets.json', assets)
+            if stage in {'native-runtime-wit', 'native-aot-raw-wit'}:
+                return json.dumps(raw_graph).encode()
+            if stage == 'closed-runtime-adapter-wit':
+                return json.dumps(self.graph([])).encode()
+            if stage == 'closed-runtime-composition':
+                (compiled / 'component.wasm').write_bytes(b'\0asm\x0d\0\x01\0')
+            if stage == 'runtime-final-wit':
+                return json.dumps(final_graph).encode()
+            return b''
+
+        def native_aot(project, output, wrapper):
+            self.stages.append('native-aot')
+            write_json(project / 'obj/bindings.json', receipt)
+            raw = project / 'bin/Release/net10.0/wasi-wasm/publish/Capsule.wasm'
+            raw.parent.mkdir(parents=True)
+            raw.write_bytes(b'\0asm\x0d\0\x01\0')
+
+        compiler.run, compiler.native_aot = run, native_aot
+        self.configure = Mock(return_value=selected)
+        return compiler, work, compiled
+
+    def test_captured_nuget_selection_preserves_authoritative_wit_imports(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=self.root) as temporary:
+            compiler, work, output = self.application(Path(temporary))
+            with patch('tools.dotnet_application_dependencies.configure', self.configure):
+                component, receipt = compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+            self.configure.assert_called_once_with(compiler.application_closure, work, compiler.package_cache)
+            self.assertTrue(component.is_file())
+            self.assertEqual(receipt['runtimeProfile']['declaredImports'], [self.runtime_profiles.CLOCK])
+            self.assertEqual(receipt['runtimeProfile']['profile'], 'closed')
+            self.assertIn('closed-runtime-composition', self.stages)
+            self.assertEqual(json.loads((self.evidence / 'nuget-build-inputs.json').read_bytes())['packages'],
+                             self.configure.return_value['packages'])
+
+    def test_profile_rejection_retains_raw_component_and_wit_after_workspace_cleanup(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=self.root) as temporary:
+            compiler, work, output = self.application(Path(temporary), emitted=['wasi:http/types@0.2.1'])
+            with patch('tools.dotnet_application_dependencies.configure', self.configure):
+                with self.assertRaisesRegex(ValueError, 'dotnet-runtime-unsupported-wasi-import:wasi:http/types@0.2.1'):
+                    compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+            self.assertNotIn('closed-runtime-composition', self.stages)
+            self.assertFalse((self.evidence / 'runtime-profile.json').exists())
+        self.assertEqual((self.evidence / 'native-aot-raw.wasm').read_bytes(), b'\0asm\x0d\0\x01\0')
+        self.assertEqual(json.loads((self.evidence / 'native-aot-raw.wit.json').read_bytes()),
+                         self.graph(['wasi:http/types@0.2.1']))
+
+    def test_final_component_cannot_introduce_undeclared_authority(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=self.root) as temporary:
+            compiler, work, output = self.application(Path(temporary),
+                final=[self.runtime_profiles.CLOCK, 'latent:secrets/reader@0.1.0'])
+            with patch('tools.dotnet_application_dependencies.configure', self.configure):
+                with self.assertRaisesRegex(ValueError, 'runtime adapter introduced undeclared authority:latent:secrets/reader@0.1.0'):
+                    compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+            self.assertIn('closed-runtime-composition', self.stages)
+            self.assertFalse((output / 'component.wit').exists())
+
+    def test_oversized_raw_wit_is_rejected_before_diagnostic_publication(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=self.root) as temporary:
+            compiler, work, output = self.application(Path(temporary))
+            run = compiler.run
+            oversized = json.dumps(self.graph([self.runtime_profiles.CLOCK])).encode()
+            oversized += b' ' * (4 * 1024 * 1024 + 1 - len(oversized))
+            compiler.run = lambda stage, *arguments: oversized if stage == 'native-runtime-wit' else run(stage, *arguments)
+            with patch('tools.dotnet_application_dependencies.configure', self.configure):
+                with self.assertRaisesRegex(ValueError, 'native-aot-raw-wit-byte-limit'):
+                    compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+            self.assertFalse((self.evidence / 'native-aot-raw.wit.json').exists())
+            self.assertFalse((self.evidence / 'runtime-profile.json').exists())
+            self.assertNotIn('closed-runtime-composition', self.stages)
+        self.assertEqual((self.evidence / 'native-aot-raw.wasm').read_bytes(), b'\0asm\x0d\0\x01\0')
+
+    def test_offline_asset_drift_still_fails_before_native_aot(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=self.root) as temporary:
+            compiler, work, output = self.application(Path(temporary))
+            selected = json.loads((work / 'nuget-resolved.lock.json').read_bytes())
+            next(row for row in selected['packages'] if row['package'] == 'outside.library')['files'] = []
+            (work / 'nuget-resolved.lock.json').write_text(json.dumps(selected))
+            with patch('tools.dotnet_application_dependencies.configure', self.configure):
+                with self.assertRaisesRegex(ValueError, 'offline-NuGet-native-asset-selection-differs-from-reviewed-capture'):
+                    compiler.compile(work, 'examples:greeting/service@1.0.0', output)
+            self.assertNotIn('native-aot', self.stages)
+            self.assertTrue((self.evidence / 'nuget-asset-selection-drift.json').is_file())
+
+
 if __name__ == '__main__':
     unittest.main()

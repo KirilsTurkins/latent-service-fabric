@@ -225,10 +225,10 @@ class Compiler:
             "-p:NuGetAudit=false", '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')
         if self.application_closure is not None:
             from tools.dotnet_application_dependencies import analyze
-            declared = declarations(snapshot(work, exclude=('dependencies', 'application-vendor')))
+            project_declaration = declarations(snapshot(work, exclude=('dependencies', 'application-vendor')))
             actual_selection = analyze(json.loads(read_file(project / 'packages.lock.json')),
                 json.loads(read_file(project / 'obj/project.assets.json', 16 * 1024 * 1024)),
-                json.loads(read_file(self.sdk / 'probes/smoke/packages.lock.json')), declared)
+                json.loads(read_file(self.sdk / 'probes/smoke/packages.lock.json')), project_declaration)
             expected = json.loads(read_file(work / 'nuget-resolved.lock.json', 16 * 1024 * 1024))
             expected_rows = [{key: value for key, value in row.items() if key not in {'originalDigest', 'originalSize'}} for row in expected['packages']]
             if actual_selection['packages'] != expected_rows:
@@ -270,8 +270,15 @@ class Compiler:
         if len(actual) != 1 or json.loads(read_file(actual[0], 16 * 1024 * 1024))["outputs"] != receipt["outputs"]:
             raise ValueError("actual NativeAOT binding inputs differ from independent drift generation")
         raw = project / "bin/Release/net10.0/wasi-wasm/publish/Capsule.wasm"
-        actual = interface_names(json.loads(self.run("native-runtime-wit", self.wasm,
-            "component", "wit", raw, "--json")))["imports"]
+        # The build workspace is retired on failure. Retain bounded compiler
+        # output before runtime selection or composition can reject its graph.
+        (command.output / 'native-aot-raw.wasm').write_bytes(read_file(raw, 64 * 1024 * 1024))
+        from tools.dotnet_guest.compatibility import MAX_GRAPH, inspect as inspect_runtime
+        raw_wit = self.run("native-runtime-wit", self.wasm, "component", "wit", raw, "--json")
+        if len(raw_wit) > MAX_GRAPH:
+            raise ValueError('native-aot-raw-wit-byte-limit')
+        (command.output / 'native-aot-raw.wit.json').write_bytes(raw_wit)
+        actual = interface_names(json.loads(raw_wit))["imports"]
         profile = runtime.select(declared, actual)
         adapter = self.runtimes[profile]
         selection = {"schemaVersion": "latent.dotnet.runtime.v1", "profile": profile,
@@ -280,7 +287,6 @@ class Compiler:
             "adapter": file_identity(adapter, runtime.ADAPTERS[profile][0].removeprefix("dotnet-"))}
         write_json(command.output / "runtime-profile.json", selection)
         component = output / "component.wasm"
-        from tools.dotnet_guest.compatibility import inspect as inspect_runtime
         self.runtime = adapter
         inspect_runtime(self, raw)
         self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter, "-o", component)
