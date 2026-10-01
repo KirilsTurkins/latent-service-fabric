@@ -6,7 +6,7 @@ import tempfile
 import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build
+from tools import guest_compatibility_build, guest_dependency_inputs
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
     read_file, read_json, snapshot, write_json)
@@ -27,10 +27,12 @@ RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "t
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/typescript_application_dependencies.py", "tools/captured_compiler_isolation.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_dependency_inputs.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path):
     project_path, output, tools = map(checked_path, (project_path, output, tools))
+    project_path = guest_dependency_inputs.application_root(project_path, 'typescript')
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
         raise ValueError("build output must be outside source or beneath its target directory")
@@ -40,7 +42,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     commands, stage = None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
-        files = source_snapshot(project_path)
+        observed = guest_dependency_inputs.capture_source(project_path, 'typescript',
+                                                         exclude_when_captured=('node_modules',))
+        files = observed.files
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe = inventory({name: read_file(ROOT / name) for name in RECIPE})
@@ -54,7 +58,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
             stage = "application-dependencies"
-            closure = prepare(project_path, work, output, "typescript")
+            closure = prepare(observed.dependency_root, work, output, "typescript")
             application_modules = bundle_configuration(closure) if closure is not None else None
             if closure is not None:
                 write_json(output / "npm-inputs.json", application_modules)
@@ -105,7 +109,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "recheck"
             captured_after = {name: data for name, data in snapshot(work, exclude=("dependencies", "application-vendor")).items()
                               if not name.startswith("generated/") and name != "tsconfig.json"}
-            if source_snapshot(project_path) != files or captured_after != files:
+            observed.check_unchanged()
+            if captured_after != files:
                 raise ValueError("captured project changed during compilation")
             if inventory({name: read_file(ROOT / name) for name in RECIPE}) != recipe:
                 raise ValueError("authoring recipe changed during compilation")
