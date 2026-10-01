@@ -113,7 +113,7 @@ SPILL_TYPES = {'volatile void*', 'volatile int32_t', 'volatile int64_t',
                'volatile float', 'volatile double'}
 
 
-def reference_spills(original: str) -> tuple[str, int]:
+def reference_spills(original: str, *, array_references: bool = False) -> tuple[str, int]:
     # TeaVM 0.15 saves Java locals across setjmp/longjmp in teavm_spill_N.
     # Its scalar spills qualify the local correctly, but "volatile void*"
     # qualifies the pointee. With -O2, the pointer saves disappear and a
@@ -126,17 +126,18 @@ def reference_spills(original: str) -> tuple[str, int]:
         nonlocal count
         declaration = match.group()
         exact = re.fullmatch(r'    (.+) (teavm_spill_[0-9]+);', declaration)
-        if exact is None or exact[1] not in SPILL_TYPES:
+        reviewed = SPILL_TYPES | ({'volatile TeaVM_Array*'} if array_references else set())
+        if exact is None or exact[1] not in reviewed:
             raise ValueError('unreviewed-teavm-exception-spill')
-        if exact[1] != 'volatile void*':
+        if exact[1] not in ('volatile void*', 'volatile TeaVM_Array*'):
             return declaration
         count += 1
-        return '    void* volatile ' + exact[2] + ';'
+        return '    ' + exact[1].removeprefix('volatile ') + ' volatile ' + exact[2] + ';'
 
     return SPILL_DECLARATION.sub(replace, original), count
 
 
-def reference_spill_outputs(generated: Path) -> tuple[list, dict]:
+def reference_spill_outputs(generated: Path, *, array_references: bool = False) -> tuple[list, dict]:
     classes = generated / 'c'
     if classes.is_symlink() or not classes.is_dir():
         raise ValueError('unreviewed-teavm-generated-classes')
@@ -155,7 +156,7 @@ def reference_spill_outputs(generated: Path) -> tuple[list, dict]:
         if scanned > 16384 or total_bytes > 256 * 1024 * 1024:
             raise ValueError('teavm-generated-class-size-limit')
         original = path.read_bytes()
-        adapted, count = reference_spills(original.decode('utf-8'))
+        adapted, count = reference_spills(original.decode('utf-8'), array_references=array_references)
         if not count:
             continue
         value = adapted.encode('utf-8')
@@ -167,7 +168,9 @@ def reference_spill_outputs(generated: Path) -> tuple[list, dict]:
                            'pointerSpills': count})
     outputs.sort(key=lambda item: item[0].relative_to(generated).as_posix())
     identities.sort(key=lambda item: item['path'])
-    return outputs, {'profile': 'teavm-0.15-wasm-sjlj-pointer-spills-v1',
+    profile = ('teavm-0.15-wasm-sjlj-reference-spills-v2' if array_references
+               else 'teavm-0.15-wasm-sjlj-pointer-spills-v1')
+    return outputs, {'profile': profile,
                      'scannedClasses': scanned, 'pointerSpills': pointers,
                      'files': identities}
 
@@ -184,7 +187,10 @@ def adapt(generated: Path) -> dict:
         originals[name] = value.decode('utf-8')
     # Validate every generated declaration before changing any platform or
     # class file. The caller has already verified the exact compiler JARs.
-    spill_outputs, spill_receipt = reference_spill_outputs(generated)
+    # The byte-verified 0.15 CodeWriter emits TeaVM_Array* for all eight array
+    # VariableType categories. Its array saves need the same pointer qualifier.
+    # Keep the historical v1 helper boundary; the maintained compiler selects v2.
+    spill_outputs, spill_receipt = reference_spill_outputs(generated, array_references=True)
     memory = originals['memory.c'].replace('#if TEAVM_UNIX\n', '#if TEAVM_UNIX && !defined(LSF_TEAVM_WASM)\n', 1)
     memory = memory.replace('#if defined(__EMSCRIPTEN__)', MEMORY, 1)
     outputs = {'fiber.c': FIBER, 'time.c': CLOCK, 'memory.c': memory, 'file.c': FILESYSTEM,
