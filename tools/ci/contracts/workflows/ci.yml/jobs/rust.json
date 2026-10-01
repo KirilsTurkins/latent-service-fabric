@@ -511,20 +511,20 @@
         "run": "set -o pipefail\npython3 tools/ci_cargo.py run workspace-tests 2>&1 | tee \"$RUNNER_TEMP/ci-workspace-tests.log\"\npython3 tools/ci_suite_discovery.py --execution-log \"$RUNNER_TEMP/ci-workspace-tests.log\"\npython3 tools/ci_cargo.py run doctests 2>&1 | tee \"$RUNNER_TEMP/ci-doctests.log\"\npython3 tools/ci_suite_discovery.py --recipe explicit-doctests --execution-log \"$RUNNER_TEMP/ci-doctests.log\"\npython3 tools/ci_cargo.py run signing-compatibility 2>&1 | tee \"$RUNNER_TEMP/ci-signing-compatibility.log\"\npython3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log \"$RUNNER_TEMP/ci-signing-compatibility.log\"\n"
       },
       {
-        "if": "matrix.lane == 'tests'",
+        "if": "matrix.lane == 'qualification'",
         "name": "Check metadata working-set suite selection and observation validation",
         "run": "python3 -m unittest tools.tests.test_metadata_working_set"
       },
       {
         "id": "metadata-working-set",
-        "if": "matrix.lane == 'tests'",
+        "if": "matrix.lane == 'qualification'",
         "name": "Qualify catalog metadata compilation working set",
         "run": "set -o pipefail\npython3 tools/test.py check --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py prepare --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py run --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\"\n",
         "shell": "bash",
         "timeout-minutes": 16
       },
       {
-        "if": "always() && matrix.lane == 'tests' && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'",
+        "if": "always() && matrix.lane == 'qualification' && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'",
         "name": "Retain metadata working-set inputs and publication/apply/reopen costs",
         "uses": "actions/upload-artifact",
         "with": {
@@ -534,13 +534,13 @@
         }
       },
       {
-        "if": "matrix.lane == 'tests'",
+        "if": "matrix.lane == 'qualification'",
         "name": "Qualify the deterministic Phase 3 security matrix",
         "run": "python3 -m unittest tools.tests.test_phase3_security\nmkdir -p target/phase3-security\npython3 tools/phase3_security.py --profile pr --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --source-commit \"$GITHUB_SHA\" --output target/phase3-security/pr-receipt.json\n",
         "timeout-minutes": 12
       },
       {
-        "if": "always() && matrix.lane == 'tests'",
+        "if": "always() && matrix.lane == 'qualification'",
         "name": "Retain the bounded Phase 3 security receipt",
         "uses": "actions/upload-artifact",
         "with": {
@@ -803,6 +803,7 @@
         "lane": [
           "checks",
           "tests",
+          "qualification",
           "provider",
           "renderer-public",
           "renderer-angular",
@@ -814,7 +815,7 @@
   },
   "jobId": "rust",
   "kind": "job",
-  "reviewReason": "Require every fixed Rust matrix lane and its original bounded commands, preserving the delegated real deferred JetStream owners, current-job inventories, complete case parity and protected result.",
+  "reviewReason": "Preserve complete workspace tests, every fixed Rust matrix lane and metadata/security qualification command, separating qualification onto a required fresh-inventory lane. Preserve delegated real deferred JetStream owners, current-job inventories, complete case parity and protected results. Preserve both website builds and all five browser suites with the digest-pinned official matching Noble image; exact project browser installation remains mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
