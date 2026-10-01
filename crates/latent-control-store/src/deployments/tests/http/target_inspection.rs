@@ -39,7 +39,10 @@ fn inspection_reads_actual_http_object_generations_without_replaying_original_op
     let after = get(&store, "alice", "http-route");
     assert_eq!(after.value().trigger, snapshot.value().trigger);
     assert_eq!(after.value().state_version, snapshot.value().state_version);
-    assert_eq!(after.value().route_generation, snapshot.value().route_generation);
+    assert_eq!(
+        after.value().route_generation,
+        snapshot.value().route_generation
+    );
     let receipt = store
         .get_trigger_operation(&TenantId("alice".into()), "original-bind")
         .unwrap();
