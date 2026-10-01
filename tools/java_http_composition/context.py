@@ -62,12 +62,17 @@ def capture_http(client, host, path="/api/status", *, headers=None, expected=(20
     before = {row["activationId"] for row in roots(client)}
     started = int(time.time() * 1000)
     status, _body, _headers = request(host, path, headers=headers)
-    require(status in expected, "java-context-http-outcome")
     discovered = [row for row in roots(client) if row["activationId"] not in before]
     require(len(discovered) <= 1, "java-context-unrelated-concurrent-http-root")
     require(status != 200 or len(discovered) == 1, "java-context-successful-http-root-not-discovered")
-    return {"httpStatus": status, "observedFromUnixMillis": started,
-            "tree": tree(client, discovered[0]["activationId"]) if discovered else None}
+    observed = {"httpStatus": status, "observedFromUnixMillis": started,
+                "tree": tree(client, discovered[0]["activationId"]) if discovered else None}
+    count = getattr(client, "java_http_observations", 0)
+    require(count < 32, "java-context-http-observation-bound")
+    client.java_http_observations = count + 1
+    write_json(client.evidence / f"http-observation-{count:02d}.json", observed)
+    require(expected is None or status in expected, "java-context-http-outcome")
+    return observed
 
 
 def hops(observation):
