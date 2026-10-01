@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "FixedResultBoundaryTests.test_additional_unsafe_or_allowance_is_rejected_in_reviewed_file",
+    "FixedResultBoundaryTests.test_canonical_storage_and_owner_cannot_change_under_reviewed_allowance",
+    "FixedResultBoundaryTests.test_exact_physical_completion_boundary_is_reviewed",
+    "FixedResultBoundaryTests.test_new_result_shapes_and_allocation_cannot_enter_reviewed_boundary"
+  ],
+  "guards": {
+    "FixedResultBoundaryTests.test_additional_unsafe_or_allowance_is_rejected_in_reviewed_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbeb6c9cdb5f3d653c172a1187dfedabf9f4206fd4bae53a49ecb272bbb94812",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedResultBoundaryTests.test_canonical_storage_and_owner_cannot_change_under_reviewed_allowance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbeb6c9cdb5f3d653c172a1187dfedabf9f4206fd4bae53a49ecb272bbb94812",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedResultBoundaryTests.test_exact_physical_completion_boundary_is_reviewed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbeb6c9cdb5f3d653c172a1187dfedabf9f4206fd4bae53a49ecb272bbb94812",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedResultBoundaryTests.test_new_result_shapes_and_allocation_cannot_enter_reviewed_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbeb6c9cdb5f3d653c172a1187dfedabf9f4206fd4bae53a49ecb272bbb94812",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_fixed_result_boundary.py",
+  "reviewReason": "Four additive actual-source and mutation controls review only the exact fixed-result canonical delegation; every inherited native-loader guard is unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
