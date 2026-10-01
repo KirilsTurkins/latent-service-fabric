@@ -2052,6 +2052,10 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "authority::tests::lookup::fresh_lookup_reads_revoked_expired_execution_without_becoming_send_authority",
+        "authority::tests::lookup::lookup_preserves_provider_incarnation_credentials_payload_and_original_attempt",
+        "authority::tests::lookup::lookup_prewrite_observes_original_management_revocation_and_native_deadline",
+        "authority::tests::lookup::lookup_rejects_missing_or_repeated_current_gate_before_issuing_a_grant",
         "authority::tests::bounded_retained_record_roundtrip_never_restores_current_authority",
         "authority::tests::bounded_rule_publication_rejects_rollback_and_same_revision_mutation",
         "authority::tests::commit_fence_rejects_narrowing_after_refresh_and_allows_compatible_rotation",
@@ -2155,7 +2159,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 97,
+      "minimumCases": 101,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [

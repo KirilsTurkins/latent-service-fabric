@@ -7,8 +7,10 @@
 //! execution cell, guest store, reusable credential, or application timer.
 
 mod grant;
+mod lookup;
 mod namespace;
 pub use grant::DispatchGrant;
+pub use lookup::{DispatchPurpose, ProviderLookupAuthorization};
 pub use namespace::NamespaceEffectCloseFence;
 
 use serde::{Deserialize, Serialize};
@@ -624,6 +626,7 @@ impl EffectAuthorityOwner {
             deadline,
             retired: false,
             grant_issued: false,
+            lookup: None,
             retained_owner: None,
         })
     }
@@ -700,6 +703,7 @@ pub struct DispatchContext {
     deadline: Instant,
     retired: bool,
     grant_issued: bool,
+    lookup: Option<Arc<dyn ProviderLookupAuthorization>>,
     retained_owner: Option<Arc<dyn std::any::Any + Send + Sync>>,
 }
 
