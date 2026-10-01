@@ -9,13 +9,13 @@ use std::{future::Future, pin::Pin, sync::atomic::Ordering, task::Poll, time::Du
 #[path = "runtime/component.rs"]
 mod component;
 #[path = "../guest_sdk/package.rs"]
-mod package;
+pub(super) mod package;
 #[path = "../../../latent-signing/tests/build_provenance/support.rs"]
 #[allow(dead_code)]
-mod provenance;
+pub(super) mod provenance;
 #[path = "../generic_backend/support.rs"]
 #[allow(dead_code)]
-mod support;
+pub(super) mod support;
 
 fn limits() -> RuntimeLimits {
     // Deliberately small test ceilings; these are not a language/product default.
