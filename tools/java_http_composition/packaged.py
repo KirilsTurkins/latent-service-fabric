@@ -76,16 +76,19 @@ def _compiler_logs(roots, output):
 
 
 def _connect(api, frontend, workspace):
-    import pwd
     backend = api.root / (workspace + "-backend.json")
     write_json(backend, {"kind": "linux", "python": sys.executable,
         "helper": str(frontend.binary.parents[1] / "helper.pyz"),
         "helperSha256": file_digest(frontend.binary.parents[1] / "helper.pyz")})
     api.call("connect", "--workspace", workspace, "--backend-config", backend)
+
+
+def _installed_workspace(workspace):
+    import pwd
     home = Path(pwd.getpwuid(os.geteuid()).pw_dir)
-    root = home / ".lsf-dev" / workspace
-    require(root.is_dir() and not root.is_symlink(), "packaged-composition-real-workspace-required")
-    return root
+    # The supported connect handshake negotiates only. Install creates the
+    # backend workspace; then validate its original private ownership record.
+    return state.workspace(home / ".lsf-dev", workspace)
 
 
 def _install(api, configuration, workspace, index):
@@ -93,6 +96,7 @@ def _install(api, configuration, workspace, index):
     selected = api.root / (workspace + "-runtime.json")
     write_json(selected, read_json(runtime))
     api.call("install", "--workspace", workspace, "--runtime-inputs", selected, timeout=1200)
+    return _installed_workspace(workspace)
 
 
 def _build(api, configuration, workspace, root, output, observation, *, diagnostics=False):
@@ -332,15 +336,15 @@ def qualify(configuration, output, *, diagnostics=False):
         control.mkdir(mode=0o700)
         api = Frontend(frontend.binary, control, report)
         baseline = "test-java-composition-710"
-        root = _connect(api, frontend, baseline)
+        _connect(api, frontend, baseline)
+        root = _install(api, configuration, baseline, 10)
         workspaces[baseline] = root
-        _install(api, configuration, baseline, 10)
         _build(api, configuration, baseline, root, output, report, diagnostics=diagnostics)
         releases = output / "releases"
         former = "test-java-former-profile-710"
-        former_root = _connect(api, frontend, former)
+        _connect(api, frontend, former)
+        former_root = _install(api, configuration, former, 11)
         workspaces[former] = former_root
-        _install(api, configuration, former, 11)
         with owned_cancellation() as cancellation:
             provider_control, provider_port = None, None
             if diagnostics:

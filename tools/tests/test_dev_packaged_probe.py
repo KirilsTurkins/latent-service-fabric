@@ -37,6 +37,42 @@ class PackagedProbe(unittest.TestCase):
         selected = extract(self.root, manifest, self.root / 'installed')
         self.assertEqual(selected.read_bytes(), b'harmless fixture 0')
 
+    def test_connect_negotiates_without_requiring_an_installed_workspace(self):
+        from types import SimpleNamespace
+        from tools.java_http_composition import packaged
+
+        frontend = self.root / 'frontend'
+        (frontend / 'bin').mkdir(parents=True)
+        (frontend / 'helper.pyz').write_bytes(b'owned test helper identity')
+        calls = []
+        api = SimpleNamespace(root=self.root, call=lambda *args: calls.append(args))
+        packaged._connect(api, SimpleNamespace(binary=frontend / 'bin' / 'latent-dev'), 'test-real-workspace')
+        self.assertEqual(calls, [('connect', '--workspace', 'test-real-workspace', '--backend-config',
+                                 self.root / 'test-real-workspace-backend.json')])
+        self.assertFalse((self.root / '.lsf-dev').exists())
+        config = json.loads((self.root / 'test-real-workspace-backend.json').read_bytes())
+        self.assertEqual(config['helperSha256'], 'sha256:' + hashlib.sha256(
+            b'owned test helper identity').hexdigest())
+
+    def test_installed_workspace_requires_the_real_private_owner_record(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.dev_workflow import paths, state
+        from tools.dev_workflow.common import DevError
+        from tools.java_http_composition import packaged
+
+        pwd = SimpleNamespace(getpwuid=lambda _uid: SimpleNamespace(pw_dir=str(self.root)))
+        with patch.dict(sys.modules, pwd=pwd), patch.object(os, 'geteuid', return_value=23001, create=True):
+            with self.assertRaises((DevError, FileNotFoundError)):
+                packaged._installed_workspace('test-real-workspace')
+            base = self.root / '.lsf-dev'
+            paths.new_directory(base)
+            original = state.workspace(base, 'test-real-workspace', create=True)
+            self.assertEqual(packaged._installed_workspace('test-real-workspace'), original)
+            state.atomic(original, 'owner.json', {'schemaVersion': 'latent.dev.owner.v1', 'id': 'other-workspace'})
+            with self.assertRaisesRegex(DevError, '^workspace-owner-mismatch$'):
+                packaged._installed_workspace('test-real-workspace')
+
     @unittest.skipUnless(os.name == 'nt', 'actual Windows DACL required')
     def test_conductor_protects_only_its_new_windows_directory(self):
         from tools.dev_packaged_windows import make_private

@@ -1,0 +1,20 @@
+{
+  "id": 11158489692,
+  "node_id": "MDg6QXJ0aWZhY3QxMTE1ODQ4OTY5Mg==",
+  "name": "packaged-qualification-support",
+  "size_in_bytes": 30104461,
+  "url": "https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/11158489692",
+  "archive_download_url": "https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/11158489692/zip",
+  "expired": false,
+  "digest": "sha256:ea84fc10e3bd7e6dd99b089f9697112c71584c4edce68f9f59dcc1de9b494baa",
+  "created_at": "2026-10-01T11:45:49Z",
+  "updated_at": "2026-10-01T11:45:49Z",
+  "expires_at": "2026-10-08T11:45:46Z",
+  "workflow_run": {
+    "id": 36829995045,
+    "repository_id": 1337591365,
+    "head_repository_id": 1337591365,
+    "head_branch": "feat/feedback2-java710-integration",
+    "head_sha": "d39efecac856ad8e833479075318e461f8192008"
+  }
+}
