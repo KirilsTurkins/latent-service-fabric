@@ -169,3 +169,55 @@ endpoint or packaged guest qualification. Concrete transports and their controll
 real endpoint evidence belong to #392/#393; ordinary state-runtime composition,
 management authorization and terminal payload retirement also consume their
 respective Phase 4 ports before aggregate delivery is complete.
+
+## Attributed node controls
+
+The dispatcher is node-wide, across tenants and namespaces. Its management
+gateway requires current trusted node-operator authorization; a tenant
+administrator or a known effect ID supplies no permission to pause it or release
+its node-wide aggregates. These are existing private management transport ports.
+
+`prepare_control` captures the original authenticated actor tenant/subject,
+operation ID, `Pause`/`Resume` action and exact control generation. That generation
+combines the actual persisted exclusive dispatcher epoch with a checked monotonic
+revision. Preparation does no I/O and changes no admission. A prepared value is
+affine to this actual dispatcher; another engine/owner rejects it before queuing.
+Local safety pause and restore-review changes invalidate stale preparations.
+
+`submit_control` transfers that immutable request to the same protected store's
+fixed writer. It reserves 64 KiB for the bounded request, intermediate rows and
+receipt. The actual engine transaction checks the owner row, latest control and
+absent original receipt. Its final short callback holds current node policy
+through one acceptance, advances the revision and pauses admission. Receipt
+durability then atomically stores the owner clock floor, latest control and
+attributed original-operation receipt. The policy lock never spans disk I/O.
+Only successful durable completion publishes a resume. Dropped waiters keep the
+actual writer and its reservation; no unobserved writer is refunded.
+
+Both `dispatch-control-v1\0` and `dispatch-control-receipt-v1\0` live in the
+Maintenance family. Values are closed `LDC\0\x01` records, bounded to 4 KiB.
+The receipt key contains SHA-256 of `latent.dispatcher-control-operation.v1\0`
+and the length-framed authenticated tenant, subject and original operation ID.
+IDs are at most 256 UTF-8 bytes; a reused ID with a changed action/precondition
+fails exact association. Startup validates receipt/latest-control/owner links
+in finite pages and keeps an earlier durable pause across exclusive epochs.
+
+Historical receipt lookup preserves the original action and precondition; it
+never republishes a historical resume. Unknown completion keeps admission paused
+and the pending original identity. Only actual receipt recovery or the admitted
+exclusive-owner recovery path can establish its outcome. No timeout, pause,
+cancel, cursor, decoded receipt or numeric generation proves provider retirement.
+Already accepted claim/send/cleanup can finish after pause; shutdown reports
+physical retirement and fixed thread joins separately.
+
+Pause remains available with an unproven or backwards clock. Resume requires
+protected continuity, no sticky failure and no restore-review fence. Restore
+composition installs `start_in_restore_review` before readiness, or the trusted
+`require_restore_review` safety port before exposure. Generic resume cannot clear
+that fence; #399's separately reviewed restore protocol must provide any future
+clear/resume authority. A known durable resume whose later safety fence prevents
+publication remains a known receipt and reports `published: false`.
+
+The common authenticated RPC/CLI composition and #397 reserved recovery lane
+consume these ports. This domain implementation does not by itself qualify the
+public management workflow, ordinary-queue saturation or backup/restore review.
