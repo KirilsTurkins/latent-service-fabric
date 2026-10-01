@@ -56,14 +56,19 @@ final class TimeUnitMethods {
         // intact. Only these SDK-owned method bodies are installed afterward.
         var template = new ClassRefsRenamer(new ReferenceCache(), name ->
             name.equals(SDK) ? STANDARD : name).rename(ModelUtils.copyClass(source));
+        var methods = new java.util.ArrayList<org.teavm.model.MethodHolder>();
         for (var descriptor : METHODS) {
             var method = template.getMethod(descriptor);
             if (method == null || method.getProgram() == null) {
                 throw new IllegalStateException("missing-sdk-timeunit-method");
             }
-            var old = cls.getMethod(descriptor);
+            methods.add(ModelUtils.copyMethod(method));
+        }
+        // Validate the complete template before changing the maintained model.
+        for (var method : methods) {
+            var old = cls.getMethod(method.getDescriptor());
             if (old != null) cls.removeMethod(old);
-            cls.addMethod(ModelUtils.copyMethod(method));
+            cls.addMethod(method);
         }
     }
 }

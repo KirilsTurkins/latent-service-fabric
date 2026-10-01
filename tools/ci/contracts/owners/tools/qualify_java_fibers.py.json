@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Four unchanged reference-JDK modes and exact locked Throwable constructor controls preserve original application identities; expanded signed guest execution remains unqualified",
+  "reviewReason": "Expanded thread and default-future controls preserve all four original reference-JDK modes and verify locked Throwable and TimeUnit model ownership and reference conversions",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ee8ca2d9796295e3196929890f1d3d281cf10120ccc7a885357776294e280ee5"
+  "sha256": "c975c01b87b6a7bda589df36857d696cacaab5d2aaeaeb13d622694563ce04b1"
 }
