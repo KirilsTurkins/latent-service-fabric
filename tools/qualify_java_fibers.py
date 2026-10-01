@@ -19,11 +19,12 @@ from tools.java_guest.compiler import Compiler
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file, write_json
 
 
-def locked_model_classpath(compiler: Compiler) -> tuple[str, dict[str, str]]:
+def locked_model_classpath(compiler: Compiler, *, include_platform: bool = False) -> tuple[str, dict[str, str]]:
     """Verify the compiler's own locked model tooling before any host loading."""
     names = {"teavm-classlib", "teavm-core", "teavm-extension-spi", "teavm-interop",
              "teavm-relocated-libs-asm", "teavm-relocated-libs-asm-analysis",
              "teavm-relocated-libs-asm-commons", "teavm-relocated-libs-asm-tree", "teavm-relocated-libs-hppc"}
+    if include_platform: names.add("teavm-platform")
     lock = json.loads(read_file(compiler.sdk / "feasibility/dependencies.lock.json"))
     artifacts = [item for item in lock["artifacts"]
                  if Path(item["path"]).parts[-3] in names and item["path"].startswith("org/teavm/")]
@@ -89,10 +90,17 @@ def timeunit_model_control(compiler: Compiler, output: Path) -> dict:
 
 def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     """Verify the actual native/callback pairs and their resumed owner frames."""
-    classpath, identities = locked_model_classpath(compiler)
+    classpath, identities = locked_model_classpath(compiler, include_platform=True)
     output.mkdir()
-    sources = ("fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
+    sources = ("fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java",
+               "fibers/conformance/compiler/WaitFramePluginOrder.java",
                "fibers/conformance/compiler/WaitFrameModelControl.java")
     compiler.run("wait-frame-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", output, *(compiler.sdk / source for source in sources))
@@ -100,9 +108,11 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
                           str(output) + os.pathsep + classpath,
                           "dev.latent.guest.runtime.compiler.WaitFrameModelControl").strip()
     expected = ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;real-native-callback-pairs;"
-                "resumed-java-frame-owners;throws-and-standard-owners;shape-and-repeat-negatives;application-identity")
+                "resumed-java-frame-owners;throws-and-standard-owners;actual-platform-order;"
+                "async-lowered-owned-pairs;platform-first-negative;shape-and-repeat-negatives;application-identity")
     if result != expected: raise ValueError("Java wait frame model control did not complete")
-    return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2, "jarDigests": identities}
+    return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2,
+            "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2, "jarDigests": identities}
 
 
 def recipe_inputs() -> dict[str, str]:

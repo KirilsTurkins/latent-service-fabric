@@ -14,11 +14,12 @@ from tools import qualify_java_fibers as fibers
 
 class ThrowableModelIntegrity(unittest.TestCase):
     @staticmethod
-    def fixture(root):
+    def fixture(root, *, include_platform=False):
         compiler = SimpleNamespace(sdk=root / "sdk", directory=root / "compiler", run=Mock())
         names = ("teavm-classlib", "teavm-core", "teavm-extension-spi", "teavm-interop",
                  "teavm-relocated-libs-asm", "teavm-relocated-libs-asm-analysis",
                  "teavm-relocated-libs-asm-commons", "teavm-relocated-libs-asm-tree", "teavm-relocated-libs-hppc")
+        if include_platform: names += ("teavm-platform",)
         artifacts, jars = [], []
         for name in names:
             raw = name.encode()
@@ -129,7 +130,7 @@ class WaitFrameModelIntegrity(unittest.TestCase):
     def test_changed_tooling_cannot_enter_host_frame_model_execution(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            compiler, jars, _ = ThrowableModelIntegrity.fixture(root)
+            compiler, jars, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
             jars[0].write_bytes(b"modified classlib")
             with self.assertRaisesRegex(ValueError, "integrity mismatch"):
                 fibers.wait_frame_model_control(compiler, root / "model")
@@ -139,7 +140,7 @@ class WaitFrameModelIntegrity(unittest.TestCase):
     def test_missing_callback_model_closure_fails_before_host_loading(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            compiler, _, lock = ThrowableModelIntegrity.fixture(root)
+            compiler, _, lock = ThrowableModelIntegrity.fixture(root, include_platform=True)
             document = json.loads(lock.read_bytes())
             document["artifacts"] = document["artifacts"][:-1]
             lock.write_text(json.dumps(document))
@@ -151,7 +152,7 @@ class WaitFrameModelIntegrity(unittest.TestCase):
     def test_partial_native_pair_receipt_is_not_owner_frame_proof(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            compiler, _, _ = ThrowableModelIntegrity.fixture(root)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
             compiler.run.side_effect = ["", "WAIT_FRAME_MODEL_CONTROL PASS real-native-callback-pairs"]
             with self.assertRaisesRegex(ValueError, "wait frame model control did not complete"):
                 fibers.wait_frame_model_control(compiler, root / "model")
@@ -160,20 +161,47 @@ class WaitFrameModelIntegrity(unittest.TestCase):
     def test_model_receipt_requires_both_actual_standard_api_pairs_and_closed_shape_negatives(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            compiler, _, _ = ThrowableModelIntegrity.fixture(root)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
             compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
                 "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "actual-platform-order;async-lowered-owned-pairs;platform-first-negative;"
                 "shape-and-repeat-negatives;application-identity\n")]
             report = fibers.wait_frame_model_control(compiler, root / "model")
             self.assertEqual(report["nativeCallbackPairs"], 2)
-            self.assertEqual(len(report["jarDigests"]), 9)
+            self.assertEqual(report["pluginOrder"], ["runtime", "platform"])
+            self.assertEqual(report["asyncLoweredOwnedPairs"], 2)
+            self.assertEqual(len(report["jarDigests"]), 10)
             compile_call, model_call = compiler.run.call_args_list
             self.assertEqual(compile_call.args[:3], ("wait-frame-model-compile", "javac", "-proc:none"))
-            self.assertEqual(compile_call.args[-3:], tuple(compiler.sdk / source for source in (
+            self.assertEqual(compile_call.args[-4:], tuple(compiler.sdk / source for source in (
                 "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
                 "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java",
+                "fibers/conformance/compiler/WaitFramePluginOrder.java",
                 "fibers/conformance/compiler/WaitFrameModelControl.java")))
+            self.assertIn(compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+                          compile_call.args)
             self.assertEqual(model_call.args[-1], "dev.latent.guest.runtime.compiler.WaitFrameModelControl")
+
+    def test_changed_platform_processor_is_rejected_before_model_loading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            jars[-1].write_bytes(b"changed maintained async processor")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_native_pair_proof_without_actual_platform_order_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
+                "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "shape-and-repeat-negatives;application-identity\n")]
+            with self.assertRaisesRegex(ValueError, "wait frame model control did not complete"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
 
 
 class PackagingTools(unittest.TestCase):

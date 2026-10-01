@@ -151,6 +151,22 @@ metadata control. The maintained qualifier repeats it using the pinned compiler
 toolchain. A new component and all twelve normal signed invocations are still
 required to prove this repair; the complete runtime profile remains unqualified.
 
+The first pinned rebuild from source `e812437c` passed all 70 SDK helper checks
+and all twelve unchanged reference-JDK results, then failed at TeaVM's
+`generateC` step with `unreviewed-maintained-monitor-handler`. The exact locked
+compiler reproduces the cause: its platform plugin changes the native async
+declaration into a Fiber bridge before the SDK's native-pair transformer runs.
+The SDK plugin now uses TeaVM's public `@Before(PlatformPlugin.class)` ordering
+contract. The existing locked platform artifact supplies that annotation's
+class reference; no compiler dependency version or application symbol changes.
+An expanded control against ten verified model JARs exercises the actual plugin
+ordering reader, preserves rejection of the original platform-first shape, and
+runs the maintained async processor on both owned pairs. It checks that each
+generated Fiber bridge targets its owned callback once while the standard
+method retains the Java frame that closes its leases. This control passed on
+host JDK 25.0.3. Pinned component compilation and the twelve normal signed
+invocations remain pending after this ordering repair.
+
 The last attempted expanded executor component passed its thread-only mode but
 failed in its signed executor mode with a closed host `resource-exhausted` cause
 ([retained CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36811904043)).

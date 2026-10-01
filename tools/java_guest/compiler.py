@@ -237,6 +237,8 @@ class Compiler:
         if activation_profile or server_profile:
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
+                if activation_profile:
+                    build.write("dependencies { compileOnly 'org.teavm:teavm-platform:0.15.0' }\n")
         application_source_names = set()
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")

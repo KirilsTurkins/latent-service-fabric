@@ -20,11 +20,14 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.ClassRefsRenamer;
+import org.teavm.platform.plugin.PlatformPlugin;
+import org.teavm.vm.spi.Before;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 /** SDK-owned compiler extension. The closure index is emitted from actual class
  * files, not a package allowlist or an application-executed compiler plugin. */
+@Before(PlatformPlugin.class)
 public final class RuntimePlugin implements TeaVMPlugin {
     private static final String RUNTIME = "dev.latent.guest.runtime.Activation";
     private final Set<String> applicationClasses = new HashSet<>();

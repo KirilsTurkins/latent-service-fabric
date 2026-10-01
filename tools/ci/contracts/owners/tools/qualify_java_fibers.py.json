@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserves all four reference-JDK modes and existing locked Throwable/TimeUnit controls; additionally verifies the actual locked Thread/Object native callback pairs with owner cleanup in resumed Java frames",
+  "reviewReason": "Preserve all four reference-JDK modes and existing locked Throwable/TimeUnit controls; verify the native owner frames through actual locked plugin ordering and maintained async lowering, including platform-first rejection",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f5e51da765273ce36ab2bda3abf46de192d4f23e5bc1e4e1fb25d01eae466da8"
+  "sha256": "dc9f23750ffd5ccf8afc973e27b53845c6720f181658f7e74d67a94bb33694eb"
 }

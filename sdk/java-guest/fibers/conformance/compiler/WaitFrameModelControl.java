@@ -1,8 +1,11 @@
 package dev.latent.guest.runtime.compiler;
 
+import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.List;
 import org.teavm.classlib.impl.ClasslibSubstitutionPolicy;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
@@ -14,6 +17,8 @@ import org.teavm.model.util.ModelUtils;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
 import org.teavm.parsing.substitution.DefaultSubstituteClassNameMapping;
+import org.teavm.platform.plugin.AsyncMethodProcessor;
+import org.teavm.vm.WaitFramePluginOrder;
 
 /** Actual locked classlib IR; developer classes are never initialized. */
 public final class WaitFrameModelControl {
@@ -58,6 +63,49 @@ public final class WaitFrameModelControl {
         call(standard, new MethodReference(SUPPORT, hook, wrapperArguments));
     }
 
+    private static List<ClassHolder> lowerAsync(ClassHolder cls) {
+        var generated = new ArrayList<ClassHolder>();
+        var context = (ClassHolderTransformerContext) Proxy.newProxyInstance(
+            WaitFrameModelControl.class.getClassLoader(), new Class<?>[] { ClassHolderTransformerContext.class },
+            (proxy, method, arguments) -> {
+                require(method.getName().equals("submit"), "exact-async-processor-context-operation");
+                generated.add((ClassHolder) arguments[0]);
+                return null;
+            });
+        new AsyncMethodProcessor(true).transformClass(cls, context);
+        return generated;
+    }
+
+    private static void loweredPair(ClassHolder cls, MethodDescriptor original, String rawName, String hook,
+                                    ValueType... wrapperArguments) {
+        var nativeEntry = cls.getMethod(new MethodDescriptor(rawName, original.getSignature()));
+        var generated = lowerAsync(cls);
+        require(nativeEntry.getProgram() != null && !nativeEntry.hasModifier(ElementModifier.NATIVE),
+                "actual-low-level-fiber-entry");
+        int suspensions = 0;
+        for (var block : nativeEntry.getProgram().getBasicBlocks()) for (var instruction : block) {
+            if (instruction instanceof InvokeInstruction invoke
+                    && invoke.getMethod().equals(new MethodReference("org.teavm.runtime.Fiber", "suspend",
+                        ValueType.object("org.teavm.runtime.Fiber$AsyncCall"), ValueType.object("java.lang.Object"))))
+                suspensions++;
+        }
+        require(suspensions == 1, "one-maintained-fiber-suspension");
+        var callbackSignature = new ValueType[original.parameterCount() + 2];
+        System.arraycopy(original.getParameterTypes(), 0, callbackSignature, 0, original.parameterCount());
+        callbackSignature[original.parameterCount()] = CALLBACK;
+        callbackSignature[original.parameterCount() + 1] = ValueType.VOID;
+        var expected = new MethodReference(cls.getName(), rawName, callbackSignature);
+        int callbacks = 0;
+        for (var generatedClass : generated) {
+            var run = generatedClass.getMethod(new MethodDescriptor("run", CALLBACK, ValueType.VOID));
+            for (var block : run.getProgram().getBasicBlocks()) for (var instruction : block) {
+                if (instruction instanceof InvokeInstruction invoke && invoke.getMethod().equals(expected)) callbacks++;
+            }
+        }
+        require(callbacks == 1, "actual-generated-owned-callback-target");
+        call(cls.getMethod(original), new MethodReference(SUPPORT, hook, wrapperArguments));
+    }
+
     public static void main(String[] arguments) {
         var loader = WaitFrameModelControl.class.getClassLoader();
         var source = new ClasspathClassHolderSource(new ClasspathResourceProvider(loader), new ReferenceCache(),
@@ -69,12 +117,23 @@ public final class WaitFrameModelControl {
         require(originalThread.getMethod(sleep).getModifiers().contains(ElementModifier.NATIVE)
                 && originalObject.getMethod(wait).getModifiers().contains(ElementModifier.NATIVE),
                 "actual-original-native-frame-negative");
+        require(WaitFramePluginOrder.ordered().equals(List.of("dev.latent.guest.runtime.compiler.RuntimePlugin",
+            "org.teavm.platform.plugin.PlatformPlugin")), "actual-maintained-plugin-order");
+        var platformFirst = ModelUtils.copyClass(originalObject);
+        lowerAsync(platformFirst);
+        require(platformFirst.getMethod(wait).getProgram() != null
+                && !platformFirst.getMethod(wait).hasModifier(ElementModifier.NATIVE), "actual-platform-first-negative");
+        try { WaitContinuations.transform(platformFirst); throw new AssertionError("platform-first-port-accepted"); }
+        catch (IllegalStateException expected) {
+            require(expected.getMessage().equals("unreviewed-maintained-monitor-handler"), "closed-platform-first-shape");
+        }
         var thread = ModelUtils.copyClass(originalThread);
         var object = ModelUtils.copyClass(originalObject);
         var sleeping = thread.getMethod(sleep);
         var waiting = object.getMethod(wait);
         var sleepThrows = List.copyOf(sleeping.getThrownTypes());
         var waitThrows = List.copyOf(waiting.getThrownTypes());
+        MonitorContinuations.transform(object);
         SleepContinuations.transform(thread);
         WaitContinuations.transform(object);
         pair(thread, sleep, "lsfOwnedSleep", "ownedSleep", ValueType.LONG, ValueType.VOID);
@@ -96,11 +155,15 @@ public final class WaitFrameModelControl {
         catch (IllegalStateException expected) {
             require(expected.getMessage().equals("unreviewed-maintained-monitor-handler"), "closed-repeated-shape");
         }
+        loweredPair(thread, sleep, "lsfOwnedSleep", "ownedSleep", ValueType.LONG, ValueType.VOID);
+        loweredPair(object, wait, "lsfOwnedWait", "ownedWait", ValueType.object("java.lang.Object"),
+                    ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
         var unrelated = new ClassHolder("outside.application.Thread");
         SleepContinuations.transform(unrelated);
         WaitContinuations.transform(unrelated);
         require(unrelated.getMethods().isEmpty(), "application-identity-preserved");
         System.out.println("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;real-native-callback-pairs;"
-            + "resumed-java-frame-owners;throws-and-standard-owners;shape-and-repeat-negatives;application-identity");
+            + "resumed-java-frame-owners;throws-and-standard-owners;actual-platform-order;"
+            + "async-lowered-owned-pairs;platform-first-negative;shape-and-repeat-negatives;application-identity");
     }
 }
