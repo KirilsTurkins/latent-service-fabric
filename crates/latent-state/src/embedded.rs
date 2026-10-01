@@ -7,8 +7,8 @@ use std::{
     collections::BTreeSet,
     fs::File,
     sync::{
-        Arc,
         atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc,
     },
     time::{Duration, Instant},
 };

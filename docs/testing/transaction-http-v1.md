@@ -38,6 +38,13 @@ and epochs, configured clock/provider descriptors, and the actual retained
 source service's dispatch subject and recovery scope. Use these observations in
 the reviewed policy tuples; the description itself grants no authority.
 
+`configuredHttpCallers` describes the actual HTTP invoke credentials.
+`configuredTransportCallers` separately describes the authenticated RPC
+principals, including administrator/operator identities used by namespace
+management. Both scopes come from the native caller-scope owner. The output
+contains no bearer tokens or claims, and provides no management or invocation
+grant.
+
 The command opens and shuts down the ordinary protected configuration/catalog
 and provider owners. It starts no listener, guest activation, state store,
 namespace or dispatcher. The state digest describes the validated selected

@@ -3,7 +3,7 @@ use super::{clock::ProtectedCommandClock, effects, load_operations};
 use crate::{config::NodeSettings, standalone::providers::ProviderRuntime};
 use latent_artifacts::DirectoryArtifactRepository;
 use latent_capabilities::namespace::{CallerScope, RecoverySelection};
-use latent_core::{ActivationClock, PlatformError};
+use latent_core::{ActivationClock, InvocationPrincipal, PlatformError};
 use latent_effects::runtime::EffectTimeSource;
 use latent_policy::capability::{PolicyStore, RecoveryScopeKind};
 use latent_state::protected_store::ProtectedStoreConfig;
@@ -41,14 +41,15 @@ pub struct NativeTransactionHostInspection {
     pub schema_version: &'static str,
     pub configured_providers: Vec<crate::standalone::ProviderDescriptor>,
     pub configured_http_callers: Vec<NativeHttpCallerInspection>,
+    pub configured_transport_callers: Vec<NativeHttpCallerInspection>,
     pub state_provider_profile: String,
     pub state_configuration_digest: String,
     pub state_configuration_epoch: u64,
     pub deferred_http: Vec<NativeDeferredEffectHostInspection>,
 }
 
-/// Stable scope data from the principals admitted by the actual HTTP bearer
-/// configuration. Tokens and claims are never included; this is no grant.
+/// Stable scope data from the principals selected by actual authenticated
+/// transport configuration. Tokens and claims are never included; this is no grant.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NativeHttpCallerInspection {
@@ -78,6 +79,12 @@ pub(in crate::standalone) async fn inspect_host_configuration(
         configured_providers: providers
             .map_or_else(Vec::new, |providers| providers.descriptors().to_vec()),
         configured_http_callers: http_callers(settings)?,
+        configured_transport_callers: settings
+            .transport
+            .credentials
+            .iter()
+            .map(|credential| caller(&credential.principal))
+            .collect::<Result<_, _>>()?,
         state_provider_profile: profile.into(),
         state_configuration_digest: format!("sha256:{:x}", latent_core::digest::HexDigest(digest)),
         state_configuration_epoch: configuration.configuration_epoch,
@@ -94,22 +101,23 @@ fn http_callers(settings: &NodeSettings) -> Result<Vec<NativeHttpCallerInspectio
     };
     credentials
         .iter()
-        .map(|credential| {
-            let principal = &credential.principal;
-            let caller = CallerScope::derive(principal, &RecoverySelection::OriginalCaller)?;
-            Ok(NativeHttpCallerInspection {
-                subject: principal.subject.clone(),
-                owner_kind: caller.owner_kind,
-                tenant: principal
-                    .tenant
-                    .as_ref()
-                    .ok_or_else(super::denied)?
-                    .0
-                    .clone(),
-                service: principal.service.as_ref().map(|service| service.0.clone()),
-                recovery_kind: caller.kind,
-                recovery_scope: caller.scope,
-            })
-        })
+        .map(|credential| caller(&credential.principal))
         .collect()
+}
+
+fn caller(principal: &InvocationPrincipal) -> Result<NativeHttpCallerInspection, PlatformError> {
+    let caller = CallerScope::derive(principal, &RecoverySelection::OriginalCaller)?;
+    Ok(NativeHttpCallerInspection {
+        subject: principal.subject.clone(),
+        owner_kind: caller.owner_kind,
+        tenant: principal
+            .tenant
+            .as_ref()
+            .ok_or_else(super::denied)?
+            .0
+            .clone(),
+        service: principal.service.as_ref().map(|service| service.0.clone()),
+        recovery_kind: caller.kind,
+        recovery_scope: caller.scope,
+    })
 }
