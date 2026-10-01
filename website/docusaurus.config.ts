@@ -9,6 +9,7 @@ import {mermaidOptions, preparePalette, prismTheme} from './lib/palette.mjs';
 import repositoryContent from './plugins/repository-content.mjs';
 import examplesPlugin from './plugins/examples/index.mjs';
 import discoveryPlugin from './plugins/discovery.mjs';
+import codeWordWrap from './plugins/code-word-wrap.mjs';
 
 const prepared = prepare();
 type Snapshot = {index: typeof prepared.index & {documentPrefix: string}; assets: typeof prepared.assets;
@@ -82,6 +83,7 @@ const config: Config = {
     theme: {customCss: [theme.css, './src/css/foundation.css', './src/css/theme.css']},
   } satisfies Options]],
   plugins: [
+    codeWordWrap,
     ['@docusaurus/plugin-content-docs', {
       ...commonDocs,
       id: 'decisions',
