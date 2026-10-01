@@ -15,6 +15,7 @@ pub struct DispatcherConfig {
     pub workers: usize,
     pub queued_jobs: usize,
     pub accepted_jobs: usize,
+    pub maximum_command_owners: usize,
     pub per_tenant_jobs: usize,
     pub retained_bytes: u64,
     pub page_rows: usize,
@@ -34,6 +35,7 @@ impl Default for DispatcherConfig {
             workers: 2,
             queued_jobs: 4,
             accepted_jobs: 16,
+            maximum_command_owners: 128,
             per_tenant_jobs: 1,
             retained_bytes: 80 * 1024 * 1024,
             page_rows: 16,
@@ -57,6 +59,7 @@ impl DispatcherConfig {
         if !(1..=16).contains(&self.workers)
             || !(1..=64).contains(&self.queued_jobs)
             || !(1..=128).contains(&self.accepted_jobs)
+            || !(1..=1024).contains(&self.maximum_command_owners)
             || !(1..=self.workers).contains(&self.per_tenant_jobs)
             || self.queued_jobs > self.accepted_jobs
             || self.workers > self.accepted_jobs
