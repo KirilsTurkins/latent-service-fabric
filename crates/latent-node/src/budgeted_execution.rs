@@ -124,11 +124,11 @@ impl ExecutionBackend for BudgetedExecutionBackend {
         self.inner.prepare_from_repository(repository, key)
     }
 
-    fn prepare_ready_from_repository<'a>(
-        &'a self,
+    fn prepare_ready_from_repository(
+        &self,
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
-    ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
+    ) -> BoxFuture<'_, Result<PreparedReadiness, PlatformError>> {
         self.inner.prepare_ready_from_repository(repository, key)
     }
 

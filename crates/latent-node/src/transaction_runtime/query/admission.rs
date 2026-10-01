@@ -4,13 +4,19 @@ use latent_activation::ActivationEnvelope;
 use latent_capabilities::namespace::{
     CallerScope, NamespaceAdmission, NamespaceAuthority, STATE_CONTRACT,
 };
-use latent_core::{ActivationBudget, BoxFuture, BudgetProfile, PlatformError};
+use latent_core::{
+    ActivationBudget, BoxFuture, BudgetProfile, HostMemoryReservation, PlatformError,
+};
 use latent_policy::capability::{
-    CallRestrictions, CapabilityCeiling, EvaluationInput, PolicyStore, ResourceTarget,
+    CallRestrictions, CapabilityCeiling, EvaluationInput, OwnedPolicyDecision, PolicyStore,
+    ResourceTarget,
 };
 use latent_state::{
     embedded::StoreError,
-    namespace::{catalog::NamespaceCatalog, NamespaceError},
+    namespace::{
+        catalog::{NamespaceCatalog, NamespaceRead},
+        NamespaceError,
+    },
     protected_store::ProtectedStoreOwner,
     session::{StateMode, StateScope},
 };
@@ -62,22 +68,12 @@ impl QueryAdmission {
         })
     }
 
-    async fn open(
+    fn retain_authority(
         &self,
         envelope: &ActivationEnvelope,
         budget: &ActivationBudget,
-    ) -> Result<TransactionExecution, PlatformError> {
-        self.selection.accepts(envelope)?;
+    ) -> Result<OwnedPolicyDecision, PlatformError> {
         let granted = budget.granted();
-        if budget.profile() != BudgetProfile::Phase4
-            || granted.state_write_bytes != 0
-            || granted.effect_count != 0
-            || granted.child_calls != 0
-            || granted.outbound_requests != 0
-            || budget.descendant_is_cancelled()
-        {
-            return Err(denied());
-        }
         let caller = CallerScope::derive(&envelope.principal, &self.selection.recovery)?;
         let now = Instant::now();
         let deadline = budget.deadline().monotonic().ok_or_else(denied)?;
@@ -127,11 +123,13 @@ impl QueryAdmission {
             },
             &self.selection.publication,
         )?;
-        let retained = self.owners.policy.retain_decision(&decision)?;
-        drop(decision);
-        drop(snapshot);
-        // Authorize before reading native metadata, then retain the same original
-        // authority while the fixed worker reads one bounded current namespace.
+        self.owners.policy.retain_decision(&decision)
+    }
+
+    async fn read_namespace(
+        &self,
+        budget: &ActivationBudget,
+    ) -> Result<(NamespaceRead, Arc<HostMemoryReservation>), PlatformError> {
         let memory = Arc::new(budget.reserve_host_memory(65_536).map_err(|_| denied())?);
         let worker_memory = Arc::clone(&memory);
         let tenant = self.selection.target.tenant.clone();
@@ -168,6 +166,30 @@ impl QueryAdmission {
                 latent_executor::transaction::StateFailure::Conflict,
             ));
         }
+        Ok((namespace, result_memory))
+    }
+
+    async fn open(
+        &self,
+        envelope: &ActivationEnvelope,
+        budget: &ActivationBudget,
+    ) -> Result<TransactionExecution, PlatformError> {
+        self.selection.accepts(envelope)?;
+        let granted = budget.granted();
+        if budget.profile() != BudgetProfile::Phase4
+            || granted.state_write_bytes != 0
+            || granted.effect_count != 0
+            || granted.child_calls != 0
+            || granted.outbound_requests != 0
+            || budget.descendant_is_cancelled()
+        {
+            return Err(denied());
+        }
+        let retained = self.retain_authority(envelope, budget)?;
+        // This bounded read keeps the original retained authority and physical
+        // memory charge while the fixed worker owns the metadata.
+        let (namespace, memory) = self.read_namespace(budget).await?;
+        let deadline = budget.deadline().monotonic().ok_or_else(denied)?;
         let lifecycle = self
             .owners
             .namespaces
@@ -217,7 +239,6 @@ impl QueryAdmission {
         )
         .await
         .map_err(super::failure)?;
-        drop(result_memory);
         drop(memory);
         let completion = Arc::new(QueryCompletion::new(Arc::clone(&host)));
         TransactionExecution::query(host, completion)

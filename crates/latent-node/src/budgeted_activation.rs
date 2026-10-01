@@ -253,9 +253,9 @@ where
         let consumption = finalization.consumption().clone();
 
         let candidate = if let Some(error) = deadline_violation {
-            budget_failure(error, consumption.clone())
+            budget_failure(&error, consumption.clone())
         } else if let Some(error) = finalization.violation().cloned() {
-            budget_failure(error, consumption.clone())
+            budget_failure(&error, consumption.clone())
         } else {
             replace_consumption(outcome, consumption.clone())
         };
@@ -287,11 +287,11 @@ impl<M> ActivationManager for BudgetedActivationManager<M>
 where
     M: ActivationManager + 'static,
 {
-    fn invoke<'a>(&'a self, envelope: ActivationEnvelope) -> BoxFuture<'a, ActivationOutcome> {
+    fn invoke(&self, envelope: ActivationEnvelope) -> BoxFuture<'_, ActivationOutcome> {
         Box::pin(async move {
             let grant = match self.admit(&envelope) {
                 Ok(grant) => grant,
-                Err(error) => return budget_failure(error, BudgetConsumption::default()),
+                Err(error) => return budget_failure(&error, BudgetConsumption::default()),
             };
             self.invoke_admitted(envelope, grant).await
         })
@@ -358,7 +358,7 @@ fn outcome_consumption(outcome: &ActivationOutcome) -> BudgetConsumption {
     }
 }
 
-fn budget_failure(error: BudgetError, consumption: BudgetConsumption) -> ActivationOutcome {
+fn budget_failure(error: &BudgetError, consumption: BudgetConsumption) -> ActivationOutcome {
     ActivationOutcome::Failed {
         terminal_state: error.terminal_state(),
         error: error.to_platform_error(),
@@ -406,7 +406,6 @@ fn terminal_state_for_code(code: PlatformErrorCode) -> ActivationTerminalState {
         | PlatformErrorCode::IncompatibleContract
         | PlatformErrorCode::CorruptArtifact
         | PlatformErrorCode::AdmissionRejected => ActivationTerminalState::Rejected,
-        PlatformErrorCode::Internal => ActivationTerminalState::PlatformFailed,
         _ => ActivationTerminalState::PlatformFailed,
     }
 }
@@ -581,7 +580,7 @@ mod tests {
     }
 
     impl ActivationManager for RecordingManager {
-        fn invoke<'a>(&'a self, envelope: ActivationEnvelope) -> BoxFuture<'a, ActivationOutcome> {
+        fn invoke(&self, envelope: ActivationEnvelope) -> BoxFuture<'_, ActivationOutcome> {
             Box::pin(async move {
                 self.invocations.fetch_add(1, Ordering::AcqRel);
                 let activation_id = envelope.activation_id.clone();

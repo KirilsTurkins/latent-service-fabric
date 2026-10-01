@@ -13,7 +13,7 @@ impl QueryCompletion {
     }
 }
 impl TransactionCompletionHook for QueryCompletion {
-    fn complete<'a>(&'a self, outcome: ActivationOutcome) -> BoxFuture<'a, TransactionCompletion> {
+    fn complete(&self, outcome: ActivationOutcome) -> BoxFuture<'_, TransactionCompletion> {
         Box::pin(async move {
             let consumption = match &outcome {
                 ActivationOutcome::Succeeded(success) => success.consumption.clone(),
@@ -25,7 +25,13 @@ impl TransactionCompletionHook for QueryCompletion {
                 ActivationOutcome::DeclaredError { error, .. } => error.payload.len(),
                 ActivationOutcome::Failed { .. } => 0,
             };
-            let permitted = if matches!(outcome, ActivationOutcome::Failed { .. }) {
+            let permitted = if matches!(
+                &outcome,
+                ActivationOutcome::Succeeded(success)
+                    if success.committed_state_version.is_some() || !success.effect_ids.is_empty()
+            ) {
+                Err(super::super::authorization::denied())
+            } else if matches!(outcome, ActivationOutcome::Failed { .. }) {
                 // An original technical failure is not a data delivery. Keep its
                 // typed stage/reason while still retiring the physical view.
                 Ok(())
