@@ -4,7 +4,6 @@
   "coverage": {},
   "definition": {
     "env": {
-      "LSF_DEV_COMPILER_CACHE": "${{ runner.temp }}/compiler-archives",
       "LSF_DEV_LANGUAGE": "${{ matrix.language }}"
     },
     "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
@@ -46,7 +45,7 @@
         "uses": "actions/cache/restore",
         "with": {
           "key": "compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}",
-          "path": "${{ env.LSF_DEV_COMPILER_CACHE }}"
+          "path": "${{ runner.temp }}/compiler-archives"
         }
       },
       {
@@ -54,6 +53,9 @@
         "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/guest-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\"\n"
       },
       {
+        "env": {
+          "LSF_DEV_COMPILER_CACHE": "${{ runner.temp }}/compiler-archives"
+        },
         "name": "Assemble pinned compiler tools and maintained templates",
         "run": "python tools/build_dev_guest_tools.py --language \"$LSF_DEV_LANGUAGE\" --output target/dev-tools --python-prefix \"$LSF_DEV_PYTHON_PREFIX\" --node-tests"
       },
@@ -63,7 +65,7 @@
         "uses": "actions/cache/save",
         "with": {
           "key": "${{ steps.compiler-cache.outputs.cache-primary-key }}",
-          "path": "${{ env.LSF_DEV_COMPILER_CACHE }}"
+          "path": "${{ runner.temp }}/compiler-archives"
         }
       },
       {
@@ -289,7 +291,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Add pinned digest-reverified archive restore/save via explicit cache env; preserve every historical run block unchanged and all six languages/application checks.",
+  "reviewReason": "Scope runner.temp to the compiler assembly step env and cache action inputs, where GitHub permits the runner context; preserve the archive directory, independently reverified restore/save behavior and every historical run block.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
