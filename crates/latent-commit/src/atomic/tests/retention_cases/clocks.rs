@@ -1,6 +1,42 @@
 use super::*;
 
 #[test]
+fn repeated_small_wall_only_jumps_hold_response_expiry_across_progress_reopen() {
+    let (dir, store, effects) = setup();
+    let record = completed(&store, &effects, "cumulative-clock-drift");
+    let owner = ResultMaintenanceOwner::default();
+    owner
+        .anchor(&store, None, observation(100, 0), maintenance)
+        .unwrap();
+    let body = result_bytes(&store, &record);
+    let progress = owner
+        .step(&store, observation(1000, 0), maintenance)
+        .unwrap();
+    assert_eq!(progress.retired, 0);
+    assert_eq!(result_bytes(&store, &record), body);
+    drop(store);
+
+    let reopened = open(&dir.path().join("state.redb"));
+    let owner = ResultMaintenanceOwner::default();
+    assert_eq!(
+        owner.step(&reopened, observation(1900, 0), maintenance),
+        Err(AtomicError::RecoveryRequired)
+    );
+    assert_eq!(result_bytes(&reopened, &record), body);
+    let checkpoint = reopened
+        .snapshot()
+        .unwrap()
+        .get(&MaintenanceProgress::key())
+        .unwrap()
+        .unwrap();
+    assert_eq!(MaintenanceProgress::decode(&checkpoint).unwrap(), progress);
+    owner
+        .step(&reopened, observation(1900, 1800), maintenance)
+        .unwrap();
+    assert!(result_bytes(&reopened, &record).starts_with(b"LCE\0\x01"));
+}
+
+#[test]
 fn uncertain_boot_regression_forward_jump_and_overflow_hold_all_retained_responses() {
     let (_dir, store, effects) = setup();
     let record = completed(&store, &effects, "clock-hold");

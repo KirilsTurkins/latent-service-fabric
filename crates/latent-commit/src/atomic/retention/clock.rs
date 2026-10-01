@@ -22,6 +22,8 @@ pub struct MaintenanceProgress {
     pub unix_millis: u64,
     pub boot: [u8; 32],
     pub monotonic_millis: u64,
+    pub anchor_unix_millis: u64,
+    pub anchor_monotonic_millis: u64,
     pub visited: u64,
     pub retired: u64,
     pub reclaimed_bytes: u64,
@@ -38,9 +40,20 @@ impl MaintenanceClock {
         self.validate()?;
         let elapsed = self.monotonic_millis.checked_sub(previous.monotonic_millis);
         let wall = self.time.unix_millis.checked_sub(previous.unix_millis);
+        // Persist the approved anchor. Refreshing the tolerance at each step
+        // would let repeated small wall-only jumps erase a retained result.
+        let anchored_elapsed = self
+            .monotonic_millis
+            .checked_sub(previous.anchor_monotonic_millis);
+        let anchored_wall = self
+            .time
+            .unix_millis
+            .checked_sub(previous.anchor_unix_millis);
         if self.boot != previous.boot
             || !matches!((elapsed, wall), (Some(e), Some(w))
                 if e <= 60_000 && e.abs_diff(w) <= 1_000)
+            || !matches!((anchored_elapsed, anchored_wall), (Some(e), Some(w))
+                if e.abs_diff(w) <= 1_000)
         {
             return Err(AtomicError::RecoveryRequired);
         }
@@ -54,6 +67,8 @@ impl MaintenanceProgress {
             unix_millis: clock.time.unix_millis,
             boot: clock.boot,
             monotonic_millis: clock.monotonic_millis,
+            anchor_unix_millis: clock.time.unix_millis,
+            anchor_monotonic_millis: clock.monotonic_millis,
             visited: 0,
             retired: 0,
             reclaimed_bytes: 0,
@@ -61,12 +76,14 @@ impl MaintenanceProgress {
         }
     }
     pub(in crate::atomic) fn encode(&self) -> Result<Vec<u8>, AtomicError> {
-        let mut out = Encoder::new(b"LMP\0\x01");
+        let mut out = Encoder::new(b"LMP\0\x02");
         out.identity(super::super::Identity(self.boot));
         for number in [
             self.generation,
             self.unix_millis,
             self.monotonic_millis,
+            self.anchor_unix_millis,
+            self.anchor_monotonic_millis,
             self.visited,
             self.retired,
             self.reclaimed_bytes,
@@ -83,14 +100,16 @@ impl MaintenanceProgress {
                 .to_le_bytes(),
         );
         out.0.extend_from_slice(cursor);
-        out.finish(130)
+        out.finish(146)
     }
     pub(in crate::atomic) fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
-        let mut input = Decoder::new(bytes, b"LMP\0\x01", 130)?;
+        let mut input = Decoder::new(bytes, b"LMP\0\x02", 146)?;
         let boot = input.identity()?.bytes();
         let generation = input.number()?;
         let unix_millis = input.number()?;
         let monotonic_millis = input.number()?;
+        let anchor_unix_millis = input.number()?;
+        let anchor_monotonic_millis = input.number()?;
         let visited = input.number()?;
         let retired = input.number()?;
         let reclaimed_bytes = input.number()?;
@@ -101,6 +120,15 @@ impl MaintenanceProgress {
                 .map_err(|_| AtomicError::Corrupt)?,
         );
         if !matches!(length, 0 | 43) || generation == 0 || boot == [0; 32] || retired > visited {
+            return Err(AtomicError::Corrupt);
+        }
+        if !matches!(
+            (
+                unix_millis.checked_sub(anchor_unix_millis),
+                monotonic_millis.checked_sub(anchor_monotonic_millis)
+            ),
+            (Some(w), Some(e)) if e.abs_diff(w) <= 1_000
+        ) {
             return Err(AtomicError::Corrupt);
         }
         let cursor = (length != 0)
@@ -118,6 +146,8 @@ impl MaintenanceProgress {
             unix_millis,
             boot,
             monotonic_millis,
+            anchor_unix_millis,
+            anchor_monotonic_millis,
             visited,
             retired,
             reclaimed_bytes,
