@@ -32,6 +32,7 @@ hickory-proto = "=0.26.3"
 latent-artifacts = { path = "../latent-artifacts" }
 latent-manifest = { path = "../latent-manifest" }
 latent-executor = { path = "../latent-executor" }
+latent-http = { path = "../latent-http" }
 latent-activation = { path = "../latent-activation" }
 latent-routing = { path = "../latent-routing" }
 latent-audit = { path = "../latent-audit" }

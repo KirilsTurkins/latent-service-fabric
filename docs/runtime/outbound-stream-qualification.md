@@ -82,6 +82,39 @@ configured observer reports unavailable without fabricating zero counters. The
 CLI accepts only the ten defined stream counters and that exact unavailable
 reason; unknown fields and provider error text remain rejected.
 
+The 2026-10-01 downstream C management regression passed on host source
+`9c6913d3e76dd37cf17d9aba9c9de2916d0715d7`: 27 actual invocations, 111 CLI
+calls and six provider-idle inspections on a fresh enforced HTTP-only node.
+The ordinary C components are the preserved CI-emitted bytes; fresh isolated
+demo trust admits them to this new node. This checks the management response
+regression, not fresh compiler output, standard socket ports or a release.
+The maintained workflow accepts `--language c` together with explicit existing
+`--cli`, `--node`, `--releases` and a fresh `--output` directory. Its normal
+closed response validator and file bounds remain unchanged.
+
+The successful receipt records source digest
+`sha256:d7b8e67c278557057a5741f32be976e2f1c28e4f8609e4e282f8a4c600fc015e`,
+2,292 explicit input files and 14,581,350 input bytes. CLI identity is
+`sha256:097b2996e6386f208d53594f70844873814beff265bf3fe984de2a148383d213`
+(66,015,776 bytes); node identity is
+`sha256:cc6657cbe91f3f21c28b3e56f979ec0a34c3aa86d65f1f080166220e03a7724c`
+(177,700,664 bytes). These are `objcopy --strip-debug` copies of the fresh
+default binaries; the unstripped node exceeded the existing file-size ceiling.
+The isolated Python 3.13.5 validation image is
+`sha256:689a279df886d11be10c75d4cd301ec382f33f2e07fd8ae034bfa68c80529de6`;
+the run uses no external network and a 4 GiB memory ceiling. Failed file-bound,
+interrupted and Docker-EOF attempts remain separate preserved evidence. The
+receipt's source scope is explicit and nonhermetic; it does not attest implicit
+compiler inputs.
+
+The native suite now also registers a separate genuine HTTP-only authority
+control. Its original sealed session grants only a GET to `/allowed`; opaque
+stream access to that same host/port must fail before DNS, TCP contact or a spent
+connect attempt. The same session then performs the allowed typed GET through
+the maintained HTTP provider. This raises the registered native inventory to 15;
+execution of that new control remains pending and is not included in the 14
+passing native cases above.
+
 Open delivery gates include #737's explicit review, protected node/operator
 end-to-end qualification and live rotation workflow (#739), full adversarial
 socket/uncertainty and measured native

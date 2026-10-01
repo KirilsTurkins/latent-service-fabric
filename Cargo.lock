@@ -2084,6 +2084,7 @@ dependencies = [
  "latent-capabilities",
  "latent-core",
  "latent-executor",
+ "latent-http",
  "latent-manifest",
  "latent-network",
  "latent-policy",

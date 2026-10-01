@@ -4,6 +4,7 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "tests::authority::genuine_http_only_authority_denies_opaque_bytes_before_dns_and_contact",
         "tests::currentness::a_policy_change_while_readable_is_pending_is_checked_before_syscall",
         "tests::currentness::provider_retirement_wakes_pending_read_without_early_refund",
         "tests::dns::pending_dns_socket_keeps_original_native_charge_until_actual_cancelled_drop",
@@ -24,7 +25,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 14,
+      "minimumCases": 15,
       "mode": "libtest",
       "package": "latent-streams",
       "platforms": [
