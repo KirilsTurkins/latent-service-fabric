@@ -1,0 +1,127 @@
+{
+  "additionalBodyLimitProbe": {
+    "expectedStatus": 200,
+    "observedStatus": 502,
+    "rawBytes": 65536,
+    "reason": "not established; audit observations were lost",
+    "receipt": {
+      "bytes": 414,
+      "sha256": "sha256:eaf40268494095c6bbd04a959ded7ec7d9f3b54ca1bd2fd15e3402f60921a966"
+    },
+    "status": "failed"
+  },
+  "componentDigest": "sha256:b1f093ceb9fbf32f59610ded6f786b28d74d72e643c1e074ca716db4d64635b2",
+  "fullReceipt": {
+    "bytes": 62093,
+    "sha256": "sha256:c16ba55fbe13e1254e68f34157791f097499cff2e2fc77952bdb9f3941013050"
+  },
+  "httpControls": 50,
+  "inputs": {
+    "cli": {
+      "bytes": 58536272,
+      "sha256": "sha256:45b6a6bc6f120e8ed9295b182157cd97925c30d15770759f587d6ada40ab6a69"
+    },
+    "component": {
+      "bytes": 1883709,
+      "sha256": "sha256:b1f093ceb9fbf32f59610ded6f786b28d74d72e643c1e074ca716db4d64635b2"
+    },
+    "declaration": {
+      "bytes": 2285,
+      "sha256": "sha256:01597bb1c9875ea35bb7b8759f34313043f3e1e88a3523553b110205b8817820"
+    },
+    "node": {
+      "bytes": 143837600,
+      "sha256": "sha256:50af48b1450674399df88c7cef517fe07f98634852598b635cb37ec264d6f514"
+    },
+    "profile": {
+      "bytes": 2310,
+      "sha256": "sha256:d1c34c5f81efe076e3cf5c19aa5ba8bd7834f3ab0a4c44b32e87a498b5120179"
+    },
+    "sourceInputs": {
+      "bytes": 11604,
+      "sha256": "sha256:10f0f02f008a41f5ffea94af61599b2fefbbcb994321703ac71e4b2f88d6c221"
+    },
+    "tlsFixtureTool": {
+      "bytes": 19308920,
+      "sha256": "sha256:9934a14b6f7f9815880c6012639e73dfea26cc2335558380448add806688176d"
+    },
+    "workflow": {
+      "bytes": 22855,
+      "sha256": "sha256:842a19c4040e6ee13448521e773b474e9d7e0b39b13df5c1d34bb4afd894b842"
+    }
+  },
+  "inputsUnchanged": true,
+  "log": {
+    "bytes": 1588,
+    "sha256": "sha256:3f8932f3c2b7c7035548e38d9c9760cfe5704b599587d327ec29f8a9ec44d4d6"
+  },
+  "nativeSourceCommit": "6facfd59aa49f5fa8d433e5e352f8f17a3115eaa",
+  "oversizedRequest": {
+    "bytes": 65537,
+    "cellLeasesAfter": [
+      "38"
+    ],
+    "cellLeasesBefore": [
+      "38"
+    ],
+    "status": 413
+  },
+  "remaining": [
+    "fresh exact-head compiler CI",
+    "maximal request and response payload execution",
+    "redeploy and rollback",
+    "cancellation and disconnect",
+    "packaged frontend qualification"
+  ],
+  "retainedCompilerArtifact": {
+    "archiveSha256": "sha256:e4cec1eed96b07a1c89b028dea375ba4ab25b99737861d02f5fb6fdc1c5809c2",
+    "artifact": 11142816260,
+    "run": 36814727989
+  },
+  "schemaVersion": "lsf.java.server.tls-replay-observation.v1",
+  "scope": "retained real Java component replay against current native CLI/node, not a fresh compiler or complete profile qualification",
+  "shutdown": {
+    "activeInvocations": 0,
+    "activeStores": 0,
+    "clean": true,
+    "reaped": true,
+    "reservedCpuFuel": 0,
+    "reservedMemoryBytes": 0
+  },
+  "sourceSnapshotDigest": "sha256:10f0f02f008a41f5ffea94af61599b2fefbbcb994321703ac71e4b2f88d6c221",
+  "status": "passed",
+  "tls": {
+    "certificate": {
+      "bytes": 688,
+      "sha256": "sha256:59c028f5a6392b768ef5ac30b6d4a8599f41c9864f99bec23d1dc53a3078c438"
+    },
+    "certificateAuthority": {
+      "bytes": 447,
+      "sha256": "sha256:09e61ec59d006f45e43ecb09406a2e3599d7445dac502d9ac2f8a8cdf0cc1740"
+    },
+    "fixtureControls": [
+      {
+        "case": "trusted-chain",
+        "certificateDigest": "sha256:567120b8ba839624956e955f8482f30b43f0afc8759b7f548a919841e752eb4c",
+        "status": "verified",
+        "version": "TLSv1.3"
+      },
+      {
+        "case": "hostname-mismatch",
+        "status": "rejected",
+        "verificationCode": 62
+      },
+      {
+        "case": "untrusted-chain",
+        "status": "rejected",
+        "verificationCode": 20
+      }
+    ],
+    "logicalAuthority": "java.server.test",
+    "verifiedTransportHostname": "localhost"
+  },
+  "workflow": {
+    "bytes": 22855,
+    "sha256": "sha256:842a19c4040e6ee13448521e773b474e9d7e0b39b13df5c1d34bb4afd894b842"
+  }
+}
