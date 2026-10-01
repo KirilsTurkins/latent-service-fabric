@@ -14,10 +14,6 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, fresh,
                                         inventory, decode_json, read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
-from tools.application_dependencies import prepare, verify_inputs
-from tools.application_dependency_approval import approve as approve_execution, request as execution_request
-from tools.rust_application_dependencies import configure as configure_application
-from tools.captured_compiler_isolation import Isolation
 from tools import guest_compatibility_build
 
 BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
@@ -206,6 +202,13 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, *, offline: bool = False, host_linker: Path | None = None,
           rust_bin: Path | None = None, executable_approval: str | None = None) -> Path:
+    # Commands/package_inputs are shared by every language. Only this recipe
+    # loads the Rust application graph and executable-input approval consumer.
+    from tools.application_dependencies import prepare, verify_inputs
+    from tools.application_dependency_approval import approve as approve_execution, request as execution_request
+    from tools.rust_application_dependencies import configure as configure_application
+    from tools.captured_compiler_isolation import Isolation
+
     project_path, output = checked_path(project_path), checked_path(output)
     if output == project_path or output in project_path.parents:
         raise ValueError("build output overlaps source")
