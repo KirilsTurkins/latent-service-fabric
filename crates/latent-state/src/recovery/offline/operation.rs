@@ -1,18 +1,29 @@
 use super::file::ProtectedSnapshotFile;
-use super::*;
+use super::{
+    OfflineRecoveryError, OfflineRecoverySource, OfflineRestoreInspection, OfflineRestoreReceipt,
+    OfflineRestoreRequest, RecoveryCodecs, SnapshotFile, OPERATION_SCRATCH_BYTES,
+};
 use crate::{
-    embedded::{AtomicBatch, EmbeddedStore},
+    embedded::{AtomicBatch, EmbeddedStore, ReadView, RowKey, StoreError},
+    protected_store::{ProtectedStoreConfig, ProtectedStoreError},
     recovery::{
-        restore::{RestoreChecks, RestorePlan},
-        snapshot::{export_snapshot, inspect_snapshot, validate_deadline},
+        restore::{RestoreChecks, RestorePlan, RestoreWindow},
+        snapshot::{
+            export_snapshot, inspect_snapshot, validate_deadline, SnapshotMetadata, SnapshotReceipt,
+        },
     },
     store_io::{StoreIoJob, StoreIoKind},
 };
 use latent_protected_files::ProtectedRoot;
 use std::{
+    future::Future,
     pin::Pin,
-    sync::atomic::Ordering,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     task::{Context, Poll},
+    time::Instant,
 };
 
 type PhysicalResult<T> = Result<Result<T, OfflineRecoveryError>, ProtectedStoreError>;
@@ -145,7 +156,7 @@ pub(super) fn restore(
             Ok(restore_worker(
                 &current,
                 &source_root,
-                request,
+                &request,
                 &*codecs,
                 deadline,
             ))
@@ -228,17 +239,17 @@ fn restore_charge(
 fn restore_worker(
     current: &ReadView,
     source_root: &std::path::Path,
-    request: OfflineRestoreRequest,
+    request: &OfflineRestoreRequest,
     codecs: &dyn RecoveryCodecs,
     deadline: Instant,
 ) -> Result<OfflineRestoreReceipt, OfflineRecoveryError> {
     let (root, mut input, snapshot) =
-        inspect_worker(current, source_root, &request, codecs, deadline)?;
+        inspect_worker(current, source_root, request, codecs, deadline)?;
     let snapshot_digest = snapshot.snapshot_digest;
     let manifest_digest = snapshot.manifest_digest;
     let plan =
         RestorePlan::prepare_until(current, snapshot, &request.review, deadline, |window, _| {
-            codecs.review_restore(current, window, &request)
+            codecs.review_restore(current, window, request)
         })
         .map_err(OfflineRecoveryError::Review)?;
     plan.require_capacity(request.destination.engine)

@@ -1,9 +1,19 @@
-use super::*;
-use crate::{namespace::compatibility::RetainedInventory, protected_store::ProtectedStoreStartup};
+use super::{OfflineRecoveryError, OfflineRecoverySource, RecoveryCodecs, CODEC_BYTES};
+use crate::{
+    namespace::compatibility::RetainedInventory,
+    protected_store::{
+        ProtectedStoreConfig, ProtectedStoreDrain, ProtectedStoreError, ProtectedStoreOwner,
+        ProtectedStoreStartup,
+    },
+    store_io::StoreIoSnapshot,
+};
 use std::{
+    future::Future,
+    path::PathBuf,
     pin::Pin,
-    sync::atomic::AtomicBool,
+    sync::{atomic::AtomicBool, Arc},
     task::{Context, Poll},
+    time::Instant,
 };
 
 #[must_use = "readiness requires actual exclusive offline source ownership"]
