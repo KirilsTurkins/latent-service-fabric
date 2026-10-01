@@ -309,8 +309,8 @@ MSRV1.95.0 and Python3.13.5. All six cold/warm samples executed the three tests;
 all nine fault controls produced their required outcomes, including the retained
 Cargo101 corruption failure. Current Cargo times were 0.24/0.17/0.20 seconds;
 correctness times were 0.30/0.16/0.20 seconds. Both warm samples reused one
-dependency artifact and rebuilt the application. Maximum child RSS was
-117,764?118,420 KiB for the ordinary native controls. Local archive overhead,
+dependency artifact and rebuilt the application. Maximum child RSS across the six successful samples was
+116,956?118,236 KiB. Local archive overhead,
 owner-stage time and exact toolchain observations remain in the raw receipt.
 This is a new synthetic mechanism observation, with no cache-network transfer
 or full-workspace speed claim. The diagnostic image's OCI index was
