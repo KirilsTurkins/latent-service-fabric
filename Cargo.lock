@@ -2249,6 +2249,7 @@ dependencies = [
  "latent-core",
  "latent-effects",
  "latent-executor",
+ "latent-ingress",
  "latent-manifest",
  "latent-node",
  "latent-policy",
