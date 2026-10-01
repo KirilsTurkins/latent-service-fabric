@@ -104,6 +104,7 @@ pub struct NativeTransactionAdmission {
     installation: Arc<TransactionInstallation>,
     state: Mutex<State>,
     completion: Mutex<Option<TransactionCompletionResult>>,
+    response: Mutex<Option<Arc<super::TransactionResponseAuthority>>>,
     retention: Mutex<Option<Arc<TransactionRetention>>>,
 }
 impl NativeTransactionAdmission {
@@ -118,6 +119,7 @@ impl NativeTransactionAdmission {
             installation,
             state: Mutex::new(State::Fresh(Some(selection))),
             completion: Mutex::new(None),
+            response: Mutex::new(None),
             retention: Mutex::new(None),
         })
     }
@@ -142,11 +144,58 @@ impl NativeTransactionAdmission {
     }
 
     pub fn take_completion(&self) -> Result<Option<TransactionCompletionResult>, PlatformError> {
-        Ok(self
+        let completion = self
             .completion
             .lock()
             .map_err(|_| authorization::denied())?
-            .take())
+            .take();
+        if completion.is_some() {
+            let authority = self
+                .response
+                .lock()
+                .map_err(|_| authorization::denied())?
+                .take();
+            drop(authority);
+        }
+        Ok(completion)
+    }
+
+    /// Transfer the actual terminal result and its original data permission
+    /// together. A transport must retain this authority through all body/frames.
+    pub fn take_owned_completion(
+        &self,
+    ) -> Result<Option<super::OwnedTransactionCompletion>, PlatformError> {
+        let mut completion = self
+            .completion
+            .lock()
+            .map_err(|_| authorization::denied())?;
+        if completion.is_none() {
+            return Ok(None);
+        }
+        let authority = self
+            .response
+            .lock()
+            .map_err(|_| authorization::denied())?
+            .take()
+            .ok_or_else(authorization::denied)?;
+        Ok(completion
+            .take()
+            .map(|result| super::OwnedTransactionCompletion { result, authority }))
+    }
+
+    fn retain_response_authority(
+        &self,
+        authorization: Arc<super::StateAuthorization>,
+        query: bool,
+    ) -> Result<(), PlatformError> {
+        let retained = self.retained_capacity()?;
+        *self
+            .response
+            .lock()
+            .map_err(|_| super::authorization::denied())? = Some(Arc::new(
+            super::TransactionResponseAuthority::new(authorization, retained, query),
+        ));
+        Ok(())
     }
 
     fn retained_capacity(&self) -> Result<Arc<TransactionRetention>, PlatformError> {

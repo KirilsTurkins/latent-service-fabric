@@ -2930,14 +2930,17 @@
         "transaction_runtime::tests::native_incompatible_selected_source_rejects_before_durable_admission",
         "transaction_runtime::tests::native_manager_completion_hook_commits_once_and_retains_affine_result",
         "transaction_runtime::tests::native_original_cancellation_before_commit_preserves_pending_without_business_rows",
-        "transaction_runtime::tests::native_policy_revocation_denies_access_without_false_physical_retirement"
+        "transaction_runtime::tests::native_policy_revocation_denies_access_without_false_physical_retirement",
+        "transaction_runtime::tests::response::existing_command_response_rechecks_fresh_data_permission_without_another_guest",
+        "transaction_runtime::tests::response::original_response_permission_survives_commit_and_freeze_but_not_policy_revocation",
+        "transaction_runtime::tests::response::query_response_keeps_original_read_permission_and_global_frame_charge"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 92,
+      "minimumCases": 95,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
