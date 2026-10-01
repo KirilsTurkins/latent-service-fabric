@@ -19,6 +19,37 @@ BLOB_CONTRACT = "tests:local-blobs/api@1.0.0"
 PROVIDER_CREDENTIAL = b"LSF-PUBLIC-PROVIDER-WORKFLOW-TEST-ONLY"
 
 
+def http_provider(directory, tenant, http_port):
+    """The same protected finite HTTP fixture installation for real-node tests."""
+    require(type(http_port) is int and 1 <= http_port <= 65535, "http-fixture-port")
+    require(isinstance(tenant, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,63}", tenant),
+            "http-fixture-tenant")
+    secrets = directory / "provider-credentials"
+    secrets.mkdir(mode=0o700)
+    credential = secrets / "authorization"
+    with credential.open("xb") as target:
+        target.write(PROVIDER_CREDENTIAL)
+    credential.chmod(0o600)
+    origin = {"scheme": "http", "host": "localhost", "port": http_port}
+    return {
+        "identity": {"id": "http", "tenant": tenant, "service": "http-host", "epoch": 1},
+        "configuration": {
+            "formatVersion": 1,
+            "destinations": [{"origin": origin,
+                              "addresses": {"networks": ["127.0.0.0/8"], "specialAddresses": ["127.0.0.1"]},
+                              "resolution": {"kind": "static", "addresses": ["127.0.0.1"]},
+                              "allowedRequestHeaders": [], "redirectDestinations": []}],
+            "limits": {"maximumRequestBodyBytes": 4096, "maximumResponseBodyBytes": 4096,
+                       "maximumEncodedResponseBytes": 8192, "maximumHeaderBytes": 4096,
+                       "maximumHeaders": 16, "maximumRedirects": 0},
+            "extraRoots": [], "publicRoots": False,
+        },
+        "credentialDirectory": "provider-credentials",
+        "credentials": [{"reference": "workflow-upstream", "file": "authorization",
+                         "destination": 0, "header": "authorization"}],
+    }
+
+
 def configure_provider_node(directory, fixture, http_port):
     require(1 <= http_port <= 65535, "http-fixture-port")
     original = configure_node(directory, fixture, TENANT)
@@ -28,32 +59,9 @@ def configure_provider_node(directory, fixture, http_port):
     value["capabilityPolicies"] = {"formatVersion": 1, "maximumControlJobs": 2}
     value["shutdownGraceMillis"] = 5000
     value["audit"].update(records=1024, diskBytes=16777216)
-    secrets = directory / "provider-credentials"
-    secrets.mkdir(mode=0o700)
-    credential = secrets / "authorization"
-    with credential.open("xb") as target:
-        target.write(PROVIDER_CREDENTIAL)
-    credential.chmod(0o600)
-    origin = {"scheme": "http", "host": "localhost", "port": http_port}
     value["providers"] = {
         "formatVersion": 1,
-        "http": {
-            "identity": {"id": "http", "tenant": TENANT, "service": "http-host", "epoch": 1},
-            "configuration": {
-                "formatVersion": 1,
-                "destinations": [{"origin": origin,
-                                  "addresses": {"networks": ["127.0.0.0/8"], "specialAddresses": ["127.0.0.1"]},
-                                  "resolution": {"kind": "static", "addresses": ["127.0.0.1"]},
-                                  "allowedRequestHeaders": [], "redirectDestinations": []}],
-                "limits": {"maximumRequestBodyBytes": 4096, "maximumResponseBodyBytes": 4096,
-                           "maximumEncodedResponseBytes": 8192, "maximumHeaderBytes": 4096,
-                           "maximumHeaders": 16, "maximumRedirects": 0},
-                "extraRoots": [], "publicRoots": False,
-            },
-            "credentialDirectory": "provider-credentials",
-            "credentials": [{"reference": "workflow-upstream", "file": "authorization",
-                             "destination": 0, "header": "authorization"}],
-        },
+        "http": http_provider(directory, TENANT, http_port),
         "blob": {"identity": {"id": "blob", "tenant": TENANT, "service": "blob-host", "epoch": 1},
                  "namespace": "workflow"},
         "bindings": [{"name": f"{name}-binding", "tenant": TENANT, "consumerService": SERVICE,
