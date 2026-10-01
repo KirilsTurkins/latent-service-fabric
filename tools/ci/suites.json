@@ -8105,7 +8105,12 @@
         "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access",
         "standalone::measurements::scale::tests::catalog_content_growth_does_not_mask_owner_or_capacity_changes",
         "standalone::http::assets::csp::tests::signed_style_identities_only_extend_styles_and_reject_policy_text",
-        "standalone::http::assets::static_tests::signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache"
+        "standalone::http::assets::static_tests::signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache",
+        "config::tests::providers::activation_runtime::input_requires_explicit_finite_categories_without_authority_overrides",
+        "config::tests::providers::activation_runtime::protected_runtime_installation_preserves_finite_backend_limits_without_side_effects",
+        "config::tests::providers::activation_runtime::runtime_bindings_do_not_follow_clock_read_permissions",
+        "config::tests::providers::activation_runtime::runtime_configuration_digest_binds_every_category_and_keeps_epoch_separate",
+        "standalone::start::tests::provider_startup::protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -8168,7 +8173,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 244,
+      "minimumCases": 249,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

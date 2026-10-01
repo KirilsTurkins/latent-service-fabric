@@ -96,6 +96,56 @@ class NodeProvidersSchema(unittest.TestCase):
             self.assertFalse(VALIDATOR.is_valid(changed))
 
 
+class ActivationRuntimeProviderSchema(unittest.TestCase):
+    def example(self):
+        guide = (ROOT / "docs/reference/standalone-providers.md").read_text(encoding="utf-8")
+        documents = [json.loads(raw) for raw in re.findall(r"```json\n(.*?)\n```", guide, re.S)]
+        return next(item["providers"] for item in documents if "activationRuntime" in item.get("providers", {}))
+
+    def test_documented_runtime_has_exact_interface_and_explicit_separate_limits(self):
+        value = self.example()
+        VALIDATOR.validate(value)
+        self.assertEqual(value["bindings"][0]["contract"], "latent:runtime/activation@0.1.0")
+        self.assertEqual(sum(value["activationRuntime"]["limits"].values()), 58)
+        self.assertEqual(set(value["activationRuntime"]["limits"]),
+                         {"tasks", "executors", "queuedWork", "waits", "timers", "results", "nativeOwners"})
+        disabled = NodeProvidersSchema().example()
+        VALIDATOR.validate(disabled)
+        self.assertNotIn("activationRuntime", disabled)
+
+    def test_runtime_rejects_missing_null_noninteger_and_unbounded_categories(self):
+        value = self.example()
+        for field in ("activationRuntime", "limits"):
+            changed = copy.deepcopy(value)
+            (changed if field == "activationRuntime" else changed["activationRuntime"])[field] = None
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for category in value["activationRuntime"]["limits"]:
+            for invalid in (True, -1, 8193, "8", None):
+                changed = copy.deepcopy(value)
+                changed["activationRuntime"]["limits"][category] = invalid
+                self.assertFalse(VALIDATOR.is_valid(changed), (category, invalid))
+            changed = copy.deepcopy(value)
+            del changed["activationRuntime"]["limits"][category]
+            self.assertFalse(VALIDATOR.is_valid(changed), category)
+        changed = copy.deepcopy(value)
+        changed["activationRuntime"]["limits"] = {key: 0 for key in value["activationRuntime"]["limits"]}
+        self.assertFalse(VALIDATOR.is_valid(changed))
+
+    def test_runtime_cannot_override_profile_authority_executor_or_contract_version(self):
+        value = self.example()
+        for field, invalid in (("profile", "future-profile"), ("grants", ["implicit"]),
+                               ("executor", "ambient-threadpool"), ("configurationDigest", "forged")):
+            changed = copy.deepcopy(value)
+            changed["activationRuntime"][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        changed = copy.deepcopy(value)
+        changed["activationRuntime"]["limits"]["memoryBytes"] = 1
+        self.assertFalse(VALIDATOR.is_valid(changed))
+        changed = copy.deepcopy(value)
+        changed["bindings"][0]["contract"] = "latent:runtime/activation@0.2.0"
+        self.assertFalse(VALIDATOR.is_valid(changed))
+
+
 class StreamingProviderSchema(unittest.TestCase):
     def setUp(self):
         guide = (ROOT / "docs/reference/standalone-providers.md").read_text(encoding="utf-8")

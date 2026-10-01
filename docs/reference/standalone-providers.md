@@ -7,7 +7,9 @@ OS-entropy providers. Explicit `secrets` installs the protected local guest-secr
 provider. `metrics` shares the node's telemetry exporter, and `localService`
 selects a bounded local caller/callee binding. `events` installs the maintained
 TLS NATS immediate publisher. `httpStreaming` explicitly installs the existing
-typed HTTP 0.3 provider. S3 has no installation entry here. The
+typed HTTP 0.3 provider. `activationRuntime` selects explicit finite ownership
+and wait limits for the optional V5 runtime bridge. S3 has no installation entry
+here. The
 [configuration schema](../../schemas/node-providers.schema.json) describes the
 closed input. This example is the provider section of a protected node file:
 
@@ -27,6 +29,54 @@ closed input. This example is the provider section of a protected node file:
   }
 }
 ```
+
+## Activation ownership and waits
+
+The `activationRuntime` installation is available only with the experimental
+`local-experimental` isolation profile, Linux x86_64, protected node
+configuration, phase3 budgets, capability policies and durable audit. It selects
+the exact `latent:runtime/activation@0.1.0` interface and fixed
+`activation-owned-v1` profile from host ABI V5. Every limit category is required;
+zero disables that category. Native validation requires their total to be in
+1..8192. There is no default selection or environment override.
+
+```json
+{
+  "providers": {
+    "formatVersion": 1,
+    "activationRuntime": {
+      "identity": {"id":"activation","tenant":"examples","service":"runtime-host","epoch":7},
+      "limits": {"tasks":8,"executors":2,"queuedWork":8,"waits":16,
+                 "timers":8,"results":8,"nativeOwners":8}
+    },
+    "bindings": [
+      {"name":"activation-binding","tenant":"examples","consumerService":"guest-runtime",
+       "providerService":"runtime-host","contract":"latent:runtime/activation@0.1.0",
+       "providerBinding":"activation-installed"}
+    ]
+  }
+}
+```
+
+This example installs a provider identity and backend ceilings. The explicit
+provider binding, capability policy and deployment grants must also name the
+same runtime contract, allowed operations, publication and configuration digest
+and epoch. Clock-read grants do not authorize runtime operations. The immutable
+configuration digest includes all seven limits, fixed operation names, profile
+and host ABI identity; changing limits requires fresh corresponding authority.
+The separately pinned epoch retains the existing revocation/currentness rules.
+
+Installation starts no task, timer, worker or language executor. The first
+authorized runtime operation creates bounded activation-local ownership under
+the original native-memory ledger. Each operation reserves at least 100 CPU
+fuel in the original broker call. Existing memory, fuel, cancellation and
+absolute deadlines remain authoritative through cancellation and physical
+destruction. Omission leaves the backend runtime disabled. This installer does
+not establish default CLR/Java task scheduling, sibling host-I/O progress, or
+complete language client compatibility. ADR-0060 and language qualification
+remain separate; see [activation runtime support](../runtime/activation-runtime.md).
+
+## Existing scalar and storage profiles
 
 Each scalar installation takes only `identity` (the same closed fields as the
 blob example). The corresponding contracts are `latent:clock/monotonic@0.1.0`,

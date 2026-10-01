@@ -113,6 +113,91 @@ fn repeat_startup(source: &Path) {
 }
 
 #[test]
+fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times() {
+    let source = TempDir::new().unwrap();
+    let path = source.path().join("node.json");
+    let document = serde_json::json!({
+        "formatVersion":1, "dataDirectory":source.path().join("unselected-data"),
+        "nodeId":"activation-runtime-startup", "bind":"127.0.0.1:0",
+        "credentials":[{"token":"LSF-PUBLIC-RUNTIME-STARTUP-TEST-ONLY",
+            "subject":"operator","tenant":"tests","role":"operator"}],
+        "budgetProfile":{"mode":"phase3","maximumOutboundRequests":8,
+            "maximumBlobReadBytes":65536,"maximumBlobWriteBytes":65536},
+        "audit":{"mode":"durable"}, "capabilityPolicies":{"formatVersion":1},
+        "providers":{"formatVersion":1,
+            "activationRuntime":{
+                "identity":{"id":"activation","tenant":"tests","service":"runtime-host","epoch":7},
+                "limits":{"tasks":8,"executors":2,"queuedWork":8,"waits":16,
+                    "timers":8,"results":8,"nativeOwners":8}},
+            "bindings":[{"name":"activation-binding","tenant":"tests","consumerService":"guest-runtime",
+                "providerService":"runtime-host","contract":"latent:runtime/activation@0.1.0",
+                "providerBinding":"activation-installed"}]}
+    });
+    std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let control = Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(4)
+        .enable_all()
+        .build()
+        .unwrap();
+    let invocation = Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(1)
+        .enable_all()
+        .build()
+        .unwrap();
+    for ordinal in 0..32 {
+        let mut settings = NodeConfig::load(&path).unwrap().derive().unwrap();
+        let installed = settings
+            .providers
+            .as_ref()
+            .unwrap()
+            .activation_runtime
+            .as_ref()
+            .unwrap();
+        let expected_digest = installed.configuration_digest().unwrap();
+        assert_eq!(
+            settings.wasmtime.activation_runtime,
+            Some(installed.runtime_limits())
+        );
+        settings.data_directory = source.path().join(format!("runtime-node-{ordinal}"));
+        let node = invocation
+            .block_on(StandaloneNode::start(
+                settings,
+                control.handle().clone(),
+                RuntimeThreads::default(),
+            ))
+            .unwrap();
+        let descriptors = serde_json::to_value(node.configured_providers()).unwrap();
+        let actual = descriptors.as_array().unwrap();
+        assert_eq!(actual.len(), 1);
+        assert_eq!(
+            actual[0]["capability"],
+            latent_core::activation_runtime::CAPABILITY
+        );
+        assert_eq!(
+            actual[0]["profile"],
+            latent_core::activation_runtime::PROFILE
+        );
+        assert_eq!(actual[0]["configurationEpoch"], "7");
+        assert_eq!(actual[0]["configurationDigest"], expected_digest.as_str());
+        let stopped = invocation.block_on(node.shutdown()).unwrap();
+        assert!(stopped.clean);
+        let providers = stopped.providers.unwrap();
+        assert!(providers.clean);
+        assert_eq!(providers.secret_generations, 0);
+        assert_eq!(providers.secret_leases, 0);
+        assert_eq!(providers.io.queued_jobs, 0);
+        assert_eq!(providers.io.active_jobs, 0);
+        assert_eq!(providers.io.memory_used_bytes, 0);
+        assert!(providers.io.threads_joined);
+    }
+    control.shutdown_timeout(Duration::from_secs(5));
+    invocation.shutdown_timeout(Duration::from_secs(5));
+}
+
+#[test]
 fn protected_streaming_http_installation_retires_credentials_without_contact_thirty_two_times() {
     let source = TempDir::new().unwrap();
     let credentials = source.path().join("credentials");

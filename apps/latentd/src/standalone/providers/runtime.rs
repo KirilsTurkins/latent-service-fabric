@@ -95,11 +95,16 @@ impl ProviderRuntime {
             metrics: None,
             blobs: None,
             registrations: Vec::with_capacity(3),
-            descriptors: Vec::with_capacity(10),
+            descriptors: Vec::with_capacity(11),
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
-            let mut providers = Vec::with_capacity(10);
+            let mut providers = Vec::with_capacity(11);
+            if let Some(installation) = &config.activation_runtime {
+                let registration = scalar::activation_runtime(&broker, installation)?;
+                providers.push(owner.record(&installation.identity, registration.reference()));
+                owner.registrations.push(registration);
+            }
             for (installation, monotonic) in
                 [(&config.clock_monotonic, true), (&config.clock_wall, false)]
             {
