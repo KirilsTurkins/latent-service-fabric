@@ -52,6 +52,8 @@ pub(super) struct State {
     pub pending_control: Option<super::control::PendingControl>,
     pub restore_review: RestoreReview,
     effects: BTreeSet<String>,
+    management_effects: BTreeSet<String>,
+    management_tenants: BTreeMap<String, usize>,
     tenants: BTreeMap<String, usize>,
     pub claims: u64,
     pub command_owners: usize,
@@ -68,12 +70,60 @@ pub(super) struct Shared {
 }
 
 impl State {
+    pub fn management_retired(
+        &self,
+        shared: &Arc<Shared>,
+        effect: &str,
+        owned: Option<&ActiveGuard>,
+    ) -> bool {
+        !self.effects.contains(effect)
+            || owned.is_some_and(|guard| {
+                guard.started
+                    && !guard.retired
+                    && guard.effect == effect
+                    && Arc::ptr_eq(&guard.shared, shared)
+            })
+    }
     pub fn effects_empty(&self) -> bool {
         self.effects.is_empty() && self.command_owners == 0
     }
 }
 
 impl Shared {
+    /// An explicit operator lookup uses the original finite worker/tenant/effect
+    /// slots while ordinary sends are paused. It cannot bypass quarantine or an
+    /// unresolved control receipt and never clears restore review.
+    pub fn admit_management(
+        self: &Arc<Self>,
+        tenant: &str,
+        effect: &str,
+        config: &DispatcherConfig,
+    ) -> Option<ActiveGuard> {
+        let mut state = self.state.lock().ok()?;
+        if state.closed
+            || state.failure.is_some()
+            || state.pending_control.is_some()
+            || state.management_effects.len() >= DispatcherConfig::RECOVERY_JOBS
+            || state.effects.contains(effect)
+            || state.management_tenants.get(tenant).copied().unwrap_or(0) >= config.per_tenant_jobs
+        {
+            return None;
+        }
+        state.management_effects.insert(effect.to_owned());
+        *state
+            .management_tenants
+            .entry(tenant.to_owned())
+            .or_default() += 1;
+        state.effects.insert(effect.to_owned());
+        Some(ActiveGuard {
+            shared: Arc::clone(self),
+            tenant: tenant.to_owned(),
+            effect: effect.to_owned(),
+            retired: false,
+            started: false,
+            management: true,
+        })
+    }
     pub fn new(
         paused: bool,
         epoch: crate::dispatch_store::DispatchEpoch,
@@ -94,6 +144,8 @@ impl Shared {
                     RestoreReview::Clear
                 },
                 effects: BTreeSet::new(),
+                management_effects: BTreeSet::new(),
+                management_tenants: BTreeMap::new(),
                 tenants: BTreeMap::new(),
                 claims: 0,
                 command_owners: 0,
@@ -134,7 +186,7 @@ impl Shared {
         if state.closed
             || state.paused
             || state.failure.is_some()
-            || state.effects.len() >= config.accepted_jobs
+            || state.effects.len() - state.management_effects.len() >= config.accepted_jobs
             || state.effects.contains(effect)
             || state.tenants.get(tenant).copied().unwrap_or(0) >= config.per_tenant_jobs
         {
@@ -148,6 +200,7 @@ impl Shared {
             effect: effect.to_owned(),
             retired: false,
             started: false,
+            management: false,
         })
     }
 
@@ -164,7 +217,12 @@ impl Shared {
             retained_attempt_bytes: jobs.retained_bytes,
             live_workers: jobs.live_workers,
             accepted_effects: state.effects.len(),
-            live_tenants: state.tenants.len(),
+            live_tenants: state.tenants.len()
+                + state
+                    .management_tenants
+                    .keys()
+                    .filter(|tenant| !state.tenants.contains_key(*tenant))
+                    .count(),
             claims: state.claims,
             physical_owners: owners.physical,
             command_owners: state.command_owners,
@@ -202,6 +260,7 @@ pub(super) struct ActiveGuard {
     effect: String,
     retired: bool,
     started: bool,
+    management: bool,
 }
 
 impl ActiveGuard {
@@ -222,7 +281,15 @@ impl Drop for ActiveGuard {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if self.retired || !self.started {
             state.effects.remove(&self.effect);
-            if let Some(count) = state.tenants.get_mut(&self.tenant) {
+            if self.management {
+                state.management_effects.remove(&self.effect);
+                if let Some(count) = state.management_tenants.get_mut(&self.tenant) {
+                    *count -= 1;
+                    if *count == 0 {
+                        state.management_tenants.remove(&self.tenant);
+                    }
+                }
+            } else if let Some(count) = state.tenants.get_mut(&self.tenant) {
                 *count -= 1;
                 if *count == 0 {
                     state.tenants.remove(&self.tenant);

@@ -58,7 +58,42 @@ have their own closed formats. Coherent startup validation rejects orphaned
 records, missing reserved disposition capacity and unsupported formats instead
 of treating them as absent work.
 
-The native catalog tests exercise actual engine snapshots, CAS, reopen, history
-and high-water accounting. These tests qualify the catalog substrate. The public
+The installed dispatcher now exposes `plan_effect_retained`,
+`mutate_effect_retained` and `lookup_effect_receipt_retained` on its existing
+management handle. Every database job borrows the same protected engine through
+its actual `RecoveryRead`/`RecoveryWrite` partition. The final writer fence checks
+the installed dispatcher role, retained policy/publication and namespace,
+original effect rules for redrive, and original native request reservation, in
+that order. Namespace row CAS and durable plan/receipt/effect/history links share
+the actual atomic writer. Healthy domain refusal does not quarantine storage.
+
+An explicit status lookup has four bounded physical lookup slots and an
+independent management tenant/effect admission partition. Its provider job uses
+one reserved fixed worker, two queued jobs, four accepted jobs and 8 MiB of the
+same dispatcher worker owner. Ordinary jobs cannot consume these reserves.
+Accepted provider cleanup, positive receipt persistence and unclaimed completion
+buffers retain the original request owner after caller disconnect. Actual device
+stalls or exhausted live provider sockets may still fail finitely; admission does
+not steal live physical work or fabricate retirement.
+
+Fresh current operator/read authority can look up the original provider attempt
+after execution expiry or revocation. The immutable `ReconcileOnly` purpose
+cannot authorize an ordinary send or redrive. A positive provider fact changes
+the disposition only after real provider cleanup and an exact original effect
+row/version fence. Missing, expired or conflicting status leaves the original
+uncertain fact and preallocated plan intact. A plan expires within 30 seconds;
+reconciliation expiry does not renew the old execution lifetime. Historical
+receipt reads and known receipt replay remain available after plan expiry under
+fresh current read authority. Restore review blocks new redrive and generic
+resume, while permitting authorized lookup and administrative stop.
+
+The native catalog and worker tests exercise actual engine snapshots, CAS,
+reopen, history, high-water accounting, protected workers and original global
+native admission. The 113-case Linux effects suite and strict all-target,
+all-feature Clippy pass include current management revocation, detached lookup,
+ordinary saturation, stale plans, affirmative nonexecution redrive, original
+execution revocation, restore review and unsafe uncertain redrive refusal.
+The controlled lookup adapter in these worker schedules is distinct from the
+actual TLS/provider qualification. The public
 authenticated adapter, CLI/node acceptance and full Phase 4 management scope
 remain separate integration requirements of [issue 400](https://github.com/KirilsTurkins/latent-service-fabric/issues/400).

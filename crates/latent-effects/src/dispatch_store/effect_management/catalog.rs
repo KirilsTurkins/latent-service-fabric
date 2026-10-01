@@ -106,6 +106,38 @@ impl Loaded {
 }
 
 impl EffectManagementCatalog {
+    /// Original persisted plan, addressed by authenticated actor and operation.
+    /// The gateway validates its full target/precondition/digest before release.
+    /// Knowing an operation ID is never namespace or provider permission.
+    pub fn plan_for_actor(
+        view: &ReadView,
+        tenant: &str,
+        subject: &str,
+        operation: &str,
+    ) -> Result<Option<EffectManagementPlan>, EffectManagementError> {
+        for text in [tenant, subject, operation] {
+            if text.is_empty() || text.len() > 256 || text.chars().any(char::is_control) {
+                return Err(EffectManagementError::Invalid);
+            }
+        }
+        let key = codec::row(
+            PLAN_PREFIX,
+            &codec::operation_actor(tenant, subject, operation),
+        );
+        let Some(bytes) = view.get(&key)? else {
+            return Ok(None);
+        };
+        let plan = EffectManagementPlan::decode(&bytes)?;
+        let input = plan.request().input();
+        if input.actor_tenant != tenant
+            || input.actor_subject != subject
+            || input.operation_id != operation
+        {
+            return Err(StoreError::Corrupt.into());
+        }
+        Ok(Some(plan))
+    }
+
     /// Prepare on a fixed worker's coherent native view. Planning reserves the
     /// finite future disposition in the same engine; it performs no provider IO.
     pub fn prepare_plan(
@@ -434,7 +466,7 @@ fn expiry(
         .unix_millis
         .checked_add(MAXIMUM_PLAN_LIFETIME_MILLIS)
         .ok_or(EffectManagementError::Capacity)?;
-    if request.0.action != EffectManagementAction::Terminate {
+    if request.0.action == EffectManagementAction::Redrive {
         expires = expires.min(
             authority
                 .expires_at_millis()
