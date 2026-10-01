@@ -226,7 +226,17 @@ def verify_shutdown(shutdown: dict) -> dict:
     """Only the original reaped node report proves all common pool counters zero."""
     require(shutdown.get("reaped") is True and shutdown["record"].get("clean") is True,
             "java-provider-node-not-reaped")
-    report = shutdown["record"]["report"]["providers"]
+    return _pool_shutdown(shutdown["record"]["report"]["providers"])
+
+
+def verify_managed_shutdown(shutdown: dict) -> dict:
+    """Accept the actual shipped dev-down projection without reconstructing it."""
+    require(shutdown.get("state") == "stopped" and shutdown.get("reaped") is True
+            and shutdown.get("cleanShutdown") is True, "java-provider-managed-node-not-reaped")
+    return _pool_shutdown(shutdown.get("providerShutdown", {}))
+
+
+def _pool_shutdown(report: dict) -> dict:
     counters = ("controlOwners", "connections", "pendingRequests", "runningRequests", "workers", "cleanupJobs",
         "failedCleanup", "sessions", "handles", "calls", "results", "ioCalls", "ioRetainedBytes")
     require(report.get("clean") is True and all(type(report.get(name)) is int and report[name] == 0 for name in counters),
