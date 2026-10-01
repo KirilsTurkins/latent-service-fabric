@@ -1,4 +1,11 @@
-use super::*;
+use std::sync::Arc;
+
+use latent_core::{PlatformError, PlatformErrorCode};
+
+use super::{
+    capacity_error, platform_error, CacheLimits, Entry, PrepareAccess, PrepareReservation,
+    PreparedResidency, PreparedRuntimeCost, State, TrackedPreparedValue, MAXIMUM_HANDLE_BYTES,
+};
 
 impl<T> PrepareReservation<T> {
     pub(crate) fn track_runtime(&mut self, runtime: &Arc<T>) -> Result<(), PlatformError>
@@ -72,9 +79,9 @@ impl<T> PrepareReservation<T> {
             let limits = &self.cache.limits;
             state.entries.reserve_publication(limits.maximum_entries)?;
             let actual_cost = PreparedRuntimeCost {
-                source_bytes: cost.source_bytes,
-                metadata_bytes: actual_metadata_bytes,
-                compiled_image_bytes,
+                source: cost.source_bytes,
+                metadata: actual_metadata_bytes,
+                compiled_image: compiled_image_bytes,
             };
             if state.needs_eviction(*limits, actual_cost) {
                 evicted
@@ -160,10 +167,9 @@ impl<T> PrepareReservation<T> {
 impl<T> State<T> {
     fn needs_eviction(&self, limits: CacheLimits, cost: PreparedRuntimeCost) -> bool {
         self.entries.len() >= limits.maximum_entries
-            || cost.source_bytes > limits.maximum_source_bytes - self.source_bytes
-            || cost.metadata_bytes > limits.maximum_metadata_bytes - self.metadata_bytes
-            || cost.compiled_image_bytes
-                > limits.maximum_compiled_image_bytes - self.compiled_image_bytes
+            || cost.source > limits.maximum_source_bytes - self.source_bytes
+            || cost.metadata > limits.maximum_metadata_bytes - self.metadata_bytes
+            || cost.compiled_image > limits.maximum_compiled_image_bytes - self.compiled_image_bytes
     }
 }
 

@@ -58,25 +58,40 @@ fn lookup_function<'a, T>(
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Providers {
     pub local_services: bool,
+    pub network: NetworkProviders,
+    pub storage: StorageProviders,
+    pub signals: SignalProviders,
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct NetworkProviders {
     pub http: bool,
     pub streaming_http: bool,
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct StorageProviders {
     pub blobs: bool,
     pub secrets: bool,
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct SignalProviders {
     pub events: bool,
     pub random: bool,
     pub metrics: bool,
 }
 impl Providers {
     fn supports(self, name: &str) -> bool {
-        (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
-            || (self.random && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
-            || (self.metrics && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
-            || (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
-            || (self.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
+        (self.signals.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+            || (self.signals.random
+                && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
+            || (self.signals.metrics
+                && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
+            || (self.storage.secrets
+                && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
+            || (self.storage.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
             || (self.local_services
                 && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
-            || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
-            || (self.streaming_http
+            || (self.network.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
+            || (self.network.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
     }
 }

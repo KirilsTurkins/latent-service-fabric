@@ -17,14 +17,11 @@ use crate::{
 
 #[path = "../../../../tests/guest_sdk/package.rs"]
 mod package;
-#[path = "../../../../../latent-packaging/tests/fixtures/mod.rs"]
-mod packaging;
+use crate::test_fixtures::packaging;
 #[path = "../../../../../latent-signing/tests/build_provenance/support.rs"]
 #[allow(dead_code)]
 mod provenance;
-#[path = "../../../../../latent-packaging/tests/sbom_association/support.rs"]
-#[allow(dead_code)]
-mod sbom;
+use package::sbom;
 
 // The shared signing helper's unused catalog constructor requires this config.
 mod support {
@@ -71,9 +68,12 @@ impl Fixture {
         let root = tempfile::tempdir().unwrap();
         let input = packaging::capsule(packaging::component::Options::default());
         let inventory = sbom::inventory(&input);
-        let bundle =
-            latent_packaging::build_package_with_sbom(input, inventory, Default::default())
-                .unwrap();
+        let bundle = latent_packaging::build_package_with_sbom(
+            input,
+            inventory,
+            latent_packaging::PackagingLimits::default(),
+        )
+        .unwrap();
         let release = bundle.layout().component_release().unwrap();
         let signers = package::Signers::new(latent_signing::PROVENANCE_BUILD_TYPE);
         let mut observation = provenance::observation();
@@ -108,8 +108,8 @@ impl Fixture {
         let repository = Arc::new(
             DirectoryArtifactRepository::open_enforced(
                 root.path().join("catalog"),
-                Default::default(),
-                Default::default(),
+                latent_artifacts::DirectoryArtifactRepositoryConfig::default(),
+                latent_artifacts::AdmissionStorageLimits::default(),
                 authority.clone(),
             )
             .unwrap(),

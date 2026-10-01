@@ -13,7 +13,10 @@ use wasmtime::{component, Config, Engine, Instance, Module, Store};
 
 fn engine(java: bool) -> Engine {
     let policy = WasmtimeConfig {
-        java_guest: java,
+        guest_languages: crate::GuestLanguageProfiles {
+            java_guest: java,
+            ..Default::default()
+        },
         fuel_async_yield_interval: java.then_some(10_000),
         ..WasmtimeConfig::default()
     };
@@ -46,16 +49,16 @@ fn fuel_module(exceptional: bool) -> Vec<u8> {
         elements.declared(Elements::Functions(Cow::Borrowed(&[0])));
         module.section(&elements);
     }
-    let mut callee = Function::new([]);
+    let mut target = Function::new([]);
     // Fixed work, not a loop: a regressed runtime still terminates immediately.
     for _ in 0..64 {
-        callee.instruction(&Instruction::I32Const(1));
-        callee.instruction(&Instruction::Drop);
+        target.instruction(&Instruction::I32Const(1));
+        target.instruction(&Instruction::Drop);
     }
     if exceptional {
-        callee.instruction(&Instruction::Throw(0));
+        target.instruction(&Instruction::Throw(0));
     }
-    callee.instruction(&Instruction::End);
+    target.instruction(&Instruction::End);
     let mut caller = Function::new([]);
     if exceptional {
         caller.instruction(&Instruction::Block(BlockType::Empty));
@@ -72,7 +75,7 @@ fn fuel_module(exceptional: bool) -> Vec<u8> {
     }
     caller.instruction(&Instruction::End);
     let mut code = CodeSection::new();
-    code.function(&callee).function(&caller);
+    code.function(&target).function(&caller);
     module.section(&code);
     module.finish()
 }
@@ -213,7 +216,6 @@ fn dynamic_record_lifting_charges_host_allocations_before_acceptance() {
                 };
                 assert_eq!(fields.len(), 10);
             }
-            run.post_return(&mut store).unwrap();
         }
     }
 }

@@ -8,9 +8,9 @@ use crate::cache::{
 };
 
 pub(super) const COST: PreparedRuntimeCost = PreparedRuntimeCost {
-    source_bytes: 7,
-    metadata_bytes: 5,
-    compiled_image_bytes: 13,
+    source: 7,
+    metadata: 5,
+    compiled_image: 13,
 };
 
 pub(super) struct Value {
@@ -91,7 +91,7 @@ pub(super) fn reservation(
     cost: PreparedRuntimeCost,
 ) -> PrepareReservation<Value> {
     let PrepareAccess::Compile(reservation) = cache
-        .begin(key.to_owned(), cost.source_bytes, cost.metadata_bytes)
+        .begin(key.to_owned(), cost.source, cost.metadata)
         .unwrap()
     else {
         panic!("expected a fresh reservation");
@@ -103,11 +103,7 @@ pub(super) fn publish(cache: &Arc<PreparedCache<Value>>, key: &str, runtime: &Ar
     let mut reservation = reservation(cache, key, COST);
     reservation.track_runtime(runtime).unwrap();
     reservation
-        .publish_with_metadata(
-            Arc::clone(runtime),
-            COST.compiled_image_bytes,
-            COST.metadata_bytes,
-        )
+        .publish_with_metadata(Arc::clone(runtime), COST.compiled_image, COST.metadata)
         .unwrap();
 }
 

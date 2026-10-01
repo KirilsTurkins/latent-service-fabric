@@ -31,7 +31,7 @@ impl WasmtimeBackend {
                 if let Some(kind) = stop.observe() {
                     return Ok(Err(interrupted_outcome(
                         kind,
-                        stop.reason(kind),
+                        &stop.reason(kind),
                         BudgetConsumption::default(),
                     )));
                 }
@@ -51,7 +51,7 @@ impl WasmtimeBackend {
         if let Some(kind) = stop.observe() {
             return Ok(Err(interrupted_outcome(
                 kind,
-                stop.reason(kind),
+                &stop.reason(kind),
                 BudgetConsumption::default(),
             )));
         }

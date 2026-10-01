@@ -3,7 +3,7 @@
 use super::preparation::{
     counters, empty_component, metadata_overflow, ComponentIntegrity, PreparationCounters,
 };
-use super::{bounded_error, sha256_digest, PreparedRuntime};
+use super::{bounded_error, sha256_digest};
 use crate::bindings;
 use crate::config::{WasmtimeConfig, PHASE0_BACKEND_ID};
 use crate::containment::platform_error;
@@ -14,7 +14,7 @@ use latent_artifacts::{AdmissionAuthority, ArtifactPreparationIdentity, CapsuleA
 use latent_core::{Metadata, PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedComponent};
 use latent_manifest::{ExecutionBackendKind, StateModel, ThreadingModel};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
@@ -32,7 +32,7 @@ pub(super) struct PreparationContext {
     pub(super) config: WasmtimeConfig,
     pub(super) preparation: Arc<PreparationCounters>,
     pub(super) observer: PreparationObserver,
-    pub(super) uncached: Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>,
+    pub(super) uncached: super::UncachedPrepared,
 }
 
 impl PreparationContext {

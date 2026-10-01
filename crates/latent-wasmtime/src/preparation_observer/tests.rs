@@ -154,16 +154,11 @@ fn running_entry_overflow_does_not_hide_live_job_count_or_corrupt_other_entries(
     );
 }
 
-struct Noop;
-impl Wake for Noop {
-    fn wake(self: Arc<Self>) {}
-}
-
 #[test]
 fn only_one_pending_waiter_is_retained_and_drop_releases_its_slot() {
     let observer = PreparationObserver::new(1);
-    let waker = Waker::from(Arc::new(Noop));
-    let mut context = Context::from_waker(&waker);
+    let waker = Waker::noop();
+    let mut context = Context::from_waker(waker);
     let mut first = observer.wait_for_change(0);
     let mut other = observer.wait_for_change(0);
     assert!(first.as_mut().poll(&mut context).is_pending());
@@ -193,8 +188,8 @@ fn only_one_pending_waiter_is_retained_and_drop_releases_its_slot() {
 #[test]
 fn dropping_a_woken_waiter_cannot_remove_a_later_registration() {
     let observer = PreparationObserver::new(1);
-    let waker = Waker::from(Arc::new(Noop));
-    let mut context = Context::from_waker(&waker);
+    let waker = Waker::noop();
+    let mut context = Context::from_waker(waker);
     let mut old = observer.wait_for_change(0);
     assert!(old.as_mut().poll(&mut context).is_pending());
     observer.enable();
@@ -364,7 +359,7 @@ fn linux_task_stat_parser_handles_comm_parentheses_and_exact_cpu_field_positions
 #[test]
 fn malformed_truncated_oversized_or_overflowing_cpu_records_are_unavailable() {
     for text in [
-        "".to_owned(),
+        String::new(),
         "57 (missing closing delimiter".into(),
         "57 (short) S 0 0".into(),
         task_stat("negative", "-1", "0", "789"),

@@ -90,8 +90,8 @@ async fn only_exact_busy_reads_wait_and_other_failures_forward_unchanged() {
 #[tokio::test(start_paused = true)]
 async fn retry_repeats_only_the_failed_read_and_forwards_one_success_owner() {
     let attempts = Cell::new(0);
-    let owned = Arc::new(7);
-    let mut owner = Some(Arc::clone(&owned));
+    let original = Arc::new(7);
+    let mut owner = Some(Arc::clone(&original));
     let start = tokio::time::Instant::now();
     let result = Window::new(Some(&Timer))
         .check(|| {
@@ -105,7 +105,7 @@ async fn retry_repeats_only_the_failed_read_and_forwards_one_success_owner() {
         .await
         .unwrap();
     assert_eq!(attempts.get(), 2);
-    assert!(Arc::ptr_eq(&result, &owned));
+    assert!(Arc::ptr_eq(&result, &original));
     assert_eq!(
         tokio::time::Instant::now() - start,
         Duration::from_millis(10)

@@ -6,8 +6,7 @@ use wasm_encoder::{
 };
 use wasmtime::component::ResourceType;
 
-#[path = "../../../../latent-packaging/tests/fixtures/host.rs"]
-mod fixture;
+use crate::test_fixtures::host as fixture;
 
 const STATE: &str = "latent:state/key-value@0.2.0";
 const INTENTS: &str = "latent:intents/staging@0.1.0";

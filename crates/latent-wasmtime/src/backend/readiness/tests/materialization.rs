@@ -17,7 +17,7 @@ async fn busy_materialization_retains_exact_readiness_and_materializes_once_afte
     let imports = ready.imports().to_vec();
     let activity = f.backend.preparation_activity_snapshot();
     let jobs = f.backend.compiler_snapshot().jobs_started;
-    let reads = f.repository.verification_snapshot();
+    let verification = f.repository.verification_snapshot();
     let fence = Fence::hold(&f.eligibility);
     let mut pending = f.backend.materialize_ready_with_wait(ready, &Timer);
     assert!(pending
@@ -36,7 +36,7 @@ async fn busy_materialization_retains_exact_readiness_and_materializes_once_afte
     assert_eq!(f.backend.compiler_snapshot().ready_preparations, 0);
     assert_eq!(f.backend.compiler_snapshot().jobs_started, jobs);
     assert_eq!(f.backend.preparation_activity_snapshot(), activity);
-    assert_eq!(f.repository.verification_snapshot(), reads);
+    assert_eq!(f.repository.verification_snapshot(), verification);
     drop(activation);
     f.idle();
 }

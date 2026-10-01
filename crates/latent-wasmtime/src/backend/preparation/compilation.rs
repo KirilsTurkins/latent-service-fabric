@@ -202,13 +202,19 @@ impl super::super::PreparationContext {
             &self.config,
             surface::Providers {
                 local_services: self.local_services().is_some(),
-                http: self.http().is_some(),
-                streaming_http: self.streaming_http().is_some(),
-                blobs: self.blobs().is_some(),
-                secrets: self.secrets().is_some(),
-                events: self.events().is_some(),
-                random: self.random().is_some(),
-                metrics: self.metrics().is_some(),
+                network: surface::NetworkProviders {
+                    http: self.http().is_some(),
+                    streaming_http: self.streaming_http().is_some(),
+                },
+                storage: surface::StorageProviders {
+                    blobs: self.blobs().is_some(),
+                    secrets: self.secrets().is_some(),
+                },
+                signals: surface::SignalProviders {
+                    events: self.events().is_some(),
+                    random: self.random().is_some(),
+                    metrics: self.metrics().is_some(),
+                },
             },
         )?;
         let metadata_bytes = input
@@ -231,9 +237,9 @@ impl super::super::PreparationContext {
         let lifetime_charge = self
             .runtime_ledger
             .register(crate::cache::PreparedRuntimeCost {
-                source_bytes: artifact.component_bytes.len(),
-                metadata_bytes,
-                compiled_image_bytes: image_bytes,
+                source: artifact.component_bytes.len(),
+                metadata: metadata_bytes,
+                compiled_image: image_bytes,
             })?;
         let declared_budget = artifact.manifest.execution.resource_budget_ceiling.clone();
         let imports = artifact

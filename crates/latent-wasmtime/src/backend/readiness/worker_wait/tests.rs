@@ -75,7 +75,7 @@ fn worker_window_is_shared_across_checks_and_never_refreshes_after_expiry() {
     );
     assert_eq!(window.until, original_until);
     // Queue/compile elapsed time consumes the existing absolute window.
-    window.until = Some(Instant::now() - Duration::from_secs(1));
+    window.until = Some(Instant::now().checked_sub(Duration::from_secs(1)).unwrap());
     let calls = AtomicUsize::new(0);
     for _ in 0..2 {
         assert!(WorkerWindow::check(Some(&window), || {
