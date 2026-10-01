@@ -29,6 +29,7 @@
     "CompletionRegressionTests.test_runtime_case_selects_only_its_required_fixture_builders",
     "CompletionRegressionTests.test_strict_failure_record_rejects_malformed_nested_values_and_options",
     "CompletionRegressionTests.test_unsupported_owner_is_never_ready_even_with_inventory",
+    "CompletionRegressionTests.test_valid_reusable_fixture_does_not_require_its_build_tools",
     "CompletionRegressionTests.test_wasm_header_accepts_real_magic_and_rejects_literal_escape",
     "DriftTests.test_ci_routes_a_real_prepared_selection_through_the_same_entrypoint",
     "DriftTests.test_contributor_guide_links_the_local_entrypoint",
@@ -398,6 +399,18 @@
       ],
       "skipSites": []
     },
+    "CompletionRegressionTests.test_valid_reusable_fixture_does_not_require_its_build_tools": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:da17933401a867a52e1ee87578481c546998319cf02fc41de344a9e33c1d10d5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "CompletionRegressionTests.test_wasm_header_accepts_real_magic_and_rejects_literal_escape": {
       "bases": [
         "unittest.TestCase"
@@ -635,6 +648,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_local_tests.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Keep the existing missing-fixture tool preflight guard independent of generated target contents, and add a validated cached-fixture reuse control that requires no fixture build tools or build execution.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
