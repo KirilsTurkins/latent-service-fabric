@@ -113,6 +113,36 @@ fn mutable_engine_file_creation_and_reopen_never_truncate_existing_bytes() {
 }
 
 #[test]
+fn exclusive_offline_output_refuses_existing_failed_files_and_unsafe_names_without_overwrite() {
+    use std::io::Write as _;
+    let directory = root();
+    let root = ProtectedRoot::open(directory.path()).unwrap();
+    for name in ["", ".", "..", "../snapshot", "/snapshot", "nested/snapshot"] {
+        assert!(root.create_mutable_file(name, 4096).is_err());
+    }
+    let (mut output, fence) = root.create_mutable_file("snapshot", 4096).unwrap();
+    output.write_all(b"partial-sensitive-snapshot").unwrap();
+    output.sync_all().unwrap();
+    root.check_mutable_file(&fence).unwrap();
+    assert!(root.create_mutable_file("snapshot", 4096).is_err());
+    assert_eq!(
+        fs::read(directory.path().join("snapshot")).unwrap(),
+        b"partial-sensitive-snapshot"
+    );
+    assert_eq!(output.metadata().unwrap().mode() & 0o777, 0o600);
+    symlink(
+        directory.path().join("snapshot"),
+        directory.path().join("alias"),
+    )
+    .unwrap();
+    assert!(root.create_mutable_file("alias", 4096).is_err());
+    assert!(root
+        .create_mutable_file("oversized", 1_073_741_825)
+        .is_err());
+    assert!(!directory.path().join("oversized").exists());
+}
+
+#[test]
 fn mutable_engine_files_reject_unsafe_names_types_links_permissions_and_lengths() {
     let dir = root();
     let root = ProtectedRoot::open(dir.path()).unwrap();

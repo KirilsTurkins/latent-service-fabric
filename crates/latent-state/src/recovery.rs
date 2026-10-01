@@ -11,7 +11,11 @@ use crate::{
 };
 use latent_core::{StateNamespaceId, TenantId};
 
+pub mod migration;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub mod offline;
 pub mod restore;
+pub mod resume;
 pub mod snapshot;
 
 pub const GUARD_KEY: &[u8] = b"recovery-control-v1\0";
@@ -71,6 +75,11 @@ impl RecoveryGuard {
     #[must_use]
     pub fn window_digest(&self) -> [u8; 32] {
         self.window_digest
+    }
+
+    #[must_use]
+    pub fn review_digest(&self) -> [u8; 32] {
+        self.review_digest
     }
 
     pub fn encode(&self) -> Result<Vec<u8>, StoreError> {

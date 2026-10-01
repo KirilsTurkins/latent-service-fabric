@@ -994,7 +994,7 @@ pub fn inspect(
     clippy::needless_pass_by_value,
     reason = "Result::map_err transfers the closed engine/fence error into the host error"
 )]
-fn fenced_error(error: FencedStoreError<AtomicError>) -> AtomicError {
+pub(super) fn fenced_error(error: FencedStoreError<AtomicError>) -> AtomicError {
     match error {
         FencedStoreError::Store(error) => error.into(),
         FencedStoreError::Fence(error) => error,
@@ -1058,9 +1058,9 @@ fn namespace(
     Ok((record, row, bytes))
 }
 #[derive(Default)]
-struct Usage {
+pub(super) struct Usage {
     results: u64,
-    result_bytes: u64,
+    pub(super) result_bytes: u64,
     effects: u64,
     effect_bytes: u64,
     payload_bytes: u64,
@@ -1068,7 +1068,7 @@ struct Usage {
     recovery_reserved: u64,
 }
 impl Usage {
-    fn read(
+    pub(super) fn read(
         view: &ReadView,
         key: &latent_core::transaction_contract::CommandKey,
     ) -> Result<(Self, RowKey, Option<Vec<u8>>), AtomicError> {
@@ -1104,7 +1104,7 @@ impl Usage {
         };
         Ok((usage, row, bytes))
     }
-    fn encode(&self) -> Vec<u8> {
+    pub(super) fn encode(&self) -> Vec<u8> {
         let mut out = Encoder::new(b"LCU\0\x01");
         for number in [
             self.results,

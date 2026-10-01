@@ -30,12 +30,28 @@ pub struct NamespaceRecoveryWindow {
 #[derive(Debug, Serialize)]
 pub struct RestoreWindow {
     snapshot_digest: [u8; 32],
+    current_rows_digest: [u8; 32],
+    current_rows: u64,
+    current_logical_bytes: u64,
     tenant: String,
     namespaces: Vec<NamespaceRecoveryWindow>,
 }
 
 impl RestoreWindow {
     pub fn capture(current: &ReadView, snapshot: &SnapshotReceipt) -> Result<Self, StoreError> {
+        Self::capture_until(
+            current,
+            snapshot,
+            Instant::now() + super::snapshot::SNAPSHOT_DURATION,
+        )
+    }
+
+    pub fn capture_until(
+        current: &ReadView,
+        snapshot: &SnapshotReceipt,
+        deadline: Instant,
+    ) -> Result<Self, StoreError> {
+        super::snapshot::validate_deadline(deadline)?;
         snapshot.manifest.validate()?;
         super::require_ready(current)?;
         let actual = capture_namespaces(current, &snapshot.manifest.metadata.tenant)?;
@@ -63,8 +79,12 @@ impl RestoreWindow {
                 current: now,
             });
         }
+        let observed = super::snapshot::visit_view(current, deadline, |_, _, _| Ok(()))?;
         Ok(Self {
             snapshot_digest: snapshot.snapshot_digest,
+            current_rows_digest: observed.digest,
+            current_rows: observed.rows,
+            current_logical_bytes: observed.logical_bytes,
             tenant: snapshot.manifest.metadata.tenant.clone(),
             namespaces,
         })
@@ -110,6 +130,13 @@ pub struct RestorePlan {
     histories: Vec<NamespaceHistory>,
 }
 
+/// Installed decoders and the physical owner's current named-file fence.
+pub struct RestoreChecks<R, V, F> {
+    pub row: R,
+    pub view: V,
+    pub fence: F,
+}
+
 impl RestorePlan {
     pub fn prepare(
         current: &ReadView,
@@ -117,6 +144,23 @@ impl RestorePlan {
         request: &RestoreRequest,
         review: impl FnOnce(&RestoreWindow, &RestoreRequest) -> Result<(), StoreError>,
     ) -> Result<Self, StoreError> {
+        Self::prepare_until(
+            current,
+            snapshot,
+            request,
+            Instant::now() + super::snapshot::SNAPSHOT_DURATION,
+            review,
+        )
+    }
+
+    pub fn prepare_until(
+        current: &ReadView,
+        snapshot: SnapshotReceipt,
+        request: &RestoreRequest,
+        deadline: Instant,
+        review: impl FnOnce(&RestoreWindow, &RestoreRequest) -> Result<(), StoreError>,
+    ) -> Result<Self, StoreError> {
+        super::snapshot::validate_deadline(deadline)?;
         for identity in [&request.operation_id, &request.operator_id] {
             crate::namespace::identity(identity).map_err(|_| StoreError::Invalid)?;
         }
@@ -129,7 +173,7 @@ impl RestorePlan {
         {
             return Err(StoreError::UnsupportedFormat);
         }
-        let window = RestoreWindow::capture(current, &snapshot)?;
+        let window = RestoreWindow::capture_until(current, &snapshot, deadline)?;
         let window_digest = window.digest()?;
         if request.window_acknowledgement != window_digest {
             return Err(StoreError::Conflict);
@@ -177,26 +221,7 @@ impl RestorePlan {
     /// live history row before creating a destination. It never silently raises
     /// the selected store's configured physical/logical quotas.
     pub fn require_capacity(&self, limits: StoreLimits) -> Result<(), StoreError> {
-        if self
-            .snapshot
-            .manifest
-            .rows
-            .checked_add(1 + u64::try_from(self.histories.len()).map_err(|_| StoreError::Capacity)?)
-            .is_none_or(|rows| rows > u64::try_from(limits.maximum_rows).unwrap_or(0))
-            || self
-                .snapshot
-                .manifest
-                .logical_bytes
-                .checked_add(
-                    u64::try_from(SNAPSHOT_NAMESPACES * 4096).map_err(|_| StoreError::Capacity)?,
-                )
-                .is_none_or(|bytes| {
-                    bytes > u64::try_from(limits.maximum_logical_bytes).unwrap_or(0)
-                })
-        {
-            return Err(StoreError::Capacity);
-        }
-        Ok(())
+        require_snapshot_capacity(&self.snapshot, limits)
     }
 
     /// Caller has inspected the whole protected input before creating a fresh
@@ -207,18 +232,50 @@ impl RestorePlan {
         input: &mut impl Read,
         destination: &EmbeddedStore,
         deadline: Instant,
-        mut validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
         validate_staged: impl FnOnce(&ReadView) -> Result<SnapshotClosure, StoreError>,
     ) -> Result<RecoveryGuard, StoreError> {
+        self.execute_checked(
+            input,
+            destination,
+            deadline,
+            RestoreChecks {
+                row: validate_row,
+                view: validate_staged,
+                fence: || Ok(()),
+            },
+        )
+    }
+
+    pub fn execute_checked<R, V, F>(
+        self,
+        input: &mut impl Read,
+        destination: &EmbeddedStore,
+        deadline: Instant,
+        checks: RestoreChecks<R, V, F>,
+    ) -> Result<RecoveryGuard, StoreError>
+    where
+        R: FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+        V: FnOnce(&ReadView) -> Result<SnapshotClosure, StoreError>,
+        F: FnMut() -> Result<(), StoreError>,
+    {
+        let RestoreChecks {
+            row: mut validate_row,
+            view: validate_staged,
+            mut fence,
+        } = checks;
         super::snapshot::validate_deadline(deadline)?;
         self.require_capacity(destination.limits())?;
         require_empty(destination)?;
+        fence()?;
         destination.apply(self.guard.prepare_staging()?)?;
+        fence().map_err(|_| StoreError::CommitUncertain)?;
         let mut importer = Importer {
             destination,
             batch: AtomicBatch::default(),
             bytes: 0,
             deadline,
+            fence: &mut fence,
         };
         let observed = inspect_snapshot(input, deadline, |key, value| {
             validate_row(key, value)?;
@@ -230,6 +287,7 @@ impl RestorePlan {
             Ok(())
         })?;
         importer.flush()?;
+        drop(importer);
         if observed != self.snapshot {
             return Err(StoreError::Corrupt);
         }
@@ -243,11 +301,38 @@ impl RestorePlan {
             }
         }
         super::snapshot::checkpoint(deadline)?;
-        publish_histories(destination, &self.histories, deadline)?;
+        publish_histories(destination, &self.histories, deadline, &mut fence)?;
         super::snapshot::checkpoint(deadline)?;
+        fence()?;
         destination.apply(self.guard.prepare_completed()?)?;
+        fence().map_err(|_| StoreError::CommitUncertain)?;
         RecoveryGuard::capture(&destination.snapshot()?)?.ok_or(StoreError::Corrupt)
     }
+}
+
+pub(super) fn require_snapshot_capacity(
+    snapshot: &SnapshotReceipt,
+    limits: StoreLimits,
+) -> Result<(), StoreError> {
+    if snapshot
+        .manifest
+        .rows
+        .checked_add(
+            1 + u64::try_from(snapshot.manifest.namespaces.len())
+                .map_err(|_| StoreError::Capacity)?,
+        )
+        .is_none_or(|rows| rows > u64::try_from(limits.maximum_rows).unwrap_or(0))
+        || snapshot
+            .manifest
+            .logical_bytes
+            .checked_add(
+                u64::try_from(SNAPSHOT_NAMESPACES * 4096).map_err(|_| StoreError::Capacity)?,
+            )
+            .is_none_or(|bytes| bytes > u64::try_from(limits.maximum_logical_bytes).unwrap_or(0))
+    {
+        return Err(StoreError::Capacity);
+    }
+    Ok(())
 }
 
 fn require_empty(destination: &EmbeddedStore) -> Result<(), StoreError> {
@@ -275,6 +360,7 @@ fn publish_histories(
     destination: &EmbeddedStore,
     histories: &[NamespaceHistory],
     deadline: Instant,
+    fence: &mut impl FnMut() -> Result<(), StoreError>,
 ) -> Result<(), StoreError> {
     for page in histories.chunks(destination.limits().maximum_batch_rows.min(128)) {
         super::snapshot::checkpoint(deadline)?;
@@ -293,18 +379,21 @@ fn publish_histories(
             });
         }
         drop(view);
+        fence()?;
         destination.apply(batch)?;
+        fence().map_err(|_| StoreError::CommitUncertain)?;
     }
     Ok(())
 }
 
-struct Importer<'a> {
+struct Importer<'a, F> {
     destination: &'a EmbeddedStore,
     batch: AtomicBatch,
     bytes: usize,
     deadline: Instant,
+    fence: &'a mut F,
 }
-impl Importer<'_> {
+impl<F: FnMut() -> Result<(), StoreError>> Importer<'_, F> {
     fn put(&mut self, key: &RowKey, value: &[u8]) -> Result<(), StoreError> {
         let bytes = key
             .key
@@ -332,7 +421,9 @@ impl Importer<'_> {
     fn flush(&mut self) -> Result<(), StoreError> {
         super::snapshot::checkpoint(self.deadline)?;
         if !self.batch.mutations.is_empty() {
+            (self.fence)()?;
             self.destination.apply(std::mem::take(&mut self.batch))?;
+            (self.fence)().map_err(|_| StoreError::CommitUncertain)?;
             self.bytes = 0;
         }
         Ok(())

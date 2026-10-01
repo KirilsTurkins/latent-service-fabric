@@ -48,8 +48,13 @@ pub trait ResourceProbe: Send + Sync {
 pub struct CurrentProcessProbe;
 
 impl ResourceProbe for CurrentProcessProbe {
+    #[cfg(target_os = "linux")]
     fn capture(&self) -> io::Result<ProcessResources> {
         capture_current_process()
+    }
+    #[cfg(not(target_os = "linux"))]
+    fn capture(&self) -> io::Result<ProcessResources> {
+        Ok(capture_current_process())
     }
 }
 
@@ -81,14 +86,14 @@ fn capture_current_process() -> io::Result<ProcessResources> {
 }
 
 #[cfg(not(target_os = "linux"))]
-fn capture_current_process() -> io::Result<ProcessResources> {
-    Ok(ProcessResources {
+fn capture_current_process() -> ProcessResources {
+    ProcessResources {
         process_id: std::process::id(),
         resident_memory_bytes: None,
         thread_count: None,
         open_file_descriptors: None,
         socket_count: None,
-    })
+    }
 }
 
 #[cfg(target_os = "linux")]

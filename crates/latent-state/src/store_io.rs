@@ -14,6 +14,7 @@
 
 mod drain;
 mod job;
+mod recovery;
 mod retained;
 mod retirement;
 mod startup;
@@ -23,6 +24,7 @@ mod worker;
 
 pub use drain::StoreIoDrain;
 pub use job::StoreIoJob;
+pub use recovery::{StoreIoRecoveryCapacity, StoreIoRecoverySnapshot};
 pub use retained::StoreIoRetained;
 pub use retirement::{StoreIoRetirement, StoreIoRetirementWitness};
 pub use startup::{StoreIoReady, StoreIoStartup};

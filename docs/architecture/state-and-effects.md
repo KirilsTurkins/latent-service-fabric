@@ -194,6 +194,11 @@ reserve is exhausted. Pending work retains bounded durable bytes/shared metadata
 not a guest Store/cell, process, heap, per-entity worker/listener/timer or
 application provider pool. Dropped waiters never refund live physical I/O.
 
+The [implemented response-retention and recovery-reserve profile](transaction-retention.md)
+uses the same physical store, preserves linked protective identities and records
+bounded generation-safe maintenance progress. Its focused engine evidence is
+separate from public node/Java/HTTP qualification.
+
 ## Implementation and evidence owners
 
 | Required work | Owners |
