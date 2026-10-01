@@ -338,6 +338,9 @@ impl NamespaceCatalog {
         if key.family != Family::Namespace {
             return Err(NamespaceError::UnsupportedFormat);
         }
+        if key.key.starts_with(super::history::HISTORY_PREFIX) {
+            return super::history::NamespaceHistory::validate_row(key, bytes);
+        }
         let expected = if key.key.starts_with(b"ns-v1\0") {
             let record = NamespaceRecord::decode(bytes)?;
             namespace_record_key(&record.tenant, &record.id)?

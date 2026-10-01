@@ -3,6 +3,8 @@ use crate::embedded::{EmbeddedStore, FencedStoreError, StoreLimits};
 use crate::namespace::NamespaceQuota;
 use std::fs::OpenOptions;
 
+mod history;
+
 struct Fixture {
     store: EmbeddedStore,
     scope: StateScope,
@@ -359,7 +361,8 @@ fn byte_limited_pages_require_continuation_and_never_omit_an_entry() {
     let mut keys = vec![];
     loop {
         let page = session
-            .scan(&view, b"", cursor.as_ref(), 128, 120, allow)
+            // The v2 opaque record token includes two 8-byte history epochs.
+            .scan(&view, b"", cursor.as_ref(), 128, 136, allow)
             .unwrap();
         assert_eq!(page.entries.len(), 1);
         keys.extend(page.entries.into_iter().map(|entry| entry.key));
