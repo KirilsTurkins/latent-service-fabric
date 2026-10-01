@@ -1,18 +1,18 @@
 use super::config::PolicyIdentity;
 use latent_artifacts::package::{
-    artifact_blob_digest, decode_referrer, package_digest, EvidenceKind, PackageKind,
-    PackageLimits, PackageSubject,
+    EvidenceKind, PackageKind, PackageLimits, PackageSubject, artifact_blob_digest,
+    decode_referrer, package_digest,
 };
 use latent_artifacts::{
     AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits, PackageAdmissionUpload,
 };
 use latent_core::{ArtifactBlobDigest, PackageDigest, PlatformError, PlatformErrorCode};
 use latent_packaging::{
-    evaluate_sboms, inspect_bundle, BundleInput, PackageBundle, PackagingLimits,
-    SbomEvidenceLimits, SbomEvidenceRef, SbomPolicy, SbomPolicyConfig, SbomPresence,
+    BundleInput, PackageBundle, PackagingLimits, SbomEvidenceLimits, SbomEvidenceRef, SbomPolicy,
+    SbomPolicyConfig, SbomPresence, evaluate_sboms, inspect_bundle,
 };
 use latent_signing::{
-    inspect_provenance, inspect_signature, PackageSigningSubject, ProvenanceLimits, SignatureLimits,
+    PackageSigningSubject, ProvenanceLimits, SignatureLimits, inspect_provenance, inspect_signature,
 };
 use serde::{Deserialize, Serialize};
 
@@ -46,9 +46,22 @@ impl Receipt {
     /// Binds historical display fields to the original checked bytes before a
     /// current policy denial may retain non-authorizing history. Parsed identity
     /// hints confer no trust; successful recovery still verifies both signatures.
+    #[cfg(test)]
     pub fn validate_retained(
         binding: &AdmissionBinding,
         upload: PackageAdmissionUpload,
+    ) -> Result<PackageAdmissionUpload, PlatformError> {
+        Self::validate_retained_with_profile(
+            binding,
+            upload,
+            latent_manifest::ManifestValidationProfile::default(),
+        )
+    }
+
+    pub fn validate_retained_with_profile(
+        binding: &AdmissionBinding,
+        upload: PackageAdmissionUpload,
+        manifest_profile: latent_manifest::ManifestValidationProfile,
     ) -> Result<PackageAdmissionUpload, PlatformError> {
         let old = Self::validate_history(binding)?;
         AdmissionStorageLimits::default().check_upload(&upload, 64 * 1024 * 1024)?;
@@ -69,7 +82,10 @@ impl Receipt {
                 configuration,
                 layers,
             },
-            PackagingLimits::default(),
+            PackagingLimits {
+                manifest_profile,
+                ..Default::default()
+            },
         )
         .map_err(retained_error)?;
         let subject = PackageSigningSubject::from_package(

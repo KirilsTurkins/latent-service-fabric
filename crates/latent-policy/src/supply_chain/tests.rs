@@ -21,6 +21,8 @@ mod publications;
 #[cfg(target_os = "linux")]
 mod runtime;
 mod support;
+#[cfg(target_os = "linux")]
+mod transaction_profile;
 mod verification;
 #[cfg(target_os = "linux")]
 mod web;
