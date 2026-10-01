@@ -62,6 +62,7 @@ def inputs(language="rust"):
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
                     "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/compatibility.py", "dotnet_guest/outputs.py", "dotnet_guest/sdk.py",
+                    "dotnet_guest/runtime.py", "dotnet_guest/entropy.py", "dotnet_guest/entropy_grants.py",
                     "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     'application_dependencies.py', 'application_dependency_store.py', 'application_dependency_tools.py',
                     'application_dependency_approval.py', 'captured_compiler_isolation.py', 'dotnet_compiler_isolation.py',
@@ -320,7 +321,8 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
-        result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language=language)
+        result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
+            language=language, noncrypto_entropy=language == "dotnet" and application_dependencies)
         stage = "printed-guide"
         result["guide"] = guide(output / "guide", environment, language)
         stage = "final-integrity"

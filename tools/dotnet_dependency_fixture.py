@@ -26,6 +26,8 @@ def install(project: Path, outside: Path, tools: Path, *, identity='Outside.Qual
         transitive = ['SmartFormat', 'Newtonsoft.Json', 'ZString']
     else:
         raise ValueError('unknown SDK qualification fixture')
+    from tools.dotnet_guest.entropy_grants import declare
+    declare(project)
     outside.mkdir(mode=0o700)
     library, evidence, feed = (outside / name for name in ('developer-library', 'compiler-evidence', 'local-feed'))
     for root in (library, evidence, feed):
@@ -135,6 +137,7 @@ public partial class CapturedPayload {
         'generatedSerialization': {'generator': 'MemoryPack.Generator/1.21.4', 'type': 'CapturedPayload',
             'ordinaryCalls': ['MemoryPackSerializer.Serialize', 'MemoryPackSerializer.Deserialize']} if serialization == 'memorypack' else None,
         'resourceDigest': digest(resource), 'managedAssemblyDigest': digest(assembly),
+        'declaredNoncryptoEntropy': 'latent:random/random@0.1.0',
         'sourceDigest': digest(source.read_bytes()), 'offlineOriginals': 'unavailable-after-capture',
         'nativeGraphDigest': digest((project / 'nuget-resolved.lock.json').read_bytes()),
         'preparationCommands': commands.records}

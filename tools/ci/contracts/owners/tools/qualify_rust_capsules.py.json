@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all historical qualification commands and add exact NuGet generator denial, explicit fixture approval, preserved failure causes and retained generated serialization source checks.",
+  "reviewReason": "Preserve every historical qualification command and require explicit entropy declaration, missing-grant denial and bounded bytes-only authority solely for the dotnet application dependency fixture.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a817a087ae096ab83921c0105a00335ece32da6014fb4fb5b3fe57a15d73413a"
+  "sha256": "2a0d07989501827cdb86a0abc8095dd1107f4217a57b14d1c58af0233befa554"
 }

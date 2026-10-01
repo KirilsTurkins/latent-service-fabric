@@ -54,3 +54,13 @@ validation and the exact final declared graph. This source port and its derivati
 checks do not qualify ordinary resource lookup or MemoryPack execution. Those
 claims require a fresh signed node run with the unchanged application/library
 sources, entropy denial controls, recovery and measured retirement.
+
+The application-library qualifier explicitly adds that import before NuGet
+capture. Its optional node configuration binds one normal random provider only
+to the greeting service. After installing the existing clock grant, it requires
+the still-missing entropy grant to fail with zero guest fuel, memory and effects.
+It then binds the exact installed provider profile, configuration digest and
+epoch, and grants only `bytes` for that service and publication: at most 16
+operations, eight input bytes, 4096 output bytes and five seconds. Existing
+authoring defaults and other languages keep their original grants. This setup
+retains ordinary secure-random denial and records no random payload bytes.
