@@ -57,7 +57,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         files = snapshot(project_path)
         project, _lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
+        recipe_files = {path: read_file(ROOT / path) for path in RECIPE}
+        recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
         with tempfile.TemporaryDirectory(prefix="lsf-java-capsule-") as owned:
@@ -113,6 +114,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 package_files = dict(files)
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
                 surface = read_json(derived / "surface.json")
+                recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
                 stage = "compatibility"
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
                     host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
@@ -129,7 +131,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for path, item in zip(application_jars, application_inventory["artifacts"]):
                         if digest(read_file(path, 64 * 1024 * 1024)) != item["selectedDigest"]:
                             raise ValueError("selected Java classpath changed during compilation")
-                if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
+                if inventory({path: read_file(ROOT / path) for path in recipe_files}) != recipe_inputs:
                     raise ValueError("Java authoring recipe changed during the build")
                 compiler.check_unchanged()
                 for name, path in paths.items():
