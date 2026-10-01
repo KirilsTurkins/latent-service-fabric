@@ -38,6 +38,18 @@ impl TransactionAdmissionControl {
         self.bind_authorization(authorization, latent_capabilities::namespace::Mode::Query)
     }
 
+    /// Existing-result inspection keeps the original cancellation and budget.
+    /// It gains no command claim, writer or application execution permission.
+    pub fn bind_result(
+        &self,
+        authorization: &crate::transaction_runtime::StateAuthorization,
+    ) -> Result<(), PlatformError> {
+        self.bind_authorization(
+            authorization,
+            latent_capabilities::namespace::Mode::Inspection,
+        )
+    }
+
     fn bind_authorization(
         &self,
         authorization: &crate::transaction_runtime::StateAuthorization,

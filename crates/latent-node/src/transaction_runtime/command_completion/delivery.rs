@@ -95,6 +95,7 @@ impl StateTransactionHost {
         self.authorization
             .authorize("query-info", 0, 0, || Ok(()))?;
         let authorization = Arc::clone(&self.authorization);
+        let time = Arc::clone(&self.time);
         let original = self.view_identity;
         let job = self
             .store
@@ -119,12 +120,15 @@ impl StateTransactionHost {
                 {
                     return Err(StoreError::Unavailable);
                 }
-                NamespaceCatalog::read_in(&view, &scope.tenant, &scope.namespace)
+                let namespace = NamespaceCatalog::read_in(&view, &scope.tenant, &scope.namespace)
                     .map_err(|_| StoreError::Unavailable)?
-                    .ok_or(StoreError::Unavailable)
+                    .ok_or(StoreError::Unavailable)?;
+                // The accepted worker/result retains the original ordinary
+                // owner even when its async response has detached.
+                Ok((namespace, time))
             })
             .map_err(super::errors::protected)?;
-        let namespace = job
+        let (namespace, time) = job
             .await
             .map_err(|_| {
                 super::errors::atomic(latent_commit::atomic::AtomicError::RecoveryRequired)
@@ -134,7 +138,7 @@ impl StateTransactionHost {
             authorization: Arc::new(self.authorization.rebind_query_delivery(namespace)?),
             operation: "query-info",
             command: None,
-            time: Arc::clone(&self.time),
+            time,
         };
         fence.with_current(0, || Ok(()))?;
         Ok(fence)
