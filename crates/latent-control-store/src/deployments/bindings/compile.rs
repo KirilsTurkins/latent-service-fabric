@@ -1,6 +1,6 @@
 use super::model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider};
 use super::{
-    BindingCatalog, CompilerOwner, capacity, denied, error, invalid, model::StoredBinding,
+    capacity, denied, error, invalid, model::StoredBinding, BindingCatalog, CompilerOwner,
 };
 use crate::deployments::compiler::{CompiledCatalog, RevisionRecord};
 use latent_artifacts::{AdmissionAuthority, ArtifactRepository, ReleaseUseEligibility};

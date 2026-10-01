@@ -2,10 +2,10 @@ use super::super::{fixtures, supply_chain::authority};
 use super::package_fixture;
 pub(super) use crate::bindings::BindingDefinition;
 use crate::{
-    DeploymentStore,
     bindings::{BindingLimits, ConfiguredBindingProvider, PreparedBindingUpdate},
+    DeploymentStore,
 };
-pub(super) use fixtures::{TempRoot, run};
+pub(super) use fixtures::{run, TempRoot};
 pub(super) use latent_artifacts::ArtifactRepository;
 use latent_artifacts::{DirectoryArtifactRepository, PackageAdmissionUpload};
 pub(super) use latent_capabilities::broker::{ActivationCapabilityBroker, ProviderRegistration};

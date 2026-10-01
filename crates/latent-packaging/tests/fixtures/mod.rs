@@ -2,11 +2,11 @@
 pub mod component;
 
 use latent_artifacts::package::{
-    LayerRole, PackageKind, PackageLimits, WitLock, WitLockedPackage, artifact_blob_digest,
-    encode_wit_lock,
+    artifact_blob_digest, encode_wit_lock, LayerRole, PackageKind, PackageLimits, WitLock,
+    WitLockedPackage,
 };
 use latent_packaging::{BundleInput, LayerInput, PackageBundle, PackageInput};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 pub fn capsule(options: component::Options) -> PackageInput {
     let bytes = component::component(options);
