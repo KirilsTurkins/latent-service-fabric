@@ -73,11 +73,11 @@ def _expected_cases(data: dict, lane: str) -> tuple[str, ...]:
                     "provider-selection-contract")
             values.extend(selected["names"])
         return tuple(values)
-    require(lane == "renderer", "unknown-lane")
+    require(lane in {"renderer", "renderer-public", "renderer-angular"}, "unknown-lane")
     browser = data["selections"].get("browser-boundary")
     require(isinstance(browser, dict) and browser.get("runner") == "ci_rust_artifacts",
             "browser-selection-contract")
-    values = list(browser["names"])
+    values = list(browser["names"]) if lane != "renderer-angular" else []
     process = data.get("processContracts", {}).get("angular-renderer")
     require(isinstance(process, dict) and process.get("suiteIds"), "renderer-process-contract")
     for key in process["suiteIds"]:
@@ -87,29 +87,37 @@ def _expected_cases(data: dict, lane: str) -> tuple[str, ...]:
         selected = row["expectedIgnored"]
         if row["target"] == "latentd":
             selected = [name for name in selected if "actual_angular_http_" in name]
-        values.extend(selected)
+        if lane != "renderer-angular":
+            values.extend(selected)
     for key in ("latent-packaging.test.angular-build", "latent-wasmtime.test.angular-build"):
         build = suites.get(key)
         require(isinstance(build, dict) and build.get("expectedIgnored"), "angular-build-suite-contract")
-        values.extend(build["expectedIgnored"])
+        if lane != "renderer-public":
+            values.extend(build["expectedIgnored"])
     policy = suites.get("latent-policy.lib.latent-policy")
     require(isinstance(policy, dict), "angular-policy-suite-contract")
     policy_cases = [name for name in policy["expectedIgnored"]
                     if "supply_chain::tests::web::angular_build::" in name]
     require(len(policy_cases) == 1, "angular-policy-case-contract")
-    values.extend(policy_cases)
+    if lane != "renderer-public":
+        values.extend(policy_cases)
     return tuple(values)
 
 
-def stages(renderer: bool) -> tuple[Stage, ...]:
+def stages(renderer: bool, lane: str = "both") -> tuple[Stage, ...]:
+    require(lane in {"both", "provider", "renderer", "renderer-public", "renderer-angular"}, "unknown-lane")
+    require(lane in {"both", "provider"} or renderer, "renderer-lane-not-selected")
     result = [
         Stage("provider-integrations", Phase.EXECUTION, "provider", 1500,
               cases=PROVIDER_STEPS, receipts=("provider-lane-receipt",)),
-    ]
-    if renderer:
+    ] if lane in {"both", "provider"} else []
+    if renderer and lane != "provider":
+        selected = "renderer" if lane == "both" else lane
+        steps = RENDERER_STEPS[:4] if selected == "renderer-public" else (
+            RENDERER_STEPS[4:] if selected == "renderer-angular" else RENDERER_STEPS)
         result.append(
-            Stage("renderer-integrations", Phase.EXECUTION, "renderer", 3900,
-                  cases=RENDERER_STEPS, receipts=("renderer-lane-receipt",))
+            Stage(selected + "-integrations", Phase.EXECUTION, "renderer", 3900,
+                  cases=steps, receipts=(selected + "-lane-receipt",))
         )
     return tuple(result)
 
@@ -121,7 +129,7 @@ def _read_receipt(path: Path, lease, data: dict) -> dict:
     value = json.loads(raw)
     require(isinstance(value, dict) and value.get("schemaVersion") == CHILD_SCHEMA,
             "lane-receipt-schema")
-    lane = "provider" if lease.stage.name == "provider-integrations" else "renderer"
+    lane = lease.stage.name.removesuffix("-integrations")
     require(value.get("lane") == lane and value.get("outcome") == "passed",
             "lane-receipt-outcome")
     require(value.get("steps") == list(lease.stage.cases), "lane-step-parity")
@@ -139,7 +147,7 @@ def _read_receipt(path: Path, lease, data: dict) -> dict:
 
 
 async def _execute(lease, inventory: Path, output: Path, data: dict) -> tuple[Completion, dict | None, str]:
-    lane = "provider" if lease.stage.name == "provider-integrations" else "renderer"
+    lane = lease.stage.name.removesuffix("-integrations")
     receipt = output / f"{lane}.json"
     command = [
         sys.executable, str(ROOT / "tools/ci_lane_worker.py"),
@@ -177,7 +185,7 @@ async def run(args: argparse.Namespace) -> int:
     output.mkdir(parents=True, exist_ok=True)
     output.chmod(0o700)
     scheduler = Scheduler(
-        stages(args.renderer), workers=args.workers,
+        stages(args.renderer, args.lane), workers=args.workers,
         capacities={"provider": 1, "renderer": 1},
     )
     started = time.monotonic()
@@ -241,6 +249,7 @@ async def run(args: argparse.Namespace) -> int:
         "inventorySha256": "sha256:" + hashlib.sha256(raw_inventory).hexdigest(),
         "workers": args.workers,
         "rendererSelected": args.renderer,
+        "laneSelection": args.lane,
         "elapsedMs": round((time.monotonic() - started) * 1000, 3),
         "states": {name: state.value for name, state in scheduler.states.items()},
         "reasons": dict(scheduler.reasons),
@@ -270,6 +279,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--renderer", choices=("true", "false"), required=True)
     parser.add_argument("--workers", type=int, choices=(1, 2), required=True)
+    parser.add_argument("--lane", choices=("both", "provider", "renderer", "renderer-public", "renderer-angular"), default="both")
     args = parser.parse_args()
     args.renderer = args.renderer == "true"
     try:
