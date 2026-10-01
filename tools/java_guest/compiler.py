@@ -234,7 +234,7 @@ class Compiler:
             for name, data in snapshot(self.sdk / (profile + "/services")).items():
                 target = project / "src/main/resources" / name
                 stage_sdk_service(target, name, data)
-        if activation_profile:
+        if activation_profile or server_profile:
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         application_source_names = set()
