@@ -95,6 +95,25 @@ test('Unicode, repeat headings, CommonMark prose and explicit HTML anchors retai
   assert.throws(() => parseDocument('---\nslug: one\nslug: two\n---\n# Duplicate\n', 'docs/example.md'));
 });
 
+test('repeated parsing isolates mutable trees and rechecks changed source and front matter', context => {
+  const source = 'docs/nested/start.md';
+  const body = '# Fresh input\n\n[Source](../../sdk/source%20file.ts)\n';
+  const first = parseDocument(body, source);
+  first.children[0].children[0].value = 'Mutated by a plugin';
+  first.children.pop();
+  const second = parseDocument(body, source);
+  assert.equal(second.children[0].children[0].value, 'Fresh input');
+  assert.equal(second.children.length, 2);
+  assert.throws(() => parseDocument(`---\ndraft: true\n---\n${body}`, source), /Draft\/hidden/);
+  assert.throws(() => parseDocument(`---\nformat: mdx\n---\n${body}`, source), /execution mode/);
+  const {root, index} = fixture(context, {[source]: body});
+  fs.writeFileSync(path.join(root, source), '# Changed bytes\n');
+  const changed = createRepositoryIndex(root, index.paths, index.revision);
+  assert.equal(changed.pages.find(page => page.source === source).title, 'Changed bytes');
+  assert.notEqual(changed.pages.find(page => page.source === source).sha256,
+    index.pages.find(page => page.source === source).sha256);
+});
+
 test('approved bounded downloads use both base paths; unapproved source material is never copied', context => {
   const {root, index} = fixture(context, {'docs/assets/example.txt': 'Harmless download fixture\n'});
   const assets = validateAssets(root, {schema: 1, assets: [{path: 'docs/assets/example.txt', kind: 'download', maxBytes: 1024}]}, index);

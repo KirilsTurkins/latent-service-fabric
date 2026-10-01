@@ -43,7 +43,7 @@
       },
       {
         "name": "Verify production pages, theme and source-backed controls",
-        "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery\n",
+        "run": "# Each suite owns separate servers, browsers and evidence directories.\n# Run the complete five-suite matrix concurrently on the hosted VM.\nnpm run test:versions &\nversions_pid=$!\nnpm run test:build &\nbuild_pid=$!\nnpm run test:theme &\ntheme_pid=$!\nnpm run test:examples &\nexamples_pid=$!\nnpm run test:discovery &\ndiscovery_pid=$!\nstatus=0\nwait \"$build_pid\" || status=$?\nwait \"$theme_pid\" || status=$?\nwait \"$examples_pid\" || status=$?\nwait \"$discovery_pid\" || status=$?\nwait \"$versions_pid\" || status=$?\nexit \"$status\"\n",
         "working-directory": "website"
       },
       {
@@ -63,7 +63,7 @@
   },
   "jobId": "website",
   "kind": "job",
-  "reviewReason": "Preserve every website command and its existing finite limit; run 36783140060 job 110142455876 completed the version matrix after 27 minutes and the 30-minute job deadline interrupted the final five-minute discovery journey. Allow 40 minutes for the full bounded matrix and receipt upload/cleanup.",
+  "reviewReason": "Preserve both builds and every browser suite; run independent servers, browser processes and evidence directories concurrently and join all five exit statuses.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-site.yml"
 }
