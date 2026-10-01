@@ -14,6 +14,7 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, fresh,
                                         inventory, decode_json, read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
+from tools import guest_compatibility_build
 from tools.application_dependencies import prepare, verify_inputs
 from tools.application_dependency_approval import approve as approve_execution, request as execution_request
 from tools.rust_application_dependencies import configure as configure_application
@@ -26,6 +27,7 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
           "tools/stage_runtime_wit.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
+RECIPE += guest_compatibility_build.RECIPE
 
 
 class Commands:
