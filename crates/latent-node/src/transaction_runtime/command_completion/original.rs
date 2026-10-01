@@ -18,6 +18,7 @@ pub struct OriginalCommandMetadata {
     namespace: Option<NamespaceRead>,
     pub(super) expected: latent_state::embedded::ExpectedRow,
     pub(super) command_expected: latent_state::embedded::ExpectedRow,
+    result_history: Option<Box<latent_capabilities::namespace::ReviewedResultHistory>>,
 }
 impl OriginalCommandMetadata {
     #[must_use]
@@ -28,6 +29,13 @@ impl OriginalCommandMetadata {
         self.namespace
             .take()
             .ok_or_else(|| errors::atomic(AtomicError::PermissionDenied))
+    }
+    /// The actual same-store observation can seal only historical result-read
+    /// authority, never a query minimum, retry or another execution source.
+    pub fn take_result_history(
+        &mut self,
+    ) -> Option<latent_capabilities::namespace::ReviewedResultHistory> {
+        self.result_history.take().map(|history| *history)
     }
 }
 impl CommandCoordinator {
@@ -72,7 +80,17 @@ impl CommandCoordinator {
                     if record.key() != &key {
                         return Err(StoreError::Corrupt);
                     }
-                    super::history::require_record(&view, &record)?;
+                    let result_history =
+                        if record.outcome() == latent_commit::atomic::Outcome::Pending {
+                            super::history::require_record(&view, &record)?;
+                            None
+                        } else {
+                            Some(Box::new(
+                                latent_capabilities::namespace::ReviewedResultHistory::capture(
+                                    &view, &namespace, &record,
+                                )?,
+                            ))
+                        };
                     let expected = namespace.expectation();
                     let command_expected = latent_state::embedded::ExpectedRow {
                         key: command_key,
@@ -84,6 +102,7 @@ impl CommandCoordinator {
                         expected,
                         command_expected,
                         namespace: Some(namespace),
+                        result_history,
                     }))
                 })();
                 // Accepted work and its returned metadata retain this original
