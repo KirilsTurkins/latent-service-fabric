@@ -3,6 +3,7 @@
 
 mod adapter;
 mod admission;
+mod capacity;
 mod config;
 pub mod control;
 mod driver;

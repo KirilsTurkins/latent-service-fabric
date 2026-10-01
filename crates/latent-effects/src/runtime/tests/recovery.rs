@@ -47,6 +47,7 @@ async fn persisted_owner_history_requires_external_checkpoint_before_new_epoch_o
     assert_eq!(adapter.sent.load(Ordering::SeqCst), 1);
     fixture.finish().await;
     let reopened = Arc::new(Fixture::open(fixture.config.clone()).await);
+    reopened.bind_native_capacity(&fixture.capacity).unwrap();
     let mut after_restart = DispatcherOwner::start(
         config(),
         Arc::clone(&reopened),
@@ -57,6 +58,9 @@ async fn persisted_owner_history_requires_external_checkpoint_before_new_epoch_o
     )
     .await
     .unwrap();
+    after_restart
+        .bind_native_capacity(&fixture.capacity)
+        .unwrap();
     assert!(
         after_restart
             .shutdown(Instant::now() + WATCHDOG)
