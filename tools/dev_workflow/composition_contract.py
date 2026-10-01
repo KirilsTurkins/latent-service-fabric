@@ -45,6 +45,18 @@ def support_matrix():
     require(value.get("schemaVersion") == MATRIX, "preflight-support-matrix-version")
     require(isinstance(value.get("rows"), list) and 0 < len(value["rows"]) <= 32,
             "preflight-support-matrix-bound")
+    bounds = value.get("bufferedHttpLimits")
+    numbers = {"minimumWirePayloadBytes", "maximumRequestBodyBytes", "maximumResponseBodyBytes"}
+    require(isinstance(bounds, dict) and set(bounds) == numbers | {"sources"},
+            "preflight-buffered-http-limits-shape")
+    for name in numbers:
+        _uint(bounds[name])
+        require(int(bounds[name]) > 0, "preflight-buffered-http-limits-bound")
+    sources = bounds["sources"]
+    known = value.get("sources")
+    require(isinstance(known, dict) and isinstance(sources, list) and 0 < len(sources) <= 8
+        and all(isinstance(name, str) and name in known for name in sources)
+        and len(set(sources)) == len(sources), "preflight-buffered-http-limits-source")
     return value
 
 

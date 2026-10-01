@@ -312,6 +312,7 @@ class DevCompositionContractTests(unittest.TestCase):
         self.assertFalse(json.loads(serialized)["executionQualified"])
 
     def test_matrix_binds_sources_and_missing_packaged_contract_fails_finitely(self):
+        from unittest.mock import patch
         matrix = contract.support_matrix()
         self.assertEqual(matrix["axes"]["publicationKind"], ["capsule", "static-site"])
         self.assertFalse(matrix["cartesianSupportPromised"])
@@ -327,6 +328,19 @@ class DevCompositionContractTests(unittest.TestCase):
             self.assertFalse(row["executionQualified"])
         with self.assertRaisesRegex(DevError, "^preflight-support-contract-not-packaged$"):
             contract._document("contracts/dev/missing-contract.json")
+        invalid = [lambda value: value.pop("maximumResponseBodyBytes"),
+                   lambda value: value.update(extra="1"),
+                   lambda value: value.update(maximumResponseBodyBytes="0262144"),
+                   lambda value: value.update(maximumRequestBodyBytes=65536),
+                   lambda value: value.update(minimumWirePayloadBytes="0"),
+                   lambda value: value.update(sources=["unknown-source"]),
+                   lambda value: value.update(sources=["http-ingress-bounds"] * 9),
+                   lambda value: value.update(sources=["http-ingress-bounds"] * 2)]
+        for change in invalid:
+            bad = copy.deepcopy(matrix)
+            change(bad["bufferedHttpLimits"])
+            with self.subTest(change=change), patch.object(contract, "_document", return_value=bad), self.assertRaises(DevError):
+                contract.support_matrix()
 
     def test_zip_packaged_stdlib_helper_uses_exact_resources_without_checkout(self):
         with tempfile.TemporaryDirectory() as directory:
