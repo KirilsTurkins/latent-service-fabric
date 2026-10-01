@@ -50,6 +50,15 @@ pub struct HistoryPage {
     pub resume: Option<Vec<u8>>,
 }
 
+/// Exact bounded dependencies captured from the same native view. These bytes
+/// confer no terminalization, payload-release or provider authority.
+pub struct RetainedEffectRows {
+    pub record: EffectRecord,
+    pub expectations: Vec<ExpectedRow>,
+    pub due: Option<latent_state::embedded::RowKey>,
+    pub reclaim: Vec<latent_state::embedded::RowKey>,
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
 pub struct DispatchCounts {
     pub pending: u64,
@@ -70,6 +79,26 @@ pub struct DispatchCounts {
 pub struct DispatchCatalog;
 
 impl DispatchCatalog {
+    /// Namespace admission charge for the declared finite retained closure.
+    /// Include closed codec maxima and encoded row-key bytes, rather than
+    /// pretending the initial pending record bounds later receipt/history growth.
+    /// The protected engine independently enforces actual disk/index high-water.
+    pub fn retention_charge(authority: &DurableEffectAuthority) -> Result<u64, StoreError> {
+        let attempts = u64::from(authority.ceiling().maximum_attempts);
+        let history = attempts
+            .checked_mul(
+                (super::codec::MAXIMUM_HISTORY_BYTES + super::codec::HISTORY_PREFIX.len() + 40 + 64)
+                    as u64,
+            )
+            .ok_or(StoreError::Capacity)?;
+        EffectRecord::retained_bound(authority)
+            .map_err(storage_error)?
+            .checked_add((EFFECT_PREFIX.len() + 32 + 64) as u64)
+            .and_then(|bytes| bytes.checked_add(history))
+            .and_then(|bytes| bytes.checked_add(256))
+            .ok_or(StoreError::Capacity)
+    }
+
     /// Only the fresh exclusive node startup owner may advance this fence.
     /// The protected root must prove the previous process physically retired.
     /// An admitted external restore checkpoint rejects epoch/clock rollback;

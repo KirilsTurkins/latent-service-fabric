@@ -7,8 +7,8 @@ use std::{
     collections::BTreeSet,
     fs::File,
     sync::{
-        Arc,
         atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc,
     },
     time::{Duration, Instant},
 };
@@ -240,6 +240,7 @@ impl EmbeddedStore {
     ) -> Result<(), StoreError> {
         let mut count = 0usize;
         let mut bytes = 0usize;
+        let mut reservations = crate::reservation::ReservationCoverage::default();
         for row in table.iter().map_err(|_| StoreError::Corrupt)? {
             let (k, v) = row.map_err(|_| StoreError::Corrupt)?;
             let k = k.value();
@@ -253,6 +254,7 @@ impl EmbeddedStore {
             }
             count = count.checked_add(1).ok_or(StoreError::Capacity)?;
             let reserved = crate::reservation::reserved_bytes(k, v)?;
+            reservations.observe(k, v, reserved)?;
             bytes = bytes
                 .checked_add(k.len() + v.len())
                 .and_then(|bytes| bytes.checked_add(reserved))
@@ -261,7 +263,7 @@ impl EmbeddedStore {
                 return Err(StoreError::Capacity);
             }
         }
-        Ok(())
+        reservations.verify()
     }
     pub fn snapshot(&self) -> Result<ReadView, StoreError> {
         if self.quarantined.load(Ordering::Acquire) {

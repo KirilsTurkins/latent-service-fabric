@@ -3,6 +3,7 @@ use crate::atomic::record::result_row_key;
 
 mod clocks;
 mod ownership;
+mod review;
 
 fn observation(now: u64, elapsed: u64) -> MaintenanceClock {
     MaintenanceClock {
