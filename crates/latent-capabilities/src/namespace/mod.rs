@@ -48,7 +48,7 @@ pub struct ResultOwnership {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Mode {
+pub enum Mode {
     Command,
     Query,
     Inspection,
