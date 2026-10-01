@@ -237,7 +237,9 @@ and strict combined state/effects Clippy passed on the pinned Linux image.
 `StoreIoKind::RecoveryRead` and `RecoveryWrite` use a separate preallocated queue,
 accepted-owner cap and retained-byte partition on this same engine. The protected
 production profile has four fixed workers: the original three ordinary workers
-and one reserved recovery worker. Ordinary reads, writes, retained native views
+and one reserved recovery worker. Ordinary retirement callbacks also stay on
+ordinary workers, so a paused native destructor cannot occupy that reserve.
+Ordinary reads, writes, retained native views
 and completed response owners cannot consume the recovery partition. The
 provider-dispatch job owner explicitly disables this extra lane; it is not a
 second storage engine or an additional unbounded blocking pool.
@@ -261,7 +263,8 @@ durability settings or evicts guaranteed records.
 
 Windows Rust 1.97.1: all 93 state library cases and strict all-target/all-feature
 state/effects Clippy passed, including four deterministic physical recovery
-schedules. They demonstrate ordinary saturation, retained detached buffers,
+schedules. A fifth focused portable schedule passed after adding isolation from
+an ordinary paused native destructor. They demonstrate ordinary saturation, retained detached buffers,
 finite recovery caps and unavailable/invalid configuration, and read progress
 past an actual live writer without a second write. The fifth registered case
 uses the real protected Linux engine and verifies the committed row while all
