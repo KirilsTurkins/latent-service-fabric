@@ -101,7 +101,11 @@ impl ClientProfile for FixtureClient {
         })
     }
 
-    fn inspect_http_target(&self, _request: InspectHttpTargetRequest, _options: CallOptions) -> ClientFuture<'_, InspectHttpTargetResponse> {
+    fn inspect_http_target(
+        &self,
+        _request: InspectHttpTargetRequest,
+        _options: CallOptions,
+    ) -> ClientFuture<'_, InspectHttpTargetResponse> {
         panic!("target inspection is not used by the lifetime fixture")
     }
 
