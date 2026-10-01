@@ -6,6 +6,7 @@
     "FrontendDependencyInputs.test_changed_project_selection_and_sibling_application_cannot_use_outer_capture",
     "FrontendDependencyInputs.test_compiler_native_projection_is_checked_against_original_reviewed_lock",
     "FrontendDependencyInputs.test_descriptor_without_capture_preserves_original_source_inventory_and_creates_no_store",
+    "FrontendDependencyInputs.test_inner_descriptor_cannot_redirect_the_approved_application_root",
     "FrontendDependencyInputs.test_missing_reviewed_lock_stale_manifest_and_declared_trust_are_rejected",
     "FrontendDependencyInputs.test_native_mapping_cannot_change_original_descriptor_or_reviewed_lock_identity",
     "FrontendDependencyInputs.test_native_original_cas_missing_and_tampered_bytes_fail_before_build",
@@ -82,6 +83,18 @@
       "skipSites": []
     },
     "FrontendDependencyInputs.test_descriptor_without_capture_preserves_original_source_inventory_and_creates_no_store": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:05732c09ff9eb2ac01e04b458e99b801c469a06923144d7f02a504105aeba80c",
+        "class:setup-sha256:7bef93063f33c5e2f6ab85e23026e7c05b7d82965d850e1e9fd7701080bccb54"
+      ],
+      "skipSites": []
+    },
+    "FrontendDependencyInputs.test_inner_descriptor_cannot_redirect_the_approved_application_root": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -252,6 +265,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_dependency_inputs.py",
-  "reviewReason": "Add 19 exact outer/application binding, immutable native projection and real staged six-language offline capture controls; preserve every historical Python case and guard.",
+  "reviewReason": "Reject inner project descriptor redirection for all six authenticated application roots",
   "schemaVersion": "latent.ci.contracts.v1"
 }
