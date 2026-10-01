@@ -74,9 +74,17 @@ paused buffer destructor, wait detachment, sticky drain and poisoned acceptance.
 Three test-only string/binding changes preserve existing core regression
 semantics while allowing the complete strict core check to pass.
 
-The real protected Linux saturation case and application integration checks
-remain pending shared Docker filesystem recovery. The node coordinator and
-#400 authenticated management adapters consume this port and must retain guards
-through actual worker and frame cleanup. This focused resource port does not
+The same source passed all 102 core, 113 state and 70 effect library cases on
+the pinned Linux image
+`sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97`
+with Rust `1.97.1-x86_64-unknown-linux-gnu`, offline locked dependencies, and no
+ignored or filtered library cases. Strict all-target/all-feature Clippy also
+passed for all three crates. This includes the actual protected-engine recovery
+saturation schedule and the native command-source ownership schedules.
+
+The node coordinator and #400 authenticated management adapters consume this
+port and must retain guards through actual worker and frame cleanup. Their
+combined public application qualification remains an integration step. This
+focused resource port does not
 complete #397's durable quota accounting, linked retention, compaction, physical
 disk pressure or audited terminalization acceptance criteria.
