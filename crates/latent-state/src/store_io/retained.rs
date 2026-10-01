@@ -83,6 +83,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
                 control: Arc::clone(control),
                 bytes,
                 recovery: false,
+                keeper: None,
             }),
             retired: Arc::new(RetirementSignal::default()),
             witness_issued: false,

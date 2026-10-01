@@ -193,6 +193,20 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
             .map_err(|error| error.reason)
     }
 
+    pub fn submit_retaining<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        bytes: u64,
+        keeper: Arc<dyn std::any::Any + Send + Sync>,
+        operation: impl FnOnce(&S) -> T + Send + 'static,
+    ) -> Result<StoreIoJob<T>, StoreIoError> {
+        self.owner
+            .submit_retaining(kind, bytes, keeper, move |slot| {
+                operation(slot.get().expect("initialized store owner"))
+            })
+            .map_err(|error| error.reason)
+    }
+
     pub fn snapshot(&self) -> Result<StoreIoSnapshot, StoreIoError> {
         self.owner.snapshot()
     }
