@@ -928,6 +928,8 @@
       "expectedCases": [
         "durable::model::tests::absent_rollout_fields_preserve_old_canonical_identity_bytes",
         "durable::model::tests::canary_evidence_fields_require_exact_rollout_and_positive_epoch",
+        "durable::model::tests::dispatcher_audit_preserves_node_actor_epoch_and_original_full_width_revision",
+        "durable::model::tests::dispatcher_audit_rejects_tenant_scope_hybrids_unrelated_action_and_explicit_null",
         "durable::model::tests::rollout_counters_are_typed_bounded_and_require_their_identity",
         "durable::tests::abandoned_before_and_after_start_have_distinct_durable_outcomes",
         "durable::tests::acknowledged_record_missing_is_corruption_not_a_new_epoch",
@@ -972,7 +974,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-audit/Cargo.toml",
-      "minimumCases": 40,
+      "minimumCases": 42,
       "mode": "libtest",
       "package": "latent-audit",
       "platforms": [
