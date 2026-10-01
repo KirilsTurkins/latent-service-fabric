@@ -114,16 +114,21 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
             association::node(value.inventory.as_ref(), &id)?;
             response::got_node(value)
         }
-        Operation::InspectActivationTree(request) => {
-            let value = call!(session, NodeServiceClient, inspect_activation_tree, request);
-            response::activation_tree(value)
-        }
+        Operation::InspectActivationTree(request) => inspect_activation_tree(request, session).await,
         Operation::ListNodes(request) => list_nodes(request, session).await,
         _ => Err(Failure::local(
             "invalid-operation",
             "This is not a management operation.",
         )),
     }
+}
+
+async fn inspect_activation_tree(
+    request: proto::InspectActivationTreeRequest,
+    session: &Session,
+) -> Result<Outcome, Failure> {
+    let value = call!(session, NodeServiceClient, inspect_activation_tree, request);
+    response::activation_tree(value)
 }
 
 async fn list_releases(

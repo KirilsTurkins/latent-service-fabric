@@ -22,15 +22,7 @@ use super::invalid_manifest;
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
-        Command::Activation(crate::args::ActivationCommand::Tree(args)) => {
-            identifier(&args.id)?;
-            Ok(Operation::InspectActivationTree(
-                proto::InspectActivationTreeRequest {
-                    activation_id: args.id.clone(),
-                    page: Some(page(args.page_size, args.page_token.as_deref())?),
-                },
-            ))
-        }
+        Command::Activation(crate::args::ActivationCommand::Tree(args)) => activation_tree(args),
         Command::Web(command) => super::web::prepare(command, config),
         Command::Trigger(command) => super::triggers::prepare(command, config),
         Command::Capability(command) => super::capabilities::prepare(command),
@@ -150,6 +142,16 @@ pub fn validate(command: &ValidateCommand) -> Result<Outcome, Failure> {
             .map_err(|_| invalid_manifest())?;
     }
     Ok(Outcome::success(json!({"kind":kind,"valid":true})))
+}
+
+fn activation_tree(args: &crate::args::ActivationTreeArgs) -> Result<Operation, Failure> {
+    identifier(&args.id)?;
+    Ok(Operation::InspectActivationTree(
+        proto::InspectActivationTreeRequest {
+            activation_id: args.id.clone(),
+            page: Some(page(args.page_size, args.page_token.as_deref())?),
+        },
+    ))
 }
 
 fn publish(args: &PublishArgs, config: &ResolvedConfig) -> Result<Operation, Failure> {
