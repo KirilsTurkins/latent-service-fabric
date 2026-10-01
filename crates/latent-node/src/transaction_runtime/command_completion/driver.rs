@@ -2,12 +2,16 @@ use std::sync::{Arc, Mutex};
 
 use latent_activation::ActivationOutcome;
 use latent_commit::atomic::{
-    AdmittedCommand, AtomicError, AttemptRetirement, CommandRecord, CompleteEnvelope,
-    PreparedDisposition,
+    AdmittedCommand, AtomicError, AttemptRetirement, CapturedIntent, CommandRecord, CommandTime,
+    CompleteEnvelope, PreparedDisposition, RetiredAttempt,
 };
 use latent_core::{BoxFuture, HostMemoryReservation, PlatformError};
+use latent_effects::authority::EffectAuthorityOwner;
 use latent_state::{
-    embedded::StoreError, protected_store::ProtectedStoreOperation, store_io::StoreIoKind,
+    embedded::{EmbeddedStore, ReadView, StoreError},
+    protected_store::ProtectedStoreOperation,
+    session::StatePlan,
+    store_io::StoreIoKind,
 };
 
 use super::super::{StateAuthorization, StateHandoff, StateTransactionHost};
@@ -35,6 +39,12 @@ struct Attempt {
     operation: ProtectedStoreOperation,
     notification: CommandNotificationOwner,
     memory: Arc<HostMemoryReservation>,
+}
+struct HandoffPayload {
+    claim: AdmittedCommand,
+    plan: StatePlan,
+    intents: Vec<CapturedIntent>,
+    value: latent_core::transaction_contract::Value,
 }
 pub(super) struct CommandCompletion {
     coordinator: CommandCoordinator,
@@ -85,9 +95,9 @@ impl CommandCompletion {
         let completion = match validated {
             Ok(CommandOutput::Success(value)) => match self.host.handoff().await {
                 Ok(handoff) => {
-                    self.success(
+                    Box::pin(self.success(
                         claim, operation, retirement, record, value, handoff, outcome, memory,
-                    )
+                    ))
                     .await
                 }
                 Err(error) => {
@@ -103,9 +113,9 @@ impl CommandCompletion {
                 }
             },
             Ok(CommandOutput::Rejection { code, value }) => {
-                self.rejection(
+                Box::pin(self.rejection(
                     claim, operation, retirement, record, code, value, outcome, memory,
-                )
+                ))
                 .await
             }
             Err(error) => {
@@ -171,27 +181,17 @@ impl CommandCompletion {
             .store
             .with_view(view, WRITER_JOB_BYTES, move |view| {
                 native.enter();
-                let prepared = if intents.is_empty() {
-                    CompleteEnvelope::success_without_intents(
-                        view,
+                let prepared = prepare_handoff(
+                    view,
+                    HandoffPayload {
                         claim,
-                        Some(plan),
-                        value,
-                        time.sample(),
-                    )
-                } else if let Some(effects) = effects {
-                    CompleteEnvelope::success_captured(
-                        view,
-                        claim,
-                        Some(plan),
+                        plan,
                         intents,
                         value,
-                        &effects,
-                        time.sample(),
-                    )
-                } else {
-                    Err(AtomicError::PermissionDenied)
-                };
+                    },
+                    effects,
+                    time.sample(),
+                );
                 let prepared = match prepared {
                     Ok(value) => Ok(value),
                     Err(error) => Err(errors::storage(error)?),
@@ -209,9 +209,8 @@ impl CommandCompletion {
             Err(_) => return self.recovery(record, outcome, memory).await,
         };
         view.retire().await;
-        let (prepared, operation, session_memory) = match prepared {
-            Ok(value) => value,
-            Err(_) => return self.recovery(record, outcome, memory).await,
+        let Ok((prepared, operation, session_memory)) = prepared else {
+            return self.recovery(record, outcome, memory).await;
         };
         if let Err(error) = self.host.retire().await {
             operation.retire().await;
@@ -484,7 +483,7 @@ impl TransactionCompletionHook for CommandCompletion {
         Box::pin(async move {
             let attempt = self.attempt.lock().ok().and_then(|mut slot| slot.take());
             match attempt {
-                Some(attempt) => self.finish(outcome, attempt).await,
+                Some(attempt) => Box::pin(self.finish(outcome, attempt)).await,
                 None => TransactionCompletion::ordinary(failure(
                     outcome,
                     errors::atomic(AtomicError::RecoveryRequired),
@@ -516,19 +515,16 @@ impl CommandCoordinator {
         outcome: ActivationOutcome,
         memory: Arc<HostMemoryReservation>,
     ) -> TransactionCompletion {
-        let attempt = match retirement.proven_noncommit() {
-            Ok(value) => value,
-            Err(_) => {
-                return self
-                    .observation(
-                        record,
-                        outcome,
-                        CommandObservation::RecoveryRequired,
-                        &read,
-                        memory,
-                    )
-                    .await
-            }
+        let Ok(attempt) = retirement.proven_noncommit() else {
+            return self
+                .observation(
+                    record,
+                    outcome,
+                    CommandObservation::RecoveryRequired,
+                    &read,
+                    memory,
+                )
+                .await;
         };
         let current = match self
             .read_namespace(&read)
@@ -548,19 +544,16 @@ impl CommandCoordinator {
                     .await
             }
         };
-        let operation = match self.store.reserve_operation() {
-            Ok(value) => value,
-            Err(_) => {
-                return self
-                    .observation(
-                        record,
-                        outcome,
-                        CommandObservation::RecoveryRequired,
-                        &read,
-                        memory,
-                    )
-                    .await
-            }
+        let Ok(operation) = self.store.reserve_operation() else {
+            return self
+                .observation(
+                    record,
+                    outcome,
+                    CommandObservation::RecoveryRequired,
+                    &read,
+                    memory,
+                )
+                .await;
         };
         let mut native = NativeCommandWork::new(operation, None, Some(Arc::clone(&memory)));
         let time = Arc::clone(&self.time);
@@ -574,28 +567,10 @@ impl CommandCoordinator {
             .with_store(StoreIoKind::Write, WRITER_JOB_BYTES, move |store| {
                 native.enter();
                 let view = store.snapshot()?;
-                let prepared =
-                    match CompleteEnvelope::technical_abort(&view, attempt, code, time.sample()) {
-                        Ok(envelope) => envelope,
-                        Err(error) => {
-                            native.complete();
-                            return errors::storage(error).map(Err);
-                        }
-                    };
-                let fence = match prepared.namespace_expectation() {
-                    Ok(value) => value,
-                    Err(error) => {
-                        native.complete();
-                        return errors::storage(error).map(Err);
-                    }
-                };
-                let disposition = prepared.publish(store, |_| {
-                    current
-                        .accept_abort(&fence)
-                        .map_err(|_| AtomicError::PermissionDenied)
-                });
+                let disposition =
+                    prepare_abort(&view, store, attempt, code, &current, time.sample());
                 native.complete();
-                Ok(Ok(disposition))
+                disposition
             });
         match job {
             Ok(job) => match job.await {
@@ -701,4 +676,48 @@ fn failure(outcome: ActivationOutcome, error: PlatformError) -> ActivationOutcom
             crate::activation_runner::outcome_consumption(&outcome),
         )
     }
+}
+
+fn prepare_handoff(
+    view: &ReadView,
+    input: HandoffPayload,
+    effects: Option<EffectAuthorityOwner>,
+    time: CommandTime,
+) -> Result<CompleteEnvelope, AtomicError> {
+    let HandoffPayload {
+        claim,
+        plan,
+        intents,
+        value,
+    } = input;
+    if intents.is_empty() {
+        CompleteEnvelope::success_without_intents(view, claim, Some(plan), value, time)
+    } else if let Some(effects) = effects {
+        CompleteEnvelope::success_captured(view, claim, Some(plan), intents, value, &effects, time)
+    } else {
+        Err(AtomicError::PermissionDenied)
+    }
+}
+
+fn prepare_abort(
+    view: &ReadView,
+    store: &EmbeddedStore,
+    attempt: RetiredAttempt,
+    code: String,
+    current: &StateAuthorization,
+    time: CommandTime,
+) -> Result<Result<PreparedDisposition, AtomicError>, StoreError> {
+    let prepared = match CompleteEnvelope::technical_abort(view, attempt, code, time) {
+        Ok(value) => value,
+        Err(error) => return errors::storage(error).map(Err),
+    };
+    let fence = match prepared.namespace_expectation() {
+        Ok(value) => value,
+        Err(error) => return errors::storage(error).map(Err),
+    };
+    Ok(Ok(prepared.publish(store, |_| {
+        current
+            .accept_abort(&fence)
+            .map_err(|_| AtomicError::PermissionDenied)
+    })))
 }

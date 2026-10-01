@@ -200,7 +200,11 @@ impl StateAuthorization {
         if envelope.activation_id != *self.activation_id()
             || envelope.principal != self.principal
             || !budget.is_same_instance(&self.budget)
-            || revision.publication.as_ref().map(|id| id.as_str()) != Some(self.publication())
+            || revision
+                .publication
+                .as_ref()
+                .map(latent_core::PublicationId::as_str)
+                != Some(self.publication())
             || revision.revision.0 != input.source.revision
             || revision.release.0 != input.source.release_digest
             || revision.route_generation.0 != input.source.route_generation
