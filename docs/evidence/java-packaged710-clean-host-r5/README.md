@@ -21,6 +21,17 @@ archive and four embedded preflight resource identities. The
 archive and executable identities. These native/frontend bytes were consumed
 unchanged; no native runtime was rebuilt or substituted.
 
+The current source review updates only the support matrix's `resource-budget`
+source fingerprint from the producer's older pinned source to its reviewed
+current source. Its qualified combinations, profile values and all other
+matrix contents are unchanged. The actual R5 matrix resource remains
+`sha256:13b43cbd26d4b1500c4e03c90800bd8a66a804cac541dbaa3ea4fe11f75df7f6`;
+the reviewed source matrix is
+`sha256:257b35fb522f0883180d0173d9127d79d3bfe8d375e2f6ba851dca877ad8ad56`.
+The other three embedded canonical resources still match byte for byte. No
+current-source producer artifact or changed producer-policy approval is claimed
+from these historical executable bytes.
+
 The OS-only clean host was Ubuntu 24.04.5, Python 3.13.5 and glibc 2.39, with
 unprivileged UID 23001 and a fresh home. Its original environment observation
 records no existing SDK/compiler programs or workspace. Its
