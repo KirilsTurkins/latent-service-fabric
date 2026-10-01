@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_ci_lanes.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain existing bounded lane graph and add required deferred JetStream case and completion receipt identities",
+  "reviewReason": "Preserve every original provider/renderer case and the qualified deferred JetStream cases, running fixed mandatory shards from current-job Cargo inputs with the same finite process ownership.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "31b06fe1a2c7114e21069e12aaf088f2e730a7f8c0a5b5f5824a36239e7323a8"
+  "sha256": "b09870328886e0dae85fe2b7a31a4e77f4456f0204b5c862a8d402c800fa4252"
 }

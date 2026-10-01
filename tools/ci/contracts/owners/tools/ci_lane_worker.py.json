@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_lane_worker.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain every existing provider campaign and add exact bounded committed JetStream delivery cases on the same serial provider lane",
+  "reviewReason": "Preserve every original provider/renderer case and the qualified deferred JetStream cases, running fixed mandatory shards from current-job Cargo inputs with the same finite process ownership.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e037d819cdbfc74d266ef9737014128d8949a75c90a1dc804088ca167d551d33"
+  "sha256": "03516329f48b14e499a9edd79b4cb50d5140bc0b1dfc102dbe9f0faee9151187"
 }

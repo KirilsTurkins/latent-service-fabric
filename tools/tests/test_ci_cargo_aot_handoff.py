@@ -9,8 +9,11 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def handoff(workflow):
-    """Select exactly one unconditional producer, preparation and consumer."""
-    steps = workflow["jobs"]["rust"]["steps"]
+    """Require the same current-job producer and AOT inputs in the tests lane."""
+    job = workflow["jobs"]["rust"]
+    if "tests" not in job.get("strategy", {}).get("matrix", {}).get("lane", []):
+        raise ValueError("AOT tests lane must remain required and fail closed")
+    steps = job["steps"]
     names = (
         "Build workspace binaries and test harnesses",
         "Prepare authenticated AOT test inputs",
@@ -23,8 +26,9 @@ def handoff(workflow):
         if len(matches) != 1:
             raise ValueError("missing or duplicate AOT handoff step")
         index, step = matches[0]
-        if "if" in step or step.get("continue-on-error", False):
-            raise ValueError("AOT handoff must remain unconditional and fail closed")
+        condition = "matrix.lane != 'checks'" if name == names[0] else "matrix.lane == 'tests'"
+        if step.get("if") != condition or step.get("continue-on-error", False):
+            raise ValueError("AOT handoff must remain required in its lane and fail closed")
         indices.append(index)
         selected.append(step["run"])
     if indices != sorted(indices):
@@ -90,10 +94,26 @@ class AotRecipeHandoffTests(unittest.TestCase):
         aot = next(step for step in steps if step.get("name") == "Prepare authenticated AOT test inputs")
         for field, value in (("if", "false"), ("continue-on-error", True)):
             with self.subTest(field=field):
+                original = aot.get(field)
                 aot[field] = value
                 with self.assertRaisesRegex(ValueError, "fail closed"):
                     handoff(self.workflow)
-                del aot[field]
+                if original is None:
+                    del aot[field]
+                else:
+                    aot[field] = original
+
+    def test_missing_tests_lane_or_a_foreign_producer_is_rejected(self):
+        job = self.workflow["jobs"]["rust"]
+        lanes = job["strategy"]["matrix"]["lane"]
+        lanes.remove("tests")
+        with self.assertRaisesRegex(ValueError, "fail closed"):
+            handoff(self.workflow)
+        lanes.append("tests")
+        producer = next(step for step in job["steps"] if step.get("name") == "Build workspace binaries and test harnesses")
+        producer["if"] = "matrix.lane == 'provider'"
+        with self.assertRaisesRegex(ValueError, "fail closed"):
+            handoff(self.workflow)
 
 
 if __name__ == "__main__":
