@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "latent.signing.canonical-vectors.v1",
+  "publisherInput": {
+    "formatVersion": 1,
+    "scope": "paired-java-test",
+    "generation": 1,
+    "validFrom": 100,
+    "validUntil": 2000,
+    "maxSignatureLifetimeSeconds": 900,
+    "maxProofAgeSeconds": 60,
+    "keys": [
+      {
+        "publisherId": "publisher-a",
+        "publicKey": "vnQjlpuUf3fLSNxwidPrQy1DIRtXIwmJDEuxfXWrDqQ=",
+        "validFrom": 100,
+        "validUntil": 2000
+      },
+      {
+        "publisherId": "publisher-b",
+        "publicKey": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=",
+        "validFrom": 100,
+        "validUntil": 2000
+      }
+    ]
+  },
+  "builderInput": {
+    "formatVersion": 1,
+    "scope": "paired-java-test",
+    "generation": 1,
+    "validFrom": 100,
+    "validUntil": 2000,
+    "maxSignatureLifetimeSeconds": 900,
+    "maxProofAgeSeconds": 60,
+    "keys": [
+      {
+        "builderId": "builder-a",
+        "publicKey": "vnQjlpuUf3fLSNxwidPrQy1DIRtXIwmJDEuxfXWrDqQ=",
+        "validFrom": 100,
+        "validUntil": 2000
+      },
+      {
+        "builderId": "builder-b",
+        "publicKey": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=",
+        "validFrom": 100,
+        "validUntil": 2000
+      }
+    ],
+    "requirements": [
+      {
+        "builderId": "builder-b",
+        "buildType": "https://latent.dev/build/java-capsule/v1",
+        "sourceRepository": "https://example.com/domain",
+        "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "sourceSnapshotDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "requireReproducible": false
+      },
+      {
+        "builderId": "builder-a",
+        "buildType": "https://latent.dev/build/java-capsule/v1",
+        "sourceRepository": "https://example.com/adapter",
+        "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sourceSnapshotDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "requireReproducible": false
+      }
+    ]
+  },
+  "expected": {
+    "publisher": {
+      "policyDigest": "sha256:86f5dc50b814c1112f6694ee438ee6b7284e5d57d65fe5cae4134642e7354b73",
+      "canonicalJson": "{\"formatVersion\":1,\"scope\":\"paired-java-test\",\"generation\":1,\"validFrom\":100,\"validUntil\":2000,\"maxSignatureLifetimeSeconds\":900,\"maxProofAgeSeconds\":60,\"keys\":[{\"publisherId\":\"publisher-b\",\"publicKey\":\"11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=\",\"validFrom\":100,\"validUntil\":2000},{\"publisherId\":\"publisher-a\",\"publicKey\":\"vnQjlpuUf3fLSNxwidPrQy1DIRtXIwmJDEuxfXWrDqQ=\",\"validFrom\":100,\"validUntil\":2000}]}"
+    },
+    "builder": {
+      "policyDigest": "sha256:83649acc1fa2255bc002c386301382e209ddaec6c16a0c51525455cbd78cd5ae",
+      "canonicalJson": "{\"formatVersion\":1,\"scope\":\"paired-java-test\",\"generation\":1,\"validFrom\":100,\"validUntil\":2000,\"maxSignatureLifetimeSeconds\":900,\"maxProofAgeSeconds\":60,\"keys\":[{\"builderId\":\"builder-b\",\"publicKey\":\"11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=\",\"validFrom\":100,\"validUntil\":2000},{\"builderId\":\"builder-a\",\"publicKey\":\"vnQjlpuUf3fLSNxwidPrQy1DIRtXIwmJDEuxfXWrDqQ=\",\"validFrom\":100,\"validUntil\":2000}],\"requirements\":[{\"builderId\":\"builder-a\",\"buildType\":\"https://latent.dev/build/java-capsule/v1\",\"sourceRepository\":\"https://example.com/adapter\",\"sourceRevision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceSnapshotDigest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"requireReproducible\":false},{\"builderId\":\"builder-b\",\"buildType\":\"https://latent.dev/build/java-capsule/v1\",\"sourceRepository\":\"https://example.com/domain\",\"sourceRevision\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"sourceSnapshotDigest\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"requireReproducible\":false}]}"
+    }
+  }
+}
