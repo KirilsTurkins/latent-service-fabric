@@ -22,7 +22,13 @@ use crate::{
 // Reserved from the actual activation before factory/admission allocations and
 // held through accepted worker buffers and the delivered closed observation.
 pub(super) const DRIVER_BYTES: u64 = 24 * 1024 * 1024;
-const WRITER_JOB_BYTES: u64 = 64 * 1024 * 1024;
+// State and intent staging are each bounded by STAGED_BYTES, even before the
+// final combined-batch check. Payloads are moved into encoded rows. The extra
+// 8 MiB covers bounded result/encoder/authority/key overhead, while the engine
+// cache has its separate resident reservation. Keep this below the installed
+// protected owner's unchanged 40 MiB per-job cap.
+const WRITER_JOB_BYTES: u64 =
+    2 * latent_core::transaction_contract::STAGED_BYTES as u64 + 8 * 1024 * 1024;
 
 struct Attempt {
     claim: AdmittedCommand,
@@ -402,7 +408,7 @@ impl CommandCompletion {
         match disposition {
             PreparedDisposition::Confirmed { command, result } => {
                 self.coordinator
-                    .deliver_confirmed(outcome, command, &result, &self.result_read, memory)
+                    .deliver_confirmed(outcome, *command, &result, &self.result_read, memory)
                     .await
             }
             PreparedDisposition::KnownNotCommitted { command, reason } => {
@@ -416,7 +422,7 @@ impl CommandCompletion {
                 .await
             }
             PreparedDisposition::RecoveryRequired { identity } => {
-                self.recovery(identity, outcome, memory).await
+                self.recovery(*identity, outcome, memory).await
             }
         }
     }
@@ -594,7 +600,7 @@ impl CommandCoordinator {
         match job {
             Ok(job) => match job.await {
                 Ok(Ok(Ok(PreparedDisposition::Confirmed { command, result }))) => {
-                    self.deliver_confirmed(outcome, command, &result, &read, memory)
+                    self.deliver_confirmed(outcome, *command, &result, &read, memory)
                         .await
                 }
                 _ => {

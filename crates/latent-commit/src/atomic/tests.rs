@@ -242,7 +242,7 @@ fn confirm(
         drop(guard);
         Ok(())
     }) {
-        PreparedDisposition::Confirmed { command, .. } => command,
+        PreparedDisposition::Confirmed { command, .. } => *command,
         _ => panic!("expected durable disposition"),
     }
 }
