@@ -1255,6 +1255,15 @@
         "atomic::tests::retention_cases::ownership::shared_owner_refuses_overlap_and_durable_page_progress_resumes_after_restart",
         "atomic::tests::retention_cases::paused_namespace_history_and_restore_hold_expiry_without_progress_or_body_changes",
         "atomic::tests::retention_cases::response_expiry_preserves_uncertain_effect_inbox_source_and_original_key_after_reopen",
+        "atomic::tests::retention_cases::review::adversarial::active_effect_claim_and_restore_pause_hold_every_audited_destructive_dependency",
+        "atomic::tests::retention_cases::review::adversarial::current_policy_and_original_horizons_refuse_terminalization_and_purge_without_partial_rows",
+        "atomic::tests::retention_cases::review::adversarial::interrupted_multi_attempt_purge_deletes_only_exact_retry_backpointers_and_releases_usage",
+        "atomic::tests::retention_cases::review::capacity::forged_quota_padding_and_mixed_reservation_formats_fail_coherent_startup",
+        "atomic::tests::retention_cases::review::capacity::legacy_accounting_remains_readable_without_granting_an_implicit_destructive_upgrade",
+        "atomic::tests::retention_cases::review::capacity::namespace_review_reanchor_requires_current_policy_exact_generation_and_original_horizons",
+        "atomic::tests::retention_cases::review::capacity::reserved_inline_review_completes_at_original_six_row_capacity_without_global_progress_row",
+        "atomic::tests::retention_cases::review::destructive_purge_waits_for_native_reader_then_resumes_after_reopen_to_expired_floor",
+        "atomic::tests::retention_cases::review::explicit_terminalization_keeps_real_uncertain_receipt_payload_inbox_and_original_identity",
         "atomic::tests::startup_rejects_uninstalled_formats_key_aliases_and_orphan_results",
         "atomic::tests::terminal_namespace_version_codec_rejects_forgery_absence_and_legacy_format",
         "atomic::tests::view_tokens::actual_original_view_token_survives_history_change_later_commit_and_reopen",
@@ -1290,7 +1299,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-commit/Cargo.toml",
-      "minimumCases": 57,
+      "minimumCases": 66,
       "mode": "libtest",
       "package": "latent-commit",
       "platforms": [
@@ -4878,6 +4887,7 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "embedded::tests::aggregate_reservations_charge_once_and_orphan_accounted_markers_refuse_every_writer",
         "embedded::tests::closed_store_backup_compaction_and_independent_writer_rows_preserve_receipts",
         "embedded::tests::coherent_prefix_pages_resume_exactly_and_refuse_unrepresentable_first_row",
         "embedded::tests::conflicting_and_over_budget_batches_abort_all_families",
@@ -5048,7 +5058,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 164,
+      "minimumCases": 165,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

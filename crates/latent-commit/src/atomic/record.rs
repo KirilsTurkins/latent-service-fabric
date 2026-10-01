@@ -136,6 +136,8 @@ impl InboxIdentity {
 /// History uses one bounded row per attempt; bodies are separate result records.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommandRecord {
+    pub(super) accounted: bool,
+    pub(super) retention_review: Vec<u8>,
     pub(super) key: CommandKey,
     pub(super) id: Identity,
     pub(super) fingerprint: Identity,
@@ -257,7 +259,11 @@ impl CommandRecord {
     }
     pub fn encode(&self) -> Result<Vec<u8>, AtomicError> {
         self.validate()?;
-        let mut out = Encoder::new(b"LCM\0\x03");
+        let mut out = Encoder::new(if self.accounted {
+            b"LCM\0\x04"
+        } else {
+            b"LCM\0\x03"
+        });
         for text in [
             &self.key.tenant,
             &self.key.namespace,
@@ -306,10 +312,27 @@ impl CommandRecord {
             out.number(version.generation);
         }
         encode_token(&mut out, &self.committed_view_token)?;
+        if self.accounted {
+            out.0.extend_from_slice(
+                &u16::try_from(self.retention_review.len())
+                    .map_err(|_| AtomicError::Limit)?
+                    .to_le_bytes(),
+            );
+            out.0.extend_from_slice(&self.retention_review);
+        }
         out.finish(METADATA_BYTES)
     }
     pub fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
-        let mut input = Decoder::new(bytes, b"LCM\0\x03", METADATA_BYTES)?;
+        let accounted = bytes.starts_with(b"LCM\0\x04");
+        let mut input = Decoder::new(
+            bytes,
+            if accounted {
+                b"LCM\0\x04"
+            } else {
+                b"LCM\0\x03"
+            },
+            METADATA_BYTES,
+        )?;
         let key = CommandKey {
             tenant: input.text(256)?,
             namespace: input.text(256)?,
@@ -357,8 +380,24 @@ impl CommandRecord {
             _ => return Err(AtomicError::Corrupt),
         };
         let committed_view_token = decode_token(&mut input)?;
+        let retention_review = if accounted {
+            let length = usize::from(u16::from_le_bytes(
+                input
+                    .take(2)?
+                    .try_into()
+                    .map_err(|_| AtomicError::Corrupt)?,
+            ));
+            if length > 2048 {
+                return Err(AtomicError::Corrupt);
+            }
+            input.take(length)?.to_vec()
+        } else {
+            vec![]
+        };
         input.finish()?;
         let record = Self {
+            accounted,
+            retention_review,
             key,
             id,
             fingerprint,
@@ -384,6 +423,12 @@ impl CommandRecord {
         Ok(record)
     }
     fn validate(&self) -> Result<(), AtomicError> {
+        if !self.retention_review.is_empty() {
+            if !self.accounted {
+                return Err(AtomicError::Invalid);
+            }
+            super::retention::RetentionAudit::decode(&self.retention_review)?.verify(self)?;
+        }
         self.source.validate()?;
         id(&self.result_read_policy)?;
         self.result_policy.validate()?;

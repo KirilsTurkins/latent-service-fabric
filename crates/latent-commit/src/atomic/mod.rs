@@ -15,7 +15,10 @@ pub use record::{
     attempt_row_key, command_row_key, result_row_key, CommandRecord, DurableResult, InboxIdentity,
     SourceIdentity,
 };
-pub use retention::{MaintenanceClock, MaintenanceProgress, ResultMaintenanceOwner};
+pub use retention::{
+    MaintenanceClock, MaintenanceProgress, ResultMaintenanceOwner, RetentionAction,
+    RetentionProgress, RetentionRequest, RetiredCommand,
+};
 pub use validation::{validate_linked_row, validate_row, validate_view};
 pub use writer::{
     inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
@@ -139,13 +142,20 @@ impl ResultPolicy {
         }
         Ok(())
     }
-    pub(super) fn reservation(self) -> Result<u64, AtomicError> {
+    pub(super) fn reservation_for(self, accounted: bool) -> Result<u64, AtomicError> {
         self.validate()?;
         let body = match self.replay {
             ReplayPolicy::Full => self.maximum_result_bytes + contract::METADATA_BYTES,
             ReplayPolicy::ReceiptOnly => 0,
         };
-        u64::try_from(body + codec::METADATA_BYTES).map_err(|_| AtomicError::Limit)
+        // Two bounded command copies, result/inbox/index envelopes and their
+        // encoded keys remain covered before any business mutation is accepted.
+        let metadata = if accounted {
+            2 * codec::METADATA_BYTES + 4096
+        } else {
+            codec::METADATA_BYTES
+        };
+        u64::try_from(body + metadata).map_err(|_| AtomicError::Limit)
     }
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

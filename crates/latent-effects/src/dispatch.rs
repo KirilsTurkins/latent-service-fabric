@@ -113,6 +113,13 @@ pub struct EffectRecord {
 }
 
 impl EffectRecord {
+    /// Immutable authority bytes do not grow after commit. The remaining fixed
+    /// fields can add at most 4 KiB: two bounded escaped receipt strings,
+    /// disposition tags and ten fixed-width integer/optional observations.
+    pub fn retained_bound(authority: &DurableEffectAuthority) -> Result<u64, AuthorityError> {
+        let initial = Self::committed(authority)?.encode()?.len() as u64;
+        initial.checked_add(4096).ok_or(AuthorityError::Invalid)
+    }
     pub fn committed(authority: &DurableEffectAuthority) -> Result<Self, AuthorityError> {
         Ok(Self {
             authority_record: authority.encode()?,
@@ -189,6 +196,24 @@ impl EffectRecord {
     #[must_use]
     pub fn latest(&self) -> Option<&AttemptReceipt> {
         self.latest.as_ref()
+    }
+
+    /// Host-audited retention may stop unresolved work only after the original
+    /// delivery horizon and actual attempt retirement. Its audit is persisted
+    /// by the complete maintenance envelope. Keep the last measured receipt;
+    /// expiry is never a fabricated provider acknowledgement or nonexecution.
+    pub fn expire_retired(&mut self, time: EffectTime) -> Result<(), AuthorityError> {
+        self.check_clock(time)?;
+        if self.disposition == Disposition::Dispatching {
+            return Err(AuthorityError::Unavailable);
+        }
+        if time.unix_millis < self.authority()?.expires_at_millis() {
+            return Err(AuthorityError::Expired);
+        }
+        if !self.disposition.terminal() {
+            self.disposition = Disposition::Expired;
+        }
+        Ok(())
     }
 
     pub(crate) fn active_attempt(&self) -> Result<AttemptIdentity, AuthorityError> {
@@ -407,7 +432,9 @@ impl EffectRecord {
     pub fn encode(&self) -> Result<Vec<u8>, AuthorityError> {
         self.validate()?;
         let body = serde_json::to_vec(self).map_err(|_| AuthorityError::Invalid)?;
-        if body.len() > 65_536 {
+        let initial = serde_json::to_vec(&Self::committed(&self.authority()?)?)
+            .map_err(|_| AuthorityError::Invalid)?;
+        if body.len() > 65_536 || body.len() > initial.len().saturating_add(4096) {
             return Err(AuthorityError::Capacity);
         }
         let mut bytes = b"LER\0\x01".to_vec();

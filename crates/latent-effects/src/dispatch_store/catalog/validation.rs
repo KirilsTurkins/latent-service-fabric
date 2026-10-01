@@ -16,6 +16,86 @@ use crate::payload::PayloadRecord;
 use super::DispatchCatalog;
 
 impl DispatchCatalog {
+    /// Capture one effect's installed inline payload/history/index closure.
+    /// No active physical claim can be reclaimed. Missing or corrupt links
+    /// refuse, including extra history slots; metadata never authorizes GC.
+    pub fn retention_rows(
+        view: &ReadView,
+        effect: &str,
+    ) -> Result<super::RetainedEffectRows, StoreError> {
+        use latent_state::embedded::ExpectedRow;
+        let key = effect_row_key(effect)?;
+        let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
+        let record = EffectRecord::decode(&bytes).map_err(storage_error)?;
+        if record.disposition() == Disposition::Dispatching {
+            return Err(StoreError::Capacity);
+        }
+        let owner_key = OwnerRecord::key();
+        let owner_bytes = view.get(&owner_key)?;
+        let owner = owner_bytes
+            .as_deref()
+            .map(OwnerRecord::decode)
+            .transpose()?;
+        validate_effect(view, owner, &key, &bytes)?;
+        let history = Self::history_page(view, effect, None, 128, 1024 * 1024)?;
+        if history.resume.is_some()
+            || history.pending_slots != 0
+            || history.rows.len() as u64 != record.history_sequence()
+        {
+            return Err(StoreError::Corrupt);
+        }
+        let payload_key = effect_payload_key(effect)?;
+        let payload = view.get(&payload_key)?.ok_or(StoreError::Corrupt)?;
+        let reservation_key = attempt_reservation_key(effect)?;
+        if view.get(&reservation_key)?.is_some() {
+            return Err(StoreError::Corrupt);
+        }
+        let mut reclaim = vec![key.clone(), payload_key.clone()];
+        let mut expectations = vec![
+            ExpectedRow {
+                key,
+                value: Some(bytes),
+            },
+            ExpectedRow {
+                key: payload_key,
+                value: Some(payload),
+            },
+            ExpectedRow {
+                key: owner_key,
+                value: owner_bytes,
+            },
+            ExpectedRow {
+                key: reservation_key,
+                value: None,
+            },
+        ];
+        for item in history.rows {
+            let key = item.key()?;
+            reclaim.push(key.clone());
+            let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
+            expectations.push(ExpectedRow {
+                key,
+                value: Some(bytes),
+            });
+        }
+        let due = expected_due(&record)?;
+        let due_key = due.as_ref().map(DueRecord::key).transpose()?;
+        if let Some(key) = &due_key {
+            reclaim.push(key.clone());
+            let bytes = view.get(key)?.ok_or(StoreError::Corrupt)?;
+            expectations.push(ExpectedRow {
+                key: key.clone(),
+                value: Some(bytes),
+            });
+        }
+        Ok(super::RetainedEffectRows {
+            record,
+            expectations,
+            due: due_key,
+            reclaim,
+        })
+    }
+
     /// Validate closed dispatcher rows and their links in one startup snapshot.
     /// Other families/prefixes are left to the complete command registry. No
     /// native view, engine owner or materialized backlog escapes this callback.

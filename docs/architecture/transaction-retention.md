@@ -28,9 +28,65 @@ keeps outstanding effects and payloads, terminal inbox rows and required source
 metadata. An original key with such dependencies remains an existing command;
 changed input conflicts. A native reader still sees its original snapshot and
 prevents compaction until physical view retirement. This profile retains the
-protective metadata under the existing finite admission quotas. Identity/payload
-purge and destructive namespace retirement require the broader declared-horizon
-and audited reconciliation operations; #397 remains open for those operations.
+protective metadata under the existing finite admission quotas. Explicit
+terminalization and dependency purge use the separate review below. Destructive
+namespace release and public management composition remain part of the broader
+#397 acceptance work.
+
+## Explicit review and dependency purge
+
+`ResultMaintenanceOwner::terminalize` advances at most one original effect with
+its finite history closure. The command identity and effect's original delivery
+window must have expired; an inbox requires its original host-verified horizon.
+Current host policy is checked before lookup and again at durable acceptance.
+An active dispatch claim, corrupt linkage, paused restore/history or uncertain
+clock refuses the whole callback. Pending commands need explicit physical-owner
+recovery before they can be reviewed.
+
+The review records authenticated attribution, original command digest, policy,
+operation identity, reviewed time and a further retention horizon of at most
+seven days. It resides in the existing command and current attempt, bounded to
+2 KiB per copy. An expired uncertain effect retains its last uncertain receipt,
+history and exact original payload; terminalization does not fabricate provider
+acknowledgement. Required inbox, schema/source and original version/token metadata
+remain linked until the later destructive release.
+
+`purge` needs a fresh destructive policy and the recorded retention horizon.
+Each callback deletes one validated original effect/payload/history closure or
+one original attempt/result/retry-index closure. Durable audit progress supports
+reopen between callbacks. Physical native readers prevent the destructive writer
+fence, even after their public deadline; permits are never stolen. Final purge
+keeps a bounded `LCX` identity floor in the original command row. The original
+key reports expired and cannot become a fresh command in that incarnation.
+Explicit drained namespace release must remove this final pin before destruction
+and recreation. These ports provide no guest or administrator authority by
+themselves and create no store, worker, timer or background dispatcher.
+
+New admission uses closed version-4 command metadata and a fixed 256-byte
+version-2 quota row. It charges encoded command, attempt, result, inbox, payload
+and retry-index keys/values plus a conservative 65-byte table/index allowance per
+row; effect metadata includes its bounded future history slots. Pending result
+and later review capacity are reserved in the same atomic admission/commit.
+The physical engine charges the quota reservation once; each pending command
+still carries an exact ownership marker. Terminal review consumes a 24 KiB
+reservation in already charged rows, so it needs no seventh row at the original
+six-row result/inbox boundary. Namespace ceilings further narrow the existing
+finite node limits and physical file high-water protection.
+
+`anchor_review` installs an explicitly authorized clock anchor in that fixed
+quota row. Subsequent review callbacks advance the same row without increasing
+its encoded size. Generation, actual namespace/global/history rows and current
+policy are fenced. Boot changes require explicit re-anchoring and never extend
+original business horizons. An explicitly installed original global maintenance
+anchor may seed the first namespace observation; ordinary body-expiry progress
+continues to use its original global cursor.
+
+Version-3 commands and version-1 quota rows remain readable under their original
+accounting. Their bytes do not prove the new review reservation, so destructive
+review and new admissions into that legacy quota refuse with an unsupported
+format. No implicit accounting upgrade authorizes deletion. Mixed reservation
+formats, nonzero quota padding and malformed reference chains fail coherent
+startup validation.
 
 ## Conservative time and current permission
 
