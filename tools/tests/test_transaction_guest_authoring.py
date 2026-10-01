@@ -10,6 +10,21 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_java_transaction_capture_closes_its_declared_runtime_clock_dependencies(self):
+        from tools.java_capsule_project import create, validate
+        from tools.stage_runtime_wit import REFERENCE
+        with tempfile.TemporaryDirectory() as temporary:
+            project = create(Path(temporary) / "source", TEMPLATE, "transaction-java-clock-closure")
+            files = snapshot(project)
+            validate(files)
+            self.assertIn("latent:clock/monotonic@0.1.0", files["wit/world.wit"].decode())
+            self.assertIn("latent:clock/wall@0.1.0", files["wit/world.wit"].decode())
+            self.assertEqual(files["wit/deps/clock/package.wit"], files["vendor/lsf/wit/platform/clock/package.wit"])
+            imported = {match.group(1) + "@" + match.group(2) for match in REFERENCE.finditer(files["wit/world.wit"].decode())}
+            declared = {raw.decode().split(";", 1)[0].removeprefix("package ").strip()
+                        for name, raw in files.items() if name.startswith("wit/deps/") and name.endswith("package.wit")}
+            self.assertTrue(imported <= declared)
+
     def test_six_forbidden_http_variants_keep_profile_companion_and_sdk_capture(self):
         from tools.transaction_guest_variants import create, HTTP, LANGUAGES, SOURCES, URL
         from tools.rust_capsule_build import validate_project as rust
