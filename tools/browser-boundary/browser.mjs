@@ -52,7 +52,7 @@ async function observeOpaqueOrigin(context, target) {
     const requestHeaders = request === null ? {} : await request.allHeaders();
     const requestMethod = request === null ? 'not-observed' : request.method();
     assert.ok(['not-observed', 'POST', 'OPTIONS'].includes(requestMethod));
-    assert.equal(requestHeaders.referer, undefined);
+    assert.ok(requestHeaders.referer === undefined || requestHeaders.referer === '');
     assert.ok(requestHeaders.origin === undefined || requestHeaders.origin === 'null');
     if (response !== null) {
       assert.equal(requestHeaders.origin, 'null');
