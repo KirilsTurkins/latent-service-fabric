@@ -121,15 +121,64 @@ class CacheIdentityTests(unittest.TestCase):
         self.assertEqual(self.digest(environment={}), self.digest(environment={"GITHUB_JOB": "another-layout"}))
 
     def test_workflow_cache_writes_and_scope_match_the_reviewed_policy(self):
+        from tools.ci_lane_inventory import workflow_model
         workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text()
         rust = workflow.split("\n  rust:\n", 1)[1].split("\n  oci-registry:\n", 1)[0]
-        for option in ("cache-targets", "cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
+        for option in ("cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
             self.assertIn(option + ": false", rust)
+        self.assertIn("cache-targets: true", rust)
+        self.assertNotIn("cache-directories:", rust)
+        self.assertIn("shared-key: host-correctness", rust)
         self.assertIn("default: baseline", workflow)
         self.assertIn("steps.cargo-cache-identity.outputs.prefix", rust)
         self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/development'", rust)
-        self.assertIn("github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release'", rust)
         self.assertNotIn("pull_request_target", rust)
+        jobs = workflow_model(workflow)["jobs"]
+        primary = next(s for s in jobs["rust"]["steps"] if s.get("name") == "Restore compiled Rust dependencies")
+        self.assertEqual(primary["with"]["save-if"],
+            "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'tests' }}")
+        for name in ("oci-registry", "catalog"):
+            step = next(s for s in jobs[name]["steps"] if s.get("name") == "Restore compiled Rust dependencies")
+            self.assertIs(step["with"]["save-if"], False)
+            self.assertEqual(step["with"]["shared-key"], "host-correctness")
+        native = next(s for s in jobs["contracts"]["steps"] if s.get("name") == "Restore compiled Rust dependencies")
+        self.assertEqual(native["with"]["save-if"],
+            "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements' || matrix.lane == 'optimization') }}")
+        self.assertEqual(native["with"]["shared-key"],
+            "${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}")
+        for option in ("cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
+            self.assertIs(native["with"][option], False)
+
+    def test_ci_symbols_are_removed_without_disabling_correctness_guards(self):
+        from tools.ci_lane_inventory import workflow_model
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/ci.yml").read_text())
+        for profile in ("DEV", "TEST"):
+            self.assertEqual(workflow["env"][f"CARGO_PROFILE_{profile}_DEBUG"], "0")
+            for guard in ("DEBUG_ASSERTIONS", "OVERFLOW_CHECKS"):
+                self.assertEqual(workflow["env"][f"CARGO_PROFILE_{profile}_{guard}"], "true")
+        manifest = tomllib.loads((root / "Cargo.toml").read_text())
+        self.assertEqual(set(manifest["profile"]), {"dev"})
+        dev = manifest["profile"]["dev"]
+        self.assertEqual(set(dev), {"package"})
+        self.assertEqual(set(dev["package"]), {"cranelift-codegen", "regalloc2", "wasmparser"})
+        self.assertTrue(all(set(p) == {"opt-level"} and p["opt-level"] == 3 for p in dev["package"].values()))
+
+    def test_isolated_compiler_cache_matches_its_real_cargo_target_and_excludes_workspace_outputs(self):
+        from tools.ci_lane_inventory import workflow_model
+        root = Path(__file__).resolve().parents[2]
+        steps = workflow_model((root / ".github/workflows/ci.yml").read_text())["jobs"]["rust"]["steps"]
+        cache_step = next(step for step in steps if step.get("name") == "Restore isolated Angular compiler dependencies")
+        build = next(step for step in steps if step.get("name") == "Build the optimized isolated Angular compiler")
+        qualification = next(step for step in steps if step.get("name") == "Qualify actual Angular on the protected T1 node")
+        self.assertEqual(cache_step["with"]["workspaces"], ". -> target/angular-t1-compiler")
+        self.assertEqual(build["env"]["CARGO_TARGET_DIR"], "${{ github.workspace }}/target/angular-t1-compiler")
+        self.assertIs(cache_step["with"]["cache-targets"], True)
+        for option in ("cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
+            self.assertIs(cache_step["with"][option], False)
+        self.assertEqual(cache_step["with"]["prefix-key"], "lsf-ci-dependencies-v3")
+        self.assertEqual(build["run"], "cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked")
+        self.assertIn('objcopy --strip-debug "$PWD/target/angular-t1-compiler/release/latent-aot-compiler"', qualification["run"])
 
     def test_candidate_rejects_unknown_or_msrv_profile_combinations(self):
         for changed in ({"recipe": "release"}, {"configuration": "release"},
