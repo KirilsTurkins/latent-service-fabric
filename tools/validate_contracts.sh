@@ -14,7 +14,13 @@ mkdir -p "${OUTPUT}/wit" "${OUTPUT}/proto" "${OUTPUT}/example-wit"
 
 python3 tools/validate_repository.py
 python3 tools/validate_foundation.py
-python3 -m unittest discover -s tools/tests
+# Unit fixtures own temporary inputs; they can overlap the independent native
+# contract build. Always join the complete suite, including on a build failure.
+# Bash background jobs inherit SIGINT ignored. Restore Python's foreground
+# handler so the process-ownership suite exercises real interrupt cleanup.
+python3 -c 'import runpy, signal; signal.signal(signal.SIGINT, signal.default_int_handler); runpy.run_module("unittest", run_name="__main__")' discover -s tools/tests &
+python_suite_pid=$!
+trap 'validation_status=$?; wait "$python_suite_pid" || validation_status=$?; exit "$validation_status"' EXIT
 
 wasm-tools parse crates/latent-wasmtime/src/values/types.wat \
     -o "${OUTPUT}/wit/value-types.wasm"
@@ -230,4 +236,11 @@ LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \
 python3 tools/run_phase1_conformance.py --target-root "${TARGET_ROOT}"
 
 # Separate tiny collector validation. Full100k profiles remain explicit opt-ins.
-python3 tools/run_phase1_measurements.py --profile smoke --target-root "${TARGET_ROOT}"
+(
+    # Frozen collectors reject inherited build overrides. Scope out only the
+    # workflow's correctness settings while retaining that rejection policy.
+    unset CARGO_INCREMENTAL CARGO_BUILD_JOBS CARGO_PROFILE_DEV_DEBUG CARGO_PROFILE_TEST_DEBUG
+    unset CARGO_PROFILE_DEV_DEBUG_ASSERTIONS CARGO_PROFILE_TEST_DEBUG_ASSERTIONS
+    unset CARGO_PROFILE_DEV_OVERFLOW_CHECKS CARGO_PROFILE_TEST_OVERFLOW_CHECKS
+    python3 tools/run_phase1_measurements.py --profile smoke --target-root "${TARGET_ROOT}"
+)

@@ -16,7 +16,12 @@
     "BuildProcessTests.test_signal_during_constructor_is_deferred_until_child_is_owned",
     "BuildProcessTests.test_sigterm_during_capture_runs_cleanup_before_exit",
     "BuildProcessTests.test_silent_deadline_reaps_leader",
-    "BuildProcessTests.test_successful_early_parent_exit_cleans_inherited_pipe_descendant"
+    "BuildProcessTests.test_successful_early_parent_exit_cleans_inherited_pipe_descendant",
+    "WindowsThreadSnapshotTests.test_current_owned_initial_thread_resumes_once_and_releases_handles",
+    "WindowsThreadSnapshotTests.test_deadline_expiring_during_owner_verification_never_resumes",
+    "WindowsThreadSnapshotTests.test_original_deadline_expiring_in_snapshot_is_not_a_row_limit",
+    "WindowsThreadSnapshotTests.test_reused_thread_id_still_rejects_foreign_owner",
+    "WindowsThreadSnapshotTests.test_thread_snapshot_row_limit_remains_262144"
   ],
   "guards": {
     "BuildProcessTests.test_binary_output_exact_combined_limit_and_overflow": {
@@ -266,10 +271,70 @@
         "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
       ],
       "skipSites": []
+    },
+    "WindowsThreadSnapshotTests.test_current_owned_initial_thread_resumes_once_and_releases_handles": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:f54c7cde70d4c6b886c8685957bfd7110b09e2d0e33c28236954b904d774198d"
+      ],
+      "skipSites": []
+    },
+    "WindowsThreadSnapshotTests.test_deadline_expiring_during_owner_verification_never_resumes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:f54c7cde70d4c6b886c8685957bfd7110b09e2d0e33c28236954b904d774198d"
+      ],
+      "skipSites": []
+    },
+    "WindowsThreadSnapshotTests.test_original_deadline_expiring_in_snapshot_is_not_a_row_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:f54c7cde70d4c6b886c8685957bfd7110b09e2d0e33c28236954b904d774198d"
+      ],
+      "skipSites": []
+    },
+    "WindowsThreadSnapshotTests.test_reused_thread_id_still_rejects_foreign_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:f54c7cde70d4c6b886c8685957bfd7110b09e2d0e33c28236954b904d774198d"
+      ],
+      "skipSites": []
+    },
+    "WindowsThreadSnapshotTests.test_thread_snapshot_row_limit_remains_262144": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:f54c7cde70d4c6b886c8685957bfd7110b09e2d0e33c28236954b904d774198d"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_build_process.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Distinguish original Windows command deadline expiry from unchanged thread snapshot capacity and prevent late ResumeThread; five additive snapshot boundary controls retain all accepted process cleanup and cancellation guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
