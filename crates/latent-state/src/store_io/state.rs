@@ -34,6 +34,11 @@ pub(super) struct QueuedWork<S> {
 pub(super) struct State<S> {
     pub limits: StoreIoLimits,
     pub queue: VecDeque<QueuedWork<S>>,
+    pub recovery_queue: VecDeque<QueuedWork<S>>,
+    pub recovery_accepted: usize,
+    pub recovery_retained_bytes: u64,
+    pub active_recovery_reads: usize,
+    pub active_recovery_writes: usize,
     pub retirements: VecDeque<Box<dyn Retirement>>,
     pub physical_owners: usize,
     pub accepted: usize,
@@ -58,11 +63,19 @@ pub(super) struct State<S> {
 impl<S> State<S> {
     pub fn new(limits: StoreIoLimits, finalizer: Finalizer<S>) -> Self {
         let queue = VecDeque::with_capacity(limits.queued_jobs);
-        let retirements = VecDeque::with_capacity(limits.accepted_jobs);
+        let recovery_queue = VecDeque::with_capacity(limits.recovery.map_or(0, |r| r.queued_jobs));
+        let retirements = VecDeque::with_capacity(
+            limits.accepted_jobs + limits.recovery.map_or(0, |r| r.accepted_jobs),
+        );
         let retained_bytes = limits.resident_bytes;
         Self {
             limits,
             queue,
+            recovery_queue,
+            recovery_accepted: 0,
+            recovery_retained_bytes: 0,
+            active_recovery_reads: 0,
+            active_recovery_writes: 0,
             retirements,
             physical_owners: 0,
             accepted: 0,
@@ -85,52 +98,111 @@ impl<S> State<S> {
         }
     }
 
-    pub fn admit(&self, bytes: u64) -> Result<(), StoreIoError> {
+    pub fn admit(&self, recovery: bool, bytes: u64) -> Result<(), StoreIoError> {
         if self.closed {
             return Err(StoreIoError::AdmissionClosed);
         }
-        if self.queue.len() >= self.limits.queued_jobs {
+        let (
+            queue,
+            accepted,
+            current_bytes,
+            maximum_queue,
+            maximum_accepted,
+            job_bytes,
+            maximum_bytes,
+        ) = if recovery {
+            let limits = self
+                .limits
+                .recovery
+                .ok_or(StoreIoError::RecoveryUnavailable)?;
+            (
+                self.recovery_queue.len(),
+                self.recovery_accepted,
+                self.recovery_retained_bytes,
+                limits.queued_jobs,
+                limits.accepted_jobs,
+                limits.job_bytes,
+                limits.retained_bytes,
+            )
+        } else {
+            (
+                self.queue.len(),
+                self.accepted - self.recovery_accepted,
+                self.retained_bytes - self.recovery_retained_bytes,
+                self.limits.queued_jobs,
+                self.limits.accepted_jobs,
+                self.limits.job_bytes,
+                self.limits.retained_bytes - self.limits.recovery.map_or(0, |r| r.retained_bytes),
+            )
+        };
+        if queue >= maximum_queue {
             return Err(StoreIoError::QueueFull);
         }
-        if self.accepted >= self.limits.accepted_jobs {
+        if accepted >= maximum_accepted {
             return Err(StoreIoError::AcceptedFull);
         }
-        if bytes > self.limits.job_bytes {
+        if bytes > job_bytes {
             return Err(StoreIoError::JobTooLarge);
         }
-        if self
-            .retained_bytes
+        if current_bytes
             .checked_add(bytes)
-            .is_none_or(|sum| sum > self.limits.retained_bytes)
+            .is_none_or(|sum| sum > maximum_bytes)
         {
             return Err(StoreIoError::ByteBudget);
         }
         Ok(())
     }
 
+    pub fn reserve(&mut self, recovery: bool, bytes: u64) {
+        self.accepted += 1;
+        self.retained_bytes += bytes;
+        if recovery {
+            self.recovery_accepted += 1;
+            self.recovery_retained_bytes += bytes;
+        }
+    }
+
     pub fn can_run(&self, kind: StoreIoKind) -> bool {
         match kind {
             StoreIoKind::Read => self.active_reads < self.limits.active_reads,
-            StoreIoKind::Write => self.active_writes < self.limits.active_writes,
+            StoreIoKind::RecoveryRead => {
+                self.active_recovery_reads < self.limits.recovery.map_or(0, |r| r.workers)
+            }
+            StoreIoKind::Write | StoreIoKind::RecoveryWrite => {
+                self.active_writes < self.limits.active_writes
+            }
         }
     }
 
     pub fn running(&mut self, kind: StoreIoKind, enter: bool) {
         let count = match kind {
             StoreIoKind::Read => &mut self.active_reads,
-            StoreIoKind::Write => &mut self.active_writes,
+            StoreIoKind::RecoveryRead => &mut self.active_recovery_reads,
+            StoreIoKind::Write | StoreIoKind::RecoveryWrite => &mut self.active_writes,
         };
         if enter {
             *count += 1;
         } else {
             *count -= 1;
         }
+        if kind == StoreIoKind::RecoveryWrite {
+            if enter {
+                self.active_recovery_writes += 1;
+            } else {
+                self.active_recovery_writes -= 1;
+            }
+        }
     }
 
     pub fn snapshot(&self) -> StoreIoSnapshot {
         StoreIoSnapshot {
-            queued: self.queue.len(),
-            active_reads: self.active_reads,
+            queued: self.queue.len() + self.recovery_queue.len(),
+            recovery_queued: self.recovery_queue.len(),
+            recovery_accepted: self.recovery_accepted,
+            recovery_retained_bytes: self.recovery_retained_bytes,
+            active_recovery_reads: self.active_recovery_reads,
+            active_recovery_writes: self.active_recovery_writes,
+            active_reads: self.active_reads + self.active_recovery_reads,
             active_writes: self.active_writes,
             accepted: self.accepted,
             retained_bytes: self.retained_bytes,
