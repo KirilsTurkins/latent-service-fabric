@@ -34,6 +34,19 @@ TOKENS = {ALICE: "LSF-PUBLIC-JAVA-TRANSACTION-ALICE-TEST-ONLY",
 CLOCKS = {"clockMonotonic": ("latent:clock/monotonic@0.1.0", "now-nanos"),
           "clockWall": ("latent:clock/wall@0.1.0", "now-unix-millis")}
 
+# An explicit disposable startup constraint. These twelve limits do not create
+# a namespace, authorize a caller, select a schema, or approve retained work.
+# They cover the separately authorized 4096-row/8 MiB namespace fixture with
+# bounded space for original results, effects, tombstones and recovery records.
+TENANT_QUOTA_PROFILE = {
+    "stateKeys": 8192, "stateBytes": 16777216,
+    "tombstoneKeys": 8192, "tombstoneBytes": 16777216,
+    "resultRows": 8192, "resultBytes": 16777216,
+    "effectRows": 8192, "effectBytes": 16777216,
+    "payloadBytes": 16777216, "recoveryBytes": 8388608,
+    "metadataRows": 8192, "metadataBytes": 16777216,
+}
+
 
 @dataclass(frozen=True)
 class Configuration:
@@ -124,7 +137,8 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
                          "destination": 0, "header": "authorization"}]}
     value["providers"] = providers
     value["state"] = {"formatVersion": 1, "createIfMissing": True, "configurationEpoch": 1,
-                      "clockCheckpoint": str(checkpoint.resolve()), "operations": []}
+                      "clockCheckpoint": str(checkpoint.resolve()), "operations": [],
+                      "tenantQuotas": [{"tenant": TENANT, "limits": dict(TENANT_QUOTA_PROFILE)}]}
     path = directory / "bootstrap-node.json"
     write_json(path, value)
     return Configuration(path, value, authority, origin)
