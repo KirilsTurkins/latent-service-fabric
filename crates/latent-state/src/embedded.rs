@@ -1,7 +1,8 @@
 //! Host-internal atomic record storage. This is neither a guest API nor a
 //! multi-backend abstraction. A caller supplies an already protected descriptor.
 use redb::{
-    Database, Durability, ReadTransaction, ReadableDatabase, ReadableTable, TableDefinition,
+    Database, Durability, ReadTransaction, ReadableDatabase, ReadableTable, ReadableTableMetadata,
+    TableDefinition,
 };
 use std::{
     collections::BTreeSet,
@@ -481,6 +482,21 @@ pub struct ReadPage {
 }
 
 impl ReadView {
+    /// The actual shared records table contains no row in any fixed family.
+    /// This observes engine state only and establishes no initialization grant.
+    pub fn is_empty(&self) -> Result<bool, StoreError> {
+        if self.opened.elapsed() > self.limits.maximum_view_age {
+            return Err(StoreError::SnapshotExpired);
+        }
+        self.tx
+            .as_ref()
+            .expect("retained view")
+            .open_table(ROWS)
+            .map_err(|_| StoreError::Corrupt)?
+            .is_empty()
+            .map_err(|_| StoreError::Corrupt)
+    }
+
     /// Process-local descriptive identity, never caller or namespace authority.
     /// Allocation does not wrap; external cursors also need activation/boot scope.
     #[must_use]

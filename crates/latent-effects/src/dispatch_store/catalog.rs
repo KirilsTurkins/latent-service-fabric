@@ -1,6 +1,7 @@
 use latent_state::embedded::{
     AtomicBatch, EmbeddedStore, ExpectedRow, Family, ReadView, RowMutation, StoreError,
 };
+use latent_state::protected_store::FreshStoreInitialization;
 
 use crate::authority::{AuthorityError, DurableEffectAuthority, EffectTime};
 use crate::dispatch::{AttemptIdentity, AttemptReceipt, Disposition, EffectRecord, RetryProof};
@@ -79,12 +80,34 @@ impl DispatchCatalog {
         time: EffectTime,
         minimum_checkpoint: Option<(u64, u64)>,
     ) -> Result<DispatchEpoch, DispatchStoreError> {
+        Self::begin_initializing_epoch(store, time, minimum_checkpoint, None)
+    }
+
+    /// The production protected worker may supply its one affine initialization
+    /// witness. This checks the original checkpoint against actual continuous
+    /// time for a wholly empty new store; it never relaxes a reopened owner floor.
+    pub fn begin_initializing_epoch(
+        store: &EmbeddedStore,
+        time: EffectTime,
+        minimum_checkpoint: Option<(u64, u64)>,
+        initialization: Option<FreshStoreInitialization<'_>>,
+    ) -> Result<DispatchEpoch, DispatchStoreError> {
         let view = store.snapshot()?;
         let key = OwnerRecord::key();
         let previous = view.get(&key)?;
         let old = previous.as_deref().map(OwnerRecord::decode).transpose()?;
         if let Some((minimum_epoch, minimum_clock)) = minimum_checkpoint {
-            if old.is_none_or(|old| old.epoch < minimum_epoch || old.clock_floor < minimum_clock) {
+            let accepted = match old {
+                None => {
+                    initialization.is_some_and(|proof| proof.matches_store(store))
+                        && minimum_epoch == 1
+                        && time.continuity_proven
+                        && time.unix_millis >= minimum_clock
+                        && view.is_empty()?
+                }
+                Some(old) => old.epoch >= minimum_epoch && old.clock_floor >= minimum_clock,
+            };
+            if !accepted {
                 return Err(DispatchStoreError::StaleEpoch);
             }
         }

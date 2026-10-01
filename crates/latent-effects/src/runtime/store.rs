@@ -69,10 +69,13 @@ pub(super) async fn startup(
             crate::authority::AuthorityError::ClockDiscontinuity,
         ));
     }
-    let epoch = call(owner, StoreIoKind::Write, 1024 * 1024, move |store| {
-        DispatchCatalog::begin_exclusive_epoch(store, time, checkpoint)
-    })
-    .await?;
+    let job = owner.with_initializing_store(1024 * 1024, move |store, initialization| {
+        match DispatchCatalog::begin_initializing_epoch(store, time, checkpoint, initialization) {
+            Err(DispatchStoreError::Storage(error)) => Err(error),
+            result => Ok(result),
+        }
+    })?;
+    let epoch = job.await??.map_err(DispatcherError::from)?;
     let mut cursor = None;
     loop {
         cursor = call(owner, StoreIoKind::Write, 8 * 1024 * 1024, move |store| {

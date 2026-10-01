@@ -98,6 +98,27 @@ fn receipt(disposition: Disposition, now: u64) -> AttemptReceipt {
 }
 
 #[test]
+fn empty_bare_engine_and_missing_owner_never_certify_fresh_checkpoint_initialization() {
+    let fixture = Fixture::new();
+    let store = fixture.store();
+    assert!(store.snapshot().unwrap().is_empty().unwrap());
+    assert_eq!(
+        DispatchCatalog::begin_initializing_epoch(store, time(100), Some((1, 100)), None),
+        Err(DispatchStoreError::StaleEpoch),
+    );
+    let epoch = DispatchCatalog::begin_exclusive_epoch(store, time(100), None).unwrap();
+    assert_eq!(epoch.generation(), 1);
+    assert_eq!(
+        DispatchCatalog::begin_exclusive_epoch(store, time(100), Some((2, 100))),
+        Err(DispatchStoreError::StaleEpoch),
+    );
+    assert_eq!(
+        DispatchCatalog::begin_exclusive_epoch(store, time(100), Some((1, 101))),
+        Err(DispatchStoreError::StaleEpoch),
+    );
+}
+
+#[test]
 fn paused_namespace_blocks_due_claim_and_actual_send_marker_without_changing_original_effect() {
     for sending in [false, true] {
         for changed in 0..3 {

@@ -49,6 +49,21 @@ pub struct ProtectedStoreOwner {
     limits: StoreLimits,
 }
 
+/// One original protected startup may initialize a wholly empty new database.
+/// Only its accepted native worker constructs this affine same-engine witness
+/// after exclusive creation of both retained physical owner anchors. It cannot
+/// escape that borrowed worker or certify a reopened, replaced or restored file.
+pub struct FreshStoreInitialization<'a> {
+    store: &'a crate::embedded::EmbeddedStore,
+}
+
+impl FreshStoreInitialization<'_> {
+    #[must_use]
+    pub fn matches_store(&self, store: &crate::embedded::EmbeddedStore) -> bool {
+        std::ptr::eq(self.store, store)
+    }
+}
+
 impl Clone for ProtectedStoreOwner {
     fn clone(&self) -> Self {
         Self {
@@ -60,6 +75,27 @@ impl Clone for ProtectedStoreOwner {
 }
 
 impl ProtectedStoreOwner {
+    /// Trusted one-time dispatcher initialization on the original storage
+    /// writer. Ordinary reopening receives no fresh witness, even when the
+    /// configured create option is true or the dispatch owner row is missing.
+    pub fn with_initializing_store<T: Send + 'static>(
+        &self,
+        retained_payload_bytes: u64,
+        operation: impl FnOnce(
+                &crate::embedded::EmbeddedStore,
+                Option<FreshStoreInitialization<'_>>,
+            ) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit(StoreIoKind::Write, retained_payload_bytes, move |store| {
+                store.with_initialization(operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
     /// Describes this actual selected engine/configuration. The digest binds
     /// native limits and the current format; it is not a qualification receipt.
     #[must_use]
