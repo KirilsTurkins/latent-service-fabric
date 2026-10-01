@@ -49,6 +49,10 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     if template == "transactional-aggregate":
         from tools.transaction_guest_project import augment
         augment(files, project)
+        # The authored world explicitly imports TeaVM's runtime clocks. Carry
+        # their captured definition so the project is a closed WIT input even
+        # before the compiler stages its separate runtime-support world.
+        files["wit/deps/clock/package.wit"] = vendor["wit/platform/clock/package.wit"]
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/dev/latent/app/Capsule.java` and `wit/world.wit`.\n"
         "Keep `vendor/lsf` unchanged. Build with `tools/java_capsule.py` from the SDK checkout.\n"
