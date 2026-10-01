@@ -95,6 +95,26 @@ class NodeProvidersSchema(unittest.TestCase):
             changed["localService"][key] = invalid
             self.assertFalse(VALIDATOR.is_valid(changed))
 
+    def test_core_context_and_log_installations_are_explicit_and_closed(self):
+        for field, contract in (("context", "latent:context/context@0.1.0"),
+                                ("log", "latent:log/log@0.1.0")):
+            value = {"formatVersion": 1, field: {"identity": {
+                "id": field, "tenant": "tests", "service": "runtime-host", "epoch": 1}},
+                "bindings": [{"name": field + "-binding", "tenant": "tests",
+                    "consumerService": "server", "providerService": "runtime-host",
+                    "contract": contract, "providerBinding": field + "-installed"}]}
+            VALIDATOR.validate(value)
+            for replacement in (None, dict(value[field], profile="ambient"),
+                                dict(value[field], callback="application")):
+                invalid = copy.deepcopy(value)
+                invalid[field] = replacement
+                self.assertFalse(VALIDATOR.is_valid(invalid))
+            for key, replacement in (("id", "../escape"), ("epoch", 0),
+                                     ("epoch", True), ("credential", "PRIVATE")):
+                invalid = copy.deepcopy(value)
+                invalid[field]["identity"][key] = replacement
+                self.assertFalse(VALIDATOR.is_valid(invalid))
+
 
 if __name__ == "__main__":
     unittest.main()

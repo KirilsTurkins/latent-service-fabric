@@ -39,6 +39,38 @@ fn protected_local_blob_provider_starts_and_reaps_thirty_two_times() {
 }
 
 #[test]
+fn protected_context_and_log_profiles_start_and_reap_without_guest_owners() {
+    let source = TempDir::new().unwrap();
+    let path = source.path().join("node.json");
+    let mut document = serde_json::json!({
+        "formatVersion": 1, "dataDirectory": source.path().join("unselected-data"),
+        "nodeId": "core-startup", "bind": "127.0.0.1:0",
+        "credentials": [{"token": "LSF-PUBLIC-CORE-STARTUP-TEST-ONLY",
+            "subject": "operator", "tenant": "tests", "role": "operator"}],
+        "budgetProfile": {"mode": "phase3", "maximumOutboundRequests": 8,
+            "maximumBlobReadBytes": 65536, "maximumBlobWriteBytes": 65536},
+        "audit": {"mode": "durable"}, "capabilityPolicies": {"formatVersion": 1},
+        "providers": {"formatVersion": 1, "bindings": []}
+    });
+    for (field, capability) in [
+        ("context", "latent:context/context@0.1.0"),
+        ("log", "latent:log/log@0.1.0"),
+    ] {
+        document["providers"][field] = serde_json::json!({"identity": {
+            "id": field, "tenant": "tests", "service": "runtime-host", "epoch": 1}});
+        document["providers"]["bindings"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!({"name": format!("{field}-binding"),
+                "tenant": "tests", "consumerService": "server", "providerService": "runtime-host",
+                "contract": capability, "providerBinding": format!("{field}-installed")}));
+    }
+    std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    repeat_startup(&path);
+}
+
+#[test]
 fn protected_http_credential_bootstrap_starts_and_reaps_thirty_two_times() {
     let source = TempDir::new().unwrap();
     let credentials = source.path().join("credentials");

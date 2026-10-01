@@ -3,7 +3,9 @@
 The opt-in `providers` object installs the existing bounded HTTP and immutable
 local-blob providers in the standalone node. Explicit `clockMonotonic`, `clockWall`
 and `random` installations also enable the maintained activation-clock and
-OS-entropy providers. Explicit `secrets` installs the protected local guest-secret
+OS-entropy providers. Explicit `context` and `log` installations authorize the
+existing activation context and bounded structured log host implementations.
+Explicit `secrets` installs the protected local guest-secret
 provider. `metrics` shares the node's telemetry exporter, and `localService`
 selects a bounded local caller/callee binding. `events` installs the maintained
 TLS NATS immediate publisher. Streaming HTTP and S3 have no installation entry
@@ -30,13 +32,27 @@ closed input. This example is the provider section of a protected node file:
 
 Each scalar installation takes only `identity` (the same closed fields as the
 blob example). The corresponding contracts are `latent:clock/monotonic@0.1.0`,
-`latent:clock/wall@0.1.0`, and `latent:random/random@0.1.0`. Installation does not
+`latent:clock/wall@0.1.0`, `latent:random/random@0.1.0`,
+`latent:context/context@0.1.0`, and `latent:log/log@0.1.0`. Installation does not
 grant access: an explicit binding, provider-binding policy, capability policy
 and deployment grant are still required for each consumer. Clock profiles
 charge 100 fuel per call. Entropy uses the existing nonblocking OS provider,
 with at most 4096 bytes per call and 65536 per activation; no seeded test source
 or fallback entropy can be configured. Registrations are shared node-owned
 objects, with no per-service worker, timer, listener or persistent guest heap.
+
+The `activation-context-v1` profile reads only the current invocation's host-owned
+context, including its live remaining budget and original deadline. The existing
+host preflight and context exposure policy bound its strings, claims, baggage and
+metadata. `activation-log-v1` uses the existing shared bounded node sink and
+original activation log-byte ledger, with a 256-byte message, at most 16 fields,
+64-byte field names and 256-byte values. Neither profile accepts a callback,
+replacement context, unbounded sink or caller-selected implementation.
+
+An ordinary Capsule declaring context or log imports needs those exact provider
+bindings alongside its other imports. An HTTP application Capsule follows the
+same rule. Its shared listener and WIT export do not create provider grants. The
+separately sealed browser-renderer context projection keeps its existing rules.
 
 Installation requires Linux x86_64, a protected configuration file, `phase3`
 budgets, `capabilityPolicies`, and durable audit. Omission disables installation;

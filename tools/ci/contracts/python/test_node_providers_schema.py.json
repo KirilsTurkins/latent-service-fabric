@@ -1,5 +1,6 @@
 {
   "cases": [
+    "NodeProvidersSchema.test_core_context_and_log_installations_are_explicit_and_closed",
     "NodeProvidersSchema.test_documented_blob_and_shared_real_workflow_http_configuration",
     "NodeProvidersSchema.test_guest_secrets_only_accept_bounded_file_references_and_no_plaintext",
     "NodeProvidersSchema.test_local_service_configuration_has_no_remote_or_publication_grant_override",
@@ -7,6 +8,18 @@
     "NodeProvidersSchema.test_null_unknown_future_profiles_and_path_escape_are_rejected"
   ],
   "guards": {
+    "NodeProvidersSchema.test_core_context_and_log_installations_are_explicit_and_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
+        "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
+      ],
+      "skipSites": []
+    },
     "NodeProvidersSchema.test_documented_blob_and_shared_real_workflow_http_configuration": {
       "bases": [
         "unittest.TestCase"
@@ -70,6 +83,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_node_providers_schema.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add closed optional context and log installation rejection coverage while retaining every prior schema test and skip guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

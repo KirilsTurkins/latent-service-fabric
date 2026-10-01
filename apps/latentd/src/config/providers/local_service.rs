@@ -28,6 +28,8 @@ impl LocalServiceInstallation {
             providers.clock_monotonic.as_ref().map(|v| &v.identity),
             providers.clock_wall.as_ref().map(|v| &v.identity),
             providers.random.as_ref().map(|v| &v.identity),
+            providers.context.as_ref().map(|v| &v.identity),
+            providers.log.as_ref().map(|v| &v.identity),
         ]
         .into_iter()
         .flatten()
