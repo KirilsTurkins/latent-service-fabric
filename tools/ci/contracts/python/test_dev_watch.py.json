@@ -111,6 +111,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_watch.py",
-  "reviewReason": "Atomically publish actual compiler PID readiness while preserving both cancellation reasons, deadlines and physical reaping assertions",
+  "reviewReason": "Retain every existing case and deadline; poll only the guarded state-replacement race and atomically publish complete compiler PID readiness for both cancellation reasons.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -635,6 +635,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_local_tests.py",
-  "reviewReason": "Make the missing-fixture tool refusal independent of verified warm fixtures; preserve the production reuse guard and every case",
+  "reviewReason": "Retain every existing case and deadline; make the missing-fixture precondition explicit and accept only the guarded concurrent-replacement race while polling actual compiler startup.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

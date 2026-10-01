@@ -1,6 +1,44 @@
 {
-  "schema": "lsf.ci-lane-baseline.v2",
-  "workflow_path": ".github/workflows/ci.yml",
+  "catalog": {
+    "manual_if": "github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale",
+    "manual_step": "Publish and reopen 100,000 dormant releases in isolated processes"
+  },
+  "contracts": {
+    "if": "needs.profile.outputs.profile == 'full'",
+    "lane_command": "tools/validate_contracts.sh \"$CI_CONTRACT_LANE\"",
+    "lane_step": "Validate contracts, echo component, and generated bindings",
+    "matrix_lanes": [
+      "python",
+      "bindings",
+      "runtime",
+      "standalone",
+      "sdk-provider",
+      "measurements",
+      "optimization"
+    ],
+    "needs": "profile",
+    "step_conditions": {
+      "Pass bounded observed build inputs to registry verification": "matrix.lane == 'runtime'",
+      "Pass the bounded public web component to registry verification": "matrix.lane == 'runtime'",
+      "Record echo capsule build evidence": "matrix.lane == 'runtime'",
+      "Retain Phase 1 measurement collector smoke diagnostics": "always() && matrix.lane == 'measurements'",
+      "Retain bounded conformance and provider diagnostics": "always() && (matrix.lane == 'standalone' || matrix.lane == 'sdk-provider')",
+      "Retain optimization benchmark smoke evidence": "always() && matrix.lane == 'optimization'",
+      "Upload echo capsule build evidence": "matrix.lane == 'runtime'",
+      "Validate contracts, echo component, and generated bindings": "matrix.lane != 'optimization'",
+      "Validate standalone optimization benchmark smoke": "matrix.lane == 'optimization'"
+    }
+  },
+  "inventory": {
+    "browser_selection": "browser-boundary",
+    "provider_selections": [
+      "s3-blobs",
+      "vault-secrets",
+      "nats-events",
+      "nats-triggers"
+    ],
+    "renderer_process_contract": "angular-renderer"
+  },
   "required_jobs": [
     "profile",
     "docs",
@@ -27,12 +65,7 @@
     "sdks"
   ],
   "rust": {
-    "needs": [
-      "profile"
-    ],
     "if": "needs.profile.outputs.profile == 'full'",
-    "lane_step": "Run bounded renderer and provider integration lanes",
-    "lane_id": "integration_lanes",
     "lane_command_fragments": [
       "tools/run_ci_lanes.py",
       "--inventory",
@@ -41,22 +74,23 @@
       "--output",
       "tools/ci_lane_worker.py",
       "tools/run_s3_blob_tests.py",
-      "tools/run_angular_renderer_tests.py"
+      "tools/run_angular_renderer_tests.py",
+      "--lane",
+      "CI_NATIVE_LANE"
     ],
-    "prepared_step": "Prepare immutable browser lane component",
-    "prepared_command_fragments": [
-      "cargo build --locked -p latent-toolchain-smoke --example web-contract",
-      "wasm-tools component new",
-      "wasm-tools validate"
+    "lane_id": "integration_lanes",
+    "lane_step": "Run bounded renderer and provider integration lanes",
+    "matrix_lanes": [
+      "checks",
+      "tests",
+      "provider",
+      "renderer-public",
+      "renderer-angular",
+      "publications",
+      "angular-t1"
     ],
-    "renderer_condition": "needs.profile.outputs.renderer == 'true'",
-    "renderer_actions": [
-      "Set up the qualified Angular build runtime",
-      "Set up the pinned component composer"
-    ],
-    "renderer_run_steps": [
-      "Check selected renderer prerequisites before building",
-      "Prepare immutable browser lane component"
+    "needs": [
+      "profile"
     ],
     "physical_after": [
       "Fetch the pinned operator workflow registry",
@@ -65,6 +99,12 @@
       "Export actual signed Angular T1 fixtures",
       "Qualify actual Angular on the protected T1 node"
     ],
+    "prepared_command_fragments": [
+      "cargo build --locked -p latent-toolchain-smoke --example web-contract",
+      "wasm-tools component new",
+      "wasm-tools validate"
+    ],
+    "prepared_step": "Prepare immutable browser lane component",
     "removed_serial_steps": [
       "Qualify bounded Angular SSR and browser hydration",
       "Validate browser boundary with live ingress",
@@ -82,20 +122,66 @@
       "Validate NATS events with the existing test harness",
       "Validate NATS triggers with the existing test harness",
       "Validate capability policy CLI lifecycle"
-    ]
-  },
-  "catalog": {
-    "manual_step": "Publish and reopen 100,000 dormant releases in isolated processes",
-    "manual_if": "github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale"
-  },
-  "inventory": {
-    "provider_selections": [
-      "s3-blobs",
-      "vault-secrets",
-      "nats-events",
-      "nats-triggers"
     ],
-    "browser_selection": "browser-boundary",
-    "renderer_process_contract": "angular-renderer"
-  }
+    "renderer_actions": [
+      "Set up the qualified Angular build runtime",
+      "Set up the pinned component composer"
+    ],
+    "renderer_condition": "needs.profile.outputs.renderer == 'true'",
+    "renderer_run_steps": [
+      "Check selected renderer prerequisites before building",
+      "Prepare immutable browser lane component"
+    ],
+    "step_conditions": {
+      "Build fresh resource guest inputs": "matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+      "Build the optimized isolated Angular compiler": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
+      "Build workspace binaries and test harnesses": "matrix.lane != 'checks'",
+      "Check deterministic helper dependency boundaries": "matrix.lane == 'checks'",
+      "Check formatting": "matrix.lane == 'checks'",
+      "Check generated RPC and Component Model bindings": "matrix.lane == 'checks'",
+      "Check independently selected production packages": "matrix.lane == 'checks'",
+      "Check metadata working-set suite selection and observation validation": "matrix.lane == 'tests'",
+      "Check workspace": "matrix.lane == 'checks'",
+      "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}": "failure() && matrix.lane == 'checks' && steps.clippy.outcome == 'failure'",
+      "Execute the bounded Phase 3 resource matrix": "matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+      "Exercise the local exact-case entry point with prepared workspace inputs": "matrix.lane == 'tests'",
+      "Export actual signed Angular T1 fixtures": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
+      "Fetch the pinned operator workflow registry": "matrix.lane == 'publications'",
+      "Install the real Fish completion test shell": "matrix.lane == 'tests'",
+      "Prepare authenticated AOT test inputs": "matrix.lane == 'tests'",
+      "Prepare fresh actual Angular package for T1": "matrix.lane == 'angular-t1' && needs.profile.outputs.renderer == 'true'",
+      "Prepare immutable browser lane component": "(matrix.lane == 'renderer-public') && needs.profile.outputs.renderer == 'true'",
+      "Prepare publication toolchain and package assembler": "matrix.lane == 'publications' && needs.profile.outputs.renderer == 'true'",
+      "Qualify actual Angular PrimeNG and bilingual Docusaurus publications": "matrix.lane == 'publications' && needs.profile.outputs.renderer == 'true'",
+      "Qualify actual Angular on the protected T1 node": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
+      "Qualify signed static sites through OCI and actual browsers": "matrix.lane == 'publications' && needs.profile.outputs.renderer == 'true'",
+      "Qualify the deterministic Phase 3 security matrix": "matrix.lane == 'tests'",
+      "Restore isolated Angular compiler dependencies": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
+      "Retain attempted renderer ownership diagnostics": "always() && (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && steps.renderer_preflight.outcome != '' && steps.renderer_preflight.outcome != 'skipped'",
+      "Retain bounded CI lane timing and completion receipts": "always() && (matrix.lane == 'provider' || ((matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular') && needs.profile.outputs.renderer == 'true')) && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'",
+      "Retain bounded browser boundary observations": "always() && (matrix.lane == 'renderer-public') && needs.profile.outputs.renderer == 'true' && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'",
+      "Retain compact Phase 2 gate receipts": "always() && (matrix.lane == 'publications' || matrix.lane == 'angular-t1')",
+      "Retain exact workspace test discovery and custom-harness execution": "always() && matrix.lane == 'tests'",
+      "Retain immutable Phase 3 resource attempts": "matrix.lane == 'angular-t1' && always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+      "Retain metadata working-set inputs and publication/apply/reopen costs": "always() && matrix.lane == 'tests' && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'",
+      "Retain source-built S3 fixture and failure evidence": "always() && steps.s3_fixture.outcome != '' && steps.s3_fixture.outcome != 'skipped'",
+      "Retain the bounded Phase 3 security receipt": "always() && matrix.lane == 'tests'",
+      "Retain the opt-in dependency-cache identity": "always() && steps.cargo-cache-identity.outcome == 'success'",
+      "Run tests": "matrix.lane == 'tests'",
+      "Set up the bounded resource guest compiler": "matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+      "Set up the pinned component composer": "(matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
+      "Set up the qualified Angular build runtime": "(matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
+      "Validate bounded Phase 2 delivery and resource workflows": "matrix.lane == 'publications'",
+      "Validate small Phase 3 resource regressions": "matrix.lane == 'tests'",
+      "Verify complete registered workspace test discovery": "matrix.lane == 'tests'",
+      "cargo-cache-identity": "github.event_name == 'workflow_dispatch' && inputs.cargo_dependency_cache == 'recipe'",
+      "clippy": "matrix.lane == 'checks'",
+      "integration_lanes": "matrix.lane == 'provider' || ((matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular') && needs.profile.outputs.renderer == 'true')",
+      "metadata-working-set": "matrix.lane == 'tests'",
+      "renderer_preflight": "(matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
+      "s3_fixture": "matrix.lane == 'provider'"
+    }
+  },
+  "schema": "lsf.ci-lane-baseline.v3",
+  "workflow_path": ".github/workflows/ci.yml"
 }

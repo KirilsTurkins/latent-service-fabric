@@ -8,37 +8,43 @@ manifest, process supervisor, or result gate.
 
 ## Current production layout
 
-The full Rust job remains the single producer for the compatible host build:
+The required `rust` job uses a fixed seven-variant matrix:
 
-1. Cargo checks, Clippy and the ordinary all-target/all-feature workspace build
-   run exactly once.
-2. The successful Cargo JSON inventory is verified by
-   'tools/ci_suite_discovery.py' and remains the source of prepared libtest
-   identities.
-3. AOT inputs are prepared through the existing authenticated preparation
-   boundary.
-4. Ordinary workspace tests, doctests, signing compatibility, metadata and
-   Phase 3 security qualification complete before product integration starts.
-5. When renderer coverage is selected, the browser component is composed once
-   from the already built workspace input.
-6. The [pinned source-built S3 fixture](s3-fixture.md) is prepared under its own
-   finite build owner before product integration. Its immutable local image
-   receipt is passed to both the positive and negative S3 runs.
-7. 'tools/run_ci_lanes.py' dispatches the co-located provider and renderer lanes.
-8. The existing Phase 2 delivery/security/resource work, isolated Angular T1
-   compiler and protected T1 qualification remain after the lanes. They are not
-   overlapped with product integration because their physical/resource evidence
-   must remain uncontaminated.
+| Variant | Retained obligations |
+| --- | --- |
+| checks | Formatting, deterministic dependency checks, workspace and independent production checks, bindings and both Clippy policies |
+| tests | Complete discovery, authenticated AOT preparation, ordinary workspace tests, doctests, signing compatibility, metadata, security and bounded resource units |
+| provider | Fresh pinned S3 fixture, positive/negative S3 runs, Vault, NATS events/triggers and capability-policy CLI |
+| renderer-public | Browser component, SSR/hydration, browser boundary, generic Angular/node cases and discovery fault control |
+| renderer-angular | Build contracts, fresh actual Angular package, admission/runtime and hydration |
+| publications | Static/framework publication, offline delivery, operator, security and bounded physical resource workflows |
+| angular-t1 | Fresh actual Angular package, isolated compiler, signed T1 fixtures and protected physical qualification; original manual resource options |
+
+Every runtime variant runs the unchanged workspace/all-target/all-feature Cargo
+producer. Its fresh JSON inventory remains on that runner with its consumers.
+The tests variant owns complete discovery and the original ordinary test command
+vectors. Required renderer variants retain the existing profile selection. The
+source-built S3 receipt belongs to the provider variant. Physical qualification
+owns separate runners from product integration, preserving uncontaminated
+per-job measurements.
+
+The required `contracts` job has independent Python, bindings, runtime,
+standalone, SDK-provider, measurement-smoke and optimization-smoke variants.
+The complete Python suite runs in the foreground without concurrent native
+fixture writers. Each native variant prepares fresh local fixtures and runs its
+original exact cases. Frozen collector build-policy rejection stays enforced.
+`tools/validate_contracts.sh` still runs all validation by default; unknown
+selections fail. See [performance and coverage](../development/ci-performance.md).
 
 No native target tree is uploaded to another Actions job. #428's prepared-artifact
 boundary authenticates same-checkout Cargo artifacts and their runtime link paths;
-this change deliberately keeps compatible consumers on the producing runner
-rather than inventing path rewriting or cross-job native relocation.
+compatible consumers remain on their own producing runner with current source
+and inventory identities.
 
 The fast correctness job delivered by #427 remains a separate prompt result.
 'CI result' stays unconditional and continues to aggregate the complete selected
-job set. The lane coordinator is inside the required Rust job, so any missing,
-failed or cancelled required lane makes that job fail.
+job set. Both matrices use `fail-fast: false` and propagate every failure. Any
+missing, failed or cancelled required variant prevents a successful result.
 
 ## Bounded scheduler
 
@@ -47,20 +53,28 @@ accepts an already selected graph and supports exactly one or two workers. Resou
 groups are declared and capacity remains charged until the process owner confirms
 teardown.
 
-The production graph has two independent execution stages:
+The coordinator supports these exact execution stages:
 
 | Stage | Resource group | Selected work |
 | --- | --- | --- |
 | provider-integrations | provider | S3 blobs, Vault secrets, NATS events, NATS triggers, capability-policy CLI |
 | renderer-integrations | renderer | Angular SSR/hydration, browser boundary, generic renderer/node cases, build/package admission and hydration |
+| renderer-public-integrations | renderer | The complete public/browser/generic portion and its negative control |
+| renderer-angular-integrations | renderer | The complete actual Angular build/package/admission/hydration portion |
 
 The renderer stage exists only when the existing profile output selects renderer
 coverage. Provider coverage remains required for every full profile.
 
-Normal pull-request and push CI uses **two workers**. 'workflow_dispatch' exposes
+The two renderer portions have disjoint case sets whose union is the original
+complete renderer selection. Required CI selects one stage per matrix variant;
+the default local coordinator still supports the original provider-plus-renderer
+graph.
+
+Normal pull-request and push CI configures **two workers**. 'workflow_dispatch' exposes
 'ci_lane_workers' with only 1 or 2, so the same source and selection can be
-run serially for comparable evidence without changing commands, cases or resource
-policy.
+run the local combined graph serially for comparable evidence without changing
+commands, cases or resource policy. This setting does not serialize Actions
+matrix variants.
 
 A failed prerequisite blocks only its consumers. Independent work may finish.
 Whole-run cancellation is latched; already-started leases are not released until
@@ -168,12 +182,13 @@ The structural guard requires:
 
 - the complete current job set and unconditional CI result;
 - superseded-run cancellation;
-- one lane coordinator using the prepared workspace inventory;
-- renderer setup/component preparation under the existing renderer condition;
+- every fixed Rust and contract matrix variant, without exclusions or failure masking;
+- one lane coordinator per selected integration variant, using its fresh workspace inventory;
+- renderer setup/component preparation under the reviewed variant and profile conditions;
 - removal of the old consecutive provider/renderer run slots;
-- Phase 2/T1 physical work after the lane; and
+- Phase 2/T1 physical work on isolated producing runners; and
 - manual catalog scale remaining manual.
 
-Rollback is mechanical: restore the prior serial run slots and remove the two lane
-scripts, worker input and lane receipts. It requires no runtime, release,
-security, resource-policy, installation or branch-protection change.
+Rollback restores the previous monolithic required jobs and reviewed contract
+dispatcher, then updates the structural snapshots. It requires no runtime,
+release, security, resource-policy, installation or branch-protection change.
