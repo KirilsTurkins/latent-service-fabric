@@ -101,7 +101,7 @@ pub(super) fn resume(
     codecs: &Codecs,
     view: &ReadView,
     request: &NamespaceResumeRequest,
-    observed: latent_state::recovery::resume::NamespaceResumeObservation<'_>,
+    observed: &latent_state::recovery::resume::NamespaceResumeObservation<'_>,
 ) -> Result<(), StoreError> {
     codecs.accept_namespace_resume(request)?;
     codecs.validate_view(view)?;

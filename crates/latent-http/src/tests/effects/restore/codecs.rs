@@ -217,7 +217,7 @@ impl RecoveryCodecs for Codecs {
         request: &NamespaceResumeRequest,
         observed: latent_state::recovery::resume::NamespaceResumeObservation<'_>,
     ) -> Result<(), StoreError> {
-        review::resume(self, view, request, observed)
+        review::resume(self, view, request, &observed)
     }
     fn accept_namespace_resume(&self, request: &NamespaceResumeRequest) -> Result<(), StoreError> {
         self.check_review(&request.operator_id, request.review_digest, [71; 32])
