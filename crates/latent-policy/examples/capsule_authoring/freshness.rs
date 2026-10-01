@@ -103,7 +103,7 @@ pub(crate) fn check_stale_proofs(
             .check_current()
             .err()
             .ok_or("expired proof was accepted")?;
-        if error.code != PlatformErrorCode::PermissionDenied
+        if error.code != PlatformErrorCode::StateConflict
             || error.message != "signature-stale-proof"
         {
             return Err("expired proof was not rejected by the signature currentness owner".into());
@@ -114,13 +114,14 @@ pub(crate) fn check_stale_proofs(
             Ok(())
         });
         if entered
-            || !matches!(fenced, Err(ref error) if error.code == PlatformErrorCode::PermissionDenied && error.message == "signature-stale-proof")
+            || !matches!(fenced, Err(ref error) if error.code == PlatformErrorCode::StateConflict && error.message == "signature-stale-proof")
         {
             return Err("expired proof entered the actual admission fence".into());
         }
         observations.push(json!({"packageDigest":binding.package.as_str(),"componentDigest":binding.release.0.as_str(),
             "originalAdmissionReceipt":receipt,"freshCheckpointAccepted":true,"expiredAtUnixSeconds":checked(clock.now())?,
-            "reusedGrantRejected":true,"fencedActionEntered":entered,"reason":"signature-stale-proof"}));
+            "reusedGrantRejected":true,"fencedActionEntered":entered,"reason":"signature-stale-proof",
+            "platformCode":"state-conflict"}));
         authority.retire();
     }
     write(
