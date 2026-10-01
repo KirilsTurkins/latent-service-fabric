@@ -1,6 +1,37 @@
 use super::*;
 
 #[test]
+fn dispatcher_registration_is_exclusive_across_ready_aliases_until_actual_retirement() {
+    let (_root, config) = fixture();
+    let owner = start(config.clone());
+    let alias = owner.clone();
+    let first = wait(owner.reserve_dispatcher().unwrap()).unwrap().unwrap();
+    assert!(matches!(
+        wait(alias.reserve_dispatcher().unwrap()).unwrap(),
+        Err(ProtectedStoreError::Store(StoreError::Conflict))
+    ));
+    assert!(owner.failure().is_none());
+    wait(owner.apply(batch(b"first-dispatcher-still-live")).unwrap())
+        .unwrap()
+        .unwrap();
+    wait(first.retire());
+    let second = wait(alias.reserve_dispatcher().unwrap()).unwrap().unwrap();
+    owner.close();
+    assert!(matches!(
+        alias.reserve_dispatcher(),
+        Err(ProtectedStoreError::Io(StoreIoError::AdmissionClosed))
+    ));
+    assert_eq!(
+        failed_start(config.clone()),
+        ProtectedStoreError::Store(StoreError::Unavailable)
+    );
+    wait(second.retire());
+    assert!(finish(&owner).clean);
+    let reopened = start(config);
+    assert!(finish(&reopened).clean);
+}
+
+#[test]
 fn physical_operation_pins_bound_admission_keep_root_through_deadline_and_retire_after_close() {
     let (_root, mut config) = fixture();
     config.io.accepted_jobs = 4;
