@@ -629,6 +629,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_ci_contracts.py",
-  "reviewReason": "Issue #732: negative contracts, real independent-branch merges, lossless migration and read-only failure evidence.",
+  "reviewReason": "Preserve every historical command and test floor; derive only the exact retained-name State-full and fixed Workflows proper-subset assertion replacement",
   "schemaVersion": "latent.ci.contracts.v1"
 }

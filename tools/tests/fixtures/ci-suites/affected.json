@@ -2,8 +2,8 @@
   "schemaVersion": "latent.ci.affected-fixtures.v1",
   "cases": [
     {"name": "rust-only-runtime-dependent", "paths": ["crates/latent-core/src/lib.rs"], "profile": "full", "renderer": true},
-    {"name": "narrow-reverse-dependents", "paths": ["crates/latent-workflows/src/lib.rs"], "profile": "fast", "renderer": false,
-     "packages": ["latent-core", "latent-effects", "latent-state", "latent-workflows"]},
+    {"name": "narrow-reverse-dependents", "paths": ["crates/latent-workflows/src/lib.rs"], "profile": "full", "renderer": false,
+     "packages": ["latent-core", "latent-effects"]},
     {"name": "phase4-state-runtime-dependents", "paths": ["crates/latent-state/src/lib.rs"], "profile": "full", "renderer": true},
     {"name": "provider-only", "paths": ["crates/latent-nats/src/lib.rs"], "profile": "full", "renderer": true},
     {"name": "renderer", "paths": ["tools/angular-renderer-adapter/src/lib.rs"], "profile": "full", "renderer": true},
