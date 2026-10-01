@@ -34,6 +34,7 @@ pub struct PreparedFloorRelease<'a> {
     before: NamespaceRecord,
     after: NamespaceRecord,
     reclaimed_bytes: u64,
+    tenant_accounting: latent_state::tenant::PreparedTenantUpdate,
 }
 impl PreparedFloorRelease<'_> {
     #[must_use]
@@ -70,7 +71,12 @@ impl PreparedFloorRelease<'_> {
         }) {
             return Err(AtomicError::Corrupt);
         }
-        self.plan.append(batch)
+        let mut candidate = self.plan.clone();
+        candidate.append(batch)?;
+        self.tenant_accounting.rebuild_batch(&mut candidate.batch)?;
+        candidate.refresh_bound()?;
+        self.plan = candidate;
+        Ok(())
     }
 
     /// Drop the planning view before calling. Final acceptance must hold the
@@ -177,6 +183,10 @@ impl ResultMaintenanceOwner {
             namespace_key,
             Some(after.encode().map_err(|_| AtomicError::Corrupt)?),
         )?;
+        let tenant_accounting =
+            crate::atomic::accounting::capture(view, &request.tenant, &plan.batch)?;
+        tenant_accounting.rebuild_batch(&mut plan.batch)?;
+        plan.refresh_bound()?;
         Ok(PreparedFloorRelease {
             step,
             plan,
@@ -184,6 +194,7 @@ impl ResultMaintenanceOwner {
             before,
             after,
             reclaimed_bytes,
+            tenant_accounting,
         })
     }
 }

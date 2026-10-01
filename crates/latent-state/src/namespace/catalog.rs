@@ -511,7 +511,7 @@ impl NamespaceCatalog {
         };
         let encoded_record = receipt.record.encode()?;
         let encoded_receipt = receipt.encode()?;
-        let batch = AtomicBatch {
+        let mut batch = AtomicBatch {
             expectations: vec![
                 ExpectedRow {
                     key: namespace_key.clone(),
@@ -533,6 +533,9 @@ impl NamespaceCatalog {
                 },
             ],
         };
+        crate::tenant::prepare_metadata_update(&view, &receipt.context.tenant, &batch)
+            .and_then(|accounting| accounting.append_to(&mut batch))
+            .map_err(storage)?;
         Ok(PreparedNamespaceMutation {
             batch,
             receipt,

@@ -47,6 +47,31 @@ any released protective floor must share the same tenant update and physical
 writer fence. No quota descriptor, checksum or operation identity grants
 permission, proves lifecycle drain or creates a recovery worker.
 
+The state session captures the original accounting row in its already charged
+read view. Real catalog changes, state plans, claim/retry, terminal command
+envelopes, response expiry and reviewed terminalization/purge compose their
+actual ownership changes into that same physical batch. Live state and tombstone
+bytes use their complete encoded keys and cells. Command, effect and payload
+charges retain the original upper ledger's promised recovery reservations.
+Missing tenant declarations refuse read admission as well as mutation preparation.
+
+`PreparedTenantUpdate::rebuild_batch` lets the complete-envelope owner recompute
+the lower state and metadata slice from exact original row expectations, then
+combine it with the upper ledger contribution. A floor release can append the
+management owner's immutable receipt while charging both the actual old/new
+namespace encodings and that receipt in one original quota CAS. Failed composition
+leaves the prepared plan unchanged. Legacy catalog compositions canonicalize only
+identical read-only installation-absence expectations; ordinary duplicate keys
+still reject and installation still conflicts with an earlier legacy plan.
+
+Portable engine fixtures cover real catalog/state writes across two namespaces,
+another tenant's independent capacity, live-to-tombstone changes, atomic command
+and effect refusal, actual response expiry, reopened totals and a bounded whole
+floor/management append. These hooks do not establish the startup total census,
+all schema/restore writers, an installed protected-worker profile or operator
+endpoint qualification. Those consuming checks remain required before enabling
+the mandatory installed runtime profile.
+
 ## Linked response expiry
 
 One node-owned `ResultMaintenanceOwner` inspects one indexed command per step.

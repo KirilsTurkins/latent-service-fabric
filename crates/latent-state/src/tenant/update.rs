@@ -11,6 +11,20 @@ pub struct TenantDelta {
     pub added: TenantUsage,
 }
 impl TenantDelta {
+    pub(super) fn combined(self, other: Self) -> Result<Self, StoreError> {
+        fn add(left: TenantUsage, right: TenantUsage) -> Result<TenantUsage, StoreError> {
+            let mut next = [0; 12];
+            for (index, (left, right)) in left.values().into_iter().zip(right.values()).enumerate()
+            {
+                next[index] = left.checked_add(right).ok_or(StoreError::Capacity)?;
+            }
+            Ok(TenantUsage::from_values(next))
+        }
+        Ok(Self {
+            removed: add(self.removed, other.removed)?,
+            added: add(self.added, other.added)?,
+        })
+    }
     fn apply(self, current: TenantUsage) -> Result<TenantUsage, StoreError> {
         let mut next = [0; 12];
         for (index, ((current, removed), added)) in current
@@ -113,6 +127,45 @@ fn metadata_delta(batch: &AtomicBatch) -> Result<TenantDelta, StoreError> {
 }
 
 impl PreparedTenantUpdate {
+    /// Complete-envelope owner only: rebuild this contribution plus the exact
+    /// lower state/namespace/metadata row changes from the original counter.
+    /// This avoids charging a namespace row twice when a later management
+    /// receipt joins its already prepared floor release. State rows need their
+    /// exact old expectations; command/effect reserves remain the upper owner's
+    /// original captured delta. Every check precedes the supplied plan change.
+    pub fn rebuild_batch(&self, batch: &mut AtomicBatch) -> Result<(), StoreError> {
+        if self.is_legacy() {
+            return self.append_to(batch);
+        }
+        let delta = self
+            .delta
+            .combined(super::rows::batch_delta(&self.tenant, batch)?)?;
+        let update = Self {
+            tenant: self.tenant.clone(),
+            captured: self.captured.clone(),
+            delta,
+        };
+        let guard = ExpectedRow {
+            key: guard_key(),
+            value: update.captured.as_ref().map(|old| old.guard.clone()),
+        };
+        check_expectation(batch, &guard)?;
+        if batch.mutations.iter().any(|row| row.key == guard.key) {
+            return Err(StoreError::Corrupt);
+        }
+        if let Some(captured) = &update.captured {
+            update.append_installed(batch, &guard, captured, true)
+        } else {
+            update.append_to(batch)
+        }
+    }
+
+    #[must_use]
+    pub fn read_bytes(&self) -> usize {
+        self.captured
+            .as_ref()
+            .map_or(0, |old| old.guard.len() + old.bytes.len())
+    }
     #[must_use]
     pub fn is_legacy(&self) -> bool {
         self.captured.is_none()
@@ -144,7 +197,7 @@ impl PreparedTenantUpdate {
             return Err(StoreError::Corrupt);
         }
         if let Some(captured) = &self.captured {
-            self.append_installed(batch, &guard, captured)
+            self.append_installed(batch, &guard, captured, false)
         } else {
             if batch
                 .mutations
@@ -163,6 +216,7 @@ impl PreparedTenantUpdate {
         batch: &mut AtomicBatch,
         guard: &ExpectedRow,
         captured: &codec::Captured,
+        rebuild: bool,
     ) -> Result<(), StoreError> {
         let expected = ExpectedRow {
             key: quota_key(&self.tenant)?,
@@ -193,7 +247,13 @@ impl PreparedTenantUpdate {
             {
                 return Err(StoreError::Corrupt);
             }
-            record
+            if rebuild {
+                let mut original = captured.record.clone();
+                original.generation = record.generation;
+                original
+            } else {
+                record
+            }
         } else {
             let mut record = captured.record.clone();
             record.generation = record
