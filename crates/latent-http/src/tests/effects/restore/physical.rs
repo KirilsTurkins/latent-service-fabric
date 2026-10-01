@@ -173,7 +173,7 @@ pub(super) async fn deliver(
     let checkpoint = store
         .owner
         .with_store(StoreIoKind::Read, 1024 * 1024, |store| {
-            Ok(DispatchCatalog::has_owner_history(&store.snapshot()?)?)
+            DispatchCatalog::has_owner_history(&store.snapshot()?)
         })
         .unwrap()
         .await
