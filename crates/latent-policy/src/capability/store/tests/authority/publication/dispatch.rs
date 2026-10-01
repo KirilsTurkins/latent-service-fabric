@@ -1,4 +1,5 @@
 use super::*;
+use latent_core::InvocationPrincipal;
 
 const CONTRACT: &str = "latent:intents/staging@0.1.0";
 fn scope() -> serde_json::Value {

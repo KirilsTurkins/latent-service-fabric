@@ -133,7 +133,7 @@ pub fn inspect_bundle(
         Some(crate::assembly::inspect_capsule(
             layout.config(),
             &input.layers,
-            limits,
+            &limits,
         )?)
     } else {
         None
@@ -158,7 +158,7 @@ pub fn inspect_bundle(
     } else {
         None
     };
-    let sbom = crate::sbom::embedded::inspect(&layout, &input.layers, limits)?;
+    let sbom = crate::sbom::embedded::inspect(&layout, &input.layers, &limits)?;
     Ok(PackageBundle {
         layout,
         manifest: input.manifest.into_boxed_slice(),

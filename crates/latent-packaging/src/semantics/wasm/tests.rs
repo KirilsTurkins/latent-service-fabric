@@ -307,7 +307,7 @@ fn conservative_alias_expansion_has_an_independent_finite_ceiling() {
         .params([("value", PrimitiveValType::U32)])
         .result(Some(PrimitiveValType::U32.into()));
     for index in 0..32 {
-        instance.export(&format!("operation-{index}"), ComponentTypeRef::Func(0));
+        instance.export(format!("operation-{index}"), ComponentTypeRef::Func(0));
     }
     let mut types = ComponentTypeSection::new();
     types.instance(&instance);

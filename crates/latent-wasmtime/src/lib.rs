@@ -45,9 +45,9 @@ pub use compiler::CompilerObserver;
 #[cfg(feature = "development-clock-fixture")]
 pub use config::DevelopmentClockReadings;
 pub use config::{
-    CompilerOptimization, ExecutionIsolationProfile, GuestLanguageProfiles, BufferedWebValueProfile, InstanceAllocator,
-    Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig, GENERIC_BACKEND_ID,
-    WASMTIME_VERSION,
+    BufferedWebValueProfile, CompilerOptimization, ExecutionIsolationProfile,
+    GuestLanguageProfiles, InstanceAllocator, Phase0InstanceAllocator, Phase0WasmtimeConfig,
+    WasmtimeConfig, GENERIC_BACKEND_ID, WASMTIME_VERSION,
 };
 pub use containment::RuntimeResourceSnapshot;
 pub use factory::WasmtimeComponentEngineFactory;

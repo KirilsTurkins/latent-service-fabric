@@ -124,7 +124,8 @@ impl ProviderRuntime {
                 owner.secrets = secrets;
                 providers.push(owner.record(&http.identity, provider.reference()));
                 let provider = Arc::new(provider);
-                owner.runtime.install_http(Arc::clone(&provider))?;
+                let invocation = Arc::clone(&provider);
+                owner.runtime.install_http(invocation)?;
                 owner.native_http = Some((http.identity.clone(), provider));
             }
             if let Some(blob) = &config.blob {

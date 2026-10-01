@@ -17,7 +17,7 @@ use crate::{CheckedSurface, LayerInput, PackagingLimits};
 pub(super) fn canonicalize(
     config: &PackageConfig,
     layers: &mut [LayerInput],
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<(), PlatformError> {
     let manifest_index = role_index(layers, LayerRole::CapsuleManifest)?;
     let contracts_index = role_index(layers, LayerRole::Contracts)?;
@@ -50,7 +50,7 @@ fn role_index(layers: &[LayerInput], role: LayerRole) -> Result<usize, PlatformE
 pub(crate) fn inspect_capsule(
     config: &PackageConfig,
     blobs: &[(String, Vec<u8>)],
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<CheckedSurface, PlatformError> {
     let content = |role| -> Result<&[u8], PlatformError> {
         let index = config
@@ -85,17 +85,53 @@ pub(crate) fn inspect_capsule(
             (package.source_path.clone(), blobs[index].1.as_slice())
         })
         .collect::<BTreeMap<_, _>>();
-    crate::validate_capsule(
+    let host_profile = host_profile(config, blobs, &manifest)?;
+    crate::semantics::validate_capsule_for_profile(
         content(LayerRole::Component)?,
         &manifest,
         &contracts,
         &lock,
         &sources,
         limits.semantics,
+        host_profile,
     )
 }
 
-fn manifest_codec(limits: PackagingLimits) -> JsonManifestCodec {
+fn host_profile(
+    config: &PackageConfig,
+    blobs: &[(String, Vec<u8>)],
+    manifest: &latent_manifest::CapsuleManifest,
+) -> Result<latent_core::HostAbiProfile, PlatformError> {
+    let Some(layer) = config
+        .layers
+        .iter()
+        .find(|layer| layer.path == "transaction-binding.json")
+    else {
+        return Ok(latent_core::PHASE3_HOST_ABI_CURRENT);
+    };
+    if layer.role != LayerRole::Asset
+        || layer.media_type != "application/vnd.latent.transaction-binding.v1+json"
+    {
+        return Err(crate::invalid("invalid-transaction-companion-layer"));
+    }
+    let bytes = blobs
+        .iter()
+        .find(|(path, _)| path == &layer.path)
+        .map(|(_, bytes)| bytes.as_slice())
+        .ok_or_else(|| crate::invalid("missing-transaction-companion"))?;
+    let binding = latent_manifest::TransactionBinding::decode(bytes)
+        .map_err(|_| crate::invalid("invalid-transaction-companion"))?;
+    if binding.capsule != manifest.metadata.name || manifest.runtime_requirements.renderer.is_some()
+    {
+        return Err(crate::invalid("transaction-companion-capsule-mismatch"));
+    }
+    // Exact-byte layer association is already checked by inspect_bundle. The
+    // companion selects only immutable ABI inspection, never an installed host,
+    // deployment, namespace, policy, or execution admission.
+    Ok(latent_core::PHASE4_HOST_ABI_V1)
+}
+
+fn manifest_codec(limits: &PackagingLimits) -> JsonManifestCodec {
     JsonManifestCodec::new(ManifestLimits {
         max_document_bytes: limits.package.max_document_bytes,
         max_nesting_depth: limits.package.max_depth,
@@ -105,7 +141,7 @@ fn manifest_codec(limits: PackagingLimits) -> JsonManifestCodec {
     })
 }
 
-fn contract_limits(limits: PackagingLimits) -> ContractMetadataLimits {
+fn contract_limits(limits: &PackagingLimits) -> ContractMetadataLimits {
     ContractMetadataLimits {
         max_document_bytes: limits.package.max_document_bytes,
         max_nodes: limits.package.max_nodes,

@@ -12,7 +12,7 @@ pub(super) fn validate(
     config: &PackageConfig,
     layers: &[(String, Vec<u8>)],
     inventory: &SbomInventory,
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<(), PlatformError> {
     let lock = config
         .layers

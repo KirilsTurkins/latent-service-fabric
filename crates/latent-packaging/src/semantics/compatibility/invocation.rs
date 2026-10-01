@@ -43,7 +43,7 @@ pub fn check_invocation_target(
     let mut analysis = Analysis::new(limits.comparison)?;
     analysis.name(interface)?;
     let lock = lock(package)?;
-    preflight(package, &lock, limits, &mut 0, &mut 0, &mut analysis)?;
+    preflight(package, &lock, &limits, &mut 0, &mut 0, &mut analysis)?;
     let (source, surface) = resolved(package, &lock, limits.semantics)?;
     let exported = *surface.exports.get(interface).ok_or_else(incompatible)?;
     let functions = checked_functions(&source, exported, interface, &mut analysis)?;

@@ -14,6 +14,38 @@ use latent_capabilities::broker::CapabilityPlanSource;
 use latent_routing::{RouteCompiler, RouteResolver, RouteSnapshotPublisher};
 
 #[test]
+fn checked_transaction_hosts_keep_publication_without_provider_bindings_or_grants() {
+    let f = Fixture::with_transaction_hosts();
+    f.install();
+    let pin = f.store.pin().unwrap();
+    let revision = pin.resolve(&target(), None).unwrap();
+    let plan = f.store.plan(&revision).unwrap();
+    assert!(plan.matches_revision(&revision));
+    assert_eq!(f.store.binding_inventory().1, 1);
+    assert_eq!(f.store.binding_inventory().2, 1);
+    let first =
+        latent_packaging::build_package(fixture::transaction_input(), Default::default()).unwrap();
+    let second =
+        latent_packaging::build_package(fixture::transaction_input(), Default::default()).unwrap();
+    let report = latent_packaging::compare_packages(&first, &second, Default::default()).unwrap();
+    assert!(report.structural().analysis_complete);
+    assert_eq!(
+        report.structural().level,
+        latent_contracts::StructuralCompatibility::Identical
+    );
+    let mut input = fixture::transaction_input();
+    input
+        .layers
+        .retain(|layer| layer.path != "transaction-binding.json");
+    assert!(latent_packaging::build_package(input, Default::default()).is_err());
+    let mut input = fixture::transaction_input();
+    package_fixture::mutate_json(&mut input, "transaction-binding.json", |binding| {
+        binding["hostAbiDigest"] = serde_json::json!(format!("sha256:{}", "0".repeat(64)));
+    });
+    assert!(latent_packaging::build_package(input, Default::default()).is_err());
+}
+
+#[test]
 fn checked_structural_values_do_not_require_or_create_provider_bindings() {
     let f = Fixture::with_structural_values();
     f.install();

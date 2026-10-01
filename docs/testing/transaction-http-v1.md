@@ -13,6 +13,20 @@ from the admitted package's signed `transaction-binding.json` asset. Configurati
 describes these links; the current publication, namespace and purpose-specific
 policy must still authorize the request. Request headers cannot change them.
 
+Package inspection selects the exact Phase 4 ABI only when the package carries
+the closed companion with the pinned host digest and matching capsule identity.
+The default capsule inspection remains Phase 3. Source contract derivation can
+recognize an explicit exact-versioned State/Intents import, but it grants no
+publication, namespace, policy or execution authority.
+
+Managed deployment plans validate these imports against the pinned WIT and
+retain the ordinary publication proof. They do not create State/Intents provider
+registrations or synthetic capability grants. Execution attaches those two
+hosts to the admitted activation's transaction. Clocks and other ordinary
+imports still require their real provider bindings. Structural package
+comparison preserves the same resource owners across compatible revisions;
+a change of host profile remains an explicit incompatible comparison.
+
 ## Requests
 
 | Route mode | Method and input | Command identity and state conditions |
