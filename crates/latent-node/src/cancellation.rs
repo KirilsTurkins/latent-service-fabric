@@ -106,7 +106,7 @@ impl ActivationCancellationRegistry {
 
     /// Cancels a registered activation. Repeated requests are accepted and do
     /// not replace the first reason.
-    #[must_use]
+    #[must_use = "Observe the finite cancellation disposition before reporting cancellation"]
     pub fn cancel(
         &self,
         activation_id: &ActivationId,
@@ -293,6 +293,7 @@ impl CancellationHandle {
     /// Returns `true` only for the request that installed the retained reason.
     /// A terminal activation and an already-accepted cancellation both return
     /// `false` without changing the retained state.
+    #[must_use]
     pub fn cancel(&self, reason: &str) -> bool {
         let reason = if reason.trim().is_empty() {
             DEFAULT_REASON

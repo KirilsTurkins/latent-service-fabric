@@ -368,19 +368,16 @@ impl CommandAdmission {
                         .await)
                 }
             };
-        let notification = match self.coordinator.waiters.register(&claim) {
-            Ok(owner) => owner,
-            Err(_) => {
-                return Ok(self
-                    .abort_before_host(
-                        claim,
-                        operation,
-                        selected,
-                        None,
-                        errors::atomic(AtomicError::Limit),
-                    )
-                    .await)
-            }
+        let Ok(notification) = self.coordinator.waiters.register(&claim) else {
+            return Ok(self
+                .abort_before_host(
+                    claim,
+                    operation,
+                    selected,
+                    None,
+                    errors::atomic(AtomicError::Limit),
+                )
+                .await);
         };
         let view = latent_executor::transaction::ViewIdentity {
             namespace: selected.scope.namespace.0.clone(),

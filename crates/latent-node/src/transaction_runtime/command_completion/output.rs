@@ -30,7 +30,7 @@ pub trait CommandResultCodec: Send + Sync {
 pub struct CanonicalCommandResult;
 const MESSAGE: &str = "lsf-declared-error-message";
 impl CommandResultCodec for CanonicalCommandResult {
-    fn format(&self) -> &str {
+    fn format(&self) -> &'static str {
         "lsf-wit-values-v1"
     }
     fn validate(&self, outcome: &ActivationOutcome) -> Result<CommandOutput, PlatformError> {

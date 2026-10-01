@@ -126,7 +126,7 @@ impl CommandCoordinator {
                 })
                 .map_err(waiter_error)?;
             match decision {
-                CommandWaiterDecision::ReloadDurableState => continue,
+                CommandWaiterDecision::ReloadDurableState => (),
                 CommandWaiterDecision::RecoveryRequired => {
                     return observed(
                         &current,

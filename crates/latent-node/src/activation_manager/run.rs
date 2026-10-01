@@ -122,18 +122,7 @@ impl Inner {
     ) -> Result<ActivationOutcome, PlatformError> {
         let token = lifecycle.registration().token();
         let transport = Arc::clone(&lifecycle.transport_stop);
-        if token.is_cancelled() {
-            return Err(cancelled(&token));
-        }
-        if lifecycle
-            .incoming_deadline
-            .is_some_and(|deadline| self.clock.monotonic_now() >= deadline.monotonic())
-        {
-            return Err(deadline_error());
-        }
-        if let Some(failure) = transport.failure() {
-            return Err(failure);
-        }
+        self.check_run_start(lifecycle, &token)?;
         let child_control = lifecycle.child_control.take();
         let permit = if child_control.is_some() {
             None
@@ -231,6 +220,26 @@ impl Inner {
             .await?;
         self.execute(envelope, lifecycle, control, budget, prepared, imports)
             .await
+    }
+
+    fn check_run_start(
+        &self,
+        lifecycle: &Lifecycle,
+        token: &CancellationToken,
+    ) -> Result<(), PlatformError> {
+        if token.is_cancelled() {
+            return Err(cancelled(token));
+        }
+        if lifecycle
+            .incoming_deadline
+            .is_some_and(|deadline| self.clock.monotonic_now() >= deadline.monotonic())
+        {
+            return Err(deadline_error());
+        }
+        if let Some(failure) = lifecycle.transport_stop.failure() {
+            return Err(failure);
+        }
+        Ok(())
     }
 
     async fn execute(
