@@ -39,16 +39,39 @@ impl Gate {
 pub struct CommitCancellation {
     pub(super) gate: Arc<Gate>,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommitCancellationDisposition {
+    Installed,
+    AlreadyInstalled,
+    CommitIoAccepted,
+}
 impl CommitCancellation {
+    #[must_use]
+    pub fn is_same_instance(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.gate, &other.gate)
+    }
+
     /// True means cancellation won before commit I/O acceptance. False means
     /// cancellation was already requested or the commit fence already accepted;
     /// neither branch is a durable outcome or permission to refund charges.
     #[must_use]
     pub fn request(&self) -> bool {
-        self.gate
+        self.request_disposition() == CommitCancellationDisposition::Installed
+    }
+
+    /// This observes logical acceptance only. None of these states proves
+    /// durable commitment, abort or physical retirement.
+    #[must_use]
+    pub fn request_disposition(&self) -> CommitCancellationDisposition {
+        match self
+            .gate
             .0
             .compare_exchange(OPEN, CANCELLED, Ordering::AcqRel, Ordering::Acquire)
-            .is_ok()
+        {
+            Ok(_) => CommitCancellationDisposition::Installed,
+            Err(CANCELLED) => CommitCancellationDisposition::AlreadyInstalled,
+            Err(_) => CommitCancellationDisposition::CommitIoAccepted,
+        }
     }
 }
 

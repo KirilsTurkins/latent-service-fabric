@@ -119,7 +119,7 @@ impl LocalActivationManager {
         })();
         if let Err(failure) = admitted {
             drop(envelope);
-            let _ = lifecycle.complete(failure_for_platform_error(
+            let _ = lifecycle.complete_admission_failure(failure_for_platform_error(
                 failure.clone(),
                 BudgetConsumption::default(),
             ));
@@ -213,10 +213,12 @@ impl InboundActivationReservation {
 
     fn reject(self, failure: PlatformError) -> Result<ActivationHandle, PlatformError> {
         drop(self.envelope);
-        let _ = self.lifecycle.complete(failure_for_platform_error(
-            failure.clone(),
-            BudgetConsumption::default(),
-        ));
+        let _ = self
+            .lifecycle
+            .complete_admission_failure(failure_for_platform_error(
+                failure.clone(),
+                BudgetConsumption::default(),
+            ));
         Err(failure)
     }
 }

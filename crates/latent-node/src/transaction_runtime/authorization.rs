@@ -34,6 +34,21 @@ pub struct StateAuthorization {
     pub(super) budget: ActivationBudget,
 }
 impl StateAuthorization {
+    pub(crate) fn authority_mode(&self) -> latent_capabilities::namespace::Mode {
+        self.authority.mode()
+    }
+    #[must_use]
+    pub fn activation_id(&self) -> &latent_core::ActivationId {
+        self.authority.activation_id()
+    }
+    #[must_use]
+    pub fn budget(&self) -> &ActivationBudget {
+        &self.budget
+    }
+    #[must_use]
+    pub(crate) fn cancellation(&self) -> latent_capabilities::namespace::CommitCancellation {
+        self.authority.cancellation()
+    }
     pub(super) fn publication(&self) -> &str {
         self.publication.publication().as_str()
     }

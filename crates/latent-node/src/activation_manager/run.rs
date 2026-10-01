@@ -179,7 +179,19 @@ impl Inner {
                     "strict transaction admission required",
                 ));
             }
-            let host = admission.admit(&envelope, &budget).await?;
+            admission.bind_control(super::TransactionAdmissionControl::new(
+                lifecycle.registration().handle(),
+                budget.clone(),
+            ))?;
+            let execution = match admission.admit(&envelope, &budget).await? {
+                super::TransactionAdmission::Execute(execution) => execution,
+                super::TransactionAdmission::Existing(completion) => {
+                    let outcome = completion.outcome().clone();
+                    lifecycle.transaction_completion = Some(completion);
+                    return Ok(outcome);
+                }
+            };
+            let host = execution.host;
             if host.activation_id() != &envelope.activation_id
                 || !host.budget().is_same_instance(&budget)
             {
@@ -196,6 +208,10 @@ impl Inner {
                     "query write budget denied",
                 ));
             }
+            if let Some(gate) = execution.cancellation {
+                lifecycle.registration().handle().bind_commit_gate(gate)?;
+            }
+            lifecycle.transaction_hook = Some(execution.completion);
             lifecycle.transaction_host = Some(host);
         }
         if permit.is_some() {
