@@ -4,6 +4,8 @@ use latent_core::{
 };
 use serde::Deserialize;
 use std::path::PathBuf;
+mod effects;
+pub use effects::DeferredHttpConfig;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -34,6 +36,8 @@ pub struct StateOperationConfig {
     pub state_policies: Vec<String>,
     #[serde(default, deserialize_with = "present_entity")]
     pub entity: Option<String>,
+    #[serde(default, deserialize_with = "effects::present")]
+    pub deferred_http: Option<DeferredHttpConfig>,
 }
 
 fn present_entity<'de, D: serde::Deserializer<'de>>(source: D) -> Result<Option<String>, D::Error> {
@@ -68,6 +72,7 @@ pub(crate) struct OperationSettings {
     pub result_policy: String,
     pub policies: Vec<String>,
     pub entity: Option<String>,
+    pub deferred_http: Option<DeferredHttpConfig>,
 }
 
 pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError> {
@@ -97,6 +102,9 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
         }
         checked_digest(&input.component_digest)?;
         checked_digest(&input.companion_digest)?;
+        if let Some(effect) = &input.deferred_http {
+            effect.validate()?;
+        }
         if input.incarnation == 0
             || input.state_policies.is_empty()
             || input.state_policies.len() > 8
@@ -135,6 +143,7 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
             result_policy: input.result_policy.clone(),
             policies: input.state_policies.clone(),
             entity: input.entity.clone(),
+            deferred_http: input.deferred_http.clone(),
         });
     }
     Ok(StateSettings {
@@ -204,5 +213,26 @@ mod tests {
         config.operations.pop();
         config.operations[0].state_policies.push("state".into());
         assert!(derive(&config).is_err());
+    }
+
+    #[test]
+    fn native_effect_installation_pins_reject_implicit_grants_null_and_ambiguous_policy_ids() {
+        let effect = serde_json::json!({"requirementsDigest":format!("sha256:{}", "d".repeat(64)),
+            "providerId":"http","providerIncarnation":"e".repeat(64),"credentialReference":"effect-secret",
+            "stagingBinding":"intent-stage","stagingPolicies":["stage"],"dispatchBinding":"intent-dispatch","dispatchPolicies":["dispatch"]});
+        let mut wire = input();
+        wire["operations"][0]["deferredHttp"] = effect.clone();
+        assert!(derive(&serde_json::from_value(wire.clone()).unwrap()).is_ok());
+        for name in ["enabled", "grant", "credential", "continuityProven"] {
+            let mut hostile = wire.clone();
+            hostile["operations"][0]["deferredHttp"][name] = true.into();
+            assert!(serde_json::from_value::<StateConfig>(hostile).is_err());
+        }
+        let mut absent = input();
+        absent["operations"][0]["deferredHttp"] = serde_json::Value::Null;
+        assert!(serde_json::from_value::<StateConfig>(absent).is_err());
+        wire["operations"][0]["deferredHttp"]["dispatchPolicies"] =
+            serde_json::json!(["dispatch", "dispatch"]);
+        assert!(derive(&serde_json::from_value(wire).unwrap()).is_err());
     }
 }

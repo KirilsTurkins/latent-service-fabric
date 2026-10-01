@@ -45,6 +45,7 @@ pub(super) struct Inner {
     pub source: CommandAdmissionSource,
     pub waiters: CommandWaiterRegistry,
     pub installed: Vec<Arc<InstalledTransactionOperation>>,
+    pub intents: Vec<super::effects::InstalledIntent>,
     pub epoch: u64,
     pub profile: String,
     pub configuration_digest: String,
@@ -53,13 +54,14 @@ pub(super) struct Inner {
 #[derive(Clone)]
 pub struct StateRuntime(pub(super) Arc<Inner>);
 impl StateRuntime {
-    pub(crate) async fn open(
+    pub(in crate::standalone) async fn open(
         settings: &NodeSettings,
         artifacts: Arc<DirectoryArtifactRepository>,
         policy: Arc<PolicyStore>,
         clock: Arc<dyn ActivationClock>,
         audit: Option<latent_audit::AuditHandle>,
         control: tokio::runtime::Handle,
+        providers: Option<&super::super::providers::ProviderRuntime>,
     ) -> Result<(Arc<Self>, super::super::EffectRuntime), PlatformError> {
         let state = settings.state.as_ref().ok_or_else(super::denied)?;
         let time = ProtectedCommandClock::load(settings, Arc::clone(&clock))?;
@@ -71,6 +73,15 @@ impl StateRuntime {
             .map_err(|_| super::capacity())?;
         let authority = EffectAuthorityOwner::new(128, 2, time.minimum_checkpoint().1)
             .map_err(|_| super::unavailable())?;
+        let effect_time: Arc<dyn latent_effects::runtime::EffectTimeSource> = time.clone();
+        let installation = super::effects::install(
+            settings,
+            &installed,
+            providers,
+            &policy,
+            &authority,
+            &effect_time,
+        )?;
         let mut config = ProtectedStoreConfig::bounded_linux(settings.data_directory.join("state"));
         config.create_if_missing = state.create_if_missing;
         let store = Arc::new(
@@ -84,13 +95,11 @@ impl StateRuntime {
             .await
             .map_err(|_| super::unavailable())?,
         );
-        // No installed deferred adapter or real policy grant is synthesized.
-        // Existing retained unsupported effects stay with the dispatch owner.
         let effects = super::super::EffectRuntime::start(
             DispatcherConfig::default(),
             Arc::clone(&store),
             authority,
-            vec![],
+            installation.adapters,
             time.clone(),
             Some(time.minimum_checkpoint()),
             control,
@@ -120,6 +129,7 @@ impl StateRuntime {
             source,
             waiters,
             installed,
+            intents: installation.intents,
             epoch: state.configuration_epoch,
             profile: profile.into(),
             configuration_digest,

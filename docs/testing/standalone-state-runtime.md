@@ -74,3 +74,45 @@ cutover, restart, cancellation, overload, and one-intent dispatch qualification
 remain required on the composed Linux node. Deferred adapters are empty unless
 explicitly installed from actual native provider and authority owners; a guest
 declaration does not establish an adapter, grant, or successful dispatch.
+
+An operation may explicitly install `deferredHttp` with `requirementsDigest`,
+`providerId`, `providerIncarnation`, `credentialReference`, `stagingBinding`,
+`stagingPolicies`, `dispatchBinding`, and `dispatchPolicies`. This closed object
+contains no credential, enabled flag, or authorization decision. Null, unknown
+fields, ambiguous policy IDs, and noncanonical identities refuse installation.
+The operation must be a strict command, and its admitted signed package must
+contain the exact `deferred-http-requirements.json` Asset with media type
+`application/json` and the pinned original SHA-256. Its capsule, deployment,
+transaction binding, namespace, and companion digest must all match the retained
+transaction descriptor. Payload bytes, logical binding/operation, contract,
+adapter formats, and finite ceilings come from those original signed bytes.
+
+Installation uses the already configured HTTP provider and protected credential
+owner. It shares their transport pools, peer rules, resource counters, and secret
+binding with the native `QualifiedHttpEffectAdapter`; it creates no second HTTP
+client or listener. The installed configuration and signed requirements narrow
+the selection but do not grant it. Before publishing a dispatch rule, the actual
+policy store must authorize the retained source service's explicit native
+`dispatch` purpose for that publication, namespace/incarnation, entity, result
+policy, and derived service-integration recovery scope. The provider binding must
+match the adapter's actual profile, combined configuration digest, and epoch.
+
+The original caller separately needs `stage` permission. Its original sealed
+staging decision remains intersected with fresh staging checks, and final commit
+retains it when the envelope contains effects. Revocation blocks actual commit
+before effect admission even when the service's dispatch rule remains valid.
+Commands that retain no effects and queries keep their existing final fences.
+Before each native adapter acceptance, dispatch rechecks current source policy
+and publication under the policy/catalog fence, then the existing namespace,
+effect-rule, and original deadline fences. Missing, unavailable, or changed
+authority retains `PolicyBlocked`; it does not authorize an accepted-request
+retry or infer an external outcome. Configured count limits are ceilings, so a
+business rejection can retain zero intents.
+
+The added portable checks cover strict installation pins and exact signed
+requirements, including a NUL payload and unsigned overflow. Linux-only cases
+add an actual policy/catalog dispatch decision, a real dispatcher with no
+dispatch authority, and a retained staging-policy revoke at actual engine commit
+acceptance. Their execution results must be recorded separately from compiler
+and portable evidence. Full installed guest-to-HTTP dispatch is still a composed
+node qualification requirement.

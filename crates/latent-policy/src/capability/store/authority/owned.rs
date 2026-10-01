@@ -70,6 +70,7 @@ impl PolicyStore {
                     tenant: original.tenant.clone(),
                     policies: original.policies.clone(),
                     binding: original.binding.clone(),
+                    generation: original.generation,
                     lease,
                 },
                 publication: decision.publication.clone(),
@@ -101,7 +102,28 @@ impl PolicyStore {
         operation: &SealedPolicyDecision<'_>,
         action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        self.with_current_decisions(&[&captured.borrowed(), operation], action)
+        self.with_captured_decisions(&[captured], operation, action)
+    }
+
+    /// Intersect original sealed purposes and a current operation in the same
+    /// policy/publication fence. Additional captured grants can only narrow the
+    /// accepted action; replaced snapshots cannot revive their original stamps.
+    pub fn with_captured_decisions(
+        &self,
+        captured: &[&OwnedPolicyDecision],
+        operation: &SealedPolicyDecision<'_>,
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if captured.is_empty() || captured.len() > 8 {
+            return Err(denied());
+        }
+        let borrowed: Vec<_> = captured
+            .iter()
+            .map(|original| original.borrowed())
+            .collect();
+        let mut decisions: Vec<_> = borrowed.iter().collect();
+        decisions.push(operation);
+        self.with_current_decisions(&decisions, action)
     }
 
     /// Recheck the original retained owner, row stamps and publication under the

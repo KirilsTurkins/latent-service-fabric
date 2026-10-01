@@ -714,6 +714,7 @@ impl StandaloneNode {
             Arc::clone(&self.clock),
             self.audit.as_ref().map(super::audit::AuditRuntime::handle),
             control_runtime.clone(),
+            self.providers.as_deref(),
         ))
         .await?;
         self.effects = Some(effects);

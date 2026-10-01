@@ -35,6 +35,7 @@ struct Credential {
 struct Inner {
     contract: PutOnceContract,
     profile: DispatchProfile,
+    configuration_digest: String,
     transport: ProtocolTransport,
     pools: Arc<ProviderPools>,
     credentials: Mutex<Credential>,
@@ -68,6 +69,11 @@ impl QualifiedHttpEffectAdapter {
             .reserve_protocol_metadata(16_384)
             .map_err(|error| operation::admission_error(&error))?;
         let profile = contract.profile(provider.reference().configuration_digest());
+        let configuration_digest = profile
+            .destination
+            .strip_prefix("put-once:")
+            .ok_or(AuthorityError::Invalid)?
+            .to_owned();
         let transport = ProtocolTransport::new(
             Arc::clone(&pools),
             &provider.inner.installed,
@@ -78,6 +84,7 @@ impl QualifiedHttpEffectAdapter {
             inner: Arc::new(Inner {
                 contract,
                 profile,
+                configuration_digest,
                 transport,
                 pools,
                 credentials: Mutex::new(Credential {
@@ -88,6 +95,14 @@ impl QualifiedHttpEffectAdapter {
                 _metadata: metadata,
             }),
         })
+    }
+
+    /// Actual native contract/provider identity used by capability bindings.
+    /// This digest includes the qualified endpoint incarnation and ceilings as
+    /// well as the original installed provider configuration; it grants nothing.
+    #[must_use]
+    pub fn configuration_digest(&self) -> &str {
+        &self.inner.configuration_digest
     }
 
     /// Trusted publication only. Pause dispatch while changing the credential
@@ -120,6 +135,18 @@ impl QualifiedHttpEffectAdapter {
 impl DeferredEffectAdapter for QualifiedHttpEffectAdapter {
     fn profile(&self) -> &DispatchProfile {
         &self.inner.profile
+    }
+
+    /// Low-level native conformance installs an actual effect rule. Production
+    /// composition additionally wraps this producer in its current `PolicyStore`
+    /// authority; this method itself creates no rule or policy grant.
+    fn with_current_dispatch(
+        &self,
+        _authority: &latent_effects::authority::DurableEffectAuthority,
+        _deadline: std::time::Instant,
+        accept: &mut dyn FnMut() -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError>,
+    ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
+        accept()
     }
 
     fn accept(

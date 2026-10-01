@@ -179,7 +179,8 @@ fn operation(contract: &str, name: &str) -> bool {
             "namespace-destroy",
             "namespace-recreate",
         ],
-        "latent:intents/staging@0.1.0" => &["stage"],
+        // Dispatch is a native current-purpose operation, not a guest import.
+        "latent:intents/staging@0.1.0" => &["stage", "dispatch"],
         _ => return false,
     };
     operations.contains(&name)

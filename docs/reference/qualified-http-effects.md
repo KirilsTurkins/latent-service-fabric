@@ -9,6 +9,15 @@ effect clock to `QualifiedHttpEffectAdapter::new`. Install the returned adapter
 in the existing `EffectRuntime` / `DispatcherOwner` before readiness. Installing
 this native port grants neither a guest HTTP capability nor a dispatch rule.
 
+The production standalone installation also wraps the adapter with the actual
+policy store's current native `dispatch` decision for its retained source
+service. This check runs before the existing effect-rule acceptance fence and
+before any network operation. The raw adapter's acceptance hook remains a lower
+native conformance port; it supplies no policy grant. Other adapters default to
+denying that hook. Missing or revoked production authority retains `PolicyBlocked`
+without provider admission. Original caller staging permission is independently
+retained through the effect-bearing atomic command commit.
+
 The exact destination profile binds the HTTP configuration digest, tenant,
 provider identity, endpoint deduplication incarnation, body bound, approved
 horizon and retry delay. The current `EffectRule` must select that profile,

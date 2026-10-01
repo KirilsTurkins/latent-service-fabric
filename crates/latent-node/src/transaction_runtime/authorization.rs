@@ -22,6 +22,16 @@ pub struct PolicyCallBinding {
     pub provider_configuration: GrantRestriction,
 }
 
+/// Exact signed logical intent selection. Installed metadata narrows the
+/// current caller's staging policy; it never creates a dispatch grant.
+pub struct IntentPolicyBinding {
+    pub call: PolicyCallBinding,
+    pub binding: String,
+    pub operation: String,
+    pub maximum_intents: u32,
+    pub payload_digest: String,
+}
+
 pub struct StateAuthorization {
     policy: Arc<PolicyStore>,
     pub(super) authority: Arc<NamespaceAuthority>,
@@ -30,7 +40,8 @@ pub struct StateAuthorization {
     service: String,
     publication: ReleaseUseEligibility,
     state: Arc<PolicyCallBinding>,
-    intents: Option<Arc<PolicyCallBinding>>,
+    intents: Option<Arc<IntentPolicyBinding>>,
+    initial_intent: Option<Arc<latent_policy::capability::OwnedPolicyDecision>>,
     pub(super) budget: ActivationBudget,
 }
 impl StateAuthorization {
@@ -64,7 +75,7 @@ impl StateAuthorization {
         service: String,
         publication: ReleaseUseEligibility,
         state: PolicyCallBinding,
-        intents: Option<PolicyCallBinding>,
+        intents: Option<IntentPolicyBinding>,
         budget: ActivationBudget,
     ) -> Result<Self, PlatformError> {
         let scope = authority.ownership();
@@ -79,30 +90,8 @@ impl StateAuthorization {
         {
             return Err(denied());
         }
-        for binding in std::iter::once(&state).chain(intents.as_ref()) {
-            if binding.policies.is_empty()
-                || binding.policies.len() > 8
-                || binding.operations.is_empty()
-                || binding.operations.len() > 16
-                || binding.configuration_epoch == 0
-            {
-                return Err(denied());
-            }
-            for text in binding
-                .policies
-                .iter()
-                .chain(binding.operations.iter())
-                .chain([
-                    &binding.binding,
-                    &binding.profile,
-                    &binding.configuration_digest,
-                    &service,
-                ])
-            {
-                latent_core::transaction_contract::identity(text).map_err(|_| denied())?;
-            }
-        }
-        Ok(Self {
+        validate_bindings(&state, intents.as_ref(), &service)?;
+        let mut admitted = Self {
             policy,
             authority,
             namespace: Arc::new(namespace),
@@ -111,8 +100,20 @@ impl StateAuthorization {
             publication,
             state: Arc::new(state),
             intents: intents.map(Arc::new),
+            initial_intent: None,
             budget,
-        })
+        };
+        if admitted.authority_mode() == latent_capabilities::namespace::Mode::Command
+            && admitted.intents.is_some()
+        {
+            admitted.initial_intent = Some(Arc::new(admitted.with_current_decision(
+                "stage",
+                0,
+                0,
+                |decision| admitted.policy.retain_decision(decision),
+            )?));
+        }
+        Ok(admitted)
     }
 
     pub(super) fn authorize(
@@ -123,14 +124,41 @@ impl StateAuthorization {
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
         self.with_current_decision(operation, input_bytes, output_bytes, |decision| {
-            self.authority.with_operation(
+            let retained = if operation == "stage" {
+                self.initial_intent
+                    .as_deref()
+                    .into_iter()
+                    .collect::<Vec<_>>()
+            } else {
+                Vec::new()
+            };
+            self.authority.with_operation_retained(
                 &self.policy,
                 decision,
                 &self.namespace,
                 operation,
+                &retained,
                 action,
             )
         })
+    }
+
+    pub(super) fn check_intent_selection(
+        &self,
+        intent: &latent_executor::transaction::Intent,
+        sequence: u32,
+    ) -> Result<(), PlatformError> {
+        let selected = self.intents.as_ref().ok_or_else(denied)?;
+        if intent.binding != selected.binding
+            || intent.operation != selected.operation
+            || sequence >= selected.maximum_intents
+            || intent.expires_at_unix_millis.is_some()
+            || latent_effects::payload::payload_digest(&intent.payload).map_err(|_| denied())?
+                != selected.payload_digest
+        {
+            return Err(denied());
+        }
+        Ok(())
     }
 
     pub(super) fn rebind_command_after_claim(
@@ -177,6 +205,7 @@ impl StateAuthorization {
             publication: self.publication.clone(),
             state: Arc::clone(&self.state),
             intents: self.intents.clone(),
+            initial_intent: self.initial_intent.clone(),
             budget: self.budget.clone(),
         }
     }
@@ -241,8 +270,17 @@ impl StateAuthorization {
     ) -> Result<(), PlatformError> {
         use latent_state::namespace::NamespaceError;
         self.with_current_decision("commit", 0, 0, |decision| {
-            self.authority
-                .prepare_envelope_commit_io(&self.policy, decision, &self.namespace, envelope)?
+            let mut acceptance = self.authority.prepare_envelope_commit_io(
+                &self.policy,
+                decision,
+                &self.namespace,
+                envelope,
+            )?;
+            if !authorities.is_empty() {
+                acceptance =
+                    acceptance.retain_policy(self.initial_intent.as_deref().ok_or_else(denied)?)?;
+            }
+            acceptance
                 .accept_with(|| {
                     if let Some(effects) = effects {
                         effects
@@ -286,7 +324,7 @@ impl StateAuthorization {
     ) -> Result<R, PlatformError> {
         let intent = operation == "stage";
         let binding = if intent {
-            self.intents.as_ref().ok_or_else(denied)?
+            &self.intents.as_ref().ok_or_else(denied)?.call
         } else {
             &self.state
         };
@@ -366,6 +404,52 @@ impl StateAuthorization {
         action(&decision)
     }
 }
+
+fn validate_bindings(
+    state: &PolicyCallBinding,
+    intents: Option<&IntentPolicyBinding>,
+    service: &str,
+) -> Result<(), PlatformError> {
+    if let Some(intent) = intents {
+        latent_core::transaction_contract::identity(&intent.binding).map_err(|_| denied())?;
+        latent_core::transaction_contract::identity(&intent.operation).map_err(|_| denied())?;
+        if !(1..=128).contains(&intent.maximum_intents)
+            || intent.payload_digest.len() != 71
+            || !intent.payload_digest.starts_with("sha256:")
+            || !intent.payload_digest[7..]
+                .bytes()
+                .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+        {
+            return Err(denied());
+        }
+    }
+    for binding in std::iter::once(state).chain(intents.map(|intent| &intent.call)) {
+        if binding.policies.is_empty()
+            || binding.policies.len() > 8
+            || binding.operations.is_empty()
+            || binding.operations.len() > 16
+            || binding.configuration_epoch == 0
+        {
+            return Err(denied());
+        }
+        for text in binding
+            .policies
+            .iter()
+            .chain(binding.operations.iter())
+            .map(String::as_str)
+            .chain([
+                binding.binding.as_str(),
+                binding.profile.as_str(),
+                binding.configuration_digest.as_str(),
+                service,
+            ])
+        {
+            latent_core::transaction_contract::identity(text).map_err(|_| denied())?;
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn denied() -> PlatformError {
     PlatformError {
         code: PlatformErrorCode::PermissionDenied,

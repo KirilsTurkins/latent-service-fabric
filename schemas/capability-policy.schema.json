@@ -993,7 +993,8 @@
                 "uniqueItems": true,
                 "items": {
                   "enum": [
-                    "stage"
+                    "stage",
+                    "dispatch"
                   ]
                 }
               },

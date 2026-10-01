@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latent.dev/schemas/node-providers.schema.json",
   "title": "Optional standalone bounded capability providers",
-  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations, metric descriptor uniqueness and histogram ordering, and aggregate reservations. Installs only maintained HTTP, local-blob, protected-local-secret, custom-metric, isolated-local-service, TLS-NATS-immediate-event, activation-clock and OS-entropy profiles; it grants no guest authority.",
+  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 or phase4 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations, metric descriptor uniqueness and histogram ordering, and aggregate reservations. Installs only maintained HTTP, local-blob, protected-local-secret, custom-metric, isolated-local-service, TLS-NATS-immediate-event, activation-clock and OS-entropy profiles; it grants no guest authority.",
   "type": "object",
   "additionalProperties": false,
   "required": ["formatVersion", "bindings"],

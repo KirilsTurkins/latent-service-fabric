@@ -165,32 +165,43 @@ async fn prepare(
                 payload,
             } = claim;
             let time = clock.observe();
-            let accepted = worker_context
+            let deadline = worker_context
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .as_mut()
+                .as_ref()
                 .expect("owned physical context")
-                .accept_with(&authority, attempt.attempt(), time, |grant| {
-                    adapter.accept(grant, payload, attempt.clone())
-                });
+                .deadline();
+            let mut payload = Some(payload);
+            let mut adapter_refusal = false;
+            let mut accept = || {
+                let payload = payload.take().ok_or(AuthorityError::Invalid)?;
+                let admitted = worker_context
+                    .lock()
+                    .map_err(|_| AuthorityError::Unavailable)?
+                    .as_mut()
+                    .ok_or(AuthorityError::Unavailable)?
+                    .accept_with(&authority, attempt.attempt(), time, |grant| {
+                        adapter.accept(grant, payload, attempt.clone())
+                    })?;
+                adapter_refusal = admitted.is_err();
+                admitted
+            };
+            let accepted = adapter.with_current_dispatch(&authority, deadline, &mut accept);
             let accepted = match accepted {
-                Ok(Ok(future)) => {
+                Ok(future) => {
                     // Same accepted storage job owns claim/admission/send-marker:
                     // queue pressure cannot strand an admitted unpolled operation.
                     DispatchCatalog::begin_send(store, epoch, &attempt, time)?;
                     Ok(future)
                 }
-                Ok(Err(error)) => Err(AdapterOutcome {
-                    receipt: negative(error, time.unix_millis, false),
-                    retry: matches!(
-                        error,
-                        AuthorityError::Capacity | AuthorityError::Unavailable
-                    )
-                    .then_some((RetryProof::KnownNonexecution, 100)),
-                }),
                 Err(error) => Err(AdapterOutcome {
-                    receipt: negative(error, time.unix_millis, true),
-                    retry: None,
+                    receipt: negative(error, time.unix_millis, !adapter_refusal),
+                    retry: (adapter_refusal
+                        && matches!(
+                            error,
+                            AuthorityError::Capacity | AuthorityError::Unavailable
+                        ))
+                    .then_some((RetryProof::KnownNonexecution, 100)),
                 }),
             };
             Ok(Prepared { attempt, accepted })
