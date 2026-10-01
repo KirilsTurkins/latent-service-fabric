@@ -205,6 +205,11 @@ async fn run_browser(component: Option<Vec<u8>>) {
     .unwrap();
     assert!(status.success(), "real browser boundary probe failed");
     let receipt: serde_json::Value = serde_json::from_slice(&read(result_path, 4096)).unwrap();
+    validate_browser_receipt(&receipt, &harness, application);
+    harness.finish().await;
+}
+
+fn validate_browser_receipt(receipt: &serde_json::Value, harness: &Harness, application: bool) {
     assert_eq!(receipt["originalDomReused"], true);
     assert_eq!(receipt["navigationHydrated"], true);
     assert_eq!(receipt["componentRenderClaimed"], false);
@@ -268,5 +273,4 @@ async fn run_browser(component: Option<Vec<u8>>) {
     } else {
         assert_eq!(stores, 0);
     }
-    harness.finish().await;
 }
