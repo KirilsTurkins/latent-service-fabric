@@ -348,6 +348,7 @@ fn operation_receipt_recovery_requires_one_associated_receipt() {
     let request = Request::from(c::GetStateOperationReceiptRequest {
         namespace: Some(inspect()),
         operation_id: "original".into(),
+        original_effect_plan: None,
     });
     assert!(
         Response::from(c::GetStateOperationReceiptResponse::default())
@@ -368,7 +369,8 @@ fn operation_receipt_recovery_requires_one_associated_receipt() {
     };
     assert!(Response::from(c::GetStateOperationReceiptResponse {
         receipt: None,
-        namespace_receipt: Some(receipt.clone())
+        namespace_receipt: Some(receipt.clone()),
+        audit_ack: None,
     })
     .validate_for(&request)
     .is_ok());
@@ -376,7 +378,8 @@ fn operation_receipt_recovery_requires_one_associated_receipt() {
     other.operation_id = "new-operation".into();
     assert!(Response::from(c::GetStateOperationReceiptResponse {
         receipt: None,
-        namespace_receipt: Some(other)
+        namespace_receipt: Some(other),
+        audit_ack: None,
     })
     .validate_for(&request)
     .is_err());

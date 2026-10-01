@@ -302,6 +302,7 @@ service!(c::state_service_server::StateService;
     (mutate_namespace,c::MutateNamespaceRequest,c::MutateNamespaceResponse,MutateNamespace),
     (select_entity,c::SelectEntityRequest,c::SelectEntityResponse,SelectEntity),
     (mutate_state,c::MutateStateRequest,c::MutateStateResponse,MutateState),
+    (plan_effect_mutation,c::PlanEffectMutationRequest,c::PlanEffectMutationResponse,PlanEffectMutation),
     (get_state_operation_receipt,c::GetStateOperationReceiptRequest,c::GetStateOperationReceiptResponse,GetStateOperationReceipt));
 service!(c::dispatcher_service_server::DispatcherService;
     (inspect_dispatcher,c::InspectDispatcherRequest,c::InspectDispatcherResponse,InspectDispatcher),

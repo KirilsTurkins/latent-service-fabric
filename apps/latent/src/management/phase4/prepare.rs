@@ -106,6 +106,7 @@ pub fn prepare_state(
         StateCommand::Operation(args) => Request::from(c::GetStateOperationReceiptRequest {
             namespace: Some(target(&args.target, config)),
             operation_id: args.operation_id.clone(),
+            original_effect_plan: None,
         }),
         StateCommand::Entities(args) => Request::from(c::SelectEntityRequest {
             namespace: Some(target(&args.target, config)),

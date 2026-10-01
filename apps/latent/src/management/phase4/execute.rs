@@ -60,6 +60,9 @@ async fn dispatch(request: Request, session: &Session) -> Result<Response, Failu
         }
         Request::SelectEntity(value) => call!(session, StateServiceClient, select_entity, value),
         Request::MutateState(value) => call!(session, StateServiceClient, mutate_state, value),
+        Request::PlanEffectMutation(value) => {
+            call!(session, StateServiceClient, plan_effect_mutation, value)
+        }
         Request::GetStateOperationReceipt(value) => call!(
             session,
             StateServiceClient,

@@ -108,6 +108,7 @@ fn inspect_in(
         status: response::status(read.record().status) as i32,
         quota: Some(response::quota(read.record().quota)),
         generation: read.record().version.generation,
+        namespace_policy_digest: String::new(),
     };
     Ok(Ok((read, value)))
 }
@@ -170,7 +171,7 @@ pub(super) async fn receipt(
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
     let (read, receipt, public) = result?;
-    read_ack(finish).await?;
+    let ack = audit::ack(finish).await;
     response::owned(
         inner,
         worker_permit,
@@ -181,6 +182,7 @@ pub(super) async fn receipt(
         c::GetStateOperationReceiptResponse {
             receipt: None,
             namespace_receipt: Some(public),
+            audit_ack: Some(ack),
         }
         .into(),
     )
