@@ -1,6 +1,91 @@
 use super::*;
 
 #[test]
+fn namespace_close_invalidates_accepted_grants_without_refunding_physical_work() {
+    let (owner, original, authority) = setup();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    owner
+        .prepare_namespace_close("tenant-a", "orders", 1)
+        .unwrap()
+        .accept(|| Ok::<(), ()>(()))
+        .unwrap();
+    assert_eq!(
+        grant.check_current(time(103)),
+        Err(AuthorityError::PolicyBlocked)
+    );
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    let mut newer = original.clone();
+    newer.scope.publication = "publication-b".into();
+    newer.policy_revision = 2;
+    assert_eq!(
+        owner.publish(newer.clone()),
+        Err(AuthorityError::PolicyBlocked)
+    );
+    newer.scope.incarnation = 2;
+    owner.publish(newer).unwrap();
+    context.retire().unwrap();
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
+#[test]
+fn rejected_namespace_acceptance_preserves_current_original_effect_rules() {
+    let (owner, _, authority) = setup();
+    let fence = owner
+        .prepare_namespace_close("tenant-a", "orders", 1)
+        .unwrap();
+    assert!(matches!(
+        owner.0.state.try_lock(),
+        Err(std::sync::TryLockError::WouldBlock)
+    ));
+    assert_eq!(
+        fence.accept(|| Err::<(), _>("original-request-closed")),
+        Err("original-request-closed")
+    );
+    owner.retry_fence(&authority, 2, 200, time(101)).unwrap();
+    assert!(owner.0.state.lock().unwrap().closed_namespaces.is_empty());
+}
+
+#[test]
+fn sticky_namespace_close_is_exact_and_bounded_before_original_acceptance() {
+    let owner = EffectAuthorityOwner::new(1, 1, 100).unwrap();
+    let original = rule();
+    owner.publish(original.clone()).unwrap();
+    owner
+        .prepare_namespace_close("tenant-b", "orders", 1)
+        .unwrap()
+        .accept(|| Ok::<(), ()>(()))
+        .unwrap();
+    assert!(matches!(
+        owner.prepare_namespace_close("tenant-a", "orders", 1),
+        Err(AuthorityError::Capacity)
+    ));
+    assert!(matches!(
+        owner.prepare_namespace_close("tenant-a", "orders", 0),
+        Err(AuthorityError::Invalid)
+    ));
+    assert!(
+        owner
+            .0
+            .state
+            .lock()
+            .unwrap()
+            .rules
+            .get(&original.scope)
+            .unwrap()
+            .enabled
+    );
+    owner
+        .prepare_namespace_close("tenant-b", "orders", 1)
+        .unwrap()
+        .accept(|| Ok::<(), ()>(()))
+        .unwrap();
+    assert_eq!(owner.0.state.lock().unwrap().closed_namespaces.len(), 1);
+}
+
+#[test]
 fn explicit_redrive_intersects_narrowed_original_rules_through_final_acceptance() {
     let (owner, mut rule, authority) = setup();
     rule.policy_revision = 2;
