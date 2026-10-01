@@ -9,7 +9,7 @@ mod update;
 pub use model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider};
 pub use update::PreparedBindingUpdate;
 
-use super::{PublishedCatalog, compiler::CompiledCatalog};
+use super::{compiler::CompiledCatalog, PublishedCatalog};
 use latent_capabilities::broker::{ActivationCapabilityBroker, CompiledCapabilityPlan};
 use latent_core::{PlatformError, PlatformErrorCode};
 use model::StoredBinding;
