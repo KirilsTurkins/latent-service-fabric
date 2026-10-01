@@ -4,8 +4,8 @@ use wasmparser::{
     InstanceTypeDeclaration,
 };
 
-impl Guard {
-    pub(super) fn ty(&mut self, ty: &ComponentType<'_>) -> Result<()> {
+impl<'a> Guard<'a> {
+    pub(super) fn ty(&mut self, ty: &ComponentType<'a>) -> Result<()> {
         let value = match ty {
             ComponentType::Resource { .. } => Measure::LEAF,
             ComponentType::Defined(ty) => self.defined(ty)?,
@@ -25,8 +25,12 @@ impl Guard {
                     match declaration {
                         ComponentTypeDeclaration::Type(value) => self.ty(value)?,
                         ComponentTypeDeclaration::Alias(value) => self.alias(value)?,
-                        ComponentTypeDeclaration::Import(value) => self.reference(value.ty)?,
-                        ComponentTypeDeclaration::Export { ty, .. } => self.reference(*ty)?,
+                        ComponentTypeDeclaration::Import(value) => {
+                            self.reference(value.ty)?;
+                        }
+                        ComponentTypeDeclaration::Export { name, ty } => {
+                            self.export_type(name.name, *ty)?;
+                        }
                         ComponentTypeDeclaration::CoreType(_) => (),
                     }
                 }
@@ -38,7 +42,9 @@ impl Guard {
                     match declaration {
                         InstanceTypeDeclaration::Type(value) => self.ty(value)?,
                         InstanceTypeDeclaration::Alias(value) => self.alias(value)?,
-                        InstanceTypeDeclaration::Export { ty, .. } => self.reference(*ty)?,
+                        InstanceTypeDeclaration::Export { name, ty } => {
+                            self.export_type(name.name, *ty)?;
+                        }
                         InstanceTypeDeclaration::CoreType(_) => (),
                     }
                 }

@@ -3,12 +3,6 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0,
-      "CARGO_PROFILE_TEST_DEBUG": 0
-    },
     "name": "Admitted C capability ownership",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -28,6 +22,21 @@
         "uses": "dtolnay/rust-toolchain",
         "with": {
           "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -85,7 +94,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Preserve exact existing standalone and captured C SDK library isolation qualification plus Phase4 compiler and authored aggregate evidence with both artifact sets",
+  "reviewReason": "Preserve exact existing standalone and captured C SDK library isolation qualification plus Phase4 compiler and authored aggregate evidence with both artifact sets. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }
