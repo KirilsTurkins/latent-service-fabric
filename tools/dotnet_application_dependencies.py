@@ -420,13 +420,14 @@ def resolve(project: Path, candidate: Path, *, dotnet: Path, tools: Path, policy
 
 
 def configure(closure, project: Path, packages: Path) -> dict:
+    from tools.guest_dependency_inputs import read_native
     files = snapshot(project, exclude=('dependencies', 'application-vendor'))
     declared = declarations(files, closure.lock['selection'])
-    native = json.loads(read_bytes(closure.project / ASSETS, 16 * 1024 * 1024))
+    native = json.loads(read_native(closure, ASSETS, 16 * 1024 * 1024))
     baseline = json.loads(read_bytes(project / 'vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json'))
     if native['selection'] != declared['selection'] or native['sdkBaselineDigest'] != digest(canonical(baseline)):
         raise DependencyError('nuget-native-selection-or-sdk-baseline-drift')
-    expected = analyze(json.loads(read_bytes(closure.project / LOCK)), native['assets'], baseline, declared)
+    expected = analyze(json.loads(read_native(closure, LOCK)), native['assets'], baseline, declared)
     normalized = [{key: value for key, value in row.items() if key not in {'originalDigest', 'originalSize'}} for row in native['packages']]
     if normalized != expected['packages'] or any(native[key] != expected[key] for key in ('resources', 'trimmingDescriptors')):
         raise DependencyError('nuget-native-assets-or-resource-selection-drift')
@@ -472,7 +473,7 @@ def configure(closure, project: Path, packages: Path) -> dict:
         (destination / (archive + '.sha512')).write_text(row['contentHash'], encoding='ascii')
         (destination / '.nupkg.metadata').write_bytes(canonical({'version': 2, 'contentHash': row['contentHash'], 'source': 'captured-offline-closure'}))
     return {'formatVersion': 1, 'inputIdentity': closure.identity, **declared,
-            'nativeSelectionDigest': digest(read_bytes(closure.project / ASSETS)),
+            'nativeSelectionDigest': digest(read_native(closure, ASSETS)),
             'automaticLayoutTransformations': layouts,
             'originalPackages': [{'id': row['package'] + '/' + row['version'], 'digest': row['originalDigest'],
                                   'contentHash': row['contentHash'], 'targets': row['targets']} for row in active]}

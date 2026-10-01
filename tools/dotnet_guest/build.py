@@ -6,7 +6,7 @@ import tempfile
 import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build
+from tools import guest_compatibility_build, guest_dependency_inputs
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
     read_file, read_json, snapshot, write_json)
@@ -29,11 +29,13 @@ RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_st
            'tools/application_dependency_approval.py', 'tools/captured_compiler_isolation.py', 'tools/dotnet_compiler_isolation.py',
            'tools/dotnet_application_dependencies.py')
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_dependency_inputs.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
           *, tools: Path, offline: bool = False, executable_approval: str | None = None):
     project_path, output, tools = map(checked_path, (project_path, output, tools))
+    project_path = guest_dependency_inputs.application_root(project_path, 'dotnet')
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
         raise ValueError("build output must be outside source or beneath its target directory")
@@ -43,7 +45,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     commands, stage = None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
-        files = snapshot(project_path)
+        observed = guest_dependency_inputs.capture_source(project_path, 'dotnet')
+        files = observed.files
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe = inventory({name: read_file(ROOT / name) for name in RECIPE})
@@ -71,7 +74,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             stage = "compiler-inputs"
-            verified = verify_inputs(project_path, 'dotnet')
+            verified = verify_inputs(observed.dependency_root, 'dotnet')
             compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None)
             write_json(output / "compiler-inputs.json", compiler.before)
             materials.extend(compiler.materials)
@@ -90,7 +93,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     if executable_approval is None:
                         raise ValueError('captured NuGet targets/analyzers require the exact retained executable-input approval identity')
                     approval = approve_execution(verified, compiler.isolation, executable_recipe, executable_approval)
-                closure = prepare(project_path, work, output, 'dotnet', execution_approval=approval)
+                closure = prepare(observed.dependency_root, work, output, 'dotnet', execution_approval=approval)
                 compiler.application_closure = closure
                 compiler.executable_approval = approval
             stage = "compile"
@@ -117,7 +120,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                 commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
-            if snapshot(project_path) != files or snapshot(work, exclude=('dependencies', 'application-vendor') if closure else ()) != files:
+            observed.check_unchanged()
+            if snapshot(work, exclude=('dependencies', 'application-vendor') if closure else ()) != files:
                 raise ValueError("captured C# project changed during compilation")
             if inventory({name: read_file(ROOT / name) for name in RECIPE}) != recipe:
                 raise ValueError("C# authoring recipe changed during compilation")
