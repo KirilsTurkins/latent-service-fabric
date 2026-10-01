@@ -38,7 +38,17 @@ fn http_provider(f: &Fixture) -> HttpProvider {
                 allowed_request_headers: vec![],
                 redirect_destinations: vec![],
             }],
-            limits: HttpLimits::default(),
+            // Both providers retain the fixture's original 16 KiB I/O cap.
+            // HTTP's default 32 KiB buffers would fail before this tiny GET
+            // could prove that the independent typed authority works.
+            limits: HttpLimits {
+                maximum_request_body_bytes: 8 * 1024,
+                maximum_response_body_bytes: 8 * 1024,
+                maximum_encoded_response_bytes: 8 * 1024,
+                maximum_header_bytes: 1024,
+                maximum_headers: 8,
+                maximum_redirects: 0,
+            },
             extra_roots: vec![],
             public_roots: false,
         },

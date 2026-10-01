@@ -113,7 +113,11 @@ stream access to that same host/port must fail before DNS, TCP contact or a spen
 connect attempt. The same session then performs the allowed typed GET through
 the maintained HTTP provider. This raises the registered native inventory to 15;
 execution of that new control remains pending and is not included in the 14
-passing native cases above.
+passing native cases above. Its first run passed all stream-denial assertions,
+but the allowed GET hit the original fixture's 16 KiB I/O buffer ceiling because
+the HTTP provider defaults to 32 KiB buffers. The control now configures 8 KiB
+HTTP body buffers on that same original I/O runtime; a rerun of the corrected
+success leg remains pending.
 
 Open delivery gates include #737's explicit review, protected node/operator
 end-to-end qualification and live rotation workflow (#739), full adversarial
