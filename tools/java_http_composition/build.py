@@ -7,6 +7,11 @@ from tools.java_capsule_project import create
 from tools.java_http_composition.revision import create_revision
 from tools.rust_capsule_project import ROOT, digest, read_json, write_json
 
+# The actual C4 campaign retains its spin child through promotion/rollback
+# with this finite allowance. The node's existing ceiling remains 10B;
+# cancellation, the original deadline and physical release still apply.
+SPIN_CPU_FUEL = 10_000_000_000
+
 
 def projects(output: Path) -> dict[str, Path]:
     result = {}
@@ -17,7 +22,7 @@ def projects(output: Path) -> dict[str, Path]:
         (project / "wit/world.wit").write_bytes((fixture / "world.wit").read_bytes())
         descriptor = read_json(project / "capsule-project.json")
         descriptor["world"] = "examples:java-http-" + name + "/service@1.0.0"
-        descriptor["limits"].update(childCalls=4 if name == "adapter" else 0,
+        descriptor["limits"].update(cpuFuel=SPIN_CPU_FUEL, childCalls=4 if name == "adapter" else 0,
                                     memoryBytes=134217728 if name == "adapter" else 67108864)
         (project / "capsule-project.json").write_text(json.dumps(descriptor, indent=2) + "\n", encoding="utf-8")
         lock = read_json(project / "sdk-lock.json")
