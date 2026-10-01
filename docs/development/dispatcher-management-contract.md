@@ -61,6 +61,15 @@ latent dispatcher operation --scope node --operation-id control-42 --original-ac
 The final command recovers the original receipt without submitting another
 mutation. Epochs and revisions remain lossless decimal strings in CLI output.
 Portable tests cover exact RPC validation, CLI preparation and real-engine
-acceptance/denial schedules. Full authenticated CLI-to-node qualification,
+acceptance/denial schedules. The native gateway schedules use authenticated
+contexts, the installed dispatcher, its protected engine, global recovery
+capacity and the actual audit journal. They exercise original policy capture
+before polling, revoke/reallow without reviving an old decision, current access
+to the unchanged historical receipt, and audit closure preventing mutation.
+An accepted audit conclusion followed by a durable journal query supplies the
+readiness witness before another critical operation; the tests do not infer
+readiness from the caller having received an error.
+
+Full authenticated CLI-to-node qualification,
 manual effect reconciliation and restored-store operations remain separate
 requirements of issue #400.
