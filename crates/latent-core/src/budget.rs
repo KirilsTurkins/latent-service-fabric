@@ -768,6 +768,7 @@ struct AccountingState {
     outstanding_reservations: u64,
     own_memory_peak: u64,
     host_reserved_memory: u64,
+    host_observed_memory: u64,
     pending_runtime_memory: Option<u64>,
     child_reserved_memory: u64,
     child_observed_memory: u64,
