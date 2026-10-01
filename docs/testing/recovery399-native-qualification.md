@@ -44,3 +44,29 @@ Its retained-work inventory is empty. The composed command/result/inbox/effect
 workload, actual Java v1/v2 data change, current runtime authorization and a
 remote success after a pending backup remain separate integration requirements.
 No application snapshot or backup payload is published as test evidence.
+# Explicit protected review and resume
+
+The subsequent immutable source `e134d9363046729173b23fba64f482354302e1dd`
+passed all 147 maintained State cases on actual Linux x86_64/ext4, including two
+new physical administrative review/resume cases. Protected-files passed 18 cases
+with its one historical registered ignored ownership case. Both owners passed
+strict all-target/all-feature Clippy. Actual libtest discovery exactly matched
+all 147/19 maintained case names. The [resume receipt](recovery399-resume-native-evidence.json)
+records source/archive/tool, logs and preserved executable hashes separately
+from the earlier snapshot source qualification.
+
+The fixture restores a real protected engine, observes its new recovery epoch,
+refuses namespace resume before global review, keeps the namespace paused after
+global review, then uses the installed explicit resume port. After actual engine
+retirement/reopening it refuses the original pre-restore live token and replays
+the original bounded operation receipt under current authorization. A second
+case changes authorization after installed review and verifies refusal at the
+real irreversible writer fence with unchanged namespace/token.
+
+The prior source `e9a0b792` passed all 147 State cases but failed strict native
+lint for three unnecessary owned arguments in a new test helper; that failure
+is retained and the narrow borrow-only fix has no suppressed check. The initial
+source-staging quoting refusals and empty-cache selection error are also kept
+under the local qualification directory. These are not engine-test passes.
+No real retained effect/inbox workload, Java capsule, migration, management
+command or complete #398/#399 acceptance claim is included in this receipt.

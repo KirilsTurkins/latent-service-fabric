@@ -1,0 +1,57 @@
+{
+  "latent-state": {
+    "cases": 147,
+    "registeredIgnored": [],
+    "listSha256": "3eeaf98e6df117c3dc4f822c15ec43898a07d9d11305e4f28a7c6e4bac6aecf1",
+    "testSha256": "e7513395e8408220e246d9e8af5284e7ffb033748f26d05bbfb1eb478b3ead19"
+  },
+  "latent-protected-files": {
+    "cases": 19,
+    "registeredIgnored": [
+      "tests::unexpected_file_and_directory_owners_are_rejected"
+    ],
+    "listSha256": "889c88466bf8072f0cab10a337e4f73b4ba0444f0f10c8c038d1e821433eda0c",
+    "testSha256": "5d7a99173b10589a7dab13465f4eb4b5d8663e1a1a1d48b3ec3c2d75326b844a"
+  },
+  "source": {
+    "source": "e134d9363046729173b23fba64f482354302e1dd",
+    "sourceArchiveSha256": "9f8110d9a6f1553a60409a33cab5bbe9d51f7ea748a904659d89ac68e243f3ce",
+    "toolImage": "sha256:808682d39104dc67ea35b407841aa8ecd4d5662bb8fa8df09e78cecdf4cacde7",
+    "scope": [
+      "latent-state",
+      "latent-protected-files"
+    ],
+    "qualification": "native Linux x86_64/ext4 reviewed recovery/resume engine ports only; no Java/node/effect reconciliation qualification"
+  },
+  "clippySha256": "6ab8dda020da7461cc3151fd680c46f4e762b4a2085f576e427eb76f4ca3f920",
+  "binaries": [
+    {
+      "file": "latent_protected_files-c1cea63afd223a48",
+      "sha256": "75c8bd8c1e53705b8753b7eab43f2bd7591e33cc617e6dcecd80000c63bc07db",
+      "bytes": 1794424
+    },
+    {
+      "file": "latent_state-1d1882b485da920f",
+      "sha256": "ed74d757c6415b66751dcf700ac51523b06e1e90df50d0039f37af29bb0f5b4e",
+      "bytes": 19296896
+    }
+  ],
+  "preservedFailedClippy": {
+    "source": "e9a0b7929a8cfed2bde44803946857977d4b8d43",
+    "sha256": "3e0fe287c911e0966dbfaa7d77871dcbaa8b9929ea5cac03ed6dd7c7af9d38c0",
+    "reason": "three unnecessary owned test-helper observations; fixed by e134d936, no suppression or product change"
+  },
+  "schema": "latent.recovery.native-evidence.v1",
+  "platform": {
+    "target": "x86_64-unknown-linux-gnu",
+    "rust": "1.97.1",
+    "filesystemMagic": "ef53"
+  },
+  "scopeBoundary": [
+    "actual protected offline restore, administrative review, explicit namespace resume and final-fence revocation",
+    "original pre-restore live token invalidation; stable business namespace/incarnation",
+    "original receipt replay after actual engine close/reopen; current permission recheck",
+    "no effect provider or real pending/inbox closure fixture",
+    "no Java compiler, signed capsule, management CLI, migration or node qualification"
+  ]
+}
