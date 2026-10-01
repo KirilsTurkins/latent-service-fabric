@@ -64,6 +64,7 @@ impl StateTransactionHost {
                 conditions,
                 memory,
                 retained_bytes,
+                time: Arc::clone(&time),
             },
             &mut command,
         )
@@ -270,6 +271,7 @@ struct SessionSetup {
     conditions: Vec<Precondition>,
     memory: Arc<HostMemoryReservation>,
     retained_bytes: u64,
+    time: Arc<dyn CommandTimeSource>,
 }
 struct OpenedSession {
     owned: OwnedSession,
@@ -282,7 +284,7 @@ async fn open_session(
     command: &mut Option<CommandHostSelection>,
 ) -> Result<OpenedSession, StateFailure> {
     let operation = never_started(store.reserve_operation().map_err(protected_error), command)?;
-    let (opening, witness) = match store.open_view_observed() {
+    let (opening, witness) = match store.open_view_observed_retaining(Arc::clone(&setup.time)) {
         Ok(accepted) => accepted,
         Err(error) => {
             operation.retire().await;
@@ -313,6 +315,7 @@ async fn open_session(
         conditions,
         memory,
         retained_bytes,
+        time: _,
     } = setup;
     let job = store.with_view(view, retained_bytes, move |view| {
         super::initialization::initialize(view, selected, limits, mode, &conditions, &auth, memory)

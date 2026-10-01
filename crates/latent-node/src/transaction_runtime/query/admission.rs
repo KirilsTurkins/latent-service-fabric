@@ -146,7 +146,7 @@ impl QueryAdmission {
         let view = self
             .owners
             .store
-            .open_view()
+            .open_view_retaining(Arc::clone(&self.owners.time))
             .map_err(store_error)?
             .await
             .map_err(|_| denied())?
@@ -188,6 +188,7 @@ impl QueryAdmission {
         budget: &ActivationBudget,
     ) -> Result<TransactionExecution, PlatformError> {
         self.selection.accepts(envelope)?;
+        self.owners.time.retain_admission(envelope, budget)?;
         let control = self
             .control
             .lock()
@@ -290,6 +291,7 @@ impl TransactionActivationAdmission for QueryAdmission {
     ) -> BoxFuture<'a, Result<(), PlatformError>> {
         Box::pin(async move {
             self.selection.accepts(envelope)?;
+            self.owners.time.retain_admission(envelope, budget)?;
             let memory = budget.reserve_host_memory(65_536).map_err(|_| denied())?;
             let decision = self.retain_authority(envelope, budget)?;
             drop(decision);
