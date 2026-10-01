@@ -1,0 +1,41 @@
+package examples:java-http-domain@1.0.0;
+
+interface types {
+    type sequence-number = u64;
+    record wide {
+        a: string, b: string, c: string, d: string, e: string, f: string,
+        g: string, h: string, i: string, j: string, k: string, l: string,
+        sequence: sequence-number,
+    }
+    record nested { value: wide, optional: option<wide>, labels: list<string> }
+}
+
+interface api {
+    use types.{wide, nested};
+    status: func() -> list<wide>;
+    echo: func(value: wide) -> wide;
+    echo-nested: func(value: nested) -> nested;
+    text: func(value: string) -> string;
+    items: func(value: list<string>) -> list<string>;
+    fail: func() -> result<string, string>;
+    throw-error: func() -> string;
+    spin: func() -> u32;
+    private-admin: func() -> string;
+    publishing: func() -> string;
+    provider-event: func() -> string;
+}
+
+world typed-domain {
+    export api;
+}
+
+world service {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    include typed-domain;
+}
+
+world runtime-support {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+}
