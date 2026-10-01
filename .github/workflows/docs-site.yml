@@ -10,8 +10,8 @@ jobs:
   website:
     name: Static site, examples and browser journeys
     runs-on: ubuntu-24.04
-    # The complete matrix can reach its final five-minute browser journey after
-    # 27 minutes. Leave time for that bounded check and receipt upload/cleanup.
+    # Keep diagnostic headroom for cold installations; all checks remain required.
+    # Duration is measured from job timestamps rather than enforced by truncation.
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,11 +49,25 @@ jobs:
       - name: Verify production pages, theme and source-backed controls
         working-directory: website
         run: |
-          npm run test:build
-          npm run test:theme
-          npm run test:examples
-          npm run test:versions
-          npm run test:discovery
+          # Each suite owns separate servers, browsers and evidence directories.
+          # Run the complete five-suite matrix concurrently on the hosted VM.
+          npm run test:versions &
+          versions_pid=$!
+          npm run test:build &
+          build_pid=$!
+          npm run test:theme &
+          theme_pid=$!
+          npm run test:examples &
+          examples_pid=$!
+          npm run test:discovery &
+          discovery_pid=$!
+          status=0
+          wait "$build_pid" || status=$?
+          wait "$theme_pid" || status=$?
+          wait "$examples_pid" || status=$?
+          wait "$discovery_pid" || status=$?
+          wait "$versions_pid" || status=$?
+          exit "$status"
       - name: Retain only the tested site and compact browser receipts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
