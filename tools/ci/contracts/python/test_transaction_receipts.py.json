@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "TransactionReceiptTests.test_abort_fence_is_specific_to_old_attempt_and_not_structural_authority",
+    "TransactionReceiptTests.test_committed_cleanup_and_uncertain_effect_keep_original_commit",
+    "TransactionReceiptTests.test_decoded_result_and_envelope_traversal_are_bounded_before_schema_recursion",
+    "TransactionReceiptTests.test_expired_payload_keeps_known_commit_but_unknown_never_supplies_abort_proof",
+    "TransactionReceiptTests.test_fresh_query_has_view_and_no_durable_command_or_effect_identity",
+    "TransactionReceiptTests.test_raw_http_decoder_rejects_duplicate_fields_and_deep_json_before_lifting",
+    "TransactionReceiptTests.test_receipt_links_unknown_formats_and_full_width_integers_fail_closed",
+    "TransactionReceiptTests.test_retained_rejection_uses_original_old_application_format_without_state_commit",
+    "TransactionReceiptTests.test_six_guest_and_external_profiles_are_complete_and_independent"
+  ],
+  "guards": {
+    "TransactionReceiptTests.test_abort_fence_is_specific_to_old_attempt_and_not_structural_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:84effc0501fd79e2cbb1eb349ac079cd832956e5e8af93073780a1cc74a7fc9f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionReceiptTests.test_committed_cleanup_and_uncertain_effect_keep_original_commit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:84effc0501fd79e2cbb1eb349ac079cd832956e5e8af93073780a1cc74a7fc9f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionReceiptTests.test_decoded_result_and_envelope_traversal_are_bounded_before_schema_recursion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:84effc0501fd79e2cbb1eb349ac079cd832956e5e8af93073780a1cc74a7fc9f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionReceiptTests.test_expired_payload_keeps_known_commit_but_unknown_never_supplies_abort_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:84effc0501fd79e2cbb1eb349ac079cd832956e5e8af93073780a1cc74a7fc9f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionReceiptTests.test_fresh_query_has_view_and_no_durable_command_or_effect_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:84effc0501fd79e2cbb1eb349ac079cd832956e5e8af93073780a1cc74a7fc9f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionReceiptTests.test_raw_http_decoder_rejects_duplicate_fields_and_deep_json_before_lifting": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:84effc0501fd79e2cbb1eb349ac079cd832956e5e8af93073780a1cc74a7fc9f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionReceiptTests.test_receipt_links_unknown_formats_and_full_width_integers_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:84effc0501fd79e2cbb1eb349ac079cd832956e5e8af93073780a1cc74a7fc9f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionReceiptTests.test_retained_rejection_uses_original_old_application_format_without_state_commit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:84effc0501fd79e2cbb1eb349ac079cd832956e5e8af93073780a1cc74a7fc9f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionReceiptTests.test_six_guest_and_external_profiles_are_complete_and_independent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:84effc0501fd79e2cbb1eb349ac079cd832956e5e8af93073780a1cc74a7fc9f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_transaction_receipts.py",
+  "reviewReason": "Bounded HTTP receipt linkage, payload expiry, rejection, opaque abort, full-width u64 and independent profile cases",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -10,6 +10,8 @@
       "pull_request": {
         "paths": [
           "sdk/typescript-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
           "crates/latent-wasmtime/examples/typescript_runtime_probe.rs",
           "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
           "tools/typescript_guest/**",
@@ -36,6 +38,8 @@
         ],
         "paths": [
           "sdk/typescript-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
           "crates/latent-wasmtime/examples/typescript_runtime_probe.rs",
           "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
           "tools/typescript_guest/**",
@@ -65,7 +69,7 @@
   "requiredJobs": [
     "boundary"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

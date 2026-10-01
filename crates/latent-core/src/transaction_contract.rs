@@ -55,7 +55,10 @@ impl Value {
         bounded(self.bytes.len(), VALUE_BYTES)?;
         if self.media_type.is_empty()
             || !self.media_type.is_ascii()
-            || self.media_type.contains('\0')
+            || !self
+                .media_type
+                .bytes()
+                .all(|byte| (32..=126).contains(&byte))
         {
             return Err(ContractError::InvalidPresentValue);
         }
@@ -287,6 +290,11 @@ mod tests {
         value.bytes.push(0);
         assert_eq!(value.validate(), Err(ContractError::ByteLimit));
         value.bytes.clear();
+        for media_type in ["text/plain\n", "text/plain\t", "application/é"] {
+            value.media_type = media_type.into();
+            assert_eq!(value.validate(), Err(ContractError::InvalidPresentValue));
+        }
+        value.media_type = "application/octet-stream".into();
         value.metadata = vec![("x".into(), "".into()), ("x".into(), "a".into())];
         assert_eq!(value.validate(), Err(ContractError::Duplicate));
     }

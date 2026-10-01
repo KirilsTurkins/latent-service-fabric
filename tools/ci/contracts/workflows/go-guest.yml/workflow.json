@@ -10,6 +10,8 @@
       "pull_request": {
         "paths": [
           "sdk/go-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
           "tools/go_guest/**",
           "tools/go_capsule*.py",
           "tools/probe_go_authoring.py",
@@ -43,6 +45,8 @@
         ],
         "paths": [
           "sdk/go-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
           "tools/go_guest/**",
           "tools/go_capsule*.py",
           "tools/probe_go_authoring.py",
@@ -79,7 +83,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

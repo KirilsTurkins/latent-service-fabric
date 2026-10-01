@@ -10,8 +10,8 @@ mod tests;
 
 use super::{invalid, unavailable, CapabilityPolicy, ProviderBinding};
 pub use authority::{
-    CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, PolicySnapshot,
-    PolicySnapshotState, SealedPolicyDecision,
+    CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, OwnedPolicyDecision,
+    PolicySnapshot, PolicySnapshotState, SealedPolicyDecision,
 };
 use latent_artifacts::LifecycleAuthorityHandle;
 use latent_core::PlatformError;

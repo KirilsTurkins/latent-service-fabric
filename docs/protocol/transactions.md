@@ -108,7 +108,7 @@ defines transactional invoke, fresh query, command/commit lookup, effect status
 and history, and command cancellation. Its wrapper requests negotiate the whole
 profile and retain the existing generic invocation fields. The stateless Invoke
 API gains no durable authority from `idempotency-key`. Captured source identity
-contains exact publication, revision, component digest, route generation,
+contains exact publication, revision, separate component and release digests, route generation,
 contract digest, state schema and input/result format. Replays retain that
 source identity despite subsequent route changes.
 
@@ -128,6 +128,12 @@ least the acknowledged version through `minimum-view-version`; incarnation
 mismatch fails. Queries are fresh again on each new request, not cached command
 replays. All envelope and application result bytes are bounded before lifting.
 
+The shared `decode_envelope` validates byte/depth/node limits before JSON
+allocation, rejects duplicate fields, then checks structural and decoded bounds.
+Receipt IDs, source formats, opaque versions and effect attempts must agree.
+An opaque abort fence passing shape validation grants no retry authority; the
+host must prove durable technical abort and physical-owner retirement.
+
 Only explicit application data, permitted media type and application response
 metadata are retained. Set-Cookie, Authorization, CSRF tokens, CORS/CSP/security
 headers and credentials are not replayable historical data by default. Current
@@ -135,6 +141,9 @@ transport headers are reconstructed under current route/security policy. A
 committed application result with cleanup, cancellation or transport failure
 stays committed; `already-committed` cancellation returns its receipt. Lost commit
 acknowledgement yields lookup/recovery, never an invented abort.
+`application-state-committed=false` on an unknown outcome is not proof of abort.
+A known commit remains `committed` after payload expiry, with its receipt and
+`payload-available=false`; expiry cannot fabricate a safe retry.
 
 ## Durable effects and formats
 
@@ -170,6 +179,11 @@ Both required profiles cover Rust, C, TypeScript, Go, Java and C#/.NET: guest
 state/query/intent operations for #389/#718, and all external transactional RPCs
 plus authenticated management inspection/writes for #401. Client generation
 cannot qualify guest lowering; guest compilation cannot qualify a client transport.
+[The generated requirements](../../sdk/profile/transaction-requirements-v1.json)
+enumerate all 13 guest operations and 11 external/management RPCs. Guest profile
+`latent.guest.transaction.v1` and client profile `latent.client.transaction.v1`
+both consume the single `lsf-transaction-v1` wire contract and retain independent
+execution evidence; neither becomes qualified by generating the other.
 
 Required compiler probes cover reuse of imported types, result/option/record/list
 lifting, imported own/borrow resource ownership and host suspension. Freestanding
@@ -188,6 +202,22 @@ globally increased. Pages pull one nested entry per call to avoid list-element
 amplification from #708. Successful generation/compilation alone is not successful
 preparation or real state-engine execution. #708 retains its separate composed
 Java regression; the definition probes consume the same preparation limits.
+
+[The generated preparation profile](../../sdk/profile/transaction-preparation-v1.json)
+binds these dimensions with its own digest. Engine reflection checks all 13
+operations, including eight async imports, and writes per-signature allocation
+plans when `LSF_TRANSACTION_PREPARATION_REPORT` names a new output file. A
+negative nested-page signature consumes the #708 allocation regression, and
+unrecognized resource owners reject before lifting.
+
+[The shared compiler inputs](../../sdk/transaction-contract) use each maintained
+language owner through `tools/qualify_transaction_contracts.py --language LANGUAGE
+--output NEW_DIRECTORY`. Java also needs `--wasi-sdk`; TypeScript and .NET need
+their existing pinned `--tools` directory. The six existing language CI lanes
+retain actual components, exact generated bindings, source identity and compiler
+definition receipts. They preserve the later executable SDK gates. The required
+Jco `delete` declaration and Java shared-owner alias corrections are exact
+compiler projections; neither changes WIT authority or lowers typecheck strictness.
 
 [Shared vectors](../../sdk/profile/transaction-vectors.json) retain one scenario
 vocabulary across guest models, external client models, HTTP and actual execution.

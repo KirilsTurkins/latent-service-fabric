@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_guest_bindings.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Prove exact selected-world linker metadata against the authoritative nominal types and async signatures; unchanged single-world contracts and physical output ownership remain required",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6c51ffa8c2cd39b9f57f3cc4d48303d734a845c15a476038a6289b77d0efbc82"
+  "sha256": "d9f5f4e183a39e0cdc3d845dbe4b2b48ca2fd82e6070df9abfbb4000aa4aafb9"
 }

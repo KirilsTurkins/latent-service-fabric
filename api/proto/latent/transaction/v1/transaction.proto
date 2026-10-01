@@ -76,6 +76,8 @@ message SourceIdentity {
   string state_schema = 6;
   string input_format = 7;
   string result_format = 8;
+  // The exact component bytes and signed release bundle are separate sources.
+  string component_digest = 9;
 }
 
 message CommitReceipt {
@@ -119,6 +121,7 @@ message CommandInspection {
   // Result metadata durability is distinct from application state commitment.
   bool metadata_durable = 6;
   bool application_state_committed = 7;
+  // false on an unknown/recovery-required outcome is not proof of abort.
   SourceIdentity source = 8;
   oneof retained_result {
     latent.invocation.v1.Success success = 9;

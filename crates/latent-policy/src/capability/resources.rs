@@ -71,6 +71,41 @@ impl HttpOrigin {
     }
 }
 
+/// Host-approved recovery domain; guest claims cannot widen it to shared.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum RecoveryScopeKind {
+    OriginalCaller,
+    ServiceIntegration,
+    Delegated,
+    Shared,
+}
+
+/// Exact tuples avoid synthesizing a cross-product of unrelated grants.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StateResourceScope {
+    pub namespace: String,
+    pub incarnation: u64,
+    #[serde(deserialize_with = "explicit_entity")]
+    pub entity: Option<String>,
+    pub recovery_kind: RecoveryScopeKind,
+    pub recovery_scope: String,
+    pub result_policy: String,
+}
+impl StateResourceScope {
+    fn valid(&self) -> bool {
+        state_identifier(&self.namespace)
+            && self.incarnation != 0
+            && self
+                .entity
+                .as_ref()
+                .is_none_or(|value| state_identifier(value))
+            && identifier(&self.recovery_scope)
+            && identifier(&self.result_policy)
+    }
+}
+
 /// Closed, typed resource scopes. Empty allow-sets match nothing. A missing
 /// additional grant constraint is represented outside this required rule type.
 #[derive(Debug, Deserialize, Serialize)]
@@ -109,6 +144,9 @@ pub enum ResourceConstraint {
         services: Vec<String>,
         publications: Vec<String>,
     },
+    State {
+        scopes: Vec<StateResourceScope>,
+    },
 }
 
 /// A normalized host-side operation target. Guest labels are not evidence that
@@ -142,6 +180,14 @@ pub enum ResourceTarget<'a> {
         service: &'a str,
         publication: &'a str,
     },
+    State {
+        namespace: &'a str,
+        incarnation: u64,
+        entity: Option<&'a str>,
+        recovery_kind: RecoveryScopeKind,
+        recovery_scope: &'a str,
+        result_policy: &'a str,
+    },
 }
 
 impl ResourceTarget<'_> {
@@ -162,6 +208,20 @@ impl ResourceTarget<'_> {
                 service,
                 publication: id,
             } => identifier(service) && publication(id),
+            Self::State {
+                namespace,
+                incarnation,
+                entity,
+                recovery_scope,
+                result_policy,
+                ..
+            } => {
+                state_identifier(namespace)
+                    && *incarnation != 0
+                    && entity.is_none_or(state_identifier)
+                    && identifier(recovery_scope)
+                    && identifier(result_policy)
+            }
         }
     }
 }
@@ -195,6 +255,7 @@ impl ResourceConstraint {
                 unique(services, |value| identifier(value))
                     && unique(publications, |value| publication(value))
             }
+            Self::State { scopes } => unique(scopes, StateResourceScope::valid),
         };
         if valid {
             Ok(())
@@ -225,6 +286,10 @@ impl ResourceConstraint {
                 | (Self::Events { .. }, "latent:events/publisher@0.2.0")
                 | (Self::Telemetry { .. }, "latent:telemetry/custom@0.1.0")
                 | (Self::Service { .. }, "latent:service/invoke@0.1.0")
+                | (
+                    Self::State { .. },
+                    "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
+                )
         )
     }
 
@@ -277,6 +342,24 @@ impl ResourceConstraint {
                     publication,
                 },
             ) => contains(services, service) && contains(publications, publication),
+            (
+                Self::State { scopes },
+                ResourceTarget::State {
+                    namespace,
+                    incarnation,
+                    entity,
+                    recovery_kind,
+                    recovery_scope,
+                    result_policy,
+                },
+            ) => scopes.iter().any(|scope| {
+                scope.namespace == *namespace
+                    && scope.incarnation == *incarnation
+                    && scope.entity.as_deref() == *entity
+                    && scope.recovery_kind == *recovery_kind
+                    && scope.recovery_scope == *recovery_scope
+                    && scope.result_policy == *result_policy
+            }),
             _ => false,
         }
     }
@@ -284,6 +367,14 @@ impl ResourceConstraint {
 
 fn contains(values: &[String], requested: &str) -> bool {
     values.iter().any(|value| value == requested)
+}
+pub(super) fn explicit_entity<'de, D: serde::Deserializer<'de>>(
+    decoder: D,
+) -> Result<Option<String>, D::Error> {
+    Option::<String>::deserialize(decoder)
+}
+fn state_identifier(value: &str) -> bool {
+    !value.is_empty() && value.len() <= 256 && !value.chars().any(char::is_control)
 }
 fn log_level(value: &str) -> bool {
     matches!(value, "trace" | "debug" | "info" | "warn" | "error")

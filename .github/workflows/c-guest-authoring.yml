@@ -5,6 +5,7 @@ on:
     branches: [development]
     paths:
       - 'sdk/c-guest/**'
+      - 'sdk/transaction-contract/**'
       - 'tools/**'
       - 'crates/**'
       - 'wit/**'
@@ -16,6 +17,7 @@ on:
     branches: [development]
     paths:
       - 'sdk/c-guest/**'
+      - 'sdk/transaction-contract/**'
       - 'tools/**'
       - 'crates/**'
       - 'wit/**'
@@ -62,6 +64,8 @@ jobs:
           python3 -m pip install --requirement tools/requirements.lock
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
           echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+      - name: Qualify proposed transaction shapes with the maintained async C compiler
+        run: python3 tools/qualify_transaction_contracts.py --language c --output "$RUNNER_TEMP/transaction-contract-c"
       - name: Build and execute signed C and Rust capability packages
         env:
           LSF_GUEST_CAPSULES: ${{ runner.temp }}/c-guest-capsules
@@ -82,6 +86,21 @@ jobs:
         with:
           name: c-guest-ownership-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/transaction-contract-c/report.json
+            ${{ runner.temp }}/transaction-contract-c/source.tar.gz
+            ${{ runner.temp }}/transaction-contract-c/component.wit
+            ${{ runner.temp }}/transaction-contract-c/preparation.json
+            ${{ runner.temp }}/transaction-contract-c/compiler-inputs.json
+            ${{ runner.temp }}/transaction-contract-c/logs/**
+            ${{ runner.temp }}/transaction-contract-c/compiler/*.log
+            ${{ runner.temp }}/transaction-contract-c/compiler/*.command.json
+            ${{ runner.temp }}/transaction-contract-c/compiled/component.wasm
+            ${{ runner.temp }}/transaction-contract-c/compiled/component.wit
+            ${{ runner.temp }}/transaction-contract-c/compiled/bindings/**
+            ${{ runner.temp }}/transaction-contract-c/compiled/generated/**
+            ${{ runner.temp }}/transaction-contract-c/compiled/raw-generated-bindings.json
+            ${{ runner.temp }}/transaction-contract-c/bindings/**
+            ${{ runner.temp }}/transaction-contract-c/component.wasm
             ${{ runner.temp }}/c-guest-*.log
             ${{ runner.temp }}/c-guest-capsules/BUILD-COMPLETE.json
             ${{ runner.temp }}/c-guest-capsules/c-*/*.json
