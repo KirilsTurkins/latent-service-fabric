@@ -1,5 +1,7 @@
 //! Product command dispatch.
 #[cfg(target_os = "linux")]
+mod inspect_transactions;
+#[cfg(target_os = "linux")]
 mod serve;
 #[cfg(any(target_os = "linux", test))]
 mod status;
@@ -25,6 +27,11 @@ struct CommandLine {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Inspect native transaction host profiles before binding policies.
+    InspectTransactionHosts {
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+    },
     /// Check protected configuration and actual compiler/profile prerequisites.
     CheckConfig {
         #[arg(long, value_name = "PATH")]
@@ -59,6 +66,7 @@ pub fn main_entry() -> ExitCode {
         }
     };
     let result = match command {
+        Command::InspectTransactionHosts { config } => run_inspect_transaction_hosts(&config),
         Command::CheckConfig { config } => run_check_config(&config),
         Command::Serve { config } => run_serve(&config),
     };
@@ -66,6 +74,16 @@ pub fn main_entry() -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(failure) => report_failure(failure),
     }
+}
+
+#[cfg(target_os = "linux")]
+fn run_inspect_transaction_hosts(path: &std::path::Path) -> Result<(), Failure> {
+    inspect_transactions::run(path)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn run_inspect_transaction_hosts(_path: &std::path::Path) -> Result<(), Failure> {
+    Err(Failure::new("platform", PlatformErrorCode::Unavailable))
 }
 
 #[cfg(target_os = "linux")]

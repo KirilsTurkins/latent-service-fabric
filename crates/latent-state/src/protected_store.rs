@@ -64,23 +64,7 @@ impl ProtectedStoreOwner {
     /// native limits and the current format; it is not a qualification receipt.
     #[must_use]
     pub fn inspection_profile(&self) -> (&'static str, [u8; 32]) {
-        use sha2::{Digest, Sha256};
-        let mut digest = Sha256::new();
-        digest.update(b"lsf-protected-redb-4.3.0-immediate-ext4-v1\0");
-        digest.update(b"latent.transaction-store.v1\0");
-        for value in [
-            self.limits.cache_bytes,
-            self.limits.maximum_rows,
-            self.limits.maximum_logical_bytes,
-            self.limits.maximum_key_bytes,
-            self.limits.maximum_value_bytes,
-            self.limits.maximum_batch_rows,
-            self.limits.maximum_read_views,
-        ] {
-            digest.update((value as u64).to_le_bytes());
-        }
-        digest.update(self.limits.maximum_view_age.as_nanos().to_le_bytes());
-        ("protected-redb-immediate-ext4-v1", digest.finalize().into())
+        config::inspection_profile(self.limits)
     }
     /// Compares sealed physical ownership, including clones of this same owner.
     /// Paths, epochs and caller descriptions cannot establish this identity.
