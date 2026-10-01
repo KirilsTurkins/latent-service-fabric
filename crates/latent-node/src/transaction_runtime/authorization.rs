@@ -3,8 +3,8 @@ use latent_artifacts::ReleaseUseEligibility;
 use latent_capabilities::namespace::{NamespaceAuthority, INTENT_CONTRACT, STATE_CONTRACT};
 use latent_core::{ActivationBudget, InvocationPrincipal, PlatformError, PlatformErrorCode};
 use latent_policy::capability::{
-    CallRestrictions, CapabilityCeiling, EvaluationInput, PolicyStore,
-    ResourceTarget, SealedPolicyDecision,
+    CallRestrictions, CapabilityCeiling, EvaluationInput, PolicyStore, ResourceTarget,
+    SealedPolicyDecision,
 };
 use latent_state::namespace::catalog::NamespaceRead;
 use std::{sync::Arc, time::Instant};
