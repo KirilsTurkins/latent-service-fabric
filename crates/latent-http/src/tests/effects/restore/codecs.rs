@@ -201,6 +201,13 @@ impl RecoveryCodecs for Codecs {
         self.validate_view(view)?;
         Ok(())
     }
+    fn accept_restore(
+        &self,
+        request: &OfflineRestoreRequest,
+        _: latent_state::recovery::offline::RestoreFence,
+    ) -> Result<(), StoreError> {
+        self.check_operator(&request.review.operator_id)
+    }
     fn review_reconciliation(
         &self,
         view: &ReadView,

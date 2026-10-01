@@ -4994,6 +4994,9 @@
         "recovery::offline::tests::protected_offline_snapshot_and_fresh_restore_close_real_engines_and_remain_paused",
         "recovery::offline::tests::protected_recovery_refuses_bad_input_missing_artifacts_revocation_and_existing_destination_without_source_poisoning",
         "recovery::offline::tests::protected_review_requires_explicit_reconciliation_and_namespace_resume_and_replays_original_receipt",
+        "recovery::offline::tests::restore_authority::protected_restore_final_publication_revocation_preserves_paused_history_without_success_receipt",
+        "recovery::offline::tests::restore_authority::protected_restore_requires_installed_final_authority_before_creating_destination",
+        "recovery::offline::tests::restore_authority::protected_restore_revocation_after_review_denies_writes_without_changing_source",
         "recovery::offline::tests::protected_source_requires_actual_owner_retirement_and_refuses_active_or_missing_roots",
         "recovery::restore::tests::actual_older_snapshot_restore_preserves_original_rows_and_business_incarnation_but_invalidates_live_tokens",
         "recovery::restore::tests::checked_restore_fences_each_durable_write_and_preserves_failed_staging_without_touching_source",
@@ -5075,7 +5078,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 174,
+      "minimumCases": 177,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

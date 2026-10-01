@@ -70,6 +70,17 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
         request: &OfflineRestoreRequest,
     ) -> Result<(), StoreError>;
 
+    /// Recheck the original current restore authority and clock at actual
+    /// destination writes and publication. Earlier review and historic rows are
+    /// not this authority. No request-selected approval or provider execution.
+    fn accept_restore(
+        &self,
+        _request: &OfflineRestoreRequest,
+        _fence: RestoreFence,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+
     /// Review the actual linked restored inventory, recovery/data-loss window,
     /// present grants and conservative clock continuity. No external redrive.
     fn review_reconciliation(
@@ -138,6 +149,13 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
     ) -> Result<(), StoreError> {
         Err(StoreError::Unavailable)
     }
+}
+
+/// Host-owned acceptance boundaries, never a caller-selected recovery purpose.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RestoreFence {
+    Write,
+    Publication,
 }
 
 #[derive(Debug, Clone)]

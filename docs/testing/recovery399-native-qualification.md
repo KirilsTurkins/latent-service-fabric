@@ -44,6 +44,22 @@ Its retained-work inventory is empty. The composed command/result/inbox/effect
 workload, actual Java v1/v2 data change, current runtime authorization and a
 remote success after a pending backup remain separate integration requirements.
 No application snapshot or backup payload is published as test evidence.
+
+The current offline port also requires installed
+`RecoveryCodecs::accept_restore` authority at the host-owned `Write` and
+`Publication` boundaries. The default refuses restoration even when an earlier
+inspection and schema review succeeded. The original deadline and current
+permission are checked before destination creation, at the existing pre/post
+write fences, and around actual engine close and file-lock publication.
+Authority loss after durable writes or during final publication preserves
+`CommitUncertain` and the paused destination history; it returns no successful
+restore receipt or resumed business permission. The source remains separate.
+
+The three registered protected-engine regressions park the actual reviewer or
+publication callback and revoke its installed authority, without sleeps or
+guessed callback counts. Their source registration alone does not extend any
+of the immutable native receipts below or qualify signed Java restoration.
+
 # Explicit protected review and resume
 
 The subsequent immutable source `e134d9363046729173b23fba64f482354302e1dd`
