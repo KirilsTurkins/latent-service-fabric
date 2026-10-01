@@ -50,6 +50,8 @@ pub(super) struct Inner {
     pub profile: String,
     pub configuration_digest: String,
     pub management: Option<StateManagementBackend>,
+    pub maintenance: Arc<latent_commit::atomic::ResultMaintenanceOwner>,
+    pub maintenance_clock: Arc<dyn latent_wire::phase4::StateMaintenanceClock>,
 }
 #[derive(Clone)]
 pub struct StateRuntime(pub(super) Arc<Inner>);
@@ -141,6 +143,8 @@ impl StateRuntime {
             profile: profile.into(),
             configuration_digest,
             management: None,
+            maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
+            maintenance_clock: time,
         };
         finish_open(inner, effects, clock, audit, settings.shutdown_grace()).await
     }
@@ -336,6 +340,8 @@ fn management(
             admission: Arc::new(StateManagementRecoveryAdmission::new(inner.native.clone())),
             clock,
             audit,
+            maintenance: Arc::clone(&inner.maintenance),
+            maintenance_clock: Arc::clone(&inner.maintenance_clock),
         },
         bindings,
     )?))
