@@ -2,15 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latent.dev/schemas/node-providers.schema.json",
   "title": "Optional standalone bounded capability providers",
-  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations, metric descriptor uniqueness and histogram ordering, and aggregate reservations. Installs only maintained HTTP, local-blob, protected-local-secret, custom-metric, isolated-local-service, TLS-NATS-immediate-event, activation-clock and OS-entropy profiles; it grants no guest authority.",
+  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations, metric descriptor uniqueness and histogram ordering, and aggregate reservations. Installs only maintained buffered/streaming HTTP, local-blob, protected-local-secret, custom-metric, isolated-local-service, TLS-NATS-immediate-event, activation-clock and OS-entropy profiles; it grants no guest authority.",
   "type": "object",
   "additionalProperties": false,
   "required": ["formatVersion", "bindings"],
-  "anyOf": [{"required": ["events"]}, {"required": ["http"]}, {"required": ["blob"]}, {"required": ["secrets"]}, {"required": ["metrics"]}, {"required": ["localService"]}, {"required": ["clockMonotonic"]}, {"required": ["clockWall"]}, {"required": ["random"]}],
+  "anyOf": [{"required": ["events"]}, {"required": ["http"]}, {"required": ["httpStreaming"]}, {"required": ["blob"]}, {"required": ["secrets"]}, {"required": ["metrics"]}, {"required": ["localService"]}, {"required": ["clockMonotonic"]}, {"required": ["clockWall"]}, {"required": ["random"]}],
   "properties": {
     "formatVersion": {"type": "integer", "const": 1},
     "events": {"$ref": "#/$defs/events"},
     "http": {"$ref": "#/$defs/http"},
+    "httpStreaming": {"$ref": "#/$defs/httpStreaming"},
     "secrets": {"$ref": "#/$defs/secrets"},
     "metrics": {"$ref": "#/$defs/metrics"},
     "localService": {
@@ -33,7 +34,7 @@
           "name": {"$ref": "#/$defs/token"}, "tenant": {"$ref": "#/$defs/token"},
           "consumerService": {"$ref": "#/$defs/token"}, "providerService": {"$ref": "#/$defs/token"},
           "providerBinding": {"$ref": "#/$defs/token"}, "route": {"$ref": "#/$defs/token"},
-          "contract": {"enum": ["latent:events/publisher@0.2.0", "latent:http/client@0.2.0", "latent:blob/blob@0.2.0", "latent:secrets/reader@0.1.0", "latent:telemetry/custom@0.1.0", "latent:service/invoke@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0"]}
+          "contract": {"enum": ["latent:events/publisher@0.2.0", "latent:http/client@0.2.0", "latent:http/streaming@0.3.0", "latent:blob/blob@0.2.0", "latent:secrets/reader@0.1.0", "latent:telemetry/custom@0.1.0", "latent:service/invoke@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0"]}
         }
       }
     }
@@ -115,6 +116,27 @@
             }
           }
         }
+      },
+      "if": {"required": ["credentialDirectory"]},
+      "then": {"required": ["credentials"], "properties": {"credentials": {"minItems": 1}}},
+      "else": {"properties": {"credentials": {"maxItems": 0}}}
+    },
+    "httpStreaming": {
+      "type": "object", "additionalProperties": false, "required": ["identity", "configuration", "limits"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/identity"}, "configuration": {"$ref": "#/$defs/httpConfiguration"},
+        "limits": {
+          "type": "object", "additionalProperties": false,
+          "required": ["maximumInputBytes", "maximumOutputBytes", "maximumChunkBytes", "maximumOutstandingChunks"],
+          "properties": {
+            "maximumInputBytes": {"type": "integer", "minimum": 0, "maximum": 66060288},
+            "maximumOutputBytes": {"type": "integer", "minimum": 1, "maximum": 66060288},
+            "maximumChunkBytes": {"type": "integer", "minimum": 1, "maximum": 65536},
+            "maximumOutstandingChunks": {"type": "integer", "minimum": 1, "maximum": 32}
+          }
+        },
+        "credentialDirectory": {"$ref": "#/$defs/http/properties/credentialDirectory"},
+        "credentials": {"$ref": "#/$defs/http/properties/credentials"}
       },
       "if": {"required": ["credentialDirectory"]},
       "then": {"required": ["credentials"], "properties": {"credentials": {"minItems": 1}}},
