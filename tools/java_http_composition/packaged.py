@@ -21,7 +21,7 @@ from tools.dev_packaged_process import digest as file_digest
 from tools.dev_packaged_process import write_json as replace_public
 from tools.dev_packaged_windows import Frontend, acquire, inputs
 from tools.dev_workflow import build, project, state, tool_inventory
-from tools.dev_workflow.common import digest, encode, require
+from tools.dev_workflow.common import DevError, digest, encode, require
 from tools.java_http_composition import context, inspection, provider_timeout, resource_diagnostics
 from tools.java_http_composition.build import projects
 from tools.java_http_composition.node import (
@@ -387,6 +387,7 @@ def qualify(configuration, output, *, diagnostics=False):
             report["originalCompilerLogs"] = _compiler_logs(workspaces, output)
         except BaseException as error:
             report["compilerLogRetentionFailure"] = type(error).__name__
+            report["compilerLogRetentionReason"] = error.code if isinstance(error, DevError) else None
             report["passed"] = False
         if api is not None:
             for workspace in list(api.running):

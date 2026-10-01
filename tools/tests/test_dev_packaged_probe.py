@@ -100,6 +100,41 @@ class PackagedProbe(unittest.TestCase):
         with self.assertRaisesRegex(common.DevError, 'guest-tool-companion-modified'):
             packaged._generation_tools(self.root, descriptor)
 
+    def test_composition_frontend_hashes_the_actual_operator_string_path(self):
+        from types import SimpleNamespace
+        import time
+        from tools.composition_probe.frontend import Frontend
+        from tools.phase2_operator_process import Client
+
+        frontend = self.root / 'frontend'
+        frontend.write_bytes(b'original frontend executable')
+        operator = self.root / 'operator'
+        operator.write_bytes(b'original operator executable')
+        cancellation = SimpleNamespace(check=lambda: None)
+        client = Client(operator, self.root, cancellation, time.monotonic() + 10)
+        self.assertIsInstance(client.executable, str)
+        observed = Frontend(frontend, 'sha256:' + hashlib.sha256(frontend.read_bytes()).hexdigest(), self.root, client)
+        self.assertEqual(observed.operator_digest, 'sha256:' + hashlib.sha256(operator.read_bytes()).hexdigest())
+        client.executable = str(self.root / 'missing-operator')
+        with self.assertRaisesRegex(RuntimeError, '^identity-file$'):
+            Frontend(frontend, observed.expected, self.root, client)
+
+    def test_original_compiler_log_retention_keeps_finite_owner_and_count_bounds(self):
+        from tools.dev_workflow.common import DevError
+        from tools.java_http_composition import packaged
+
+        workspace = self.root / 'test-original-workspace'
+        logs = workspace / 'builds/actual-attempt/source/output/compiler-logs'
+        logs.mkdir(parents=True)
+        for index in range(128):
+            (logs / f'{index:03d}.log').write_bytes(b'original bounded log')
+        retained = packaged._compiler_logs({'test-original-workspace': workspace}, self.root / 'original-observation')
+        self.assertEqual(len(retained), 128)
+        (logs / '129.log').write_bytes(b'original log beyond the configured count')
+        with self.assertRaisesRegex(DevError, '^packaged-java-original-compiler-log-bound$'):
+            packaged._compiler_logs({'test-original-workspace': workspace}, self.root / 'failed-observation')
+        self.assertEqual(len(list(logs.iterdir())), 129)
+
     @unittest.skipUnless(os.name == 'nt', 'actual Windows DACL required')
     def test_conductor_protects_only_its_new_windows_directory(self):
         from tools.dev_packaged_windows import make_private

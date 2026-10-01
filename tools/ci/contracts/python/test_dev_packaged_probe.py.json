@@ -2,6 +2,7 @@
   "cases": [
     "PackagedProbe.test_bounded_binary_stdin_reaches_only_the_owned_child",
     "PackagedProbe.test_changed_bytes_never_return_an_executable",
+    "PackagedProbe.test_composition_frontend_hashes_the_actual_operator_string_path",
     "PackagedProbe.test_conductor_protects_only_its_new_windows_directory",
     "PackagedProbe.test_connect_negotiates_without_requiring_an_installed_workspace",
     "PackagedProbe.test_deadline_does_not_replay_the_command",
@@ -17,6 +18,7 @@
     "PackagedProbe.test_newcomer_diagnostics_preserve_native_windows_and_utf8_paths",
     "PackagedProbe.test_newcomer_invocation_cannot_accept_stale_revision_or_wrong_greeting",
     "PackagedProbe.test_newcomer_walkthrough_requires_the_exact_staged_guide",
+    "PackagedProbe.test_original_compiler_log_retention_keeps_finite_owner_and_count_bounds",
     "PackagedProbe.test_output_flood_is_bounded_and_owned_child_is_reaped",
     "PackagedProbe.test_recovery_guest_rejects_changed_installed_helper_before_import",
     "PackagedProbe.test_required_unsupported_report_remains_a_non_success",
@@ -42,6 +44,18 @@
       "skipSites": []
     },
     "PackagedProbe.test_changed_bytes_never_return_an_executable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:380891144ed1bf4cf8dfab6b7d9b65fa466e3f38a28fc4fe71e06189027b01b7",
+        "class:setup-sha256:2d277f0aa3c5c73844dfdc30c8b6be8d4044721929ec72c60537958f66c7321c"
+      ],
+      "skipSites": []
+    },
+    "PackagedProbe.test_composition_frontend_hashes_the_actual_operator_string_path": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -243,6 +257,18 @@
       ],
       "skipSites": []
     },
+    "PackagedProbe.test_original_compiler_log_retention_keeps_finite_owner_and_count_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:380891144ed1bf4cf8dfab6b7d9b65fa466e3f38a28fc4fe71e06189027b01b7",
+        "class:setup-sha256:2d277f0aa3c5c73844dfdc30c8b6be8d4044721929ec72c60537958f66c7321c"
+      ],
+      "skipSites": []
+    },
     "PackagedProbe.test_output_flood_is_bounded_and_owned_child_is_reaped": {
       "bases": [
         "unittest.TestCase"
@@ -376,6 +402,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_packaged_probe.py",
-  "reviewReason": "Retain every original case and guard; reject mutated original SDK WIT tool bytes before source generation",
+  "reviewReason": "Qualify actual string operator identity and preserve bounded original compiler log retention",
   "schemaVersion": "latent.ci.contracts.v1"
 }
