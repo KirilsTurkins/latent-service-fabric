@@ -77,6 +77,7 @@ impl DispatcherConfig {
 
     pub(super) fn worker_limits(&self) -> StoreIoLimits {
         StoreIoLimits {
+            recovery: None,
             workers: self.workers,
             queued_jobs: self.queued_jobs,
             accepted_jobs: self.accepted_jobs,
