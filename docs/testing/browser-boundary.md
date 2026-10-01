@@ -77,7 +77,7 @@ classification or browser user-authentication guarantee is claimed.
 ## Feedback Report 2 response-policy observation, 1 October 2026
 
 The registered `http-response-policy` selection passed against the clean native
-source `4229d1a9e8ab8028793fccaba643b8e278223dda`. It executed the actual signed
+source `4229d1a9e8ab8028793fccaba643b8e278223dda`. It executed the actual catalog-published
 public component, 15 negative output vectors and successful later output. The
 reachable 65-header case records the admitted activation's nonterminal
 `OutputValidation / HttpResponseRejected` diagnostic through both tenant-scoped
