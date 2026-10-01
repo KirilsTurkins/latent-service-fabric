@@ -13,6 +13,8 @@ gate to the activation registration and reserves bounded native/result memory
 from that same activation. The durable claim must retain the original sealed
 namespace expectation. An opaque admitted claim is required to reobserve its
 exact post-admission generation; raw decoded pending rows cannot do this.
+The actual metadata view must also pass the durable global recovery guard and
+original namespace/history readiness before claiming or observing work.
 Registration/capacity failure admits no second guest. Known never-started paths
 still await actual native retirement before technical abort metadata is possible.
 
@@ -59,7 +61,8 @@ owner operation.
 
 The focused engine tests cover original token preservation across changed
 history, later commit and reopen, and exact absent/present history CAS before
-no-state rejection/abort acceptance. This source milestone does not certify the
+no-state rejection/abort acceptance, including the exact absent or reviewed
+global recovery guard. This source milestone does not certify the
 HTTP/management wire adapter, actual component completion campaign, recovery
 operator wiring or the full #387/#388/#718 acceptance gates. Those integrations
 must consume these owners and are qualified separately.

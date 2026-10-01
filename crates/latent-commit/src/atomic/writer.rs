@@ -916,6 +916,7 @@ impl CompleteEnvelope {
             let scope = super::record::record_scope(&terminal)?;
             let captured = latent_state::session::version::capture_view(view, &scope)?;
             batch.expectations.push(captured.history_expectation());
+            batch.expectations.push(captured.recovery_expectation());
             namespace.pins = pins;
             namespace.version.generation = namespace
                 .version

@@ -273,6 +273,13 @@ impl CommandAdmission {
                     native.enter();
                     let decision = (|| {
                         let view = store.snapshot()?;
+                        let ownership = auth.authority.ownership();
+                        latent_state::recovery::require_namespace_ready(
+                            &view,
+                            &ownership.tenant,
+                            &latent_core::StateNamespaceId(ownership.namespace.clone()),
+                            ownership.incarnation,
+                        )?;
                         let expected = auth.namespace.expectation();
                         if view.get(&expected.key)? != expected.value {
                             return Ok(Err(AtomicError::Conflict));
