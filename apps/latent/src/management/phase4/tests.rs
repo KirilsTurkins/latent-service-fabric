@@ -10,6 +10,7 @@ use latent_rpc::{control::v1 as c, phase4::Request, transaction::v1 as t};
 use serde_json::json;
 use std::time::Duration;
 mod dispatcher;
+mod effect_management;
 
 fn publication() -> String {
     format!("publication:sha256:{}", "a".repeat(64))

@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 mod dispatcher;
 mod effect_management;
 pub(super) use dispatcher::generation as dispatcher_generation;
+pub(super) use effect_management::plan as effect_plan;
 
 pub(super) fn bytes(value: &[u8]) -> Value {
     json!({"encoding":"base64","data":STANDARD.encode(value)})
