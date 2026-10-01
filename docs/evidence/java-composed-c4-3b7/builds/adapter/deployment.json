@@ -1,0 +1,40 @@
+{
+  "apiVersion": "latent.dev/v1alpha1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "java-http-adapter",
+    "tenant": "examples"
+  },
+  "spec": {
+    "service": "examples/java-http-adapter",
+    "release": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+    "route": {
+      "weight": 10000
+    },
+    "grants": [],
+    "resources": {
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "childCalls": 4,
+      "cpuFuel": 10000000000,
+      "effectCount": 0,
+      "logBytes": 0,
+      "memoryBytes": 134217728,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "wallTimeLimitMillis": 120000
+    },
+    "availability": {
+      "minimumCachedCopies": 1,
+      "minimumZones": 1
+    },
+    "placement": {
+      "trustClass": "internal",
+      "architectures": [
+        "x86_64",
+        "aarch64"
+      ]
+    }
+  }
+}
