@@ -92,15 +92,21 @@ impl StateTransactionHost {
                 return Err(error);
             }
         };
+        let view_identity = owned.payload.session.view_identity();
+        let token = match view_identity.token(&scope) {
+            Ok(token) => token,
+            Err(error) => {
+                drop(owned.payload);
+                owned.view.retire().await;
+                operation.retire().await;
+                return Err(state_error(error, false));
+            }
+        };
         let (context, info, work) = command.map_or((None, None, None), |mut command| {
-            let version = authorization.namespace.record().version;
-            let mut bytes = Vec::with_capacity(16);
-            bytes.extend_from_slice(&version.incarnation.to_le_bytes());
-            bytes.extend_from_slice(&version.generation.to_le_bytes());
             command.info.view = latent_executor::transaction::ViewIdentity {
                 namespace: scope.namespace.0.clone(),
                 incarnation: scope.incarnation.to_string(),
-                version: bytes,
+                version: token,
                 state_schema: scope.state_schema.clone(),
             };
             (
@@ -113,6 +119,7 @@ impl StateTransactionHost {
             activation,
             mode,
             scope,
+            view_identity,
             authorization,
             store,
             session: Mutex::new(Some(owned)),
