@@ -23,8 +23,8 @@ objects, continuation arrays and events remain inside the original accounted
 linear-memory allocation. Shared runtime task/wait records retain their original
 native reservations until actual physical destruction.
 
-The pending SDK class-library implementation supplies `Executors.newSingleThreadExecutor`
-and `newFixedThreadPool`, including ordinary `ThreadFactory` overloads. Each pool
+The pending SDK class-library implementation supplies `Executors.newSingleThreadExecutor`,
+`newFixedThreadPool` and `newCachedThreadPool`, including ordinary `ThreadFactory` overloads. Each pool
 has its own FIFO queue and honors its requested parallelism with lazy Java worker
 fibers. Submissions reserve executor, queued-work and pending-result records;
 blocked future and termination waits reserve wait records. A cancelled running
@@ -33,13 +33,25 @@ finishes. Completed results and returned queued tasks stay inside the accounted
 Java heap. All logical ceilings come from the explicit host runtime configuration.
 
 `FutureTask` supports runnable/callable construction, pending get, timed get,
-completion/error/cancellation, readable result state, and subclass `done` callbacks.
+completion/error/cancellation, readable result state, subclass `done` callbacks,
+and protected `runAndReset` without completing a successfully reset future.
 A callback runs outside the future's monitor, so another thread can read a
 completed result while that callback blocks. `AbstractExecutorService` implements
 standard submit, ordered `invokeAll` and first-successful-completion `invokeAny`.
 Factories and class substitutions apply only to these exact standard classes;
 application and library API references remain unchanged. TimeUnit conversions
-saturate and finite waits preserve positive submillisecond timeouts.
+saturate and finite waits preserve positive submillisecond timeouts. Duration
+conversion truncates negative fractions toward zero; ChronoUnit conversion uses
+the seven standard TimeUnit units. Cached workers retain their original host
+ceilings and retire after an uninterrupted 60-second idle period.
+
+The owned compiler hooks keep TeaVM's actual sleep and monitor continuations.
+They reserve a single wait owner and, for a timed wait, a timer owner before
+installing its maintained listener. Listener completion settles those owners
+after monitor reacquisition and before delivering the application continuation. Standard wait argument
+validation precedes monitor ownership checks; interruption clears the current
+thread's flag at the standard throwing boundary. Absolute deadlines saturate
+without shortening a large requested timeout.
 
 Root completion closes independent admission, while accepted application threads
 and running callbacks may still submit necessary continuations. Idle pool workers
@@ -82,12 +94,21 @@ cover independent pools, future exceptions and interruption/cancellation,
 timeouts, a blocking completion callback, ordered batches and first-successful
 completion. A root-return mode supplies idle and pending pools without application
 shutdown glue. Every invocation checks real Store, broker, activation and cell
-reclamation. The unchanged application source runs all three modes in each of
+reclamation. The unchanged application source runs all four modes in each of
 three separate reference-JDK processes; only the reference harness terminates its
-ordinary process-owned pools. The last attempted expanded executor component
-failed in its signed guest run. The subsequent monitor-continuation changes have
-not yet completed pinned component and signed-node execution; the executor and
-root-return modes remain unqualified. Reference-JDK success and successful
+ordinary process-owned pools. The fourth mode covers ordinary cached factories,
+reset futures, Duration and ChronoUnit conversion, wait validation and interrupted
+sleep/join. Three fresh installed-JDK 25.0.3 reference processes passed the four
+modes. All selected SDK sources compiled against pinned TeaVM 0.15.0 APIs, and
+nine actual maintained/SDK class bodies passed the compiler's transformation
+against that pinned class model. These are source and model controls.
+
+The last attempted expanded executor component passed its thread-only mode but
+failed in its signed executor mode with a closed host `resource-exhausted` cause
+([retained CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36811904043)).
+The subsequent default-factory and wait/sleep changes have not completed pinned
+component and signed-node execution; the executor, root-return and cached modes
+remain unqualified. Reference-JDK success and successful
 component generation do not establish their guest behavior. Complete failed
 attempts are retained separately.
 
@@ -99,9 +120,10 @@ latency, fairness or physical memory plateaus.
 
 ## Remaining profile requirements
 
-CompletableFuture, cached/work-stealing/virtual-thread factories, scheduled
-executors, recurring callbacks, FutureTask.runAndReset, duration-based TimeUnit
-members, full interruption and wait/notify races, shared I/O readiness, sockets/DNS,
+CompletableFuture, work-stealing/virtual-thread factories, scheduled
+executors, recurring callbacks, actual guest qualification of cached factories,
+reset futures and duration-based TimeUnit members, full interruption and
+wait/notify races, shared I/O readiness, sockets/DNS,
 cross-tenant reuse, late wakes and node stop remain open. General generated host
 I/O still uses the existing synchronous lowering and does not establish sibling
 progress while an accepted socket operation waits. Published library/default

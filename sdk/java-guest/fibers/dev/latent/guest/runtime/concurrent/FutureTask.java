@@ -67,6 +67,22 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
             synchronized (this) { runner = null; callable = null; releaseIfPhysicalComplete(); }
         }
     }
+    /** A recurring owner stays pending until a later completion or cancellation. */
+    protected boolean runAndReset() {
+        synchronized (this) {
+            if (completed || runner != null) return false;
+            accept();
+            runner = Thread.currentThread();
+        }
+        boolean ran = false;
+        try {
+            try { callable.call(); ran = true; }
+            catch (Throwable error) { setException(error); }
+        } finally {
+            synchronized (this) { runner = null; if (completed) callable = null; releaseIfPhysicalComplete(); }
+        }
+        synchronized (this) { return ran && !completed; }
+    }
     protected void set(V result) {
         synchronized (this) {
             if (completed) return;
@@ -91,7 +107,7 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     protected void done() { }
     @Override public V get() throws InterruptedException, ExecutionException {
         synchronized (this) {
-            if (!completed) try (var wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait)) {
+            if (!completed) {
                 if (Thread.interrupted()) throw new InterruptedException();
                 while (!completed) wait();
             }
@@ -102,7 +118,7 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout);
         long started = System.nanoTime();
         synchronized (this) {
-            if (!completed) try (var wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait)) {
+            if (!completed) {
                 if (Thread.interrupted()) throw new InterruptedException();
                 if (nanos <= 0) throw new TimeoutException();
                 while (!completed) {

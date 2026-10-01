@@ -101,7 +101,31 @@ final class MonitorContinuations {
                     clearCompletion(method, "exception", "result", OBJECT);
             }
         } else if (cls.getName().equals("java.lang.Object$NotifyListenerImpl")) {
+            if (cls.getField("expired") == null || !cls.getField("expired").getType().equals(ValueType.BOOLEAN))
+                throw new IllegalStateException("unreviewed-maintained-monitor-expiry");
+            int interrupted = 0;
             for (var method : cls.getMethods()) {
+                if (method.getName().equals("run") || method.getName().equals("interrupted")) {
+                    int claims = 0;
+                    for (var block : method.getProgram().getBasicBlocks()) {
+                        for (var instruction = block.getFirstInstruction(); instruction != null; ) {
+                            var next = instruction.getNext();
+                            if (instruction instanceof PutFieldInstruction store
+                                    && store.getField().equals(new FieldReference(cls.getName(), "performed"))) {
+                                var expire = new PutFieldInstruction();
+                                expire.setInstance(store.getInstance());
+                                expire.setField(new FieldReference(cls.getName(), "expired"));
+                                expire.setFieldType(ValueType.BOOLEAN);
+                                expire.setValue(store.getValue());
+                                instruction.insertNext(expire);
+                                claims++;
+                            }
+                            instruction = next;
+                        }
+                    }
+                    // A cancelled listener must not consume a later notify.
+                    if (claims != 1) throw new IllegalStateException("unreviewed-maintained-monitor-claim");
+                }
                 if (!method.getName().startsWith("lambda$interrupted$")) continue;
                 if (method.parameterCount() != 0 || method.getModifiers().contains(ElementModifier.STATIC))
                     throw new IllegalStateException("unreviewed-maintained-monitor-interruption");
@@ -117,7 +141,9 @@ final class MonitorContinuations {
                 program.basicBlockAt(0).add(call);
                 program.basicBlockAt(0).add(new ExitInstruction());
                 method.setProgram(program);
+                interrupted++;
             }
+            if (interrupted != 2) throw new IllegalStateException("unreviewed-maintained-monitor-callbacks");
         } else if (cls.getName().equals("java.lang.Object")) {
             for (var method : cls.getMethods()) {
                 var program = method.getProgram();

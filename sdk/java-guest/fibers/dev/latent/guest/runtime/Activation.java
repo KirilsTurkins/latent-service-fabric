@@ -121,19 +121,17 @@ public final class Activation {
     /** A loop handles spurious notifications and preserves interrupt behavior. */
     public static void join(Thread thread, long millis, int nanos) throws InterruptedException {
         if (millis < 0 || nanos < 0 || nanos > 999999) throw new IllegalArgumentException();
-        if (Thread.interrupted()) throw new InterruptedException();
-        long timeout = millis > Long.MAX_VALUE / 1_000_000
-            ? Long.MAX_VALUE : millis * 1_000_000;
-        timeout = nanos > Long.MAX_VALUE - timeout ? Long.MAX_VALUE : timeout + nanos;
-        long started = System.nanoTime();
+        if (nanos > 0 && millis != Long.MAX_VALUE) millis++;
+        long timeout = millis;
+        long started = monotonicMillis();
         synchronized (thread) {
             while (alive(thread)) {
                 if (timeout == 0) {
                     thread.wait();
                 } else {
-                    long remaining = timeout - (System.nanoTime() - started);
+                    long remaining = timeout - (monotonicMillis() - started);
                     if (remaining <= 0) return;
-                    thread.wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
+                    thread.wait(remaining);
                 }
             }
         }

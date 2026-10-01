@@ -1,6 +1,6 @@
 public final class Main {
     public static void main(String[] args) {
-        for (long mode = 0; mode < 3; mode++) {
+        for (long mode = 0; mode < 4; mode++) {
             long value = new dev.latent.app.Capsule().run(mode);
             if (value != 42) throw new AssertionError(value);
         }
@@ -12,6 +12,6 @@ public final class Main {
         // Reference harness owns process termination. Capsule source stays byte
         // identical and contains no activation-specific executor/shutdown glue.
         for (var pool : dev.latent.app.Capsule.referencePools) pool.close();
-        System.out.println("42 42 42");
+        System.out.println("42 42 42 42");
     }
 }

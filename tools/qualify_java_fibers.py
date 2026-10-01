@@ -50,8 +50,8 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         report["reference"] = []
         for iteration in range(3):
             result = compiler.run(f"reference-jdk-{iteration}", "java", "-cp", control, "Main")
-            if result.strip() != "42 42 42": raise ValueError("reference-JDK fiber observable mismatch")
-            report["reference"].append({"iteration": iteration, "modes": [0, 1, 2], "results": [42, 42, 42]})
+            if result.strip() != "42 42 42 42": raise ValueError("reference-JDK fiber observable mismatch")
+            report["reference"].append({"iteration": iteration, "modes": [0, 1, 2, 3], "results": [42, 42, 42, 42]})
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True)
         compiler.check_unchanged()

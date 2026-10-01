@@ -52,6 +52,8 @@ public final class RuntimePlugin implements TeaVMPlugin {
     private void transform(ClassHolder cls, ClassHolderTransformerContext context) {
         normalizeOwnedConcurrentReferences(cls);
         MonitorContinuations.transform(cls);
+        SleepContinuations.transform(cls);
+        WaitContinuations.transform(cls);
         boolean thread = cls.getName().equals("java.lang.Thread");
         boolean monotonic = thread || cls.getName().equals("java.lang.Object")
             || cls.getName().equals("org.teavm.runtime.EventQueue");
@@ -86,7 +88,8 @@ public final class RuntimePlugin implements TeaVMPlugin {
 
     private static boolean privateConcurrentHelper(String suffix) {
         return suffix.equals("ManagedExecutor") || suffix.startsWith("ManagedExecutor$")
-            || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$");
+            || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$")
+            || suffix.startsWith("TimeUnit$");
     }
 
     private static String concurrentReference(String name) {

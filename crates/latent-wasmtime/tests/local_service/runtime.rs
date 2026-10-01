@@ -147,8 +147,8 @@ async fn signed_java_threads_spin_join_and_thread_local_use_real_activation_fibe
     );
     assert_eq!(record["reference"].as_array().unwrap().len(), 3);
     for control in record["reference"].as_array().unwrap() {
-        assert_eq!(control["modes"], serde_json::json!([0, 1, 2]));
-        assert_eq!(control["results"], serde_json::json!([42, 42, 42]));
+        assert_eq!(control["modes"], serde_json::json!([0, 1, 2, 3]));
+        assert_eq!(control["results"], serde_json::json!([42, 42, 42, 42]));
     }
     let wit = std::fs::read_to_string(prepared.join("wit/service.wit")).unwrap();
     let caller = packages::java_activation_runtime(bytes, &wit);
@@ -166,7 +166,7 @@ async fn signed_java_threads_spin_join_and_thread_local_use_real_activation_fibe
     };
     let f = signed_runtime_with_limits(root.path(), 1, 120_000, caller, &source, java_limits).await;
     for iteration in 0..3 {
-        for mode in 0..3 {
+        for mode in 0..4 {
             let receipt = success(
                 f.manager
                     .start(f.request(&format!("java-fibers-{iteration}-{mode}"), mode))

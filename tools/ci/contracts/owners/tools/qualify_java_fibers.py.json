@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Owned thread and pending executor controls retain original reference-JDK results and qualify source attribution independently of package directories",
+  "reviewReason": "Four unchanged JDK controls cover cached default factories, reset futures and maintained wait/sleep hooks; actual expanded signed guest qualification remains explicitly pending",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8f2f7118d6444f4ebaa6aed05144c7377217379af5b3d9d379cdf977a6358ede"
+  "sha256": "139b1b50a3bcbf1a37bee2b05bd210889fb632c02b68729535633c411dee863d"
 }
