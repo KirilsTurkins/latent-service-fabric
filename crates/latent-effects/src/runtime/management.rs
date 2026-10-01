@@ -12,8 +12,8 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct DispatcherManagementPort {
-    services: Arc<Services>,
-    jobs: StoreIoOwner<Arc<Services>>,
+    pub(super) services: Arc<Services>,
+    pub(super) jobs: StoreIoOwner<Arc<Services>>,
 }
 /// Values drop before the same original retained request owner. An unclaimed
 /// native completion therefore cannot refund the global work/response budget.

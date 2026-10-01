@@ -77,7 +77,7 @@ impl EffectAuthorityOwner {
                 .min(original_deadline);
             let credential_epoch = rule.credential_epoch;
             let reference = rule.protected_credential_reference.clone();
-            if state.physical >= self.0.maximum_physical {
+            if state.lookup_physical >= Self::MAXIMUM_LOOKUP_OWNERS {
                 return Err(AuthorityError::Capacity);
             }
             if time.unix_millis < authority.committed_at_millis {
@@ -85,6 +85,7 @@ impl EffectAuthorityOwner {
             }
             result = Some(live_with(&gate, || {
                 state.physical += 1;
+                state.lookup_physical += 1;
                 Ok(DispatchContext {
                     owner: Arc::clone(&self.0),
                     live: Arc::new(AtomicBool::new(true)),
