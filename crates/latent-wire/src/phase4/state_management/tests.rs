@@ -1,6 +1,7 @@
 use super::*;
 mod bindings;
 mod dispatcher;
+mod effects;
 mod fixture;
 mod physical;
 mod recovery;

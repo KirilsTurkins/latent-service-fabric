@@ -408,6 +408,11 @@ fn operations() -> Vec<String> {
         "namespace-destroy",
         "namespace-recreate",
         "namespace-inspect",
+        "inspect-effect",
+        "effect-plan",
+        "effect-redrive",
+        "effect-reconcile",
+        "effect-terminate",
     ]
     .into_iter()
     .map(str::to_owned)
