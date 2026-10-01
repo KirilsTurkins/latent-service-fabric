@@ -112,6 +112,9 @@ impl DispatcherOwner {
             epoch,
             runtime: runtime.clone(),
             shared,
+            native_capacity: std::sync::Mutex::new(
+                super::admission::NativeCapacityBinding::default(),
+            ),
             receipts,
         });
         let jobs =
