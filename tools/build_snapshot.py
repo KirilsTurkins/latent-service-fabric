@@ -46,8 +46,8 @@ class SnapshotLimits:
     max_entries: int = MAX_SOURCE_FILES
     max_directories: int = 4096
     max_file_bytes: int = 4 * 1024 * 1024
-    max_total_bytes: int = 32 * 1024 * 1024
-    max_archive_bytes: int = 40 * 1024 * 1024
+    max_total_bytes: int = 48 * 1024 * 1024
+    max_archive_bytes: int = 56 * 1024 * 1024
 
     def validate(self) -> None:
         hard = SnapshotLimits()

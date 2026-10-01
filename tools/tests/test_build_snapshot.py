@@ -126,7 +126,13 @@ class BuildSnapshotTests(unittest.TestCase):
             with self.subTest(limits=limits), tempfile.TemporaryDirectory() as temporary:
                 with self.assertRaises(SnapshotError):
                     extract_archive(payload, Path(temporary) / "source", limits)
-        for limits in (SnapshotLimits(max_entries=0), SnapshotLimits(max_total_bytes=33 * 1024 * 1024)):
+        # The maintained committed source exceeds the former 32 MiB ceiling.
+        # Its reviewed replacement remains a hard cap, including archive framing.
+        self.assertEqual(SnapshotLimits().max_total_bytes, 48 * 1024 * 1024)
+        self.assertEqual(SnapshotLimits().max_archive_bytes, 56 * 1024 * 1024)
+        for limits in (SnapshotLimits(max_entries=0),
+                       SnapshotLimits(max_total_bytes=48 * 1024 * 1024 + 1),
+                       SnapshotLimits(max_archive_bytes=56 * 1024 * 1024 + 1)):
             with self.assertRaises(SnapshotError):
                 limits.validate()
 
