@@ -6,6 +6,47 @@ This implemented first retention profile uses the existing
 [serializable transaction contract](state-and-effects.md). It contributes the
 linked response-expiry and physical recovery-capacity parts of #397.
 
+## Explicit tenant aggregate profile
+
+The lower [tenant accounting ports](../../crates/latent-state/src/tenant.rs)
+accept at most 32 explicit `TenantQuota` declarations. Their limits come from
+reviewed configuration. They are not calculated by adding namespace ceilings.
+The immutable `LTG1` guard selects exact declaration digests, and each tenant's
+preinstalled 1024-byte `LTQ1` row stores those limits and its current usage.
+Counts are bounded by 65,536 and byte allowances by 1 GiB. Zero can explicitly
+disable a category. Node engine, physical file and worker bounds still apply.
+
+State cells, tombstones, command/results and inbox protection, effects and their
+finite history allowance, inline payloads and recovery obligations have separate
+counters. Namespace, schema, history and management rows use a separate finite
+metadata row/byte allowance. Encoded row charges include the actual key and value,
+the family byte and a conservative 64-byte index allowance. Installation charges
+its own tenant row to that metadata allowance before business admission.
+
+`prepare_install` is a descriptive setup plan for the existing reserved writer.
+Its physical `publish` fence rechecks that no business rows appeared since
+preparation and repeats current host review. It refuses an inferred upgrade of
+existing legacy data. An exact repeated installation is a read-only success;
+changed limits or missing tenant rows refuse. Installed Phase 4 startup must
+require the selected installation, bind every domain accounting hook and verify
+the counters against actual durable ownership before admitting targets. The
+absent guard remains the explicit lower legacy fixture profile.
+
+`PreparedTenantUpdate::append_to` merges original state, command and maintenance
+contributions into one tenant counter mutation with one original compare-and-swap.
+It checks removal, addition, limits and the complete bounded candidate before
+changing the supplied plan. The generation advances once for the whole physical
+envelope. A stale counter refuses the complete write. Legacy plans capture the
+absent guard without adding a mutation, retaining the original six-row fixtures
+and preventing an old prepared plan from crossing installation.
+
+`prepare_metadata_update` and `metadata_slice` account the original bounded
+namespace/history/operation slice. Every mutation requires its exact old row
+expectation; a management receipt is at most 8192 bytes. Its metadata charge and
+any released protective floor must share the same tenant update and physical
+writer fence. No quota descriptor, checksum or operation identity grants
+permission, proves lifecycle drain or creates a recovery worker.
+
 ## Linked response expiry
 
 One node-owned `ResultMaintenanceOwner` inspects one indexed command per step.
