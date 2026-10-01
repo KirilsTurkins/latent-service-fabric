@@ -87,6 +87,8 @@ and replace `greeting` in the creation command with either template name.
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
 
+Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers canonical imported owners, `Unsigned64`, try-with-resources and the captured profile, schema and binding companion. The host owns commitment. The signed transaction and HTTP recovery matrix is tracked by #389 and required Java slice #718. The tutorial below retains its existing stateless profile.
+
 ## 2. Build and package the project
 
 ```bash

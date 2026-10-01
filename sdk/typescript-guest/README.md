@@ -75,6 +75,8 @@ local-service callee.
 | `service` | Returned, domain-error and platform-failure outcomes; host-controlled descendant budgets. |
 | `random` | Host-authorized bounded bytes/full-width integers, never ambient entropy. |
 | `metrics` | Exact instrument kind/attributes; no guest exporter or provider. |
+| `state` (Phase 4) | Command/fresh-query owners, typed get/put/delete/scan, bounded pages and explicit close. |
+| `intents` (Phase 4) | Logical intent builder stages through the canonical command owner; host-owned commitment. |
 
 Owners reject use after close/consume and reentrant borrow. Aliases share live
 state. Consuming calls invalidate before uncertain effects; destructors are
