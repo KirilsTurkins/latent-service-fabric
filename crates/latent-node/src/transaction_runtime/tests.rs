@@ -220,7 +220,7 @@ async fn native_original_cancellation_before_commit_preserves_pending_without_bu
         .await
         .unwrap();
     host.finish_guest_access();
-    budget.finalize_at(None, std::time::Instant::now());
+    let _ = budget.finalize_at(None, std::time::Instant::now());
     fixture.cancel_original(&envelope);
     let completion = CommandCompletion::new(
         claim,
@@ -254,7 +254,7 @@ async fn native_manager_completion_hook_commits_once_and_retains_affine_result()
         .await
         .unwrap();
     host.finish_guest_access();
-    budget.finalize_at(None, std::time::Instant::now());
+    let _ = budget.finalize_at(None, std::time::Instant::now());
     let observed = admission
         .complete(
             success(b"owned result"),
