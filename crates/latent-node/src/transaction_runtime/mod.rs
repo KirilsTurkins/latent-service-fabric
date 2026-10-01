@@ -27,6 +27,40 @@ use std::sync::{
 /// time alone cannot assert continuity after an older restore or process loss.
 pub trait CommandTimeSource: Send + Sync {
     fn sample(&self) -> CommandTime;
+
+    /// Normal composition reserves its original ordinary native capacity from
+    /// the actual admitted envelope and budget before accepting metadata work.
+    fn retain_admission(
+        &self,
+        _envelope: &latent_activation::ActivationEnvelope,
+        _budget: &latent_core::ActivationBudget,
+    ) -> Result<(), latent_core::PlatformError> {
+        Ok(())
+    }
+
+    /// Retained physical response owner; no guest accounting is consumed.
+    fn with_delivery(
+        &self,
+        action: &mut dyn FnMut() -> Result<(), latent_core::PlatformError>,
+    ) -> Result<(), latent_core::PlatformError> {
+        action()
+    }
+
+    /// Managed composition retains the original protected command-role guard
+    /// through this short acceptance callback. No callback performs I/O.
+    fn with_acceptance(
+        &self,
+        action: &mut dyn FnMut(CommandTime) -> Result<(), latent_core::PlatformError>,
+    ) -> Result<(), latent_core::PlatformError> {
+        action(self.sample())
+    }
+
+    /// Only a positively retired original attempt can retire its role owner.
+    fn retire_attempt(&self, _original: &latent_commit::atomic::AttemptRetirement) {}
+
+    /// The coordinator invokes this only after an actual unclaimed native
+    /// operation has retired, or positive refusal before worker acceptance.
+    fn retire_without_claim(&self) {}
 }
 
 pub struct CommandHostSelection {

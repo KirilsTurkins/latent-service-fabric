@@ -431,7 +431,9 @@ fn pre_fence_revocation_and_occ_failure_leave_all_business_families_untouched() 
     };
     assert_eq!(reason, AtomicError::PermissionDenied);
     assert!(watch.proven_noncommit().is_err());
+    assert!(!watch.physically_retired());
     drop(command);
+    assert!(watch.physically_retired());
     let retired = watch.proven_noncommit().unwrap();
     drop(view);
     let view = store.snapshot().unwrap();
