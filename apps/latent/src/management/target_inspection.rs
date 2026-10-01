@@ -72,7 +72,7 @@ pub(super) fn associate(
                 .any(|publication| publication.tenant != tenant)
             || candidate.preparation.as_ref().is_none_or(|preparation| {
                 (preparation.state == proto::TargetPreparationState::NotRequested as i32)
-                    != !expected.include_preparation
+                    == expected.include_preparation
             })
         {
             return Err(invalid_response());
@@ -89,18 +89,18 @@ pub(super) fn associate(
     Ok(())
 }
 
-pub(super) fn response(value: proto::InspectHttpTargetResponse) -> Result<Outcome, Failure> {
+pub(super) fn response(value: proto::InspectHttpTargetResponse) -> Outcome {
     let candidates = value.candidates.into_iter().map(|candidate| {
         let reasons = candidate.reasons.iter().map(|reason| reason_name(*reason)).collect::<Vec<_>>();
         let dependencies = candidate.dependencies.into_iter().map(|dependency| json!({
             "capability":dependency.capability,"state":dependency.state,"policyIdentityDigest":dependency.policy_identity_digest,
             "providerConfigurationEpoch":dependency.provider_configuration_epoch.to_string(),
-            "binding":dependency.binding.map(revision),"policies":dependency.policies.into_iter().map(revision).collect::<Vec<_>>(),
+            "binding":dependency.binding.as_ref().map(revision),"policies":dependency.policies.iter().map(revision).collect::<Vec<_>>(),
             "providerProfile":dependency.provider_profile,"configurationDigest":dependency.configuration_digest,
         })).collect::<Vec<_>>();
         json!({"deploymentId":candidate.deployment_id,"deploymentGeneration":candidate.deployment_generation.to_string(),
             "revisionId":candidate.revision_id,"componentDigest":candidate.component_digest,"packageDigest":candidate.package_digest,
-            "publication":candidate.publication.map(publication),"requestedPublication":candidate.requested_publication.map(publication),
+            "publication":candidate.publication.as_ref().map(publication),"requestedPublication":candidate.requested_publication.as_ref().map(publication),
             "publicationKind":candidate.publication_kind,"publicationGeneration":candidate.publication_generation.map(|value| value.to_string()),
             "routingWeight":candidate.routing_weight,"exportCompatible":candidate.export_compatible,"httpCompatible":candidate.http_compatible,
             "eligible":candidate.eligible,"reasons":candidate.reasons,"reasonNames":reasons,"dependencies":dependencies,
@@ -108,19 +108,19 @@ pub(super) fn response(value: proto::InspectHttpTargetResponse) -> Result<Outcom
             "httpBindings":candidate.http_bindings.into_iter().map(|binding| json!({"id":binding.id,"generation":binding.generation.to_string(),
                 "selectedDeploymentGeneration":binding.selected_deployment_generation.to_string(),"state":binding.state})).collect::<Vec<_>>()})
     }).collect::<Vec<_>>();
-    Ok(Outcome::success(
+    Outcome::success(
         json!({"schemaVersion":value.schema_version,"tenant":value.tenant,"service":value.service,
         "contract":value.contract,"function":value.function,"route":value.route,"state":value.state,"stateName":state_name(value.state),
         "catalogTransaction":value.catalog_transaction.to_string(),"routeGeneration":value.route_generation.to_string(),
         "bindingGeneration":value.binding_generation.to_string(),"policyStoreGeneration":value.policy_store_generation.map(|value| value.to_string()),
         "candidates":candidates,"selectedRevisionId":value.selected_revision_id,"liveGrantsChecked":value.live_grants_checked}),
-    ))
+    )
 }
 
-fn publication(value: proto::PublicationRef) -> Value {
+fn publication(value: &proto::PublicationRef) -> Value {
     json!({"tenant":value.tenant,"id":value.id})
 }
-fn revision(value: proto::TargetDependencyRevision) -> Value {
+fn revision(value: &proto::TargetDependencyRevision) -> Value {
     json!({"id":value.id,"digest":value.digest,"revision":value.revision.to_string()})
 }
 fn preparation(value: proto::TargetPreparation) -> Value {
@@ -129,7 +129,7 @@ fn preparation(value: proto::TargetPreparation) -> Value {
         .into_iter()
         .map(|export| json!({"contract":export.contract,"function":export.function}))
         .collect::<Vec<_>>();
-    json!({"state":value.state,"stateName":preparation_name(value.state),"diagnostic":value.diagnostic.map(diagnostic),
+    json!({"state":value.state,"stateName":preparation_name(value.state),"diagnostic":value.diagnostic.as_ref().map(diagnostic),
         "profile":value.profile,"profileName":value.profile.and_then(profile_name),"engineVersion":value.engine_version,
         "engineConfigurationDigest":value.engine_configuration_digest,"targetTriple":value.target_triple,"cpuFeatureSet":value.cpu_feature_set,
         "sealedMetadataFingerprint":value.sealed_metadata_fingerprint,"importCount":value.import_count.map(|value| value.to_string()),
@@ -143,7 +143,7 @@ fn budget(value: proto::ResourceBudget) -> Value {
     "stateReadBytes":value.state_read_bytes.to_string(),"stateWriteBytes":value.state_write_bytes.to_string(),"blobReadBytes":value.blob_read_bytes.to_string(),
     "blobWriteBytes":value.blob_write_bytes.to_string(),"logBytes":value.log_bytes.to_string(),"effectCount":value.effect_count})
 }
-fn diagnostic(value: proto::ActivationDiagnostic) -> Value {
+fn diagnostic(value: &proto::ActivationDiagnostic) -> Value {
     json!({"schemaVersion":value.schema_version,"stage":value.stage,"reason":value.reason,
     "stageName":proto::DiagnosticStage::try_from(value.stage).ok().map(|value| value.as_str_name()),
     "reasonName":proto::DiagnosticReason::try_from(value.reason).ok().map(|value| value.as_str_name()),"profile":value.profile,"profileDigest":value.profile_digest,
@@ -237,7 +237,7 @@ mod tests {
     fn target_json_preserves_exact_u64_absence_and_future_reason_values() {
         let value = reply();
         bounds::checked(&value, 65536).unwrap();
-        let json = response(value).unwrap().data;
+        let json = response(value).data;
         assert_eq!(json["catalogTransaction"], u64::MAX.to_string());
         assert_eq!(json["policyStoreGeneration"], "0");
         assert_eq!(json["stateName"], "coherent");

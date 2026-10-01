@@ -223,6 +223,11 @@ or authorization from candidate attributes.
 
 ## Validation and compatibility
 
+Application maintenance initiated by an external operator scheduler follows
+[bounded external maintenance guidance](operations/external-maintenance.md).
+Invocation-local SDK timers and future durable application schedules have
+separate authority, ownership and roadmap boundaries.
+
 Run the focused deterministic suites with the pinned toolchain:
 
 ```sh

@@ -127,6 +127,14 @@ an uncertain result, and never replays publication to obtain a different
 receipt. Failed attempts, bounded logs and exact component/source/compiler
 identities remain in the chosen fresh evidence directory.
 
+The [retained actual paired subcampaign](../evidence/java-paired-trust-36a10fc7/README.md)
+binds its original source and receipts, including the overall HTTP pipeline's
+later failed context assertion. Its passed signing/admission observations do not
+turn that complete pipeline into a successful qualification.
+The [fresh source-66 paired record](../evidence/java-paired-trust-66f2a031/README.md)
+adds actual builder-identity revocation and host-derived child grant observations,
+while preserving its separate later context fixture failure.
+
 The [executed C4/3b7 campaign](../evidence/java-composed-c4-3b7/README.md)
 retains the newer actual four-component builds and a successful complete
 synthetic HTTP/context/canary campaign. Its paired record verifies the independent
