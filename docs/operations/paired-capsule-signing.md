@@ -126,3 +126,12 @@ precondition. The fixture looks up the original operation, including after
 an uncertain result, and never replays publication to obtain a different
 receipt. Failed attempts, bounded logs and exact component/source/compiler
 identities remain in the chosen fresh evidence directory.
+
+The [executed C4/3b7 campaign](../evidence/java-composed-c4-3b7/README.md)
+retains the newer actual four-component builds and a successful complete
+synthetic HTTP/context/canary campaign. Its paired record verifies the independent
+domain and adapter identities under three equivalent canonical policy orders,
+nine verifier negatives and six admission cases. Two original admission grants
+expire before their fenced actions can enter. All original failed aggregate
+receipts remain failed; the newer success does not qualify the private reporting
+application, packaged native frontend or transactional Java scope.
