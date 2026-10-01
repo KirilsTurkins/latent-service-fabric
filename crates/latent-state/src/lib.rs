@@ -13,6 +13,8 @@ pub mod recovery;
 pub mod reservation;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.
 pub mod session;
+/// Closed persisted node store identity; this metadata grants no state access.
+pub mod store_identity;
 pub mod store_io;
 
 use latent_core::{
