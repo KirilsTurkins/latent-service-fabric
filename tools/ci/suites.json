@@ -1730,6 +1730,7 @@
         "payload::tests::canonical_payload_identity_sorts_metadata_and_binds_media_and_binary_bytes",
         "payload::tests::payload_byte_and_metadata_caps_preserve_empty_presence_and_exact_authority_link",
         "payload::tests::payload_decoder_checks_all_lengths_counts_utf8_formats_and_trailing_bytes",
+        "payload::tests::sealed_adapter_grant_rejects_changed_payload_identity_media_metadata_and_bytes",
         "payload::tests::tampered_retained_payload_cannot_dispatch_with_the_original_authority",
         "runtime::tests::ownership::dropped_dispatcher_waiter_keeps_provider_and_root_until_actual_record_and_cleanup",
         "runtime::tests::ownership::live_provider_owner_blocks_alias_epoch_recovery_and_deadline_never_resends",
@@ -1745,7 +1746,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 51,
+      "minimumCases": 52,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [
