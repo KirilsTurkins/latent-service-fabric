@@ -6,6 +6,8 @@ on:
     paths:
       - 'sdk/java-guest/**'
       - 'examples/java-http-composition/**'
+      - 'examples/java-transaction-schema/**'
+      - 'contracts/state/application-aggregate-*.schema.json'
 
       - 'sdk/transaction-contract/**'
       - 'tools/**'
@@ -86,6 +88,18 @@ jobs:
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
       - name: Qualify proposed transaction shapes and shared imported owners with the maintained Java compiler
         run: python3 tools/qualify_transaction_contracts.py --language java --output "$RUNNER_TEMP/transaction-contract-java" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Check bounded Java aggregate format vectors without claiming State execution
+        id: aggregate-schema-vectors
+        run: |
+          set -euo pipefail
+          javac --version
+          java --version
+          mkdir "$RUNNER_TEMP/java-aggregate-encoding"
+          javac -d "$RUNNER_TEMP/java-aggregate-encoding" \
+            examples/java-transaction-schema/AggregateCodec.java \
+            examples/java-transaction-schema/EncodingVectors.java
+          java -cp "$RUNNER_TEMP/java-aggregate-encoding" dev.latent.app.EncodingVectors \
+            | tee "$RUNNER_TEMP/java-aggregate-encoding/vectors.log"
       - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
         run: python3 tools/compile_transaction_guests.py --language java --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guests-java"
       - name: Compile real Java sources and retain the first incompatible stage
@@ -116,6 +130,7 @@ jobs:
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/java-aggregate-encoding/vectors.log
             ${{ runner.temp }}/transaction-guests-java/**/report.json
             ${{ runner.temp }}/transaction-guests-java/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-java/**/recipe-inputs.json
