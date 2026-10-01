@@ -14,6 +14,7 @@
         "paths": [
           "sdk/java-guest/**",
           "examples/java-http-composition/**",
+          "sdk/transaction-contract/**",
           "tools/**",
           "apps/**",
           "crates/**",
@@ -33,7 +34,7 @@
   "requiredJobs": [
     "compiler-component"
   ],
-  "reviewReason": "Review maintained typed Java composition minimizations and exact generated client evidence",
+  "reviewReason": "Retain Java composition triggers and add the shared transaction contract path without changing required jobs",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

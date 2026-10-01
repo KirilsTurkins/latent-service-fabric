@@ -14,6 +14,7 @@
         "paths": [
           ".github/workflows/rust-capsule-authoring.yml",
           "sdk/rust-guest/**",
+          "sdk/transaction-contract/**",
           "crates/**",
           "apps/**",
           "examples/**",
@@ -31,6 +32,7 @@
         "paths": [
           ".github/workflows/rust-capsule-authoring.yml",
           "sdk/rust-guest/**",
+          "sdk/transaction-contract/**",
           "crates/**",
           "apps/**",
           "examples/**",
@@ -49,7 +51,7 @@
   "requiredJobs": [
     "authoring"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

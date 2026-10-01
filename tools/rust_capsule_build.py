@@ -19,7 +19,8 @@ BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
           "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
           "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
-          "tools/stage_runtime_wit.py")
+          "tools/stage_runtime_wit.py", "tools/transaction_guest_project.py",
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 
 
 class Commands:
@@ -168,6 +169,10 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
             layers.append((name, "asset", "text/plain"))
+    from tools.transaction_guest_project import package_companion
+    companion = package_companion(output, project, files)
+    if companion is not None:
+        layers.append(companion)
     write_json(output / "package-source.json", {
         "formatVersion": 1, "kind": "capsule", "name": project["name"], "version": project["version"],
         "entrypoint": "component.wasm", "annotations": {},

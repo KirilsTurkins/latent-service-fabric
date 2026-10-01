@@ -10,6 +10,14 @@
       "pull_request": {
         "paths": [
           "sdk/dotnet-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
+          "tools/compile_transaction_guests.py",
+          "tools/transaction_guest_project.py",
+          "tools/transaction_guest_variants.py",
+          "tools/tests/test_transaction_guest_authoring.py",
+          "tools/tests/test_transaction_guest_compilers.py",
+          "examples/rust-capsules/transactional-aggregate/**",
           "tools/dotnet_guest*",
           "tools/dotnet_guest/**",
           "tools/dotnet_capsule.py",
@@ -40,7 +48,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

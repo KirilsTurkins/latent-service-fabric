@@ -1667,14 +1667,19 @@
         "test_support::deterministic::tests::executor_handles_a_wake_before_parking",
         "test_support::deterministic::tests::identifiers_are_repeatable",
         "test_support::deterministic::tests::workspace_rejects_path_traversal",
-        "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up"
+        "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up",
+        "budget::host_memory::tests::actual_native_owner_keeps_capacity_after_terminal_report_and_settles_once",
+        "budget::host_memory::tests::native_and_linear_memory_compete_before_allocation_and_failed_preparations_roll_back",
+        "transaction_contract::tests::byte_and_presence_boundaries_are_exact",
+        "transaction_contract::tests::caller_and_incarnation_prevent_foreign_replay",
+        "transaction_contract::tests::fingerprint_sorts_but_never_erases_presence_or_stale_edit_inputs"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 91,
+      "minimumCases": 96,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -1961,14 +1966,16 @@
         "runtime_compatibility::tests::omitted_requirements_preserve_canonical_json_and_empty_arrays_normalize",
         "runtime_compatibility::tests::profile_digest_binds_detected_facts_and_budgets_order_independently",
         "runtime_compatibility::tests::renderer_requirements_are_explicit_immutable_and_separate_from_host_capacity",
-        "runtime_compatibility::tests::requirement_shapes_and_typed_spare_capacities_fail_closed"
+        "runtime_compatibility::tests::requirement_shapes_and_typed_spare_capacities_fail_closed",
+        "transaction_binding::tests::companion_round_trip_is_exact_and_does_not_grant_link_authority",
+        "transaction_binding::tests::malformed_present_values_unknown_modes_and_stale_profile_reject"
       ],
       "expectedIgnored": [],
       "id": "latent-manifest.lib.latent-manifest",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-manifest/Cargo.toml",
-      "minimumCases": 9,
+      "minimumCases": 11,
       "mode": "libtest",
       "package": "latent-manifest",
       "platforms": [
@@ -5731,7 +5738,9 @@
         "values::tests::scalars::floats_accept_explicit_special_values_and_reject_accidental_overflow",
         "values::tests::scalars::scalar_widths_unicode_and_lossless_decimal64",
         "values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan",
-        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults"
+        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults",
+        "values::tests::transactions::transaction_owned_signatures_fit_the_existing_http_preparation_profile",
+        "values::tests::transactions::transaction_resources_need_an_explicit_allowlist_and_nested_pages_reject"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -5744,7 +5753,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 342,
+      "minimumCases": 344,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -6403,6 +6412,7 @@
         "engine_profiles::foreign_profile_prepared_ownership_is_rejected_before_native_instantiation",
         "engine_profiles::insufficient_native_memory_pool_rejects_without_leaking_prepared_or_active_owners",
         "host_abi::forged_or_stale_host_profile_descriptors_cannot_reuse_preparation",
+        "host_abi::outbound_proposal_and_wasi_sockets_are_not_ambient_authority",
         "host_abi::recognized_provider_imports_fail_preparation_without_installed_owners",
         "owned_preparation::dropped_and_unwinding_pending_guests_preserve_unsampled_fuel_and_memory",
         "owned_preparation::foreign_factory_changed_descriptor_and_foreign_guard_fail_before_store_creation",
@@ -6512,7 +6522,7 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 46,
+      "minimumCases": 47,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -8495,6 +8505,30 @@
       "resourceClass": "runtime-bounded",
       "source": "examples/java_runtime_probe.rs",
       "target": "java_runtime_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.transaction-contract",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "../../sdk/transaction-contract/rust/component.rs",
+      "target": "transaction-contract",
       "timeoutSeconds": 900
     }
   ],

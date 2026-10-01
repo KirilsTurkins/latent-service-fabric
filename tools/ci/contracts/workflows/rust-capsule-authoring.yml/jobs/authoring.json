@@ -52,6 +52,17 @@
         "run": "python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process"
       },
       {
+        "env": {
+          "LSF_TRANSACTION_PREPARATION_REPORT": "${{ runner.temp }}/transaction-contract-rust/preparation.json"
+        },
+        "name": "Qualify proposed transaction shapes with the maintained Rust compiler and HTTP preparation",
+        "run": "python3 tools/generate_transaction_contracts.py --check\npython3 tools/qualify_transaction_contracts.py --language rust --output \"$RUNNER_TEMP/transaction-contract-rust\"\ncargo test --locked -p latent-wasmtime --lib values::tests::transactions -- --nocapture\n"
+      },
+      {
+        "name": "Compile the authored transaction aggregate and forbidden immediate HTTP variant",
+        "run": "python3 tools/compile_transaction_guests.py --language rust --output \"$RUNNER_TEMP/transaction-guests-rust\""
+      },
+      {
         "name": "Execute complete outside-checkout authoring qualification",
         "run": "python3 tools/qualify_rust_capsules.py --output \"$RUNNER_TEMP/rust-capsule-authoring\""
       },
@@ -71,7 +82,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "rust-capsule-authoring-${{ github.run_id }}",
-          "path": "${{ runner.temp }}/dev-build-cache/\n${{ runner.temp }}/rust-capsule-authoring/*.json\n${{ runner.temp }}/rust-capsule-authoring/*.log\n${{ runner.temp }}/rust-capsule-authoring/*.stdout\n${{ runner.temp }}/rust-capsule-authoring/*.stderr\n${{ runner.temp }}/rust-capsule-authoring/logs/**\n${{ runner.temp }}/rust-capsule-authoring/builds/**\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.json\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.jsonl\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr.txt\n${{ runner.temp }}/rust-capsule-authoring/node/**\n${{ runner.temp }}/rust-capsule-authoring/releases/**\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.json\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/rust-capsule-authoring/guide/logs/**\n${{ runner.temp }}/rust-capsule-authoring/guide/projects/results/**\n",
+          "path": "${{ runner.temp }}/transaction-guests-rust/**/report.json\n${{ runner.temp }}/transaction-guests-rust/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-rust/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-rust/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-rust/**/component.wasm\n${{ runner.temp }}/transaction-guests-rust/**/component.wit\n${{ runner.temp }}/transaction-guests-rust/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-rust/**/logs/**\n${{ runner.temp }}/transaction-guests-rust/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-rust/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-rust/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-rust/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-rust/**/bindings/**\n${{ runner.temp }}/transaction-guests-rust/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-rust/report.json\n${{ runner.temp }}/transaction-contract-rust/source.tar.gz\n${{ runner.temp }}/transaction-contract-rust/component.wit\n${{ runner.temp }}/transaction-contract-rust/preparation.json\n${{ runner.temp }}/transaction-contract-rust/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-rust/logs/**\n${{ runner.temp }}/transaction-contract-rust/compiler/*.log\n${{ runner.temp }}/transaction-contract-rust/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wit\n${{ runner.temp }}/transaction-contract-rust/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-rust/compiled/generated/**\n${{ runner.temp }}/transaction-contract-rust/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-rust/bindings/**\n${{ runner.temp }}/transaction-contract-rust/component.wasm\n${{ runner.temp }}/dev-build-cache/\n${{ runner.temp }}/rust-capsule-authoring/*.json\n${{ runner.temp }}/rust-capsule-authoring/*.log\n${{ runner.temp }}/rust-capsule-authoring/*.stdout\n${{ runner.temp }}/rust-capsule-authoring/*.stderr\n${{ runner.temp }}/rust-capsule-authoring/logs/**\n${{ runner.temp }}/rust-capsule-authoring/builds/**\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.json\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.jsonl\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr.txt\n${{ runner.temp }}/rust-capsule-authoring/node/**\n${{ runner.temp }}/rust-capsule-authoring/releases/**\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.json\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/rust-capsule-authoring/guide/logs/**\n${{ runner.temp }}/rust-capsule-authoring/guide/projects/results/**\n",
           "retention-days": 3
         }
       }
@@ -80,7 +91,7 @@
   },
   "jobId": "authoring",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

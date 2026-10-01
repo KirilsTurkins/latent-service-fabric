@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/transaction-api.schema.json",
+  "title": "Bounded application HTTP transaction envelopes",
+  "description": "UTF-8 byte totals and decoded base64/u64 bounds require the transaction_contracts decoder in addition to structural validation. Current identity and authority come from the host route, never this envelope.",
+  "oneOf": [
+    {"$ref": "#/$defs/command"},
+    {"$ref": "#/$defs/query"},
+    {"$ref": "#/$defs/recovery"},
+    {"$ref": "#/$defs/response"}
+  ],
+  "$defs": {
+    "identity": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[^\\u0000]+$"},
+    "u64": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,19})$", "maxLength": 20},
+    "opaque": {"type": "string", "minLength": 4, "maxLength": 344, "pattern": "^[A-Za-z0-9+/]+={0,2}$"},
+    "bytes": {"type": "string", "maxLength": 1398104, "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"},
+    "key": {"type": "string", "minLength": 4, "maxLength": 1368, "pattern": "^[A-Za-z0-9+/]+={0,2}$"},
+    "metadata": {
+      "type": "array", "maxItems": 32,
+      "items": {"type": "array", "minItems": 2, "maxItems": 2,
+        "prefixItems": [{"$ref": "#/$defs/identity"}, {"type": "string", "maxLength": 1024}]}
+    },
+    "value": {
+      "type": "object", "additionalProperties": false, "required": ["bytes", "mediaType", "metadata"],
+      "properties": {"bytes": {"$ref": "#/$defs/bytes"}, "mediaType": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[\\u0020-\\u007e]+$"}, "metadata": {"$ref": "#/$defs/metadata"}}
+    },
+    "expectedVersion": {
+      "type": "object", "additionalProperties": false, "required": ["key"],
+      "properties": {"key": {"$ref": "#/$defs/key"}, "absent": {"const": true}, "version": {"$ref": "#/$defs/opaque"}},
+      "oneOf": [{"required": ["absent"]}, {"required": ["version"]}]
+    },
+    "abortFence": {
+      "type": "object", "additionalProperties": false, "required": ["commandId", "attemptId", "transactionId", "ownerFence"],
+      "properties": {"commandId": {"$ref": "#/$defs/identity"}, "attemptId": {"$ref": "#/$defs/identity"}, "transactionId": {"$ref": "#/$defs/identity"}, "ownerFence": {"$ref": "#/$defs/opaque"}}
+    },
+    "retryAttempt": {
+      "type": "object", "additionalProperties": false, "required": ["requestId", "expectedAbort"],
+      "properties": {"requestId": {"$ref": "#/$defs/identity"}, "expectedAbort": {"$ref": "#/$defs/abortFence"}}
+    },
+    "digest": {"type": "string", "minLength": 71, "maxLength": 71, "pattern": "^sha256:[0-9a-f]{64}$"},
+    "sourceIdentity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["publicationId", "revisionId", "releaseDigest", "componentDigest", "routeGeneration", "contractDigest", "stateSchema", "inputFormat", "resultFormat"],
+      "properties": {
+        "publicationId": {"$ref": "#/$defs/identity"}, "revisionId": {"$ref": "#/$defs/identity"},
+        "releaseDigest": {"$ref": "#/$defs/digest"}, "componentDigest": {"$ref": "#/$defs/digest"},
+        "routeGeneration": {"$ref": "#/$defs/u64"}, "contractDigest": {"$ref": "#/$defs/digest"},
+        "stateSchema": {"$ref": "#/$defs/digest"}, "inputFormat": {"$ref": "#/$defs/identity"}, "resultFormat": {"$ref": "#/$defs/identity"}
+      }
+    },
+    "viewIdentity": {
+      "type": "object", "additionalProperties": false, "required": ["namespace", "incarnation", "version", "stateSchema"],
+      "properties": {"namespace": {"$ref": "#/$defs/identity"}, "incarnation": {"$ref": "#/$defs/identity"},
+        "version": {"$ref": "#/$defs/opaque"}, "stateSchema": {"$ref": "#/$defs/digest"}}
+    },
+    "retention": {
+      "type": "object", "additionalProperties": false, "required": ["recordFormat", "recordVersion", "requiredRecordIds", "payloadAvailable"],
+      "properties": {
+        "recordFormat": {"enum": ["lsf-command-result-v1", "lsf-effect-intent-v1", "lsf-inbox-record-v1", "lsf-ordering-record-v1", "lsf-checkpoint-record-v1"]},
+        "recordVersion": {"const": 1}, "payloadExpiresAtUnixMillis": {"$ref": "#/$defs/u64"},
+        "identityExpiresAtUnixMillis": {"$ref": "#/$defs/u64"}, "remainingRecoveryMillis": {"$ref": "#/$defs/u64"},
+        "requiredRecordIds": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/identity"}},
+        "payloadAvailable": {"type": "boolean"}
+      }
+    },
+    "commitReceipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["commandId", "attemptId", "transactionId", "receiptId", "committedVersion", "committedAtUnixMillis", "effectIds", "sourceIdentity"],
+      "properties": {
+        "commandId": {"$ref": "#/$defs/identity"}, "attemptId": {"$ref": "#/$defs/identity"}, "transactionId": {"$ref": "#/$defs/identity"},
+        "receiptId": {"$ref": "#/$defs/identity"}, "committedVersion": {"$ref": "#/$defs/opaque"}, "committedAtUnixMillis": {"$ref": "#/$defs/u64"},
+        "effectIds": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/identity"}},
+        "sourceIdentity": {"$ref": "#/$defs/sourceIdentity"}
+      }
+    },
+    "effectReceipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effectId", "commandId", "commandAttemptId", "dispatchAttempt", "disposition", "occurredAtUnixMillis", "retention", "providerProfile"],
+      "properties": {
+        "effectId": {"$ref": "#/$defs/identity"}, "commandId": {"$ref": "#/$defs/identity"}, "commandAttemptId": {"$ref": "#/$defs/identity"},
+        "dispatchAttempt": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "disposition": {"enum": ["pending", "dispatching", "provider-acknowledged", "known-failure", "uncertain-after-dispatch", "expired", "policy-blocked", "administratively-terminated"]},
+        "occurredAtUnixMillis": {"$ref": "#/$defs/u64"}, "providerProfile": {"$ref": "#/$defs/identity"},
+        "providerReceipt": {"$ref": "#/$defs/identity"}, "failureCode": {"$ref": "#/$defs/identity"},
+        "retention": {"$ref": "#/$defs/retention"}, "managementOperationReceiptId": {"$ref": "#/$defs/identity"}
+      }
+    },
+    "command": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "profile", "namespace", "incarnation", "operation", "clientKey", "inputFormat", "input", "expectedVersions"],
+      "properties": {
+        "kind": {"const": "command"}, "profile": {"const": "lsf-transaction-v1"},
+        "namespace": {"$ref": "#/$defs/identity"}, "incarnation": {"$ref": "#/$defs/identity"}, "operation": {"$ref": "#/$defs/identity"},
+        "clientKey": {"$ref": "#/$defs/identity"}, "entity": {"$ref": "#/$defs/identity"}, "sharedRecoveryScope": {"$ref": "#/$defs/identity"},
+        "inputFormat": {"$ref": "#/$defs/identity"}, "input": {"$ref": "#/$defs/value"},
+        "expectedVersions": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/expectedVersion"}}, "retryAttempt": {"$ref": "#/$defs/retryAttempt"}
+      }
+    },
+    "query": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "profile", "namespace", "incarnation", "operation", "input"],
+      "properties": {"kind": {"const": "query"}, "profile": {"const": "lsf-transaction-v1"}, "namespace": {"$ref": "#/$defs/identity"},
+        "incarnation": {"$ref": "#/$defs/identity"}, "operation": {"$ref": "#/$defs/identity"}, "entity": {"$ref": "#/$defs/identity"},
+        "minimumViewVersion": {"$ref": "#/$defs/opaque"}, "input": {"$ref": "#/$defs/value"}}
+    },
+    "recovery": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "profile", "namespace", "incarnation", "operation", "clientKey"],
+      "properties": {"kind": {"const": "recovery"}, "profile": {"const": "lsf-transaction-v1"}, "namespace": {"$ref": "#/$defs/identity"},
+        "incarnation": {"$ref": "#/$defs/identity"}, "operation": {"$ref": "#/$defs/identity"}, "clientKey": {"$ref": "#/$defs/identity"},
+        "entity": {"$ref": "#/$defs/identity"}, "sharedRecoveryScope": {"$ref": "#/$defs/identity"}, "attemptId": {"$ref": "#/$defs/identity"}}
+    },
+    "response": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "profile", "outcome", "metadataDurable", "applicationStateCommitted"],
+      "properties": {"kind": {"const": "response"}, "profile": {"const": "lsf-transaction-v1"},
+        "outcome": {"enum": ["in-progress", "committed", "rejected", "aborted", "unknown", "recovery-required", "expired", "query-returned"]},
+        "metadataDurable": {"type": "boolean"}, "applicationStateCommitted": {"type": "boolean"}, "result": {"$ref": "#/$defs/value"},
+        "commandId": {"$ref": "#/$defs/identity"}, "attemptId": {"$ref": "#/$defs/identity"}, "receiptId": {"$ref": "#/$defs/identity"},
+        "viewVersion": {"$ref": "#/$defs/opaque"}, "provenAbort": {"$ref": "#/$defs/abortFence"},
+        "remainingRecoveryMillis": {"$ref": "#/$defs/u64"}, "resultFormat": {"$ref": "#/$defs/identity"},
+        "sourceIdentity": {"$ref": "#/$defs/sourceIdentity"}, "viewIdentity": {"$ref": "#/$defs/viewIdentity"},
+        "commitReceipt": {"$ref": "#/$defs/commitReceipt"}, "retention": {"$ref": "#/$defs/retention"},
+        "effects": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/effectReceipt"}},
+        "cleanupFailure": {"$ref": "#/$defs/identity"}},
+      "allOf": [
+        {"if": {"properties": {"outcome": {"const": "committed"}}}, "then": {
+          "required": ["commandId", "attemptId", "receiptId", "commitReceipt", "sourceIdentity", "retention"],
+          "properties": {"metadataDurable": {"const": true}, "applicationStateCommitted": {"const": true}}, "not": {"required": ["provenAbort"]}}},
+        {"if": {"properties": {"outcome": {"const": "rejected"}}}, "then": {
+          "required": ["commandId", "attemptId", "receiptId", "sourceIdentity", "retention"],
+          "properties": {"metadataDurable": {"const": true}, "applicationStateCommitted": {"const": false}, "effects": {"maxItems": 0}},
+          "not": {"anyOf": [{"required": ["commitReceipt"]}, {"required": ["provenAbort"]}]}}},
+        {"if": {"properties": {"outcome": {"const": "aborted"}}}, "then": {
+          "required": ["commandId", "attemptId", "receiptId", "retention"],
+          "properties": {"metadataDurable": {"const": true}, "applicationStateCommitted": {"const": false}}, "not": {"required": ["commitReceipt"]}}},
+        {"if": {"properties": {"outcome": {"enum": ["unknown", "in-progress", "recovery-required", "expired"]}}}, "then": {
+          "properties": {"applicationStateCommitted": {"const": false}},
+          "not": {"anyOf": [{"required": ["provenAbort"]}, {"required": ["commitReceipt"]}]}}},
+        {"if": {"properties": {"outcome": {"const": "query-returned"}}}, "then": {
+          "required": ["sourceIdentity", "viewIdentity", "result", "resultFormat"],
+          "properties": {"metadataDurable": {"const": false}, "applicationStateCommitted": {"const": false}},
+          "not": {"anyOf": [{"required": ["commandId"]}, {"required": ["attemptId"]}, {"required": ["receiptId"]}, {"required": ["provenAbort"]}, {"required": ["commitReceipt"]}, {"required": ["retention"]}, {"required": ["effects"]}]}}}
+      ]
+    }
+  }
+}

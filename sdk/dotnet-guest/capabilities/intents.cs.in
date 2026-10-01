@@ -1,0 +1,14 @@
+using @root@;
+using Raw = @raw@;
+namespace Lsf.Guest;
+
+/// <summary>Logical requests only; the host owns policy, provider and delivery.</summary>
+public sealed class Intent
+{
+    private readonly Raw.Intent value;
+    public Intent(string binding, string operation, @state@.Value payload, ulong? expiresAtUnixMillis = null) {
+        value = new Raw.Intent(binding, operation, payload, expiresAtUnixMillis);
+    }
+    public Result<Raw.StagedIntent, Raw.IntentError> Stage(State.Command command) =>
+        command.Borrow(raw => Raw.Stage(raw, value));
+}

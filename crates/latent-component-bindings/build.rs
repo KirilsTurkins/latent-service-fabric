@@ -24,6 +24,7 @@ fn main() -> io::Result<()> {
     let phase3_wit = output.join("phase3-wit");
     let streaming_wit = output.join("streaming-wit");
     let blob_wit = output.join("blob-wit");
+    let transaction_wit = output.join("transaction-wit");
 
     stage_runtime_world(&platform_wit, &runtime_wit, "runtime")?;
     stage_runtime_world(&platform_wit, &phase3_wit, "runtime-phase3")?;
@@ -35,6 +36,8 @@ fn main() -> io::Result<()> {
     write_streaming_bindings(&output, &streaming_wit)?;
     stage_runtime_world(&platform_wit, &blob_wit, "runtime-phase3-blobs")?;
     write_blob_bindings(&output, &blob_wit)?;
+    stage_runtime_world(&platform_wit, &transaction_wit, "runtime-phase4")?;
+    write_transaction_guest_bindings(&output, &transaction_wit)?;
     write_web_bindings(&output, &platform_wit)?;
 
     println!(
@@ -102,9 +105,10 @@ fn stage_runtime_world(platform_wit: &Path, destination: &Path, world: &str) -> 
     for package in packages {
         if !package.file_type()?.is_dir()
             || package.file_name() == OsStr::new("runtime")
-            || package.file_name() == OsStr::new("runtime-phase3")
-            || package.file_name() == OsStr::new("runtime-phase3-streaming")
-            || package.file_name() == OsStr::new("runtime-phase3-blobs")
+            || package
+                .file_name()
+                .to_string_lossy()
+                .starts_with("runtime-")
         {
             continue;
         }
@@ -289,6 +293,20 @@ fn write_blob_bindings(output: &Path, wit: &Path) -> io::Result<()> {
             r#"wit_bindgen::generate!({{
         path: {path},
         world: "latent:platform/capsule@0.4.0",
+        generate_all,
+    }});"#
+        ),
+    )
+}
+
+fn write_transaction_guest_bindings(output: &Path, wit: &Path) -> io::Result<()> {
+    let path = format!("{:?}", wit.to_string_lossy());
+    fs::write(
+        output.join("transaction_guest.rs"),
+        format!(
+            r#"wit_bindgen::generate!({{
+        path: {path},
+        world: "latent:platform/capsule@0.5.0",
         generate_all,
     }});"#
         ),

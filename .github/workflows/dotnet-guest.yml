@@ -4,6 +4,14 @@ on:
   pull_request:
     paths:
       - 'sdk/dotnet-guest/**'
+      - 'sdk/transaction-contract/**'
+      - 'tools/qualify_transaction_contracts.py'
+      - 'tools/compile_transaction_guests.py'
+      - 'tools/transaction_guest_project.py'
+      - 'tools/transaction_guest_variants.py'
+      - 'tools/tests/test_transaction_guest_authoring.py'
+      - 'tools/tests/test_transaction_guest_compilers.py'
+      - 'examples/rust-capsules/transactional-aggregate/**'
       - 'tools/dotnet_guest*'
       - 'tools/dotnet_guest/**'
       - 'tools/dotnet_capsule.py'
@@ -111,6 +119,10 @@ jobs:
           printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
           python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Qualify proposed transaction shapes with the maintained NativeAOT compiler
+        run: python3 tools/qualify_transaction_contracts.py --language dotnet --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/transaction-contract-dotnet"
+      - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
+        run: python3 tools/compile_transaction_guests.py --language dotnet --tools "$RUNNER_TEMP/dotnet-authoring-tools" --output "$RUNNER_TEMP/transaction-guests-dotnet"
       - name: Check independent editable projects and closed provenance profiles
         run: |
           python3 -m pip install -r tools/requirements.lock
@@ -164,6 +176,35 @@ jobs:
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/transaction-guests-dotnet/**/report.json
+            ${{ runner.temp }}/transaction-guests-dotnet/**/source-inputs.json
+            ${{ runner.temp }}/transaction-guests-dotnet/**/recipe-inputs.json
+            ${{ runner.temp }}/transaction-guests-dotnet/**/source.tar.gz
+            ${{ runner.temp }}/transaction-guests-dotnet/**/component.wasm
+            ${{ runner.temp }}/transaction-guests-dotnet/**/component.wit
+            ${{ runner.temp }}/transaction-guests-dotnet/**/compiler-inputs.json
+            ${{ runner.temp }}/transaction-guests-dotnet/**/logs/**
+            ${{ runner.temp }}/transaction-guests-dotnet/**/compiler/*.log
+            ${{ runner.temp }}/transaction-guests-dotnet/**/compiler/*.command.json
+            ${{ runner.temp }}/transaction-guests-dotnet/**/compiled/generated/**
+            ${{ runner.temp }}/transaction-guests-dotnet/**/compiled/bindings/**
+            ${{ runner.temp }}/transaction-guests-dotnet/**/bindings/**
+            ${{ runner.temp }}/transaction-guests-dotnet/**/compiled/raw-generated-bindings.json
+            ${{ runner.temp }}/transaction-contract-dotnet/report.json
+            ${{ runner.temp }}/transaction-contract-dotnet/source.tar.gz
+            ${{ runner.temp }}/transaction-contract-dotnet/component.wit
+            ${{ runner.temp }}/transaction-contract-dotnet/preparation.json
+            ${{ runner.temp }}/transaction-contract-dotnet/compiler-inputs.json
+            ${{ runner.temp }}/transaction-contract-dotnet/logs/**
+            ${{ runner.temp }}/transaction-contract-dotnet/compiler/*.log
+            ${{ runner.temp }}/transaction-contract-dotnet/compiler/*.command.json
+            ${{ runner.temp }}/transaction-contract-dotnet/compiled/component.wasm
+            ${{ runner.temp }}/transaction-contract-dotnet/compiled/component.wit
+            ${{ runner.temp }}/transaction-contract-dotnet/compiled/bindings/**
+            ${{ runner.temp }}/transaction-contract-dotnet/compiled/generated/**
+            ${{ runner.temp }}/transaction-contract-dotnet/compiled/raw-generated-bindings.json
+            ${{ runner.temp }}/transaction-contract-dotnet/bindings/**
+            ${{ runner.temp }}/transaction-contract-dotnet/component.wasm
             ${{ runner.temp }}/dotnet-guest/
             ${{ runner.temp }}/dotnet-capsule-authoring/
             ${{ runner.temp }}/dotnet-authoring-tools/logs/

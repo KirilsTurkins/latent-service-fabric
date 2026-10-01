@@ -64,6 +64,19 @@ def codec(graph: Graph, index: int) -> list[str]:
     kind, name = graph.types[index]["kind"], graph.name(index)
     if kind == "resource": return []
     form, body = next(iter(kind.items()))
+    # A cross-interface `use` of a resource is its type identity, not a value
+    # codec. Only the distinct own/borrow handle codecs may transfer access.
+    if form == "type":
+        target, seen = body, {index}
+        for _ in range(33):
+            if isinstance(target, str): break
+            if target in seen: raise ValueError("recursive Java resource alias")
+            seen.add(target)
+            aliased = graph.types[target]["kind"]
+            if aliased == "resource": return []
+            if not isinstance(aliased, dict) or set(aliased) != {"type"}: break
+            target = aliased["type"]
+        else: raise ValueError("Java resource alias depth limit")
     write, read = [], []
     if form == "type":
         write.append(writer(graph, body, "value")); read.append("return " + reader(graph, body) + ";")
@@ -105,7 +118,7 @@ def codec(graph: Graph, index: int) -> list[str]:
         own = "own" in body
         write.append("output.resource(value, " + str(own).lower() + ");")
         if not own: read.append('throw new IllegalArgumentException("borrowed resource exports are unsupported");')
-        else: read.append("return new " + graph.name(body["own"]) + "((int) input.integer(4));")
+        else: read.append("return new " + graph.name(graph.resource_index(body["own"])) + "((int) input.integer(4));")
     else: raise ValueError("unsupported Java codec form " + form)
     jtype, suffix = graph.jtype(index), graph.codec(index)
     return [f"private static void write{suffix}(Wire.Writer output, {jtype} value) {{", *write, "}",

@@ -1,0 +1,273 @@
+syntax = "proto3";
+
+package latent.transaction.v1;
+
+import "latent/invocation/v1/invocation.proto";
+
+// The complete profile is mandatory. Unknown names/versions reject before
+// execution; decoding these messages does not install an engine or authority.
+message TransactionProfile {
+  string profile = 1; // lsf-transaction-v1
+  string host_abi_digest = 2;
+  string preparation_profile_digest = 3;
+}
+
+message NamespaceSelector {
+  string tenant = 1;
+  string namespace = 2;
+  string incarnation = 3;
+}
+
+message CommandSelector {
+  NamespaceSelector namespace = 1;
+  string operation = 2;
+  optional string entity = 3;
+  string client_key = 4;
+  // Absent selects stable authenticated caller scope. Present selects only a
+  // currently authorized host-issued shared/delegated scope, never a credential.
+  optional string shared_recovery_scope = 5;
+}
+
+message CommandKey {
+  NamespaceSelector namespace = 1;
+  string recovery_scope = 2; // host-derived stable identity
+  string operation = 3;
+  optional string entity = 4;
+  string client_key = 5;
+}
+
+message ExpectedVersion {
+  bytes key = 1;
+  oneof expectation {
+    bool absent = 2; // present true only; false is invalid, not absence
+    bytes version = 3; // nonempty opaque incarnation-aware version
+  }
+}
+
+message InvokeCommandRequest {
+  TransactionProfile profile = 1;
+  latent.invocation.v1.InvokeRequest invocation = 2;
+  CommandSelector command = 3;
+  string input_format = 4;
+  repeated ExpectedVersion expected_versions = 5;
+  // Optional explicit attempt only after server-issued durable abort proof.
+  // The old attempt/result is immutable. SDKs never manufacture this request.
+  RetryAttempt retry_attempt = 6;
+}
+
+message RetryAttempt {
+  string request_id = 1;
+  AbortFence expected_abort = 2;
+}
+
+message AbortFence {
+  string command_id = 1;
+  string attempt_id = 2;
+  string transaction_id = 3;
+  bytes owner_fence = 4;
+}
+
+message SourceIdentity {
+  string publication_id = 1;
+  string revision_id = 2;
+  string release_digest = 3;
+  uint64 route_generation = 4;
+  string contract_digest = 5;
+  string state_schema = 6;
+  string input_format = 7;
+  string result_format = 8;
+  // The exact component bytes and signed release bundle are separate sources.
+  string component_digest = 9;
+}
+
+message CommitReceipt {
+  string command_id = 1;
+  string attempt_id = 2;
+  string transaction_id = 3;
+  bytes committed_version = 4;
+  uint64 committed_at_unix_millis = 5;
+  repeated string effect_ids = 6;
+  string receipt_id = 7;
+  SourceIdentity source = 8;
+}
+
+enum CommandOutcome {
+  COMMAND_OUTCOME_UNSPECIFIED = 0;
+  COMMAND_OUTCOME_IN_PROGRESS = 1;
+  COMMAND_OUTCOME_COMMITTED = 2;
+  COMMAND_OUTCOME_REJECTED = 3;
+  COMMAND_OUTCOME_ABORTED = 4;
+  COMMAND_OUTCOME_UNKNOWN = 5;
+  COMMAND_OUTCOME_RECOVERY_REQUIRED = 6;
+  COMMAND_OUTCOME_EXPIRED = 7;
+}
+
+message LinkedRetention {
+  string record_format = 1;
+  uint32 record_version = 2;
+  optional uint64 payload_expires_at_unix_millis = 3;
+  optional uint64 identity_expires_at_unix_millis = 4;
+  optional uint64 remaining_recovery_millis = 5;
+  repeated string required_record_ids = 6;
+  bool payload_available = 7;
+}
+
+message CommandInspection {
+  CommandKey key = 1;
+  string command_id = 2;
+  string attempt_id = 3;
+  bytes fingerprint_sha256 = 4;
+  CommandOutcome outcome = 5;
+  // Result metadata durability is distinct from application state commitment.
+  bool metadata_durable = 6;
+  bool application_state_committed = 7;
+  // false on an unknown/recovery-required outcome is not proof of abort.
+  SourceIdentity source = 8;
+  oneof retained_result {
+    latent.invocation.v1.Success success = 9;
+    latent.invocation.v1.DeclaredError business_rejection = 10;
+    latent.invocation.v1.PlatformError technical_failure = 11;
+  }
+  CommitReceipt commit = 12;
+  AbortFence proven_abort = 13;
+  LinkedRetention retention = 14;
+  // Cleanup/transport/cancellation failure cannot change a committed outcome.
+  latent.invocation.v1.PlatformError cleanup_failure = 15;
+}
+
+message InvokeCommandResponse {
+  latent.invocation.v1.InvokeResponse invocation = 1;
+  CommandInspection command = 2;
+  bool replayed = 3;
+}
+
+message LookupCommandRequest {
+  TransactionProfile profile = 1;
+  CommandSelector command = 2;
+  optional string attempt_id = 3;
+}
+
+message LookupCommitRequest {
+  TransactionProfile profile = 1;
+  CommandSelector command = 2;
+  string receipt_id = 3;
+}
+
+message QueryRequest {
+  TransactionProfile profile = 1;
+  latent.invocation.v1.InvokeRequest invocation = 2;
+  NamespaceSelector namespace = 3;
+  optional string entity = 4;
+  // Fresh bounded view at admission, at least this acknowledged version.
+  // Restore/incarnation mismatch explicitly rejects; no historical snapshots.
+  optional bytes minimum_view_version = 5;
+}
+
+message ViewIdentity {
+  NamespaceSelector namespace = 1;
+  bytes version = 2;
+  string state_schema = 3;
+}
+
+message QueryResponse {
+  latent.invocation.v1.InvokeResponse invocation = 1;
+  ViewIdentity view = 2;
+  SourceIdentity source = 3;
+  uint64 observed_at_unix_millis = 4;
+}
+
+message PageRequest {
+  uint32 limit = 1;
+  optional bytes cursor = 2;
+}
+
+message PageResponse {
+  optional bytes next_cursor = 1;
+  uint32 returned_count = 2;
+  uint64 encoded_bytes = 3;
+}
+
+enum EffectDisposition {
+  EFFECT_DISPOSITION_UNSPECIFIED = 0;
+  EFFECT_DISPOSITION_PENDING = 1;
+  EFFECT_DISPOSITION_DISPATCHING = 2;
+  EFFECT_DISPOSITION_PROVIDER_ACKNOWLEDGED = 3;
+  EFFECT_DISPOSITION_KNOWN_FAILURE = 4;
+  EFFECT_DISPOSITION_UNCERTAIN_AFTER_DISPATCH = 5;
+  EFFECT_DISPOSITION_EXPIRED = 6;
+  EFFECT_DISPOSITION_POLICY_BLOCKED = 7;
+  EFFECT_DISPOSITION_ADMINISTRATIVELY_TERMINATED = 8;
+}
+
+message EffectReceipt {
+  string effect_id = 1;
+  string command_id = 2;
+  string command_attempt_id = 3;
+  uint32 dispatch_attempt = 4;
+  EffectDisposition disposition = 5;
+  optional string provider_receipt = 6;
+  optional string failure_code = 7;
+  uint64 occurred_at_unix_millis = 8;
+  LinkedRetention retention = 9;
+  optional string management_operation_receipt_id = 10;
+  // No universal exactly-once delivery or completion order is implied.
+  string provider_profile = 11;
+}
+
+message GetEffectRequest {
+  TransactionProfile profile = 1;
+  CommandSelector command = 2;
+  string effect_id = 3;
+}
+
+message ListEffectHistoryRequest {
+  GetEffectRequest effect = 1;
+  PageRequest page = 2;
+}
+
+message ListEffectHistoryResponse {
+  repeated EffectReceipt receipts = 1;
+  PageResponse page = 2;
+}
+
+enum CommandCancelDisposition {
+  COMMAND_CANCEL_DISPOSITION_UNSPECIFIED = 0;
+  COMMAND_CANCEL_DISPOSITION_REQUESTED = 1;
+  COMMAND_CANCEL_DISPOSITION_ALREADY_COMMITTED = 2;
+  COMMAND_CANCEL_DISPOSITION_ALREADY_TERMINAL = 3;
+  COMMAND_CANCEL_DISPOSITION_NOT_FOUND = 4;
+  COMMAND_CANCEL_DISPOSITION_RECOVERY_REQUIRED = 5;
+}
+
+message CancelCommandRequest {
+  LookupCommandRequest command = 1;
+  string reason = 2;
+}
+
+message CancelCommandResponse {
+  CommandCancelDisposition disposition = 1;
+  CommandInspection command = 2;
+}
+
+// Application client profile, distinct from management and guest imports.
+service TransactionService {
+  rpc InvokeCommand(InvokeCommandRequest) returns (InvokeCommandResponse);
+  rpc Query(QueryRequest) returns (QueryResponse);
+  rpc LookupCommand(LookupCommandRequest) returns (LookupCommandResponse);
+  rpc LookupCommit(LookupCommitRequest) returns (LookupCommitResponse);
+  rpc GetEffect(GetEffectRequest) returns (GetEffectResponse);
+  rpc ListEffectHistory(ListEffectHistoryRequest) returns (ListEffectHistoryResponse);
+  rpc CancelCommand(CancelCommandRequest) returns (CancelCommandResponse);
+}
+
+message LookupCommandResponse {
+  CommandInspection command = 1;
+}
+
+message LookupCommitResponse {
+  CommandInspection command = 1;
+}
+
+message GetEffectResponse {
+  EffectReceipt effect = 1;
+}

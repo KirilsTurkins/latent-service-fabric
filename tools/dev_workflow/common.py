@@ -16,6 +16,13 @@ MAX_DEPLOY_SECONDS = 300
 MAX_START_SECONDS = 180
 PROTOCOL = "latent.dev.protocol.v1"
 HOST_ABI = "lsf-host-abi-phase3-v4"
+TRANSACTION_HOST_ABI = "lsf-host-abi-phase4-v1"
+GUEST_HOST_ABIS = frozenset({HOST_ABI, TRANSACTION_HOST_ABI})
+
+
+def guest_host_abi(value: object) -> str:
+    require(isinstance(value, str) and value in GUEST_HOST_ABIS, "incompatible-host-abi")
+    return value
 
 
 class DevError(ValueError):

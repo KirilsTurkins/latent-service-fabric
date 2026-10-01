@@ -15,6 +15,7 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 TUTORIALS = ("greeting", "word-count", "shipping")
 TEMPLATES = (*TUTORIALS, "http-status", "recovery")
+AUTHORING_TEMPLATES = (*TEMPLATES, "transactional-aggregate")
 MAX_FILES = 4096
 MAX_FILE = 4 * 1024 * 1024
 MAX_SOURCE = 32 * 1024 * 1024
@@ -99,7 +100,7 @@ def checked_path(path: Path) -> Path:
     return path.resolve(strict=False)
 
 
-def snapshot(root: Path) -> dict[str, bytes]:
+def snapshot(root: Path, *, exclude: tuple[str, ...] = ()) -> dict[str, bytes]:
     root = checked_path(root)
     if not root.is_dir():
         raise ValueError("project directory does not exist")
@@ -108,7 +109,7 @@ def snapshot(root: Path) -> dict[str, bytes]:
     while pending:
         parent = pending.pop()
         for path in sorted(parent.iterdir()):
-            if parent == root and path.name in {".git", "target"}:
+            if parent == root and path.name in {".git", "target", "dependency-inputs", *exclude}:
                 continue
             visited += 1
             if visited > MAX_FILES:
@@ -183,7 +184,7 @@ def sdk_files() -> dict[str, bytes]:
 
 
 def create(directory: Path, template: str, name: str | None = None) -> Path:
-    if template not in TEMPLATES:
+    if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown capsule template")
     name = name or "my-" + template
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", name) or len(name) > 64:
@@ -246,6 +247,9 @@ panic = "abort"
                "service": "examples/" + name, "world": f"examples:{template}/service@1.0.0",
                "limits": limits}
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
+    if template == "transactional-aggregate":
+        from tools.transaction_guest_project import augment
+        augment(files, project)
     pin = {"formatVersion": 1, "toolchain": pins,
            "sdk": json.loads(inventory(vendor)),
            "bindings": read_json(ROOT / "tools/guest_bindings.lock.json"),

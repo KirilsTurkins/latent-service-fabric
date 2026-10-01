@@ -6,7 +6,7 @@ import re
 import tomllib
 
 from tools.java_guest.compiler import sdk_snapshot
-from tools.rust_capsule_project import (ROOT, TEMPLATES, TUTORIALS, decode_json, digest,
+from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TUTORIALS, decode_json, digest,
     fresh, inventory, read_file, snapshot)
 
 
@@ -22,7 +22,7 @@ def runtime_wit(source: bytes, world: str) -> bytes:
 
 
 def create(directory: Path, template: str, name: str | None = None) -> Path:
-    if template not in TEMPLATES:
+    if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown Java capsule template")
     name = name or "my-" + template
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", name) or len(name) > 64:
@@ -46,6 +46,9 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
             "template": {"name": template, "sourceDigest": digest(files["src/dev/latent/app/Capsule.java"]),
                          "witDigest": digest(files["wit/world.wit"])}}
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
+    if template == "transactional-aggregate":
+        from tools.transaction_guest_project import augment
+        augment(files, project)
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/dev/latent/app/Capsule.java` and `wit/world.wit`.\n"
         "Keep `vendor/lsf` unchanged. Build with `tools/java_capsule.py` from the SDK checkout.\n"
@@ -78,12 +81,12 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
     if json.loads(inventory(vendor)) != lock["sdk"]:
         raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
-    # This version deliberately supports Java source dependencies only. Ignored
-    # Gradle/JAR overrides would falsely appear to be captured compiler inputs.
+    # Captured application JARs enter through the separately reviewed closure.
+    # Arbitrary application Gradle/Maven executable build recipes remain denied.
     for path in files:
         if path.startswith("vendor/lsf/"): continue
         if path.endswith((".jar", ".class", ".gradle", ".gradle.kts")) or Path(path).name == "pom.xml":
-            raise ValueError("binary dependencies and application build scripts require a new reviewed Java recipe")
+            raise ValueError("uncaptured Java binary dependencies or executable application build scripts")
         if path.startswith("src/") and not path.endswith(".java"):
             raise ValueError("Java application sources must be Java files")
     limits = project["limits"]

@@ -22,7 +22,7 @@ from tools.build_observation import build_environment, resolve_tools
 from tools.build_process import run_bounded
 from tools.dev_distribution import assemble, file_digest
 from tools.dev_guest_tools import ZIG_BYTES, ZIG_SHA256, ZIG_VERSION
-from tools.dev_workflow.common import HOST_ABI, PROTOCOL, encode, require
+from tools.dev_workflow.common import GUEST_HOST_ABIS, HOST_ABI, PROTOCOL, encode, require
 from tools.dev_workflow.project import LANGUAGES
 from tools.install_guest_bindgen import URL as BINDGEN_URL
 
@@ -124,6 +124,8 @@ def main() -> int:
     parser.add_argument("--python-prefix", type=Path, required=True, help="/usr/local copied from the pinned Python OCI image")
     parser.add_argument("--allow-dirty", action="store_true", help="Unsigned local assembly testing only")
     parser.add_argument("--language", choices=sorted(LANGUAGES), required=True)
+    parser.add_argument("--host-abi", choices=sorted(GUEST_HOST_ABIS), default=HOST_ABI,
+                        help="Explicit captured guest profile; grants no node authority")
     parser.add_argument("--node-tests", action="store_true", help="Also stage source-built node executables for focused contributor tests")
     parser.add_argument("--compiler-cache", type=Path, default=os.environ.get("LSF_DEV_COMPILER_CACHE"),
                         help="Untrusted digest-addressed archives, reverified before use; defaults to LSF_DEV_COMPILER_CACHE")
@@ -231,8 +233,8 @@ def main() -> int:
     for name in executables:
         (payload / name).chmod(0o700)
     run("python-version", payload / "sdk/bin/python", "-I", "-B", "-c", "import sys; assert sys.version_info[:3] == (3, 13, 5)")
-    inventory = distribution.compiler_inventory(payload, commit, args.language)
-    distribution.templates(payload, commit, args.language)
+    inventory = distribution.compiler_inventory(payload, commit, args.language, host_abi=args.host_abi)
+    distribution.templates(payload, commit, args.language, host_abi=args.host_abi)
     metadata = json.loads(run("metadata", tools["cargo"], "metadata", "--locked", "--format-version", "1",
                               "--filter-platform", "x86_64-unknown-linux-gnu"))
     sbom, licenses = native_runtime_build.dependency_inventory(metadata,
@@ -298,12 +300,13 @@ def main() -> int:
                                   "relatedSpdxElement": item["SPDXID"]} for item in extra)
     (payload / "sbom.spdx.json").write_bytes(encode(sbom))
     (payload / "build-provenance.json").write_bytes(encode({"schemaVersion": "latent.dev.build-provenance.v1",
-        "sourceCommit": commit, "sourceDirty": dirty, "target": "linux-x86_64", "hostAbi": HOST_ABI, "protocol": PROTOCOL,
+        "sourceCommit": commit, "sourceDirty": dirty, "target": "linux-x86_64", "hostAbi": args.host_abi, "protocol": PROTOCOL,
         "toolInventory": inventory["identity"], "pythonImage": PYTHON_IMAGE, "upstreamArchives": upstream,
         "language": args.language, "ownerIssue": LANGUAGES[args.language], "qualification": "assembly-only", "publicRelease": False}))
     version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
     value = assemble(payload, output / "candidate", commit=commit, version=version, target="linux-x86_64", epoch=epoch,
-                     executables=executables, archive_name="latent-dev-linux-x86_64-" + args.language + "-tools.zip")
+                     executables=executables, host_abi=args.host_abi,
+                     archive_name="latent-dev-linux-x86_64-" + args.language + "-tools.zip")
     print(encode({"archive": value["archive"], "sourceCommit": commit, "publisherAuthenticated": False}).decode(), end="")
     return 0
 

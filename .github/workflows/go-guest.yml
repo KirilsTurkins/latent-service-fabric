@@ -4,6 +4,14 @@ on:
   pull_request:
     paths:
       - sdk/go-guest/**
+      - sdk/transaction-contract/**
+      - tools/qualify_transaction_contracts.py
+      - 'tools/compile_transaction_guests.py'
+      - 'tools/transaction_guest_project.py'
+      - 'tools/transaction_guest_variants.py'
+      - 'tools/tests/test_transaction_guest_authoring.py'
+      - 'tools/tests/test_transaction_guest_compilers.py'
+      - 'examples/rust-capsules/transactional-aggregate/**'
       - tools/go_guest/**
       - tools/go_capsule*.py
       - tools/probe_go_authoring.py
@@ -33,6 +41,14 @@ on:
     branches: [development]
     paths:
       - sdk/go-guest/**
+      - sdk/transaction-contract/**
+      - tools/qualify_transaction_contracts.py
+      - 'tools/compile_transaction_guests.py'
+      - 'tools/transaction_guest_project.py'
+      - 'tools/transaction_guest_variants.py'
+      - 'tools/tests/test_transaction_guest_authoring.py'
+      - 'tools/tests/test_transaction_guest_compilers.py'
+      - 'examples/rust-capsules/transactional-aggregate/**'
       - tools/go_guest/**
       - tools/go_capsule*.py
       - tools/probe_go_authoring.py
@@ -130,6 +146,10 @@ jobs:
           retention-days: 1
       - name: Generate and compile upstream and constrained LSF components
         run: python3 tools/go_guest/probe.py --output "$RUNNER_TEMP/go-guest-probe" --go "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
+      - name: Qualify proposed transaction shapes and explicit owners with the maintained Go compiler
+        run: python3 tools/qualify_transaction_contracts.py --language go --output "$RUNNER_TEMP/transaction-contract-go"
+      - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
+        run: python3 tools/compile_transaction_guests.py --language go --output "$RUNNER_TEMP/transaction-guests-go"
       - name: Execute the compiled runtime diagnostic without claiming admission
         run: |
           set -o pipefail
@@ -146,6 +166,35 @@ jobs:
         with:
           name: go-guest-upstream-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/transaction-guests-go/**/report.json
+            ${{ runner.temp }}/transaction-guests-go/**/source-inputs.json
+            ${{ runner.temp }}/transaction-guests-go/**/recipe-inputs.json
+            ${{ runner.temp }}/transaction-guests-go/**/source.tar.gz
+            ${{ runner.temp }}/transaction-guests-go/**/component.wasm
+            ${{ runner.temp }}/transaction-guests-go/**/component.wit
+            ${{ runner.temp }}/transaction-guests-go/**/compiler-inputs.json
+            ${{ runner.temp }}/transaction-guests-go/**/logs/**
+            ${{ runner.temp }}/transaction-guests-go/**/compiler/*.log
+            ${{ runner.temp }}/transaction-guests-go/**/compiler/*.command.json
+            ${{ runner.temp }}/transaction-guests-go/**/compiled/generated/**
+            ${{ runner.temp }}/transaction-guests-go/**/compiled/bindings/**
+            ${{ runner.temp }}/transaction-guests-go/**/bindings/**
+            ${{ runner.temp }}/transaction-guests-go/**/compiled/raw-generated-bindings.json
+            ${{ runner.temp }}/transaction-contract-go/report.json
+            ${{ runner.temp }}/transaction-contract-go/source.tar.gz
+            ${{ runner.temp }}/transaction-contract-go/component.wit
+            ${{ runner.temp }}/transaction-contract-go/preparation.json
+            ${{ runner.temp }}/transaction-contract-go/compiler-inputs.json
+            ${{ runner.temp }}/transaction-contract-go/logs/**
+            ${{ runner.temp }}/transaction-contract-go/compiler/*.log
+            ${{ runner.temp }}/transaction-contract-go/compiler/*.command.json
+            ${{ runner.temp }}/transaction-contract-go/compiled/component.wasm
+            ${{ runner.temp }}/transaction-contract-go/compiled/component.wit
+            ${{ runner.temp }}/transaction-contract-go/compiled/bindings/**
+            ${{ runner.temp }}/transaction-contract-go/compiled/generated/**
+            ${{ runner.temp }}/transaction-contract-go/compiled/raw-generated-bindings.json
+            ${{ runner.temp }}/transaction-contract-go/bindings/**
+            ${{ runner.temp }}/transaction-contract-go/component.wasm
             ${{ runner.temp }}/go-guest-probe/
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn

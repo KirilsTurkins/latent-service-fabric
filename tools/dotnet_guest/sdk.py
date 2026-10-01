@@ -11,6 +11,8 @@ CAPABILITIES = {
     "service": ("latent:service/invoke@0.1.0", "IInvokeImports"),
     "random": ("latent:random/random@0.1.0", "IRandomImports"),
     "metrics": ("latent:telemetry/custom@0.1.0", "ICustomImports"),
+    "state": ("latent:state/key-value@0.2.0", "IKeyValueImports"),
+    "intents": ("latent:intents/staging@0.1.0", "IStagingImports"),
 }
 
 
@@ -36,7 +38,10 @@ def install(sdk: Path, generated: Path, output: Path) -> dict:
         if not any("namespace " + namespace + ";" in text and "public interface " + interface + " {" in text for text in sources):
             raise ValueError("generated C# import interface drift:" + identity)
         raw = namespace + "." + interface
+        if name == "intents" and "latent:state/key-value@0.2.0" not in installed:
+            raise ValueError("intent staging requires the canonical imported state owner")
         (output / (name + ".cs")).write_text((sdk / "capabilities" / (name + ".cs.in")).read_text()
-            .replace("@root@", root).replace("@raw@", raw), encoding="utf-8")
+            .replace("@root@", root).replace("@raw@", raw)
+            .replace("@state@", installed.get("latent:state/key-value@0.2.0", "")), encoding="utf-8")
         installed[identity] = raw
     return installed
