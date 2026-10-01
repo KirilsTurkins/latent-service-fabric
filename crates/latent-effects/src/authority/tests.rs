@@ -1,6 +1,104 @@
 use super::*;
 
 #[test]
+fn unretired_provider_context_quarantines_original_global_capacity_after_all_grants_drop() {
+    use latent_core::native_capacity::{
+        NativeAdmissionClass, NativeCapacityLimits, NativeCapacityOwner, NativeReservationRequest,
+    };
+    let capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+    let original = Arc::new(
+        capacity
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    request_bytes: 1,
+                    work_bytes: 1,
+                    response_bytes: 1,
+                },
+                Instant::now() + Duration::from_secs(30),
+            )
+            .unwrap(),
+    );
+    let witness = Arc::downgrade(&original);
+    let (owner, _, authority) = setup();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    context
+        .retain_owner(original.clone())
+        .unwrap_or_else(|_| panic!("original owner refused"));
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    drop(original);
+    drop(context);
+    drop(grant);
+    assert!(witness.upgrade().is_some());
+    assert_eq!(capacity.snapshot().unwrap().recovery.slots, 1);
+    assert_eq!(
+        owner.owners().unwrap(),
+        DispatchOwners {
+            physical: 1,
+            quarantined: 1
+        }
+    );
+}
+
+#[test]
+fn provider_grant_retains_original_native_capacity_after_context_retirement_and_refuses_replacement(
+) {
+    use latent_core::native_capacity::{
+        NativeAdmissionClass, NativeCapacityLimits, NativeCapacityOwner, NativeReservationRequest,
+    };
+    let mut limits = NativeCapacityLimits::default();
+    limits.recovery.slots = 1;
+    let capacity = NativeCapacityOwner::new(limits).unwrap();
+    let original = Arc::new(
+        capacity
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    request_bytes: 4096,
+                    work_bytes: 8192,
+                    response_bytes: 4096,
+                },
+                Instant::now() + Duration::from_secs(30),
+            )
+            .unwrap(),
+    );
+    let witness = Arc::downgrade(&original);
+    let (owner, _, authority) = setup();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    context
+        .retain_owner(original.clone())
+        .unwrap_or_else(|_| panic!("original owner refused"));
+    let replacement: Arc<dyn std::any::Any + Send + Sync> = Arc::new("foreign");
+    let refused = context
+        .retain_owner(Arc::clone(&replacement))
+        .err()
+        .unwrap();
+    assert!(Arc::ptr_eq(&replacement, &refused));
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    drop(original);
+    context.retire().unwrap();
+    assert_eq!(owner.owners().unwrap().physical, 0);
+    assert!(witness.upgrade().is_some());
+    assert_eq!(capacity.snapshot().unwrap().recovery.slots, 1);
+    assert_eq!(grant.check_current(time(103)), Err(AuthorityError::Stale));
+    drop(grant);
+    assert!(witness.upgrade().is_none());
+    assert_eq!(capacity.snapshot().unwrap().recovery.slots, 0);
+    let mut later = owner.accept(&authority, 1, time(104)).unwrap();
+    let grant = later
+        .accept_with(&authority, 1, time(104), |grant| grant)
+        .unwrap();
+    let refused = later.retain_owner(Arc::clone(&replacement)).err().unwrap();
+    assert!(Arc::ptr_eq(&replacement, &refused));
+    drop(grant);
+    later.retire().unwrap();
+}
+
+#[test]
 fn namespace_close_invalidates_accepted_grants_without_refunding_physical_work() {
     let (owner, original, authority) = setup();
     let mut context = owner.accept(&authority, 1, time(101)).unwrap();

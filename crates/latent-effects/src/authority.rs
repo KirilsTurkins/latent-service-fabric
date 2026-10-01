@@ -593,6 +593,8 @@ impl EffectAuthorityOwner {
             reference,
             deadline,
             retired: false,
+            grant_issued: false,
+            retained_owner: None,
         })
     }
 
@@ -667,9 +669,24 @@ pub struct DispatchContext {
     reference: String,
     deadline: Instant,
     retired: bool,
+    grant_issued: bool,
+    retained_owner: Option<Arc<dyn std::any::Any + Send + Sync>>,
 }
 
 impl DispatchContext {
+    /// Retain the already reserved original request/global owner before issuing
+    /// any provider grant. The refused owner is returned unchanged; replacement
+    /// or late installation cannot refund an accepted owner's capacity.
+    pub fn retain_owner(
+        &mut self,
+        owner: Arc<dyn std::any::Any + Send + Sync>,
+    ) -> Result<(), Arc<dyn std::any::Any + Send + Sync>> {
+        if self.grant_issued || self.retained_owner.is_some() {
+            return Err(owner);
+        }
+        self.retained_owner = Some(owner);
+        Ok(())
+    }
     #[must_use]
     pub fn scope(&self) -> &EffectScope {
         &self.scope
@@ -726,6 +743,12 @@ impl Drop for DispatchContext {
     fn drop(&mut self) {
         if !self.retired {
             self.live.store(false, Ordering::Release);
+            if let Some(owner) = self.retained_owner.take() {
+                // Preserve the exact original capacity while physical ownership
+                // is unresolved. The existing finite physical/global caps bound
+                // this quarantine; only actual retirement or process loss ends it.
+                std::mem::forget(owner);
+            }
             if let Ok(mut state) = self.owner.state.lock() {
                 // Keep the physical permit occupied. No timeout/lease path may
                 // turn this diagnostic owner into an automatic retry.

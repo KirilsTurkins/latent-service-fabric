@@ -105,3 +105,23 @@ all-target/all-feature effect Clippy passed. The exact Linux inventory is now
 73 cases. New native transport execution remains separately qualified by the
 owned provider fixture; these metadata tests do not establish broker or HTTP
 endpoint qualification.
+
+`DispatchContext::retain_owner` binds one already reserved original request or
+global owner before any grant is issued. Refused replacement or late retention
+returns the exact owner unchanged. Every issued grant retains the same opaque
+keeper as its last field, so the existing provider request carries it through
+actual payload, socket and response cleanup. Returned management confirmations
+and transport responses retain it independently. This adds no reservation,
+worker, retry authority or renewed deadline.
+
+Explicit context retirement releases its own keeper after positive physical
+cleanup. Unexpected context drop instead preserves the exact keeper with the
+already quarantined physical permit, bounded by the existing physical/global
+capacity limits. Dropping all grants or response waiters cannot refund that
+unresolved capacity; process loss remains the conservative recovery boundary.
+
+The original management port milestone recorded 97 effect cases and strict
+all-target/all-feature Clippy on pinned Linux Rust 1.97.1. Provider branch
+validation is recorded separately. The two new cases use real shared native
+reservations to check replacement refusal, retained grant capacity after
+positive context retirement, and exact owner quarantine after unexpected drop.
