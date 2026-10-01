@@ -16,7 +16,7 @@ from tools.rust_capsule_project import ROOT, digest, read_json, write_json
 SPIN_CPU_FUEL = 10_000_000_000
 
 
-def projects(output: Path) -> dict[str, Path]:
+def projects(output: Path, *, tools: dict[str, Path] | None = None) -> dict[str, Path]:
     result = {}
     for name in ("domain", "context-required"):
         project = create(output / name, "greeting", "java-http-" + name)
@@ -37,8 +37,8 @@ def projects(output: Path) -> dict[str, Path]:
         (project / "sdk-lock.json").write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
         result[name] = project
     selection = ROOT / "examples/java-http-composition/routes.json"
-    result["adapter"] = generate(result["domain"], selection, output / "adapter")
-    check(result["domain"], selection, result["adapter"])
+    result["adapter"] = generate(result["domain"], selection, output / "adapter", tools=tools)
+    check(result["domain"], selection, result["adapter"], tools=tools)
     result["adapter-next"] = create_revision(result["adapter"], output / "adapter-next")
     return result
 

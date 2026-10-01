@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_packaged_java_composition.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Require an explicit flag for distinct fresh Java provider-capable compiler inputs and diagnostic receipts",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "bea9e79d1d5dd4aa8aa5f1bdd32554640e819d9aa2227ad1cb850f3de47ccfcb"
+}
