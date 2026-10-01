@@ -10,7 +10,7 @@ private workspace and its original owner record only after installation.
 The retained [observation](observation.json), [environment](environment.json)
 and [process receipt](process.json) remain failed evidence. They do not prove
 Java execution, live preflight, signing, grants, or a successful node campaign.
-The original stderr is retained in [qualification.stderr.log](qualification.stderr.log).
+The original stderr is retained in [qualification.stderr.txt](qualification.stderr.txt).
 
 The producer source is `761172002e4a4d02102f8c757235b888fe4859e1`; the independently
 approved combined policy digest is

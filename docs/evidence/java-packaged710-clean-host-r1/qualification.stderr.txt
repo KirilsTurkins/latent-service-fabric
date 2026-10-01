@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/controller/qualify-owned-r2.py", line 16, in <module>
+    result=qualify(json.loads((root/'inputs.json').read_bytes()),root/'campaign-r1')
+  File "/qualification-work/conductor-d39/tools/java_http_composition/packaged.py", line 297, in qualify
+    root = _connect(api, frontend, baseline)
+  File "/qualification-work/conductor-d39/tools/java_http_composition/packaged.py", line 86, in _connect
+    require(root.is_dir() and not root.is_symlink(), "packaged-composition-real-workspace-required")
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/qualification-work/conductor-d39/tools/dev_workflow/common.py", line 31, in require
+    raise DevError(code)
+tools.dev_workflow.common.DevError: packaged-composition-real-workspace-required
