@@ -51,6 +51,17 @@ impl Project for proto::AuditCanaryDecision {
 impl Project for proto::AuditIdentities {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
+        if let Some(dispatcher) = &self.dispatcher {
+            dispatcher.validate(b)?;
+            if *self
+                != (proto::AuditIdentities {
+                    dispatcher: Some(dispatcher.clone()),
+                    ..Default::default()
+                })
+            {
+                return Err(invalid_response());
+            }
+        }
         if let Some(state) = &self.state {
             state.validate(b)?;
             if self.publication_id.is_none()
@@ -132,6 +143,7 @@ impl Project for proto::AuditIdentities {
     }
     fn project(self) -> Value {
         json!({
+        "dispatcher": self.dispatcher.map(Project::project),
         "state": self.state.map(Project::project),
         "trigger": self.trigger,
         "triggerGeneration": self.trigger_generation.map(|value| value.to_string()),
@@ -158,6 +170,23 @@ impl Project for proto::AuditIdentities {
         "canaryEvidenceDigest": self.canary_evidence_digest.map(|value| json!(value)),
         "rollbackTargetGeneration": self.rollback_target_generation.map(|value| json!(value.to_string())),
         })
+    }
+}
+
+impl Project for proto::AuditDispatcherTarget {
+    fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
+        b.message::<Self>()?;
+        b.text(&self.actor_tenant, 256)?;
+        if self.owner_epoch == 0
+            || self.actor_tenant.is_empty()
+            || self.actor_tenant.chars().any(char::is_control)
+        {
+            return Err(invalid_response());
+        }
+        Ok(())
+    }
+    fn project(self) -> Value {
+        json!({"ownerEpoch":self.owner_epoch.to_string(),"actorTenant":self.actor_tenant})
     }
 }
 
