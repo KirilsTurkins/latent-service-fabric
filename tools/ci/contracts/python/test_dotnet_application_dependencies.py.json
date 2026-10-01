@@ -5,6 +5,7 @@
     "CapturedCompilerSelection.test_offline_asset_drift_still_fails_before_native_aot",
     "CapturedCompilerSelection.test_oversized_raw_wit_is_rejected_before_diagnostic_publication",
     "CapturedCompilerSelection.test_profile_rejection_retains_raw_component_and_wit_after_workspace_cleanup",
+    "NativeAotRuntimeCoverage.test_actual_raw_failure_retention_preserves_shared_failure_report",
     "NativeAotRuntimeCoverage.test_failure_report_rechecks_raw_bytes_and_does_not_invent_source_identity",
     "NativeAotRuntimeCoverage.test_malformed_world_tables_type_indices_and_function_names_fail",
     "NativeAotRuntimeCoverage.test_missing_http_is_not_a_clock_grant_or_catalogue_decision",
@@ -93,6 +94,18 @@
       "fixtureGuards": [
         "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
         "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_actual_raw_failure_retention_preserves_shared_failure_report": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
       ],
       "skipSites": []
     },
@@ -450,6 +463,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_application_dependencies.py",
-  "reviewReason": "Exercise captured NuGet compiler selection without overwriting declared WIT authority and retain bounded raw output before rejected composition",
+  "reviewReason": "Preserve existing NativeAOT ingestion contracts and add actual chained shared-failure/raw-diagnostic retention without replacing immutable reports or changing fixture guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

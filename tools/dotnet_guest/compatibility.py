@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from tools import guest_compatibility as compatibility
-from tools.guest_compatibility_build import interface_names
+from tools.guest_compatibility_build import interface_names, retain_report
 from tools.dev_workflow.common import decode, digest, require
 from tools.rust_capsule_project import read_file, write_json
 
@@ -108,4 +108,4 @@ def retain_failure(output: Path) -> None:
         [{'kind': 'runtime', 'digest': value['runtimeAdapterDigest'], 'profile': PROFILE}], findings(value))
     # This report explicitly describes the retained raw compiler component;
     # successful final composition has a separate authoritative inspection.
-    write_json(output / 'compatibility-report.json', report)
+    retain_report(output, report, kind='raw')

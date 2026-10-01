@@ -294,6 +294,42 @@ class NativeAotRuntimeCoverage(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'stale-receipt'):
                 retain_failure(output)
 
+    def test_actual_raw_failure_retention_preserves_shared_failure_report(self):
+        from tools.build_snapshot import canonical, digest
+        from tools.dotnet_guest.compatibility import coverage, retain_failure, PROFILE
+        from tools.guest_compatibility import read as read_report
+        from tools.guest_compatibility_build import failure_report
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            raw, adapter = self.graph(), self.graph(export=True)
+            adapter['interfaces'][0]['functions'] = {}
+            raw_graph, adapter_graph = canonical(raw), canonical(adapter)
+            raw_bytes, source = b'retained-compiler-input', b'reviewed-source-inventory'
+            (output / 'native-aot-raw.wit.json').write_bytes(raw_graph)
+            (output / 'closed-runtime-adapter.wit.json').write_bytes(adapter_graph)
+            (output / 'native-aot-raw.wasm').write_bytes(raw_bytes)
+            (output / 'source-inputs.json').write_bytes(source)
+            receipt = coverage(raw, adapter)
+            receipt.update(schemaVersion='lsf.dotnet.runtime.coverage.v1', runtimeProfile=PROFILE,
+                rawComponentDigest=digest(raw_bytes), runtimeAdapterDigest=digest(b'adapter'),
+                rawWitDigest=digest(raw_graph), runtimeWitDigest=digest(adapter_graph))
+            (output / 'closed-runtime-coverage.json').write_bytes(canonical(receipt))
+            failure_report(output, 'dotnet', 'compile')
+            shared = (output / 'compatibility-report.json').read_bytes()
+            retain_failure(output)
+            self.assertEqual((output / 'compatibility-report.json').read_bytes(), shared)
+            report = read_report((output / 'compatibility-raw-report.json').read_bytes())
+            self.assertEqual(report['sourceDigest'], digest(source))
+            self.assertEqual(report['componentDigest'], digest(raw_bytes))
+            self.assertEqual(report['findings'][0]['classification'], 'missing-runtime-port')
+            self.assertEqual(report['status'], 'blocked')
+            retained = (output / 'compatibility-raw-report.json').read_bytes()
+            (output / 'native-aot-raw.wasm').write_bytes(b'tampered')
+            with self.assertRaisesRegex(ValueError, 'stale-receipt'):
+                retain_failure(output)
+            self.assertEqual((output / 'compatibility-report.json').read_bytes(), shared)
+            self.assertEqual((output / 'compatibility-raw-report.json').read_bytes(), retained)
+
 
 class NugetGeneratedOutputs(unittest.TestCase):
     def approval(self):
