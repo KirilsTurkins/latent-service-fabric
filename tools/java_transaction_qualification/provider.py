@@ -220,9 +220,10 @@ def _stop(_signum, _frame):
     STOPPING = True
 
 
-def run(root: Path, tls: Path, token_file: Path, incarnation: str, deadline: float, session: int):
+def run(root: Path, tls: Path, token_file: Path, incarnation: str, deadline: float, session: int, port=0):
     require(0 < deadline - time.monotonic() <= 1200, "recipient-original-lifetime")
     require(session in {1, 2, 3}, "recipient-bounded-session")
+    require(type(port) is int and 0 <= port <= 65535, "recipient-fixed-loopback-port")
     stopped = root / f"recipient-stopped-{session}.json"
     require(not stopped.exists(), "recipient-original-session")
     require(token_file.is_file() and not token_file.is_symlink(), "recipient-credential-file")
@@ -233,7 +234,7 @@ def run(root: Path, tls: Path, token_file: Path, incarnation: str, deadline: flo
     signal.signal(signal.SIGTERM, _stop)
     signal.signal(signal.SIGINT, _stop)
     with socket.socket() as listener:
-        listener.bind(("127.0.0.1", 0))
+        listener.bind(("127.0.0.1", port))
         listener.listen(4)
         print(json.dumps({"port": listener.getsockname()[1], "providerIncarnation": incarnation}), flush=True)
         connections = refused = 0
@@ -279,8 +280,9 @@ def main():
     parser.add_argument("--incarnation", required=True)
     parser.add_argument("--deadline", type=float, required=True)
     parser.add_argument("--session", type=int, default=1)
+    parser.add_argument("--port", type=int, default=0)
     args = parser.parse_args()
-    run(args.root, args.tls, args.token_file, args.incarnation, args.deadline, args.session)
+    run(args.root, args.tls, args.token_file, args.incarnation, args.deadline, args.session, args.port)
 
 
 if __name__ == "__main__":
