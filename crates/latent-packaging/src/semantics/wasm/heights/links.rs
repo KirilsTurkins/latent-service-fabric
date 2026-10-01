@@ -1,16 +1,30 @@
 use super::{invalid, Guard, Kind, Measure, Result};
+use std::collections::BTreeMap;
 use wasmparser::{ComponentAlias, ComponentInstance, ComponentOuterAliasKind};
 
-impl Guard {
+impl<'a> Guard<'a> {
     pub(super) fn alias(&mut self, alias: &ComponentAlias<'_>) -> Result<()> {
         match *alias {
             ComponentAlias::InstanceExport {
                 kind,
                 instance_index,
-                ..
+                name,
             } => {
-                // A whole-instance maximum safely overestimates any named export.
-                let value = self.current()?.at(Kind::Instance, instance_index)?;
+                // An alias visits this named member, not every private or public
+                // sibling in its instance. The member's full transitive measure
+                // still spends the independent reference/depth limits.
+                let instance = self.current()?.at(Kind::Instance, instance_index)?;
+                let exports = instance
+                    .exports
+                    .and_then(|index| self.exports.get(index))
+                    .ok_or_else(|| invalid("invalid-component-export-reference"))?;
+                let (actual_kind, value) = exports
+                    .get(name)
+                    .copied()
+                    .ok_or_else(|| invalid("invalid-component-export-reference"))?;
+                if actual_kind != kind {
+                    return Err(invalid("invalid-component-export-kind"));
+                }
                 self.push(kind, value)
             }
             ComponentAlias::Outer { kind, count, index } => {
@@ -33,17 +47,16 @@ impl Guard {
         }
     }
 
-    pub(super) fn instance(&mut self, instance: &ComponentInstance<'_>) -> Result<()> {
+    pub(super) fn instance(&mut self, instance: &ComponentInstance<'a>) -> Result<()> {
         let mut result = Measure::LEAF;
         match instance {
             ComponentInstance::Instantiate {
                 component_index,
                 args,
             } => {
-                result.include(
-                    self.current()?.at(Kind::Component, *component_index)?,
-                    self.limits,
-                )?;
+                let component = self.current()?.at(Kind::Component, *component_index)?;
+                result.include(component, self.limits)?;
+                result.exports = component.exports;
                 for argument in args {
                     result.include(
                         self.current()?.at(argument.kind, argument.index)?,
@@ -52,9 +65,13 @@ impl Guard {
                 }
             }
             ComponentInstance::FromExports(exports) => {
+                let mut members = BTreeMap::new();
                 for export in exports {
-                    result.include(self.current()?.at(export.kind, export.index)?, self.limits)?;
+                    let value = self.current()?.at(export.kind, export.index)?;
+                    result.include(value, self.limits)?;
+                    self.insert_export(&mut members, export.name.name, export.kind, value)?;
                 }
+                result.exports = Some(self.retain_exports(members)?);
             }
         }
         self.push(Kind::Instance, result)

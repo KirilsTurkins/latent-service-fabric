@@ -121,15 +121,38 @@ class CacheIdentityTests(unittest.TestCase):
         self.assertEqual(self.digest(environment={}), self.digest(environment={"GITHUB_JOB": "another-layout"}))
 
     def test_workflow_cache_writes_and_scope_match_the_reviewed_policy(self):
+        from tools.ci_lane_inventory import workflow_model
         workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml").read_text()
         rust = workflow.split("\n  rust:\n", 1)[1].split("\n  oci-registry:\n", 1)[0]
-        for option in ("cache-targets", "cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
+        for option in ("cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
             self.assertIn(option + ": false", rust)
+        self.assertIn("cache-targets: true", rust)
+        self.assertNotIn("cache-directories:", rust)
+        self.assertIn("shared-key: host-correctness", rust)
         self.assertIn("default: baseline", workflow)
         self.assertIn("steps.cargo-cache-identity.outputs.prefix", rust)
         self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/development'", rust)
-        self.assertIn("github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release'", rust)
         self.assertNotIn("pull_request_target", rust)
+        jobs = workflow_model(workflow)["jobs"]
+        for name in ("oci-registry", "catalog", "contracts"):
+            step = next(s for s in jobs[name]["steps"] if s.get("name") == "Restore compiled Rust dependencies")
+            self.assertIs(step["with"]["save-if"], False)
+            self.assertEqual(step["with"]["shared-key"], "host-correctness")
+
+    def test_ci_symbols_are_removed_without_disabling_correctness_guards(self):
+        from tools.ci_lane_inventory import workflow_model
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/ci.yml").read_text())
+        for profile in ("DEV", "TEST"):
+            self.assertEqual(workflow["env"][f"CARGO_PROFILE_{profile}_DEBUG"], "0")
+            for guard in ("DEBUG_ASSERTIONS", "OVERFLOW_CHECKS"):
+                self.assertEqual(workflow["env"][f"CARGO_PROFILE_{profile}_{guard}"], "true")
+        manifest = tomllib.loads((root / "Cargo.toml").read_text())
+        self.assertEqual(set(manifest["profile"]), {"dev"})
+        dev = manifest["profile"]["dev"]
+        self.assertEqual(set(dev), {"package"})
+        self.assertEqual(set(dev["package"]), {"cranelift-codegen", "regalloc2", "wasmparser"})
+        self.assertTrue(all(set(p) == {"opt-level"} and p["opt-level"] == 3 for p in dev["package"].values()))
 
     def test_candidate_rejects_unknown_or_msrv_profile_combinations(self):
         for changed in ({"recipe": "release"}, {"configuration": "release"},

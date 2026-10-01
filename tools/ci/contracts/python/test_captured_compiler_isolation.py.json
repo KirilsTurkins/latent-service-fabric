@@ -4,8 +4,11 @@
     "CompilerInputs.test_dependency_output_cannot_hide_rules_variables_or_overflow",
     "CompilerInputs.test_dependency_output_preserves_escaped_names_and_continuations",
     "CompilerInputs.test_distribution_binds_headers_runtime_and_zero_byte_files",
+    "CompilerNamespace.test_captured_sdk_child_path_cannot_expose_unregistered_executables",
     "CompilerNamespace.test_deadline_kills_descendants_and_next_build_is_clean",
-    "CompilerNamespace.test_selected_bytes_work_but_ambient_file_and_credentials_are_absent"
+    "CompilerNamespace.test_go_compiler_policy_cannot_enable_network_cgo_or_an_ambient_toolchain",
+    "CompilerNamespace.test_selected_bytes_work_but_ambient_file_and_credentials_are_absent",
+    "CompilerNamespace.test_selected_sources_are_read_only_and_owned_outputs_remain_writable"
   ],
   "guards": {
     "CompilerInputs.test_absolute_embedded_file_outside_capture_is_rejected": {
@@ -56,7 +59,35 @@
       ],
       "skipSites": []
     },
+    "CompilerNamespace.test_captured_sdk_child_path_cannot_expose_unregistered_executables": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e512317641672518b9e2fa30e9c6c7d0489fae30f1a78dd43134ba67e8288154",
+        "class:raise:raise unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')",
+        "class:setup-sha256:dc680314629b4f4a5ad78dba54cc482ca48d526b9fc12f300d1de7a8162a9695",
+        "class:skip:unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')"
+      ],
+      "skipSites": []
+    },
     "CompilerNamespace.test_deadline_kills_descendants_and_next_build_is_clean": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e512317641672518b9e2fa30e9c6c7d0489fae30f1a78dd43134ba67e8288154",
+        "class:raise:raise unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')",
+        "class:setup-sha256:dc680314629b4f4a5ad78dba54cc482ca48d526b9fc12f300d1de7a8162a9695",
+        "class:skip:unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')"
+      ],
+      "skipSites": []
+    },
+    "CompilerNamespace.test_go_compiler_policy_cannot_enable_network_cgo_or_an_ambient_toolchain": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -83,10 +114,24 @@
         "class:skip:unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')"
       ],
       "skipSites": []
+    },
+    "CompilerNamespace.test_selected_sources_are_read_only_and_owned_outputs_remain_writable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e512317641672518b9e2fa30e9c6c7d0489fae30f1a78dd43134ba67e8288154",
+        "class:raise:raise unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')",
+        "class:setup-sha256:dc680314629b4f4a5ad78dba54cc482ca48d526b9fc12f300d1de7a8162a9695",
+        "class:skip:unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_captured_compiler_isolation.py",
-  "reviewReason": "Add explicit real Linux namespace containment and descendant cleanup cases",
+  "reviewReason": "Retain all existing namespace controls and bind SDK child executable exposure and Go offline compiler policy.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
