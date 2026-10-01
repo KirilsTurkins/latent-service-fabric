@@ -29,9 +29,9 @@ metadata. An original key with such dependencies remains an existing command;
 changed input conflicts. A native reader still sees its original snapshot and
 prevents compaction until physical view retirement. This profile retains the
 protective metadata under the existing finite admission quotas. Explicit
-terminalization and dependency purge use the separate review below. Destructive
-namespace release and public management composition remain part of the broader
-#397 acceptance work.
+terminalization, dependency purge and explicit command-floor release use the
+separate review below. Public management composition and bounded compaction
+remain part of the broader #397 acceptance work.
 
 ## Explicit review and dependency purge
 
@@ -61,6 +61,25 @@ key reports expired and cannot become a fresh command in that incarnation.
 Explicit drained namespace release must remove this final pin before destruction
 and recreation. These ports provide no guest or administrator authority by
 themselves and create no store, worker, timer or background dispatcher.
+
+`prepare_floor_release` prepares one descriptive `PreparedFloorRelease` for the
+existing namespace management owner. It requires the exact namespace generation,
+a retired namespace, ready history/global restore guards and drained result
+reservations, effects, payload and inbox dependencies. It checks all sixteen
+original attempt/result slots and bounded retry backpointers are absent. The
+native writer compares the original floor, fixed quota, namespace and history
+rows; a missing or malformed chain refuses release. Active or merely quiescing
+namespaces retain their identity floors.
+
+The prepared plan holds the same single maintenance step through physical
+publication. Management may append its bounded operation and audit rows without
+overriding cleanup expectations or mutations. `publish` uses the existing native
+reader reclamation gate and the host's final current namespace-destroy policy
+and actual lifecycle drain callback. The final floor releases its accounting
+pin and empty quota row. Namespace incarnation stays unchanged; only the normal
+explicit destruction and recreation transitions advance it. A partial cleanup
+is not a completed namespace destruction. The consuming management bridge must
+retain its own attributable operation receipt and uncertain-commit recovery.
 
 New admission uses closed version-4 command metadata and a fixed 256-byte
 version-2 quota row. It charges encoded command, attempt, result, inbox, payload
