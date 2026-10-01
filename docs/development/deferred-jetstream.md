@@ -79,21 +79,30 @@ all 88 historical obligations and observed 221 current run blocks with 132
 reviewed delegated owners.
 
 The maintained provider CI lane selects `deferred_events` through
-`tools/run_nats_deferred_tests.py`. Its seven registered native schedules all
-passed against the actual controlled broker in 5.33 seconds, with zero ignored
-or filtered cases. Each schedule uses the protected shared store, native
+`tools/run_nats_deferred_tests.py`. Its eight registered native schedules all
+passed against the actual controlled broker in 7.57 seconds, with zero ignored
+or filtered cases. The earlier seven-schedule campaign passed in 5.33 seconds.
+Each schedule uses the protected shared store, native
 captured-intent atomic writer, fixed dispatcher, protected credential references
 and the original installed provider pools. An acknowledgement fault proxy
 forwards to the real broker before dropping, holding or replacing replies;
 independent operator inspection checks actual stored bytes and effect-derived
 headers. Every owned broker, bounded storage directory and TLS file was removed.
 
-The seven schedules cover committed state/result/payload/receipt agreement,
+The schedules cover committed state/result/payload/receipt agreement,
 declared rejection and positive technical abort without outgoing effects,
 presend restart with advanced physical epoch, lost acknowledgement followed by
 equal-ID recovery with one broker message, expiry/revocation/stream recreation,
 malformed and oversized replies, and live publication across the original
-shutdown cutoff. They preserve the existing immediate and trigger campaigns
+shutdown cutoff. An additional schedule holds the actual protected command-role
+fence while an opposing thread holds the effect fence. Synchronous adapter
+acceptance completes without observing the role-owned clock; that observation
+would invert the required Role-to-Effects order. The copied acceptance
+description is never polled and sends no business message. Actual send paths
+retain their first-poll and prewrite current-grant/clock checks. Strict NATS
+all-target, all-feature Clippy and the 12 runner/inventory regressions also
+passed after this change. The schedules preserve the existing immediate and
+trigger campaigns
 and their required CI owners. The earlier selected ownership, runner and
 inventory regressions passed all 58 Python cases.
 
@@ -109,7 +118,10 @@ The measured identities are:
 | `support.rs` fixture blob | `a4b73e7f80d264ef9e27c947a0a9a54fff9a7a8d` |
 | `campaign.rs` fixture blob | `38df1a6af23f56e0c5393c8b3a950cf91c071cd1` |
 | `proxy.rs` fixture blob | `b2baf2c21d156fadb2a11da35cd74e50e8eaec5a` |
-| Native harness SHA-256 | `4460495f3504db1cdc33f0c939e72e1e70b56ef2b3f4c27a2ec92fa876665298` |
+| Earlier seven-case harness SHA-256 | `4460495f3504db1cdc33f0c939e72e1e70b56ef2b3f4c27a2ec92fa876665298` |
+| Current `deferred.rs` blob | `dbc3fce8d8ccb3c2f64de6ab6273cf02f7447fa4` |
+| `locks.rs` fixture blob | `cbf12bec8cd0ee1f2565b279a1c298e1a5f7022d` |
+| Eight-case harness SHA-256 | `8ab4cf91a967557a1249b588a82a0adeb3687142aadd2ee0e00c8e5794620ae5` |
 
 The fixture stream has file storage, one replica, 64 messages/1 MiB, discard-new,
 a 30-second duplicate window, and delete/purge denied. The runner owns one

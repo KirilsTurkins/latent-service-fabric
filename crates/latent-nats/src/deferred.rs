@@ -199,20 +199,17 @@ impl JetStreamEffectAdapter {
             return Err(AuthorityError::Invalid);
         }
         payload.verify_grant(grant)?;
-        let now = self.time.observe();
-        if !now.continuity_proven || now.unix_millis < grant.committed_at_millis() {
-            return Err(AuthorityError::ClockDiscontinuity);
-        }
-        if now.unix_millis >= grant.expires_at_millis() {
-            return Err(AuthorityError::Expired);
-        }
         let horizon = grant
             .committed_at_millis()
             .checked_add(mapping.duplicate_window_millis)
-            .ok_or(AuthorityError::Invalid)?;
+            .ok_or(AuthorityError::Invalid)?
+            .min(grant.expires_at_millis());
+        // accept_with already owns the effect time/currentness fence. Calling
+        // a role-owning clock here would reverse the Role -> Effect lock order.
+        // The original clock/grant are rechecked on first poll and before send.
         if attempt
             .retry_horizon_millis()
-            .is_some_and(|approved| approved > horizon || now.unix_millis >= approved)
+            .is_some_and(|approved| approved > horizon)
         {
             return Err(AuthorityError::PolicyBlocked);
         }

@@ -10,7 +10,8 @@
         "campaign::real_deferred_horizon_expiry_revocation_and_recreated_stream_stop_delivery",
         "campaign::real_deferred_live_publication_keeps_actual_root_role_and_buffers_after_shutdown_cutoff",
         "campaign::real_deferred_lost_acknowledgement_retries_exact_id_once_with_one_broker_message",
-        "campaign::real_deferred_malformed_and_oversized_replies_preserve_send_uncertainty"
+        "campaign::real_deferred_malformed_and_oversized_replies_preserve_send_uncertainty",
+        "locks::real_deferred_synchronous_acceptance_respects_opposing_role_and_effect_fences"
       ],
       "expectedIgnored": [
         "campaign::real_deferred_atomic_state_result_payload_and_broker_receipt_agree",
@@ -19,7 +20,8 @@
         "campaign::real_deferred_horizon_expiry_revocation_and_recreated_stream_stop_delivery",
         "campaign::real_deferred_live_publication_keeps_actual_root_role_and_buffers_after_shutdown_cutoff",
         "campaign::real_deferred_lost_acknowledgement_retries_exact_id_once_with_one_broker_message",
-        "campaign::real_deferred_malformed_and_oversized_replies_preserve_send_uncertainty"
+        "campaign::real_deferred_malformed_and_oversized_replies_preserve_send_uncertainty",
+        "locks::real_deferred_synchronous_acceptance_respects_opposing_role_and_effect_fences"
       ],
       "id": "latent-nats.test.deferred-events",
       "ignoredLeaves": [
@@ -29,11 +31,12 @@
         "real_deferred_horizon_expiry_revocation_and_recreated_stream_stop_delivery",
         "real_deferred_live_publication_keeps_actual_root_role_and_buffers_after_shutdown_cutoff",
         "real_deferred_lost_acknowledgement_retries_exact_id_once_with_one_broker_message",
-        "real_deferred_malformed_and_oversized_replies_preserve_send_uncertainty"
+        "real_deferred_malformed_and_oversized_replies_preserve_send_uncertainty",
+        "real_deferred_synchronous_acceptance_respects_opposing_role_and_effect_fences"
       ],
       "kind": "test",
       "manifest": "crates/latent-nats/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 8,
       "mode": "libtest",
       "package": "latent-nats",
       "platforms": [
