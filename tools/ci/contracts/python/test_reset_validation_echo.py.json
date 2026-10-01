@@ -1,9 +1,11 @@
 {
   "cases": [
     "ResetValidationEchoTests.test_absent_output_is_a_noop_and_other_capsules_are_preserved",
+    "ResetValidationEchoTests.test_cache_archive_after_validated_reset_restores_dependencies_without_incomplete_echo_trees",
     "ResetValidationEchoTests.test_cache_profile_changed_missing_extra_partial_or_linked_dependencies_preserve_both_owners",
     "ResetValidationEchoTests.test_cache_pruned_known_empty_skeletons_are_removed_without_touching_dependencies",
     "ResetValidationEchoTests.test_changed_component_or_foreign_or_duplicate_marker_is_preserved",
+    "ResetValidationEchoTests.test_empty_package_requires_authenticated_retained_legacy_cache_owner",
     "ResetValidationEchoTests.test_empty_skeleton_keeps_unknown_partial_and_linked_content_fail_closed",
     "ResetValidationEchoTests.test_exact_pinned_cache_profile_dependencies_reset_without_touching_other_outputs",
     "ResetValidationEchoTests.test_linked_output_cannot_delete_another_directory",
@@ -18,7 +20,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:d4537dc708982ced93e60ba85ab23f46fa9f1461ff78adef7e0bd1fc22e041ea",
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResetValidationEchoTests.test_cache_archive_after_validated_reset_restores_dependencies_without_incomplete_echo_trees": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -30,7 +44,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:d4537dc708982ced93e60ba85ab23f46fa9f1461ff78adef7e0bd1fc22e041ea",
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -42,7 +56,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:d4537dc708982ced93e60ba85ab23f46fa9f1461ff78adef7e0bd1fc22e041ea",
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -54,7 +68,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:d4537dc708982ced93e60ba85ab23f46fa9f1461ff78adef7e0bd1fc22e041ea",
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResetValidationEchoTests.test_empty_package_requires_authenticated_retained_legacy_cache_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -66,7 +92,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:d4537dc708982ced93e60ba85ab23f46fa9f1461ff78adef7e0bd1fc22e041ea",
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -78,7 +104,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:d4537dc708982ced93e60ba85ab23f46fa9f1461ff78adef7e0bd1fc22e041ea",
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -90,7 +116,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:d4537dc708982ced93e60ba85ab23f46fa9f1461ff78adef7e0bd1fc22e041ea",
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": [
@@ -105,7 +131,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:d4537dc708982ced93e60ba85ab23f46fa9f1461ff78adef7e0bd1fc22e041ea",
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -117,7 +143,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:d4537dc708982ced93e60ba85ab23f46fa9f1461ff78adef7e0bd1fc22e041ea",
+        "module:setup-sha256:8e5f26d31d1d9d103db64f630adb3aab7241a15caa4422ab3e7f37dee615b109",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -125,6 +151,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_reset_validation_echo.py",
-  "reviewReason": "Retain all existing cases and guards; add authenticated actual pinned-cache residual and changed/missing/extra/metadata/link preservation controls",
+  "reviewReason": "Reconcile development337 cache round-trip without changing its body or guards; retain exact three-WIT legacy cache recovery, require that authenticated sibling for an empty package, reject bare empty owners, and replace the synthetic all-files cache assumption with actual retained WIT bytes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
