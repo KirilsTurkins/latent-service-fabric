@@ -164,13 +164,20 @@ class Http:
                 and path.startswith("/") and "\r" not in path and "\n" not in path,
                 "original-http-campaign-deadline")
         require(body is None or isinstance(body, bytes) and len(body) <= 65536, "original-http-input-bound")
+        require(len(headers) <= 16 and all(isinstance(key, str) and isinstance(value, str)
+                and "\r" not in key + value and "\n" not in key + value for key, value in headers)
+                and sum(len(key.encode()) + len(value.encode()) for key, value in headers) <= 8192,
+                "bounded-http-header-input")
         self.requests += 1
         connection = http.client.HTTPConnection("127.0.0.1", int(self.authority.rsplit(":", 1)[1]),
                                                 timeout=min(125, remaining))
         try:
             connection.putrequest(method, path, skip_host=True)
-            for key, value in (("Host", self.authority), ("Origin", "http://" + self.authority),
-                               ("Content-Type", VALUE_MEDIA), ("Connection", "close"), *headers):
+            fields = (("Host", self.authority), ("Origin", "http://" + self.authority),
+                      ("Connection", "close"))
+            if body is not None:
+                fields += (("Content-Type", VALUE_MEDIA),)
+            for key, value in (*fields, *headers):
                 connection.putheader(key, value)
             if body is not None:
                 connection.putheader("Content-Length", str(len(body)))

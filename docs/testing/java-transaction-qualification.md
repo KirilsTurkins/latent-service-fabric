@@ -71,3 +71,27 @@ the transition appends a record without overwriting the original acceptance.
 The fixture can disconnect after durable recipient acceptance and withhold
 lookup delivery until its fault mode changes. These are external observations,
 never evidence of platform commitment, a namespace grant or recipient delivery.
+
+## Current policy provisioning
+
+The conductor provisions a private empty state directory, then starts the same
+production node with no installed transaction operations. It publishes the four
+signed original packages through the normal authenticated release API. A separate
+stopped-node `inspect-transaction-hosts` observation reads the exact retained
+publications and real native state, clock and qualified HTTP constructors.
+
+Policy proposals must retain that actual observation's state and effect profile,
+configuration digest and epoch. The HTTP caller and management RPC caller use
+their separate actual authenticated `OriginalCaller` scopes; independent deferred
+dispatch uses the original source service's `ServiceIntegration` scope. The
+conductor refuses an earlier runtime that cannot describe the real transport
+principal. Python never derives a recovery scope, provider digest or grant from
+the declarations. Explicit authenticated policy mutations, their original
+receipts and current acceptance checks remain authoritative.
+
+Only after those mutations does the node start with the exact signed operation
+descriptors. The administrator creates the namespace through the normal state
+management API. The fixed HTTP routes select command, fresh query and original
+result lookup. Bodyless queries and result requests carry no content type or
+business body. Synthetic provisioning/parser tests and the local HTTP transport
+fixture do not qualify native transaction execution.
