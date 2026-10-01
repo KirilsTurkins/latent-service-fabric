@@ -3,6 +3,10 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "container": {
+      "image": "mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27",
+      "options": "--init --ipc=host"
+    },
     "name": "Static site, examples and browser journeys",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -16,6 +20,12 @@
         "uses": "actions/setup-node",
         "with": {
           "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
         }
       },
       {
@@ -38,7 +48,7 @@
       },
       {
         "name": "Install the pinned test browser and its OS prerequisites",
-        "run": "node node_modules/playwright/cli.js install-deps chromium\nnpm run browser:install\n",
+        "run": "npm run browser:install",
         "working-directory": "website"
       },
       {
@@ -63,7 +73,7 @@
   },
   "jobId": "website",
   "kind": "job",
-  "reviewReason": "Preserve both builds and every browser suite; run independent servers, browser processes and evidence directories concurrently and join all five exit statuses.",
+  "reviewReason": "Preserve complete workspace tests and every metadata/security qualification command, separating qualification onto a required fresh-inventory lane. Preserve both website builds and all five browser suites while using the digest-pinned official matching Noble image for preinstalled system libraries and fonts; exact project browser installation remains mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-site.yml"
 }

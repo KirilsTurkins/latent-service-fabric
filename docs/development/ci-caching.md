@@ -56,13 +56,20 @@ This cleanup runs in the post step, after validation and evidence uploads.
 See the pinned [cleanup implementation](https://github.com/Swatinem/rust-cache/blob/6323deb102c322ba6fcbdcafc7e3dddab59af2b6/src/cleanup.ts)
 and [save implementation](https://github.com/Swatinem/rust-cache/blob/6323deb102c322ba6fcbdcafc7e3dddab59af2b6/src/save.ts).
 
-The cache paths exclude `target/capsules`, generated contract inventories,
+Pruning removes capsule files under `target/capsules`, generated contract inventories,
 provenance exports, native/raw runtime caches, catalogs, test fixtures,
 benchmark receipts and runner temporary directories. Compatible third-party
 WebAssembly and release dependencies can be pruned and reused too. Existing fixture
 exporters, reproducibility checks and artifact transfers still run for the
 current source. In particular, the registry job receives the contracts job's
 observed build artifact named with the current `github.sha`.
+
+Native cache writers also validate and remove their two generated echo fixture
+roots after tests and evidence retention, before the action's post-step pruning.
+Pruning removes non-Cargo files but can leave empty directory trees; restoring an
+empty echo fixture correctly fails its ownership/completeness guard. The native
+and frozen-collector v3 caches exclude those roots before archiving. Incomplete,
+foreign or changed fixtures still fail the unchanged validated reset helper.
 
 CI disables incremental compilation and debug symbols for correctness builds.
 Workspace code remains unoptimized; debug assertions and overflow checks are

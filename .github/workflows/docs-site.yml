@@ -10,6 +10,9 @@ jobs:
   website:
     name: Static site, examples and browser journeys
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      options: --init --ipc=host
     # Keep diagnostic headroom for cold installations; all checks remain required.
     # Duration is measured from job timestamps rather than enforced by truncation.
     timeout-minutes: 40
@@ -20,6 +23,9 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
       - name: Install the reviewed website dependency graph without lifecycle scripts
         run: |
           python3 -m unittest discover -s website/toolchain/tests -v
@@ -43,9 +49,9 @@ jobs:
           npm run build:root
       - name: Install the pinned test browser and its OS prerequisites
         working-directory: website
-        run: |
-          node node_modules/playwright/cli.js install-deps chromium
-          npm run browser:install
+        # The matching pinned Noble image already contains the system libraries
+        # and fonts. Keep the project's exact browser installation and all tests.
+        run: npm run browser:install
       - name: Verify production pages, theme and source-backed controls
         working-directory: website
         run: |

@@ -176,7 +176,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lane: [checks, tests, provider, renderer-public, renderer-angular, publications, angular-t1]
+        lane: [checks, tests, qualification, provider, renderer-public, renderer-angular, publications, angular-t1]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -292,10 +292,10 @@ jobs:
           python3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log "$RUNNER_TEMP/ci-signing-compatibility.log"
 
       - name: Check metadata working-set suite selection and observation validation
-        if: matrix.lane == 'tests'
+        if: matrix.lane == 'qualification'
         run: python3 -m unittest tools.tests.test_metadata_working_set
       - name: Qualify catalog metadata compilation working set
-        if: matrix.lane == 'tests'
+        if: matrix.lane == 'qualification'
         id: metadata-working-set
         timeout-minutes: 16
         # Required on every full profile. The exact inventory-owned selection is
@@ -307,7 +307,7 @@ jobs:
           python3 tools/test.py prepare --suite selection.metadata-working-set --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
           python3 tools/test.py run --suite selection.metadata-working-set --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci 2>&1 | tee "$RUNNER_TEMP/metadata-working-set.log"
       - name: Retain metadata working-set inputs and publication/apply/reopen costs
-        if: always() && matrix.lane == 'tests' && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'
+        if: always() && matrix.lane == 'qualification' && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: metadata-working-set-observations-${{ matrix.lane }}
@@ -315,14 +315,14 @@ jobs:
           if-no-files-found: error
 
       - name: Qualify the deterministic Phase 3 security matrix
-        if: matrix.lane == 'tests'
+        if: matrix.lane == 'qualification'
         timeout-minutes: 12
         run: |
           python3 -m unittest tools.tests.test_phase3_security
           mkdir -p target/phase3-security
           python3 tools/phase3_security.py --profile pr --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --source-commit "$GITHUB_SHA" --output target/phase3-security/pr-receipt.json
       - name: Retain the bounded Phase 3 security receipt
-        if: always() && matrix.lane == 'tests'
+        if: always() && matrix.lane == 'qualification'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase3-security-pr-${{ github.sha }}-${{ matrix.lane }}
@@ -803,7 +803,7 @@ jobs:
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: lsf-ci-dependencies-v2
+          prefix-key: ${{ (matrix.lane == 'bindings' || matrix.lane == 'optimization') && 'lsf-ci-dependencies-v2' || 'lsf-ci-dependencies-v3' }}
           shared-key: ${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}
           key: ubuntu-24.04
           cache-targets: true
@@ -919,6 +919,9 @@ jobs:
             target/capsules/echo/sha256.txt
           if-no-files-found: error
           retention-days: 14
+      - name: Remove validated echo fixtures before dependency cache pruning
+        if: github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements')
+        run: python3 tools/reset_validation_echo.py --target-root target
 
   sdks:
     name: Cross-language SDK surfaces

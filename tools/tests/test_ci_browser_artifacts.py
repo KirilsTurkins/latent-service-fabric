@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import re
 import unittest
 
@@ -44,6 +45,17 @@ def retention_enabled(expression: str, renderer: str, outcome: str | None,
 
 
 class BrowserArtifactTests(unittest.TestCase):
+    def test_website_image_matches_the_locked_browser_and_supplies_dependencies_without_network_apt(self):
+        website = yaml.safe_load((ROOT / ".github/workflows/docs-site.yml").read_text())["jobs"]["website"]
+        version = json.loads((ROOT / "website/package.json").read_text())["devDependencies"]["@playwright/test"]
+        self.assertRegex(website["container"]["image"],
+            rf"^mcr\.microsoft\.com/playwright:v{re.escape(version)}-noble@sha256:[0-9a-f]{{64}}$")
+        self.assertEqual(website["container"]["options"], "--init --ipc=host")
+        browser = next(step for step in website["steps"] if step.get("name") == "Install the pinned test browser and its OS prerequisites")
+        self.assertEqual(browser["run"], "npm run browser:install")
+        self.assertNotIn("if", browser)
+        self.assertNotIn("continue-on-error", browser)
+
     def setUp(self) -> None:
         self.workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
         self.steps = self.workflow["jobs"]["rust"]["steps"]
