@@ -27,7 +27,9 @@
     "ManagedCompilerInputs.test_distribution_materializes_internal_links_and_rejects_external_links",
     "ManagedCompilerInputs.test_expansion_is_private_and_source_is_immutable",
     "ManagedCompilerInputs.test_expansion_observes_cancellation_and_finite_byte_budget",
-    "NativeDifferential.test_actual_bytes_component_and_native_host_must_all_match"
+    "NativeDifferential.test_actual_bytes_component_and_native_host_must_all_match",
+    "SelectedRecipeImports.test_all_six_actual_selected_recipes_import_without_checkout_fallback",
+    "SelectedRecipeImports.test_missing_captured_shared_helper_cannot_import_from_checkout"
   ],
   "guards": {
     "AdapterResults.test_missing_nested_cleanup_receipt_remains_uncertain": {
@@ -380,10 +382,34 @@
         "class:setup-sha256:bea9b2d13cd74dfefe42c1049e068bb766e58b71ab58d1e6ddf6d5f0171d5600"
       ],
       "skipSites": []
+    },
+    "SelectedRecipeImports.test_all_six_actual_selected_recipes_import_without_checkout_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:5b577fb95d2faa46c9f8a17db5afb9198007f04db9c799b968bb0c4fdf6cd8d7"
+      ],
+      "skipSites": []
+    },
+    "SelectedRecipeImports.test_missing_captured_shared_helper_cannot_import_from_checkout": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:5b577fb95d2faa46c9f8a17db5afb9198007f04db9c799b968bb0c4fdf6cd8d7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dev_tools.py",
-  "reviewReason": "Retain all original test bodies and skip/execution guards. Extend only the existing installed-tools fixture with the two now-required captured BCL tool/source directories; add separate positive distribution and missing-input controls.",
+  "reviewReason": "Preserve both reviewed histories unchanged: actual isolated six-language recipe imports and mandatory captured .NET adapter/BCL-tool distribution controls; no old case or execution/skip guard changes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
