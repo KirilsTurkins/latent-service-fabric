@@ -1778,6 +1778,9 @@
         "authority::tests::guest_selected_alias_does_not_grant_cross_tenant_or_publication_authority",
         "authority::tests::provider_replacement_and_old_decoder_removal_block_instead_of_redirecting",
         "authority::tests::requested_expiry_only_narrows_and_malformed_typed_envelopes_grant_nothing",
+        "authority::tests::retained_grant_compatible_widening_preserves_original_ceiling_expiry_deadline_and_clock",
+        "authority::tests::retained_grant_rechecks_original_owner_revocation_profile_ceiling_and_credential_epoch",
+        "authority::tests::retired_or_quarantined_attempt_cannot_reauthorize_its_grant_through_another_live_owner",
         "authority::tests::revocation_after_acceptance_does_not_refund_live_physical_work",
         "authority::tests::revocation_between_claim_and_adapter_acceptance_prevents_io_without_refunding_physical_owner",
         "dispatch::tests::delayed_retry_beyond_provider_horizon_blocks_without_network_send",
@@ -1839,7 +1842,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 70,
+      "minimumCases": 73,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [

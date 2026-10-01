@@ -1,6 +1,121 @@
 use super::*;
 
 #[test]
+fn retained_grant_rechecks_original_owner_revocation_profile_ceiling_and_credential_epoch() {
+    for change in 0..5 {
+        let (owner, mut current, authority) = setup();
+        let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+        let grant = context
+            .accept_with(&authority, 1, time(102), |grant| grant)
+            .unwrap();
+        let original_deadline = grant.deadline();
+        let foreign = EffectAuthorityOwner::new(2, 2, 100).unwrap();
+        let mut foreign_rule = current.clone();
+        foreign_rule.enabled = false;
+        foreign.publish(foreign_rule).unwrap();
+        assert_eq!(grant.check_current(time(103)), Ok(()));
+        current.policy_revision = 2;
+        let expected = match change {
+            0 => {
+                current.enabled = false;
+                AuthorityError::PolicyBlocked
+            }
+            1 => {
+                current.profile.adapter = "replacement-adapter".into();
+                AuthorityError::UnsupportedFormat
+            }
+            2 => {
+                current.ceiling.maximum_response_bytes -= 1;
+                AuthorityError::Capacity
+            }
+            3 => {
+                current.credential_epoch += 1;
+                AuthorityError::PolicyBlocked
+            }
+            _ => {
+                current.protected_credential_reference = "replacement-secret".into();
+                AuthorityError::PolicyBlocked
+            }
+        };
+        owner.publish(current).unwrap();
+        assert_eq!(grant.check_current(time(104)), Err(expected));
+        assert_eq!(grant.deadline(), original_deadline);
+        assert_eq!(owner.owners().unwrap().physical, 1);
+        context.retire().unwrap();
+        assert_eq!(grant.check_current(time(105)), Err(AuthorityError::Stale));
+        assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+    }
+}
+
+#[test]
+fn retained_grant_compatible_widening_preserves_original_ceiling_expiry_deadline_and_clock() {
+    let (owner, mut current, authority) = setup();
+    current.policy_revision = 2;
+    current.ceiling.maximum_age_millis = 200;
+    owner.publish(current.clone()).unwrap();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    let deadline = grant.deadline();
+    let ceiling = grant.ceiling();
+    current.policy_revision = 3;
+    current.ceiling.maximum_age_millis = 2000;
+    current.ceiling.maximum_response_bytes = 4096;
+    current.ceiling.maximum_attempts = 8;
+    owner.publish(current).unwrap();
+    assert_eq!(grant.check_current(time(299)), Ok(()));
+    assert_eq!(grant.deadline(), deadline);
+    assert_eq!(grant.ceiling(), ceiling);
+    assert_eq!(grant.check_current(time(300)), Err(AuthorityError::Expired));
+    assert_eq!(
+        grant.check_current(time(299)),
+        Err(AuthorityError::ClockDiscontinuity)
+    );
+    assert_eq!(
+        grant.check_current(EffectTime {
+            unix_millis: 301,
+            continuity_proven: false
+        }),
+        Err(AuthorityError::ClockDiscontinuity)
+    );
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    context.retire().unwrap();
+}
+
+#[test]
+fn retired_or_quarantined_attempt_cannot_reauthorize_its_grant_through_another_live_owner() {
+    let (owner, _, authority) = setup();
+    let mut first = owner.accept(&authority, 1, time(101)).unwrap();
+    let first_grant = first
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    let mut second = owner.accept(&authority, 2, time(103)).unwrap();
+    let second_grant = second
+        .accept_with(&authority, 2, time(104), |grant| grant)
+        .unwrap();
+    first.retire().unwrap();
+    assert_eq!(
+        first_grant.check_current(time(105)),
+        Err(AuthorityError::Stale)
+    );
+    assert_eq!(second_grant.check_current(time(105)), Ok(()));
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    drop(second);
+    assert_eq!(
+        second_grant.check_current(time(106)),
+        Err(AuthorityError::Stale)
+    );
+    assert_eq!(
+        owner.owners().unwrap(),
+        DispatchOwners {
+            physical: 1,
+            quarantined: 1
+        }
+    );
+}
+
+#[test]
 fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_under_fence() {
     let (owner, mut rule, authority) = setup();
     let mut context = owner.accept(&authority, 1, time(101)).unwrap();

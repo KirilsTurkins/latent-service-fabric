@@ -1,12 +1,15 @@
 use super::{
     check_time, current_ceiling, Arc, AuthorityError, DispatchCeiling, DispatchContext,
-    DispatchProfile, DurableEffectAuthority, Duration, EffectScope, EffectTime, Instant,
+    DispatchProfile, DurableEffectAuthority, Duration, EffectScope, EffectTime, Instant, Owner,
 };
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Sealed, owned delegation to one reviewed adapter acceptance. Contains only
 /// bounded current metadata; the fixed worker retains the affine physical
 /// `DispatchContext` until the accepted provider operation actually retires.
 pub struct DispatchGrant {
+    owner: Arc<Owner>,
+    live: Arc<AtomicBool>,
     scope: EffectScope,
     profile: DispatchProfile,
     effect: String,
@@ -22,6 +25,51 @@ pub struct DispatchGrant {
 }
 
 impl DispatchGrant {
+    /// Recheck the same sealed effect owner immediately before protocol I/O,
+    /// after any awaited DNS/TLS/qualification work. This metadata-only fence
+    /// neither admits a new attempt nor refreshes the original physical lease,
+    /// ceiling or deadline. Call outside `accept_with`'s held acceptance fence.
+    /// The provider request must also check its original installed epoch.
+    pub fn check_current(&self, time: EffectTime) -> Result<(), AuthorityError> {
+        let mut state = self
+            .owner
+            .state
+            .lock()
+            .map_err(|_| AuthorityError::Unavailable)?;
+        if !self.live.load(Ordering::Acquire) {
+            return Err(AuthorityError::Stale);
+        }
+        check_time(&mut state, time)?;
+        let rule = state
+            .rules
+            .get(&self.scope)
+            .filter(|rule| rule.enabled)
+            .ok_or(AuthorityError::PolicyBlocked)?;
+        if rule.profile != self.profile {
+            return Err(AuthorityError::UnsupportedFormat);
+        }
+        if rule.credential_epoch != self.credential_epoch
+            || rule.protected_credential_reference != self.reference
+        {
+            return Err(AuthorityError::PolicyBlocked);
+        }
+        if self.ceiling.intersection(rule.ceiling) != self.ceiling {
+            return Err(AuthorityError::Capacity);
+        }
+        let expiry = self
+            .committed_at_millis
+            .checked_add(self.ceiling.maximum_age_millis)
+            .ok_or(AuthorityError::Invalid)?
+            .min(self.expires_at_millis);
+        if time.unix_millis < self.committed_at_millis {
+            return Err(AuthorityError::ClockDiscontinuity);
+        }
+        if time.unix_millis >= expiry || Instant::now() >= self.deadline {
+            return Err(AuthorityError::Expired);
+        }
+        Ok(())
+    }
+
     #[must_use]
     pub fn scope(&self) -> &EffectScope {
         &self.scope
@@ -139,6 +187,8 @@ impl DispatchContext {
         self.reference
             .clone_from(&rule.protected_credential_reference);
         let result = accept(DispatchGrant {
+            owner: Arc::clone(&self.owner),
+            live: Arc::clone(&self.live),
             scope: self.scope.clone(),
             profile: self.profile.clone(),
             effect: self.effect.clone(),
