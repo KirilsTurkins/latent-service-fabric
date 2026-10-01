@@ -14,7 +14,7 @@ from tools.build_process_signals import owned_cancellation
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.java_http_composition.build import compile_pair
-from tools.java_http_composition import context
+from tools.java_http_composition import context, trust
 from tools.java_http_composition.node import (
     ADAPTER, DOMAIN_CONTRACT, SERVICE_CAPABILITY, WEB_CONTRACT, configure, decoded,
     grant, idle, invoke, request, route, service_grant, web_request, rebind,
@@ -31,11 +31,14 @@ from tools.rust_capsule_build import Commands
 
 def publish(client, releases):
     result = {}
-    for name in ("domain", "adapter", "context-required"):
+    for name in ("domain", "adapter", "adapter-next", "context-required"):
         source = releases / ("java-http-" + name)
         published = client.call("release", "publish-package", source / "package", "--evidence", source / "evidence/index.json",
-            "--operation-id", "publish-" + name, "--expected-generation", 0)
-        require(published["outcomeKnown"], "java-http-publication-unknown")
+            "--operation-id", "publish-" + name, "--expected-generation", 0, codes=(0, 2, 4, 5, 6))
+        recovered = client.call("release", "operation", "publish-" + name, codes=(0, 6))
+        require(published["outcomeKnown"] and published["category"] == "success", "java-http-publication-rejected-or-unknown")
+        require(recovered["category"] == "success" and recovered["data"]["receipt"] == published["data"]["operation"],
+            "java-http-original-publication-operation-recovery")
         result[name] = published["data"]["operation"]["publication"]["id"]
     require(result["domain"] != result["adapter"], "java-http-independent-publications")
     return result
@@ -313,10 +316,12 @@ def qualify(output, wasi_sdk, target):
         stage = "sign"
         (output / "signing").mkdir(mode=0o700)
         commands = Commands(ROOT, output / "signing", build_environment(output / "signing"))
-        commands.run("demo-sign", binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built.values())
+        commands.run("demo-sign-separated", binaries["examples/capsule_authoring"], "demo-sign-separated", output / "releases", *built.values())
         result["releaseSet"] = read_json(output / "releases/release-set.json")
         signed_inputs = inventory(output / "releases", maximum_bytes=128 * 1024 * 1024)
         result["signedInputs"] = signed_inputs
+        stage = "paired-canonical-trust"
+        result["pairedTrust"] = trust.qualify(binaries, output / "releases", output / "paired-trust")
         stage = "former-http-global-profile"
         result["formerProfile"] = run_node(binaries, output / "releases", output / "former-profile", http=False,
                                             former_profile=True)

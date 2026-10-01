@@ -21,13 +21,9 @@ def ordinary_import(client, targets, releases, publications, host):
     result = {"publication": publications["context-required"], "deployment": applied,
               "contextInstallationProfile": "ordinary-installed-clocks-and-local-service-v1"}
     if applied["category"] == "success":
-        input_path, budget_path = client.directory / "context-required-input.json", client.directory / "context-required-budget.json"
-        write_json(input_path, [])
-        write_json(budget_path, targets["domain"]["budget"])
-        denied = client.call("--rpc-timeout-ms", "120000", "invoke", "--service", CONTEXT_REQUIRED,
-            "--contract", "examples:java-http-context-required/api@1.0.0", "--function", "status",
-            "--activation-id", "java-context-required", "--route", "java-http-context-required",
-            "--input", input_path, "--budget", budget_path, "--budget-profile", "phase3", codes=(4,))
+        invocation_targets = {**targets, "context-required": {
+            "name": "java-http-context-required", "budget": targets["domain"]["budget"]}}
+        denied = invoke(client, invocation_targets, "context-required", "status", [], "java-context-required", codes=(4,))
         result.update(stage="invocation", invocation=denied, tree=tree(client, "java-context-required"))
     else:
         denied = applied

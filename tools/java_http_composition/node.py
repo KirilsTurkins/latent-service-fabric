@@ -21,6 +21,7 @@ DOMAIN = "examples/java-http-domain"
 ADAPTER = "examples/java-http-adapter"
 CONTEXT_REQUIRED = "examples/java-http-context-required"
 DOMAIN_CONTRACT = "examples:java-http-domain/api@1.0.0"
+CONTEXT_CONTRACT = "examples:java-http-context-required/api@1.0.0"
 WEB_CONTRACT = "latent:web/application@0.1.0"
 SERVICE_CAPABILITY = "latent:service/invoke@0.1.0"
 CHILD_SUBJECT = f"service:{len(TENANT)}:{TENANT}:{len(ADAPTER)}:{ADAPTER}"
@@ -164,9 +165,11 @@ def invoke(client, targets, name, function, arguments, activation, *, route_name
     count = getattr(client, "java_invocations", 0)
     require(count < 64, "java-http-invocation-count")
     client.java_invocations = count + 1
+    service, contract = {"domain": (DOMAIN, DOMAIN_CONTRACT), "adapter": (ADAPTER, WEB_CONTRACT),
+                         "context-required": (CONTEXT_REQUIRED, CONTEXT_CONTRACT)}[name]
     argv = [client.executable, "--output", "json", "--config", str(client.config), "--profile", "operator",
-        "--rpc-timeout-ms", "120000", "invoke", "--service", DOMAIN if name == "domain" else ADAPTER,
-        "--contract", DOMAIN_CONTRACT if name == "domain" else WEB_CONTRACT, "--function", function,
+        "--rpc-timeout-ms", "120000", "invoke", "--service", service,
+        "--contract", contract, "--function", function,
         "--activation-id", activation, "--input", str(source), "--budget", str(budget), "--budget-profile", "phase3",
         *extra, *context_flags]
     began = time.monotonic_ns()

@@ -81,9 +81,9 @@ From a Linux checkout, install the exact compiler pins described by the
 the native binary targets and helper examples explicitly:
 
 ```sh
-cargo build --locked -p latent -p latentd --bins --features latentd/development-test-node
-cargo build --locked -p latent-packaging --example package --example capsule_contracts
-cargo build --locked -p latent-policy --example capsule_authoring
+cargo --config .cargo/managed-guest.toml build --locked -p latent -p latentd --bins --features latentd/development-test-node
+cargo --config .cargo/managed-guest.toml build --locked -p latent-packaging --example package --example capsule_contracts
+cargo --config .cargo/managed-guest.toml build --locked -p latent-policy --example capsule_authoring
 python tools/qualify_java_http_composition.py --output "$FreshEvidenceDirectory" --wasi-sdk "$WasiSdk" --target "$CargoTargetDirectory"
 ```
 
