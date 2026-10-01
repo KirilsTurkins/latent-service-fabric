@@ -48,7 +48,7 @@ impl ProtectedStoreConfig {
                     queued_jobs: 4,
                     accepted_jobs: 8,
                     retained_bytes: 16 * 1024 * 1024,
-                    job_bytes: 4 * 1024 * 1024,
+                    job_bytes: 8 * 1024 * 1024 + 8 * 1024,
                 }),
                 workers: 4,
                 queued_jobs: 8,
