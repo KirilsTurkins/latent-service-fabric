@@ -8,7 +8,7 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build
+from tools import guest_compatibility_build, guest_dependency_inputs
 from tools.go_guest.compiler import Compiler
 from tools.go_capsule_project import validate
 from tools.application_dependencies import prepare
@@ -26,11 +26,13 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/go_application_dependencies.py", "tools/captured_compiler_isolation.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_dependency_inputs.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
           *, offline_cache: Path | None = None) -> Path:
-    project_path, output = checked_path(project_path), checked_path(output)
+    project_path = guest_dependency_inputs.application_root(checked_path(project_path), 'go')
+    output = checked_path(output)
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
         raise ValueError("build output must be outside source or beneath its target directory")
@@ -39,7 +41,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     commands, stage = None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
-        files = snapshot(project_path)
+        observed = guest_dependency_inputs.capture_source(project_path, 'go')
+        files = observed.files
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
@@ -54,7 +57,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
             stage = "application-dependencies"
-            closure = prepare(project_path, work, output, "go")
+            closure = prepare(observed.dependency_root, work, output, "go")
             compiler = Compiler(temporary / "compiler", work / "vendor/lsf/sdk/go-guest", commands,
                                 offline_cache=offline_cache, source_root=project_path / "src", application_closure=closure)
             materials = list(compiler.materials.values())
@@ -85,7 +88,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                 commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
-            if snapshot(project_path) != files or snapshot(work, exclude=("dependencies", "application-vendor") if closure else ()) != files:
+            observed.check_unchanged()
+            if snapshot(work, exclude=("dependencies", "application-vendor") if closure else ()) != files:
                 raise ValueError("project changed during the observed Go build")
             if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
                 raise ValueError("Go authoring recipe changed during the build")
