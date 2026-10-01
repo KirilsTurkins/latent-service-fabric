@@ -17,7 +17,8 @@ development-test-host = ["latent-artifacts/development-test-host", "latent-polic
 java-guest-diagnostic = []
 
 [lints.rust]
-# Only the private authenticated copying loader may locally allow unsafe.
+# Private authenticated native loading and exact canonical result delegation
+# may locally allow unsafe; other runtime code retains this deny boundary.
 unsafe_code = "deny"
 
 [lints.clippy]
