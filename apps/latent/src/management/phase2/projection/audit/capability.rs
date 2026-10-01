@@ -74,6 +74,9 @@ impl Project for proto::AuditCapabilityContext {
             || latent_core::PHASE3_HOST_ABI_CURRENT
                 .interface(&self.capability)
                 .is_none()
+                && latent_core::PHASE4_HOST_ABI_V1
+                    .interface(&self.capability)
+                    .is_none()
         {
             return Err(invalid_response());
         }
