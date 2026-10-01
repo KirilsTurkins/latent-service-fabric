@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "DeferredNatsRunnerTests.test_cleanup_verifies_label_and_immutable_id",
+    "DeferredNatsRunnerTests.test_daemon_failure_cannot_report_successful_cleanup",
+    "DeferredNatsRunnerTests.test_deferred_profile_cannot_select_the_immediate_or_trigger_harness",
+    "DeferredNatsRunnerTests.test_missing_or_ambiguous_cargo_artifacts_are_rejected",
+    "DeferredNatsRunnerTests.test_reuses_only_the_named_harness_inside_the_cargo_target"
+  ],
+  "guards": {
+    "DeferredNatsRunnerTests.test_cleanup_verifies_label_and_immutable_id": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b3094eea1286c335935f07cb164771ad530c64de1f1f0a1abf3b6fadc953933",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DeferredNatsRunnerTests.test_daemon_failure_cannot_report_successful_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b3094eea1286c335935f07cb164771ad530c64de1f1f0a1abf3b6fadc953933",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DeferredNatsRunnerTests.test_deferred_profile_cannot_select_the_immediate_or_trigger_harness": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b3094eea1286c335935f07cb164771ad530c64de1f1f0a1abf3b6fadc953933",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DeferredNatsRunnerTests.test_missing_or_ambiguous_cargo_artifacts_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b3094eea1286c335935f07cb164771ad530c64de1f1f0a1abf3b6fadc953933",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DeferredNatsRunnerTests.test_reuses_only_the_named_harness_inside_the_cargo_target": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b3094eea1286c335935f07cb164771ad530c64de1f1f0a1abf3b6fadc953933",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_nats_deferred_runner.py",
+  "reviewReason": "Exercise foreign or ambiguous harness rejection and owned-container identity before cleanup without dropping historical immediate runner cases",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

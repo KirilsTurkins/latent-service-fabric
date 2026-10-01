@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_lane_worker.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain every existing provider campaign and add exact bounded committed JetStream delivery cases on the same serial provider lane",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "94074afb9b2549ad9c04b8c36c9dee9e0411b866b0874c5bda5b9f8e4e1d723e"
+  "sha256": "e037d819cdbfc74d266ef9737014128d8949a75c90a1dc804088ca167d551d33"
 }

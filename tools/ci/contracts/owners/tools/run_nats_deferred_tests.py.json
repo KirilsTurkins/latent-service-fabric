@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_nats_deferred_tests.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Execute the bounded real committed-effect JetStream campaign with verified owned cleanup and exact existing Cargo artifact selection",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "ba3b8e23b0e8b0ba96aac71cf9e33199dc310a8d5429f463f7f33a79d8ae0295"
+}

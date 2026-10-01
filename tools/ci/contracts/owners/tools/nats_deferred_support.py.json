@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/nats_deferred_support.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Inspect exact pinned broker identity and bounded file-stream messages through the owned operator fixture",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "372982085005360deed962979d7da1073aa9bc2c7a794814bd63b2b9e4d55b5d"
+}

@@ -83,3 +83,27 @@ not the completed real-broker campaign. State-to-broker commit, guest rejection,
 restart, lost acknowledgement, broker-message inspection and live shutdown
 qualification are still required before issue #392 can close. Protocol peers
 and these library cases do not substitute for that campaign.
+
+The maintained provider CI lane now selects a separate `deferred_events`
+harness through `tools/run_nats_deferred_tests.py`. Its seven registered
+schedules use the actual protected store, captured-intent atomic envelope,
+fixed dispatcher, protected credentials and installed provider pools. The
+owned file stream has 64 messages/1 MiB, a 30-second duplicate window and
+delete/purge denied. An acknowledgement fault proxy forwards to that real
+broker before dropping, holding or replacing its replies; operator inspection
+checks stored message bytes and effect-derived headers independently.
+
+The fixture covers success, declared rejection/positive technical abort,
+presend restart, a lost acknowledgement with equal-ID duplicate recovery,
+revocation/recreation/horizon denial, malformed/oversized replies and a live
+publication across shutdown. It retains the historical immediate/trigger
+campaigns and their bounded CI owners. The new runner's negative ownership and
+harness selection cases, together with inventory/lane regressions, passed all
+58 selected Python cases; UTF-8 CI coverage passed 88 historical and 219
+current run blocks with 132 delegated owners.
+
+Execution of these seven new native schedules is still pending. Compilation
+was interrupted when the shared host disk filled and Docker's build volume
+became read-only; those infrastructure failures are not passing broker
+evidence. Actual guest/standalone delivery qualification remains required
+alongside this native atomic-writer campaign before #392 can close.

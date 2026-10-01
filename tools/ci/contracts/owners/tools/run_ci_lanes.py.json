@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_ci_lanes.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain existing bounded lane graph and add required deferred JetStream case and completion receipt identities",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "895017b292b9935a603f399e68fd16be20d491d7946c8345814c72636562fbdf"
+  "sha256": "31b06fe1a2c7114e21069e12aaf088f2e730a7f8c0a5b5f5824a36239e7323a8"
 }

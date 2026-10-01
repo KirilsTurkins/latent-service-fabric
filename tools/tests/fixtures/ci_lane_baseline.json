@@ -93,7 +93,8 @@
       "s3-blobs",
       "vault-secrets",
       "nats-events",
-      "nats-triggers"
+      "nats-triggers",
+        "nats-deferred"
     ],
     "browser_selection": "browser-boundary",
     "renderer_process_contract": "angular-renderer"

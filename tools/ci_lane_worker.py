@@ -28,13 +28,14 @@ SCHEMA = "latent.ci-lane-run.v1"
 VAULT = "hashicorp/vault@sha256:783103ba38c5e3edcaa9bbbcb0ff80fc93c690361f03fd487e89227da6c3efa9"
 NATS = "nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc"
 
-PROVIDER_SELECTIONS = ("s3-blobs", "vault-secrets", "nats-events", "nats-triggers")
+PROVIDER_SELECTIONS = ("s3-blobs", "vault-secrets", "nats-events", "nats-triggers", "nats-deferred")
 PROVIDER_STEPS = [
     "s3-blobs",
     "s3-invalid-prepared-harness",
     "vault-secrets",
     "nats-events",
     "nats-triggers",
+    "nats-deferred",
     "capability-policy-cli",
 ]
 RENDERER_STEPS = [
@@ -132,6 +133,9 @@ def provider(run: TestRun, manifest: Path, data: dict) -> tuple[list[str], list[
     _command(run, [python, "tools/run_nats_event_tests.py", "--suite", "nats_triggers",
                    "--test-manifest", str(manifest)],
              stage="provider-nats-triggers", timeout=420)
+
+    _command(run, [python, "tools/run_nats_deferred_tests.py", "--test-manifest", str(manifest)],
+             stage="provider-nats-deferred", timeout=420)
 
     _command(run, [python, "tools/run_capability_policy_workflow.py",
                    "--cli", str(ROOT / "target/debug/latent"),

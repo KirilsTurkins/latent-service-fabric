@@ -38,6 +38,7 @@ PROVIDER_STEPS = (
     "vault-secrets",
     "nats-events",
     "nats-triggers",
+    "nats-deferred",
     "capability-policy-cli",
 )
 RENDERER_STEPS = (
@@ -49,7 +50,7 @@ RENDERER_STEPS = (
     "angular-package",
     "angular-package-runtime",
 )
-PROVIDER_SELECTIONS = ("s3-blobs", "vault-secrets", "nats-events", "nats-triggers")
+PROVIDER_SELECTIONS = ("s3-blobs", "vault-secrets", "nats-events", "nats-triggers", "nats-deferred")
 RENDERER_SUITES = ("latent-wasmtime.test.angular-renderer", "latent-wasmtime.test.angular-build")
 
 
