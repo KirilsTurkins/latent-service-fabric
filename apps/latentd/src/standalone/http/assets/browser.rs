@@ -218,11 +218,22 @@ async fn run_browser(component: Option<Vec<u8>>) {
     }
     for field in [
         "consumedTokenRemovedBeforeApplicationFetch",
-        "unsafeSameOriginNoReferrerOriginRejected",
+        "noReferrerSameOriginPostQualified",
         "applicationCacheInputQualified",
         "reservedHeadersRejectedAndRecoveryQualified",
     ] {
         assert_eq!(receipt[field], application);
+    }
+    let origin = receipt["noReferrerPostOrigin"].as_str().unwrap();
+    let status = receipt["noReferrerPostStatus"].as_u64();
+    if application {
+        assert!(matches!(
+            (origin, status),
+            ("same-origin", Some(200)) | ("null", Some(403))
+        ));
+    } else {
+        assert_eq!(origin, "not-exercised");
+        assert_eq!(status, None);
     }
     let stores = harness.node.node.backend.resource_snapshot().stores_created;
     if application {

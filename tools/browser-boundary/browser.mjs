@@ -15,6 +15,8 @@ try {
   const errors = [];
   const initialScripts = [];
   const syntheticToken = 'browser-policy-synthetic-token';
+  let noReferrerPostOrigin = 'not-exercised';
+  let noReferrerPostStatus = null;
   context.on('request', request => {
     if (request.resourceType() === 'script' && initialScripts.length < 32) initialScripts.push(request);
   });
@@ -101,7 +103,7 @@ try {
       return {status: response.status, principal: response.headers.get('x-app-principal'), body: await response.json()};
     });
     assert.deepEqual(anonymous, {status: 200, principal: 'browser-fixture', body: {greeting: 'Hello Browser'}});
-    const [noReferrerPost, rejectedOrigin] = await Promise.all([
+    const [noReferrerPost, originReply] = await Promise.all([
       page.waitForRequest(request => request.url() === origin + '/api/greeting?synthetic-token=' + syntheticToken &&
         request.method() === 'POST', {timeout: 5000}),
       page.evaluate(async token => {
@@ -112,9 +114,14 @@ try {
           cache: response.headers.get('cache-control')};
       }, syntheticToken),
     ]);
-    assert.equal((await noReferrerPost.allHeaders()).origin, 'null');
+    const serializedOrigin = (await noReferrerPost.allHeaders()).origin;
+    assert.ok([origin, 'null'].includes(serializedOrigin));
     assert.equal((await noReferrerPost.allHeaders()).referer, undefined);
-    assert.deepEqual(rejectedOrigin, {status: 403, body: '', cache: 'no-store'});
+    assert.deepEqual(originReply, serializedOrigin === 'null'
+      ? {status: 403, body: '', cache: 'no-store'}
+      : {status: 200, body: '{"greeting":"Hello Browser"}', cache: 'no-store'});
+    noReferrerPostOrigin = serializedOrigin === 'null' ? 'null' : 'same-origin';
+    noReferrerPostStatus = originReply.status;
     for (const policy of ['referrer', 'casing', 'duplicate-location', 'duplicate-encoding',
       'header-case', 'crlf', 'header-bound', 'header-count']) {
       const rejected = await page.evaluate(async policy => {
@@ -200,7 +207,8 @@ try {
     fixedSameOriginReferrerPolicy: true, buildTimeNoReferrerBeforeResources: true,
     syntheticTokenNavigationAndFetchDoNotBecomeReferrers: true,
     consumedTokenRemovedBeforeApplicationFetch: mode === 'public-application',
-    unsafeSameOriginNoReferrerOriginRejected: mode === 'public-application',
+    noReferrerSameOriginPostQualified: mode === 'public-application',
+    noReferrerPostOrigin, noReferrerPostStatus,
     applicationCacheInputQualified: mode === 'public-application',
     reservedHeadersRejectedAndRecoveryQualified: mode === 'public-application',
     navigationHydrated: true, escapedDataRoundTrip: true, inlineAndRemoteScriptsBlocked: true,

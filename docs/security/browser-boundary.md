@@ -72,9 +72,11 @@ The current rules below continue to apply to running nodes.
 This is an origin-based CSRF profile, not a synchronizer-token or login/session
 framework. Legacy clients lacking an Origin on unsafe public calls fail closed.
 The host emits `Referrer-Policy: same-origin`: cross-origin referrers are withheld
-without making same-origin non-CORS POST Origin become `null`, as the
+without requiring a same-origin non-CORS POST Origin to become `null`, as the
 [Fetch Origin-header algorithm](https://fetch.spec.whatwg.org/#origin-header)
-would do for `no-referrer`. Browser tests exercise an actual same-origin POST.
+specifies for `no-referrer`. Browser tests record the actual Origin and response;
+browser implementations can differ from that algorithm. The maintained POST
+helper explicitly selects `same-origin` after removing consumed URL data.
 
 ## Host-owned response policy
 
@@ -223,8 +225,12 @@ or reused output. It loads a canonical signed asset URL, then uses browser histo
 to give the document a synthetic query token before fetch/navigation probes.
 Immutable asset URLs still reject queries; this is not evidence that direct
 query-bearing asset navigation is supported. The public application helper
-removes the document token before its POST, while a separate token-bearing POST
-using `no-referrer` exercises the existing `Origin: null` rejection.
+removes the document token before its POST. A separate token-bearing POST using
+`no-referrer` verifies no Referer and records the browser's finite Origin/status
+pair: a same-origin Origin receives the normal 200, while `Origin: null` must
+receive empty no-store 403. The 2026-10-01 Chromium 153.0.8010.12 observation
+preserved its same-origin Origin; it is not evidence of an actual null-Origin
+browser rejection. Native wire tests separately require null-Origin rejection.
 Its actual host responses still report `same-origin`, strict CSP and `no-store`
 on application traffic. A meta element inserted after initial resource fetching
 cannot retroactively protect those requests. LSF never inserts it at runtime or
