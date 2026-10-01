@@ -26,3 +26,9 @@ The actual TeaVM component and native transactional assertions in the
 [fault-capsule schedule](../../testing/java-transaction-diagnostics.md) are pending.
 No guest-selected persistence, retry, provider, credential, namespace or effect
 authority is introduced by this source milestone.
+
+Original zero-byte streams are retained as [explicit empty-stream encodings](original-empty-streams.json).
+Each record preserves its original name, zero-byte length, SHA256, original Git
+blob identity and empty base64 content. Reconstructing that content yields the
+exact original bytes; existing receipts, compiler archives and their identities
+remain unchanged.

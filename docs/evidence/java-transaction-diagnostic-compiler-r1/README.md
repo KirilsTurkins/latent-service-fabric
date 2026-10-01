@@ -6,7 +6,10 @@ component SHA256
 `0640b1bb0a28a7cc80b785efd6c1a3c8d55612e0a70759be2f2a400268dec20f`,
 **1,013,874 bytes**, compiler phase **170.156894 seconds** and completed
 controller process **202.413667 seconds**, exit zero. The original stderr is
-empty. This is actual TeaVM/C/WASI component compilation, separate from the
+empty and is retained as [an explicit empty-stream encoding](original-compiler.stderr.empty.json).
+Its original name, zero-byte count and SHA256 remain fixed by the unchanged
+inventory; the empty base64 content reconstructs the exact original bytes.
+This is actual TeaVM/C/WASI component compilation, separate from the
 earlier helper-only [JVM vectors](../java-transaction-diagnostic-source-r1/receipt.json).
 
 The bounded unprivileged process used one CPU, 4 GiB memory and 256 PIDs in the

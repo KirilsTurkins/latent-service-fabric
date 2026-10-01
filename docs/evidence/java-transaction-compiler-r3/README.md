@@ -42,3 +42,9 @@ The normal development merge was checked separately. Its 95 focused cases and
 CI coverage passed. The 44 dependency/helper cases passed on Linux with no skips;
 the Windows attempt retained its existing symlink privilege error and six
 original platform skips. No test guards or skip conditions were weakened.
+
+Original zero-byte streams are retained as [explicit empty-stream encodings](original-empty-streams.json).
+Each record preserves its original name, zero-byte length, SHA256, original Git
+blob identity and empty base64 content. Reconstructing that content yields the
+exact original bytes; existing receipts, compiler archives and their identities
+remain unchanged.
