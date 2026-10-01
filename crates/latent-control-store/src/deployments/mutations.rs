@@ -7,7 +7,6 @@ use latent_core::{
 };
 use latent_manifest::{
     validate_deployment_document, DeploymentManifest, JsonManifestCodec, ManifestCodec,
-    ManifestValidator,
 };
 
 use super::observation::{count, CatalogWorkOperation as WorkOperation, Work};

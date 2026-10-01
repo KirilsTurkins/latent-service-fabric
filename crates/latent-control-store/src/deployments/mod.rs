@@ -32,7 +32,7 @@ use latent_core::{
 };
 use latent_manifest::{
     validate_deployment_document, DeploymentManifest, JsonManifestCodec, ManifestCodec,
-    ManifestValidator, ManifestViolation,
+    ManifestViolation,
 };
 use latent_routing::{
     InvocationTarget, ResolvedBinding, ResolvedRevision, RouteCompiler, RouteResolver,

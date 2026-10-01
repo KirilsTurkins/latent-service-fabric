@@ -5,7 +5,6 @@ use super::{
 use latent_core::{ArtifactBlobDigest, DeploymentId};
 use latent_manifest::{
     __serde_json as json, validate_deployment_document, JsonManifestCodec, ManifestCodec,
-    ManifestValidator,
 };
 pub(crate) fn token(value: &str, maximum: usize) -> Result<()> {
     if value.is_empty()
