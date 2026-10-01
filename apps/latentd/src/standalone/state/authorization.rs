@@ -204,7 +204,7 @@ impl StateRuntime {
             op.target.service.0.clone(),
             op.publication.clone(),
             self.binding(op),
-            None,
+            self.0.intents.iter().find_map(|intent| intent.binding(op)),
             budget.clone(),
         )?))
     }

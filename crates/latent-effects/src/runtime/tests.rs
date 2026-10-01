@@ -279,6 +279,15 @@ impl DeferredEffectAdapter for Adapter {
         &self.profile
     }
 
+    fn with_current_dispatch(
+        &self,
+        _authority: &crate::authority::DurableEffectAuthority,
+        _deadline: std::time::Instant,
+        accept: &mut dyn FnMut() -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError>,
+    ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
+        accept()
+    }
+
     fn accept(
         &self,
         grant: DispatchGrant,

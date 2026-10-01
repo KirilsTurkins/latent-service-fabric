@@ -97,6 +97,16 @@ impl EffectTimeSource for ProtectedCommandClock {
     }
 }
 
+impl CommandTimeSource for ProtectedCommandClock {
+    fn sample(&self) -> latent_commit::atomic::CommandTime {
+        let time = self.observe();
+        latent_commit::atomic::CommandTime {
+            unix_millis: time.unix_millis,
+            continuity_proven: time.continuity_proven,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,14 +189,5 @@ mod tests {
         .join()
         .is_err());
         assert!(!owner.observe().continuity_proven);
-    }
-}
-impl CommandTimeSource for ProtectedCommandClock {
-    fn sample(&self) -> latent_commit::atomic::CommandTime {
-        let time = self.observe();
-        latent_commit::atomic::CommandTime {
-            unix_millis: time.unix_millis,
-            continuity_proven: time.continuity_proven,
-        }
     }
 }

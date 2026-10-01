@@ -25,6 +25,10 @@ pub struct InstalledTransactionOperation {
     pub(super) entity: Option<String>,
     pub(super) mode: TransactionOperationMode,
     pub(super) contract_digest: String,
+    pub(super) deferred_http: Option<(
+        crate::config::state::DeferredHttpConfig,
+        super::effect_requirements::HttpRequirements,
+    )>,
 }
 impl InstalledTransactionOperation {
     #[must_use]
@@ -141,6 +145,14 @@ pub(super) async fn load(
         })
         .ok_or_else(super::denied)?;
     let mode = operation.mode;
+    let deferred_http = deferred_http(
+        input.deferred_http,
+        mode,
+        &config,
+        &layers,
+        &companion,
+        &input.companion_digest,
+    )?;
     publication.check_current()?;
     Ok(InstalledTransactionOperation {
         target: InvocationTarget {
@@ -159,6 +171,7 @@ pub(super) async fn load(
         entity: input.entity,
         mode,
         contract_digest,
+        deferred_http,
     })
 }
 
@@ -187,4 +200,55 @@ fn companion(
         return Err(super::denied());
     }
     TransactionBinding::decode(bytes).map_err(|_| super::denied())
+}
+
+fn deferred_http(
+    selected: Option<crate::config::state::DeferredHttpConfig>,
+    mode: TransactionOperationMode,
+    config: &latent_artifacts::package::PackageConfig,
+    layers: &[(String, Vec<u8>)],
+    companion: &TransactionBinding,
+    companion_digest: &str,
+) -> Result<
+    Option<(
+        crate::config::state::DeferredHttpConfig,
+        super::effect_requirements::HttpRequirements,
+    )>,
+    PlatformError,
+> {
+    selected
+        .map(|selected| {
+            if mode != TransactionOperationMode::StrictCommand {
+                return Err(super::denied());
+            }
+            let path = super::effect_requirements::PATH;
+            let layer = config
+                .layers
+                .iter()
+                .find(|layer| layer.path == path)
+                .filter(|layer| {
+                    layer.role == LayerRole::Asset
+                        && layer.media_type == "application/json"
+                        && layer.digest.as_str() == selected.requirements_digest
+                        && layer.size <= super::effect_requirements::MAXIMUM_BYTES as u64
+                })
+                .ok_or_else(super::denied)?;
+            let raw = &layers
+                .iter()
+                .find(|(name, _)| name == path)
+                .ok_or_else(super::denied)?
+                .1;
+            if raw.len() as u64 != layer.size
+                || artifact_blob_digest(raw).as_str() != selected.requirements_digest
+            {
+                return Err(super::denied());
+            }
+            let requirements = super::effect_requirements::HttpRequirements::decode(
+                raw,
+                companion,
+                companion_digest,
+            )?;
+            Ok((selected, requirements))
+        })
+        .transpose()
 }

@@ -1,6 +1,8 @@
 use latent_core::BoxFuture;
 
-use crate::authority::{AuthorityError, DispatchGrant, DispatchProfile, EffectTime};
+use crate::authority::{
+    AuthorityError, DispatchGrant, DispatchProfile, DurableEffectAuthority, EffectTime,
+};
 use crate::dispatch::{AttemptIdentity, AttemptReceipt, RetryProof};
 use crate::payload::PayloadRecord;
 
@@ -15,6 +17,21 @@ pub struct AdapterOutcome {
 /// port, never a guest-provided adapter or generic idempotency grant.
 pub trait DeferredEffectAdapter: Send + Sync {
     fn profile(&self) -> &DispatchProfile;
+
+    /// Current-purpose authority runs before the effect-rule fence. A configured
+    /// policy implementation must retain its actual policy/publication fence
+    /// through this one-shot, synchronous acceptance callback. It must neither
+    /// do I/O nor enter this hook from inside an effect-rule fence. The returned
+    /// provider future remains unpolled until the durable send marker exists.
+    /// Missing authorization refuses; decoded requirements confer no permission.
+    fn with_current_dispatch(
+        &self,
+        _authority: &DurableEffectAuthority,
+        _deadline: std::time::Instant,
+        _accept: &mut dyn FnMut() -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError>,
+    ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
+        Err(AuthorityError::PolicyBlocked)
+    }
 
     /// Short synchronous admission under the current effect fence. No I/O or
     /// credential lookup here. Accepted work owns all bounded request/response

@@ -1,5 +1,44 @@
 use super::*;
 
+struct MissingDispatchPolicy {
+    profile: DispatchProfile,
+}
+impl DeferredEffectAdapter for MissingDispatchPolicy {
+    fn profile(&self) -> &DispatchProfile {
+        &self.profile
+    }
+    fn accept(
+        &self,
+        _grant: DispatchGrant,
+        _payload: PayloadRecord,
+        _attempt: AttemptIdentity,
+    ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
+        panic!("missing current policy entered provider admission")
+    }
+}
+#[tokio::test]
+async fn missing_dispatch_authority_retains_policy_blocked_without_provider_admission_and_retires()
+{
+    let fixture = Fixture::new().await;
+    let profile = profile("missing-policy.v1");
+    let authority = fixture
+        .seed(1, "tenant-a", "publication", profile.clone())
+        .await;
+    let adapter = Arc::new(MissingDispatchPolicy { profile });
+    let mut owner = fixture.start(config(), vec![adapter], None).await.unwrap();
+    wait_disposition(&fixture, &authority, Disposition::PolicyBlocked).await;
+    assert_eq!(
+        fixture.record(&authority).await.disposition(),
+        Disposition::PolicyBlocked
+    );
+    let stopped = owner.shutdown(Instant::now() + WATCHDOG).await.unwrap();
+    assert!(stopped.clean && stopped.physically_retired, "{stopped:?}");
+    assert_eq!(stopped.snapshot.physical_owners, 0);
+    assert_eq!(stopped.snapshot.accepted_effects, 0);
+    assert_eq!(fixture.authority.owners().unwrap().physical, 0);
+    fixture.finish().await;
+}
+
 #[tokio::test]
 async fn zero_adapter_commands_use_actual_epoch_bounded_owners_and_nonrewinding_clock() {
     let fixture = Fixture::new().await;

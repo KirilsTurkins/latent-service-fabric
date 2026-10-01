@@ -41,7 +41,8 @@ pub(in crate::standalone) struct ProviderRuntime {
     pub runtime: Arc<ActivationCapabilityRuntime>,
     pools: Arc<ProviderPools>,
     io: Arc<IoRuntime>,
-    secrets: Option<latent_secrets::LocalSecretStore>,
+    pub(super) secrets: Option<latent_secrets::LocalSecretStore>,
+    pub(super) native_http: Option<(ProviderIdentity, Arc<latent_http::HttpProvider>)>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
@@ -88,6 +89,7 @@ impl ProviderRuntime {
             pools,
             io,
             secrets: None,
+            native_http: None,
             guest_secrets: None,
             event_secrets: None,
             metrics: None,
@@ -121,7 +123,9 @@ impl ProviderRuntime {
                 let (provider, secrets) = http::install(&owner.pools, http, deadline).await?;
                 owner.secrets = secrets;
                 providers.push(owner.record(&http.identity, provider.reference()));
-                owner.runtime.install_http(Arc::new(provider))?;
+                let provider = Arc::new(provider);
+                owner.runtime.install_http(Arc::clone(&provider))?;
+                owner.native_http = Some((http.identity.clone(), provider));
             }
             if let Some(blob) = &config.blob {
                 let root = settings
@@ -342,7 +346,7 @@ impl Drop for ProviderRuntime {
     }
 }
 
-fn unavailable() -> PlatformError {
+pub(super) fn unavailable() -> PlatformError {
     crate::standalone::error(
         PlatformErrorCode::Unavailable,
         "configured-provider-unavailable",

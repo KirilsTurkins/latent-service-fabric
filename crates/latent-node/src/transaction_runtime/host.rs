@@ -312,6 +312,9 @@ impl TransactionHost for StateTransactionHost {
                 return Err(IntentFailure::InvalidExpiry);
             }
             self.authorization
+                .check_intent_selection(&intent, sequence)
+                .map_err(|_| IntentFailure::PermissionDenied)?;
+            self.authorization
                 .authorize("stage", bytes, 0, || {
                     captured = Some(context.capture(
                         sequence,

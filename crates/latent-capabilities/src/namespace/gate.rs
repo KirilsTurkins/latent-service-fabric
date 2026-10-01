@@ -4,7 +4,7 @@ use std::sync::{
 };
 
 use latent_core::{ActivationId, PlatformError};
-use latent_policy::capability::{PolicyStore, SealedPolicyDecision};
+use latent_policy::capability::{OwnedPolicyDecision, PolicyStore, SealedPolicyDecision};
 use latent_state::namespace::{catalog::NamespaceRead, NamespaceError};
 
 use super::{denied, NamespaceAuthority};
@@ -84,6 +84,7 @@ pub struct CommitIoAcceptance<'owner> {
     pub(super) store: &'owner PolicyStore,
     pub(super) operation: &'owner SealedPolicyDecision<'owner>,
     pub(super) namespace: &'owner NamespaceRead,
+    pub(super) retained: Vec<&'owner OwnedPolicyDecision>,
 }
 
 /// Logical acceptance observation, distinct from the durable command receipt.
@@ -99,7 +100,20 @@ impl AcceptedCommit {
     }
 }
 
-impl CommitIoAcceptance<'_> {
+impl<'owner> CommitIoAcceptance<'owner> {
+    /// Retain an additional original sealed purpose for final cancellation and
+    /// commit acceptance. This metadata adds no grant, budget or namespace.
+    pub fn retain_policy(
+        mut self,
+        original: &'owner OwnedPolicyDecision,
+    ) -> Result<Self, PlatformError> {
+        if self.retained.len() >= 7 {
+            return Err(denied());
+        }
+        self.retained.push(original);
+        Ok(self)
+    }
+
     pub fn accept(self) -> Result<AcceptedCommit, NamespaceError> {
         let activation = self.authority.activation.clone();
         self.accept_with(|| Ok(()))?;
@@ -115,11 +129,12 @@ impl CommitIoAcceptance<'_> {
     ) -> Result<(), NamespaceError> {
         let mut revalidate = Some(revalidate);
         let mut detailed = None;
-        let result = self.authority.with_operation(
+        let result = self.authority.with_operation_retained(
             self.store,
             self.operation,
             self.namespace,
             "commit",
+            &self.retained,
             || {
                 let guard = match revalidate.take().ok_or_else(denied)?() {
                     Ok(guard) => guard,

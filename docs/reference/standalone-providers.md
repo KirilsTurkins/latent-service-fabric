@@ -38,7 +38,7 @@ with at most 4096 bytes per call and 65536 per activation; no seeded test source
 or fallback entropy can be configured. Registrations are shared node-owned
 objects, with no per-service worker, timer, listener or persistent guest heap.
 
-Installation requires Linux x86_64, a protected configuration file, `phase3`
+Installation requires Linux x86_64, a protected configuration file, `phase3` or `phase4`
 budgets, `capabilityPolicies`, and durable audit. Omission disables installation;
 explicit null and unsupported fields fail closed. `check-config` validates the
 configuration without installing providers or opening credential/blob storage.

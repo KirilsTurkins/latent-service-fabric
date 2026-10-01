@@ -404,10 +404,30 @@ impl NamespaceAuthority {
         expected_operation: &str,
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.with_operation_retained(store, operation, namespace, expected_operation, &[], action)
+    }
+
+    /// Extra original sealed purposes are intersected under the same fence.
+    /// They cannot replace the namespace grant or the current operation grant.
+    pub fn with_operation_retained(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        expected_operation: &str,
+        retained: &[&OwnedPolicyDecision],
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if retained.len() > 7 {
+            return Err(denied());
+        }
+        let mut captures = Vec::with_capacity(1 + retained.len());
+        captures.push(self.initial.as_ref());
+        captures.extend_from_slice(retained);
         let mut action = Some(action);
-        store.with_captured(&self.initial, operation, &mut |inputs| {
+        store.with_captured_decisions(&captures, operation, &mut |inputs| {
             self.check_namespace(namespace, expected_operation)?;
-            let actual = inputs.get(1).ok_or_else(denied)?;
+            let actual = inputs.last().ok_or_else(denied)?;
             self.check_target(actual, expected_operation)?;
             let mut action_error = None;
             let write = matches!(expected_operation, "put" | "delete" | "stage" | "commit");
@@ -475,6 +495,7 @@ impl NamespaceAuthority {
             store,
             operation,
             namespace,
+            retained: Vec::new(),
         })
     }
 
@@ -498,6 +519,7 @@ impl NamespaceAuthority {
             store,
             operation,
             namespace,
+            retained: Vec::new(),
         })
     }
 

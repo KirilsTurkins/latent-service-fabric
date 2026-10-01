@@ -9,6 +9,7 @@ use latent_artifacts::{
 use latent_core::{ArtifactReference, BoxFuture};
 use latent_manifest::{JsonManifestCodec, ManifestCodec};
 use std::task::{Context, Poll, Waker};
+mod dispatch;
 mod service;
 
 fn ready<T>(mut future: BoxFuture<'_, T>) -> T {
