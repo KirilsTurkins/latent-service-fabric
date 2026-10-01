@@ -1,5 +1,7 @@
 use super::*;
 
+mod lookup;
+
 #[test]
 fn unretired_provider_context_quarantines_original_global_capacity_after_all_grants_drop() {
     use latent_core::native_capacity::{
