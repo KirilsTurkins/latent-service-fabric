@@ -113,6 +113,10 @@ pub struct ActivationReceipt {
     /// transport outcome. Its private fields cannot be supplied as authority.
     pub transaction: Option<TransactionDisposition>,
     pub delivery_failure: Option<PlatformError>,
+    /// Current-purpose authority retained through actual response delivery.
+    /// Ordinary activations have no state result authority.
+    pub result_delivery_fence:
+        Option<Arc<crate::transaction_runtime::command_completion::ResultDeliveryFence>>,
 }
 
 /// No detached task is spawned. Dropping this handle, even before its first
@@ -183,7 +187,7 @@ fn handle(
         };
         let resolved_revision = lifecycle.resolved.clone();
         let activation_id = lifecycle.activation_id().clone();
-        let (outcome, transaction, delivery_failure) =
+        let (outcome, transaction, delivery_failure, result_delivery_fence) =
             lifecycle.complete(outcome).await.into_parts();
         ActivationReceipt {
             activation_id,
@@ -191,6 +195,7 @@ fn handle(
             outcome,
             transaction,
             delivery_failure,
+            result_delivery_fence,
         }
     });
     ActivationHandle {

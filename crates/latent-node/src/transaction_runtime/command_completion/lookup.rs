@@ -16,7 +16,8 @@ use latent_state::{
 
 use super::super::StateAuthorization;
 use super::{
-    errors, CommandCoordinator, CommandObservation, CommandResultCodec, TransactionCompletion,
+    errors, CommandCoordinator, CommandObservation, CommandResultCodec, ResultDeliveryFence,
+    TransactionCompletion,
 };
 use crate::{
     command_waiters::{CommandWaiterDecision, CommandWaiterError},
@@ -223,8 +224,8 @@ impl CommandCoordinator {
             ),
             None => failed(errors::atomic(AtomicError::Expired), consumption),
         };
-        self.release_permission(read, &record).await?;
-        match result {
+        let fence = self.release_permission(read, &record).await?;
+        let mut completion = match result {
             Some(result) => {
                 TransactionCompletion::confirmed(outcome, record, &result, true, Some(memory))
             }
@@ -235,17 +236,18 @@ impl CommandCoordinator {
                 true,
                 Some(memory),
             )),
-        }
+        }?;
+        completion.delivery_fence = Some(Arc::new(fence));
+        Ok(completion)
     }
 
     pub(super) async fn release_permission(
         &self,
         read: &Arc<StateAuthorization>,
         record: &CommandRecord,
-    ) -> Result<(), PlatformError> {
+    ) -> Result<ResultDeliveryFence, PlatformError> {
         let current = read.rebind_result_read(self.read_namespace(read).await?)?;
-        current.accepts_record(record)?;
-        current.authorize("read-result", 0, 0, || Ok(()))
+        ResultDeliveryFence::command(Arc::new(current), record)
     }
 }
 
@@ -267,18 +269,17 @@ fn same_namespace(view: &ReadView, read: &StateAuthorization) -> Result<bool, St
     Ok(view.get(&expected.key)? == expected.value)
 }
 fn observed(
-    read: &StateAuthorization,
+    read: &Arc<StateAuthorization>,
     record: CommandRecord,
     observation: CommandObservation,
     memory: Arc<HostMemoryReservation>,
 ) -> Result<TransactionCompletion, PlatformError> {
-    read.accepts_record(&record)?;
-    read.authorize("read-result", 0, 0, || Ok(()))?;
+    let fence = ResultDeliveryFence::command(Arc::clone(read), &record)?;
     let error = match observation {
         CommandObservation::RecoveryRequired => AtomicError::RecoveryRequired,
         _ => AtomicError::InProgress,
     };
-    Ok(TransactionCompletion::observed(
+    let mut completion = TransactionCompletion::observed(
         failed(
             errors::atomic(error),
             read.budget.snapshot_at(Instant::now()),
@@ -287,7 +288,9 @@ fn observed(
         observation,
         true,
         Some(memory),
-    ))
+    );
+    completion.delivery_fence = Some(Arc::new(fence));
+    Ok(completion)
 }
 pub(super) fn failed(error: PlatformError, consumption: BudgetConsumption) -> ActivationOutcome {
     crate::activation_runner::failure_for_platform_error(error, consumption)
