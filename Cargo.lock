@@ -1501,6 +1501,7 @@ dependencies = [
  "latent-packaging",
  "latent-policy",
  "latent-rpc",
+ "latent-signing",
  "latent-testkit",
  "latent-wire",
  "prost",
@@ -1678,6 +1679,8 @@ name = "latent-effects"
 version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
