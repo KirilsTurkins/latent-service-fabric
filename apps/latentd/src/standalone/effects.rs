@@ -14,6 +14,10 @@ use latent_state::protected_store::ProtectedStoreOwner;
 
 use super::{error, PlatformError, PlatformErrorCode, StandaloneNode};
 
+pub use latent_effects::runtime::{
+    DispatcherControlError, DispatcherControlJob, DispatcherControlLookup,
+    DispatcherControlRequest, PreparedDispatcherControl,
+};
 pub use latent_effects::runtime::{DispatcherShutdown as EffectShutdownReport, DispatcherSnapshot};
 
 /// One fixed scheduling owner. Its accepted providers and root registration
@@ -68,6 +72,32 @@ impl EffectRuntime {
     }
     pub fn resume(&self) -> Result<(), PlatformError> {
         self.owner.resume().map_err(runtime_error)
+    }
+    pub fn prepare_dispatcher_control(
+        &self,
+        request: DispatcherControlRequest,
+    ) -> Result<PreparedDispatcherControl, DispatcherControlError> {
+        self.owner.prepare_control(request)
+    }
+    pub fn submit_dispatcher_control(
+        &self,
+        prepared: PreparedDispatcherControl,
+        authorize: impl FnOnce(
+                &mut dyn FnMut() -> Result<(), DispatcherControlError>,
+            ) -> Result<(), DispatcherControlError>
+            + Send
+            + 'static,
+    ) -> Result<DispatcherControlJob, DispatcherControlError> {
+        self.owner.submit_control(prepared, authorize)
+    }
+    pub fn lookup_dispatcher_control(
+        &self,
+        request: DispatcherControlRequest,
+    ) -> Result<DispatcherControlLookup, DispatcherControlError> {
+        self.owner.lookup_control(request)
+    }
+    pub fn require_dispatcher_restore_review(&self) -> Result<(), DispatcherControlError> {
+        self.owner.require_restore_review()
     }
     pub fn wake(&self) {
         self.owner.wake();

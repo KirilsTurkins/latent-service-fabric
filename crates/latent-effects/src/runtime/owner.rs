@@ -15,7 +15,7 @@ use super::{
 /// Retain this owner through node lifecycle. Drop closes logical admission;
 /// accepted physical work remains in fixed workers and the scheduling owner.
 pub struct DispatcherOwner {
-    services: Arc<Services>,
+    pub(super) services: Arc<Services>,
     jobs: StoreIoOwner<Arc<Services>>,
     driver: Option<tokio::task::JoinHandle<()>>,
     workers: usize,
@@ -87,7 +87,19 @@ impl DispatcherOwner {
                 return Err(error);
             }
         };
-        let shared = Arc::new(Shared::new(config.start_paused));
+        let restored = match store::control_startup(&store, epoch).await {
+            Ok(restored) => restored,
+            Err(error) => {
+                role.retire().await;
+                return Err(error);
+            }
+        };
+        let (was_paused, review) = restored.unwrap_or((false, false));
+        let shared = Arc::new(Shared::new(
+            config.start_paused || was_paused,
+            epoch,
+            config.start_in_restore_review || review,
+        ));
         let (receipts, receiver) = tokio::sync::mpsc::channel(config.accepted_jobs);
         let services = Arc::new(Services {
             store,
@@ -128,12 +140,21 @@ impl DispatcherOwner {
     }
 
     pub fn pause(&self) {
-        self.services
+        let mut state = self
+            .services
             .shared
             .state
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .paused = true;
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.paused = true;
+        match state.control_generation.next() {
+            Ok(next) => state.control_generation = next,
+            Err(_) => {
+                state.closed = true;
+            }
+        }
+        drop(state);
+        self.wake();
     }
 
     pub fn resume(&self) -> Result<(), DispatcherError> {
@@ -143,8 +164,11 @@ impl DispatcherOwner {
             .state
             .lock()
             .map_err(|_| DispatcherError::AdmissionClosed)?;
-        if state.closed {
+        if state.closed || state.pending_control.is_some() {
             return Err(DispatcherError::AdmissionClosed);
+        }
+        if state.restore_review.is_required() {
+            return Err(DispatcherError::CheckpointRequired);
         }
         if let Some(error) = state.failure {
             return Err(error);
@@ -152,6 +176,10 @@ impl DispatcherOwner {
         if !self.services.time.observe().continuity_proven {
             return Err(crate::authority::AuthorityError::ClockDiscontinuity.into());
         }
+        state.control_generation = state
+            .control_generation
+            .next()
+            .map_err(|_| DispatcherError::InvalidConfiguration)?;
         state.paused = false;
         drop(state);
         self.wake();

@@ -85,6 +85,19 @@ pub(super) async fn startup(
     }
 }
 
+pub(super) async fn control_startup(
+    owner: &ProtectedStoreOwner,
+    epoch: DispatchEpoch,
+) -> Result<Option<(bool, bool)>, DispatcherError> {
+    call(owner, StoreIoKind::Read, 32 * 1024, move |store| {
+        Ok(crate::dispatch_store::control::ControlCatalog::startup(
+            &store.snapshot()?,
+            epoch.generation(),
+        )?)
+    })
+    .await
+}
+
 pub(super) async fn candidates(
     owner: &ProtectedStoreOwner,
     time: EffectTime,

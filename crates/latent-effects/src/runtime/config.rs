@@ -23,6 +23,9 @@ pub struct DispatcherConfig {
     pub poll_interval: Duration,
     pub ordering: DispatchOrdering,
     pub start_paused: bool,
+    /// Set by an admitted restore plan, before exposing dispatch readiness.
+    /// Generic resume cannot clear this sticky review fence.
+    pub start_in_restore_review: bool,
 }
 
 impl Default for DispatcherConfig {
@@ -39,6 +42,7 @@ impl Default for DispatcherConfig {
             poll_interval: Duration::from_millis(100),
             ordering: DispatchOrdering::Unordered,
             start_paused: false,
+            start_in_restore_review: false,
         }
     }
 }
