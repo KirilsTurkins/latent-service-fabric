@@ -3,12 +3,20 @@ use std::sync::OnceLock;
 use super::physical::PhysicalStore;
 use super::{ProtectedStoreError, ProtectedStoreOwner};
 use crate::embedded::{ReadView, StoreError};
-use crate::store_io::{StoreIoJob, StoreIoKind, StoreIoRetained};
+use crate::store_io::{StoreIoJob, StoreIoKind, StoreIoRetained, StoreIoRetirement};
 
 /// Coherent host snapshot. The native handle has no public accessor and every
 /// read borrows it inside a fixed worker. Drop retires it on those same workers.
 pub struct ProtectedStoreView {
     retained: StoreIoRetained<OnceLock<PhysicalStore>, ReadView>,
+}
+
+impl ProtectedStoreView {
+    /// Observe actual native view destruction on the fixed storage workers.
+    /// Dropping this receipt detaches observation without cancelling cleanup.
+    pub fn retire(self) -> StoreIoRetirement {
+        self.retained.retire()
+    }
 }
 
 pub type ProtectedViewResult<T> = (ProtectedStoreView, Result<T, ProtectedStoreError>);
