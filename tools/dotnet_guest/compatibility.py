@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 from tools import guest_compatibility as compatibility
 from tools.guest_compatibility_build import interface_names, retain_report
@@ -37,9 +38,16 @@ def members(graph: dict, direction: str) -> dict:
     return result
 
 
-def coverage(raw: dict, adapter: dict) -> dict:
+def coverage(raw: dict, adapter: dict, *, additional_adapters=()) -> dict:
     """Member presence is a necessary check; WAC still checks all type signatures."""
     required, supplied = members(raw, 'imports'), members(adapter, 'exports')
+    require(len(additional_adapters) <= 4, 'dotnet-runtime-additional-adapter-limit')
+    for graph in additional_adapters:
+        exports = members(graph, 'exports')
+        require(not set(exports) & set(supplied), 'dotnet-runtime-duplicate-adapter-export')
+        supplied.update(exports)
+    require(len(supplied) <= 256 and sum(len(row['functions']) + len(row['types'])
+            for row in supplied.values()) <= 4096, 'dotnet-runtime-member-limit')
     gaps = []
     for name, row in sorted(required.items()):
         if not name.startswith('wasi:'):
@@ -64,16 +72,32 @@ def findings(value: dict) -> list:
     return result
 
 
-def inspect(compiler, raw: Path) -> dict:
+def inspect(compiler, raw: Path, *, additional_adapters=()) -> dict:
     raw_bytes, adapter_bytes = read_file(raw, 64 * 1024 * 1024), read_file(compiler.runtime, 64 * 1024 * 1024)
     raw_graph = compiler.run('native-aot-raw-wit', compiler.wasm, 'component', 'wit', raw, '--json')
     adapter_graph = compiler.run('closed-runtime-adapter-wit', compiler.wasm, 'component', 'wit', compiler.runtime, '--json')
-    value = coverage(decode(raw_graph, MAX_GRAPH), decode(adapter_graph, MAX_GRAPH))
+    require(len(additional_adapters) <= 4, 'dotnet-runtime-additional-adapter-limit')
+    graphs, extra, original = [], [], []
+    for name, path in additional_adapters:
+        require(isinstance(name, str) and re.fullmatch(r'[a-z][a-z0-9-]{0,63}', name)
+                and name not in [row['name'] for row in extra], 'dotnet-runtime-additional-adapter-name')
+        body = read_file(path, 64 * 1024 * 1024)
+        graph = compiler.run('additional-runtime-' + name + '-wit', compiler.wasm, 'component', 'wit', path, '--json')
+        graphs.append(decode(graph, MAX_GRAPH))
+        source = 'additional-runtime-' + name + '.wit.json'
+        extra.append({'name': name, 'componentDigest': digest(body), 'witDigest': digest(graph), 'witSource': source})
+        original.append((path, body))
+        (compiler.commands.output / source).write_bytes(graph)
+    value = coverage(decode(raw_graph, MAX_GRAPH), decode(adapter_graph, MAX_GRAPH), additional_adapters=graphs)
     require(read_file(raw, 64 * 1024 * 1024) == raw_bytes
             and read_file(compiler.runtime, 64 * 1024 * 1024) == adapter_bytes, 'dotnet-runtime-coverage-stale-input')
+    require(all(read_file(path, 64 * 1024 * 1024) == body for path, body in original),
+            'dotnet-runtime-coverage-stale-input')
     value.update(schemaVersion='lsf.dotnet.runtime.coverage.v1', runtimeProfile=PROFILE,
                  rawComponentDigest=digest(raw_bytes), runtimeAdapterDigest=digest(adapter_bytes),
                  rawWitDigest=digest(raw_graph), runtimeWitDigest=digest(adapter_graph))
+    if extra:
+        value['additionalAdapters'] = extra
     output = compiler.commands.output
     (output / 'native-aot-raw.wit.json').write_bytes(raw_graph)
     (output / 'closed-runtime-adapter.wit.json').write_bytes(adapter_graph)
@@ -98,14 +122,32 @@ def retain_failure(output: Path) -> None:
             and value['rawWitDigest'] == digest(read_file(output / 'native-aot-raw.wit.json', MAX_GRAPH))
             and value['runtimeWitDigest'] == digest(read_file(output / 'closed-runtime-adapter.wit.json', MAX_GRAPH)),
             'dotnet-runtime-coverage-stale-receipt')
+    graphs, extra = [], value.get('additionalAdapters', [])
+    require(isinstance(extra, list) and len(extra) <= 4, 'dotnet-runtime-additional-adapter-limit')
+    names = set()
+    for row in extra:
+        require(isinstance(row, dict) and set(row) == {'name', 'componentDigest', 'witDigest', 'witSource'},
+                'dotnet-runtime-additional-adapter-receipt')
+        name = row['name']
+        require(isinstance(name, str) and re.fullmatch(r'[a-z][a-z0-9-]{0,63}', name)
+                and name not in names and row['witSource'] == 'additional-runtime-' + name + '.wit.json',
+                'dotnet-runtime-additional-adapter-receipt')
+        names.add(name)
+        compatibility.sha(row['componentDigest'])
+        graph = read_file(output / row['witSource'], MAX_GRAPH)
+        require(digest(graph) == row['witDigest'], 'dotnet-runtime-coverage-stale-receipt')
+        graphs.append(decode(graph, MAX_GRAPH))
     actual = coverage(decode(read_file(output / 'native-aot-raw.wit.json', MAX_GRAPH), MAX_GRAPH),
-                      decode(read_file(output / 'closed-runtime-adapter.wit.json', MAX_GRAPH), MAX_GRAPH))
+                      decode(read_file(output / 'closed-runtime-adapter.wit.json', MAX_GRAPH), MAX_GRAPH),
+                      additional_adapters=graphs)
     require(all(actual[key] == value[key] for key in actual), 'dotnet-runtime-coverage-stale-receipt')
     source = output / 'source-inputs.json'
     if not source.exists():
         return  # A source identity is required; do not invent one for a probe.
     report = compatibility.report('dotnet', digest(read_file(source)), value['rawComponentDigest'], PROFILE,
-        [{'kind': 'runtime', 'digest': value['runtimeAdapterDigest'], 'profile': PROFILE}], findings(value))
+        [{'kind': 'runtime', 'digest': value['runtimeAdapterDigest'], 'profile': PROFILE},
+         *({'kind': 'runtime', 'digest': row['componentDigest'], 'profile': PROFILE + '/' + row['name']}
+           for row in extra)], findings(value))
     # This report explicitly describes the retained raw compiler component;
     # successful final composition has a separate authoritative inspection.
     retain_report(output, report, kind='raw')

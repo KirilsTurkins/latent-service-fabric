@@ -78,6 +78,7 @@ class Compiler:
         self.tools, self.commands, self.vendor = tools.resolve(strict=True), commands, vendor
         self.offline = offline or captured
         self.isolation, self.application_closure, self.executable_approval = None, None, None
+        self.generated_materials, self.noncrypto_port = [], None
         self.python, self.package_cache = Path(sys.executable).resolve(strict=True), self.tools / 'packages'
         self.sdk = vendor / "sdk/dotnet-guest"
         self.dotnet = Path(shutil.which("dotnet", path=commands.environment["PATH"]) or "missing-dotnet").resolve(strict=True)
@@ -208,6 +209,8 @@ class Compiler:
         }.items():
             (project / name).write_bytes(data)
         facades = install_sdk(self.sdk, generated, project / "lsf")
+        from tools.dotnet_guest.entropy import prepare as prepare_entropy
+        self.noncrypto_port = prepare_entropy(self, declared, project, output)
         if self.application_closure is not None:
             selected = configure(self.application_closure, work, self.package_cache)
             self.cache_before = tree_identity({'nuget-packages': self.package_cache})
@@ -266,6 +269,16 @@ class Compiler:
                 if wrapper.read_text() != script:
                     raise ValueError('SDK-owned-binding-wrapper-mutated')
                 self.isolation.read_only_inputs.remove(wrapper)
+        if self.noncrypto_port:
+            port = self.noncrypto_port.finish(project, command.output)
+            self.compiler_patches = [*self.compiler_patches, {"name": port["profile"], "profile": port["profile"],
+                "original": port["original"], "selected": port["derived"],
+                "selection": {"requiredDeclaration": port["requiredDeclaration"],
+                    "originalMember": port["originalMember"], "sourceDigest": port["sourceDigest"],
+                    "targetsDigest": port["targetsDigest"], "nativeLinkBinding": port["nativeLinkBinding"],
+                    "secureRandom": port["secureRandom"]}}]
+            self.generated_materials.extend((port["derived"],
+                file_identity(command.output / "noncrypto-entropy-port.json", "noncrypto-entropy-port")))
         actual = list((project / "obj").rglob("bindings.json"))
         if len(actual) != 1 or json.loads(read_file(actual[0], 16 * 1024 * 1024))["outputs"] != receipt["outputs"]:
             raise ValueError("actual NativeAOT binding inputs differ from independent drift generation")
@@ -281,15 +294,20 @@ class Compiler:
         actual = interface_names(json.loads(raw_wit))["imports"]
         profile = runtime.select(declared, actual)
         adapter = self.runtimes[profile]
+        additional = [(name, self.runtimes[name]) for name in runtime.additional(declared, actual)]
         selection = {"schemaVersion": "latent.dotnet.runtime.v1", "profile": profile,
             "declaredImports": declared, "emittedImports": actual,
             "rawComponent": file_identity(raw, "raw-native-aot-component", 64 * 1024 * 1024),
             "adapter": file_identity(adapter, runtime.ADAPTERS[profile][0].removeprefix("dotnet-"))}
+        if additional:
+            selection["additionalAdapters"] = [file_identity(path, runtime.ADAPTERS[name][0].removeprefix("dotnet-"))
+                                               for name, path in additional]
         write_json(command.output / "runtime-profile.json", selection)
         component = output / "component.wasm"
         self.runtime = adapter
-        inspect_runtime(self, raw)
-        self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter, "-o", component)
+        inspect_runtime(self, raw, additional_adapters=additional)
+        self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter,
+            *(argument for _name, path in additional for argument in ("--plug", path)), "-o", component)
         self.run("validate", self.wasm, "validate", component)
         final = interface_names(json.loads(self.run("runtime-final-wit", self.wasm,
             "component", "wit", component, "--json")))["imports"]
@@ -305,6 +323,8 @@ class Compiler:
             "filesDigest": digest(json.dumps(receipt["outputs"], sort_keys=True).encode())}
 
     def check_unchanged(self):
+        if self.noncrypto_port:
+            self.noncrypto_port.recheck()
         if tree_identity(self.roots) != self.before:
             raise ValueError("observed .NET compiler inputs changed during build")
         after = [file_identity(path, name) for name, path in (

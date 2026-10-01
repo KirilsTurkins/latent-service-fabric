@@ -270,7 +270,7 @@ class DotnetRuntimeDistribution(unittest.TestCase):
                 self.assertEqual((source / filename).read_bytes(), filename.encode())
             self.assertIn("tools/component-composer/input", {row["path"] for row in record["files"]})
             self.assertEqual((target / "tools/component-composer/input").read_bytes(), b"component-composer")
-            self.assertEqual(len(ADAPTERS), 3)
+            self.assertEqual(len(ADAPTERS), 4)
 
     def test_missing_selected_composer_fails_before_a_distribution_can_be_published(self):
         from tools.dev_managed_distribution import retain_dotnet_support

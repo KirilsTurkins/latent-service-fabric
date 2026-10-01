@@ -19,7 +19,8 @@ from tools.build_snapshot import canonical
 BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
     "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/runtime.py", "tools/dotnet_guest/composer.py",
-    "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/outputs.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/entropy.py", "tools/dotnet_guest/outputs.py",
+    "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
@@ -74,9 +75,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None)
             write_json(output / "compiler-inputs.json", compiler.before)
             materials.extend(compiler.materials)
-            write_json(output / 'compiler-patches.json', {'formatVersion': 1, 'patches': compiler.compiler_patches})
-            patch_identity = read_file(output / 'compiler-patches.json')
-            materials.append({'name': 'automatic-compiler-patches', 'digest': digest(patch_identity), 'size': len(patch_identity)})
+            write_json(output / 'compiler-patches-preparation.json', {'formatVersion': 1, 'patches': compiler.compiler_patches})
+            patch_identity = read_file(output / 'compiler-patches-preparation.json')
+            materials.append({'name': 'compiler-patch-preparation', 'digest': digest(patch_identity), 'size': len(patch_identity)})
             closure, approval = None, None
             if verified is not None:
                 write_json(output / 'compiler-containment.json', compiler.isolation.receipt)
@@ -97,6 +98,13 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "capturedSource": str(temporary / "compiled/project/src"),
                 "requestedSource": str(project_path / "src")})
             component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
+            # Native ports are derived inside the owned compiler workspace.
+            # Bind the completed derivation and real linker observation rather
+            # than the initial composer-only receipt written before approval.
+            write_json(output / 'compiler-patches.json', {'formatVersion': 1, 'patches': compiler.compiler_patches})
+            patch_identity = read_file(output / 'compiler-patches.json')
+            materials.append({'name': 'automatic-compiler-patches', 'digest': digest(patch_identity), 'size': len(patch_identity)})
+            materials.extend(compiler.generated_materials)
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             write_json(output / "bindings.json", generated)
