@@ -184,6 +184,7 @@ pub struct StateSession {
     namespace_bytes: Vec<u8>,
     history: NamespaceHistory,
     history_bytes: Option<Vec<u8>>,
+    recovery_bytes: Option<Vec<u8>>,
     usage: Usage,
     usage_bytes: Option<Vec<u8>>,
     view: usize,
@@ -217,6 +218,15 @@ impl StateSession {
             return Err(StateError::Invalid);
         }
         authorize(&scope, StateAccess::Read)?;
+        let recovery_bytes = view.get(&crate::recovery::guard_key())?;
+        if let Some(bytes) = &recovery_bytes {
+            crate::recovery::RecoveryGuard::decode(bytes)?
+                .require_ready()
+                .map_err(|error| match error {
+                    StoreError::Unavailable => StateError::RecoveryRequired,
+                    other => StateError::from(other),
+                })?;
+        }
         let namespace_bytes = view
             .get(&namespace_key(&scope)?)?
             .ok_or(StateError::PermissionDenied)?;
@@ -244,6 +254,7 @@ impl StateSession {
             .len()
             .checked_add(usage_bytes.as_ref().map_or(0, Vec::len))
             .and_then(|bytes| bytes.checked_add(history.encode().ok()?.len()))
+            .and_then(|bytes| bytes.checked_add(recovery_bytes.as_ref().map_or(0, Vec::len)))
             .and_then(|bytes| bytes.checked_mul(2))
             .ok_or(StateError::Limit)?;
         if read_charge > limits.read_bytes
@@ -264,6 +275,7 @@ impl StateSession {
             namespace_bytes,
             history,
             history_bytes,
+            recovery_bytes,
             usage,
             usage_bytes,
             view: view.identity(),
@@ -803,6 +815,10 @@ impl StateSession {
             expectation,
             usage_expectation,
             history_expectation,
+            recovery_expectation: ExpectedRow {
+                key: crate::recovery::guard_key(),
+                value: self.recovery_bytes,
+            },
             epochs: self.history.epochs,
             usage: usage.encode(),
             mutations,
@@ -817,6 +833,7 @@ pub struct StatePlan {
     expectation: ExpectedRow,
     usage_expectation: ExpectedRow,
     history_expectation: ExpectedRow,
+    recovery_expectation: ExpectedRow,
     epochs: crate::namespace::history::HistoryEpochs,
     usage: Vec<u8>,
     mutations: Vec<RowMutation>,
@@ -864,6 +881,7 @@ impl StatePlan {
         batch.expectations.push(self.expectation.clone());
         batch.expectations.push(self.usage_expectation.clone());
         batch.expectations.push(self.history_expectation);
+        batch.expectations.push(self.recovery_expectation);
         batch.mutations.push(RowMutation {
             key: self.expectation.key,
             value: Some(namespace),
