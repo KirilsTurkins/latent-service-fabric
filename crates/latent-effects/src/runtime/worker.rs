@@ -12,6 +12,7 @@ use super::store::{self, Candidate};
 use super::{AdapterOutcome, DeferredEffectAdapter, DispatcherError, EffectTimeSource};
 
 pub(super) struct Services {
+    pub config: super::DispatcherConfig,
     pub store: Arc<ProtectedStoreOwner>,
     pub authority: EffectAuthorityOwner,
     pub adapters: Arc<[Arc<dyn DeferredEffectAdapter>]>,

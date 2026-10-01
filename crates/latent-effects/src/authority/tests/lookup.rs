@@ -169,3 +169,49 @@ fn lookup_rejects_missing_or_repeated_current_gate_before_issuing_a_grant() {
     ));
     assert_eq!(owner.owners().unwrap().physical, 0);
 }
+
+#[test]
+fn lookup_physical_partition_remains_finite_when_every_ordinary_context_is_occupied() {
+    let (original, rule, authority) = setup();
+    let owner = EffectAuthorityOwner::new(1, 1, 100).unwrap();
+    owner.publish(rule).unwrap();
+    let ordinary = owner.accept(&authority, 1, time(101)).unwrap();
+    let mut lookups = Vec::new();
+    for _ in 0..EffectAuthorityOwner::MAXIMUM_LOOKUP_OWNERS {
+        lookups.push(
+            owner
+                .accept_lookup(
+                    &authority,
+                    1,
+                    time(102),
+                    Instant::now() + Duration::from_secs(1),
+                    gate(),
+                )
+                .unwrap(),
+        );
+    }
+    assert!(matches!(
+        owner.accept(&authority, 1, time(103)),
+        Err(AuthorityError::Capacity)
+    ));
+    assert!(matches!(
+        owner.accept_lookup(
+            &authority,
+            1,
+            time(104),
+            Instant::now() + Duration::from_secs(1),
+            gate()
+        ),
+        Err(AuthorityError::Capacity)
+    ));
+    assert_eq!(
+        owner.owners().unwrap().physical,
+        1 + EffectAuthorityOwner::MAXIMUM_LOOKUP_OWNERS
+    );
+    for context in lookups {
+        context.retire().unwrap();
+    }
+    ordinary.retire().unwrap();
+    assert_eq!(owner.owners().unwrap().physical, 0);
+    drop(original);
+}

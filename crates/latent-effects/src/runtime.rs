@@ -7,6 +7,7 @@ mod capacity;
 mod config;
 pub mod control;
 mod driver;
+mod effect_management;
 mod management;
 mod owner;
 mod reconciliation;
@@ -22,6 +23,10 @@ pub use control::{
     DispatcherControlJob, DispatcherControlLookup, DispatcherControlOutcome,
     DispatcherControlReceipt, DispatcherControlRequest, DispatcherControlSnapshot,
     PreparedDispatcherControl,
+};
+pub use effect_management::{
+    EffectManagementAuthorization, EffectManagementOutcome, EffectManagementPhase,
+    RetainedEffectManagement, RetainedEffectManagementJob, EFFECT_MANAGEMENT_WORK_BYTES,
 };
 pub use management::{
     DispatcherManagementPort, RetainedDispatcherControl, RetainedDispatcherControlJob,

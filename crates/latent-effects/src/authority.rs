@@ -320,6 +320,7 @@ struct State {
     rules: BTreeMap<EffectScope, EffectRule>,
     closed_namespaces: BTreeSet<namespace::NamespaceScope>,
     physical: usize,
+    lookup_physical: usize,
     quarantined: usize,
     clock_floor: u64,
     generation: u64,
@@ -345,6 +346,9 @@ pub struct EffectCommitFence<'a> {
 }
 
 impl EffectAuthorityOwner {
+    /// Fixed recovery contexts in this same owner, independent of ordinary
+    /// execution capacity. They can authorize only a receipt lookup.
+    pub const MAXIMUM_LOOKUP_OWNERS: usize = 4;
     pub(crate) fn same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.0, &other.0)
     }
@@ -362,6 +366,7 @@ impl EffectAuthorityOwner {
                 rules: BTreeMap::new(),
                 closed_namespaces: BTreeSet::new(),
                 physical: 0,
+                lookup_physical: 0,
                 quarantined: 0,
                 clock_floor,
                 generation: 1,
@@ -602,7 +607,7 @@ impl EffectAuthorityOwner {
         if attempt == 0 || attempt > ceiling.maximum_attempts {
             return Err(AuthorityError::Capacity);
         }
-        if state.physical >= self.0.maximum_physical {
+        if state.physical - state.lookup_physical >= self.0.maximum_physical {
             return Err(AuthorityError::Capacity);
         }
         let credential_epoch = rule.credential_epoch;
@@ -767,6 +772,12 @@ impl DispatchContext {
             .physical
             .checked_sub(1)
             .ok_or(AuthorityError::Unavailable)?;
+        if self.lookup.is_some() {
+            state.lookup_physical = state
+                .lookup_physical
+                .checked_sub(1)
+                .ok_or(AuthorityError::Unavailable)?;
+        }
         self.live.store(false, Ordering::Release);
         self.retired = true;
         Ok(())
