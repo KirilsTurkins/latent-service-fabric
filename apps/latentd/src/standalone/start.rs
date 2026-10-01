@@ -546,6 +546,8 @@ impl StandaloneNode {
         control_runtime: tokio::runtime::Handle,
         threads: RuntimeThreads,
     ) -> Result<(), PlatformError> {
+        self.start_state(settings, &catalogs, &control_runtime)
+            .await?;
         let cleanup = self
             .cleanup
             .as_ref()
@@ -590,10 +592,11 @@ impl StandaloneNode {
                 Arc::clone(&self.clock),
             ));
         }
-        let transport = transport::Transport::start(
+        let transport = transport::Transport::start_with_state(
             settings.transport.clone(),
             invocation,
             management,
+            self.state.as_ref().and_then(|state| state.management()),
             Arc::clone(&self.clock),
             control_runtime,
         )
@@ -693,6 +696,30 @@ impl StandaloneNode {
         Ok(())
     }
 
+    async fn start_state(
+        &mut self,
+        settings: &NodeSettings,
+        catalogs: &Catalogs,
+        control_runtime: &tokio::runtime::Handle,
+    ) -> Result<(), PlatformError> {
+        if settings.state.is_none() {
+            return Ok(());
+        }
+        let policy = self.policies.as_ref().ok_or_else(mode_error)?.handle();
+        let (state, effects) = Box::pin(super::state::StateRuntime::open(
+            settings,
+            Arc::clone(&catalogs.artifacts),
+            Arc::clone(policy.store()),
+            Arc::clone(&self.clock),
+            self.audit.as_ref().map(super::audit::AuditRuntime::handle),
+            control_runtime.clone(),
+        ))
+        .await?;
+        self.effects = Some(effects);
+        self.state = Some(state);
+        Ok(())
+    }
+
     fn compose(
         settings: &mut NodeSettings,
         catalogs: &mut Catalogs,
@@ -766,6 +793,7 @@ impl StandaloneNode {
             audit: None,
             rollouts: None,
             effects: None,
+            state: None,
             policies: None,
             providers: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),

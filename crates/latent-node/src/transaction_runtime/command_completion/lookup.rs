@@ -31,6 +31,14 @@ impl CommandCoordinator {
         &self,
         auth: &Arc<StateAuthorization>,
     ) -> Result<NamespaceRead, PlatformError> {
+        self.read_namespace_observed(auth, None).await
+    }
+
+    async fn read_namespace_observed(
+        &self,
+        auth: &Arc<StateAuthorization>,
+        original: Option<CommandRecord>,
+    ) -> Result<NamespaceRead, PlatformError> {
         let operation = if auth.authority_mode() == latent_capabilities::namespace::Mode::Inspection
         {
             "read-result"
@@ -39,34 +47,44 @@ impl CommandCoordinator {
         };
         auth.authorize(operation, 0, 0, || Ok(()))?;
         let auth = Arc::clone(auth);
+        let time = Arc::clone(&self.time);
         let job = self
             .store
             .with_store(StoreIoKind::Read, 8192, move |store| {
-                let view = store.snapshot()?;
-                let ownership = auth.authority.ownership();
-                latent_state::recovery::require_namespace_ready(
-                    &view,
-                    &ownership.tenant,
-                    &latent_core::StateNamespaceId(ownership.namespace.clone()),
-                    ownership.incarnation,
-                )?;
-                match NamespaceCatalog::read_in(
-                    &view,
-                    &ownership.tenant,
-                    &latent_core::StateNamespaceId(ownership.namespace.clone()),
-                ) {
-                    Ok(Some(value)) => Ok(Ok(value)),
-                    Ok(None) => Ok(Err(AtomicError::NotFound)),
-                    Err(NamespaceError::Corrupt) => Err(StoreError::Corrupt),
-                    Err(NamespaceError::UnsupportedFormat) => Err(StoreError::UnsupportedFormat),
-                    Err(_) => Err(StoreError::Unavailable),
-                }
+                let result = (|| {
+                    let view = store.snapshot()?;
+                    let ownership = auth.authority.ownership();
+                    latent_state::recovery::require_namespace_ready(
+                        &view,
+                        &ownership.tenant,
+                        &latent_core::StateNamespaceId(ownership.namespace.clone()),
+                        ownership.incarnation,
+                    )?;
+                    if let Some(record) = &original {
+                        super::history::require_record(&view, record)?;
+                    }
+                    match NamespaceCatalog::read_in(
+                        &view,
+                        &ownership.tenant,
+                        &latent_core::StateNamespaceId(ownership.namespace.clone()),
+                    ) {
+                        Ok(Some(value)) => Ok(Ok(value)),
+                        Ok(None) => Ok(Err(AtomicError::NotFound)),
+                        Err(NamespaceError::Corrupt) => Err(StoreError::Corrupt),
+                        Err(NamespaceError::UnsupportedFormat) => {
+                            Err(StoreError::UnsupportedFormat)
+                        }
+                        Err(_) => Err(StoreError::Unavailable),
+                    }
+                })();
+                Ok((result, time))
             })
             .map_err(errors::protected)?;
-        job.await
+        let (result, _time) = job
+            .await
             .map_err(|_| errors::atomic(AtomicError::RecoveryRequired))?
-            .map_err(errors::protected)?
-            .map_err(errors::atomic)
+            .map_err(errors::protected)?;
+        result.map_err(errors::store)?.map_err(errors::atomic)
     }
 
     /// Read or join the original command. No branch in this operation creates a
@@ -192,27 +210,33 @@ impl CommandCoordinator {
         let job = self
             .store
             .with_store(StoreIoKind::Read, LOOKUP_BYTES, move |store| {
-                let view = store.snapshot()?;
-                if !same_namespace(&view, &read)? {
-                    return Ok(Err(AtomicError::Conflict));
-                }
-                match atomic::inspect(&view, &key, time.sample(), |_, record| {
-                    if let Some(record) = record {
-                        read.accepts_record(record)
-                            .map_err(|_| AtomicError::PermissionDenied)?;
+                let result = (|| {
+                    let view = store.snapshot()?;
+                    if !same_namespace(&view, &read)? {
+                        return Ok(Err(AtomicError::Conflict));
                     }
-                    read.authorize("read-result", 0, 0, || Ok(()))
-                        .map_err(|_| AtomicError::PermissionDenied)
-                }) {
-                    Ok(result) => Ok(Ok(result)),
-                    Err(error) => errors::storage(error).map(Err),
-                }
+                    match atomic::inspect(&view, &key, time.sample(), |_, record| {
+                        if let Some(record) = record {
+                            super::history::require_record(&view, record)
+                                .map_err(super::history::atomic_error)?;
+                            read.accepts_record(record)
+                                .map_err(|_| AtomicError::PermissionDenied)?;
+                        }
+                        read.authorize("read-result", 0, 0, || Ok(()))
+                            .map_err(|_| AtomicError::PermissionDenied)
+                    }) {
+                        Ok(result) => Ok(Ok(result)),
+                        Err(error) => errors::storage(error).map(Err),
+                    }
+                })();
+                Ok((result, time))
             })
             .map_err(errors::protected)?;
-        job.await
+        let (result, _time) = job
+            .await
             .map_err(|_| errors::atomic(AtomicError::RecoveryRequired))?
-            .map_err(errors::protected)?
-            .map_err(errors::atomic)
+            .map_err(errors::protected)?;
+        result.map_err(errors::store)?.map_err(errors::atomic)
     }
 
     async fn replay(
@@ -259,12 +283,15 @@ impl CommandCoordinator {
         read: &Arc<StateAuthorization>,
         record: &CommandRecord,
     ) -> Result<ResultDeliveryFence, PlatformError> {
-        let current = read.rebind_result_read(self.read_namespace(read).await?)?;
+        let current = read.rebind_result_read(
+            self.read_namespace_observed(read, Some(record.clone()))
+                .await?,
+        )?;
         ResultDeliveryFence::command(Arc::new(current), record, Arc::clone(&self.time))
     }
 }
 
-fn check_key(read: &StateAuthorization, key: &CommandKey) -> Result<(), PlatformError> {
+pub(super) fn check_key(read: &StateAuthorization, key: &CommandKey) -> Result<(), PlatformError> {
     let ownership = read.authority.ownership();
     if read.authority_mode() != latent_capabilities::namespace::Mode::Inspection
         || key.tenant != ownership.tenant.0

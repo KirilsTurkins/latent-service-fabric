@@ -51,6 +51,19 @@ pub(super) fn protected(_: ProtectedStoreError) -> PlatformError {
         "protected-command-owner-unavailable",
     )
 }
+pub(super) fn store(error: latent_state::embedded::StoreError) -> PlatformError {
+    use latent_state::embedded::StoreError;
+    atomic(match error {
+        StoreError::Invalid => AtomicError::Invalid,
+        StoreError::Capacity => AtomicError::Limit,
+        StoreError::Conflict => AtomicError::Conflict,
+        StoreError::Corrupt => AtomicError::Corrupt,
+        StoreError::UnsupportedFormat => AtomicError::UnsupportedFormat,
+        StoreError::Unavailable | StoreError::CommitUncertain | StoreError::SnapshotExpired => {
+            AtomicError::RecoveryRequired
+        }
+    })
+}
 pub(super) fn state(error: StateFailure) -> PlatformError {
     match error {
         StateFailure::PermissionDenied => atomic(AtomicError::PermissionDenied),
