@@ -27,7 +27,7 @@ use super::{
     driver::{CommandCompletion, DRIVER_BYTES},
     errors,
     native::NativeCommandWork,
-    CommandResultCodec,
+    CommandResultCodec, CommandRetry,
 };
 use crate::{
     activation_manager::{
@@ -53,6 +53,7 @@ pub struct CommandAdmissionSelection {
     execution: Arc<StateAuthorization>,
     result_read: Arc<StateAuthorization>,
     codec: Arc<dyn CommandResultCodec>,
+    retry: Option<CommandRetry>,
 }
 impl CommandAdmissionSelection {
     pub fn new(
@@ -106,7 +107,16 @@ impl CommandAdmissionSelection {
             execution,
             result_read,
             codec,
+            retry: None,
         })
+    }
+
+    pub fn with_retry(mut self, retry: CommandRetry) -> Result<Self, PlatformError> {
+        if self.retry.is_some() {
+            return Err(errors::atomic(AtomicError::Invalid));
+        }
+        self.retry = Some(retry);
+        Ok(self)
     }
 }
 struct ExecutionSelection {
@@ -198,10 +208,16 @@ impl CommandAdmission {
                 .map_err(|_| errors::atomic(AtomicError::Limit))?,
         );
         let selected = self.factory.select(envelope, budget).await?;
-        selected
+        if let Err(error) = selected
             .execution
-            .accepts_envelope(envelope, budget, &selected.input)?;
-        control.bind_command(&selected.execution)?;
+            .accepts_envelope(envelope, budget, &selected.input)
+            .and_then(|()| control.bind_command(&selected.execution))
+        {
+            // Selection has returned after its actual metadata work retired;
+            // no claim or command worker has been accepted on this path.
+            self.coordinator.time.retire_without_claim();
+            return Err(error);
+        }
         let token = control.token();
         let CommandAdmissionSelection {
             input,
@@ -210,11 +226,13 @@ impl CommandAdmission {
             execution,
             result_read,
             codec,
+            retry,
         } = selected;
         let key = input.key.clone();
         let (decision, operation) = self
             .publish_claim(
                 input,
+                retry,
                 Arc::clone(&execution),
                 Arc::clone(&result_read),
                 Arc::clone(&memory),
@@ -224,6 +242,7 @@ impl CommandAdmission {
             ClaimDecision::Existing(record) => {
                 // Current selection may not replace the original retained source.
                 operation.retire().await;
+                self.coordinator.time.retire_without_claim();
                 result_read.accepts_record(&record)?;
                 drop(memory);
                 let completion = self
@@ -254,6 +273,7 @@ impl CommandAdmission {
     async fn publish_claim(
         &self,
         input: AdmissionInput,
+        retry: Option<CommandRetry>,
         auth: Arc<StateAuthorization>,
         read: Arc<StateAuthorization>,
         memory: Arc<HostMemoryReservation>,
@@ -284,24 +304,24 @@ impl CommandAdmission {
                         if view.get(&expected.key)? != expected.value {
                             return Ok(Err(AtomicError::Conflict));
                         }
-                        let prepared = match PreparedAdmission::prepare(
-                            &view,
-                            input,
-                            time.sample(),
-                            |access, record| {
-                                if access == CommandAccess::Replay {
-                                    if let Some(record) = record {
-                                        read.accepts_record(record)
-                                            .map_err(|_| AtomicError::PermissionDenied)?;
-                                    }
-                                    read.authorize("read-result", 0, 0, || Ok(()))
-                                        .map_err(|_| AtomicError::PermissionDenied)
-                                } else {
-                                    auth.authorize("acquire-command", 0, 0, || Ok(()))
-                                        .map_err(|_| AtomicError::PermissionDenied)
+                        let authorize = |access, record: Option<&CommandRecord>| {
+                            if access == CommandAccess::Replay {
+                                if let Some(record) = record {
+                                    read.accepts_record(record)
+                                        .map_err(|_| AtomicError::PermissionDenied)?;
                                 }
-                            },
-                        ) {
+                                read.authorize("read-result", 0, 0, || Ok(()))
+                                    .map_err(|_| AtomicError::PermissionDenied)
+                            } else {
+                                auth.authorize("acquire-command", 0, 0, || Ok(()))
+                                    .map_err(|_| AtomicError::PermissionDenied)
+                            }
+                        };
+                        let prepared = match if let Some(retry) = retry {
+                            retry.prepare(&view, &input, time.sample(), authorize)
+                        } else {
+                            PreparedAdmission::prepare(&view, input, time.sample(), authorize)
+                        } {
                             Ok(value) => value,
                             Err(error) => return errors::storage(error).map(Err),
                         };
@@ -317,8 +337,10 @@ impl CommandAdmission {
                                 }
                                 prepared
                                     .publish(store, || {
-                                        auth.authorize("acquire-command", 0, 0, || Ok(()))
-                                            .map_err(|_| AtomicError::PermissionDenied)
+                                        time.with_acceptance(&mut |_| {
+                                            auth.authorize("acquire-command", 0, 0, || Ok(()))
+                                        })
+                                        .map_err(|_| AtomicError::PermissionDenied)
                                     })
                                     .map(ClaimDecision::New)
                             }
@@ -342,10 +364,12 @@ impl CommandAdmission {
             Ok(Ok(value)) => Ok((value, operation)),
             Ok(Err(error)) => {
                 operation.retire().await;
+                self.coordinator.time.retire_without_claim();
                 Err(errors::atomic(error))
             }
             Err(error) => {
                 operation.retire().await;
+                self.coordinator.time.retire_without_claim();
                 Err(errors::atomic(error.into()))
             }
         }

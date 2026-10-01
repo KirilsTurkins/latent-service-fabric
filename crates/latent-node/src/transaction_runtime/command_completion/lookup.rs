@@ -134,6 +134,7 @@ impl CommandCoordinator {
                         record,
                         CommandObservation::RecoveryRequired,
                         memory,
+                        Arc::clone(&self.time),
                     )
                 }
                 CommandWaiterDecision::Wait(notification) if wait => {
@@ -161,10 +162,22 @@ impl CommandCoordinator {
                         continue;
                     }
                     // The delivery stopped; the actual original driver is untouched.
-                    return observed(&current, record, CommandObservation::InProgress, memory);
+                    return observed(
+                        &current,
+                        record,
+                        CommandObservation::InProgress,
+                        memory,
+                        Arc::clone(&self.time),
+                    );
                 }
                 CommandWaiterDecision::Wait(_) => {
-                    return observed(&current, record, CommandObservation::InProgress, memory)
+                    return observed(
+                        &current,
+                        record,
+                        CommandObservation::InProgress,
+                        memory,
+                        Arc::clone(&self.time),
+                    )
                 }
             }
         }
@@ -247,7 +260,7 @@ impl CommandCoordinator {
         record: &CommandRecord,
     ) -> Result<ResultDeliveryFence, PlatformError> {
         let current = read.rebind_result_read(self.read_namespace(read).await?)?;
-        ResultDeliveryFence::command(Arc::new(current), record)
+        ResultDeliveryFence::command(Arc::new(current), record, Arc::clone(&self.time))
     }
 }
 
@@ -273,8 +286,9 @@ fn observed(
     record: CommandRecord,
     observation: CommandObservation,
     memory: Arc<HostMemoryReservation>,
+    time: Arc<dyn super::super::CommandTimeSource>,
 ) -> Result<TransactionCompletion, PlatformError> {
-    let fence = ResultDeliveryFence::command(Arc::clone(read), &record)?;
+    let fence = ResultDeliveryFence::command(Arc::clone(read), &record, time)?;
     let error = match observation {
         CommandObservation::RecoveryRequired => AtomicError::RecoveryRequired,
         _ => AtomicError::InProgress,

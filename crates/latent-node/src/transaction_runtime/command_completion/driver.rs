@@ -91,6 +91,7 @@ impl CommandCompletion {
         } = attempt;
         let record = claim.record().clone();
         let retirement = claim.retirement();
+        let physical = retirement.clone();
         let validated = self.codec.validate(&outcome);
         let completion = match validated {
             Ok(CommandOutput::Success(value)) => match self.host.handoff().await {
@@ -133,6 +134,7 @@ impl CommandCompletion {
         // Both explicit finish and Drop are hints. The next observer reads the
         // original durable row under fresh current permission, regardless of this result.
         notification.notify_reload();
+        self.coordinator.time.retire_attempt(&physical);
         completion
     }
 
@@ -382,8 +384,10 @@ impl CommandCompletion {
                     native.enter();
                     let _session_memory = session_memory;
                     let disposition = envelope.publish(store, |authorities| {
-                        auth.accept_commit(&fence, effects.as_ref(), authorities, time.sample())
-                            .map_err(|_| AtomicError::PermissionDenied)
+                        time.with_acceptance(&mut |actual| {
+                            auth.accept_commit(&fence, effects.as_ref(), authorities, actual)
+                        })
+                        .map_err(|_| AtomicError::PermissionDenied)
                     });
                     native.complete();
                     Ok(disposition)
@@ -503,8 +507,12 @@ impl CommandCoordinator {
         memory: Arc<HostMemoryReservation>,
     ) -> TransactionCompletion {
         let outcome = failed(error, read.budget.snapshot_at(std::time::Instant::now()));
-        self.abort_retired(retirement, record, read, outcome, memory)
-            .await
+        let original = retirement.clone();
+        let completion = self
+            .abort_retired(retirement, record, read, outcome, memory)
+            .await;
+        self.time.retire_attempt(&original);
+        completion
     }
 
     async fn abort_retired(
@@ -567,8 +575,7 @@ impl CommandCoordinator {
             .with_store(StoreIoKind::Write, WRITER_JOB_BYTES, move |store| {
                 native.enter();
                 let view = store.snapshot()?;
-                let disposition =
-                    prepare_abort(&view, store, attempt, code, &current, time.sample());
+                let disposition = prepare_abort(&view, store, attempt, code, &current, &*time);
                 native.complete();
                 disposition
             });
@@ -713,9 +720,9 @@ fn prepare_abort(
     attempt: RetiredAttempt,
     code: String,
     current: &StateAuthorization,
-    time: CommandTime,
+    time: &dyn super::super::CommandTimeSource,
 ) -> Result<Result<PreparedDisposition, AtomicError>, StoreError> {
-    let prepared = match CompleteEnvelope::technical_abort(view, attempt, code, time) {
+    let prepared = match CompleteEnvelope::technical_abort(view, attempt, code, time.sample()) {
         Ok(value) => value,
         Err(error) => return errors::storage(error).map(Err),
     };
@@ -724,8 +731,7 @@ fn prepare_abort(
         Err(error) => return errors::storage(error).map(Err),
     };
     Ok(Ok(prepared.publish(store, |_| {
-        current
-            .accept_abort(&fence)
+        time.with_acceptance(&mut |_| current.accept_abort(&fence))
             .map_err(|_| AtomicError::PermissionDenied)
     })))
 }

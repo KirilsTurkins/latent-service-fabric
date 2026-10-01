@@ -11,11 +11,13 @@ mod errors;
 mod lookup;
 mod native;
 mod output;
+mod retry;
 pub use admission::{
     CommandAdmission, CommandAdmissionFactory, CommandAdmissionSelection, CommandCoordinator,
 };
 pub use delivery::ResultDeliveryFence;
 pub use output::{CanonicalCommandResult, CommandOutput, CommandResultCodec};
+pub use retry::CommandRetry;
 
 use latent_commit::atomic::{CommandRecord, DurableResult, Outcome};
 use latent_core::{HostMemoryReservation, PlatformError};

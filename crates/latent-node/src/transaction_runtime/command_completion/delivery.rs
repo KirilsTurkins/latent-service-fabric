@@ -19,6 +19,7 @@ pub struct ResultDeliveryFence {
     authorization: Arc<StateAuthorization>,
     operation: &'static str,
     command: Option<CommandRecord>,
+    time: Arc<dyn super::super::CommandTimeSource>,
 }
 
 impl std::fmt::Debug for ResultDeliveryFence {
@@ -42,6 +43,7 @@ impl ResultDeliveryFence {
     pub(super) fn command(
         authorization: Arc<StateAuthorization>,
         command: &CommandRecord,
+        time: Arc<dyn super::super::CommandTimeSource>,
     ) -> Result<Self, PlatformError> {
         if authorization.authority_mode() != Mode::Inspection {
             return Err(denied());
@@ -51,14 +53,17 @@ impl ResultDeliveryFence {
             authorization,
             operation: "read-result",
             command: Some(command.clone()),
+            time,
         };
         fence.with_current(0, || Ok(()))?;
         Ok(fence)
     }
 
-    /// Invoke a short, non-I/O delivery action under current policy, namespace
+    /// Invoke a short delivery action under current policy, namespace
     /// lifecycle and the original cancellation/deadline gate. A previous read
     /// decision or confirmed durable outcome never substitutes for this check.
+    /// No native storage or blocking I/O is allowed; one bounded nonblocking
+    /// transport poll is permitted. The action must not await.
     pub fn with_current<T>(
         &self,
         output_bytes: usize,
@@ -68,11 +73,14 @@ impl ResultDeliveryFence {
             self.authorization.accepts_record(command)?;
         }
         let mut result = None;
-        self.authorization
-            .authorize(self.operation, 0, output_bytes, || {
-                result = Some(action()?);
-                Ok(())
-            })?;
+        let mut action = Some(action);
+        self.time.with_delivery(&mut || {
+            self.authorization
+                .authorize(self.operation, 0, output_bytes, || {
+                    result = Some(action.take().ok_or_else(denied)?()?);
+                    Ok(())
+                })
+        })?;
         result.ok_or_else(denied)
     }
 }
@@ -126,6 +134,7 @@ impl StateTransactionHost {
             authorization: Arc::new(self.authorization.rebind_query_delivery(namespace)?),
             operation: "query-info",
             command: None,
+            time: Arc::clone(&self.time),
         };
         fence.with_current(0, || Ok(()))?;
         Ok(fence)

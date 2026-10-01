@@ -1,7 +1,6 @@
 use latent_capabilities::namespace::{CallerScope, RecoverySelection};
 use latent_commit::atomic::{
     inspect, AdmissionDecision, AtomicError, CompleteEnvelope, Outcome, PreparedAdmission,
-    RetryRequest,
 };
 use latent_core::{InvocationPrincipal, Metadata, PrincipalKind, TenantId};
 use latent_state::{
@@ -268,13 +267,20 @@ fn explicit_retry_generation_isolated_from_late_previous_notifications() {
     )
     .unwrap();
     let aborted = fixture.publish(envelope);
-    let request = RetryRequest {
-        request_id: "explicit-retry".into(),
-        expected_abort: aborted.abort_proof().unwrap(),
-    };
+    let request = crate::transaction_runtime::command_completion::CommandRetry::new(
+        "explicit-retry".into(),
+        latent_core::transaction_contract::AbortFence {
+            command_id: aborted.id().hex(),
+            attempt_id: aborted.attempt_id().hex(),
+            transaction_id: aborted.transaction_id().hex(),
+            owner_fence: aborted.abort_proof().unwrap().bytes().to_vec(),
+        },
+    )
+    .unwrap();
     let view = fixture.store.snapshot().unwrap();
-    let AdmissionDecision::New(prepared) =
-        PreparedAdmission::retry(&view, &input("retry"), &request, time(102), permission).unwrap()
+    let AdmissionDecision::New(prepared) = request
+        .prepare(&view, &input("retry"), time(102), permission)
+        .unwrap()
     else {
         panic!("explicit proven-abort retry obtains one new claim")
     };
@@ -282,14 +288,15 @@ fn explicit_retry_generation_isolated_from_late_previous_notifications() {
     assert_eq!(claim.record().attempt(), 2);
     let current_notification = registry.register(&claim).unwrap();
     let mut current_waiter = waiting(registry.attach(claim.record(), authorize).unwrap());
-    let AdmissionDecision::Existing(duplicate) = PreparedAdmission::retry(
-        &fixture.store.snapshot().unwrap(),
-        &input("retry"),
-        &request,
-        time(102),
-        permission,
-    )
-    .unwrap() else {
+    let AdmissionDecision::Existing(duplicate) = request
+        .prepare(
+            &fixture.store.snapshot().unwrap(),
+            &input("retry"),
+            time(102),
+            permission,
+        )
+        .unwrap()
+    else {
         panic!("duplicate explicit retry cannot schedule twice")
     };
     assert_eq!(duplicate.attempt_id(), claim.record().attempt_id());
