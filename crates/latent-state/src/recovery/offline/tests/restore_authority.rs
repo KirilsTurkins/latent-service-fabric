@@ -258,10 +258,16 @@ fn revoke_at(stage: PauseAt) {
         assert!(!path.exists());
     } else {
         assert!(path.is_file());
+        // The destination is nonempty and intentionally paused. Reopen it
+        // through the same installed complete codec registry; the empty-only
+        // default owner correctly refuses every retained format.
+        let validation = Arc::clone(&decoder.inner);
         let owner = wait(
-            ProtectedStoreOwner::start(ProtectedStoreConfig::bounded_linux(
-                prepared.destination.path().into(),
-            ))
+            ProtectedStoreOwner::start_validated_view(
+                ProtectedStoreConfig::bounded_linux(prepared.destination.path().into()),
+                validation.scratch_bytes(),
+                move |view| validation.validate_view(view).map(drop),
+            )
             .unwrap(),
         )
         .unwrap();
