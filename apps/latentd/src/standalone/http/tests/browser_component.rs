@@ -145,18 +145,24 @@ fn assert_output_observation(fixture: &Fixture, observation: OutputObservation) 
         }),
         "{observation:?}"
     );
-    assert!(
-        !node.diagnostic_is_terminal,
-        "output acceptance is distinct from execution success"
+    assert_eq!(
+        node.diagnostic_is_terminal,
+        matches!(observation, OutputObservation::CodecLimit),
+        "HTTP output acceptance and producer-owned execution failure stay distinct"
     );
     assert_eq!(
         node.diagnostic,
-        matches!(observation, OutputObservation::HeaderRejected).then(|| {
-            ActivationDiagnostic::new(
+        match observation {
+            OutputObservation::Accepted => None,
+            OutputObservation::HeaderRejected => Some(ActivationDiagnostic::new(
                 DiagnosticStage::OutputValidation,
                 DiagnosticReason::HttpResponseRejected,
-            )
-        }),
+            )),
+            OutputObservation::CodecLimit => Some(ActivationDiagnostic::new(
+                DiagnosticStage::Execution,
+                DiagnosticReason::ValueAllocationLimit,
+            )),
+        },
         "{observation:?}"
     );
     assert_eq!(
