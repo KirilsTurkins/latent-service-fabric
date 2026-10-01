@@ -20,6 +20,51 @@ use latent_state::{
 use std::{sync::Arc, time::Instant};
 
 impl StateRuntime {
+    pub(super) fn seal_original_result(
+        &self,
+        op: &InstalledTransactionOperation,
+        envelope: &ActivationEnvelope,
+        budget: &ActivationBudget,
+        original: &mut latent_node::transaction_runtime::command_completion::OriginalCommandMetadata,
+        decision: OwnedPolicyDecision,
+    ) -> Result<Arc<StateAuthorization>, PlatformError> {
+        let history = original.take_result_history();
+        let namespace = original.take_namespace()?;
+        let Some(history) = history else {
+            return self.seal(op, envelope, budget, namespace, decision);
+        };
+        let lifecycle = self
+            .0
+            .namespaces
+            .lifecycle()
+            .pin(&namespace)
+            .map_err(|_| super::unavailable())?;
+        let authority = NamespaceAuthority::seal_result_retained(
+            &self.0.policy,
+            decision,
+            &namespace,
+            NamespaceAdmission {
+                activation: envelope.activation_id.clone(),
+                deadline: budget.deadline().monotonic().ok_or_else(super::denied)?,
+                recovery: &RecoverySelection::OriginalCaller,
+                state_schema: op.state_schema(),
+            },
+            lifecycle,
+            history,
+        )?;
+        Ok(Arc::new(StateAuthorization::new(
+            Arc::clone(&self.0.policy),
+            Arc::new(authority),
+            namespace,
+            envelope.principal.clone(),
+            op.target.service.0.clone(),
+            op.publication.clone(),
+            self.binding(op),
+            None,
+            budget.clone(),
+        )?))
+    }
+
     pub(super) fn binding(&self, installed: &InstalledTransactionOperation) -> PolicyCallBinding {
         binding(&self.0, installed)
     }
