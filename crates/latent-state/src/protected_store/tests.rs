@@ -14,6 +14,7 @@ use super::*;
 use crate::embedded::{Family, RowKey, RowMutation};
 
 mod lifecycle;
+mod native_capacity;
 mod recovery;
 mod reserved;
 mod validation;
