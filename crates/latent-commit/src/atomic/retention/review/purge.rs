@@ -101,6 +101,12 @@ impl ResultMaintenanceOwner {
         if complete {
             result.purged_attempts = captured.record.attempt;
         }
+        crate::atomic::accounting::apply(
+            &view,
+            &latent_core::TenantId(request.key.tenant.clone()),
+            &mut captured.plan.batch,
+        )?;
+        captured.plan.refresh_bound()?;
         drop(view);
         store
             .apply_reclamation_fenced(captured.plan.batch, || {

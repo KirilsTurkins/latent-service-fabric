@@ -387,7 +387,7 @@ impl EmbeddedStore {
 
     fn apply_inner<E>(
         &self,
-        batch: AtomicBatch,
+        mut batch: AtomicBatch,
         accept: impl FnOnce() -> Result<(), E>,
         mut checkpoint: impl FnMut(bool),
     ) -> Result<(), FencedStoreError<E>> {
@@ -397,6 +397,27 @@ impl EmbeddedStore {
         let maximum = self.limits.maximum_batch_rows;
         if batch.expectations.len() > maximum || batch.mutations.len() > maximum {
             return Err(FencedStoreError::Store(StoreError::Capacity));
+        }
+        // Legacy catalog callers may compose independent creates. Their one
+        // read-only installation-absence fence is shared; preserve that CAS
+        // without admitting duplicate business keys or installation writes.
+        let tenant_guard = crate::tenant::guard_key();
+        if !batch.mutations.iter().any(|row| row.key == tenant_guard)
+            && batch
+                .expectations
+                .iter()
+                .filter(|row| row.key == tenant_guard)
+                .all(|row| row.value.is_none())
+        {
+            let mut observed = false;
+            batch.expectations.retain(|row| {
+                if row.key != tenant_guard {
+                    return true;
+                }
+                let first = !observed;
+                observed = true;
+                first
+            });
         }
         let mut checks = BTreeSet::new();
         let mut mutations = BTreeSet::new();

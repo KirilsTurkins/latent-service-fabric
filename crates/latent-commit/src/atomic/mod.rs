@@ -2,6 +2,7 @@
 //! ports contain no executor, native view owner, guest heap, network dispatch or
 //! application retry. The host supplies current sealed authority at acceptance.
 
+mod accounting;
 mod captured;
 mod codec;
 mod ownership;

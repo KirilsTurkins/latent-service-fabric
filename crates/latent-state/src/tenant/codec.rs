@@ -137,6 +137,7 @@ pub(super) fn decode_record(bytes: &[u8]) -> Result<TenantRecord, StoreError> {
     Ok(record)
 }
 
+#[derive(Clone)]
 pub(super) struct Captured {
     pub guard: Vec<u8>,
     pub record: TenantRecord,

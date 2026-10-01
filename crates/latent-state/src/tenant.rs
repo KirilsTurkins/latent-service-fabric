@@ -9,6 +9,7 @@
 
 mod codec;
 mod install;
+mod rows;
 mod update;
 
 use crate::embedded::{Family, ReadView, RowKey, StoreError};

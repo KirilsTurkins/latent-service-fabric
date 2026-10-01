@@ -87,9 +87,11 @@ impl ResultMaintenanceOwner {
         let mut batch = AtomicBatch::default();
         let mut command = None;
         let mut observed_floor = false;
+        let mut accounting_tenant = None;
         if let Some((key, bytes)) = page.rows.first() {
             if super::RetiredCommand::is_present(bytes) {
                 let floor = super::RetiredCommand::decode(bytes)?;
+                accounting_tenant = Some(TenantId(floor.tenant.clone()));
                 clock.time.check(floor.retired_at())?;
                 validate_linked_row(&view, key, bytes)?;
                 batch.expectations.extend(
@@ -108,6 +110,7 @@ impl ResultMaintenanceOwner {
                 observed_floor = true;
             } else {
                 let record = CommandRecord::decode(bytes)?;
+                accounting_tenant = Some(TenantId(record.key.tenant.clone()));
                 batch.expectations.extend(
                     latent_state::recovery::namespace_readiness_expectations(
                         &view,
@@ -156,17 +159,25 @@ impl ResultMaintenanceOwner {
             Some(old),
             progress.encode()?,
         );
+        if let Some(tenant) = accounting_tenant {
+            crate::atomic::accounting::apply(&view, &tenant, &mut batch)?;
+        }
         store
-            .apply_fenced(batch, || {
-                authorize(None)?;
-                if let Some(record) = &command {
-                    authorize(Some(record))?;
-                }
-                Ok(())
-            })
+            .apply_fenced(batch, || accept_step(&mut authorize, command.as_ref()))
             .map_err(fenced_error)?;
         Ok(progress)
     }
+}
+
+fn accept_step(
+    authorize: &mut impl FnMut(Option<&CommandRecord>) -> Result<(), AtomicError>,
+    record: Option<&CommandRecord>,
+) -> Result<(), AtomicError> {
+    authorize(None)?;
+    if let Some(record) = record {
+        authorize(Some(record))?;
+    }
+    Ok(())
 }
 
 fn retire_body(

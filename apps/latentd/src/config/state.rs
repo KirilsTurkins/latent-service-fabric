@@ -6,6 +6,8 @@ use serde::Deserialize;
 use std::path::PathBuf;
 mod effects;
 pub use effects::DeferredHttpConfig;
+mod tenant;
+pub use tenant::{TenantLimitsConfig, TenantQuotaConfig};
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -16,6 +18,8 @@ pub struct StateConfig {
     pub configuration_epoch: u64,
     pub clock_checkpoint: PathBuf,
     pub operations: Vec<StateOperationConfig>,
+    #[serde(default)]
+    pub tenant_quotas: Vec<TenantQuotaConfig>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -55,6 +59,7 @@ pub(crate) struct StateSettings {
     pub configuration_epoch: u64,
     pub clock_checkpoint: PathBuf,
     pub operations: Vec<OperationSettings>,
+    pub tenant_quotas: Vec<latent_state::tenant::TenantQuota>,
 }
 
 #[derive(Clone)]
@@ -84,6 +89,7 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
     {
         return Err(super::invalid("state"));
     }
+    let tenant_quotas = tenant::derive(&value.tenant_quotas, &value.operations)?;
     let mut operations = Vec::with_capacity(value.operations.len());
     for input in &value.operations {
         for text in [
@@ -151,6 +157,7 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
         configuration_epoch: value.configuration_epoch,
         clock_checkpoint: value.clock_checkpoint.clone(),
         operations,
+        tenant_quotas,
     })
 }
 
@@ -176,8 +183,9 @@ fn checked_digest(text: &str) -> Result<(), PlatformError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn input() -> serde_json::Value {
-        serde_json::json!({"formatVersion":1,"configurationEpoch":1,"clockCheckpoint":std::env::temp_dir().join("state-clock.json"),"operations":[{
+    pub(super) fn input() -> serde_json::Value {
+        serde_json::json!({"formatVersion":1,"configurationEpoch":1,"clockCheckpoint":std::env::temp_dir().join("state-clock.json"),
+            "tenantQuotas":[tenant::tests::quota("a")],"operations":[{
             "tenant":"a","componentDigest":format!("sha256:{}","a".repeat(64)),
             "publication":format!("publication:sha256:{}","b".repeat(64)),"contract":"test:state/api@1.0.0",
             "function":"save","deployment":"state","binding":"state","companionDigest":format!("sha256:{}","c".repeat(64)),
