@@ -536,21 +536,19 @@ impl WasmtimeBackend {
             self.config.value_codec_limits,
         )?;
 
-        let capabilities = self
-            .shared
-            .capabilities
-            .as_ref()
-            .map(|owner| {
-                let publication = runtime.eligibility.as_ref().ok_or_else(|| {
-                    platform_error(
-                        PlatformErrorCode::PermissionDenied,
-                        "capability publication owner required",
-                        false,
-                    )
-                })?;
-                owner.open_session(&request, cancellation, publication, accounting.deadline())
-            })
-            .transpose()?;
+        let capabilities = match self
+            .capability_session(
+                &runtime,
+                &request,
+                cancellation,
+                &stop,
+                accounting.deadline(),
+            )
+            .await?
+        {
+            Ok(session) => session,
+            Err(outcome) => return Ok(outcome),
+        };
         *capability_observer = capabilities
             .as_ref()
             .map(latent_capabilities::broker::CapabilitySession::observer);
