@@ -79,7 +79,7 @@ impl ProtectedSnapshotFile {
         self.check()
             .map_err(|_| OfflineRecoveryError::UnsafeDestination)
     }
-    fn check(&self) -> io::Result<()> {
+    pub(super) fn check(&self) -> io::Result<()> {
         self.root.check_mutable_file(&self.fence).map_err(|_| {
             io::Error::new(io::ErrorKind::PermissionDenied, "protected snapshot fence")
         })

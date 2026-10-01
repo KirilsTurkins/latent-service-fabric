@@ -3,6 +3,7 @@
 //! this facade exposes no ordinary command, query, commit or dispatch method.
 
 mod file;
+mod migration;
 mod operation;
 mod review;
 mod startup;
@@ -11,6 +12,10 @@ pub use operation::OfflineOperation;
 pub use startup::OfflineRecoveryStartup;
 
 use super::{
+    migration::{
+        AggregateMigrationObservation, AggregateMigrationProgress, AggregateMigrationRequest,
+        MigrationAction,
+    },
     restore::{RestoreRequest, RestoreWindow},
     resume::{
         NamespaceRecoveryView, NamespaceResumeObservation, NamespaceResumeReceipt,
@@ -21,7 +26,7 @@ use super::{
 };
 use crate::{
     embedded::{ReadView, RowKey, StoreError},
-    namespace::compatibility::RetainedFormat,
+    namespace::compatibility::{RetainedFormat, ReviewedSchema},
     protected_store::{
         ProtectedStoreConfig, ProtectedStoreDrain, ProtectedStoreError, ProtectedStoreOwner,
     },
@@ -99,6 +104,37 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
     ) -> Result<(), StoreError> {
         Err(StoreError::Unavailable)
     }
+    /// Select installed tested schema evidence for the exact actual package.
+    /// Request declarations and artifact names are never this approval.
+    fn migration_schema(
+        &self,
+        _view: &ReadView,
+        _request: &OfflineAggregateMigrationRequest,
+    ) -> Result<ReviewedSchema, StoreError> {
+        Err(StoreError::Unavailable)
+    }
+    fn review_migration(
+        &self,
+        _view: &ReadView,
+        _request: &OfflineAggregateMigrationRequest,
+        _observation: AggregateMigrationObservation<'_>,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+    /// Short no-I/O current authority, lifecycle and clock continuity fence.
+    fn accept_migration(
+        &self,
+        _request: &OfflineAggregateMigrationRequest,
+        _phase: MigrationAction,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct OfflineAggregateMigrationRequest {
+    pub checkpoint: SnapshotFile,
+    pub review: AggregateMigrationRequest,
 }
 
 #[derive(Debug, Clone)]
@@ -159,6 +195,25 @@ pub struct OfflineRecoverySource {
 }
 
 impl OfflineRecoverySource {
+    /// Persist reviewed paused progress; leave data/schema unchanged. A dropped
+    /// waiter does not refund accepted physical work. Restart never completes it
+    /// automatically; the same attributable operation must explicitly finish.
+    pub fn stage_aggregate_migration(
+        &self,
+        request: OfflineAggregateMigrationRequest,
+        deadline: Instant,
+    ) -> Result<OfflineOperation<AggregateMigrationProgress>, OfflineRecoveryError> {
+        migration::execute(self, request, MigrationAction::Stage, deadline)
+    }
+    /// One finite atomic data/usage/schema/history/completion envelope. This
+    /// continues the same reviewed operation and still does not resume business.
+    pub fn complete_aggregate_migration(
+        &self,
+        request: OfflineAggregateMigrationRequest,
+        deadline: Instant,
+    ) -> Result<OfflineOperation<AggregateMigrationProgress>, OfflineRecoveryError> {
+        migration::execute(self, request, MigrationAction::Complete, deadline)
+    }
     pub fn inspect_namespace(
         &self,
         operator_id: String,

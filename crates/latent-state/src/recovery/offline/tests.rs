@@ -37,6 +37,8 @@ use std::{
 const DEFINITION: &[u8] =
     include_bytes!("../../../../../contracts/state/application-aggregate-v1.schema.json");
 
+mod migration;
+
 struct Codecs {
     denied: AtomicBool,
     missing: AtomicBool,

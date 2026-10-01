@@ -530,7 +530,7 @@ fn capture_namespace_rows(
     Ok(snapshots)
 }
 
-fn row_header(key: &RowKey, value: &[u8]) -> Result<[u8; 8], StoreError> {
+pub(super) fn row_header(key: &RowKey, value: &[u8]) -> Result<[u8; 8], StoreError> {
     if key.key.is_empty() || key.key.len() > 4096 || value.len() > 4 * 1024 * 1024 {
         return Err(StoreError::Capacity);
     }

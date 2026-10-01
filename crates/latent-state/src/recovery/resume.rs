@@ -323,6 +323,9 @@ impl NamespaceResumePlan {
         {
             return Err(StoreError::Conflict);
         }
+        if prior.is_none() {
+            super::migration::require_resume_ready(view, &namespace)?;
+        }
         review(
             view,
             request,
