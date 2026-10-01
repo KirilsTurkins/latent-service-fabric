@@ -73,3 +73,54 @@ records the complete signed application, Wasm SSR/client and protected T1
 integration; it does not change this earlier Node-rendered browser receipt.
 No reconnect-flood fairness, arbitrary HTML sanitization, automatic secret
 classification or browser user-authentication guarantee is claimed.
+
+## Feedback Report 2 response-policy observation, 1 October 2026
+
+The registered `http-response-policy` selection passed against the clean native
+source `4229d1a9e8ab8028793fccaba643b8e278223dda`. It executed the actual signed
+public component, 15 negative output vectors and successful later output. The
+reachable 65-header case records the admitted activation's nonterminal
+`OutputValidation / HttpResponseRejected` diagnostic through both tenant-scoped
+root and tree inspection. The unchanged 16385-byte value instead crosses the
+WIT codec's 4096-item bound before HTTP validation and remains a guest trap;
+its producer-diagnostic propagation is a separate followup, not an HTTP reason.
+
+Both registered `browser-boundary` cases passed with browser runner source
+`9191e7b9422b635f98e158b53642a107fe773ef9` and the same native artifact. The only
+change after that native build is the browser runner's absent-or-empty Referer
+oracle; no native, component or controlled Angular build input changed. This
+bounded observation used Rust 1.97.1, Node 24.19.0, Angular 22.2.0 and Chromium
+153.0.8010.12 on Linux x86-64. It verifies actual shared ingress, cache-input
+handling and no-store responses, reserved-header rejection, later successful
+output, strict CSP and synthetic-token navigation/fetch behavior.
+
+The public-application receipt's relevant fields are:
+
+```json
+{"browser":"153.0.8010.12","publicApplicationQualified":true,"applicationComponentInvoked":true,"fixedSameOriginReferrerPolicy":true,"buildTimeNoReferrerBeforeResources":true,"syntheticTokenNavigationAndFetchDoNotBecomeReferrers":true,"consumedTokenRemovedBeforeApplicationFetch":true,"noReferrerSameOriginPostQualified":true,"noReferrerPostOrigin":"same-origin","noReferrerPostStatus":200,"opaqueOrigin":{"outcome":"browser-policy-blocked","documentOrigin":"null","requestOrigin":"not-observed","requestMethod":"POST","status":null},"applicationCacheInputQualified":true,"reservedHeadersRejectedAndRecoveryQualified":true,"errors":0}
+```
+
+The opaque data document encountered a verified browser policy failure without
+an exposed response. The exact journal count of 13 proves it did not start a
+guest, but this observation does not establish a node 403 or whether the
+request reached the network. Native literal-null Origin denial remains separate
+wire evidence. The ordinary no-referrer POST preserved a same-origin Origin
+and emitted no nonempty Referer. The supported application helper retains its
+explicit same-origin unsafe-method policy after removing the consumed token.
+Canonical signed asset navigation followed by browser history supplies the
+query-bearing document source; direct query-bearing asset navigation remains
+unsupported.
+
+| Preserved artifact or log | SHA-256 |
+| --- | --- |
+| Actual public component | `4955a2cb884b5585c10da5e8011abee7ceafea64af399204273a20a7c8822bdf` |
+| Registered response-policy pass log | `c57fa5d68995d9128577fc4054f56df887035b19f15bda35389aa91dfa481411` |
+| Registered browser pass log | `29b96ea5690c28150b5ca958a744d7d3c76c2cc3460bf896fc308e16e2718b22` |
+
+Earlier failed attempts are retained: query-bearing immutable asset navigation,
+an incorrect empty-502 assertion, header-name casing, the codec/HTTP diagnostic
+distinction, the browser's Origin tuple and its empty-string Referer exposure.
+Product failure bytes, value bounds and CSP/CORS/private-network policy were not
+changed to make those checks pass. The existing test-authority and root-browser
+sandbox limitations above still apply; current-head required CI and the typed
+codec producer followup remain separate gates.

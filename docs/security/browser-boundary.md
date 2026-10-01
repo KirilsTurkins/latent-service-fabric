@@ -231,6 +231,13 @@ pair: a same-origin Origin receives the normal 200, while `Origin: null` must
 receive empty no-store 403. The 2026-10-01 Chromium 153.0.8010.12 observation
 preserved its same-origin Origin; it is not evidence of an actual null-Origin
 browser rejection. Native wire tests separately require null-Origin rejection.
+The maintained opaque-document probe also records a bounded outcome without
+changing CSP, CORS or browser private-network policy. On that Chromium version,
+the data document had origin `null`, but the POST encountered a verified browser
+policy failure without exposing an Origin value or node response. The exact
+activation count verifies that it created no guest. This is neither a measured
+node 403 nor evidence about whether a request reached the network before the
+browser reported failure.
 Its actual host responses still report `same-origin`, strict CSP and `no-store`
 on application traffic. A meta element inserted after initial resource fetching
 cannot retroactively protect those requests. LSF never inserts it at runtime or
