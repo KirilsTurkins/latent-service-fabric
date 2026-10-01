@@ -19,8 +19,7 @@ use std::sync::Arc;
 use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility, VerifiedArtifactMetadata};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration};
 use latent_manifest::{
-    __serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidator,
-    Phase1ManifestValidator,
+    __serde_json as json, validate_deployment_document, JsonManifestCodec, ManifestCodec,
 };
 
 use super::observation::{count, Work};
@@ -476,9 +475,9 @@ async fn compile_catalog_inner(
         // The existing per-version allowance also covers bounded record/order slots.
         let mut records = vec![None; deployments.len()];
         for (position, deployment, publication) in ordered {
-            Phase1ManifestValidator
-                .validate_deployment(deployment)
-                .map_err(manifest_error)?;
+            // Finite data validation precedes loading the selected artifact.
+            // Only its sealed package metadata selects the final profile below.
+            validate_deployment_document(deployment).map_err(manifest_error)?;
             let equal_prior = compatible
                 .and_then(|catalog| catalog.record_by_id(&deployment.id))
                 .filter(|record| record.deployment.as_ref() == deployment.as_ref());
@@ -632,14 +631,9 @@ async fn compile_catalog_inner(
                     return Err(denied.error());
                 }
             }
-            if artifact.is_web_execution_projection() {
-                Phase1ManifestValidator
-                    .validate_web_execution_projection(deployment, artifact.manifest())
-            } else {
-                Phase1ManifestValidator
-                    .validate_deployment_against_capsule(deployment, artifact.manifest())
-            }
-            .map_err(manifest_error)?;
+            artifact
+                .validate_deployment(deployment)
+                .map_err(manifest_error)?;
             let mut descriptors = BTreeMap::new();
             if release_surface.is_none() {
                 for descriptor in artifact.contracts() {
