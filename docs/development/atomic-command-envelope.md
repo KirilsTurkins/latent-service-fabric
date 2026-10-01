@@ -79,8 +79,22 @@ identity expiry are separate. Existing linked identities are conservatively
 retained until the maintenance owner can prove safe reclamation. Current read
 permission and proven nonregressing clock continuity are required for inspection.
 
-All initial command codecs are closed binary v1 records: command/attempt
-`LCM`, result `LCR`, pending result `LCP`, input `LIC`, usage `LCU` and retry `LCT`.
+Command/attempt `LCM` and terminal result `LCR` use closed binary format 2.
+Both retain the original incarnation and namespace generation installed by
+that terminal physical envelope. A later command, rollout or lookup cannot
+substitute its current namespace version. The result digest includes this
+original version, and startup checks exact command/result version linkage.
+Pending records have no committed version; committed, rejected and technical
+abort metadata retain their own original durable envelope version.
+
+Historic `LCM`/`LCR` format 1 is explicitly unsupported because it did not retain
+that original version. Readiness and inspection refuse these rows; this change
+provides no backward reader, migration or version reconstruction. Operators must
+retain the previous codec/profile and its protected data until an approved
+migration or new store/incarnation is installed. Removing that codec cannot be
+claimed as compatible retained-work recovery.
+
+Pending result `LCP`, input `LIC`, usage `LCU` and retry `LCT` remain format 1.
 Lengths, counts, discriminants, key identities, body digests and trailing bytes
 are checked before acceptance. `validate_view` scans all ten families in coherent
 pages of at most 128 rows/2 MiB and performs bounded point checks for every

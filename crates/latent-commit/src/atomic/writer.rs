@@ -113,6 +113,7 @@ impl PreparedAdmission {
             attempt: 1,
             outcome: Outcome::Pending,
             completed_at: 0,
+            committed_version: None,
             result_digest: Identity([0; 32]),
             effects: vec![],
             inbox: input.inbox,
@@ -309,6 +310,7 @@ impl PreparedAdmission {
         record.owner_epoch = input.owner_epoch;
         record.outcome = Outcome::Pending;
         record.completed_at = 0;
+        record.committed_version = None;
         record.clock_floor = time.unix_millis;
         record.result_digest = Identity([0; 32]);
         record.effects.clear();
@@ -461,7 +463,8 @@ impl CompleteEnvelope {
         if minimum_bytes > latent_core::transaction_contract::STAGED_BYTES {
             return Err(AtomicError::Limit);
         }
-        let result = DurableResult::new(&claim.record, Outcome::Committed, None, value)?;
+        let version = next_namespace_version(view, &claim.record)?;
+        let result = DurableResult::new(&claim.record, Outcome::Committed, None, value, version)?;
         let mut authorities = Vec::with_capacity(intents.len());
         let mut effect_rows = Vec::with_capacity(intents.len() * 3);
         for (sequence, intent) in intents.into_iter().enumerate() {
@@ -533,7 +536,9 @@ impl CompleteEnvelope {
         value: Value,
         time: CommandTime,
     ) -> Result<Self, AtomicError> {
-        let result = DurableResult::new(&claim.record, Outcome::Rejected, Some(code), value)?;
+        let version = next_namespace_version(view, &claim.record)?;
+        let result =
+            DurableResult::new(&claim.record, Outcome::Rejected, Some(code), value, version)?;
         Self::prepare(view, claim, None, result, vec![], vec![], time, None)
     }
     /// Private physical retirement evidence permits terminal technical metadata,
@@ -560,7 +565,9 @@ impl CompleteEnvelope {
             media_type: String::from("application/vnd.lsf.technical-abort-v1"),
             metadata: vec![],
         };
-        let result = DurableResult::new(&claim.record, Outcome::Aborted, Some(code), value)?;
+        let version = next_namespace_version(view, &claim.record)?;
+        let result =
+            DurableResult::new(&claim.record, Outcome::Aborted, Some(code), value, version)?;
         Self::prepare(view, claim, None, result, vec![], vec![], time, Some(proof))
     }
     #[must_use]
@@ -631,7 +638,19 @@ impl CompleteEnvelope {
             return Err(AtomicError::Conflict);
         }
         let mut terminal = claim.record.clone();
+        let version = latent_state::namespace::NamespaceVersion {
+            incarnation: namespace.version.incarnation,
+            generation: namespace
+                .version
+                .generation
+                .checked_add(1)
+                .ok_or(AtomicError::Limit)?,
+        };
+        if result.committed_version != version {
+            return Err(AtomicError::Invalid);
+        }
         terminal.outcome = result.outcome;
+        terminal.committed_version = Some(version);
         terminal.completed_at = time.unix_millis;
         terminal.clock_floor = time.unix_millis;
         terminal.result_digest = result.digest;
@@ -878,6 +897,21 @@ fn fenced_error(error: FencedStoreError<AtomicError>) -> AtomicError {
         FencedStoreError::Fence(error) => error,
     }
 }
+pub(super) fn next_namespace_version(
+    view: &ReadView,
+    record: &CommandRecord,
+) -> Result<latent_state::namespace::NamespaceVersion, AtomicError> {
+    let (namespace, _, _) = namespace(view, &record.key, &record.source.state_schema)?;
+    Ok(latent_state::namespace::NamespaceVersion {
+        incarnation: namespace.version.incarnation,
+        generation: namespace
+            .version
+            .generation
+            .checked_add(1)
+            .ok_or(AtomicError::Limit)?,
+    })
+}
+
 fn namespace(
     view: &ReadView,
     key: &latent_core::transaction_contract::CommandKey,
