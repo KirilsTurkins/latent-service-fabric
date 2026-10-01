@@ -79,7 +79,7 @@
       },
       {
         "name": "Save independently verified compiler archive bytes",
-        "if": "steps.compiler-cache.outputs.cache-hit != 'true'",
+        "if": "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/development' && steps.compiler-cache.outputs.cache-hit != 'true'",
         "uses": "actions/cache/save",
         "with": {
           "path": "${{ runner.temp }}/compiler-archives",
@@ -295,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Preserve the maintained dependency application builds and every transaction SDK lane; resolve the original runner-owned compiler cache after runner allocation.",
+  "reviewReason": "Preserve the historical narrow dependency fixture and every Phase4 compiler/guest qualification while retaining incoming dependency-cache, native website, and interrupt correctness checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

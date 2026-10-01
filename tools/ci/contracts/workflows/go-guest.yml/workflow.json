@@ -1,10 +1,6 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "go-guest-${{ github.ref }}"
-    },
     "name": "Go guest qualification",
     "on": {
       "pull_request": {
@@ -78,12 +74,26 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "go-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
+  "reviewReason": "Preserve the historical narrow dependency fixture and every Phase4 compiler/guest qualification while retaining incoming dependency-cache, native website, and interrupt correctness checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

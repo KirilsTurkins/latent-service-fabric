@@ -3,13 +3,9 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0
-    },
     "name": "Go runtime and complete capsule qualification",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 45,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -19,16 +15,16 @@
       },
       {
         "name": "Capture immutable qualification source inputs",
-        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\"\n"
       },
       {
         "name": "Retain the exact reviewed command contract input",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "go-guest-command-contract-${{ github.sha }}",
           "path": "tools/ci/contracts/\n${{ runner.temp }}/go-guest-source.tar.gz\n${{ runner.temp }}/go-guest-source.sha\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
@@ -42,19 +38,40 @@
         "uses": "dtolnay/rust-toolchain"
       },
       {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
         "name": "Install the locked compiler and generator",
-        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ncargo install --locked wasm-tools --version 1.254.0\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Retain pinned reproduction tools",
-        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-guest-tools\"\ncp \"$HOME/.cargo/bin/componentize-go\" \"$HOME/.cargo/bin/wasm-tools\" \"$out/\"\nsha256sum \"$out/componentize-go\" \"$out/wasm-tools\" > \"$out/tools.sha256\"\n"
+        "run": "set -euo pipefail\nout=\"$RUNNER_TEMP/go-guest-tools\"\ncp \"$HOME/.cargo/bin/componentize-go\" \"$(command -v wasm-tools)\" \"$out/\"\nsha256sum \"$out/componentize-go\" \"$out/wasm-tools\" > \"$out/tools.sha256\"\n"
       },
       {
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "go-guest-tools-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-guest-tools/go.tbz\n${{ runner.temp }}/go-guest-tools/componentize-go\n${{ runner.temp }}/go-guest-tools/wasm-tools\n${{ runner.temp }}/go-guest-tools/tools.sha256\n",
+          "if-no-files-found": "error",
           "retention-days": 1
         }
       },
@@ -79,22 +96,21 @@
         "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\""
       },
       {
-        "if": "always()",
         "name": "Retain successful and failed upstream observations",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "go-guest-upstream-${{ github.sha }}",
           "path": "${{ runner.temp }}/transaction-contract-go/report.json\n${{ runner.temp }}/transaction-contract-go/source.tar.gz\n${{ runner.temp }}/transaction-contract-go/component.wit\n${{ runner.temp }}/transaction-contract-go/preparation.json\n${{ runner.temp }}/transaction-contract-go/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-go/logs/**\n${{ runner.temp }}/transaction-contract-go/compiler/*.log\n${{ runner.temp }}/transaction-contract-go/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-go/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-go/compiled/component.wit\n${{ runner.temp }}/transaction-contract-go/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-go/compiled/generated/**\n${{ runner.temp }}/transaction-contract-go/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/bindings/**\n${{ runner.temp }}/transaction-contract-go/component.wasm\n${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-authoring/\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 45
+    ]
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
+  "reviewReason": "Preserve the historical narrow dependency fixture and every Phase4 compiler/guest qualification while retaining incoming dependency-cache, native website, and interrupt correctness checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

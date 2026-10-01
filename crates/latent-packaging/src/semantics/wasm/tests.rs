@@ -4,6 +4,7 @@ mod fixtures;
 use fixtures::{component, Options};
 use latent_core::PlatformErrorCode;
 use wasm_encoder::{Component, Encode, ModuleSection, RawSection};
+mod aliases;
 
 #[test]
 fn small_real_nested_types_and_clock_import_validate_without_execution() {
@@ -332,7 +333,7 @@ fn conservative_alias_expansion_has_an_independent_finite_ceiling() {
     validate(&bytes, limits).unwrap();
     for lowered in [
         SemanticLimits {
-            max_reference_work: 2048,
+            max_reference_work: 128,
             ..limits
         },
         SemanticLimits {
