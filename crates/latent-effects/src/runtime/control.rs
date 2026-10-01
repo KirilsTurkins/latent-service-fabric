@@ -249,7 +249,7 @@ impl DispatcherOwner {
         }
         self.services
             .store
-            .with_store(StoreIoKind::Write, 64 * 1024, move |store| {
+            .with_store(StoreIoKind::RecoveryWrite, 64 * 1024, move |store| {
                 // Keep domain errors separate from physical failures. Store errors
                 // still trigger the protected owner's actual quarantine rules.
                 match execute(store, &prepared, authorize) {
@@ -269,7 +269,7 @@ impl DispatcherOwner {
         request.validate()?;
         self.services
             .store
-            .with_store(StoreIoKind::Read, 32 * 1024, move |store| {
+            .with_store(StoreIoKind::RecoveryRead, 32 * 1024, move |store| {
                 ControlCatalog::lookup(&store.snapshot()?, &request)
             })
             .map_err(DispatcherControlError::from)

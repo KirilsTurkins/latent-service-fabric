@@ -12,8 +12,8 @@ use super::*;
 
 mod initialization;
 mod ownership;
-mod retirement;
 mod recovery;
+mod retirement;
 mod shutdown;
 
 struct Store {

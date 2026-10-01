@@ -29,27 +29,34 @@ pub(super) async fn inspect(
     let job = inner
         .services
         .store
-        .with_store(StoreIoKind::Read, WORK_BYTES as u64, move |engine| {
-            let result = inspect_in(&worker, engine, &access, deadline, retained.as_ref());
-            let finish = pending.finish(
-                if result.as_ref().is_ok_and(Result::is_ok) {
-                    AuditOperationResult::Committed
-                } else {
-                    AuditOperationResult::Rejected
-                },
-                AuditReason::Verified,
-                None,
-                false,
-            );
-            result.map(|value| (value, access.inspect, finish))
-        })
+        .with_store(
+            StoreIoKind::RecoveryRead,
+            WORK_BYTES as u64,
+            move |engine| {
+                let result = inspect_in(&worker, engine, &access, deadline, retained.as_ref());
+                let finish = pending.finish(
+                    if result.as_ref().is_ok_and(Result::is_ok) {
+                        AuditOperationResult::Committed
+                    } else {
+                        AuditOperationResult::Rejected
+                    },
+                    AuditReason::Verified,
+                    None,
+                    false,
+                );
+                // Keep global capacity in the unclaimed native completion as well
+                // as the waiter. Its bytes retire after that completion's values.
+                result.map(|value| (value, access.inspect, finish, retained))
+            },
+        )
         .map_err(protected_error)?;
-    let (result, decision, finish) = job.await.map_err(io_error)?.map_err(protected_error)?;
+    let (result, decision, finish, worker_permit) =
+        job.await.map_err(io_error)?.map_err(protected_error)?;
     let (read, namespace) = result?;
     read_ack(finish).await?;
     response::owned(
         inner,
-        permit,
+        worker_permit,
         decision,
         read,
         None,
@@ -118,7 +125,7 @@ pub(super) async fn receipt(
     let job = inner
         .services
         .store
-        .with_store(StoreIoKind::Read, 65536, move |engine| {
+        .with_store(StoreIoKind::RecoveryRead, 65536, move |engine| {
             let result = (|| {
                 if let Err(error) = before_lookup(&worker, &access, deadline, retained.as_ref()) {
                     return Ok(Err(error));
@@ -157,15 +164,16 @@ pub(super) async fn receipt(
                 None,
                 true,
             );
-            result.map(|value| (value, access.inspect, finish))
+            result.map(|value| (value, access.inspect, finish, retained))
         })
         .map_err(protected_error)?;
-    let (result, decision, finish) = job.await.map_err(io_error)?.map_err(protected_error)?;
+    let (result, decision, finish, worker_permit) =
+        job.await.map_err(io_error)?.map_err(protected_error)?;
     let (read, receipt, public) = result?;
     read_ack(finish).await?;
     response::owned(
         inner,
-        permit,
+        worker_permit,
         decision,
         read,
         Some(receipt),

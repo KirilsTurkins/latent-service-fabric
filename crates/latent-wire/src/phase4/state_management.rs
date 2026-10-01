@@ -3,7 +3,9 @@ mod audit;
 mod authorization;
 mod inspection;
 mod mutation;
+mod recovery;
 mod response;
+pub use recovery::StateManagementRecoveryAdmission;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
 

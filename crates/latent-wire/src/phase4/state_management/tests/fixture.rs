@@ -117,6 +117,9 @@ pub(super) struct Fixture {
 }
 impl Fixture {
     pub async fn new(audited: bool) -> Self {
+        Self::with_io(audited, None).await
+    }
+    pub async fn with_io(audited: bool, io: Option<latent_state::store_io::StoreIoLimits>) -> Self {
         let directory = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let directory = tempfile::tempdir_in(directory).unwrap();
@@ -174,6 +177,9 @@ impl Fixture {
             )
             .unwrap();
         let mut config = ProtectedStoreConfig::bounded_linux(directory.path().join("store"));
+        if let Some(io) = io {
+            config.io = io;
+        }
         fs::create_dir(&config.root).unwrap();
         fs::set_permissions(&config.root, fs::Permissions::from_mode(0o700)).unwrap();
         config.create_if_missing = true;
