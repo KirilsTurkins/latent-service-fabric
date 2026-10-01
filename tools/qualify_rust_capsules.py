@@ -61,7 +61,7 @@ def inputs(language="rust"):
                     "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
-                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/compatibility.py", "dotnet_guest/sdk.py",
+                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/compatibility.py", "dotnet_guest/outputs.py", "dotnet_guest/sdk.py",
                     "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     'application_dependencies.py', 'application_dependency_store.py', 'application_dependency_tools.py',
                     'application_dependency_approval.py', 'captured_compiler_isolation.py', 'dotnet_compiler_isolation.py',
@@ -221,14 +221,42 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 stage = 'application-dependency-capture'
                 result['applicationDependencies'] = install(project, output / 'outside-project-dependencies', dotnet_tools)
                 write_json(output / 'application-dependency-fixture.json', result['applicationDependencies'])
+                stage = 'unapproved-executable-input-denial'
+                denied = output / 'builds/greeting-approval-required'
+                try:
+                    builder(project, denied, binaries['examples/capsule_contracts'], binaries['examples/package'],
+                            'https://github.com/KirilsTurkins/latent-service-fabric', tools=dotnet_tools, offline=True)
+                except ValueError as error:
+                    failure = read_json(denied / 'BUILD-FAILED.json')
+                    if failure['stage'] != 'executable-input-approval' or (denied / 'BUILD-COMPLETE.json').exists():
+                        raise ValueError('unapproved NuGet generator failed outside the retained approval boundary') from error
+                    request = read_json(denied / 'executable-input-approval-request.json')
+                    # Only the SDK-owned controlled fixture policy approves this
+                    # freshly retained exact request. Normal builds never do so.
+                    executable_approval = request['identity']
+                    result['applicationDependencies']['executableApproval'] = executable_approval
+                else:
+                    raise ValueError('application NuGet generator executed without exact approval')
                 stage = 'standalone-builds'
             artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],
                 binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric",
                 **({"offline": offline or executable_approval is not None, "executable_approval": executable_approval} if language == "rust" else
                    {"tools": typescript_tools} if language == "typescript" else
-                   {"tools": dotnet_tools} if language == "dotnet" else {}))
+                   {"tools": dotnet_tools, "offline": offline or executable_approval is not None,
+                    "executable_approval": executable_approval} if language == "dotnet" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
+            if language == 'dotnet' and application_dependencies and template == 'greeting':
+                receipt = read_json(artifact / 'executable-input-outputs.json')
+                outputs = receipt['outputs']
+                generated = [name for name in outputs if 'CapturedPayload' in name and name.endswith('.cs')]
+                if not generated or receipt['approvalIdentity'] != executable_approval or receipt['compilerCommandSucceeded'] is not True:
+                    raise ValueError('approved serializer generator did not emit the actual captured payload source')
+                for name, expected in outputs.items():
+                    data = (artifact / 'executable-input-outputs' / name).read_bytes()
+                    if {'digest': digest(data), 'size': len(data)} != expected:
+                        raise ValueError('retained NuGet generated output differs from the compiled capture')
+                result['applicationDependencies']['generatedOutputs'] = outputs
         if language == "go":
             stage = "go-recovery-diagnostic"
             commands.run(stage, binaries["examples/go_runtime_probe"],

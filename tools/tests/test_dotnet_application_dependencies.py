@@ -295,5 +295,156 @@ class NativeAotRuntimeCoverage(unittest.TestCase):
                 retain_failure(output)
 
 
+class NugetGeneratedOutputs(unittest.TestCase):
+    def approval(self):
+        from types import SimpleNamespace
+        from tools.build_snapshot import canonical, digest
+        specification = {'inputIdentity': {'manifestDigest': digest(b'original manifest'),
+            'lockDigest': digest(b'original executable lock')}, 'recipeDigest': digest(b'compiler recipe'),
+            'compilerInputsDigest': digest(b'captured compiler and namespace')}
+        return SimpleNamespace(identity=digest(canonical(specification)), specification=specification)
+
+    def compiler(self, output, approval, run):
+        from types import SimpleNamespace
+        from tools.dotnet_guest.compiler import Compiler
+        compiler = Compiler.__new__(Compiler)
+        compiler.commands = SimpleNamespace(output=output)
+        compiler.dotnet, compiler.wasi_sdk = Path('/captured/dotnet'), Path('/captured/wasi-sdk')
+        compiler.application_closure, compiler.executable_approval = object(), approval
+        compiler.run = run
+        return compiler
+
+    def test_native_aot_failure_retains_real_generated_bytes_after_temporary_cleanup(self):
+        from tools.dotnet_guest.outputs import verify
+        with tempfile.TemporaryDirectory() as retained:
+            output, approval = Path(retained), self.approval()
+            failure = ValueError('original-NativeAOT-command-failure')
+            with tempfile.TemporaryDirectory() as temporary:
+                compiled = Path(temporary)
+                source = compiled / 'generator-outputs/Actual.Generator/Payload.g.cs'
+
+                def run(stage, *arguments):
+                    self.assertEqual(stage, 'native-aot')
+                    self.assertIn('-p:EmitCompilerGeneratedFiles=true', arguments)
+                    source.parent.mkdir(parents=True)
+                    source.write_bytes(b'public partial class ActualPayload {}')
+                    raise failure
+
+                compiler = self.compiler(output, approval, run)
+                with self.assertRaises(ValueError) as caught:
+                    compiler.native_aot(compiled / 'project', compiled, compiled / 'wit-bindgen')
+                self.assertIs(caught.exception, failure)
+                self.assertFalse((output / 'BUILD-COMPLETE.json').exists())
+            self.assertFalse(source.exists())
+            receipt = verify(output, approval, compiler_command_succeeded=False)
+            self.assertFalse(receipt['compilerCommandSucceeded'])
+            self.assertEqual((output / 'executable-input-outputs/Actual.Generator/Payload.g.cs').read_bytes(),
+                             b'public partial class ActualPayload {}')
+            with self.assertRaisesRegex(DependencyError, 'stale-receipt'):
+                verify(output, approval)
+
+    def test_successful_compiler_capture_is_bound_before_component_exists(self):
+        from tools.dotnet_guest.outputs import verify
+        with tempfile.TemporaryDirectory() as temporary:
+            root, approval = Path(temporary), self.approval()
+            output, compiled = root / 'retained', root / 'compiled'
+            output.mkdir()
+            compiled.mkdir()
+
+            def run(stage, *arguments):
+                generated = compiled / 'generator-outputs/Payload.g.cs'
+                generated.parent.mkdir()
+                generated.write_bytes(b'public partial class ActualPayload {}')
+
+            self.compiler(output, approval, run).native_aot(compiled / 'project', compiled, compiled / 'wit-bindgen')
+            receipt = verify(output, approval, source=compiled / 'generator-outputs')
+            self.assertTrue(receipt['compilerCommandSucceeded'])
+            self.assertEqual(receipt['captureBoundary'], 'native-aot-process-reaped-before-component-composition')
+            self.assertFalse((output / 'component.wasm').exists())
+            self.assertFalse((output / 'BUILD-COMPLETE.json').exists())
+            self.assertEqual(verify(output, approval), receipt)
+
+    def test_retained_or_compiled_generated_byte_changes_are_rejected(self):
+        from tools.dotnet_guest.outputs import capture, verify
+        with tempfile.TemporaryDirectory() as temporary:
+            root, approval = Path(temporary), self.approval()
+            source, output = root / 'generated', root / 'retained'
+            source.mkdir()
+            output.mkdir()
+            (source / 'Payload.g.cs').write_bytes(b'approved generated source')
+            capture(source, output, approval, compiler_command_succeeded=True)
+            retained = output / 'executable-input-outputs/Payload.g.cs'
+            retained.write_bytes(b'changed output')
+            with self.assertRaisesRegex(DependencyError, 'output-mutated'):
+                verify(output, approval, source=source)
+            retained.write_bytes(b'approved generated source')
+            (source / 'Payload.g.cs').write_bytes(b'changed compiler input')
+            with self.assertRaisesRegex(DependencyError, 'output-mutated'):
+                verify(output, approval, source=source)
+            (source / 'Payload.g.cs').write_bytes(b'approved generated source')
+            receipt = output / 'executable-input-outputs.json'
+            value = json.loads(receipt.read_bytes())
+            value['approvalIdentity'] = 'sha256:' + '0' * 64
+            receipt.write_text(json.dumps(value))
+            with self.assertRaisesRegex(DependencyError, 'stale-receipt'):
+                verify(output, approval)
+
+    def test_output_receipt_binds_exact_approval_and_cannot_be_recaptured(self):
+        from tools.dotnet_guest.outputs import capture, verify
+        with tempfile.TemporaryDirectory() as temporary:
+            root, approval = Path(temporary), self.approval()
+            source, output = root / 'generated', root / 'retained'
+            source.mkdir()
+            output.mkdir()
+            with self.assertRaisesRegex(DependencyError, 'output-approval'):
+                capture(source, output, None, compiler_command_succeeded=True)
+            receipt = capture(source, output, approval, compiler_command_succeeded=True)
+            self.assertEqual(receipt['inputIdentity'], approval.specification['inputIdentity'])
+            self.assertEqual(receipt['recipeDigest'], approval.specification['recipeDigest'])
+            with self.assertRaisesRegex(DependencyError, 'capture-exists'):
+                capture(source, output, approval, compiler_command_succeeded=True)
+            approval.specification['recipeDigest'] = 'sha256:' + '1' * 64
+            with self.assertRaisesRegex(DependencyError, 'output-approval'):
+                verify(output, approval)
+
+    def test_bounded_capture_failure_does_not_mask_original_compiler_failure(self):
+        from unittest.mock import patch
+        from tools.dotnet_guest.outputs import capture
+        with tempfile.TemporaryDirectory() as temporary:
+            root, approval = Path(temporary), self.approval()
+            output, compiled = root / 'retained', root / 'compiled'
+            output.mkdir()
+            compiled.mkdir()
+            source = compiled / 'generator-outputs'
+            source.mkdir()
+            (source / 'Payload.g.cs').write_bytes(b'four')
+            failure = ValueError('original-compiler-error')
+
+            def run(stage, *arguments):
+                raise failure
+
+            with patch('tools.dotnet_guest.outputs.MAX_BYTES', 3):
+                with self.assertRaisesRegex(DependencyError, 'output-limit'):
+                    capture(source, output, approval, compiler_command_succeeded=True)
+                with self.assertRaises(ValueError) as caught:
+                    self.compiler(output, approval, run).native_aot(compiled / 'project', compiled, compiled / 'wit-bindgen')
+                self.assertIs(caught.exception, failure)
+            self.assertFalse((output / 'executable-input-outputs.json').exists())
+            self.assertFalse((output / 'executable-input-outputs').exists())
+
+    def test_missing_empty_capture_directory_and_non_boolean_status_are_rejected(self):
+        from tools.dotnet_guest.outputs import capture, verify
+        with tempfile.TemporaryDirectory() as temporary:
+            root, approval = Path(temporary), self.approval()
+            output = root / 'retained'
+            output.mkdir()
+            with self.assertRaisesRegex(DependencyError, 'output-status'):
+                capture(root / 'absent', output, approval, compiler_command_succeeded=1)
+            capture(root / 'absent', output, approval, compiler_command_succeeded=True)
+            (output / 'executable-input-outputs').rmdir()
+            with self.assertRaisesRegex(DependencyError, 'output-missing'):
+                verify(output, approval)
+
+
 if __name__ == '__main__':
     unittest.main()

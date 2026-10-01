@@ -75,7 +75,7 @@ class Compiler:
             raise ValueError("the pinned NativeAOT LLVM compiler is qualified only on Linux x86-64")
         self.tools, self.commands, self.vendor = tools.resolve(strict=True), commands, vendor
         self.offline = offline or captured
-        self.isolation, self.application_closure = None, None
+        self.isolation, self.application_closure, self.executable_approval = None, None, None
         self.python, self.package_cache = Path(sys.executable).resolve(strict=True), self.tools / 'packages'
         self.sdk = vendor / "sdk/dotnet-guest"
         self.dotnet = Path(shutil.which("dotnet", path=commands.environment["PATH"]) or "missing-dotnet").resolve(strict=True)
@@ -140,6 +140,26 @@ class Compiler:
             return self.commands.run(name, executable, *arguments)
         return self.commands.run(name, *self.isolation.wrap(executable, [str(value) for value in arguments],
             self.commands.root, self.commands.environment))
+
+    def native_aot(self, project: Path, output: Path, wrapper: Path):
+        from tools.dotnet_guest.outputs import capture
+        try:
+            self.run("native-aot", self.dotnet, "build", project / "Capsule.csproj", "-c", "Release", "--no-restore",
+                "-nodeReuse:false", "-p:UseSharedCompilation=false", "-p:WasiSdkRoot=" + str(self.wasi_sdk),
+                "-p:WitBindgenExe=" + str(wrapper), '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false',
+                *(['-p:EmitCompilerGeneratedFiles=true', '-p:CompilerGeneratedFilesOutputPath=' + str(output / 'generator-outputs')]
+                  if self.application_closure else []))
+        except BaseException:
+            if self.executable_approval is not None:
+                try:
+                    capture(output / 'generator-outputs', self.commands.output, self.executable_approval,
+                            compiler_command_succeeded=False)
+                except Exception:
+                    pass  # Keep the original compiler failure if diagnostic capture also fails.
+            raise
+        if self.executable_approval is not None:
+            capture(output / 'generator-outputs', self.commands.output, self.executable_approval,
+                    compiler_command_succeeded=True)
 
     def compile(self, work: Path, world: str, output: Path):
         if self.isolation is not None and not output.resolve().is_relative_to(self.isolation.workspace):
@@ -234,10 +254,7 @@ class Compiler:
             wrapper.chmod(0o700)
             if self.isolation:
                 self.isolation.protect_inputs(wrapper)
-            self.run("native-aot", self.dotnet, "build", project / "Capsule.csproj", "-c", "Release", "--no-restore",
-                "-nodeReuse:false", "-p:UseSharedCompilation=false", "-p:WasiSdkRoot=" + str(self.wasi_sdk),
-                "-p:WitBindgenExe=" + str(wrapper), '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false',
-                *(['-p:EmitCompilerGeneratedFiles=true', '-p:CompilerGeneratedFilesOutputPath=' + str(output / 'generator-outputs')] if self.application_closure else []))
+            self.native_aot(project, output, wrapper)
             if self.isolation:
                 if wrapper.read_text() != script:
                     raise ValueError('SDK-owned-binding-wrapper-mutated')

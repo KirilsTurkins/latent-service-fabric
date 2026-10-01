@@ -14,8 +14,18 @@ from tools.dotnet_guest.compiler import Compiler
 from tools.rust_capsule_build import Commands
 
 
-def install(project: Path, outside: Path, tools: Path, *, identity='Outside.Qualification.Library') -> dict:
+def install(project: Path, outside: Path, tools: Path, *, identity='Outside.Qualification.Library', serialization='memorypack') -> dict:
     package_name(identity)
+    if serialization == 'memorypack':
+        dependency, version = 'MemoryPack.Core', '1.21.4'
+        application = 'MemoryPack'
+        transitive = ['MemoryPack.Core', 'MemoryPack.Generator']
+    elif serialization == 'smartformat':
+        dependency, version = 'SmartFormat.Extensions.Newtonsoft.Json', '3.6.1'
+        application = dependency
+        transitive = ['SmartFormat', 'Newtonsoft.Json', 'ZString']
+    else:
+        raise ValueError('unknown SDK qualification fixture')
     outside.mkdir(mode=0o700)
     library, evidence, feed = (outside / name for name in ('developer-library', 'compiler-evidence', 'local-feed'))
     for root in (library, evidence, feed):
@@ -53,7 +63,7 @@ public static class LibraryPrefix {
     with zipfile.ZipFile(original, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(identity + '.nuspec', '''<?xml version="1.0"?><package><metadata><id>''' + identity + '''</id>
 <version>1.0.0</version><authors>SDK qualification</authors><description>Developer-owned immutable input</description>
-<dependencies><group targetFramework="net10.0"><dependency id="SmartFormat.Extensions.Newtonsoft.Json" version="[3.6.1]" /></group></dependencies>
+<dependencies><group targetFramework="net10.0"><dependency id="''' + dependency + '''" version="[''' + version + ''']" /></group></dependencies>
 </metadata></package>''')
         archive.writestr('lib/net10.0/Library.dll', assembly)
     (feed / (identity.lower() + '.1.0.0.nupkg')).write_bytes(original.getvalue())
@@ -62,7 +72,20 @@ public static class LibraryPrefix {
     after = before.replace(b'$"Hello, {clean}!"', b'Prefix() + clean + "!"')
     if after == before:
         raise ValueError('C# dependency qualification source hook changed')
-    helper = b'''
+    if serialization == 'memorypack':
+        helper = b'''
+    private static string Prefix() {
+        var resource = DeveloperInput.LibraryPrefix.Read();
+        var encoded = MemoryPack.MemoryPackSerializer.Serialize(new CapturedPayload { Prefix = resource });
+        var restored = MemoryPack.MemoryPackSerializer.Deserialize<CapturedPayload>(encoded)
+            ?? throw new System.Exception("generated payload missing");
+        if (restored.Prefix != resource || resource != "Hello, ")
+            throw new System.Exception("generated serialization/resource result mismatch");
+        return restored.Prefix;
+    }
+'''
+    else:
+        helper = b'''
     private static string Prefix() {
         var input = Newtonsoft.Json.Linq.JObject.Parse("{\\"prefix\\":\\"Hello, \\"}");
         var parsed = (string?)input["prefix"];
@@ -78,26 +101,39 @@ public static class LibraryPrefix {
     }
 '''
     index = after.rfind(b'}')
-    source.write_bytes(after[:index] + helper + after[index:])
+    after = after[:index] + helper + after[index:]
+    if serialization == 'memorypack':
+        after += b'''
+[MemoryPack.MemoryPackable]
+public partial class CapturedPayload {
+    public string Prefix { get; set; } = "";
+}
+'''
+    source.write_bytes(after)
     declaration = project / 'Capsule.csproj'
     declaration.write_bytes(declaration.read_bytes().replace(b'</Project>',
         ('<ItemGroup><PackageReference Include="' + identity + '" Version="[1.0.0]" />'
-         '<PackageReference Include="SmartFormat.Extensions.Newtonsoft.Json" Version="[3.6.1]" /></ItemGroup></Project>').encode()))
+         '<PackageReference Include="' + application + '" Version="[' + version + ']" /></ItemGroup></Project>').encode()))
     candidate = project / 'target/qualification.candidate.json'
     candidate.parent.mkdir()
     lock = resolve(project, candidate, dotnet=compiler.dotnet, tools=tools,
         policy={'sources': [{'name': 'developer', 'path': str(feed), 'patterns': [identity]}]})
     (project / LOCK).write_bytes(canonical(lock) + b'\n')
     selected = {row['metadata']['package'] for row in lock['artifacts']}
-    if not {identity.lower(), 'smartformat.extensions.newtonsoft.json', 'smartformat', 'newtonsoft.json', 'zstring'} <= selected:
+    if not {identity.lower(), application.lower(), *(name.lower() for name in transitive)} <= selected:
         raise ValueError('native NuGet qualification graph did not capture actual transitive/local packages')
+    if serialization == 'memorypack' and not any(row['role'] == 'build-tool'
+            and row['metadata'].get('package') == 'memorypack.generator' for row in lock['artifacts']):
+        raise ValueError('native NuGet selection did not capture the actual executable serializer generator')
     if library.resolve(strict=True).parent != outside.resolve(strict=True) or feed.resolve(strict=True).parent != outside.resolve(strict=True):
         raise ValueError('qualification cleanup escaped its owned dependency directory')
     shutil.rmtree(library)
     shutil.rmtree(feed)
-    return {'formatVersion': 1, 'thirdParty': 'SmartFormat.Extensions.Newtonsoft.Json/3.6.1',
-        'independentApplicationSelections': [identity + '/1.0.0', 'SmartFormat.Extensions.Newtonsoft.Json/3.6.1'],
-        'transitives': ['SmartFormat', 'Newtonsoft.Json', 'ZString'], 'developerOwned': identity + '/1.0.0',
+    return {'formatVersion': 1, 'thirdParty': application + '/' + version,
+        'independentApplicationSelections': [identity + '/1.0.0', application + '/' + version],
+        'transitives': transitive, 'developerOwned': identity + '/1.0.0',
+        'generatedSerialization': {'generator': 'MemoryPack.Generator/1.21.4', 'type': 'CapturedPayload',
+            'ordinaryCalls': ['MemoryPackSerializer.Serialize', 'MemoryPackSerializer.Deserialize']} if serialization == 'memorypack' else None,
         'resourceDigest': digest(resource), 'managedAssemblyDigest': digest(assembly),
         'sourceDigest': digest(source.read_bytes()), 'offlineOriginals': 'unavailable-after-capture',
         'nativeGraphDigest': digest((project / 'nuget-resolved.lock.json').read_bytes()),

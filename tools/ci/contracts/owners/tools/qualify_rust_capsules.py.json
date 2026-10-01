@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all language qualification paths and inventory shared diagnostics plus the NativeAOT member coverage helper.",
+  "reviewReason": "Retain all historical qualification commands and add exact NuGet generator denial, explicit fixture approval, preserved failure causes and retained generated serialization source checks.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "917343bb355f71a9d84697d3b2c130e02cb97121acc5c3e40ebac1a370bc1b18"
+  "sha256": "a817a087ae096ab83921c0105a00335ece32da6014fb4fb5b3fe57a15d73413a"
 }

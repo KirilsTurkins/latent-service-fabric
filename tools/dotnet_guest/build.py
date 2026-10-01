@@ -18,7 +18,7 @@ from tools.build_snapshot import canonical
 
 BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
-    "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/composer.py", "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/composer.py", "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/outputs.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
@@ -90,6 +90,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     approval = approve_execution(verified, compiler.isolation, executable_recipe, executable_approval)
                 closure = prepare(project_path, work, output, 'dotnet', execution_approval=approval)
                 compiler.application_closure = closure
+                compiler.executable_approval = approval
             stage = "compile"
             write_json(output / "diagnostic-source.json", {
                 "capturedSource": str(temporary / "compiled/project/src"),
@@ -120,13 +121,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     data = read_file(output / name, 32 * 1024 * 1024)
                     materials.append({'name': name.removesuffix('.json'), 'digest': digest(data), 'size': len(data)})
                 if approval:
-                    from tools.application_dependency_store import directory_files
-                    generated_outputs = directory_files(temporary / 'compiled/generator-outputs') if (temporary / 'compiled/generator-outputs').exists() else {}
-                    if len(generated_outputs) > 8192 or sum(len(data) for data in generated_outputs.values()) > 64 * 1024 * 1024:
-                        raise ValueError('NuGet-executable-generated-output-limit')
-                    write_json(output / 'executable-input-outputs.json', {'formatVersion': 1, 'approvalIdentity': approval.identity,
-                        'outputs': {name: {'digest': digest(data), 'size': len(data)} for name, data in generated_outputs.items()},
-                        'cleanup': 'namespace-and-owned-process-reaped', 'hermetic': False})
+                    from tools.dotnet_guest.outputs import verify as verify_generated
+                    verify_generated(output, approval, source=temporary / 'compiled/generator-outputs')
                     data = read_file(output / 'executable-input-outputs.json', 32 * 1024 * 1024)
                     materials.append({'name': 'executable-input-outputs', 'digest': digest(data), 'size': len(data)})
             if any(file_identity(path, name) not in materials for name, path in paths.items()):

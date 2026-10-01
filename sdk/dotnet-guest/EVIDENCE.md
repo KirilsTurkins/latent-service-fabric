@@ -24,3 +24,13 @@ observations. They do not replace a source-bound build observation, the final
 WIT inspection or exact-head signed-node qualification. Member names alone do
 not establish type compatibility, reachable behavior, resource retirement,
 reflection support or ordinary HttpClient operation. Issue #687 remains open.
+
+The next source qualification selects MemoryPack 1.21.4 with its actual
+MemoryPack.Core and MemoryPack.Generator graph, alongside an independently
+declared developer assembly. Ordinary generated serialization must round-trip
+the assembly's embedded resource. The qualifier requires an initial unapproved
+generator denial, an exact fresh approval and retained generated payload bytes.
+Generated source is captured immediately after the owned NativeAOT process
+exits, with a receipt distinguishing successful and failed compiler commands.
+These source checks do not establish that the new fixture compiles or runs:
+NativeAOT, final composition and signed-node receipts remain pending.
