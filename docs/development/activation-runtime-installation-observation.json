@@ -1,0 +1,123 @@
+{
+  "authority": "none",
+  "configurationControls": {
+    "cases": [
+      "config::tests::providers::activation_runtime::input_requires_explicit_finite_categories_without_authority_overrides",
+      "config::tests::providers::activation_runtime::runtime_bindings_do_not_follow_clock_read_permissions",
+      "config::tests::providers::activation_runtime::protected_runtime_installation_preserves_finite_backend_limits_without_side_effects",
+      "config::tests::providers::activation_runtime::runtime_configuration_digest_binds_every_category_and_keeps_epoch_separate"
+    ],
+    "failed": 0,
+    "passed": 4
+  },
+  "environment": {
+    "cpus": 2,
+    "features": "ordinary default; latent-streams and development-test-node disabled",
+    "image": "rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97",
+    "memoryBytes": 4294967296,
+    "network": "none",
+    "profile": "debug0/incremental-false; unchanged .cargo/managed-guest.toml"
+  },
+  "evidence": "native",
+  "implementationCommits": [
+    "4fbd52bf6d96b04c6784be7e68e92e848f107ddd",
+    "38d7f8cdc08cf0f278e972d8a530ae73d7521820"
+  ],
+  "integrationParents": [
+    "7bca7f2f9518b01c082fd7b07fdc1d01ca7b3a68",
+    "f933f8c53913ec5550b7a0fe0ab5a49b149177c1",
+    "a753814a350ecb2e2c17449570888f1eca069c47",
+    "72bc241661eaae730287bf7c48e4853674bed533"
+  ],
+  "logs": {
+    "cargo.txt": {
+      "digest": "sha256:1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e",
+      "size": 36
+    },
+    "native-build.log": {
+      "digest": "sha256:60eae2a8ac868c4d93c761f3934730ccfe9b08c6a708c8c74f8eb1129cc32ebb",
+      "size": 61
+    },
+    "runtime-config-controls.log": {
+      "digest": "sha256:89ea5ef9ca88df07588c6259b06089f45880dfb295627798f02e679cce26abc3",
+      "size": 834
+    },
+    "runtime-startup-controls.log": {
+      "digest": "sha256:2325831070f44aaf91db4b50d40cea4b71dec9b8e4708e154255c1aaa2057164",
+      "size": 393
+    },
+    "rustc.txt": {
+      "digest": "sha256:b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4",
+      "size": 196
+    }
+  },
+  "nativeTools": [
+    {
+      "digest": "sha256:c4de3cf0c9480f5d7465c767a30fc8e89ec3121882e2af8b196597665fa173c0",
+      "name": "latent"
+    },
+    {
+      "digest": "sha256:1ed890da0efdefbb8a626602c7893a9353a4dd64b62d41593988e00eae6b992f",
+      "name": "latentd"
+    },
+    {
+      "digest": "sha256:e2bfe24d5bec1c54025f8a458c41221cc0775c8e0a73e233b1894ca975dae2b4",
+      "name": "latent-aot-compiler"
+    },
+    {
+      "digest": "sha256:bc4da0ca5a7cb5ea383d6b9d1a0f05d6742c6fd52e4f8ef262316c59bbca2ebd",
+      "name": "package"
+    },
+    {
+      "digest": "sha256:01c7edc2b79e3550416a984f8ea9d52f857239353bb00a51aa5b17985139ab74",
+      "name": "capsule_contracts"
+    },
+    {
+      "digest": "sha256:533f784dbb5cfca576e00f5d8d5e777e5a338dc3e18903d2e23344d637463bba",
+      "name": "capsule_authoring"
+    }
+  ],
+  "pending": [
+    "signed-runtime-guest-invocation",
+    "default-language-task-scheduling",
+    "sibling-host-io-progress",
+    "standard-HttpClient-execution",
+    "full-SDK-Library-acceptance"
+  ],
+  "preservedFailedAttempt": {
+    "configurationControlsExecuted": false,
+    "failure": "test-compilation-E0609-unknown-shutdown-report-fields",
+    "nativeToolsCompiled": true,
+    "sourceRevision": "4fbd52bf6d96b04c6784be7e68e92e848f107ddd"
+  },
+  "schemaVersion": "lsf.activation-installation.observation.v1",
+  "sourceInputInventory": {
+    "digest": "sha256:0a3871fe09697e3494bb04c8ee9549e12014c4144a87e7de351aaecf53aa24f3",
+    "size": 1340310
+  },
+  "sourceRecheckedAfterExecution": true,
+  "sourceRevision": "38d7f8cdc08cf0f278e972d8a530ae73d7521820",
+  "startupAndRetirement": {
+    "assertedZeroCounters": [
+      "connections",
+      "pending_requests",
+      "running_requests",
+      "workers",
+      "cleanup_jobs",
+      "failed_cleanup",
+      "sessions",
+      "handles",
+      "calls",
+      "results",
+      "io_calls",
+      "io_retained_bytes",
+      "control_owners",
+      "secret_generations",
+      "secret_references"
+    ],
+    "case": "standalone::start::tests::provider_startup::protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times",
+    "clean": true,
+    "cycles": 32,
+    "passed": true
+  }
+}
