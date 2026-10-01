@@ -731,6 +731,7 @@ pub(super) fn row_key(
     }
     RowKey { family, key }
 }
+#[must_use]
 pub fn command_row_key(identity: Identity) -> RowKey {
     row_key(Family::Command, b"command-v1\0", identity, None)
 }
@@ -742,6 +743,7 @@ pub fn attempt_row_key(identity: Identity, attempt: u64) -> RowKey {
         Some(attempt),
     )
 }
+#[must_use]
 pub fn result_row_key(identity: Identity, attempt: u64) -> RowKey {
     row_key(
         Family::Result,

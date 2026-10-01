@@ -49,6 +49,76 @@ fn advance_generation(fixture: &Fixture, read: &NamespaceRead) -> NamespaceRead 
     fixture.read()
 }
 
+fn query(fixture: &Fixture, read: &NamespaceRead) -> NamespaceAuthority {
+    let actor = principal("alice");
+    let scope = scope(
+        &actor,
+        Some("alice-order"),
+        &RecoverySelection::OriginalCaller,
+    );
+    let snapshot = fixture.snapshot();
+    let decision = fixture.decision(&snapshot, &actor, &scope, "acquire-query");
+    seal(
+        fixture,
+        fixture.policy.retain_decision(&decision).unwrap(),
+        read,
+        deadline(),
+    )
+    .unwrap()
+}
+
+#[test]
+fn query_delivery_rebinding_preserves_original_gate_and_business_snapshot() {
+    let fixture = Fixture::new();
+    let before = fixture.read();
+    let authority = query(&fixture, &before);
+    let original = authority.version();
+    let after = advance_generation(&fixture, &before);
+    let delivery = authority
+        .rebind_query_delivery(&fixture.policy, &before, &after)
+        .unwrap();
+    assert_eq!(authority.version(), original);
+    assert_eq!(delivery.version(), after.record().version);
+    assert_eq!(delivery.mode(), Mode::Query);
+    assert_eq!(delivery.activation_id(), authority.activation_id());
+    assert_eq!(delivery.deadline(), authority.deadline());
+    assert_eq!(delivery.ownership(), authority.ownership());
+    assert!(authority.cancellation().request());
+    assert!(delivery
+        .rebind_query_delivery(&fixture.policy, &after, &after)
+        .is_err());
+}
+
+#[test]
+fn query_delivery_rebinding_refuses_new_schema_revocation_and_command_authority() {
+    let fixture = Fixture::new();
+    let before = fixture.read();
+    let authority = query(&fixture, &before);
+    let command = seal(&fixture, retained(&fixture), &before, deadline()).unwrap();
+    assert!(command
+        .rebind_query_delivery(&fixture.policy, &before, &before)
+        .is_err());
+    let mut changed = before.record().clone();
+    changed.state_schema = format!("sha256:{}", "8".repeat(64));
+    fixture
+        .database
+        .apply(AtomicBatch {
+            expectations: vec![before.expectation()],
+            mutations: vec![RowMutation {
+                key: before.expectation().key,
+                value: Some(changed.encode().unwrap()),
+            }],
+        })
+        .unwrap();
+    assert!(authority
+        .rebind_query_delivery(&fixture.policy, &before, &fixture.read())
+        .is_err());
+    fixture.update(None, "revoke-query-delivery");
+    assert!(authority
+        .rebind_query_delivery(&fixture.policy, &before, &before)
+        .is_err());
+}
+
 #[test]
 fn retained_admission_uses_fresh_engine_generation_and_original_activation_deadline() {
     let fixture = Fixture::new();

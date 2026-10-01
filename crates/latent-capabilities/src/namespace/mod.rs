@@ -11,6 +11,8 @@ mod tests;
 
 pub use control::{
     NamespaceControl, NamespaceControlFence, NamespaceControlRequest, PreparedNamespaceControl,
+    PreparedRetainedNamespaceControl, RetainedNamespaceControlFence,
+    RetainedNamespaceControlRequest,
 };
 pub use gate::{
     AcceptedCommit, CommitCancellation, CommitCancellationDisposition, CommitIoAcceptance,
@@ -314,6 +316,53 @@ impl NamespaceAuthority {
             version: record.version,
             activation: self.activation.clone(),
             mode: Mode::Inspection,
+            ceiling: self.ceiling,
+            deadline: self.deadline,
+            gate: Arc::clone(&self.gate),
+            selection: self.selection.clone(),
+            lifecycle: Arc::clone(&self.lifecycle),
+        })
+    }
+
+    /// Retain the original query authority while checking a freshly read
+    /// lifecycle row for delivery. Ordinary business generation changes do not
+    /// replace the original query snapshot. History checks belong to the same
+    /// protected read that supplied `current` before this short policy fence.
+    pub fn rebind_query_delivery(
+        &self,
+        store: &PolicyStore,
+        original: &NamespaceRead,
+        current: &NamespaceRead,
+    ) -> Result<Self, PlatformError> {
+        let before = original.record();
+        let after = current.record();
+        if self.mode != Mode::Query
+            || before.version != self.version
+            || before.tenant != self.ownership.tenant
+            || before.id.0 != self.ownership.namespace
+            || after.tenant != before.tenant
+            || after.id != before.id
+            || after.version.incarnation != before.version.incarnation
+            || after.state_schema != before.state_schema
+            || after.status != NamespaceStatus::Active
+            || Instant::now() >= self.deadline
+        {
+            return Err(denied());
+        }
+        self.gate.check()?;
+        store.with_retained_decision(&self.initial, &mut |actual, _| {
+            self.check_target(actual, "acquire-query")?;
+            self.lifecycle
+                .with_current(current, false, || Ok(()))
+                .map_err(|_| denied())
+        })?;
+        Ok(Self {
+            initial: Arc::clone(&self.initial),
+            ownership: self.ownership.clone(),
+            publication: self.publication.clone(),
+            version: after.version,
+            activation: self.activation.clone(),
+            mode: Mode::Query,
             ceiling: self.ceiling,
             deadline: self.deadline,
             gate: Arc::clone(&self.gate),

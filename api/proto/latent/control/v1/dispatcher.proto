@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/transaction/v1/transaction.proto";
+import "latent/control/v1/common.proto";
+import "latent/control/v1/state.proto";
+
+// The installed dispatcher is node-wide. This is an explicit requested scope,
+// never a node-operator grant, tenant pause or physical-retirement proof.
+enum DispatcherScope {
+  DISPATCHER_SCOPE_UNSPECIFIED = 0;
+  DISPATCHER_SCOPE_NODE = 1;
+}
+
+message DispatcherGeneration {
+  uint64 owner_epoch = 1;
+  uint64 revision = 2;
+}
+
+enum DispatcherAction {
+  DISPATCHER_ACTION_UNSPECIFIED = 0;
+  DISPATCHER_ACTION_PAUSE = 1;
+  DISPATCHER_ACTION_RESUME = 2;
+}
+
+enum DispatcherFailure {
+  DISPATCHER_FAILURE_UNSPECIFIED = 0;
+  DISPATCHER_FAILURE_NONE = 1;
+  DISPATCHER_FAILURE_AUTHORITY = 2;
+  DISPATCHER_FAILURE_STORE = 3;
+  DISPATCHER_FAILURE_WORKER = 4;
+  DISPATCHER_FAILURE_RESTORE_CHECKPOINT = 5;
+  DISPATCHER_FAILURE_ADMISSION_CLOSED = 6;
+  DISPATCHER_FAILURE_CONFIGURATION = 7;
+}
+
+message InspectDispatcherRequest {
+  latent.transaction.v1.TransactionProfile profile = 1;
+  DispatcherScope scope = 2;
+}
+
+message DispatcherSnapshot {
+  DispatcherGeneration generation = 1;
+  bool paused = 2;
+  bool pending_control = 3;
+  bool restore_review_required = 4;
+  bool admission_closed = 5;
+  bool quarantined = 6;
+  DispatcherFailure failure = 7;
+  uint64 queued = 8;
+  uint64 active_jobs = 9;
+  uint64 retained_attempt_bytes = 10;
+  uint64 live_workers = 11;
+  uint64 accepted_effects = 12;
+  uint64 physical_owners = 13;
+  uint64 quarantined_physical_owners = 14;
+  uint64 command_owners = 15;
+  uint64 claims = 16;
+  uint64 pending_effects = 17;
+  uint64 uncertain_effects = 18;
+  uint64 blocked_effects = 19;
+  uint64 dead_letter_effects = 20;
+  // Durable counts are the last native observation; ownership counters are
+  // separate current observations, not a cross-owner atomic snapshot.
+  uint64 counts_observed_at_unix_millis = 21;
+  bool clock_continuity_proven = 22;
+}
+
+message InspectDispatcherResponse {
+  DispatcherSnapshot dispatcher = 1;
+  AuditAck audit_ack = 2;
+}
+
+message ControlDispatcherRequest {
+  latent.transaction.v1.TransactionProfile profile = 1;
+  DispatcherScope scope = 2;
+  string operation_id = 3;
+  DispatcherAction action = 4;
+  DispatcherGeneration expected_generation = 5;
+}
+
+message DispatcherOperationReceipt {
+  string operation_id = 1;
+  string receipt_id = 2;
+  DispatcherAction action = 3;
+  string authenticated_operator = 4;
+  string actor_tenant = 5;
+  DispatcherGeneration before_generation = 6;
+  DispatcherGeneration after_generation = 7;
+  uint64 observed_at_unix_millis = 8;
+  bool clock_continuity_proven = 9;
+  bool restore_review_required = 10;
+  StateOperationDisposition disposition = 11;
+}
+
+message ControlDispatcherResponse {
+  DispatcherOperationReceipt receipt = 1;
+  bool replayed = 2;
+  // Historical receipt recovery never republishes an old resume. Publication
+  // is logical admission; accepted native work may still be physically live.
+  bool published = 3;
+  bool paused = 4;
+  AuditAck audit_ack = 5;
+}
+
+message GetDispatcherOperationRequest {
+  // Preserve the exact original action, epoch and revision. Authentication
+  // supplies the stable actor; lookup never refreshes a precondition.
+  ControlDispatcherRequest original = 1;
+}
+
+message GetDispatcherOperationResponse {
+  DispatcherOperationReceipt receipt = 1;
+  AuditAck audit_ack = 2;
+}
+
+// Existing private authenticated management transports only. Every operation
+// requires current trusted node-operator authority and reserved recovery
+// admission. Generic resume cannot clear restored-history review.
+service DispatcherService {
+  rpc InspectDispatcher(InspectDispatcherRequest) returns (InspectDispatcherResponse);
+  rpc ControlDispatcher(ControlDispatcherRequest) returns (ControlDispatcherResponse);
+  rpc GetDispatcherOperation(GetDispatcherOperationRequest) returns (GetDispatcherOperationResponse);
+}

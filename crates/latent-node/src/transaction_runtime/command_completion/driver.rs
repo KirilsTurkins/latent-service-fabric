@@ -619,7 +619,10 @@ impl CommandCoordinator {
                 .map(|identity| identity.hex())
                 .collect();
         }
-        let delivery_failure = permission.err();
+        let (delivery_fence, delivery_failure) = match permission {
+            Ok(fence) => (Some(Arc::new(fence)), None),
+            Err(error) => (None, Some(error)),
+        };
         let outcome = match &delivery_failure {
             Some(error) => failure(outcome, error.clone()),
             None => outcome,
@@ -633,6 +636,7 @@ impl CommandCoordinator {
         ) {
             Ok(mut completion) => {
                 completion.delivery_failure = delivery_failure;
+                completion.delivery_fence = delivery_fence;
                 completion
             }
             Err(error) => TransactionCompletion::ordinary(failed(
@@ -650,7 +654,10 @@ impl CommandCoordinator {
         memory: Arc<HostMemoryReservation>,
     ) -> TransactionCompletion {
         let permission = self.release_permission(read, &record).await;
-        let delivery_failure = permission.err();
+        let (delivery_fence, delivery_failure) = match permission {
+            Ok(fence) => (Some(Arc::new(fence)), None),
+            Err(error) => (None, Some(error)),
+        };
         let outcome = match &delivery_failure {
             Some(error) => failure(outcome, error.clone()),
             None => failure(outcome, errors::atomic(AtomicError::RecoveryRequired)),
@@ -663,6 +670,7 @@ impl CommandCoordinator {
             Some(memory),
         );
         completion.delivery_failure = delivery_failure;
+        completion.delivery_fence = delivery_fence;
         completion
     }
 }

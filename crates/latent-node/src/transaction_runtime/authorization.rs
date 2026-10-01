@@ -157,6 +157,16 @@ impl StateAuthorization {
         Ok(self.with_namespace(authority, namespace))
     }
 
+    pub(super) fn rebind_query_delivery(
+        &self,
+        namespace: NamespaceRead,
+    ) -> Result<Self, PlatformError> {
+        let authority =
+            self.authority
+                .rebind_query_delivery(&self.policy, &self.namespace, &namespace)?;
+        Ok(self.with_namespace(authority, namespace))
+    }
+
     fn with_namespace(&self, authority: NamespaceAuthority, namespace: NamespaceRead) -> Self {
         Self {
             policy: Arc::clone(&self.policy),

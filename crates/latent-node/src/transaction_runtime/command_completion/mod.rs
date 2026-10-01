@@ -5,6 +5,7 @@
 
 use latent_activation::ActivationOutcome;
 mod admission;
+mod delivery;
 mod driver;
 mod errors;
 mod lookup;
@@ -13,6 +14,7 @@ mod output;
 pub use admission::{
     CommandAdmission, CommandAdmissionFactory, CommandAdmissionSelection, CommandCoordinator,
 };
+pub use delivery::ResultDeliveryFence;
 pub use output::{CanonicalCommandResult, CommandOutput, CommandResultCodec};
 
 use latent_commit::atomic::{CommandRecord, DurableResult, Outcome};
@@ -54,8 +56,8 @@ impl TransactionDisposition {
     pub const fn observation(&self) -> CommandObservation {
         self.observation
     }
-    /// Consumers must check this before releasing result/receipt data. Internal
-    /// durability survives a later read denial without granting public access.
+    /// Reports authorization at observation time. Consumers must additionally
+    /// use the completion's current delivery fence when releasing data.
     #[must_use]
     pub const fn read_authorized(&self) -> bool {
         self.read_authorized
@@ -84,6 +86,7 @@ pub struct TransactionCompletion {
     outcome: ActivationOutcome,
     disposition: Option<TransactionDisposition>,
     delivery_failure: Option<PlatformError>,
+    delivery_fence: Option<Arc<ResultDeliveryFence>>,
 }
 impl TransactionCompletion {
     /// Ordinary/query completion creates no durable command observation.
@@ -93,7 +96,22 @@ impl TransactionCompletion {
             outcome,
             disposition: None,
             delivery_failure: None,
+            delivery_fence: None,
         }
+    }
+
+    /// Query completion with an actual retained read authority. Creating an
+    /// ordinary completion alone never authorizes response data.
+    #[must_use]
+    pub fn ordinary_authorized(outcome: ActivationOutcome, fence: ResultDeliveryFence) -> Self {
+        let mut completion = Self::ordinary(outcome);
+        completion.delivery_fence = Some(Arc::new(fence));
+        completion
+    }
+
+    #[must_use]
+    pub fn delivery_fence(&self) -> Option<&ResultDeliveryFence> {
+        self.delivery_fence.as_deref()
     }
 
     #[must_use]
@@ -139,8 +157,14 @@ impl TransactionCompletion {
         ActivationOutcome,
         Option<TransactionDisposition>,
         Option<PlatformError>,
+        Option<Arc<ResultDeliveryFence>>,
     ) {
-        (self.outcome, self.disposition, self.delivery_failure)
+        (
+            self.outcome,
+            self.disposition,
+            self.delivery_failure,
+            self.delivery_fence,
+        )
     }
 
     fn observed(
@@ -159,6 +183,7 @@ impl TransactionCompletion {
                 _memory: memory,
             }),
             delivery_failure: None,
+            delivery_fence: None,
         }
     }
 

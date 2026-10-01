@@ -244,7 +244,7 @@ impl Inner {
             });
             let activation_id = lifecycle.activation_id().clone();
             let resolved_revision = lifecycle.resolved.clone();
-            let (outcome, transaction, delivery_failure) =
+            let (outcome, transaction, delivery_failure, result_delivery_fence) =
                 lifecycle.complete(outcome).await.into_parts();
             ActivationReceipt {
                 activation_id,
@@ -252,6 +252,7 @@ impl Inner {
                 outcome,
                 transaction,
                 delivery_failure,
+                result_delivery_fence,
             }
         });
         ActivationHandle {

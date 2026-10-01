@@ -130,7 +130,7 @@ jobs:
         run: |
           packages="$(python3 - <<'PYCODE'
           from tools.ci_profile import classify_paths
-          selection = classify_paths(['crates/latent-state/src/lib.rs'])
+          selection = classify_paths(['crates/latent-workflows/src/lib.rs'])
           assert selection.profile == 'fast'
           print(selection.outputs()['fast_packages'])
           PYCODE
