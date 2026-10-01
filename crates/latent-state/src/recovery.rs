@@ -275,5 +275,29 @@ pub fn require_namespace_ready(
     Ok(())
 }
 
+/// Exact non-authorizing read observations for a subsequent physical CAS.
+/// A ready namespace, its history and the global recovery guard must all remain
+/// unchanged; an absent legacy history/guard is an explicit absent-row fence.
+pub fn namespace_readiness_expectations(
+    view: &ReadView,
+    tenant: &TenantId,
+    namespace: &StateNamespaceId,
+    incarnation: u64,
+) -> Result<[ExpectedRow; 3], StoreError> {
+    require_namespace_ready(view, tenant, namespace, incarnation)?;
+    let namespace_key = RowKey {
+        family: Family::Namespace,
+        key: namespace_record_key(tenant, namespace).map_err(|_| StoreError::Invalid)?,
+    };
+    let history = crate::namespace::history::history_key(tenant, namespace, incarnation)
+        .map_err(|_| StoreError::Invalid)?;
+    let observe = |key: RowKey| view.get(&key).map(|value| ExpectedRow { key, value });
+    Ok([
+        observe(guard_key())?,
+        observe(namespace_key)?,
+        observe(history)?,
+    ])
+}
+
 #[cfg(test)]
 mod tests;

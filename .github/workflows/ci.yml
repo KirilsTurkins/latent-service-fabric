@@ -130,8 +130,13 @@ jobs:
         run: |
           packages="$(python3 - <<'PYCODE'
           from tools.ci_profile import classify_paths
+          from tools import ci_suite_inventory as registry
+          state = classify_paths(['crates/latent-state/src/lib.rs'])
+          assert state.profile == 'full'
           selection = classify_paths(['crates/latent-workflows/src/lib.rs'])
-          assert selection.profile == 'fast'
+          assert selection.profile == 'full'
+          assert selection.fast_packages
+          assert set(selection.fast_packages) < set(registry.load()['fastPackages'])
           print(selection.outputs()['fast_packages'])
           PYCODE
           )"

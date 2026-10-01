@@ -71,6 +71,7 @@ impl ResultMaintenanceOwner {
         let _physical_step = self.enter()?;
         authorize(None)?;
         let view = store.snapshot()?;
+        latent_state::recovery::require_ready(&view)?;
         let old = view
             .get(&MaintenanceProgress::key())?
             .ok_or(AtomicError::RecoveryRequired)?;
@@ -87,6 +88,14 @@ impl ResultMaintenanceOwner {
         let mut command = None;
         if let Some((key, bytes)) = page.rows.first() {
             let record = CommandRecord::decode(bytes)?;
+            batch
+                .expectations
+                .extend(latent_state::recovery::namespace_readiness_expectations(
+                    &view,
+                    &TenantId(record.key.tenant.clone()),
+                    &StateNamespaceId(record.key.namespace.clone()),
+                    crate::atomic::incarnation(&record.key)?,
+                )?);
             authorize(Some(&record))?;
             clock.time.check(record.clock_floor)?;
             validate_linked_row(&view, key, bytes)?;
@@ -103,6 +112,13 @@ impl ResultMaintenanceOwner {
                 }
             }
             command = Some(record);
+        }
+        if command.is_none() {
+            let key = latent_state::recovery::guard_key();
+            batch.expectations.push(ExpectedRow {
+                value: view.get(&key)?,
+                key,
+            });
         }
         progress.generation = progress
             .generation
@@ -189,10 +205,6 @@ fn retire_body(
     );
     replace(batch, result_key, Some(old), marker);
     replace(batch, usage_key, usage_bytes, usage.encode());
-    batch.expectations.push(ExpectedRow {
-        key: namespace_key,
-        value: Some(namespace),
-    });
     Ok(reclaimed)
 }
 

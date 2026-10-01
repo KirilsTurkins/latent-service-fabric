@@ -1,6 +1,6 @@
 //! Controlled external gateway peer: host cleanup is not downstream rollback.
 //! Invoked by the existing lost-mutation regression, using the production broker,
-//! original activation budget, IoRuntime and HttpProvider. No new host import.
+//! original activation budget, `IoRuntime` and `HttpProvider`. No new host import.
 use super::*;
 use std::sync::atomic::AtomicUsize;
 use tokio::{sync::oneshot, task::JoinSet};

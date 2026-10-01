@@ -39,7 +39,7 @@
       {
         "if": "needs.profile.outputs.profile == 'full'",
         "name": "Qualify the genuinely narrow reverse-dependent fixture",
-        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-workflows/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
+        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nfrom tools import ci_suite_inventory as registry\nstate = classify_paths(['crates/latent-state/src/lib.rs'])\nassert state.profile == 'full'\nselection = classify_paths(['crates/latent-workflows/src/lib.rs'])\nassert selection.profile == 'full'\nassert selection.fast_packages\nassert set(selection.fast_packages) < set(registry.load()['fastPackages'])\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
       },
       {
         "if": "always()",
@@ -57,7 +57,7 @@
   },
   "jobId": "fast",
   "kind": "job",
-  "reviewReason": "Qualify the unchanged narrow-runner contract with latent-workflows after state gains real runtime consumers; preserve automatic full state reverse-dependency selection.",
+  "reviewReason": "The actual State reverse dependency graph requires full engine qualification. Preserve that explicit classification and qualify the same original bounded host runner with the real smaller Workflows reverse dependency graph; every suite, recipe and historical obligation is retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "latent.http-effect.conformance.v1",
+  "sourceRevision": "cc797f977d67ae939cba7997d0dc9eabfd56909e",
+  "sourceClean": true,
+  "platform": "linux-x86_64",
+  "rustVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "endpointFixtureVersion": 1,
+  "lostResponseProxyVersion": 1,
+  "owner": "latent-http.lib.latent-http",
+  "nativeExecution": {
+    "passed": 54,
+    "failed": 0,
+    "ignored": 0
+  },
+  "strictLint": {
+    "package": "latent-http",
+    "allTargets": true,
+    "allFeatures": true,
+    "noDeps": true,
+    "warningsAsErrors": true
+  },
+  "artifact": {
+    "path": "target/debug/deps/latent_http-8d19481f201c78d1",
+    "sha256": "2b8f461840c8b2c6ae9f50ce2a14be53c3df85d7f38579b53bdb34dbc4353861"
+  },
+  "buildInventorySha256": "7324612414080c506a50fae350c22acac6c3319cbd47f6e8528d69a6e63ca4f0",
+  "logSha256": "20c47f54f8ff2d2bf607a6caff748ac2a0e2a3427b98d8c980b84df7ac3037fb",
+  "strictLintLogSha256": "508c6bbe4406510a57eab88cd14575469b1510cde515a97d5aaed2fab42b5234",
+  "sourceSha256": {
+    "Cargo.lock": "d9af3a805a8dea05f6bc15e1238ee2bcb1d13256a1daa0bb55e8f62bab365da0",
+    "Cargo.toml": "880b8d05023147de17a4bee061fb47a793660e164a7176c7a2c60a8ea57d0e1f",
+    "crates/latent-http/Cargo.toml": "a9797c1ffa51b35770eb59f1dcffe4c4d77a372eb61cb40816b3c4b5f1f09978",
+    "crates/latent-http/src/effects.rs": "360425141439ad46d4127d9dfc2466baf54c912107692e667df1efd7002d8563",
+    "crates/latent-http/src/tests/effects.rs": "39b976b9ebf52216e582bfd4dc3661b936e8b6d3d95ed1f5b238622482675ac6",
+    "crates/latent-http/src/network.rs": "8823ab19602bb127b3559933d320956361bca376fe9e6d6896d5b03129f522a2",
+    "crates/latent-http/src/tests/gateway_boundary.rs": "b3b578db4f40359f45ae5c5e4eadedbf757f3310d8b7a7b77c8cd72a179c13a5",
+    "tools/ci/suites.json": "850d01ad7255536562d343d93cf22233295ea550809973306664193fa4d58696",
+    "contracts/effects/http-put-once-v1.json": "177e8b0d7f3c50cf275bac097b33ae5966b9fa4a8e54f66a243f24c90d38ca34",
+    "crates/latent-http/src/effects/contract.rs": "cf3121a61fbea011f715a378db33392210e85753509467c0c09525222776d4a1",
+    "crates/latent-http/src/effects/operation.rs": "9bb6c325d6bcc7b0e83384ce341160c5c5eec9323c422caa1690e89635087149",
+    "crates/latent-http/src/effects/receipt.rs": "561c8f87b83a7b7d2b919650e3ccc606f7a5faa0726a058576514ce08e1200db",
+    "crates/latent-http/src/tests/effects/dispatcher.rs": "2608b21fb4051081265275583e3e1faa6997988a1c5f11816110b81e32058977",
+    "crates/latent-http/src/tests/effects/endpoint/wire.rs": "461b014e735c80afdd977e397a7cd220922582c5dbe0dfb5b09d562f2d855a7c",
+    "crates/latent-http/src/tests/effects/endpoint.rs": "3fd1583b1963480ffa3038935fdee6e0e2caefa4db16ed8cc2af7c04db97068a",
+    "crates/latent-http/src/tests/effects/fixture.rs": "106c67104f589df6426277af0b73bf57281fe4f50071f91e6dc4756f161fa62e",
+    "crates/latent-http/src/tests/effects/ownership.rs": "c765e8983a365738af0b6df70a12641b0398384b58f0f1908a56e2142e281e0a",
+    "crates/latent-http/src/tests/effects/proxy.rs": "063ff087c768e7c3d7b7337d54187b04f3a20d6bb3c9cfcd1b7a62c9df7b40fc",
+    "crates/latent-http/src/tests/effects/reconciliation.rs": "06c207296c0dcd699f84537c834b0d8af6826895d3966f4d1e500ab1f696032d"
+  },
+  "qualificationBoundary": {
+    "syntheticApprovedTlsPeer": true,
+    "actualProtectedDispatcherStore": true,
+    "actualAtomicRemoteCounterAndReceipt": true,
+    "upperGuestCommitExercised": false,
+    "genericHttpQualified": false,
+    "commercialEndpointsCertified": false
+  }
+}
