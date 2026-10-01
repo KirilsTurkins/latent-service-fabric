@@ -75,6 +75,8 @@ and replace `greeting` in the creation command with either template name.
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
 
+Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers nullable options, `ulong`, disposable view/page owners and the captured profile, schema and binding companion. The host owns commitment, and signed transaction execution has its own qualification matrix. The tutorial below retains its existing stateless profile.
+
 ## 2. Build and package the project
 
 ```bash

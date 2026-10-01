@@ -69,6 +69,8 @@ The generated SDK only includes imports present in the application world:
 | Local service | Typed payload and declared-error result; cancellation propagates to the child. |
 | Random | Bounded byte count and full-width unsigned value. |
 | Metrics | Typed single counter observation, bounded labels and no retries. |
+| State (Phase 4) | Disposable command/fresh-query owners, typed get/put/delete/scan and bounded page owners. |
+| Intents (Phase 4) | Logical binding/operation/payload staged through the canonical command owner; host-owned commitment. |
 
 `Owner<T, TKind>` invalidates before consuming effects, rejects use after
 close and concurrent/reentrant borrows, and never uses a finalizer for release.
