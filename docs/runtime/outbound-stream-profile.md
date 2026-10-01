@@ -133,6 +133,7 @@ original deadline and currentness checks. No idle authenticated stream is pooled
 | Cumulative transfer | 1 MiB each direction/connection, 2 MiB combined/activation |
 | Metadata | Prepay 1 KiB table row, 16 KiB owner/operation state |
 | Socket buffers | Request send 16 KiB/receive 32 KiB; reserve 96 KiB logical kernel allowance, inspect actual OS sizes and reject overflow |
+| DNS native state | Reserve 64 KiB original native allowance; request send 4 KiB/receive 8 KiB and reject actual combined sizes above 24 KiB before bind/connect; one owned UDP or same-server TCP fallback socket |
 | Host TLS | Separate 256 KiB logical allowance plus bounded configured trust roots; physical peak qualification remains required |
 | Lifetime | Idle <=2 seconds, absolute <=10 seconds, narrowed by parent/root deadline |
 | Waiters | One read, one write and one readiness waiter; bounded #736 wait/timer/frame admission |

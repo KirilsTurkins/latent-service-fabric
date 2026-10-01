@@ -16,7 +16,7 @@ application credentials or host key paths.
 
 | Evidence | Executed source boundary | Result |
 | --- | --- | --- |
-| Native TCP owners | `latent-streams` real loopback sockets and UDP DNS peer, original sealed policy/catalog/budget | 12 passing cases: actual partial read/EOF/send half-close, chunk backpressure before copy, retained chunks after socket closure, dropped unpolled operation, alternate endpoint denial, revocation before write, revocation during pending read, provider retirement during pending read, explicit host TLS rejection, rotation/drain retaining actual old-generation owners, and autonomous idle/DNS expiry of inactive sockets |
+| Native TCP/DNS owners | `latent-streams` real loopback sockets and UDP DNS peer, original sealed policy/catalog/budget | 13 passing cases: actual partial read/EOF/send half-close, chunk backpressure before copy, retained chunks after socket closure, dropped unpolled operation, alternate endpoint denial, revocation before write, revocation during pending read, provider retirement during pending read, explicit host TLS rejection, rotation/drain retaining actual old-generation owners, autonomous idle/DNS expiry of inactive sockets, and pending DNS cancellation with independently observed kernel descriptor retirement |
 | Existing broker behavior | Existing `latent-capabilities` library suite | 125 passing cases, including HTTP/provider audit, cancellation, fair finite queues, delayed physical retirement and exact authority bookkeeping contention |
 | Bounded DNS | `latent-network` real UDP/TCP resolver peers | 3 passing cases: truncated UDP to same explicit TCP resolver, preallocation TCP length rejection and exact special-address policy |
 | Canonical component | Maintained encoded Component Model guest, package/WIT evidence, ordinary Wasmtime backend and actual TCP peer | 6 passing cases: partial owned chunks/EOF, three fresh activations on the same execution cell, oversized byte-list rejection before send, terminal trap/wrong kind/stale resources, root cancellation and policy revocation while a canonical read waits, 256 dormant deployments with zero Stores and socket owners |
@@ -35,6 +35,15 @@ The provider prepays kernel socket allowance before allocation and rejects OS
 send/receive sizes beyond its reservation. Original native-memory guards remain
 with physical sockets, pending futures, resident payload and the canonical copy.
 This is accounting evidence; RSS/allocator/kernel peak measurement is pending.
+DNS prepays 64 KiB on the same original activation and provider ledgers, requests
+4 KiB send/8 KiB receive buffers and inspects an actual 24 KiB combined ceiling
+before UDP bind or TCP fallback connect. Real scratch/socket allocation confirms
+the native peak reservation; cache hits create no new resolver socket. The
+pending DNS case observes the controlled socket inode in `/proc/net/udp` and
+`/proc/self/fd`: cancellation acknowledgement retains its original charge, and
+only actual owned-future destruction removes that descriptor and refunds live
+memory. The cumulative attempted-connect charge remains spent, with no TCP
+peer contact.
 No network operation is replayed by a currentness inspection. Accepted original
 work checks its pinned authority every 10 milliseconds while suspended and again
 before a socket syscall; changing the publication/policy/provider epoch closes

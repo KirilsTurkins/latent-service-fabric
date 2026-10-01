@@ -1,23 +1,58 @@
 use super::decode;
 use crate::NetworkError;
+use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use std::net::SocketAddr;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpSocket, UdpSocket},
 };
 
-pub(super) async fn run(server: SocketAddr, packet: &[u8]) -> Result<Vec<u8>, NetworkError> {
+const MAXIMUM_SOCKET_BUFFER_BYTES: u32 = 24 * 1024;
+
+pub(super) async fn run(
+    server: SocketAddr,
+    packet: &[u8],
+    allocated: &mut (dyn FnMut() + Send),
+) -> Result<Vec<u8>, NetworkError> {
     if !(12..=512).contains(&packet.len()) {
         return Err(NetworkError::DnsFailed);
     }
-    let bind = if server.is_ipv4() {
-        "0.0.0.0:0"
+    let (domain, bind): (_, SocketAddr) = if server.is_ipv4() {
+        (
+            Domain::IPV4,
+            "0.0.0.0:0".parse().expect("literal IPv4 bind"),
+        )
     } else {
-        "[::]:0"
+        (Domain::IPV6, "[::]:0".parse().expect("literal IPv6 bind"))
     };
-    let socket = UdpSocket::bind(bind)
-        .await
+    // Configure and inspect the bounded buffers before bind can receive data.
+    let socket = Socket::new(domain, Type::DGRAM, Some(Protocol::UDP))
         .map_err(|_| NetworkError::DnsFailed)?;
+    allocated();
+    socket
+        .set_send_buffer_size(4096)
+        .map_err(|_| NetworkError::DnsFailed)?;
+    socket
+        .set_recv_buffer_size(8192)
+        .map_err(|_| NetworkError::DnsFailed)?;
+    let actual = socket
+        .send_buffer_size()
+        .and_then(|send| {
+            socket
+                .recv_buffer_size()
+                .map(|receive| send.saturating_add(receive))
+        })
+        .map_err(|_| NetworkError::DnsFailed)?;
+    if actual > MAXIMUM_SOCKET_BUFFER_BYTES as usize {
+        return Err(NetworkError::ResourceExhausted);
+    }
+    socket
+        .set_nonblocking(true)
+        .map_err(|_| NetworkError::DnsFailed)?;
+    socket
+        .bind(&SockAddr::from(bind))
+        .map_err(|_| NetworkError::DnsFailed)?;
+    let socket = UdpSocket::from_std(socket.into()).map_err(|_| NetworkError::DnsFailed)?;
     socket
         .connect(server)
         .await
@@ -46,22 +81,38 @@ pub(super) async fn run(server: SocketAddr, packet: &[u8]) -> Result<Vec<u8>, Ne
     }
     drop(socket);
     drop(buffer);
-    tcp(server, packet).await
+    tcp(server, packet, allocated).await
 }
 
-async fn tcp(server: SocketAddr, packet: &[u8]) -> Result<Vec<u8>, NetworkError> {
+async fn tcp(
+    server: SocketAddr,
+    packet: &[u8],
+    allocated: &mut (dyn FnMut() + Send),
+) -> Result<Vec<u8>, NetworkError> {
     let socket = if server.is_ipv4() {
         TcpSocket::new_v4()
     } else {
         TcpSocket::new_v6()
     }
     .map_err(|_| NetworkError::DnsFailed)?;
+    allocated();
     socket
         .set_send_buffer_size(4096)
         .map_err(|_| NetworkError::DnsFailed)?;
     socket
         .set_recv_buffer_size(8192)
         .map_err(|_| NetworkError::DnsFailed)?;
+    let actual = socket
+        .send_buffer_size()
+        .and_then(|send| {
+            socket
+                .recv_buffer_size()
+                .map(|receive| send.saturating_add(receive))
+        })
+        .map_err(|_| NetworkError::DnsFailed)?;
+    if actual > MAXIMUM_SOCKET_BUFFER_BYTES {
+        return Err(NetworkError::ResourceExhausted);
+    }
     let mut stream = socket
         .connect(server)
         .await

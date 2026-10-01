@@ -134,6 +134,18 @@ impl Resolver {
         &self,
         deadline: Instant,
     ) -> Result<ResolvedAnswers, NetworkError> {
+        self.resolve_with_expiry_observed(deadline, &mut || {})
+            .await
+    }
+
+    /// Confirm a caller's original prepaid native reservation after actual DNS
+    /// scratch/socket allocation. The caller retains that reservation until
+    /// this owned future is destroyed. A cache hit performs no such allocation.
+    pub async fn resolve_with_expiry_observed(
+        &self,
+        deadline: Instant,
+        allocated: &mut (dyn FnMut() + Send),
+    ) -> Result<ResolvedAnswers, NetworkError> {
         self.check(deadline)?;
         if let Some(answers) = self.cached()? {
             return Ok(ResolvedAnswers {
@@ -158,7 +170,7 @@ impl Resolver {
             });
         }
         let _active = Count::new(&self.active);
-        let (answers, expires) = timeout_at(deadline, self.query())
+        let (answers, expires) = timeout_at(deadline, self.query(allocated))
             .await
             .map_err(|_| NetworkError::DeadlineExceeded)??;
         self.check(deadline)?;
@@ -213,9 +225,13 @@ impl Resolver {
         Ok(*cache)
     }
 
-    async fn query(&self) -> Result<(Answers, Instant), NetworkError> {
+    async fn query(
+        &self,
+        allocated: &mut (dyn FnMut() + Send),
+    ) -> Result<(Answers, Instant), NetworkError> {
         let name = Name::from_ascii(format!("{}.", self.host.trim_end_matches('.')))
             .map_err(|_| NetworkError::DnsFailed)?;
+        allocated();
         let mut result = Answers::default();
         let mut expires = Instant::now() + Duration::from_secs(u64::from(self.maximum_ttl));
         for kind in [RecordType::A, RecordType::AAAA] {
@@ -233,7 +249,7 @@ impl Resolver {
                 query.metadata.recursion_desired = true;
                 query.add_query(Query::query(current.clone(), kind));
                 let packet = query.to_vec().map_err(|_| NetworkError::DnsFailed)?;
-                let received = exchange::run(self.server, &packet).await?;
+                let received = exchange::run(self.server, &packet, allocated).await?;
                 let decoded =
                     decode::response(&received, identifier, &current, kind, &self.policy)?;
                 expires = expires.min(Instant::now() + Duration::from_secs(u64::from(decoded.ttl)));

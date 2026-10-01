@@ -75,8 +75,11 @@ async fn truncated_fixture(oversized: bool) -> (SocketAddr, JoinHandle<()>) {
 async fn truncated_udp_uses_only_the_same_explicit_tcp_resolver_and_fixed_cache() {
     let (server, worker) = truncated_fixture(false).await;
     let resolver = resolver(server);
+    let mut allocations = 0;
     let answers = resolver
-        .resolve_with_expiry(Instant::now() + Duration::from_secs(2))
+        .resolve_with_expiry_observed(Instant::now() + Duration::from_secs(2), &mut || {
+            allocations += 1;
+        })
         .await
         .unwrap();
     assert_eq!(
@@ -84,15 +87,26 @@ async fn truncated_udp_uses_only_the_same_explicit_tcp_resolver_and_fixed_cache(
         vec!["127.0.0.1".parse::<std::net::IpAddr>().unwrap()]
     );
     worker.await.unwrap();
+    assert!(
+        allocations > 0,
+        "actual scratch and UDP/TCP owners were allocated"
+    );
+    let first_allocations = allocations;
     assert_eq!(resolver.usage().active, 0);
     assert_eq!(resolver.usage().cached_answers, 1);
     let cached = resolver
-        .resolve_with_expiry(Instant::now() + Duration::from_secs(1))
+        .resolve_with_expiry_observed(Instant::now() + Duration::from_secs(1), &mut || {
+            allocations += 1;
+        })
         .await
         .unwrap();
     assert_eq!(
         cached.valid_until, answers.valid_until,
         "a cache hit cannot renew authority lifetime"
+    );
+    assert_eq!(
+        allocations, first_allocations,
+        "a cache hit allocates no DNS owner"
     );
     resolver.close().unwrap();
     assert_eq!(resolver.usage().cached_answers, 0);

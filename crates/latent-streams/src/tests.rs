@@ -4,6 +4,8 @@ use latent_policy::capability::{StreamEndpoint, StreamTransport};
 
 #[cfg(unix)]
 mod currentness;
+#[cfg(target_os = "linux")]
+mod dns;
 #[cfg(unix)]
 mod fixture;
 #[cfg(unix)]

@@ -272,7 +272,7 @@ async fn create_socket(
             deadline,
         ),
         StreamResolution::Dns { .. } => {
-            let _dns_memory = scope.reserve_host_memory(64 * 1024)?;
+            let mut dns_memory = scope.reserve_host_memory(64 * 1024)?;
             let _dns_metadata = inner.pools.reserve_protocol_metadata(64 * 1024)?;
             let resolver = inner.resolvers[index]
                 .as_ref()
@@ -280,7 +280,8 @@ async fn create_socket(
             let answers = wait_current(
                 call.io(),
                 deadline,
-                resolver.resolve_with_expiry(deadline.into()),
+                resolver
+                    .resolve_with_expiry_observed(deadline.into(), &mut || dns_memory.confirm()),
             )
             .await?
             .map_err(network_error)?;

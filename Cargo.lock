@@ -1794,6 +1794,7 @@ dependencies = [
  "hickory-proto",
  "ipnet",
  "serde",
+ "socket2",
  "tokio",
 ]
 
