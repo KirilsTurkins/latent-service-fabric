@@ -165,7 +165,14 @@ python -m unittest tools.tests.test_standard_http
 ```
 
 The initial Windows run passes 30 peer/parser/observation controls. Normal-node
-streaming installation has three closed schema controls and four registered Rust
-configuration/startup controls; native execution at its new source is pending.
+streaming installation also passes three closed schema controls and four native
+Rust configuration/startup controls at source `4c47482b`. The pinned Rust 1.97.1
+Linux run builds every workspace crate from this source, retaining only external
+dependency caches; no older workspace executable qualifies it. The test binary
+is 170,246,304 bytes with SHA-256
+`a13c687e2f6c9b9e4b0404bcf9a926c60d68f2b35de56b5e03240cc3fbd54ed0`.
+The ordinary production-feature lifecycle control starts/stops 32 nodes and
+verifies credential retirement, clean I/O ownership and no destination contact.
+Both earlier setup failures are retained separately from the passing attempt.
 No standard language client, complete #680 acceptance, or production raw-stream
 enablement is claimed by these source and fixture checks.

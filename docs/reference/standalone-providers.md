@@ -113,9 +113,11 @@ retains the credential store before later provider/binding steps can fail, and
 rollback and normal shutdown close it through the existing owned cleanup path.
 The node's stopped report includes its actual retained secret generations and
 references. Installation opens no destination connection and creates no guest
-Store. The additive normal-node installation and its new native controls still
-require execution at their exact source; source/schema checks do not qualify
-ordinary default language HTTP clients.
+Store. At source `4c47482b`, all four new configuration/startup controls pass on
+the pinned Linux Rust 1.97.1 image with ordinary production features. The lifecycle
+control starts and stops 32 normal nodes, observes no destination contact, and
+requires zero retained credential generations/references and I/O owners after
+shutdown. These controls do not qualify ordinary default language HTTP clients.
 
 ## Other provider installations
 
