@@ -55,8 +55,8 @@ def forbidden_http(source: str, language: str) -> str:
     if language == "go":
         source = replace_once(source, '    "encoding/binary"',
             '    "encoding/binary"\n    http "wit_component/lsf/http"')
-        return replace_once(source, 'func Update(request UpdateRequest) wit.Result[Aggregate, BusinessError] {\n',
-            'func Update(request UpdateRequest) wit.Result[Aggregate, BusinessError] {\n'
+        return replace_once(source, 'func Update(request api.UpdateRequest) wit.Result[api.Aggregate, api.BusinessError] {\n',
+            'func Update(request api.UpdateRequest) wit.Result[api.Aggregate, api.BusinessError] {\n'
             f'    http.Send(http.Request{{Method: http.MethodGet, Url: "{URL}", Headers: []http.Header{{}},\n'
             '        Body: wit.None[[]uint8](), BodyMediaType: wit.None[string](),\n'
             '        IdempotencyKey: wit.None[string](), TimeoutMillis: wit.Some[uint64](1000)}).Ok()\n')
@@ -141,7 +141,10 @@ def create(directory: Path, language: str, variant: str, name: str | None = None
     dependency = read_file(project / "vendor/lsf/wit/platform/http-v2/package.wit")
     (project / SOURCES[language]).write_bytes(code.encode())
     (project / "wit/world.wit").write_bytes(world.encode())
-    target = project / "wit/deps/forbidden-http/package.wit"
+    # Keep the captured package's canonical directory. Compiler staging can
+    # resolve the same dependency independently; a second alias would declare
+    # the identical package twice in the authored world.
+    target = project / "wit/deps/http-v2/package.wit"
     target.parent.mkdir(parents=True, exist_ok=False)
     with target.open("xb") as output:
         output.write(dependency)
