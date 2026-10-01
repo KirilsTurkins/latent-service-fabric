@@ -28,4 +28,5 @@ latent-telemetry = { path = "../latent-telemetry" }
 tokio.workspace = true
 
 [dev-dependencies]
+tempfile.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }
