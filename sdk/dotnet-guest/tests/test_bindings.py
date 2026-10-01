@@ -15,6 +15,35 @@ from tools import dotnet_guest_bindings as bindings
 
 
 class BindingTests(unittest.TestCase):
+    def test_linker_metadata_selects_only_the_exact_main_world(self):
+        original = ('package tests:contract@1.0.0;\n\n'
+            'world service {\n  import input: interface { run: async func(value: u64) -> result<u64, string>; }\n}\n'
+            'world runtime-support {\n  import clock: interface { now: func() -> u64; }\n}\n'
+            'package latent:clock@0.1.0 {\n  world other { import monotonic; }\n}\n')
+        graph = {"packages": [{"name": "tests:contract@1.0.0"}, {"name": "latent:clock@0.1.0"}],
+                 "worlds": [{"name": "service", "package": 0}, {"name": "runtime-support", "package": 0},
+                            {"name": "other", "package": 1}]}
+        expected = original.replace('world runtime-support {\n  import clock: interface { now: func() -> u64; }\n}', '')
+        for world in ("service", "tests:contract/service@1.0.0"):
+            self.assertEqual(bindings.selected_world_metadata(original, graph, world), expected)
+        # A dependency world cannot replace the selected application world.
+        for world in ("future", "latent:clock/other@0.1.0"):
+            with self.subTest(world=world), self.assertRaisesRegex(bindings.BindingError, 'selection-required'):
+                bindings.selected_world_metadata(original, graph, world)
+
+    def test_single_world_metadata_is_unchanged_and_world_drift_fails_closed(self):
+        original = 'package tests:contract@1.0.0;\nworld service { export run: func() -> u64; }\n'
+        graph = {"packages": [{"name": "tests:contract@1.0.0"}], "worlds": [{"name": "service", "package": 0}]}
+        self.assertEqual(bindings.selected_world_metadata(original, graph, "service"), original)
+        for text in (original + 'world service {}\n', original.replace('world service', 'world other')):
+            with self.assertRaisesRegex(bindings.BindingError, 'metadata-drift'):
+                bindings.selected_world_metadata(text, graph, "service")
+        with self.assertRaisesRegex(bindings.BindingError, 'unbalanced'):
+            bindings.selected_world_metadata(original.replace(' }', ''), graph, "service")
+        changed = {**graph, "worlds": graph["worlds"] * 2}
+        with self.assertRaisesRegex(bindings.BindingError, 'selection-required'):
+            bindings.selected_world_metadata(original, changed, "service")
+
     def test_state_array_pin_repairs_only_the_exact_generated_memory_overload(self):
         raw = 'global::ServiceWorld.wit.Imports.latent.state.IKeyValueImports'
         original = ('namespace ServiceWorld.wit.Imports.latent.state;\n'
