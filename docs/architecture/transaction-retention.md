@@ -60,9 +60,11 @@ from engine corruption or uncertain commitment in the physical-owner wrapper.
 
 ## Physical recovery reserve
 
-Before ordinary admission opens, the host installs a finite reserve carved from
-the storage owner's existing workers, queue slots, accepted jobs, response bytes
-and read slots. Ordinary work cannot consume that reserve. Authorized status,
+The startup configuration selects a finite reserve within the storage owner's
+original fixed workers, queue slots, accepted jobs, response bytes and read
+slots. `install_recovery_capacity` only validates that exact installed profile;
+it refuses missing, changed or live configuration and cannot create capacity
+after startup. Ordinary work cannot consume that reserve. Authorized status,
 pause/reconciliation and maintenance callbacks use `with_recovery_store`; the
 resource class supplies no read or mutation permission.
 
@@ -79,3 +81,5 @@ revocation, corrupt payload links, clock/boot holds, durable page restart,
 overlap refusal, native snapshot pinning and saturation of the protected store.
 These tests qualify this finite profile. Public node/Java/HTTP execution evidence
 is supplied by the consuming runtime and application integration tickets.
+
+The [source-matched Linux evidence](../evidence/transaction-retention-foundation-397.json) records all 109 state and 45 commit cases and strict owner Clippy. The same native schedule first reproduced the old cumulative-clock failure, then passed the fixed source after a real database reopen. Original qualified source and failed attempts remain preserved. This evidence covers the linked retention and physical reserve foundations, while the consuming Java/HTTP qualification and the remaining #397 operations stay separate.

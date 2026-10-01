@@ -21,6 +21,8 @@ mod view_tokens;
 
 mod retention_cases;
 
+mod retention_cases;
+
 fn time(now: u64) -> CommandTime {
     CommandTime {
         unix_millis: now,
