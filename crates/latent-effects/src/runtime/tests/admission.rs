@@ -1,4 +1,94 @@
 use super::*;
+use latent_core::native_capacity::{
+    NativeAdmissionClass, NativeCapacityLimits, NativeCapacityOwner, NativeReservationRequest,
+};
+
+#[tokio::test]
+async fn command_capacity_projection_retains_exact_installed_global_owner_and_rejects_substitution()
+{
+    let fixture = Fixture::new().await;
+    let mut owner = fixture.start(config(), vec![], None).await.unwrap();
+    let source = owner.command_admission_source();
+    let source_clone = source.clone();
+    let capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+    let foreign = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+    assert!(matches!(
+        source.native_capacity(),
+        Err(DispatcherError::InvalidConfiguration)
+    ));
+    assert!(!source.uses_native_capacity(&capacity));
+    owner.bind_native_capacity(&capacity).unwrap();
+    owner.bind_native_capacity(&capacity.clone()).unwrap();
+    assert!(matches!(
+        owner.bind_native_capacity(&foreign),
+        Err(DispatcherError::InvalidConfiguration)
+    ));
+    let projection = source.native_capacity().unwrap();
+    assert!(projection.is_same_owner(&capacity));
+    assert!(source_clone.uses_native_capacity(&capacity));
+    assert!(!source.uses_native_capacity(&foreign));
+    let reservation = projection
+        .reserve(
+            NativeAdmissionClass::Ordinary,
+            NativeReservationRequest {
+                request_bytes: 1024,
+                work_bytes: 2048,
+                response_bytes: 4096,
+            },
+            Instant::now() + WATCHDOG,
+        )
+        .unwrap();
+    assert!(reservation.is_from_owner(&capacity));
+    assert_eq!(capacity.snapshot().unwrap().ordinary.slots, 1);
+    assert_eq!(foreign.snapshot().unwrap().ordinary.slots, 0);
+    source.capture().unwrap().retire();
+    owner.bind_native_capacity(&capacity).unwrap();
+    assert!(owner.bind_native_capacity(&foreign).is_err());
+    owner.close();
+    assert!(source.native_capacity().is_err());
+    assert!(source_clone.capture().is_err());
+    assert!(owner.bind_native_capacity(&capacity).is_err());
+    assert_eq!(capacity.snapshot().unwrap().ordinary.slots, 1);
+    drop(reservation);
+    assert_eq!(capacity.snapshot().unwrap().ordinary.slots, 0);
+    assert!(
+        owner
+            .shutdown(Instant::now() + WATCHDOG)
+            .await
+            .unwrap()
+            .clean
+    );
+    fixture.finish().await;
+}
+
+#[tokio::test]
+async fn first_command_capture_permanently_seals_unbound_capacity_after_actual_role_retirement() {
+    let fixture = Fixture::new().await;
+    let mut owner = fixture.start(config(), vec![], None).await.unwrap();
+    let source = owner.command_admission_source();
+    source.capture().unwrap().retire();
+    assert_eq!(owner.snapshot().unwrap().command_owners, 0);
+    let capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+    assert!(matches!(
+        owner.bind_native_capacity(&capacity),
+        Err(DispatcherError::InvalidConfiguration)
+    ));
+    assert!(matches!(
+        source.native_capacity(),
+        Err(DispatcherError::InvalidConfiguration)
+    ));
+    source.capture().unwrap().retire();
+    assert!(!source.uses_native_capacity(&capacity));
+    assert!(
+        owner
+            .shutdown(Instant::now() + WATCHDOG)
+            .await
+            .unwrap()
+            .clean
+    );
+    assert!(source.native_capacity().is_err());
+    fixture.finish().await;
+}
 
 #[tokio::test]
 async fn zero_adapter_commands_use_actual_epoch_bounded_owners_and_nonrewinding_clock() {
