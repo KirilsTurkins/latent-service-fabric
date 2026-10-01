@@ -26,8 +26,10 @@ fn next<S>(control: &Control<S>, recovery: bool) -> Action<S> {
             continue;
         }
         state.check_shutdown_deadline(control.clock.monotonic_now());
-        if let Some(retirement) = state.retirements.pop_front() {
-            return Action::Retire(retirement);
+        if !recovery {
+            if let Some(retirement) = state.retirements.pop_front() {
+                return Action::Retire(retirement);
+            }
         }
         if state.quarantined {
             let queue = if recovery {

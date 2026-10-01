@@ -203,3 +203,48 @@ fn absent_or_invalid_recovery_configuration_cannot_synthesize_reserved_admission
         assert_eq!(config.validate(), Err(StoreIoError::InvalidLimits));
     }
 }
+
+#[test]
+fn blocked_ordinary_native_destructor_cannot_occupy_reserved_recovery_worker() {
+    struct Native {
+        pause: Rendezvous,
+        notice: mpsc::Sender<(Registration, PauseTicket)>,
+    }
+    impl Drop for Native {
+        fn drop(&mut self) {
+            pause(&self.pause, &self.notice, vec![0_u8; 256]);
+        }
+    }
+    let (store, _, _) = store();
+    let owner = StoreIoOwner::new(store, recovery_limits(), |_| Ok(())).unwrap();
+    let rendezvous = Rendezvous::new(2);
+    let (notice, receiver) = mpsc::channel();
+    let mut native = owner.reserve_retained::<Native>(256).unwrap();
+    assert!(native
+        .attach(Native {
+            pause: rendezvous.clone(),
+            notice: notice.clone()
+        })
+        .is_ok());
+    let retired = native.retire();
+    let (_, destructor) = ready(&receiver);
+    let worker = rendezvous.clone();
+    let write = owner
+        .submit(StoreIoKind::Write, 32, move |_| {
+            pause(&worker, &notice, vec![0_u8; 32]);
+        })
+        .unwrap();
+    let (_, io) = ready(&receiver);
+    let status = owner
+        .submit(StoreIoKind::RecoveryRead, 0, |_| {
+            std::thread::current().name().unwrap().to_owned()
+        })
+        .unwrap();
+    assert!(wait(status).unwrap().starts_with("latent-store-recovery-"));
+    assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
+    rendezvous.release(destructor).unwrap();
+    rendezvous.release(io).unwrap();
+    wait(retired);
+    wait(write).unwrap();
+    assert!(finish(&owner).clean);
+}
