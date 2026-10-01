@@ -1921,6 +1921,8 @@
         "budget::descendants::tests::retained_ancestry_stays_charged_through_late_grandchild_completion",
         "budget::descendants::tests::simultaneous_delegation_never_exceeds_the_original_ledger",
         "budget::descendants::tests::terminal_notification_wakes_waiting_descendant_without_releasing_ownership",
+        "budget::host_memory::tests::actual_native_owner_keeps_capacity_after_terminal_report_and_settles_once",
+        "budget::host_memory::tests::native_and_linear_memory_compete_before_allocation_and_failed_preparations_roll_back",
         "budget::incoming::tests::diagnostic_saturation_and_irrelevant_huge_ceiling_do_not_rewrite_timing",
         "budget::incoming::tests::each_relative_ceiling_is_anchored_to_this_admission_and_intersected_exactly",
         "budget::incoming::tests::exact_deadline_does_not_bypass_budget_intersection_or_unsupported_dimensions",
@@ -2017,7 +2019,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 106,
+      "minimumCases": 108,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -3910,6 +3912,8 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "authoring::inputs::tests::diagnostic_asset_inventory_cannot_cover_replaced_bytes",
+        "authoring::inputs::tests::diagnostic_assets_preserve_checked_component_and_wit_inventory",
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
         "authoring::policy::tests::demo_publisher_and_builder_proof_age_ceilings_remain_independent",
         "fixture_tls::tests::fixture_tls_is_fresh_private_and_never_replaces_an_existing_identity"
@@ -3919,7 +3923,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 3,
+      "minimumCases": 5,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [

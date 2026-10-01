@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add explicit captured guest profile selection while preserving Phase3 defaults, compiler pins, download bounds and publication authentication",
+  "reviewReason": "Preserve explicit captured guest profiles and incoming pinned compiler cache/mirror support with original download bounds, authentication and deadlines.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "bd0b0a562b8d323fda5a0c0a262e1c3da64a38e28f64649eba2045b103ea05dd"
 }

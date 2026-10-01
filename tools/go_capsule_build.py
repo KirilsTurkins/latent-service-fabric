@@ -8,6 +8,7 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
+from tools import guest_compatibility_build
 from tools.go_guest.compiler import Compiler
 from tools.go_capsule_project import validate
 from tools.rust_capsule_build import Commands, package_inputs
@@ -22,6 +23,7 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
           "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py",
           "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
+RECIPE += guest_compatibility_build.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
@@ -70,7 +72,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
-            package_inputs(output, project, read_json(derived / "surface.json"), files, component)
+            surface = read_json(derived / "surface.json")
+            stage = "compatibility"
+            guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+            package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
@@ -113,4 +118,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": commands.records if commands else []})
+        guest_compatibility_build.failure_report(output, "go", stage)
         raise
