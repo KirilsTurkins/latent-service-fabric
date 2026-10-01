@@ -4,9 +4,11 @@
 
 mod checkpoint;
 mod progress;
+mod recipe;
 pub use checkpoint::package_identity;
 pub use checkpoint::VerifiedMigrationCheckpoint;
 pub use progress::AggregateMigrationProgress;
+pub use recipe::AggregateMigrationRecipe;
 
 use super::{guard_key, require_ready, resume::NamespaceRecoveryView};
 use crate::{
@@ -106,7 +108,7 @@ impl AggregateMigrationRequest {
             key,
         })
     }
-    fn fingerprint(&self) -> Result<[u8; 32], StoreError> {
+    fn fingerprint(&self, recipe: AggregateMigrationRecipe) -> Result<[u8; 32], StoreError> {
         self.validate()?;
         let mut hash = Sha256::new();
         hash.update(b"lsf-aggregate-migration-input-v1\0");
@@ -117,7 +119,7 @@ impl AggregateMigrationRequest {
             self.checkpoint_manifest_digest,
             self.package_digest,
             self.review_digest,
-            Sha256::digest(RECIPE).into(),
+            recipe.digest(),
         ] {
             hash.update(value);
         }
@@ -207,13 +209,41 @@ impl AggregateMigrationPlan {
             AggregateMigrationObservation<'_>,
         ) -> Result<(), StoreError>,
     ) -> Result<Self, StoreError> {
+        Self::prepare_with_recipe(
+            view,
+            request,
+            checkpoint,
+            schema,
+            (AggregateMigrationRecipe::Count, phase),
+            deadline,
+            review,
+        )
+    }
+
+    /// An installed host selects a closed recipe before checkpoint validation.
+    /// The default entry point retains the original `count` recipe. Both keys
+    /// remain fixed and the exact recipe bytes must be in the verified snapshot.
+    pub fn prepare_with_recipe(
+        view: &ReadView,
+        request: &AggregateMigrationRequest,
+        checkpoint: &VerifiedMigrationCheckpoint,
+        schema: &ReviewedSchema,
+        selected: (AggregateMigrationRecipe, MigrationAction),
+        deadline: Instant,
+        review: impl FnOnce(
+            &ReadView,
+            &AggregateMigrationRequest,
+            AggregateMigrationObservation<'_>,
+        ) -> Result<(), StoreError>,
+    ) -> Result<Self, StoreError> {
+        let (recipe, phase) = selected;
         if phase == MigrationAction::Replay {
             return Err(StoreError::Invalid);
         }
         request.validate()?;
         require_ready(view)?;
         super::snapshot::validate_deadline(deadline)?;
-        checkpoint.require_request(request)?;
+        checkpoint.require_request(request, recipe)?;
         let current =
             NamespaceRecoveryView::capture(view, &request.scope.tenant, &request.scope.namespace)?;
         let key = request.progress_key()?;
@@ -224,7 +254,7 @@ impl AggregateMigrationPlan {
             .transpose()?;
         if let Some(prior) = &prior {
             AggregateMigrationProgress::validate_row(&key, bytes.as_ref().unwrap())?;
-            prior.require_request(request, schema)?;
+            prior.require_request(request, schema, recipe)?;
         } else {
             require_source(&current, request, schema)?;
         }
@@ -246,7 +276,9 @@ impl AggregateMigrationPlan {
                 Self::replay(view, &current, key, bytes, progress)
             }
             Some(progress) => Self::complete(view, &current, key, bytes, progress),
-            None if phase == MigrationAction::Stage => Self::stage(view, &current, request, schema),
+            None if phase == MigrationAction::Stage => {
+                Self::stage(view, &current, request, schema, recipe)
+            }
             None => Err(StoreError::Unavailable),
         }
     }
@@ -256,12 +288,13 @@ impl AggregateMigrationPlan {
         current: &NamespaceRecoveryView,
         request: &AggregateMigrationRequest,
         schema: &ReviewedSchema,
+        recipe: AggregateMigrationRecipe,
     ) -> Result<Self, StoreError> {
         // Refuse unsupported values and insufficient namespace quota BEFORE
         // publishing even the paused progress marker. No transformed bytes are
         // published by this stage.
-        crate::session::offline::aggregate_v1_to_v2(view, &current.namespace)?;
-        let progress = AggregateMigrationProgress::new(view, current, request, schema)?;
+        crate::session::offline::aggregate_v1_to_v2(view, &current.namespace, recipe)?;
+        let progress = AggregateMigrationProgress::new(view, current, request, schema, recipe)?;
         let key = request.progress_key()?;
         let history_key = progress.history_key()?;
         let batch = AtomicBatch {
@@ -305,7 +338,11 @@ impl AggregateMigrationPlan {
         {
             return Err(StoreError::Conflict);
         }
-        let mut batch = crate::session::offline::aggregate_v1_to_v2(view, &current.namespace)?;
+        let mut batch = crate::session::offline::aggregate_v1_to_v2(
+            view,
+            &current.namespace,
+            progress.recipe()?,
+        )?;
         batch.expectations.extend([
             progress.namespace_expectation()?,
             ExpectedRow {

@@ -33,6 +33,24 @@ both supported profiles, while final catalog validation checks the deployment
 against its selected package profile and original signed ceilings. These data
 checks grant no execution, namespace, state, intent or dispatch authority.
 
+Packages for the three preserved put-once variants also retain the original
+`application-schema-inputs.json`, both schema definitions and exact application
+source. The compatible reader and writer packages retain their original
+`AggregateCodec.java`; the legacy reader's codec is in its original application
+source. These exact captured assets keep their original false review and runtime
+qualification flags. An installed native reviewer must independently validate
+the maintained codec and recipe and obtain current operator permission.
+
+The existing `lsf.aggregate-migration.v1` recipe continues to target `count`.
+The Java components use `aggregate/count`, so the separate fixed
+`lsf.java-aggregate-migration.v1` recipe preserves that exact key. Selection is an
+installed closed enum, with no arbitrary key or transformer in a request. Its
+exact bytes must be declared in the protected verified checkpoint and are pinned
+in retained progress. The shared cell codec charges the actual key length, keeps
+the namespace quiesced, advances the schema epoch, and requires separate resume
+review. Neither recipe executes a guest or provider or automatically downgrades
+the value.
+
 ## A fresh native clock owner
 
 `capsule_authoring fixture-state-clock <new-private-root> <node-id>` creates an

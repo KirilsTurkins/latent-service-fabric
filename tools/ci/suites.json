@@ -5053,14 +5053,16 @@
         "store_io::tests::shutdown::deadline_quarantine_retains_live_io_and_late_retirement_is_distinct",
         "store_io::tests::shutdown::failed_finalization_is_quarantined_after_physical_engine_close",
         "store_io::tests::shutdown::finalizer_is_once_owned_and_engine_stays_open_while_it_is_paused",
-        "store_io::tests::shutdown::only_one_drain_waiter_and_dropped_registration_cannot_refund_work"
+        "store_io::tests::shutdown::only_one_drain_waiter_and_dropped_registration_cannot_refund_work",
+        "recovery::migration::tests::java_fixed_recipe_preserves_actual_key_and_original_selection_after_engine_reopen",
+        "recovery::migration::tests::java_fixed_recipe_requires_exact_checkpoint_artifact_and_refuses_cell_or_quota_mismatch"
       ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 167,
+      "minimumCases": 169,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

@@ -11,6 +11,7 @@ use latent_core::transaction_contract::Value;
 pub(crate) fn aggregate_v1_to_v2(
     view: &ReadView,
     namespace: &NamespaceRecord,
+    recipe: crate::recovery::migration::AggregateMigrationRecipe,
 ) -> Result<AtomicBatch, StoreError> {
     namespace.validate().map_err(|_| StoreError::Corrupt)?;
     if namespace.status != NamespaceStatus::Quiescing {
@@ -30,7 +31,7 @@ pub(crate) fn aggregate_v1_to_v2(
     // The fixed recipe handles one tiny cell. Refuse oversized physical rows
     // in the engine's borrowed scan, before lifting or decoding their value.
     let page = view.scan_after(Family::State, &prefix, None, 2, 4096)?;
-    let key = state_key(&scope, b"count").map_err(storage_error)?;
+    let key = state_key(&scope, recipe.key()).map_err(storage_error)?;
     if page.resume.is_some() || page.rows.len() != 1 || page.rows[0].0 != key {
         return Err(StoreError::UnsupportedFormat);
     }
@@ -55,7 +56,7 @@ pub(crate) fn aggregate_v1_to_v2(
     }
     let mut usage = Usage::decode(&original_usage).map_err(storage_error)?;
     let old_bytes =
-        u64::try_from(b"count".len() + original.len()).map_err(|_| StoreError::Capacity)?;
+        u64::try_from(recipe.key().len() + original.len()).map_err(|_| StoreError::Capacity)?;
     if usage.keys != 1
         || usage.bytes != old_bytes
         || usage.tombstones != 0
@@ -80,7 +81,7 @@ pub(crate) fn aggregate_v1_to_v2(
     .encode()
     .map_err(storage_error)?;
     usage.bytes =
-        u64::try_from(b"count".len() + migrated.len()).map_err(|_| StoreError::Capacity)?;
+        u64::try_from(recipe.key().len() + migrated.len()).map_err(|_| StoreError::Capacity)?;
     if usage.bytes > namespace.quota.state_bytes {
         return Err(StoreError::Capacity);
     }

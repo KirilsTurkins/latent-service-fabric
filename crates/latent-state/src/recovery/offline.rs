@@ -113,6 +113,15 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
     ) -> Result<ReviewedSchema, StoreError> {
         Err(StoreError::Unavailable)
     }
+    /// Installed, finite data recipe selection. The default preserves the
+    /// historical key; selecting this never grants migration or resume rights.
+    fn migration_recipe(
+        &self,
+        _view: &ReadView,
+        _request: &OfflineAggregateMigrationRequest,
+    ) -> Result<super::migration::AggregateMigrationRecipe, StoreError> {
+        Ok(super::migration::AggregateMigrationRecipe::Count)
+    }
     fn review_migration(
         &self,
         _view: &ReadView,

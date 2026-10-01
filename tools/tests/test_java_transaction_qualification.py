@@ -36,6 +36,42 @@ def result(disposition="committed", count="18446744073709551615"):
 HEADERS = [("Content-Type", http.RESULT_MEDIA), ("Cache-Control", "no-store")]
 
 
+class SchemaAssetOracle(unittest.TestCase):
+    def schema_files(self):
+        from tools.java_transaction_qualification import packaging
+        files = {path: b"original-captured-bytes" for path in packaging.SCHEMA_ASSETS}
+        files[packaging.CODEC_ASSET] = b"original-captured-compatible-reader"
+        files["application-schema-inputs.json"] = encoded({
+            "schemaVersion": "latent.java.application-schema-inputs.v1",
+            "variant": "writer-v2",
+            "sourceDigest": inputs.digest(files["src/dev/latent/app/Capsule.java"]),
+            "publicationReviewGranted": False, "componentCompiled": False,
+            "stateExecutionQualified": False})
+        return files
+
+    def test_original_schema_source_assets_remain_exact_and_do_not_grant_review(self):
+        from tools.java_transaction_qualification import packaging
+        files = self.schema_files()
+        selected = packaging.schema_assets(files)
+        self.assertEqual(selected, files)
+        self.assertTrue(all(selected[path] is files[path] for path in selected))
+        self.assertEqual(packaging.schema_assets({"state-schema.json": b"original"}), {})
+
+    def test_schema_asset_selection_refuses_missing_changed_source_and_invented_qualification(self):
+        from tools.java_transaction_qualification import packaging
+        for change in ("missing-codec", "changed-source", "invented-review"):
+            files = self.schema_files()
+            if change == "missing-codec":
+                del files["src/dev/latent/app/AggregateCodec.java"]
+            elif change == "changed-source":
+                files["src/dev/latent/app/Capsule.java"] += b"changed"
+            else:
+                declaration = inputs.decode(files["application-schema-inputs.json"])
+                declaration["publicationReviewGranted"] = True
+                files["application-schema-inputs.json"] = encoded(declaration)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                packaging.schema_assets(files)
+
 class QualificationOracle(unittest.TestCase):
     def test_duplicate_and_nonfinite_input_documents_refuse(self):
         for raw in (b'{"schemaVersion":1,"schemaVersion":1}', b'{"v":NaN}', b'{"v":Infinity}'):

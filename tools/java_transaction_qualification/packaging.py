@@ -18,6 +18,30 @@ LAYER_MEDIA = {"component.wasm": ("component", "application/wasm"),
                "contracts.json": ("contracts", "application/vnd.latent.contracts.v1+json"),
                "wit-lock.json": ("wit-lock", "application/vnd.latent.wit-lock.v1+json")}
 REPOSITORY = "https://github.com/KirilsTurkins/latent-service-fabric"
+SCHEMA_ASSETS = ("application-schema-inputs.json", "schemas/application-aggregate-v1.schema.json",
+                 "schemas/application-aggregate-v2.schema.json", "src/dev/latent/app/Capsule.java")
+CODEC_ASSET = "src/dev/latent/app/AggregateCodec.java"
+
+
+def schema_assets(files):
+    """Retain exact compiler-captured declarations/source; this grants no review."""
+    if "application-schema-inputs.json" not in files:
+        return {}
+    require(all(path in files and 0 < len(files[path]) <= 262144 for path in SCHEMA_ASSETS),
+            "complete-original-schema-source-assets-required")
+    declaration = decode(files[SCHEMA_ASSETS[0]])
+    require(declaration.get("schemaVersion") == "latent.java.application-schema-inputs.v1"
+            and declaration.get("variant") in ("legacy-v1", "compatible-v2", "writer-v2")
+            and declaration.get("sourceDigest") == digest(files["src/dev/latent/app/Capsule.java"])
+            and all(declaration.get(name) is False for name in
+                    ("publicationReviewGranted", "componentCompiled", "stateExecutionQualified")),
+            "captured-schema-declaration-is-not-native-review")
+    selected = {path: files[path] for path in SCHEMA_ASSETS}
+    if declaration["variant"] != "legacy-v1":
+        require(CODEC_ASSET in files and 0 < len(files[CODEC_ASSET]) <= 262144,
+                "original-compatible-reader-codec-required")
+        selected[CODEC_ASSET] = files[CODEC_ASSET]
+    return selected
 
 
 def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, command: Commands):
@@ -51,14 +75,18 @@ def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, c
     require(companion == ("transaction-binding.json", "asset", COMPANION_MEDIA), "actual-companion-layer-contract")
     assets = {path: raw for path, raw in files.items() if path.startswith("wit/") and path.endswith(".wit")}
     assets.update({name: files[name] for name in ("state-schema.json", "transaction-profile.json")})
+    assets.update(schema_assets(files))
     if item.requirements_digest:
         assets["deferred-http-requirements.json"] = files["deferred-http-requirements.json"]
+    if "application-schema-inputs.json" in files:
+        recipe = Path(__file__).resolve().parents[2] / "contracts/state/java-aggregate-v1-to-v2-migration.json"
+        assets["java-aggregate-v1-to-v2-migration.json"] = read_file(recipe)
     layers.append({"path": companion[0], "source": companion[0], "role": companion[1], "mediaType": companion[2]})
     for path, raw in assets.items():
         (output / path).parent.mkdir(parents=True, exist_ok=True)
         (output / path).write_bytes(raw)
         layers.append({"path": path, "source": path, "role": "asset",
-                       "mediaType": "text/plain" if path.endswith(".wit") else "application/json"})
+                       "mediaType": "text/plain" if path.endswith((".wit", ".java")) else "application/json"})
     write_json(output / "package-source.json", {"formatVersion": 1, "kind": "capsule", "name": "java718-" + item.name,
                "version": project["version"], "entrypoint": "component.wasm", "annotations": {}, "layers": layers})
     seed = decode(read_file(Path(__file__).resolve().parents[2] / "examples/echo-contract/deployment.json"))

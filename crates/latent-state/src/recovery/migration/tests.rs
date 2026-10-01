@@ -75,6 +75,14 @@ fn artifacts() -> Vec<RequiredArtifact> {
         },
     ]
 }
+fn recipe_artifacts(recipe: AggregateMigrationRecipe) -> Vec<RequiredArtifact> {
+    let mut result = artifacts();
+    result[2] = RequiredArtifact {
+        identity: recipe.identity().into(),
+        digest: recipe.digest(),
+    };
+    result
+}
 fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     if key.key.starts_with(PROGRESS_PREFIX) {
         AggregateMigrationProgress::validate_row(key, bytes)
@@ -114,6 +122,13 @@ fn fixture() -> Fixture {
     fixture_with_count(u64::MAX.to_le_bytes().to_vec(), NamespaceQuota::default())
 }
 fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
+    fixture_with_recipe(count, quota, AggregateMigrationRecipe::Count)
+}
+fn fixture_with_recipe(
+    count: Vec<u8>,
+    quota: NamespaceQuota,
+    recipe: AggregateMigrationRecipe,
+) -> Fixture {
     let root = tempfile::tempdir().unwrap();
     let store = open(root.path(), true);
     let namespace = NamespaceRecord::create(
@@ -144,7 +159,7 @@ fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
             }],
         })
         .unwrap();
-    initialize_count(&store, &scope, count);
+    initialize_key(&store, &scope, count, recipe.key());
     let view = store.snapshot().unwrap();
     let before = view.get(&key).unwrap().unwrap();
     let n = NamespaceRecord::decode(&before).unwrap();
@@ -173,11 +188,15 @@ fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
             operator_id: "operator".into(),
             runtime_digest: [42; 32],
             decoder_formats: vec![retained_format()],
-            required_artifacts: artifacts(),
+            required_artifacts: recipe_artifacts(recipe),
         },
         &mut checkpoint,
         deadline(),
-        closure,
+        |view| {
+            let mut linked = closure(view)?;
+            linked.required_artifacts = recipe_artifacts(recipe);
+            Ok(linked)
+        },
         |_| Ok(()),
     )
     .unwrap();
@@ -201,7 +220,7 @@ fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
         checkpoint,
     }
 }
-fn initialize_count(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>) {
+fn initialize_key(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>, key: &[u8]) {
     let view = store.snapshot().unwrap();
     let mut session =
         StateSession::open(
@@ -214,7 +233,7 @@ fn initialize_count(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>) {
     session
         .put(
             &view,
-            b"count".to_vec(),
+            key.to_vec(),
             Value {
                 bytes: count,
                 media_type: "application/vnd.lsf.aggregate-v1".into(),
@@ -234,15 +253,181 @@ fn initialize_count(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>) {
 }
 
 fn checkpoint(f: &Fixture, view: &ReadView) -> VerifiedMigrationCheckpoint {
+    checkpoint_with_recipe(f, view, AggregateMigrationRecipe::Count)
+}
+fn checkpoint_with_recipe(
+    f: &Fixture,
+    view: &ReadView,
+    recipe: AggregateMigrationRecipe,
+) -> VerifiedMigrationCheckpoint {
     VerifiedMigrationCheckpoint::inspect(
         view,
         &mut Cursor::new(&f.checkpoint),
         deadline(),
         |key, bytes| validate_row(view, key, bytes),
-        closure,
+        |view| {
+            let mut linked = closure(view)?;
+            linked.required_artifacts = recipe_artifacts(recipe);
+            Ok(linked)
+        },
         |_| Ok(()),
     )
     .unwrap()
+}
+
+fn prepare_java(f: &Fixture, phase: MigrationAction) -> AggregateMigrationPlan {
+    let recipe = AggregateMigrationRecipe::JavaAggregate;
+    let view = f.store.snapshot().unwrap();
+    let checkpoint = checkpoint_with_recipe(f, &view, recipe);
+    AggregateMigrationPlan::prepare_with_recipe(
+        &view,
+        &f.request,
+        &checkpoint,
+        &f.schema,
+        (recipe, phase),
+        deadline(),
+        |_, _, _| Ok(()),
+    )
+    .unwrap()
+}
+
+#[test]
+fn java_fixed_recipe_preserves_actual_key_and_original_selection_after_engine_reopen() {
+    let recipe = AggregateMigrationRecipe::JavaAggregate;
+    let mut f = fixture_with_recipe(
+        u64::MAX.to_le_bytes().to_vec(),
+        NamespaceQuota::default(),
+        recipe,
+    );
+    let view = f.store.snapshot().unwrap();
+    let inspected = checkpoint_with_recipe(&f, &view, recipe);
+    assert!(matches!(
+        AggregateMigrationPlan::prepare(
+            &view,
+            &f.request,
+            &inspected,
+            &f.schema,
+            MigrationAction::Stage,
+            deadline(),
+            |_, _, _| Ok(())
+        ),
+        Err(StoreError::UnsupportedFormat)
+    ));
+    drop(view);
+    f.store
+        .apply(prepare_java(&f, MigrationAction::Stage).into_batch())
+        .unwrap();
+    drop(f.store);
+    f.store = open(f.root.path(), false);
+    let complete = prepare_java(&f, MigrationAction::Complete);
+    let original = complete.progress().encode().unwrap();
+    assert_eq!(complete.progress().recipe().unwrap(), recipe);
+    f.store.apply(complete.into_batch()).unwrap();
+    let active = activate(&f);
+    let view = f.store.snapshot().unwrap();
+    let mut scope = f.request.scope.clone();
+    scope.state_schema = active.state_schema;
+    let mut session =
+        StateSession::open(
+            &view,
+            scope.clone(),
+            SessionLimits::default(),
+            |_, _| Ok(()),
+        )
+        .unwrap();
+    let value = session
+        .get(&view, recipe.key(), |_, _| Ok(()))
+        .unwrap()
+        .unwrap()
+        .value;
+    assert_eq!(
+        value.bytes,
+        [b"AG\x02\0".as_slice(), &u64::MAX.to_le_bytes()].concat()
+    );
+    assert_eq!(value.media_type, "application/vnd.lsf.aggregate-v2");
+    assert!(session
+        .get(&view, b"count", |_, _| Ok(()))
+        .unwrap()
+        .is_none());
+    assert!(session
+        .view_identity()
+        .require_minimum(&scope, &f.request.expected_view)
+        .is_err());
+    drop(view);
+    let replay = prepare_java(&f, MigrationAction::Complete);
+    assert_eq!(replay.action(), MigrationAction::Replay);
+    assert_eq!(replay.progress().encode().unwrap(), original);
+    f.store.apply(replay.into_batch()).unwrap();
+}
+
+#[test]
+fn java_fixed_recipe_requires_exact_checkpoint_artifact_and_refuses_cell_or_quota_mismatch() {
+    let recipe = AggregateMigrationRecipe::JavaAggregate;
+    let f = fixture();
+    let view = f.store.snapshot().unwrap();
+    let inspected = checkpoint(&f, &view);
+    assert!(matches!(
+        AggregateMigrationPlan::prepare_with_recipe(
+            &view,
+            &f.request,
+            &inspected,
+            &f.schema,
+            (recipe, MigrationAction::Stage),
+            deadline(),
+            |_, _, _| Ok(())
+        ),
+        Err(StoreError::UnsupportedFormat)
+    ));
+    drop(view);
+    let invalid = [
+        fixture_with_recipe(vec![7; 7], NamespaceQuota::default(), recipe),
+        fixture_with_recipe(vec![7; 9], NamespaceQuota::default(), recipe),
+        fixture_with_recipe(
+            u64::MAX.to_le_bytes().to_vec(),
+            NamespaceQuota {
+                state_bytes: 75,
+                ..NamespaceQuota::default()
+            },
+            recipe,
+        ),
+    ];
+    for (index, f) in invalid.into_iter().enumerate() {
+        let view = f.store.snapshot().unwrap();
+        let inspected = checkpoint_with_recipe(&f, &view, recipe);
+        let before = NamespaceRecoveryView::capture(
+            &view,
+            &f.request.scope.tenant,
+            &f.request.scope.namespace,
+        )
+        .unwrap();
+        let result = AggregateMigrationPlan::prepare_with_recipe(
+            &view,
+            &f.request,
+            &inspected,
+            &f.schema,
+            (recipe, MigrationAction::Stage),
+            deadline(),
+            |_, _, _| Ok(()),
+        );
+        let expected = if index == 2 {
+            StoreError::Capacity
+        } else {
+            StoreError::UnsupportedFormat
+        };
+        assert!(matches!(result, Err(error) if error == expected));
+        assert!(view
+            .get(&f.request.progress_key().unwrap())
+            .unwrap()
+            .is_none());
+        let after = NamespaceRecoveryView::capture(
+            &view,
+            &f.request.scope.tenant,
+            &f.request.scope.namespace,
+        )
+        .unwrap();
+        assert_eq!(after.namespace, before.namespace);
+        assert_eq!(after.history, before.history);
+    }
 }
 fn prepare(f: &Fixture) -> AggregateMigrationPlan {
     let view = f.store.snapshot().unwrap();

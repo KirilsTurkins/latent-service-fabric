@@ -1,5 +1,6 @@
 use super::{
-    progress_prefix, schema_ids, AggregateMigrationRequest, PROGRESS_BYTES, PROGRESS_PREFIX, RECIPE,
+    progress_prefix, schema_ids, AggregateMigrationRecipe, AggregateMigrationRequest,
+    PROGRESS_BYTES, PROGRESS_PREFIX,
 };
 use crate::embedded::{Family, RowKey};
 use crate::{
@@ -13,7 +14,6 @@ use crate::{
     session::version::ViewIdentity,
 };
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -38,6 +38,7 @@ impl AggregateMigrationProgress {
         current: &NamespaceRecoveryView,
         request: &AggregateMigrationRequest,
         schema: &ReviewedSchema,
+        recipe: AggregateMigrationRecipe,
     ) -> Result<Self, StoreError> {
         let key = request.progress_key()?;
         let (_, history_row) = NamespaceHistory::capture(view, &current.namespace)?;
@@ -46,13 +47,13 @@ impl AggregateMigrationProgress {
             key_digest: key.key[key.key.len() - 32..]
                 .try_into()
                 .map_err(|_| StoreError::Corrupt)?,
-            fingerprint: request.fingerprint()?,
+            fingerprint: request.fingerprint(recipe)?,
             checkpoint_digest: request.checkpoint_digest,
             checkpoint_manifest_digest: request.checkpoint_manifest_digest,
             package_digest: request.package_digest,
             declaration_digest: schema.declaration_digest(),
             schema_proof_digest: schema.proof_digest(),
-            recipe_digest: Sha256::digest(RECIPE).into(),
+            recipe_digest: recipe.digest(),
             namespace_row: current
                 .namespace
                 .encode()
@@ -65,6 +66,10 @@ impl AggregateMigrationProgress {
     #[must_use]
     pub fn completed(&self) -> bool {
         self.result_namespace_row.is_some()
+    }
+    /// The original retained recipe, never inferred from the latest package.
+    pub fn recipe(&self) -> Result<AggregateMigrationRecipe, StoreError> {
+        AggregateMigrationRecipe::from_digest(self.recipe_digest)
     }
     pub fn source_namespace(&self) -> Result<NamespaceRecord, StoreError> {
         NamespaceRecord::decode(&self.namespace_row).map_err(|_| StoreError::Corrupt)
@@ -139,9 +144,11 @@ impl AggregateMigrationProgress {
         &self,
         request: &AggregateMigrationRequest,
         schema: &ReviewedSchema,
+        recipe: AggregateMigrationRecipe,
     ) -> Result<(), StoreError> {
         self.validate()?;
-        if self.fingerprint != request.fingerprint()?
+        if self.recipe()? != recipe
+            || self.fingerprint != request.fingerprint(recipe)?
             || self.package_digest != schema.declaration().package_digest
             || self.declaration_digest != schema.declaration_digest()
             || self.schema_proof_digest != schema.proof_digest()
@@ -218,7 +225,7 @@ impl AggregateMigrationProgress {
     }
     fn validate(&self) -> Result<(), StoreError> {
         if self.format != 1
-            || self.recipe_digest != Sha256::digest(RECIPE).as_slice()
+            || self.recipe().is_err()
             || [
                 self.key_digest,
                 self.fingerprint,
