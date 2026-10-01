@@ -271,12 +271,41 @@ class BuildProcessTests(unittest.TestCase):
             signal.raise_signal(signal.SIGINT)
             return process
 
-        with patch.object(subprocess, "Popen", interrupt):
-            with self.assertRaises(KeyboardInterrupt):
-                self.run_python("import time; time.sleep(30)")
-        self.assertEqual(signal.getsignal(signal.SIGINT), previous)
-        self.assertIsNotNone(created[0].returncode)
-        self.assert_gone(created[0].pid)
+        # A background CI suite inherits SIG_IGN from its shell. This schedule
+        # specifically owns a deliverable interrupt; ordinary ignored signals
+        # must remain ignored by the production process owner.
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+        try:
+            with patch.object(subprocess, "Popen", interrupt):
+                with self.assertRaises(KeyboardInterrupt):
+                    self.run_python("import time; time.sleep(30)")
+            self.assertEqual(signal.getsignal(signal.SIGINT), signal.default_int_handler)
+            self.assertIsNotNone(created[0].returncode)
+            self.assert_gone(created[0].pid)
+        finally:
+            signal.signal(signal.SIGINT, previous)
+
+    def test_ignored_sigint_during_constructor_preserves_success_and_handler(self):
+        created = []
+        factory = subprocess.Popen
+        previous = signal.getsignal(signal.SIGINT)
+
+        def interrupt(*args, **kwargs):
+            process = factory(*args, **kwargs)
+            created.append(process)
+            signal.raise_signal(signal.SIGINT)
+            return process
+
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            with patch.object(subprocess, "Popen", interrupt):
+                result = self.run_python("print('ok')")
+            self.assertEqual(result.stdout, b"ok" + os.linesep.encode())
+            self.assertEqual(signal.getsignal(signal.SIGINT), signal.SIG_IGN)
+            self.assertEqual(created[0].returncode, 0)
+            self.assert_gone(created[0].pid)
+        finally:
+            signal.signal(signal.SIGINT, previous)
 
     def test_repeated_success_and_failure_do_not_retain_handles_or_threads(self):
         self.run_python("pass")  # Load platform DLL/module before the baseline.
