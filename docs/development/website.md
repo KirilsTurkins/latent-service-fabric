@@ -71,6 +71,13 @@ not a dependency sandbox. The checked-in package intentionally does not declare
 package boundary. Local plugins/scripts remain explicit `.mjs`, and application
 configuration/pages use TypeScript.
 
+The local `code-word-wrap` plugin applies three null checks to the exact pinned
+Docusaurus theme hook during bundling. Resize and tab callbacks can run after
+React detaches a code block and before listener cleanup; those callbacks now
+return safely. Mounted wrapping, overflow detection and cleanup stay covered by
+tests against the installed hook. The plugin verifies version 3.10.2 and the
+original hook's SHA-256, so a dependency refresh requires reviewing this patch.
+
 The first production output is `website/build/project/`, configured for
 `https://kirilsturkins.github.io/latent-service-fabric/`. The second is
 `website/build/root/`, configured for the reserved example origin
