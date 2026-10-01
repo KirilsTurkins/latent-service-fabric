@@ -22,7 +22,7 @@ latent-activation = { path = "../latent-activation", optional = true }
 latent-executor = { path = "../latent-executor", optional = true }
 latent-node = { path = "../latent-node", optional = true }
 latent-telemetry = { path = "../latent-telemetry", optional = true }
-tokio.workspace = true
+tokio = { workspace = true, features = ["process", "io-util"] }
 serde.workspace = true
 serde_json.workspace = true
 
