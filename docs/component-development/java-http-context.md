@@ -97,6 +97,14 @@ must leave a fresh request usable. A real two-cell cancellation records the
 actual child, waits until stores/cells/quotas are retired, and then runs a fresh
 composition. No accepted child or provider operation is retried automatically.
 
+The supported CLI accepts at most 32 KiB of aggregate metadata and 4096 bytes
+per value. The fixture records an accepted five-value input below that bound,
+then a nine-value input above it that fails locally before RPC dispatch. It
+retains the exact requested UTF-8 sizes and a fresh composed invocation after
+rejection. This validates the public input boundary; it does not claim to exceed
+the standalone host's separate 1 MiB admitted-context budget. Supplied activation
+lineage instead reaches the node and is rejected with `permission-denied`.
+
 ## Application observations and unavailable values
 
 The ordinary Java guest has no context import, so it cannot observe a trusted
