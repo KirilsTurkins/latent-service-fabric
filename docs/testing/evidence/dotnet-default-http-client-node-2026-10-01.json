@@ -1,0 +1,160 @@
+{
+  "kind": "ordinary-default-http-client-normal-node-failed-qualification",
+  "sourceRevision": "1cf21f0f4c76e0a58d16666d60373ce576653578",
+  "sourceTree": "6a42a5d50efb3c91e4cd57878da28c5a21d183c2",
+  "application": {
+    "size": 748,
+    "sha256": "77a90ce137454808a119bb89e50a855dc007b17560432d290c34d900f1eda6af",
+    "construction": "new System.Net.Http.HttpClient()",
+    "injectedHandlerSchedulerOrApplicationPump": false
+  },
+  "profile": {
+    "declaredCapabilities": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:runtime/activation@0.1.0",
+      "latent:http/streaming@0.3.0",
+      "latent:random/random@0.1.0"
+    ],
+    "authority": "separate explicit installed provider profiles, configuration digests, epoch 1 bindings and grants",
+    "secureWasiRandomDenied": true,
+    "nodeSecurityProfile": "local-experimental-v1"
+  },
+  "limits": {
+    "cpuFuel": 1000000000,
+    "memoryBytes": 134217728,
+    "wallTimeMillis": 120000,
+    "outboundRequests": 1,
+    "producerCpu": 2,
+    "producerMemoryBytes": 4294967296,
+    "maximumProducerSeconds": 900
+  },
+  "nativeBuild": {
+    "defaultFeatures": true,
+    "streamFeatureAndDevelopmentTestNodeDisabled": true,
+    "managedCargoProfile": ".cargo/managed-guest.toml",
+    "rustVersion": "1.97.1",
+    "maximumCommandSeconds": 600,
+    "elapsedSeconds": 335.1268685079999,
+    "trackedInputCountBefore": 7394,
+    "trackedInputCountAfter": 7394,
+    "binaries": {
+      "latent": {
+        "size": 58817232,
+        "sha256": "036adf7ace2ed9b5b482b4e87720f0165b00d98e3df5185c48f8e88b4f08ce76"
+      },
+      "latentd": {
+        "size": 145992112,
+        "sha256": "6645e68ca4f733241696e7a3bdef832950fe14edc8b7ef96d5ba0d38a1855ed4"
+      },
+      "package": {
+        "size": 14134680,
+        "sha256": "377d72726e96d880fedab3fd77e8ac6a37535852cc6ff1becb91e9f6d87d75a3"
+      },
+      "capsule_contracts": {
+        "size": 7092776,
+        "sha256": "d3c621925dea519de42b5c8666a3e6665d6c823b2fa4f71c133673fd6fcfa4a6"
+      },
+      "capsule_authoring": {
+        "size": 19344944,
+        "sha256": "4531bc97fbde25f8cd762d6f288cd6866bf3ebc8d11c064e3b706f746f90e0a2"
+      }
+    }
+  },
+  "maintainedBuild": {
+    "packageAssembled": true,
+    "observationDigest": "sha256:71baa8b63ecab8dec4d50436ccff91a71e13b1547cca0582854bd5c64c04ff41",
+    "buildSeconds": 136.08116,
+    "component": {
+      "name": "actual-default-http-client",
+      "digest": "sha256:67163cf647fbb51d9ede807598c393bcd0d800bcf05f21fcedba3d8e01dfb0e8",
+      "size": 6299761
+    },
+    "rawComponent": {
+      "bytes": 6042098,
+      "sha256": "0e47c5070b5459746657f9aa244fa985ce7dad5075d27069ce4b45fcec9ef83f"
+    },
+    "normalShortLivedDemoSigning": true,
+    "normalVerifiedNodeAdmission": true
+  },
+  "missingAuthorityControls": [
+    {
+      "activation": "http-client-no-grants",
+      "result": "permission-denied",
+      "cpuFuel": 0,
+      "effectCount": 0,
+      "outboundRequests": 0
+    },
+    {
+      "activation": "http-client-no-entropy-grant",
+      "result": "permission-denied",
+      "cpuFuel": 0,
+      "effectCount": 0,
+      "outboundRequests": 0
+    },
+    {
+      "activation": "http-client-no-http-grant",
+      "result": "permission-denied",
+      "cpuFuel": 0,
+      "effectCount": 0,
+      "outboundRequests": 0
+    }
+  ],
+  "ordinaryGet": {
+    "result": "guest-trap",
+    "outcomeKnown": true,
+    "consumption": {
+      "blobReadBytes": "0",
+      "blobWriteBytes": "0",
+      "childCalls": 0,
+      "cpuFuel": "51271032",
+      "effectCount": 0,
+      "logBytes": "0",
+      "outboundRequests": 0,
+      "peakMemoryBytes": "55902208",
+      "stateReadBytes": "0",
+      "stateWriteBytes": "0",
+      "wallTimeMicros": "120675"
+    },
+    "expectedApplicationResultObserved": false,
+    "trapCause": "not identified"
+  },
+  "cleanup": {
+    "node": {
+      "closed": true,
+      "reaped": true
+    },
+    "peer": {
+      "schemaVersion": "latent.provider-peer.failure.v1",
+      "exitedBeforeCleanup": false,
+      "closed": true,
+      "reaped": true,
+      "observationAvailable": true,
+      "observationError": "none",
+      "cleanupError": "none",
+      "exitCode": -9,
+      "diagnostic": "none"
+    }
+  },
+  "producer": {
+    "exitCode": 1,
+    "elapsedSeconds": 271.8375242999755,
+    "timedOut": false,
+    "capacityStopped": false,
+    "OOMKilled": false
+  },
+  "privateRetainedArchive": {
+    "bytes": 503215030,
+    "sha256": "ecdc44f7e1982f4d868b3788306b505d4b61b01fb27366b1f6aff62105a5896d",
+    "fileCount": 1403,
+    "WindowsReadableByteIdenticalBackupVerified": true,
+    "rawPrivateOperatorKeysNotPublished": true
+  },
+  "scope": {
+    "defaultHttpClientExecutionQualified": false,
+    "defaultTaskOrThreadPoolQualified": false,
+    "fullStandardHttpConformanceQualified": false,
+    "productionOutboundStreamsApproved": false,
+    "componentBytesUnchangedAfterBuild": true,
+    "unchangedOriginalFailed40cdProfileExplained": false
+  }
+}

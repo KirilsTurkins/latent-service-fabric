@@ -234,3 +234,22 @@ random remains denied. The combined compiler control verifies this ownership
 and provenance, including mutation rejection. A fresh normal signed-node
 execution remains necessary to qualify the combined profile and diagnose the
 original default-client trap.
+
+The fresh combined-profile control at source
+`1cf21f0f4c76e0a58d16666d60373ce576653578` rebuilt all five normal node,
+CLI, signing and packaging tools with the managed Cargo profile and Rust
+1.97.1. It compiled the same 748-byte ordinary `HttpClient` application with
+explicit typed HTTP, activation, monotonic-clock and noncrypto-random
+declarations. Maintained build, demo signing and normal node admission passed;
+missing all grants, the random grant or the HTTP grant each denied before guest
+CPU or effects. The positive GET still trapped before any outbound request:
+51,271,032 fuel, 55,902,208 peak bytes and 120,675 microseconds, under the same
+one-billion-fuel, 128 MiB and 120-second limits. Node and peer were reaped.
+
+The [failed normal-node receipt](../testing/evidence/dotnet-default-http-client-node-2026-10-01.json)
+binds the exact 6,299,761-byte component, native binaries, original application,
+limits, admission, negative controls and cleanup. Its trap cause remains
+unidentified. Adding explicit noncrypto entropy does not establish a successful
+default client, ordinary Task/ThreadPool behavior or complete HTTP conformance.
+The full private source/component/node backup is retained separately; its
+operator keys are excluded from published evidence.
