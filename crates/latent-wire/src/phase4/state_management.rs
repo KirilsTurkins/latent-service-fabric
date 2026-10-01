@@ -2,6 +2,7 @@
 mod audit;
 mod authorization;
 mod dispatcher;
+mod effects;
 mod inspection;
 mod mutation;
 mod recovery;
@@ -199,6 +200,18 @@ impl StateManagementBackend {
             let access =
                 authorization::authorize(&self.0.services, &binding, &context, &request, deadline)
                     .await?;
+            if effects::handles(&request) {
+                return effects::execute(
+                    Arc::clone(&self.0),
+                    context,
+                    request,
+                    access,
+                    node_decision.ok_or_else(invalid)?,
+                    deadline,
+                    permit,
+                )
+                .await;
+            }
             let pending = audit::begin(&self.0, &access, &context, &request).await?;
             match request {
                 contract::Request::InspectNamespace(value) => {
@@ -258,7 +271,7 @@ impl StateManagementBackend {
         let node = request.is_node_management();
         // Capture the original operator decision before returning the future.
         // Polling later must not replace a revoked decision with a new grant.
-        let node_decision = if node {
+        let node_decision = if node || effects::handles(&request) {
             Some(
                 self.0
                     .services

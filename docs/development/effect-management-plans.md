@@ -4,8 +4,12 @@ The dispatcher catalog stores an attributed original-operation plan and a separa
 historical receipt for redrive, provider reconciliation, or administrative terminal
 disposition. Both use the same selected atomic engine as commands, effects and
 physical-attempt history. Their data never supplies a grant. The authenticated
-gateway must retain its original current operator, publication, namespace and
-data-read decisions and apply the prepared batch under the actual writer fence.
+`StateManagementBackend` retains its original current operator, publication,
+namespace and data-read decisions and applies the prepared batch under the
+actual writer fence. It resolves command identity from the authenticated caller
+and installed recovery binding, then checks the durable command and effect's
+original publication, caller, commit and sequence links before preparing work.
+The separately selected current read publication never rewrites that history.
 
 Recovery-scope selectors resolve through immutable, bounded installation
 bindings before native admission. An absent selector selects the authenticated
@@ -104,11 +108,16 @@ resume, while permitting authorized lookup and administrative stop.
 
 The native catalog and worker tests exercise actual engine snapshots, CAS,
 reopen, history, high-water accounting, protected workers and original global
-native admission. The 113-case Linux effects suite and strict all-target,
-all-feature Clippy pass include current management revocation, detached lookup,
-ordinary saturation, stale plans, affirmative nonexecution redrive, original
-execution revocation, restore review and unsafe uncertain redrive refusal.
-The controlled lookup adapter in these worker schedules is distinct from the
-actual TLS/provider qualification. The public
-authenticated adapter, CLI/node acceptance and full Phase 4 management scope
-remain separate integration requirements of [issue 400](https://github.com/KirilsTurkins/latent-service-fabric/issues/400).
+native admission. The 161-case Linux Wire suite includes nine authenticated
+gateway schedules for terminal declarations, expired receipt replay under a
+separate current read grant, exact original plan semantics, denied caller/data
+scope, response revocation, unsafe unknown redrive refusal, absent status,
+reserved lookup under ordinary saturation, and detached revoked lookup cleanup.
+They invoke the concrete backend and generated RPC adapter on the actual engine
+and dispatcher. Critical audit acknowledgement remains independent of the
+historical mutation receipt, including when no provider fact is available.
+
+The controlled lookup adapter in these gateway schedules is distinct from the
+actual TLS/provider qualification. Packaged CLI/node acceptance and the full
+Phase 4 management scope remain separate integration requirements of
+[issue 400](https://github.com/KirilsTurkins/latent-service-fabric/issues/400).
