@@ -78,12 +78,12 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
     if json.loads(inventory(vendor)) != lock["sdk"]:
         raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
-    # This version deliberately supports Java source dependencies only. Ignored
-    # Gradle/JAR overrides would falsely appear to be captured compiler inputs.
+    # Captured application JARs enter through the separately reviewed closure.
+    # Arbitrary application Gradle/Maven executable build recipes remain denied.
     for path in files:
         if path.startswith("vendor/lsf/"): continue
         if path.endswith((".jar", ".class", ".gradle", ".gradle.kts")) or Path(path).name == "pom.xml":
-            raise ValueError("binary dependencies and application build scripts require a new reviewed Java recipe")
+            raise ValueError("uncaptured Java binary dependencies or executable application build scripts")
         if path.startswith("src/") and not path.endswith(".java"):
             raise ValueError("Java application sources must be Java files")
     limits = project["limits"]
