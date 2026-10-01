@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "BoundedMaintenanceTests.test_cancellation_preserves_observed_prefix_and_restart_cursor",
+    "BoundedMaintenanceTests.test_changed_or_forged_cursor_does_not_refresh_progress",
+    "BoundedMaintenanceTests.test_current_authority_is_checked_on_every_page_and_access",
+    "BoundedMaintenanceTests.test_duplicate_overlapping_and_missed_runs_do_not_mutate",
+    "BoundedMaintenanceTests.test_expiry_is_enforced_without_any_maintenance_and_clock_restore_is_conservative",
+    "BoundedMaintenanceTests.test_maintained_fixture_reports_its_synthetic_execution_boundary",
+    "BoundedMaintenanceTests.test_record_page_byte_and_work_bounds_are_finite"
+  ],
+  "guards": {
+    "BoundedMaintenanceTests.test_cancellation_preserves_observed_prefix_and_restart_cursor": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0bbcd53540af322024b2ea553d0d6fd004dd2ac065ce6a4c2a38fc8c4c6784c",
+        "class:setup-sha256:f9e064a06edca2f6a51146e3b26af5c5143f1beecd3bc164d5cf68674c093a4c"
+      ],
+      "skipSites": []
+    },
+    "BoundedMaintenanceTests.test_changed_or_forged_cursor_does_not_refresh_progress": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0bbcd53540af322024b2ea553d0d6fd004dd2ac065ce6a4c2a38fc8c4c6784c",
+        "class:setup-sha256:f9e064a06edca2f6a51146e3b26af5c5143f1beecd3bc164d5cf68674c093a4c"
+      ],
+      "skipSites": []
+    },
+    "BoundedMaintenanceTests.test_current_authority_is_checked_on_every_page_and_access": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0bbcd53540af322024b2ea553d0d6fd004dd2ac065ce6a4c2a38fc8c4c6784c",
+        "class:setup-sha256:f9e064a06edca2f6a51146e3b26af5c5143f1beecd3bc164d5cf68674c093a4c"
+      ],
+      "skipSites": []
+    },
+    "BoundedMaintenanceTests.test_duplicate_overlapping_and_missed_runs_do_not_mutate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0bbcd53540af322024b2ea553d0d6fd004dd2ac065ce6a4c2a38fc8c4c6784c",
+        "class:setup-sha256:f9e064a06edca2f6a51146e3b26af5c5143f1beecd3bc164d5cf68674c093a4c"
+      ],
+      "skipSites": []
+    },
+    "BoundedMaintenanceTests.test_expiry_is_enforced_without_any_maintenance_and_clock_restore_is_conservative": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0bbcd53540af322024b2ea553d0d6fd004dd2ac065ce6a4c2a38fc8c4c6784c",
+        "class:setup-sha256:f9e064a06edca2f6a51146e3b26af5c5143f1beecd3bc164d5cf68674c093a4c"
+      ],
+      "skipSites": []
+    },
+    "BoundedMaintenanceTests.test_maintained_fixture_reports_its_synthetic_execution_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0bbcd53540af322024b2ea553d0d6fd004dd2ac065ce6a4c2a38fc8c4c6784c",
+        "class:setup-sha256:f9e064a06edca2f6a51146e3b26af5c5143f1beecd3bc164d5cf68674c093a4c"
+      ],
+      "skipSites": []
+    },
+    "BoundedMaintenanceTests.test_record_page_byte_and_work_bounds_are_finite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0bbcd53540af322024b2ea553d0d6fd004dd2ac065ce6a4c2a38fc8c4c6784c",
+        "class:setup-sha256:f9e064a06edca2f6a51146e3b26af5c5143f1beecd3bc164d5cf68674c093a4c"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_maintenance_example.py",
+  "reviewReason": "Review finite read-only maintenance overlap cancellation cursor authority expiry and byte-bound regressions",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

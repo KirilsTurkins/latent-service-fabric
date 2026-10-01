@@ -1,5 +1,9 @@
 # Java compiler and runtime profile
 
+For application Maven/local JARs and their separately reviewed offline closure,
+follow [Java application JARs](java-dependencies.md). The source-only workflow
+below remains supported.
+
 For application development, use [Creating a capsule](creating-a-capsule.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,
 `deploy` and `test`. You do not need the source-build commands below for it.

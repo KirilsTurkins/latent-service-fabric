@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add explicit captured guest profile selection while preserving Phase3 defaults, compiler pins, download bounds and publication authentication",
+  "reviewReason": "Combine explicit captured guest profile selection with the reviewed untrusted digest archive cache and identical pinned Zig mirror; retain original profiles, all compiler pins, download deadlines, byte/hash checks, owned-file cleanup and authentication.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "bd0b0a562b8d323fda5a0c0a262e1c3da64a38e28f64649eba2045b103ea05dd"
 }
