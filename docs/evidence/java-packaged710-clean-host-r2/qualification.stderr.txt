@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "/controller/qualify.py", line 16, in <module>
+    result=qualify(json.loads((root/'inputs.json').read_bytes()),root/'campaign-r1')
+  File "/qualification-work/conductor-a128/tools/java_http_composition/packaged.py", line 342, in qualify
+    _build(api, configuration, baseline, root, output, report, diagnostics=diagnostics)
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/qualification-work/conductor-a128/tools/java_http_composition/packaged.py", line 115, in _build
+    authored = projects(output / "source-projects")
+  File "/qualification-work/conductor-a128/tools/java_http_composition/build.py", line 40, in projects
+    result["adapter"] = generate(result["domain"], selection, output / "adapter")
+                        ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/qualification-work/conductor-a128/tools/java_http_generation/project.py", line 78, in generate
+    selection, outputs, observation = rendered(domain, selection_path)
+                                      ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/qualification-work/conductor-a128/tools/java_http_generation/project.py", line 43, in rendered
+    if run("toolchain", tool, "--version").split()[:2] != [printed, version]:
+       ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/qualification-work/conductor-a128/tools/java_http_generation/project.py", line 35, in run
+    result = run_bounded_result(list(map(str, arguments)), cwd=temporary, env=environment,
+        timeout_seconds=60, max_output_bytes=4 * 1024 * 1024)
+  File "/qualification-work/conductor-a128/tools/build_process.py", line 152, in run_bounded_result
+    return _run_owned(argv, cwd, env, timeout_seconds, max_output_bytes, cancellation, check=False)
+  File "/qualification-work/conductor-a128/tools/build_process.py", line 198, in _run_owned
+    raise BuildProcessError("command-failed") from None
+tools.build_process.BuildProcessError: command-failed

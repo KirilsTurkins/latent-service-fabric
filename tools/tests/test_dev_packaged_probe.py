@@ -73,6 +73,33 @@ class PackagedProbe(unittest.TestCase):
             with self.assertRaisesRegex(DevError, '^workspace-owner-mismatch$'):
                 packaged._installed_workspace('test-real-workspace')
 
+    def test_generation_uses_original_inventoried_tools_and_rejects_changed_bytes(self):
+        from tools.dev_workflow import common
+        from tools.java_http_composition import packaged
+
+        files, tools = [], []
+        for name in ('wasm-tools', 'wit-bindgen'):
+            raw = ('original ' + name).encode()
+            path = 'sdk/bin/' + name
+            selected = self.root / path
+            selected.parent.mkdir(parents=True, exist_ok=True)
+            selected.write_bytes(raw)
+            files.append({'path': path, 'size': len(raw), 'sha256': common.digest(raw)})
+            tools.append({'name': name, 'path': path, 'sha256': common.digest(raw), 'version': '1'})
+        inventory = {'schemaVersion': 'latent.dev.guest-tools.v1', 'language': 'java', 'ownerIssue': 548,
+            'sourceCommit': 'a' * 40, 'hostAbi': common.HOST_ABI, 'host': 'linux-x86_64', 'files': files}
+        inventory['identity'] = common.digest(common.encode(inventory))
+        raw = common.encode(inventory)
+        (self.root / 'guest-tools.json').write_bytes(raw)
+        descriptor = {'language': 'java', 'template': {'ownerIssue': 548, 'revision': 'a' * 40},
+            'build': {'inventory': {'path': 'guest-tools.json', 'sha256': common.digest(raw)}, 'tools': tools}}
+        actual, observation = packaged._generation_tools(self.root, descriptor)
+        self.assertEqual(actual, {name: self.root / 'sdk/bin' / name for name in ('wasm-tools', 'wit-bindgen')})
+        self.assertEqual(observation['inventory'], inventory['identity'])
+        (self.root / 'sdk/bin/wasm-tools').write_bytes(b'changed executable')
+        with self.assertRaisesRegex(common.DevError, 'guest-tool-companion-modified'):
+            packaged._generation_tools(self.root, descriptor)
+
     @unittest.skipUnless(os.name == 'nt', 'actual Windows DACL required')
     def test_conductor_protects_only_its_new_windows_directory(self):
         from tools.dev_packaged_windows import make_private

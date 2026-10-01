@@ -99,6 +99,16 @@ def _install(api, configuration, workspace, index):
     return _installed_workspace(workspace)
 
 
+def _generation_tools(tools_root, descriptor):
+    inventory = tool_inventory.check(tools_root, descriptor, "linux-x86_64")
+    require(inventory is not None, "packaged-java-original-tool-inventory-required")
+    selected = {row["name"]: row for row in descriptor["build"]["tools"]
+                if row["name"] in {"wasm-tools", "wit-bindgen"}}
+    require(set(selected) == {"wasm-tools", "wit-bindgen"}, "packaged-java-original-wit-tools-required")
+    return {name: tools_root / row["path"] for name, row in selected.items()}, {
+        "inventory": inventory, "tools": selected}
+
+
 def _build(api, configuration, workspace, root, output, observation, *, diagnostics=False):
     tools = api.root / "java-tools.json"
     installed = api.call("install-tools", "--workspace", workspace, "--tool-inputs", tools, timeout=1800)
@@ -112,7 +122,11 @@ def _build(api, configuration, workspace, root, output, observation, *, diagnost
     report = observation["freshBuilds"] = {"publisherTools": installed,
         "templateIdentity": template_identity, "buildReceipts": {}, "runtimeRebuilt": False}
     relative = Path(template["path"]).relative_to("templates").as_posix()
-    authored = projects(output / "source-projects")
+    tools_root = Path(installed["directory"])
+    generation_tools, report["authoringTools"] = _generation_tools(tools_root, template_manifest["project"])
+    authored = projects(output / "source-projects", tools=generation_tools)
+    require(tool_inventory.check(tools_root, template_manifest["project"], "linux-x86_64")
+        == report["authoringTools"]["inventory"], "packaged-java-original-tool-inventory-changed")
     if diagnostics:
         # These are new inputs to the actual compiler. Never relabel them as
         # the original C4 component or the unadapted hosted campaign.
@@ -156,7 +170,6 @@ def _build(api, configuration, workspace, root, output, observation, *, diagnost
     require(len({row["artifacts"]["component"] for row in receipts.values()}) == 4,
             "packaged-java-independently-built-component-identities")
     last = state.load(root, "project.json")["descriptor"]
-    tools_root = Path(installed["directory"])
     inventory = tool_inventory.check(tools_root, last, "linux-x86_64")
     signer = next(row for row in last["build"]["tools"] if row["name"] == "test-signer")
     require(file_digest(tools_root / signer["path"]) == signer["sha256"], "packaged-java-pinned-signer-required")
