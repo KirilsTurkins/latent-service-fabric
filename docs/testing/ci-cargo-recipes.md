@@ -302,6 +302,29 @@ The evaluation workflow installs the MSRV declared by current development
 contracts while preserving the immutable v1 inventory and existing test guards.
 This repair changes no ordinary CI cache default or selected build recipe.
 
+The [October 1 mechanism replay](evidence/cargo-cache-mechanism-2026-10-01.json)
+completed on exact clean source `ecc5ffa994b2e848f3e6c8c5708710ffb836c976`
+in a private native Linux container capped at two CPUs/1 GiB, with Rust1.97.1,
+MSRV1.95.0 and Python3.13.5. All six cold/warm samples executed the three tests;
+all nine fault controls produced their required outcomes, including the retained
+Cargo101 corruption failure. Current Cargo times were 0.24/0.17/0.20 seconds;
+correctness times were 0.30/0.16/0.20 seconds. Both warm samples reused one
+dependency artifact and rebuilt the application. Maximum child RSS was
+117,764?118,420 KiB for the ordinary native controls. Local archive overhead,
+owner-stage time and exact toolchain observations remain in the raw receipt.
+This is a new synthetic mechanism observation, with no cache-network transfer
+or full-workspace speed claim. The diagnostic image's OCI index was
+`sha256:7cc3f5d034635d35c328591dbd993fb355816fc8124f6a6a9948f83cca74cbf0`;
+its native loader was Debian GCC12.2.0-14+deb12u1/libc2.36-9+deb12u14.
+
+The earlier local setup failures remain separate: missing Git, a timed-out
+Windows-bind-mounted Git status, and missing `cc` each stopped before a completed
+compiler sample. The successful retry used a clean Linux checkout and a new
+diagnostic image with the missing loader; no command deadline was increased.
+[Full recipe evaluation 36834225838](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36834225838)
+is dispatched for the repaired source; its pending work is not a successful
+comparison.
+
 ### Actual Rust recipe replay
 
 Enable `run_full_recipes` in the manual workflow to replay both configurations
