@@ -211,6 +211,26 @@ pub(super) fn read(
 }
 
 pub(super) fn validate_row(view: &ReadView, row: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+    validated_row(view, row, bytes).map(|_| ())
+}
+
+pub(super) fn tenant_contribution(
+    view: &ReadView,
+    row: &RowKey,
+    bytes: &[u8],
+) -> Result<latent_state::tenant::TenantCensusContribution, StoreError> {
+    let receipt = validated_row(view, row, bytes)?;
+    Ok(latent_state::tenant::TenantCensusContribution::Usage {
+        tenant: receipt.after.tenant,
+        usage: latent_state::tenant::TenantUsage {
+            metadata_rows: 1,
+            metadata_bytes: latent_state::tenant::row_charge(row, bytes)?,
+            ..latent_state::tenant::TenantUsage::default()
+        },
+    })
+}
+
+fn validated_row(view: &ReadView, row: &RowKey, bytes: &[u8]) -> Result<Receipt, StoreError> {
     if row.family != Family::Namespace || !row.key.starts_with(PREFIX) {
         return Err(StoreError::UnsupportedFormat);
     }
@@ -231,5 +251,5 @@ pub(super) fn validate_row(view: &ReadView, row: &RowKey, bytes: &[u8]) -> Resul
     {
         return Err(StoreError::Corrupt);
     }
-    Ok(())
+    Ok(receipt)
 }

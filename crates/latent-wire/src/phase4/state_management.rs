@@ -199,6 +199,18 @@ impl StateManagementBackend {
     ) -> Result<(), latent_state::embedded::StoreError> {
         state_receipt::validate_row(view, key, bytes)
     }
+    /// Exact producer-validated tenant charge for an immutable management row.
+    /// This descriptive startup port supplies no state or recovery authority.
+    /// Foreign prefixes remain unsupported; namespace linkage is checked in
+    /// the original protected view before returning its actual encoded charge.
+    pub fn tenant_metadata_contribution(
+        view: &latent_state::embedded::ReadView,
+        key: &latent_state::embedded::RowKey,
+        bytes: &[u8],
+    ) -> Result<latent_state::tenant::TenantCensusContribution, latent_state::embedded::StoreError>
+    {
+        state_receipt::tenant_contribution(view, key, bytes)
+    }
     fn admit(
         &self,
         context: AuthenticatedInvocationContext,

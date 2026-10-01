@@ -254,6 +254,23 @@ fn linked_row(
     key: &latent_state::embedded::RowKey,
     bytes: &[u8],
 ) -> Result<(), StoreError> {
+    match StateManagementBackend::tenant_metadata_contribution(view, key, bytes) {
+        Ok(latent_state::tenant::TenantCensusContribution::Usage { tenant, usage }) => {
+            assert_eq!(tenant.0, "a");
+            assert_eq!(
+                usage,
+                latent_state::tenant::TenantUsage {
+                    metadata_rows: 1,
+                    metadata_bytes: latent_state::tenant::row_charge(key, bytes).unwrap(),
+                    ..latent_state::tenant::TenantUsage::default()
+                }
+            );
+            return Ok(());
+        }
+        Ok(_) => panic!("management receipt must retain its original tenant charge"),
+        Err(StoreError::UnsupportedFormat) => {}
+        Err(error) => return Err(error),
+    }
     for result in [
         latent_state::session::validate_row(view, key, bytes),
         StateManagementBackend::validate_operation_row(view, key, bytes),
