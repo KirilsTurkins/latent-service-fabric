@@ -154,6 +154,9 @@ pub struct EmbeddedStore {
     quarantined: AtomicBool,
 }
 impl EmbeddedStore {
+    pub(crate) fn limits(&self) -> StoreLimits {
+        self.limits
+    }
     /// Must run on the node's bounded physical I/O owner. Never truncate or reset
     /// an existing file on any error. redb owns the descriptor and exclusive lock.
     pub fn open_file(file: File, limits: StoreLimits) -> Result<Self, StoreError> {

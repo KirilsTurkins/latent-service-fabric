@@ -10,13 +10,13 @@ use std::{fs::OpenOptions, io::Cursor, time::Duration};
 const DEFINITION: &[u8] =
     include_bytes!("../../../../../contracts/state/application-aggregate-v1.schema.json");
 
-struct Fixture {
-    store: EmbeddedStore,
-    metadata: SnapshotMetadata,
+pub(in crate::recovery) struct Fixture {
+    pub(in crate::recovery) store: EmbeddedStore,
+    pub(in crate::recovery) metadata: SnapshotMetadata,
     _directory: tempfile::TempDir,
 }
 
-fn fixture() -> Fixture {
+pub(in crate::recovery) fn fixture() -> Fixture {
     let directory = tempfile::tempdir().unwrap();
     let file = OpenOptions::new()
         .read(true)
@@ -126,19 +126,28 @@ fn allow(scope: &StateScope, _: StateAccess) -> Result<(), StateError> {
     }
 }
 
-fn deadline() -> Instant {
+pub(in crate::recovery) fn deadline() -> Instant {
     Instant::now() + Duration::from_secs(20)
 }
 
-fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
-    if key.family == Family::Namespace {
+pub(in crate::recovery) fn validate_row(
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+) -> Result<(), StoreError> {
+    if *key == crate::recovery::guard_key() {
+        crate::recovery::RecoveryGuard::validate_row(key, bytes)
+    } else if key.family == Family::Namespace {
         NamespaceCatalog::validate_row(key, bytes).map_err(|_| StoreError::Corrupt)
     } else {
         crate::session::validate_row(view, key, bytes)
     }
 }
 
-fn closure(view: &ReadView, metadata: &SnapshotMetadata) -> Result<SnapshotClosure, StoreError> {
+pub(in crate::recovery) fn closure(
+    view: &ReadView,
+    metadata: &SnapshotMetadata,
+) -> Result<SnapshotClosure, StoreError> {
     for family in FAMILIES {
         let page = view.scan_after(family, b"", None, 128, PAGE_BYTES)?;
         if page.resume.is_some() {
@@ -154,7 +163,7 @@ fn closure(view: &ReadView, metadata: &SnapshotMetadata) -> Result<SnapshotClosu
     })
 }
 
-fn export(fixture: &Fixture) -> (Vec<u8>, SnapshotReceipt) {
+pub(in crate::recovery) fn export(fixture: &Fixture) -> (Vec<u8>, SnapshotReceipt) {
     let mut output = Vec::new();
     let receipt = export_snapshot(
         &fixture.store,
