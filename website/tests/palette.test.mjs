@@ -37,9 +37,16 @@ test('generated CSS and Prism derive from the same tokens without independent co
   for (const tokens of Object.values(palette.modes)) {
     for (const value of Object.values(tokens)) assert.ok(paletteCss(palette).includes(value));
     const prism = prismTheme(tokens);
-    assert.equal(prism.plain.color, tokens.codeText);
-    assert.equal(prism.plain.backgroundColor, tokens.codeSurface);
-    for (const token of syntaxTokens.slice(1)) assert.ok(prism.styles.some(rule => rule.style.color === tokens[`code${token}`]));
+    const resolve = value => {
+      const match = /^var\(--lsf-([a-z]+(?:-[a-z]+)*)\)$/.exec(value);
+      assert.ok(match, 'Prism must resolve the document mode before hydration');
+      const name = match[1].replace(/-([a-z])/g, (_pair, letter) => letter.toUpperCase());
+      assert.ok(Object.hasOwn(tokens, name), 'Every Prism role belongs to the reviewed palette');
+      return tokens[name];
+    };
+    assert.equal(resolve(prism.plain.color), tokens.codeText);
+    assert.equal(resolve(prism.plain.backgroundColor), tokens.codeSurface);
+    for (const token of syntaxTokens.slice(1)) assert.ok(prism.styles.some(rule => resolve(rule.style.color) === tokens[`code${token}`]));
   }
   for (const stylesheet of ['foundation.css', 'theme.css']) {
     assert.doesNotMatch(fs.readFileSync(path.join(websiteRoot, 'src/css', stylesheet), 'utf8'), /#[\da-f]{3,8}\b|\brgba?\(|\bhsla?\(/i);
