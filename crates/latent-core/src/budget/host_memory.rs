@@ -5,17 +5,25 @@ use super::{ActivationBudget, BudgetDimension, BudgetError, BudgetProfile};
 /// Affine capacity reserved before a native allocation. Call `confirm` only
 /// after allocation succeeds; retain this guard with the actual allocation,
 /// including a quarantined owner. Dropping an awaiter is not retirement.
+/// Phase 4 counts reserved transfer/view capacity immediately and retains its
+/// outstanding owner through terminal reporting until this guard is dropped.
 #[derive(Debug)]
 #[must_use = "retain with the actual native allocation"]
 pub struct HostMemoryReservation {
     budget: ActivationBudget,
     bytes: u64,
     confirmed: bool,
+    counted: bool,
 }
 
 impl ActivationBudget {
     pub fn reserve_host_memory(&self, bytes: u64) -> Result<HostMemoryReservation, BudgetError> {
-        if self.profile() != BudgetProfile::Phase3 {
+        let counted = self.profile() == BudgetProfile::Phase4;
+        if !matches!(
+            self.profile(),
+            BudgetProfile::Phase3 | BudgetProfile::Phase4
+        ) || counted && (bytes == 0 || self.has_budget_parent())
+        {
             return Err(BudgetError::InvalidAccountingOperation {
                 dimension: BudgetDimension::MemoryBytes,
             });
@@ -35,11 +43,25 @@ impl ActivationBudget {
                 requested: bytes,
             });
         }
+        if counted {
+            state.outstanding_reservations = state.outstanding_reservations.checked_add(1).ok_or(
+                BudgetError::ArithmeticOverflow {
+                    dimension: BudgetDimension::MemoryBytes,
+                },
+            )?;
+            // Transaction transfer/view capacity remains physically occupied
+            // before any guest or awaiter can observe its final disposition.
+            state.host_observed_memory += bytes;
+            state.consumption.peak_memory_bytes = state.consumption.peak_memory_bytes.max(
+                state.own_memory_peak + state.child_observed_memory + state.host_observed_memory,
+            );
+        }
         state.host_reserved_memory += bytes;
         Ok(HostMemoryReservation {
             budget: self.clone(),
             bytes,
-            confirmed: false,
+            confirmed: counted,
+            counted,
         })
     }
 
@@ -70,6 +92,9 @@ impl Drop for HostMemoryReservation {
     fn drop(&mut self) {
         let mut state = self.budget.lock_state();
         state.host_reserved_memory -= self.bytes;
+        if self.counted {
+            state.outstanding_reservations -= 1;
+        }
         if self.confirmed {
             state.host_observed_memory -= self.bytes;
             self.budget.propagate_memory(self.bytes, false);

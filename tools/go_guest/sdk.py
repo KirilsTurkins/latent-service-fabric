@@ -17,7 +17,42 @@ CAPABILITIES = {
     "service": ("latent:service/invoke@0.1.0", set()),
     "random": ("latent:random/random@0.1.0", set()),
     "metrics": ("latent:telemetry/custom@0.1.0", set()),
+    "state": ("latent:state/key-value@0.2.0", {"Transaction", "QueryView", "Page"}),
+    "intents": ("latent:intents/staging@0.1.0", {"Transaction"}),
 }
+
+
+def export_declarations(text: str) -> str:
+    """Keep the pinned export package's canonical types when replacing stubs.
+
+    Componentize-go places business records and enums beside the empty export
+    implementations. Removing that entire file also removes their real WIT
+    owners. Only exact generated panic functions are replaced; generated type
+    declarations remain intact, with imports used by those declarations.
+    """
+    stub = re.compile(r'(?m)^func [A-Z][A-Za-z0-9_]*\([^\n]*\)[^\n{]* \{\n'
+                      r'\tpanic\("not implemented"\)\n\}\n')
+    count = text.count('panic("not implemented")')
+    if count == 0 or len(list(stub.finditer(text))) != count:
+        raise ValueError("generated-Go-export-stub-drift")
+    result = stub.sub("", text)
+    blocks = list(re.finditer(r'(?ms)^import \(\n(.*?)^\)\n', result))
+    if len(blocks) > 1:
+        raise ValueError("generated-Go-export-import-drift")
+    if blocks:
+        block = blocks[0]
+        declarations = result[:block.start()] + result[block.end():]
+        imports = []
+        for line in block[1].splitlines():
+            match = re.fullmatch(r'\s*(?:([A-Za-z][A-Za-z0-9_]*)\s+)?"([^"\n]+)"\s*', line)
+            if match is None:
+                raise ValueError("generated-Go-export-import-drift")
+            alias = match[1] or match[2].rsplit("/", 1)[-1]
+            if re.search(r"\b" + re.escape(alias) + r"\.", declarations):
+                imports.append(line)
+        replacement = "import (\n" + "\n".join(imports) + "\n)\n" if imports else ""
+        result = result[:block.start()] + replacement + result[block.end():]
+    return result
 
 
 def explicit_resource_owners(text: str) -> str:
@@ -55,6 +90,7 @@ def install(sdk: Path, module: Path) -> None:
     (output / "ownership").mkdir()
     (output / "ownership/owner.go").write_bytes((sdk / "ownership/owner.go").read_bytes())
     sources = [(p, p.read_text()) for p in sorted(module.glob("*/wit_bindings.go"))]
+    installed = {}
     for name, (identity, excluded) in CAPABILITIES.items():
         matches = [(path, text) for path, text in sources
                    if re.search(r"(?m)^//go:wasmimport " + re.escape(identity) + r" ", text)]
@@ -75,8 +111,14 @@ def install(sdk: Path, module: Path) -> None:
         directory = output / name
         directory.mkdir()
         raw = package[1]
+        installed[name] = raw
         (directory / "types.go").write_text(
             f'// Generated aliases from {identity}; no resource constructors.\npackage {name}\n\n'
             f'import raw "wit_component/{raw}"\n\n' + "\n".join(aliases) + "\n", encoding="utf-8")
         (directory / "api.go").write_text(
             (sdk / "capabilities" / (name + ".go.in")).read_text().replace("@raw@", raw), encoding="utf-8")
+    if "intents" in installed:
+        if "state" not in installed:
+            raise ValueError("intent staging requires the canonical imported state owner")
+        (output / "state/intent.go").write_text((sdk / "capabilities/state-intent.go.in").read_text()
+            .replace("@intents@", installed["intents"]), encoding="utf-8")

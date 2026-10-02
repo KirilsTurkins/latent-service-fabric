@@ -20,6 +20,11 @@
         "run": "git archive --format=tar.gz -o \"$RUNNER_TEMP/java-feasibility-source.tar.gz\" HEAD \\\n  apps crates sdk/java-guest sdk/rust tools wit/platform schemas examples \\\n  docs/component-development .cargo Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE \\\n  .github/workflows/java-guest-feasibility.yml\n"
       },
       {
+        "id": "transaction-diagnostic-schema-source",
+        "name": "Retain the exact application schemas for the separate diagnostic source",
+        "run": "git archive --format=tar.gz -o \"$RUNNER_TEMP/java-transaction-diagnostic-schemas.tar.gz\" HEAD \\\n  contracts/state/application-aggregate-v1.schema.json \\\n  contracts/state/application-aggregate-v2.schema.json\n"
+      },
+      {
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
@@ -37,6 +42,11 @@
       {
         "name": "Test evidence and process-capture behavior",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest discover -s sdk/java-guest/tests -v\n"
+      },
+      {
+        "id": "transaction-diagnostic-source-tests",
+        "name": "Check exclusive post-stage diagnostic inputs and retained compiler plans",
+        "run": "python3 -m unittest tools.tests.test_java_transaction_diagnostics tools.tests.test_transaction_guest_compilers"
       },
       {
         "uses": "actions/setup-java",
@@ -75,8 +85,36 @@
         "shell": "bash"
       },
       {
+        "name": "Qualify proposed transaction shapes and shared imported owners with the maintained Java compiler",
+        "run": "python3 tools/qualify_transaction_contracts.py --language java --output \"$RUNNER_TEMP/transaction-contract-java\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+      },
+      {
+        "id": "aggregate-schema-vectors",
+        "name": "Check bounded Java aggregate format vectors without claiming State execution",
+        "run": "set -euo pipefail\njavac --version\njava --version\nmkdir \"$RUNNER_TEMP/java-aggregate-encoding\"\njavac -d \"$RUNNER_TEMP/java-aggregate-encoding\" \\\n  examples/java-transaction-schema/AggregateCodec.java \\\n  examples/java-transaction-schema/EncodingVectors.java\njava -cp \"$RUNNER_TEMP/java-aggregate-encoding\" dev.latent.app.EncodingVectors \\\n  | tee \"$RUNNER_TEMP/java-aggregate-encoding/vectors.log\"\n"
+      },
+      {
+        "name": "Compile the authored transaction aggregate and forbidden immediate HTTP variant",
+        "run": "python3 tools/compile_transaction_guests.py --language java --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/transaction-guests-java\""
+      },
+      {
+        "id": "transaction-diagnostic-vectors",
+        "name": "Check explicit post-stage diagnostic helpers without claiming transaction execution",
+        "run": "set -euo pipefail\njavac -d \"$RUNNER_TEMP/java-aggregate-encoding\" \\\n  examples/java-transaction-schema/TransactionDiagnostics.java \\\n  examples/java-transaction-schema/DiagnosticVectors.java\nfor vector in ordinary trap reused ordinary; do\n  java -cp \"$RUNNER_TEMP/java-aggregate-encoding\" dev.latent.app.DiagnosticVectors \"$vector\"\ndone | tee \"$RUNNER_TEMP/java-aggregate-encoding/diagnostic-vectors.log\"\n",
+        "shell": "bash"
+      },
+      {
+        "id": "transaction-diagnostic-component",
+        "name": "Compile the separate Java post-stage fault capsule without claiming host execution",
+        "run": "python3 tools/compile_transaction_guests.py --language java --java-post-stage-diagnostic --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" --output \"$RUNNER_TEMP/transaction-guest-diagnostic-java\""
+      },
+      {
         "name": "Compile real Java sources and retain the first incompatible stage",
         "run": "python3 sdk/java-guest/tools/feasibility.py --output \"$RUNNER_TEMP/java-guest-feasibility\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\""
+      },
+      {
+        "name": "Minimize supported Java WIT composition with the actual parser and C ABI",
+        "run": "python3 tools/qualify_java_composition_shapes.py --output \"$RUNNER_TEMP/java-composition-shapes\""
       },
       {
         "name": "Execute Java code, exceptions and GC without claiming node admission",
@@ -95,13 +133,17 @@
         "run": "set -o pipefail\npython3 tools/qualify_java_capsules.py --output \"$RUNNER_TEMP/java-capsule-authoring\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" 2>&1 | tee \"$RUNNER_TEMP/java-capsule-authoring.log\"\n"
       },
       {
+        "name": "Qualify separately signed typed Java domain through ordinary Java HTTP adapter",
+        "run": "set -o pipefail\npython3 tools/qualify_java_http_composition.py --output \"$RUNNER_TEMP/java-http-composition\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" 2>&1 | tee \"$RUNNER_TEMP/java-http-composition.log\"\n"
+      },
+      {
         "if": "always()",
         "name": "Retain diagnostics, generated source and component candidates",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "java-guest-feasibility-${{ github.sha }}",
-          "path": "${{ runner.temp }}/java-guest-feasibility/report.json\n${{ runner.temp }}/java-guest-feasibility/*.candidate.json\n${{ runner.temp }}/java-guest-feasibility/*.candidate.xml\n${{ runner.temp }}/java-guest-feasibility/*.observed.json\n${{ runner.temp }}/java-guest-feasibility/*.log\n${{ runner.temp }}/java-guest-feasibility/*.exit.json\n${{ runner.temp }}/java-guest-feasibility/*.failure.txt\n${{ runner.temp }}/java-guest-feasibility/project/build/teavm-c/\n${{ runner.temp }}/java-guest-feasibility/bindings/\n${{ runner.temp }}/java-guest-feasibility/*.wasm\n${{ runner.temp }}/java-guest-bindings/report.json\n${{ runner.temp }}/java-guest-bindings/compiler/*.log\n${{ runner.temp }}/java-guest-bindings/compiler/*.command.json\n${{ runner.temp }}/java-guest-bindings/compiler-inputs.json\n${{ runner.temp }}/java-guest-bindings/runtime-probe.log\n${{ runner.temp }}/java-guest-bindings/compiled/bindings/\n${{ runner.temp }}/java-guest-bindings/compiled/component.wasm\n${{ runner.temp }}/java-capsule-authoring.log\n${{ runner.temp }}/java-capsule-authoring/*.json\n${{ runner.temp }}/java-capsule-authoring/logs/**\n${{ runner.temp }}/java-capsule-authoring/builds/**\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/*.json\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/logs/**\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/*.json\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/component.wasm\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/compiler-logs/**\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/logs/**\n${{ runner.temp }}/java-capsule-authoring/node/**\n${{ runner.temp }}/java-capsule-authoring/releases/**\n${{ runner.temp }}/java-capsule-authoring/guide/guide.json\n${{ runner.temp }}/java-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/java-capsule-authoring/guide/logs/**\n${{ runner.temp }}/java-capsule-authoring/guide/projects/results/**\n",
+          "path": "${{ runner.temp }}/java-aggregate-encoding/vectors.log\n${{ runner.temp }}/java-transaction-diagnostic-schemas.tar.gz\n${{ runner.temp }}/java-aggregate-encoding/diagnostic-vectors.log\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/report.json\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/source-inputs.json\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/source.tar.gz\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/component.wasm\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/component.wit\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/logs/**\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.log\n${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-java/**/report.json\n${{ runner.temp }}/transaction-guests-java/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-java/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-java/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-java/**/component.wasm\n${{ runner.temp }}/transaction-guests-java/**/component.wit\n${{ runner.temp }}/transaction-guests-java/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-java/**/logs/**\n${{ runner.temp }}/transaction-guests-java/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-java/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-java/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-java/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-java/**/bindings/**\n${{ runner.temp }}/transaction-guests-java/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-java/report.json\n${{ runner.temp }}/transaction-contract-java/source.tar.gz\n${{ runner.temp }}/transaction-contract-java/component.wit\n${{ runner.temp }}/transaction-contract-java/preparation.json\n${{ runner.temp }}/transaction-contract-java/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-java/logs/**\n${{ runner.temp }}/transaction-contract-java/compiler/*.log\n${{ runner.temp }}/transaction-contract-java/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-java/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-java/compiled/component.wit\n${{ runner.temp }}/transaction-contract-java/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-java/compiled/generated/**\n${{ runner.temp }}/transaction-contract-java/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-java/bindings/**\n${{ runner.temp }}/transaction-contract-java/component.wasm\n${{ runner.temp }}/java-guest-feasibility/report.json\n${{ runner.temp }}/java-guest-feasibility/*.candidate.json\n${{ runner.temp }}/java-guest-feasibility/*.candidate.xml\n${{ runner.temp }}/java-guest-feasibility/*.observed.json\n${{ runner.temp }}/java-guest-feasibility/*.log\n${{ runner.temp }}/java-guest-feasibility/*.exit.json\n${{ runner.temp }}/java-guest-feasibility/*.failure.txt\n${{ runner.temp }}/java-guest-feasibility/project/build/teavm-c/\n${{ runner.temp }}/java-guest-feasibility/bindings/\n${{ runner.temp }}/java-guest-feasibility/*.wasm\n${{ runner.temp }}/java-guest-bindings/report.json\n${{ runner.temp }}/java-guest-bindings/compiler/*.log\n${{ runner.temp }}/java-guest-bindings/compiler/*.command.json\n${{ runner.temp }}/java-guest-bindings/compiler-inputs.json\n${{ runner.temp }}/java-guest-bindings/runtime-probe.log\n${{ runner.temp }}/java-guest-bindings/compiled/bindings/\n${{ runner.temp }}/java-guest-bindings/compiled/component.wasm\n${{ runner.temp }}/java-capsule-authoring.log\n${{ runner.temp }}/java-http-composition.log\n${{ runner.temp }}/java-http-composition/**/*.json\n${{ runner.temp }}/java-http-composition/**/*.log\n${{ runner.temp }}/java-http-composition/**/component.wasm\n${{ runner.temp }}/java-http-composition/**/wit/**/*.wit\n${{ runner.temp }}/java-http-composition/**/package/**\n${{ runner.temp }}/java-http-composition/**/evidence/**\n${{ runner.temp }}/java-http-composition/**/compiler-logs/**\n${{ runner.temp }}/java-http-composition/**/logs/**\n${{ runner.temp }}/java-http-composition/**/generated-bindings/**\n${{ runner.temp }}/java-http-composition/signing/logs/**\n${{ runner.temp }}/java-http-composition/**/generated-client.*.log\n${{ runner.temp }}/java-http-composition/projects/adapter/http/**\n${{ runner.temp }}/java-composition-shapes/**\n${{ runner.temp }}/java-capsule-authoring/*.json\n${{ runner.temp }}/java-capsule-authoring/logs/**\n${{ runner.temp }}/java-capsule-authoring/builds/**\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/*.json\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/logs/**\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/*.json\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/component.wasm\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/compiler-logs/**\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/logs/**\n${{ runner.temp }}/java-capsule-authoring/node/**\n${{ runner.temp }}/java-capsule-authoring/releases/**\n${{ runner.temp }}/java-capsule-authoring/guide/guide.json\n${{ runner.temp }}/java-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/java-capsule-authoring/guide/logs/**\n${{ runner.temp }}/java-capsule-authoring/guide/projects/results/**\n",
           "retention-days": 14
         }
       }
@@ -110,7 +152,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Preserve every original compiler command and add exclusive post-stage diagnostic compilation, separate exact schema source and source/JVM helper evidence CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

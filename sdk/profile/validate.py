@@ -127,7 +127,8 @@ def validate():
 if __name__ == "__main__":
     try:
         vector_count, unsigned_count = validate()
-        print(f"client profile validated: 8 RPCs, 6 facades, {vector_count} shared vectors, {unsigned_count} unsigned boundaries")
+        profile, _, _ = read_contract()
+        print(f"client profile validated: {len(profile['operations'])} RPCs, 6 facades, {vector_count} shared vectors, {unsigned_count} unsigned boundaries")
     except (ValueError, KeyError, OSError) as failure:
         print(str(failure), file=sys.stderr)
         sys.exit(1)

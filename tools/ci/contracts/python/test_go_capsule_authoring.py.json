@@ -3,6 +3,7 @@
     "GoAuthoringTests.test_every_editable_template_has_exact_runtime_imports_and_captured_sdk",
     "GoAuthoringTests.test_every_sdk_fixture_is_an_editable_source_project_with_exact_wit",
     "GoAuthoringTests.test_existing_source_and_overlapping_build_outputs_are_never_overwritten",
+    "GoAuthoringTests.test_generated_business_record_owners_survive_export_stub_replacement",
     "GoAuthoringTests.test_generated_resource_owners_have_no_gc_effects_and_reject_shape_drift",
     "GoAuthoringTests.test_guide_and_selectable_examples_cover_the_printed_workflow",
     "GoAuthoringTests.test_module_template_rejects_unreviewed_application_dependencies",
@@ -38,6 +39,18 @@
       "skipSites": []
     },
     "GoAuthoringTests.test_existing_source_and_overlapping_build_outputs_are_never_overwritten": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:305a0d09ef392e4ce99667dbf098a784a39f34b6859db8be5049bacd22570f36",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GoAuthoringTests.test_generated_business_record_owners_survive_export_stub_replacement": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -148,6 +161,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_capsule_authoring.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Verify canonical business record owners survive generated export replacement and drift fails closed",
   "schemaVersion": "latent.ci.contracts.v1"
 }

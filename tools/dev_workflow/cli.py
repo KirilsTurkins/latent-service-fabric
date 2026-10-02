@@ -21,6 +21,14 @@ def parser() -> argparse.ArgumentParser:
     dev = commands.add_parser("dev").add_subparsers(dest="command", required=True)
     doctor = dev.add_parser("doctor", help="read-only prerequisite observation; executes no project recipe")
     doctor.add_argument("--workspace", help="inspect the selected node identity, filesystem and actual profile")
+    preflight = dev.add_parser("preflight", help="bounded composition checks; never executes or deploys guests")
+    preflight.add_argument("--input", type=Path, required=True)
+    selection = preflight.add_mutually_exclusive_group()
+    selection.add_argument("--workspace", help="observe an existing provisioned backend")
+    selection.add_argument("--operator", type=Path, help="explicit standalone operator executable")
+    preflight.add_argument("--operator-sha256", help="exact standalone operator bytes")
+    preflight.add_argument("--config", type=Path, help="existing authenticated standalone operator configuration")
+    preflight.add_argument("--output", choices=("json", "human"), default="json")
     editor = dev.add_parser("editor", help="write explicit VS Code process tasks; existing tasks are preserved")
     editor.add_argument("--workspace", required=True)
     editor.add_argument("--project", type=Path, required=True)
@@ -165,6 +173,36 @@ def foreground_up(args, workspace: Path, connection) -> dict:
 
 
 def dispatch(args) -> dict:
+    if args.command == "preflight":
+        from . import preflight
+        selected = args.input.absolute()
+        value = preflight.load(selected)
+        # Structural byte observations stay on the frontend. Authenticated live
+        # observations use the existing helper protocol or standalone CLI.
+        if args.operator is not None:
+            from .preflight_operation import standalone
+            require(args.operator_sha256 is not None and args.config is not None,
+                    "preflight-explicit-operator-configuration-required")
+            return standalone(value, args.operator.absolute(), args.operator_sha256,
+                              args.config.absolute(), directory=selected.parent)
+        require(args.operator_sha256 is None and args.config is None,
+                "preflight-operator-selection-required")
+        if args.workspace is None:
+            return preflight.run(value, directory=selected.parent)
+        root = _root(args.state_root, create=False)
+        _workspace, connection = _backend(root, args.workspace)
+        structural = preflight.run(value, directory=selected.parent)
+        declaration = {**value, "components": [{key: item for key, item in component.items()
+            if key not in {"componentPath", "manifestPath", "manifestDigest", "metadataPath"}}
+            for component in value["components"]]}
+        result = connection.call("preflight", {"composition": declaration}, timeout=135)
+        require(result.get("schemaVersion") == preflight.RESULT, "preflight-backend-result-version")
+        result["compositionDigest"] = structural["compositionDigest"]
+        byte_checks = [row for row in structural["checks"] if row["code"].startswith("immutable-selected-bytes-")]
+        result["checks"] = byte_checks + result["checks"]
+        result["passed"] = result["passed"] and structural["passed"]
+        require(len(encode(result)) <= 262144, "preflight-result-byte-limit")
+        return result
     if args.command == "doctor" and not args.workspace:
         if os.name == "nt":
             return wsl.doctor()
@@ -324,8 +362,12 @@ def main() -> int:
     args = parser().parse_args()
     try:
         result = dispatch(args)
+        if args.command == "preflight" and args.output == "human":
+            from .preflight import human
+            sys.stdout.write(human(result))
+            return 0 if result["passed"] else 3
         if result.get("passed") is False:
-            emit({"code": "required-tests-failed", "result": result})
+            emit({"code": "composition-checks-failed" if args.command == "preflight" else "required-tests-failed", "result": result})
             return 3
         emit({"code": "success", "result": result})
         return 0

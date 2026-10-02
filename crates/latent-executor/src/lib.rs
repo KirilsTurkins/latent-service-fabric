@@ -2,12 +2,16 @@
 
 #![forbid(unsafe_code)]
 
+pub mod transaction;
+
 use std::sync::Arc;
 
+mod preparation_inspection;
 mod preparation_read_wait;
 mod prepared_activation;
 mod prepared_readiness;
 mod prepared_use;
+pub use preparation_inspection::PreparationInspection;
 pub use preparation_read_wait::PreparationReadWait;
 pub use prepared_activation::PreparedActivation;
 pub use prepared_readiness::PreparedReadiness;
@@ -146,6 +150,13 @@ pub trait ExecutionCancellation: Send + Sync {
     fn is_cancelled(&self) -> bool;
     fn reason(&self) -> Option<String>;
 
+    /// The node's already admitted activation-scoped transaction access. This
+    /// optional host port cannot be selected or constructed by a guest and is
+    /// never retained by a preparation/cache entry. Stateless owners omit it.
+    fn transaction_host(&self) -> Option<Arc<dyn transaction::TransactionHost>> {
+        None
+    }
+
     /// The activation owner's existing accounting state, when available.
     /// Backends clone this handle instead of admitting or registering a second
     /// ledger. The owner retains responsibility for terminal finalization.
@@ -279,6 +290,17 @@ pub trait ExecutionBackend: Send + Sync {
         ready
             .into_activation()
             .map_err(|_| owned_preparation_unsupported())
+    }
+
+    /// Consumes and rechecks the ORIGINAL readiness pin to describe actual
+    /// preparation without reserving a cell, creating a Store or invoking code.
+    /// Unsupported backends retire their pin and report unavailable context.
+    fn inspect_ready(
+        &self,
+        ready: PreparedReadiness,
+    ) -> Result<PreparationInspection, PlatformError> {
+        drop(ready);
+        Err(owned_preparation_unsupported())
     }
 
     /// Retains the same readiness owner while an opt-in backend waits only for

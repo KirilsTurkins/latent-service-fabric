@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "JavaTransactionDiagnosticTests.test_new_fault_capture_preserves_original_abi_payload_companion_and_limits",
+    "JavaTransactionDiagnosticTests.test_original_staging_drift_is_rejected_and_an_existing_capture_is_never_replaced"
+  ],
+  "guards": {
+    "JavaTransactionDiagnosticTests.test_new_fault_capture_preserves_original_abi_payload_companion_and_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:067060a2a5fecd2ea145d2d34afdbf9739d1b4e8a6f0a012099d50ef3621c126",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaTransactionDiagnosticTests.test_original_staging_drift_is_rejected_and_an_existing_capture_is_never_replaced": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:067060a2a5fecd2ea145d2d34afdbf9739d1b4e8a6f0a012099d50ef3621c126",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_diagnostics.py",
+  "reviewReason": "Add two bounded source-capture and original-authority preservation cases for the separate post-stage diagnostic Java capsule",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

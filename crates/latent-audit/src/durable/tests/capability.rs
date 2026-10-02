@@ -179,3 +179,45 @@ fn preflight_denies_oversize_before_admission_and_unknown_survives_restart() {
     drop(page);
     stop(&handle, &mut worker);
 }
+
+#[test]
+fn transaction_resource_selection_cannot_claim_generic_provider_or_commit_completion() {
+    for (capability, operation) in [
+        ("latent:state/key-value@0.2.0", "get"),
+        ("latent:intents/staging@0.1.0", "stage"),
+    ] {
+        let mut value = required();
+        let context = value.identities.capability.as_mut().unwrap();
+        context.capability = capability.into();
+        context.operation = operation.into();
+        context.resource_class = AuditCapabilityResourceClass::State;
+        context.required = false;
+        context.request.as_mut().unwrap().scope = AuditCapabilityDigestScope::ResourceSelection;
+        context.validate().unwrap();
+        for outcome in [
+            AuditProviderOutcome::HostCompleted,
+            AuditProviderOutcome::BlobSealed,
+            AuditProviderOutcome::HttpResponseReceived,
+            AuditProviderOutcome::BrokerAcknowledged,
+            AuditProviderOutcome::LocalDispatchAccepted,
+            AuditProviderOutcome::SecretResolved,
+        ] {
+            assert!(!context.accepts_outcome(outcome));
+            context.provider_outcome = Some(outcome);
+            assert!(context.validate().is_err());
+        }
+        context.provider_outcome = None;
+        // Selection evidence cannot stand in for a required durable provider
+        // attempt with its independently captured complete request digest.
+        assert!(codec::attempt(&value).is_err());
+        let mut json = serde_json::to_value(&value).unwrap();
+        json["identities"]["capability"]["resultPayload"] = "do-not-log-business-results".into();
+        assert!(serde_json::from_value::<AuditOperationAttempt>(json).is_err());
+        let context = value.identities.capability.as_mut().unwrap();
+        context.resource_class = AuditCapabilityResourceClass::Secrets;
+        assert!(context.validate().is_err());
+        context.resource_class = AuditCapabilityResourceClass::State;
+        context.capability = "latent:state/key-value@99.0.0".into();
+        assert!(context.validate().is_err());
+    }
+}

@@ -511,3 +511,16 @@ mutation preconditions, tenant isolation and current authority checks remain
 explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
+
+## Additive privileged activation-tree inspection
+
+Issue #709 adds `NodeService.InspectActivationTree` and its four messages and
+three closed diagnostic enums. Every earlier declaration, field number and RPC
+is preserved. Producer details use `activation.diagnostic.v1` internally;
+public invocation and browser errors continue to discard that detail.
+Unknown enum numbers and optional zero values survive all six common models
+and native transports. See [activation inspection](../reference/activation-inspection.md).
+
+Caller-supplied root/parent IDs now reject before an external activation is
+accepted. These IDs cannot authorize a tree edge. Trusted local service brokers
+derive lineage from the actual parent owner and authenticated tenant.

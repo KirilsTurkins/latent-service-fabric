@@ -10,8 +10,8 @@ mod tests;
 
 use super::{invalid, unavailable, CapabilityPolicy, ProviderBinding};
 pub use authority::{
-    CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, PolicySnapshot,
-    PolicySnapshotState, SealedPolicyDecision,
+    CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, OwnedPolicyDecision,
+    PolicySnapshot, PolicySnapshotState, SealedPolicyDecision,
 };
 use latent_artifacts::LifecycleAuthorityHandle;
 use latent_core::PlatformError;
@@ -91,6 +91,11 @@ pub struct PolicyStore {
     started: Instant,
 }
 impl PolicyStore {
+    /// Monotonic store stamp for privileged descriptive coherence checks. It
+    /// exposes no policy row, caller claim or reusable authorization decision.
+    pub fn inspection_generation(&self) -> Result<u64, PlatformError> {
+        Ok(self.lock()?.image.generation)
+    }
     /// Bounded ownership for a redacted management inspection response. The
     /// caller must preflight its response before releasing the control job.
     pub fn reserve_inspection(&self) -> Result<PolicyReadLease, PlatformError> {

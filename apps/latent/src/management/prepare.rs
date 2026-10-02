@@ -22,9 +22,32 @@ use super::invalid_manifest;
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
+        Command::Activation(crate::args::ActivationCommand::Tree(args)) => {
+            identifier(&args.id)?;
+            Ok(Operation::InspectActivationTree(
+                proto::InspectActivationTreeRequest {
+                    activation_id: args.id.clone(),
+                    page: Some(page(args.page_size, args.page_token.as_deref())?),
+                    ..proto::InspectActivationTreeRequest::default()
+                },
+            ))
+        }
+        Command::Activation(crate::args::ActivationCommand::Roots(args)) => {
+            identifier(&args.service)?;
+            Ok(Operation::InspectActivationTree(
+                proto::InspectActivationTreeRequest {
+                    activation_id: String::new(),
+                    service: Some(args.service.clone()),
+                    from_unix_millis: args.from_unix_millis,
+                    page: Some(page(args.page_size, args.page_token.as_deref())?),
+                },
+            ))
+        }
         Command::Web(command) => super::web::prepare(command, config),
         Command::Trigger(command) => super::triggers::prepare(command, config),
         Command::Capability(command) => super::capabilities::prepare(command),
+        Command::State(command) => super::phase4::prepare_state(command, config),
+        Command::Transaction(command) => super::phase4::prepare_transaction(command, config),
         Command::Policy(command) => super::policies::prepare(command, config),
         Command::Rollout(command) => super::phase2::prepare::rollout(command, config),
         Command::Audit(command) => super::phase2::prepare::audit(command, config),
@@ -90,6 +113,9 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
                 generation: args.generation,
             },
         )),
+        Command::Route(RouteCommand::Target(args)) => {
+            super::target_inspection::prepare(args, config)
+        }
         Command::Node(NodeCommand::Get(args)) => {
             identifier(&args.id)?;
             Ok(Operation::GetNode(proto::GetNodeRequest {

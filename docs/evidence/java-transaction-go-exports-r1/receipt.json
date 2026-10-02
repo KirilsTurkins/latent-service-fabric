@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "completed-guest-compiler-failure",
+  "pullRequest": 802,
+  "headCommit": "46d5fb0c6a68ad1a1133cf99d31a83cd3a38d6b7",
+  "testedMergeCommit": "34de611f3bc835f93d5fc0d5786b2a972021c70f",
+  "runId": "36866634936",
+  "jobId": "110383629373",
+  "artifactId": "11179156281",
+  "originalInputs": {
+    "full-job.log": {
+      "bytes": 121469,
+      "sha256": "sha256:4361088c449b917a355b90f37ba8b99b8c90d479c70d7a0f6c884d1bd88e49d7"
+    },
+    "original-upstream-artifact.zip": {
+      "bytes": 2452411,
+      "sha256": "sha256:7dcd2bfcf8132ee8c5d1e5fa0766aed23bb339a53c70538c0fbc1888c945b551"
+    },
+    "13-component-build.stderr.txt": {
+      "bytes": 1009,
+      "sha256": "sha256:bf53bf35b09ea4654be2341d6c8d2c5037ae1b779984fd870aef0dcfc0bc6078"
+    }
+  },
+  "observedStage": "aggregate/component-build",
+  "observedExitCode": 1,
+  "sourceControllerTests": {
+    "command": "python -B -m unittest tools.tests.test_transaction_guest_authoring tools.tests.test_transaction_guest_workflow",
+    "cases": 10,
+    "passed": true
+  },
+  "repairedSourceCompilerQualified": false,
+  "signedNodeExecutionQualified": false
+}

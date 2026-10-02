@@ -83,6 +83,17 @@ pub(super) struct HandleEntry {
 pub(super) struct SessionState {
     pub slots: Vec<Option<Arc<HandleEntry>>>,
 }
+impl SessionCore {
+    pub(super) fn observe_diagnostic(
+        &self,
+        diagnostic: latent_core::diagnostic::ActivationDiagnostic,
+    ) {
+        if let Some(sink) = self.owner.diagnostic_sink.get() {
+            sink.record(&self.plan.target.tenant, &self.activation_id, diagnostic);
+        }
+    }
+}
+
 pub(super) struct SessionCore {
     pub owner: Arc<Inner>,
     pub plan: Arc<CompiledCapabilityPlan>,
@@ -552,7 +563,15 @@ impl CapabilitySession {
             .bindings
             .iter()
             .position(|b| b.provider.capability == capability)
-            .ok_or_else(denied)?;
+            .ok_or_else(|| {
+                use latent_core::diagnostic::{
+                    ActivationDiagnostic as D, DiagnosticReason as R, DiagnosticStage as S,
+                };
+                D::new(S::Binding, R::BindingAbsent).attach(super::error(
+                    latent_core::PlatformErrorCode::PermissionDenied,
+                    "capability-binding-absent",
+                ))
+            })?;
         let binding = &self.core.plan.bindings[index];
         let installed = binding.provider.live.try_read().map_err(|_| busy())?;
         if !*installed {
@@ -701,6 +720,21 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
         } => ResourceRequest::Service {
             service: service.to_owned(),
             publication: publication.to_owned(),
+        },
+        ResourceTarget::State {
+            namespace,
+            incarnation,
+            entity,
+            recovery_kind,
+            recovery_scope,
+            result_policy,
+        } => ResourceRequest::State {
+            namespace: namespace.into(),
+            incarnation,
+            entity: entity.map(str::to_owned),
+            recovery_kind,
+            recovery_scope: recovery_scope.into(),
+            result_policy: result_policy.into(),
         },
     }
 }

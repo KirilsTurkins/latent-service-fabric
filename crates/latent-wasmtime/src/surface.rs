@@ -14,6 +14,7 @@ use crate::values::validate_signature;
 
 pub(crate) mod blob;
 pub(crate) mod streaming;
+pub(crate) mod transaction;
 
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
 pub const LOG_IMPORT: &str = "latent:log/log@0.1.0";
@@ -29,10 +30,63 @@ pub(crate) struct Function {
 pub(crate) struct Surface {
     functions: Vec<((String, String), Function)>,
     pub imports: BTreeSet<String>,
+    pub binding_imports: BTreeSet<String>,
+    pub type_imports: BTreeSet<String>,
     pub retained_bytes: usize,
+    pub value_codec_limits: crate::values::ValueCodecLimits,
+    pub hostcall_fuel: usize,
 }
 
 impl Surface {
+    pub(crate) fn inspection_exports(
+        &self,
+    ) -> Result<Vec<(latent_core::ContractId, latent_core::FunctionId)>, PlatformError> {
+        if self.functions.len() > 128
+            || self
+                .functions
+                .iter()
+                .any(|((contract, function), _)| contract.len() > 512 || function.len() > 512)
+        {
+            return Err(platform_error(
+                PlatformErrorCode::ResourceExhausted,
+                "preparation-inspection-export-limit",
+                false,
+            ));
+        }
+        let names = self
+            .functions
+            .iter()
+            .map(|((contract, function), _)| contract.len() + function.len())
+            .sum::<usize>()
+            + self.imports.iter().map(String::len).sum::<usize>();
+        if names > 32 * 1024 {
+            return Err(platform_error(
+                PlatformErrorCode::ResourceExhausted,
+                "preparation-inspection-name-limit",
+                false,
+            ));
+        }
+        Ok(self
+            .functions
+            .iter()
+            .map(|((contract, function), _)| {
+                (
+                    latent_core::ContractId(contract.clone()),
+                    latent_core::FunctionId(function.clone()),
+                )
+            })
+            .collect())
+    }
+    pub(crate) fn function_count(&self) -> usize {
+        self.functions.len()
+    }
+
+    pub(crate) fn has_web_application(&self) -> bool {
+        self.functions
+            .iter()
+            .any(|((contract, _), _)| contract == "latent:web/application@0.1.0")
+    }
+
     pub(crate) fn function(&self, contract: &str, function: &str) -> Option<&Function> {
         lookup_function(&self.functions, contract, function)
     }
@@ -87,10 +141,20 @@ pub(crate) fn validate_with_providers(
     providers: Providers,
 ) -> Result<Surface, PlatformError> {
     let component_type = component.component_type();
+    // The actual component surface, subsequently reconciled with the signed
+    // manifest below, selects the transfer owner. Merely installing ingress
+    // must not amplify every domain signature's allocation requirement.
+    let selected_config = selected_value_config(
+        config,
+        component_type
+            .exports(engine)
+            .any(|(name, _)| name == "latent:web/application@0.1.0"),
+    );
+    let config = &selected_config;
     let mut remaining = config.value_codec_limits.max_type_nodes;
     let mut retained_bytes = 0;
     retain(1024, &mut retained_bytes, config)?;
-    let imports = validate_imports(
+    let (imports, type_imports) = validate_imports(
         &component_type,
         engine,
         artifact,
@@ -180,16 +244,50 @@ pub(crate) fn validate_with_providers(
             "manifest or contract metadata disagrees with exported interfaces",
         ));
     }
+    let binding_imports = imports
+        .iter()
+        .filter(|name| {
+            latent_core::PHASE3_HOST_ABI_CURRENT
+                .interface(name)
+                .is_some()
+        })
+        .map(|name| {
+            retain(256 + name.len(), &mut retained_bytes, config)?;
+            Ok(name.clone())
+        })
+        .collect::<Result<BTreeSet<_>, PlatformError>>()?;
     Ok(Surface {
         // Keep cold duplicate/descriptor validation and its conservative charge;
         // retain the same sorted keys for borrowed allocation-free invocation.
         functions: functions.into_iter().collect(),
         imports,
+        binding_imports,
+        type_imports,
         retained_bytes,
+        value_codec_limits: config.value_codec_limits,
+        hostcall_fuel: config.hostcall_fuel,
     })
 }
 
 type ActualFunctions = BTreeMap<String, (ComponentFunc, Function)>;
+
+pub(crate) fn selected_value_config(
+    config: &WasmtimeConfig,
+    actual_web_export: bool,
+) -> WasmtimeConfig {
+    let mut selected = config.clone();
+    if actual_web_export {
+        if let Some(web) = config.buffered_web_value_profile {
+            selected.hostcall_fuel = web.hostcall_fuel;
+            selected.value_codec_limits = web.limits;
+        }
+    } else {
+        // This local validation copy also provides an unambiguous diagnostic
+        // selection; the original engine identity still binds both policies.
+        selected.buffered_web_value_profile = None;
+    }
+    selected
+}
 
 #[cfg(test)]
 mod tests;
@@ -202,27 +300,48 @@ fn validate_imports(
     remaining: &mut usize,
     retained_bytes: &mut usize,
     providers: Providers,
-) -> Result<BTreeSet<String>, PlatformError> {
+) -> Result<(BTreeSet<String>, BTreeSet<String>), PlatformError> {
     let mut imports = BTreeSet::new();
+    let mut type_imports = BTreeSet::new();
+    let transactional = component_type
+        .imports(engine)
+        .any(|(name, _)| name == transaction::STATE || name == transaction::INTENTS);
+    if transactional && !config.transactional_state {
+        return Err(incompatible("scoped transaction host is unavailable"));
+    }
+    let profile = if transactional {
+        latent_core::PHASE4_HOST_ABI_V1
+    } else {
+        latent_core::PHASE3_HOST_ABI_CURRENT
+    };
+    let transaction_resource = transaction::command_resource(component_type, engine);
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
-        let specification = latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(name)
-            .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
+        let ComponentItem::ComponentInstance(interface) = item.ty else {
+            return Err(incompatible(
+                "host capabilities and structural types must be imported interfaces",
+            ));
+        };
+        let Some(specification) = profile.interface(name) else {
+            validate_type_interface(&interface, engine, config, remaining)?;
+            retain(256 + name.len(), retained_bytes, config)?;
+            type_imports.insert(name.to_owned());
+            continue;
+        };
         if specification.binding == latent_core::HostInterfaceBinding::Provider
+            && !(transactional && (name == transaction::STATE || name == transaction::INTENTS))
             && !providers.supports(name)
         {
             // Recognition is data-only. Providers require an installed trusted port;
             // a label or a package manifest cannot install I/O.
-            return Err(incompatible(
+            return Err(latent_core::diagnostic::ActivationDiagnostic::new(
+                latent_core::diagnostic::DiagnosticStage::Binding,
+                latent_core::diagnostic::DiagnosticReason::ProviderAbsent,
+            )
+            .attach(incompatible(
                 "required host capability provider is unavailable",
-            ));
+            )));
         }
-        let ComponentItem::ComponentInstance(interface) = item.ty else {
-            return Err(incompatible(
-                "host capabilities must be imported interfaces",
-            ));
-        };
         let mut resources = Vec::new();
         for (resource_name, item) in interface.exports(engine) {
             if let ComponentItem::Resource(resource) = item.ty {
@@ -241,7 +360,11 @@ fn validate_imports(
                 ComponentItem::ComponentFunc(function) => {
                     signature_with_resources(
                         &function,
-                        specification.asynchronous,
+                        if specification.interface == transaction::STATE {
+                            transaction::is_async(name)?
+                        } else {
+                            specification.asynchronous
+                        },
                         config,
                         remaining,
                         &resources,
@@ -250,6 +373,7 @@ fn validate_imports(
                         match specification.interface {
                             latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            transaction::STATE | transaction::INTENTS => transaction::validate(specification.interface, name, &function, &interface, engine, transaction_resource)?,
                             _ => return Err(incompatible("unsupported host resource interface")),
                         }
                     }
@@ -285,7 +409,27 @@ fn validate_imports(
         return Err(incompatible("manifest imports disagree with the component"));
     }
 
-    Ok(imports)
+    Ok((imports, type_imports))
+}
+
+fn validate_type_interface(
+    interface: &wasmtime::component::types::ComponentInstance,
+    engine: &Engine,
+    config: &WasmtimeConfig,
+    remaining: &mut usize,
+) -> Result<(), PlatformError> {
+    for (name, item) in interface.exports(engine) {
+        take_name(name, config, remaining)?;
+        let ComponentItem::Type(ty) = item.ty else {
+            return Err(incompatible(
+                "unknown imported interfaces may contain only structural value types",
+            ));
+        };
+        // The same finite signature proof and shared type-work allowance apply.
+        // Resource, own/borrow, future, stream and nested instances fail closed.
+        check_types(&[ty], config, remaining)?;
+    }
+    Ok(())
 }
 
 fn register_functions(
@@ -377,7 +521,8 @@ fn check_types(
     config: &WasmtimeConfig,
     remaining: &mut usize,
 ) -> Result<(), PlatformError> {
-    let plan = validate_signature(types, config.value_codec_limits, config.hostcall_fuel)?;
+    let plan = validate_signature(types, config.value_codec_limits, config.hostcall_fuel)
+        .map_err(|error| diagnostic_profile(error, config))?;
     *remaining = remaining
         .checked_sub(plan.examined_type_nodes)
         .ok_or_else(exhausted)?;
@@ -395,7 +540,8 @@ fn check_host_types(
         config.value_codec_limits,
         config.hostcall_fuel,
         resources,
-    )?;
+    )
+    .map_err(|error| diagnostic_profile(error, config))?;
     *remaining = remaining
         .checked_sub(plan.examined_type_nodes)
         .ok_or_else(exhausted)?;
@@ -413,6 +559,25 @@ fn retain(
     }
     *retained = next;
     Ok(())
+}
+
+fn diagnostic_profile(mut error: PlatformError, config: &WasmtimeConfig) -> PlatformError {
+    use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticProfile};
+    for detail in &mut error.details {
+        if let Some(mut observation) = ActivationDiagnostic::from_detail(detail) {
+            // Every error returned by this type walker is preparation-owned;
+            // the execution codec's shared schema-limit helper is also used
+            // here and must not mislabel a failure before any Store exists.
+            observation.stage = latent_core::diagnostic::DiagnosticStage::Preparation;
+            observation.profile = Some(if config.buffered_web_value_profile.is_some() {
+                DiagnosticProfile::WasmtimeBufferedWebValuesV1
+            } else {
+                DiagnosticProfile::WasmtimeServiceValuesV1
+            });
+            *detail = observation.detail();
+        }
+    }
+    error
 }
 
 fn validate_descriptor(

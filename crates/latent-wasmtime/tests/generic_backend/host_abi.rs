@@ -24,6 +24,41 @@ fn artifact(spec: &latent_core::HostInterfaceSpec) -> latent_artifacts::CapsuleA
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn activation_owned_transaction_imports_require_scope_without_provider_bindings() {
+    let mut configuration = config();
+    configuration.transactional_state = true;
+    let factory = WasmtimeComponentEngineFactory::new(configuration).unwrap();
+    let backend = factory.create_backend_instance();
+    let artifact = artifact(
+        latent_core::PHASE4_HOST_ABI_V1
+            .interface("latent:state/key-value@0.2.0")
+            .unwrap(),
+    );
+    let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
+    let prepared = backend.prepare(&artifact, &key).await.unwrap();
+    assert_eq!(backend.resource_snapshot().stores_created, 0);
+    let cancellation = Cancellation::new("transaction-missing-scope");
+    let invocation = request(
+        prepared,
+        &cancellation.id,
+        fixture::CONTRACT,
+        "inspect",
+        b"[]",
+        budget(),
+    );
+    assert!(invocation.imports.is_empty());
+    let error = run(&backend, invocation, &cancellation).await.unwrap_err();
+    // The compiled import is served only by an original activation-owned port.
+    // An empty provider plan cannot grant that port, and its absence fails
+    // before input lifting or Store creation rather than asking for a catalog
+    // provider binding for the scoped state interface.
+    assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
+    assert_eq!(error.message, "scoped transaction execution owner required");
+    assert_eq!(backend.resource_snapshot().stores_created, 0);
+    idle(&backend);
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn outbound_proposal_and_wasi_sockets_are_not_ambient_authority() {
     const PROPOSED: &str = "latent:network/streams@0.1.0";
     const WIT: &str = include_str!("../../../../research/standard-outbound/streams.wit");

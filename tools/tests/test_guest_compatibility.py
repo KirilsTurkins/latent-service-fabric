@@ -112,6 +112,145 @@ class CompatibilityReport(unittest.TestCase):
 
 
 class FinalComponentInspection(unittest.TestCase):
+    def test_phase4_catalog_requires_captured_profile_companion_links_schema_and_wit(self):
+        from tools.java_transaction_schema import create
+        from tools.rust_capsule_project import snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            files = snapshot(create(Path(temporary) / "project", "legacy-v1"))
+        self.assertEqual(build.host_abi()["id"], PROFILE)
+        self.assertEqual(build.host_abi({})["id"], PROFILE)
+        self.assertEqual(build.host_abi(files)["id"], "lsf-host-abi-phase4-v1")
+        for name in ("transaction-profile.json", "state-schema.json",
+                     "wit/deps/state/package.wit", "wit/deps/intents/package.wit"):
+            changed = dict(files)
+            changed[name] += b" "
+            with self.assertRaises(DevError):
+                build.host_abi(changed)
+        # An authored companion can be reformatted; its new raw digest belongs
+        # to its new captured package, never to an old verification receipt.
+        self.assertEqual(build.host_abi({**files, "transaction-binding.json": files["transaction-binding.json"] + b" "})["id"],
+                         "lsf-host-abi-phase4-v1")
+        for name in ("transaction-profile.json", "transaction-binding.json", "capsule-project.json", "state-schema.json"):
+            changed = {key: value for key, value in files.items() if key != name}
+            with self.assertRaises(DevError):
+                build.host_abi(changed)
+        binding = json.loads(files["transaction-binding.json"])
+        for name, value in (("capsule", "examples/other"), ("deployment", "other"),
+                            ("binding", "other"), ("hostAbiDigest", DIGEST), ("profile", "automatic-transaction")):
+            changed = {**files, "transaction-binding.json": encode({**binding, name: value})}
+            with self.assertRaises(DevError):
+                build.host_abi(changed)
+
+    def test_phase4_recognition_does_not_install_providers_grant_capabilities_or_allow_immediate_http(self):
+        from tools.java_transaction_schema import create
+        from tools.rust_capsule_project import snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            files = snapshot(create(Path(temporary) / "project", "compatible-v2"))
+        selected = build.host_abi(files)
+        imports = ["latent:state/key-value@0.2.0", "latent:intents/staging@0.1.0"]
+        self.assertEqual([item["classification"] for item in c.import_findings(imports, imports, selected)],
+                         ["unresolved-behavior"])
+        for installed, granted, expected in ((set(), set(), "missing-provider"), (set(imports), set(), "missing-grant")):
+            self.assertEqual([item["classification"] for item in c.import_findings(imports, imports, selected,
+                             installed=installed, granted=granted)], [expected, expected])
+        self.assertEqual(c.import_findings([HTTP], [HTTP], selected)[0]["classification"], "unknown-import")
+
+    def test_phase4_package_and_failure_reports_keep_original_catalog_and_stale_inputs_fail_closed(self):
+        from tools.java_transaction_schema import create
+        from tools.rust_capsule_project import inventory, snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            files = snapshot(create(root / "project", "writer-v2"))
+            output = root / "observations"
+            output.mkdir()
+            component = b"unit-test-retained-component"
+            (output / "component.wasm").write_bytes(component)
+            (output / "source-inputs.json").write_bytes(inventory(files))
+            inspection = {"componentDigest": digest(component), "hostAbiDigest": digest(encode(build.host_abi(files))),
+                          "findings": [c.finding("unresolved-behavior", "invocation", "not-evaluated")]}
+            (output / "compatibility-inspection.json").write_bytes(encode(inspection))
+            build.package_report(output, files, component)
+            packaged = c.read((output / "compatibility-report.json").read_bytes())
+            self.assertEqual(packaged["runtimeProfile"], "lsf-host-abi-phase4-v1")
+            self.assertEqual((packaged["authority"], packaged["status"]), ("none", "incomplete"))
+            build.failure_report(output, "java", "compatibility", files=files)
+            failed = c.read((output / "compatibility-report.json").read_bytes())
+            self.assertEqual((failed["runtimeProfile"], failed["authority"]), ("lsf-host-abi-phase4-v1", "none"))
+            inspection["hostAbiDigest"] = DIGEST
+            (output / "compatibility-inspection.json").write_bytes(encode(inspection))
+            build.failure_report(output, "java", "compile", files=files)
+            self.assertEqual(json.loads((output / "compatibility-report-failed.json").read_bytes())["status"], "unavailable")
+
+    def test_actual_java_type_interface_is_structural_without_installing_or_granting_a_provider(self):
+        raw = (Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes()
+        self.assertEqual(digest(raw), "sha256:fa52df37a921a12fcfed9fc1fb499ee9848291daa01de04bdce572e0f7a0cf4d")
+        original = json.loads(raw)
+        host = json.loads((build.ROOT / "wit/host-abi-phase3-v4.json").read_bytes())
+        known = {row["interface"] for row in host["interfaces"]}
+        names = build.interface_names(original, host_interfaces=known)
+        clocks = ["latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0"]
+        self.assertEqual(names, {"imports": clocks, "typeImports": ["examples:java-http-domain/types@1.0.0"],
+                                "exports": ["examples:java-http-domain/api@1.0.0"]})
+        findings = c.import_findings(names["imports"], clocks, host)
+        self.assertEqual([item["classification"] for item in findings], ["unresolved-behavior"])
+        self.assertEqual(sample(findings)["authority"], "none")
+        self.assertEqual([item["classification"] for item in c.import_findings(names["imports"], clocks, host,
+                         installed=set(), granted=set())], ["missing-provider", "missing-provider"])
+        reexport = copy.deepcopy(original)
+        reexport["worlds"][0]["exports"]["types"] = {"interface": {"id": 2}}
+        self.assertIn("examples:java-http-domain/types@1.0.0", build.interface_names(reexport)["exports"])
+
+    def test_type_named_callable_and_recognized_host_interfaces_do_not_bypass_host_checks(self):
+        original = json.loads((Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes())
+        changed = copy.deepcopy(original)
+        changed["interfaces"][2]["functions"] = {"send": {"kind": "freestanding", "params": [], "result": None}}
+        self.assertEqual(build.interface_names(changed)["typeImports"], [])
+        changed = copy.deepcopy(original)
+        known = {"examples:java-http-domain/types@1.0.0"}
+        self.assertEqual(build.interface_names(changed, host_interfaces=known)["typeImports"], [])
+
+    def test_resource_handle_and_async_aliases_cannot_be_classified_as_structural(self):
+        original = json.loads((Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes())
+        for kind in ("resource", {"handle": {"own": 1}}, {"handle": {"borrow": 1}},
+                     {"future": "u64"}, {"stream": "u64"}, {"unknown": "u64"}):
+            changed = copy.deepcopy(original)
+            changed["types"][0]["kind"] = kind
+            names = build.interface_names(changed)
+            self.assertEqual(names["typeImports"], [])
+            self.assertIn("examples:java-http-domain/types@1.0.0", names["imports"])
+
+    def test_structural_alias_indices_cycles_and_deep_memoized_paths_fail_closed(self):
+        original = json.loads((Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes())
+        for index in (-1, True, 99999, 0):
+            changed = copy.deepcopy(original)
+            changed["types"][0]["kind"] = {"type": index}
+            with self.assertRaises(DevError):
+                build.interface_names(changed)
+        changed = copy.deepcopy(original)
+        changed["interfaces"][2]["types"] = {"shallow": 0, "deep": len(changed["types"]) + 32}
+        for index in range(33):
+            child = 0 if index == 0 else len(changed["types"]) - 1
+            changed["types"].append({"kind": {"option": child}})
+        with self.assertRaises(DevError):
+            build.interface_names(changed)
+
+    def test_structural_value_forms_and_shared_work_bound_remain_finite(self):
+        original = json.loads((Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes())
+        for kind in ({"tuple": {"types": ["u64", "string"]}}, {"result": {"ok": "u64", "err": None}},
+                     {"variant": {"cases": [{"name": "empty", "type": None}, {"name": "full", "type": "u64"}]}},
+                     {"enum": {"cases": [{"name": "on"}, {"name": "off"}]}},
+                     {"flags": {"flags": [{"name": "read"}, {"name": "write"}]}}):
+            changed = copy.deepcopy(original)
+            changed["types"][0]["kind"] = kind
+            self.assertEqual(build.interface_names(changed)["typeImports"], ["examples:java-http-domain/types@1.0.0"])
+        changed = copy.deepcopy(original)
+        base = len(changed["types"])
+        for index in range(9):
+            changed["types"].append({"kind": {"tuple": {"types": ["u64"] * 4096}}})
+        changed["interfaces"][2]["types"] = {"bounded-" + str(index): base + index for index in range(9)}
+        with self.assertRaises(DevError):
+            build.interface_names(changed)
+
     def test_reporting_stale_input_preserves_original_build_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Compose captured dependency approval and packaged resources in the Linux helper; retain merged source changes from both feature branches",
+  "reviewReason": "Preserve all native frontend smoke and preflight resource obligations while packaging browser ownership, captured dependency verification and source-bound guest resource imports from both parents.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e55a28df1fdcd5211cc6b874502425ec0e8c6ead55a39181d887312a0ece86ad"
+  "sha256": "61260d5e701523da566c33d897505a63df7ebbfc01930550ab37b10f75a0b854"
 }

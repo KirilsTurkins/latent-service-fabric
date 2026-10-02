@@ -1,0 +1,68 @@
+[
+  {
+    "stage": "source-clone",
+    "command": [
+      "git",
+      "clone",
+      "--shared",
+      "--no-checkout",
+      "/repository",
+      "/tmp/java718-diagnostic-r6/source"
+    ],
+    "exitCode": 0,
+    "seconds": 1.687861
+  },
+  {
+    "stage": "source-checkout",
+    "command": [
+      "git",
+      "checkout",
+      "--detach",
+      "aab172ba3df2c4d7c6f6335b074400432055f174"
+    ],
+    "exitCode": 0,
+    "seconds": 16.717949
+  },
+  {
+    "stage": "ensurepip",
+    "command": [
+      "/usr/local/bin/python3.13",
+      "-m",
+      "ensurepip",
+      "--user"
+    ],
+    "exitCode": 0,
+    "seconds": 8.659491
+  },
+  {
+    "stage": "python-requirements",
+    "command": [
+      "/usr/local/bin/python3.13",
+      "-m",
+      "pip",
+      "install",
+      "--user",
+      "-r",
+      "tools/requirements.lock"
+    ],
+    "exitCode": 0,
+    "seconds": 6.043014
+  },
+  {
+    "stage": "actual-diagnostic-compiler",
+    "command": [
+      "/usr/local/bin/python3.13",
+      "-B",
+      "/tmp/java718-diagnostic-r6/source/tools/compile_transaction_guests.py",
+      "--language",
+      "java",
+      "--wasi-sdk",
+      "/tmp/java718-diagnostic-r6/managed/wasi-sdk",
+      "--java-post-stage-diagnostic",
+      "--output",
+      "/tmp/java718-diagnostic-r6/capture"
+    ],
+    "exitCode": 0,
+    "seconds": 91.601865
+  }
+]

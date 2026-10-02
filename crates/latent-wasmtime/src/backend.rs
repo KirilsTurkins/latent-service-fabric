@@ -495,6 +495,35 @@ impl WasmtimeBackend {
             Err(outcome) => return Ok(outcome),
         };
         let function = self.requested_function(&runtime, &request)?;
+        let transaction = cancellation.transaction_host();
+        let needs_transaction = runtime
+            .surface
+            .imports
+            .contains(crate::surface::transaction::STATE)
+            || runtime
+                .surface
+                .imports
+                .contains(crate::surface::transaction::INTENTS);
+        if needs_transaction && transaction.is_none() {
+            return Err(platform_error(
+                PlatformErrorCode::PermissionDenied,
+                "scoped transaction execution owner required",
+                false,
+            ));
+        }
+        if let Some(host) = &transaction {
+            if !self.config.transactional_state
+                || !needs_transaction
+                || host.activation_id() != &request.activation.activation_id
+                || !host.budget().is_same_instance(accounting.budget())
+            {
+                return Err(platform_error(
+                    PlatformErrorCode::PermissionDenied,
+                    "transaction execution owner mismatch",
+                    false,
+                ));
+            }
+        }
         let temporary_buffer_guard = self.shared.resources.temporary_buffer();
         let raw_input = input::RawInvocationInput::new(
             std::mem::take(&mut request.activation.input),
@@ -504,7 +533,7 @@ impl WasmtimeBackend {
             &function.params,
             raw_input.bytes(),
             &request.activation.input_media_type,
-            self.config.value_codec_limits,
+            runtime.surface.value_codec_limits,
         )?;
 
         let capabilities = self
@@ -536,8 +565,14 @@ impl WasmtimeBackend {
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
-        let mut store =
-            AccountedStore::new(self.invocation_store(request, &stop, accounting, capabilities)?);
+        let mut store = AccountedStore::new(self.invocation_store(
+            request,
+            &stop,
+            accounting,
+            capabilities,
+            runtime.surface.hostcall_fuel,
+            transaction,
+        )?);
         // Decoding and every borrowed validation have completed. The Store now
         // owns only the moved context; destroy the actual raw input before call.
         raw_input.release(InvocationInputDropReason::BeforeGuestCall);
@@ -578,7 +613,11 @@ impl WasmtimeBackend {
         timing.component_post_return_micros = elapsed_micros(component_post_return_started);
 
         let encoded = call_result.as_ref().ok().map(|()| {
-            values::encode_result(&function.results, &output, self.config.value_codec_limits)
+            values::encode_result(
+                &function.results,
+                &output,
+                runtime.surface.value_codec_limits,
+            )
         });
         // Cleanup order is intentional: after the guest call and its
         // component-model post-return complete, the actual component instance,
@@ -631,7 +670,7 @@ impl WasmtimeBackend {
                 false,
             ));
         }
-        Self::validate_bound_imports(&request.imports, &runtime.surface.imports)?;
+        Self::validate_bound_imports(&request.imports, &runtime.surface.binding_imports)?;
         self.validate_invocation_budget(&request.budget, &runtime.declared_budget)?;
         let function = runtime
             .surface
@@ -655,6 +694,8 @@ impl WasmtimeBackend {
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
+        hostcall_fuel: usize,
+        transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -691,12 +732,15 @@ impl WasmtimeBackend {
         );
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
+        if let Some(transaction) = transaction {
+            host_state.transaction = crate::host::transaction::Access::attach(transaction);
+        }
         host_state.currentness_read_wait = self.shared.currentness_read_wait.clone();
         if self.config.java_guest {
             host_state.limiter.reserve_exception_heap()?;
         }
         let mut store = Store::new(&self.engine, host_state);
-        store.set_hostcall_fuel(self.config.hostcall_fuel);
+        store.set_hostcall_fuel(hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
         store.set_fuel(initial_fuel).map_err(|error| {
             platform_error(
@@ -848,6 +892,13 @@ impl ExecutionBackend for WasmtimeBackend {
     }
     fn backend_id(&self) -> &str {
         &self.profile.id
+    }
+
+    fn inspect_ready(
+        &self,
+        ready: latent_executor::PreparedReadiness,
+    ) -> Result<latent_executor::PreparationInspection, PlatformError> {
+        self.inspect_readiness(ready)
     }
 
     fn preparation_key(
