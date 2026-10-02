@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/nats_deferred_support.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Inspect exact pinned broker identity and bounded file-stream messages through the owned operator fixture",
+  "reviewReason": "Review the exact committed LF bytes for pinned broker identity and bounded owned stream inspection; remove the accidental Windows CRLF fingerprint",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "372982085005360deed962979d7da1073aa9bc2c7a794814bd63b2b9e4d55b5d"
+  "sha256": "097947aa6226bbc6bcfa9ee45519ff72712b7b43711711de09b24b728bfc38a8"
 }

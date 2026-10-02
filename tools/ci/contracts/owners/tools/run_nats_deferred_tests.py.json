@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_nats_deferred_tests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Execute the bounded real committed-effect JetStream campaign with verified owned cleanup and exact existing Cargo artifact selection",
+  "reviewReason": "Review the exact committed LF bytes for bounded JetStream launch, exact Cargo selection and owned cleanup; remove the accidental Windows CRLF fingerprint",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ba3b8e23b0e8b0ba96aac71cf9e33199dc310a8d5429f463f7f33a79d8ae0295"
+  "sha256": "5e3c4612118be0d80cd1184f3aca99108fc9737be070a24aa289ab3395b37b53"
 }
