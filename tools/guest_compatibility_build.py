@@ -8,7 +8,35 @@ from tools.dev_workflow.common import decode, encode, digest, require
 from tools.rust_capsule_project import ROOT, inventory, read_file, read_json, write_json
 
 RECIPE = ("tools/guest_compatibility.py", "tools/guest_compatibility_build.py",
-          "tools/dev_workflow/common.py", "wit/host-abi-phase3-v4.json")
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py",
+          "wit/host-abi-phase3-v4.json", "wit/host-abi-phase4-v1.json",
+          "sdk/profile/transaction-requirements-v1.json")
+
+
+def host_profile(files: dict[str, bytes] | None = None) -> dict:
+    """Recognize one captured profile; this supplies no runtime grant or proof."""
+    ordinary = read_json(ROOT / "wit/host-abi-phase3-v4.json")
+    if files is None or not {"transaction-binding.json", "transaction-profile.json"} & files.keys():
+        return ordinary
+    require({"transaction-binding.json", "transaction-profile.json", "capsule-project.json"} <= files.keys(),
+            "compatibility-incomplete-transaction-profile")
+    from tools.dev_workflow.transaction_binding import validate
+    project = decode(files["capsule-project.json"])
+    require(isinstance(project, dict), "compatibility-transaction-project")
+    validate(files["transaction-binding.json"], capsule=project.get("service"),
+             deployment=project.get("name"), binding=project.get("name"))
+    require(files["transaction-profile.json"] == read_file(ROOT / "sdk/profile/transaction-requirements-v1.json"),
+            "compatibility-unreviewed-transaction-profile")
+    selected = read_json(ROOT / "wit/host-abi-phase4-v1.json")
+    require(decode(files["transaction-profile.json"])["hostAbiDigest"] == selected["digest"],
+            "compatibility-transaction-host-identity")
+    # Wasmtime supports this exact buffered HTTP surface during Phase 4
+    # preparation. The admitted transaction owner denies its send at execution;
+    # recognizing a signature cannot certify a provider, grant or side effect.
+    http = [row for row in ordinary["interfaces"] if row["interface"] == "latent:http/client@0.2.0"]
+    require(len(http) == 1 and not any(row["interface"] == http[0]["interface"]
+                                    for row in selected["interfaces"]), "compatibility-http-fallback-identity")
+    return {**selected, "interfaces": [*selected["interfaces"], *http]}
 
 
 def interface_names(graph: dict, world: str | None = None) -> dict:
@@ -42,10 +70,10 @@ def interface_names(graph: dict, world: str | None = None) -> dict:
     return result
 
 
-def inspect(commands, wasm: Path, output: Path, declared: dict) -> dict:
+def inspect(commands, wasm: Path, output: Path, declared: dict, *, files: dict[str, bytes] | None = None) -> dict:
     raw = commands.run("compatibility-final-wit", wasm, "component", "wit", output / "component.wasm", "--json")
     names = interface_names(decode(raw, 4 * 1024 * 1024))
-    host = read_json(ROOT / "wit/host-abi-phase3-v4.json")
+    host = host_profile(files)
     findings = compatibility.import_findings(names["imports"], list(declared["imports"]), host)
     expected_exports = list(declared["exports"])
     if set(names["exports"]) != set(expected_exports):
@@ -61,7 +89,7 @@ def inspect(commands, wasm: Path, output: Path, declared: dict) -> dict:
 def package_report(output: Path, files: dict[str, bytes], component: bytes) -> None:
     lock = decode(files["sdk-lock.json"], 8 * 1024 * 1024)
     language = lock.get("language", "rust" if "Cargo.toml" in files else None)
-    host = read_json(ROOT / "wit/host-abi-phase3-v4.json")
+    host = host_profile(files)
     inspection_path = output / "compatibility-inspection.json"
     if inspection_path.exists():
         inspection = read_json(inspection_path)
@@ -82,10 +110,10 @@ def package_report(output: Path, files: dict[str, bytes], component: bytes) -> N
     write_json(output / "compatibility-report.json", value)
 
 
-def failure_report(output: Path, language: str, stage: str) -> None:
+def failure_report(output: Path, language: str, stage: str, *, files: dict[str, bytes] | None = None) -> None:
     """Retain safe known observations when captured inputs exist; never guess errors."""
     try:
-        _failure_report(output, language, stage)
+        _failure_report(output, language, stage, files=files)
     except Exception:
         # Reporting runs while the compiler exception is already propagating.
         # A stale/unreadable report input must never replace that original error.
@@ -97,11 +125,11 @@ def failure_report(output: Path, language: str, stage: str) -> None:
             pass  # The caller retains its existing bounded build-failure path.
 
 
-def _failure_report(output: Path, language: str, stage: str) -> None:
+def _failure_report(output: Path, language: str, stage: str, *, files: dict[str, bytes] | None = None) -> None:
     source_path = output / "source-inputs.json"
     if not source_path.exists():
         return  # Source identity is unavailable; do not fabricate a snapshot.
-    host = read_json(ROOT / "wit/host-abi-phase3-v4.json")
+    host = host_profile(files)
     phase = "link" if stage in {"component", "contracts", "compatibility", "package"} else "compile"
     findings = [compatibility.finding("unresolved-behavior", phase, "not-evaluated")]
     inspection_path = output / "compatibility-inspection.json"

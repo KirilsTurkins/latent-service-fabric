@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "TransactionGuestPreparation.test_checked_transaction_signature_recognition_keeps_execution_unproven",
+    "TransactionGuestPreparation.test_incomplete_forged_and_cross_linked_profile_cannot_select_phase4",
+    "TransactionGuestPreparation.test_invalid_language_and_missing_selected_prefix_leave_output_absent",
+    "TransactionGuestPreparation.test_missing_completion_is_not_replaced_with_a_fabricated_observation",
+    "TransactionGuestPreparation.test_original_unsigned_facts_are_required_and_changed_inputs_are_rejected",
+    "TransactionGuestPreparation.test_selected_language_delegates_to_the_complete_maintained_build_owner",
+    "TransactionGuestPreparation.test_stateless_selection_keeps_original_profile_and_refuses_state"
+  ],
+  "guards": {
+    "TransactionGuestPreparation.test_checked_transaction_signature_recognition_keeps_execution_unproven": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:512ae6a654e8bf92f2b1fa606c65437a678ca5aa83d730b55f861373c7a83419",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionGuestPreparation.test_incomplete_forged_and_cross_linked_profile_cannot_select_phase4": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:512ae6a654e8bf92f2b1fa606c65437a678ca5aa83d730b55f861373c7a83419",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionGuestPreparation.test_invalid_language_and_missing_selected_prefix_leave_output_absent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:512ae6a654e8bf92f2b1fa606c65437a678ca5aa83d730b55f861373c7a83419",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionGuestPreparation.test_missing_completion_is_not_replaced_with_a_fabricated_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:512ae6a654e8bf92f2b1fa606c65437a678ca5aa83d730b55f861373c7a83419",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionGuestPreparation.test_original_unsigned_facts_are_required_and_changed_inputs_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:512ae6a654e8bf92f2b1fa606c65437a678ca5aa83d730b55f861373c7a83419",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionGuestPreparation.test_selected_language_delegates_to_the_complete_maintained_build_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:512ae6a654e8bf92f2b1fa606c65437a678ca5aa83d730b55f861373c7a83419",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionGuestPreparation.test_stateless_selection_keeps_original_profile_and_refuses_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:512ae6a654e8bf92f2b1fa606c65437a678ca5aa83d730b55f861373c7a83419",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_transaction_guest_preparation.py",
+  "reviewReason": "Register bounded authentic build observation and explicit compatibility profile trust-boundary tests; no compiler or node execution claims",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

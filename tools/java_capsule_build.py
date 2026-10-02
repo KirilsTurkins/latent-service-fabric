@@ -115,7 +115,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
                 surface = read_json(derived / "surface.json")
                 stage = "compatibility"
-                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface, files=files)
                 package_inputs(output, project, surface, package_files, component)
                 if packager is not None:
                     stage = "package"
@@ -173,5 +173,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": (compiler.records if compiler else []) + (commands.records if commands else [])})
-        guest_compatibility_build.failure_report(output, "java", stage)
+        guest_compatibility_build.failure_report(output, "java", stage, files=files if "files" in locals() else None)
         raise
