@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain all Java authoring stages and feature-gated former-profile reproduction; review the added bounded buffered-web response grammar and authoritative table vectors.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f9cb042c1787805c8d31e4977f45d2079d5dcad0c02b732cd6994b56950b97ac"
+  "sha256": "169bd341f815b93c3011ad7e8c828dcd7bf854ecb2bb422440bbedd937addcf4"
 }

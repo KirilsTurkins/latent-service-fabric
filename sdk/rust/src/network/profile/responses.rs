@@ -239,6 +239,66 @@ impl ResponseProfile for control::GetPolicyResponse {
     }
 }
 
+impl ResponseProfile for control::InspectActivationTreeResponse {
+    fn validate(&self, context: &Context, _tenant: &str) -> Result<bool, RpcFailure> {
+        page(self.page.as_ref(), self.nodes.len(), context)?;
+        if self.schema_version != 1
+            || !self.retained_history_only
+            || (!self.history_available
+                && (!self.nodes.is_empty()
+                    || self
+                        .page
+                        .as_ref()
+                        .is_some_and(|p| p.next_page_token.is_some())))
+        {
+            return Err(invalid());
+        }
+        for node in &self.nodes {
+            if node.target_service.len() > 512
+                || context.inspection_service.as_ref().is_some_and(|service| {
+                    &node.target_service != service
+                        || node.parent_activation_id.is_some()
+                        || node.activation_id != node.root_activation_id
+                        || context
+                            .inspection_from
+                            .is_some_and(|from| node.received_at_unix_millis < from)
+                })
+            {
+                return Err(invalid());
+            }
+            for id in [&node.activation_id, &node.root_activation_id]
+                .into_iter()
+                .chain(node.parent_activation_id.iter())
+                .chain(node.caller_service.iter())
+            {
+                if id.is_empty()
+                    || id.len() > 512
+                    || id.chars().any(|c| c.is_control() || c.is_whitespace())
+                {
+                    return Err(invalid());
+                }
+            }
+            if node.phase.len() > 64
+                || node.principal_kind.len() > 64
+                || node.terminal_state.as_ref().is_some_and(|s| s.len() > 64)
+                || node.diagnostic.as_ref().is_some_and(|d| {
+                    d.schema_version != 1
+                        || d.profile_digest.as_ref().is_some_and(|s| {
+                            s.len() != 64
+                                || !s
+                                    .bytes()
+                                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                        })
+                })
+            {
+                return Err(invalid());
+            }
+        }
+        // Diagnostic enum numbers and optional zeros are intentionally preserved.
+        Ok(true)
+    }
+}
+
 impl ResponseProfile for control::ListPoliciesResponse {
     fn validate(&self, context: &Context, tenant: &str) -> Result<bool, RpcFailure> {
         page(self.page.as_ref(), self.policies.len(), context)?;

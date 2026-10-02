@@ -24,6 +24,12 @@ pub(crate) struct JournalOwner {
 }
 
 impl JournalOwner {
+    pub(crate) fn record_grant(&self, budget: &latent_core::ActivationBudget) {
+        let mut state = self.journal.inner.lock();
+        let record = state.records.get_mut(&self.id).expect("live journal owner");
+        record.granted_budget = Some(budget.granted().clone());
+        record.effective_deadline_unix_millis = budget.deadline().unix_millis();
+    }
     pub(crate) fn serial(&self) -> u64 {
         self.serial
     }

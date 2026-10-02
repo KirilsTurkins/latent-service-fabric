@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "latent.local-ci.prior-failed-attempt.v1",
+  "sourceHead": "0325b746ce89f6268d3b441257715adc96c35740",
+  "process": {
+    "exitCode": 1,
+    "seconds": 235.184291,
+    "actualImage": "sha256:c19db1b2bb887c214b87d05aa7f15a6d2108758fa4f2cf04d09bddce8a627502"
+  },
+  "receipt": {
+    "schemaVersion": "latent.local-ci.workflow-job.v1",
+    "sourceHead": "0325b746ce89f6268d3b441257715adc96c35740",
+    "job": "fast",
+    "profile": "full",
+    "jobTimeoutSeconds": 1200,
+    "allSelectedRunBlocksPassed": false,
+    "fullRepositoryCiPassed": false,
+    "sharedCargoCacheUsed": false,
+    "sourceTrackedFilesUnchanged": false,
+    "stages": [
+      {
+        "stage": "source-clone",
+        "command": [
+          "git",
+          "clone",
+          "--shared",
+          "--no-checkout",
+          "/repository",
+          "/tmp/local-fast785-0325-r1/source"
+        ],
+        "exitCode": 0,
+        "seconds": 2.01104
+      },
+      {
+        "stage": "source-checkout",
+        "command": [
+          "git",
+          "checkout",
+          "--detach",
+          "0325b746ce89f6268d3b441257715adc96c35740"
+        ],
+        "exitCode": 0,
+        "seconds": 12.689534
+      },
+      {
+        "stage": "original-affected-command",
+        "command": [
+          "/usr/local/bin/python3",
+          "tools/ci_fast.py",
+          "--packages-json",
+          "[\"latent-activation\", \"latent-admission\", \"latent-commit\", \"latent-core\", \"latent-effects\", \"latent-executor\", \"latent-identity\", \"latent-manifest\", \"latent-network\", \"latent-routing\", \"latent-scheduler\", \"latent-state\", \"latent-telemetry\", \"latent-workflows\"]",
+          "--output",
+          "/output/ci-fast/affected"
+        ],
+        "exitCode": 1,
+        "seconds": 218.183016
+      }
+    ],
+    "seconds": 233.636132,
+    "workspaceDependencies": [
+      "latent-activation",
+      "latent-admission",
+      "latent-artifacts",
+      "latent-audit",
+      "latent-commit",
+      "latent-contracts",
+      "latent-core",
+      "latent-effects",
+      "latent-executor",
+      "latent-identity",
+      "latent-manifest",
+      "latent-network",
+      "latent-routing",
+      "latent-scheduler",
+      "latent-state",
+      "latent-telemetry",
+      "latent-workflows"
+    ],
+    "heavyweightDependenciesAbsent": true,
+    "osRelease": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+    "failedReason": "('original-affected-command', \"Fast correctness failed: [Errno 2] No such file or directory: '/tmp/local-fast785-0325-r1/source/target'\\n\")"
+  },
+  "cause": "Owned controller placed CARGO_TARGET_DIR outside source/target; original native discovery requires source/target. Corrected only the controller target path for a new attempt.",
+  "productionSourceChanged": false,
+  "suiteCasesOrGuardsChanged": false,
+  "nativeExecutionPassed": false
+}

@@ -3,6 +3,8 @@
 mod bytes;
 mod owner;
 mod state;
+mod tree;
+pub use tree::{ActivationTreeNode, ActivationTreePage};
 #[cfg(test)]
 mod tests;
 
@@ -68,6 +70,7 @@ struct Inner {
     config: LocalActivationJournalConfig,
     clock: Arc<dyn ActivationClock>,
     state: Mutex<State>,
+    cursor_epoch: [u8; 32],
 }
 
 impl LocalActivationJournal {
@@ -90,8 +93,10 @@ impl LocalActivationJournal {
             inner: Arc::new(Inner {
                 config,
                 clock,
+                cursor_epoch: tree::epoch(),
                 state: Mutex::new(State {
                     records: BTreeMap::new(),
+                    lineage_order: BTreeMap::new(),
                     terminal_order: BTreeMap::new(),
                     next_serial: 1,
                     snapshot: ActivationJournalSnapshot::default(),
@@ -111,6 +116,8 @@ impl LocalActivationJournal {
 
     /// Capacity/identity checks and cancellation registration share the journal
     /// lock. The callback must be synchronous, bounded, and never reenter it.
+    // Registration and lineage validation publish one atomic owned transition.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn begin_with<T>(
         &self,
         envelope: &ActivationEnvelope,
@@ -128,7 +135,37 @@ impl LocalActivationJournal {
                 )
             })?;
         self.validate_query(tenant, &envelope.activation_id)?;
-        let record_bytes = bytes::base(&envelope.activation_id, tenant)?;
+        let record_bytes = bytes::base(&envelope.activation_id, tenant)?
+            .checked_add(
+                envelope
+                    .root_activation_id
+                    .0
+                    .len()
+                    .checked_mul(2)
+                    .ok_or_else(capacity)?,
+            )
+            .and_then(|bytes| {
+                bytes.checked_add(
+                    envelope
+                        .parent_activation_id
+                        .as_ref()
+                        .map_or(0, |id| id.0.len()),
+                )
+            })
+            // Base already reserves all three bounded sparse indexes. Charge
+            // this index's additional tenant allocation explicitly.
+            .and_then(|bytes| bytes.checked_add(tenant.0.len()))
+            .and_then(|bytes| bytes.checked_add(envelope.target.service.0.len()))
+            .and_then(|bytes| {
+                bytes.checked_add(
+                    envelope
+                        .principal
+                        .service
+                        .as_ref()
+                        .map_or(0, |id| id.0.len()),
+                )
+            })
+            .ok_or_else(capacity)?;
         if record_bytes > self.inner.config.maximum_record_bytes - TERMINAL_RESERVE_BYTES {
             return Err(capacity());
         }
@@ -138,14 +175,56 @@ impl LocalActivationJournal {
         state.reserve(&envelope.activation_id, self.inner.config)?;
         let serial = state.next_serial;
         let next_serial = serial.checked_add(1).ok_or_else(capacity)?;
+        let root_serial = match &envelope.parent_activation_id {
+            Some(parent) => {
+                let parent = state
+                    .records
+                    .get(parent)
+                    .filter(|parent| {
+                        &parent.tenant == tenant
+                            && parent.root == envelope.root_activation_id
+                            && parent.terminal_at.is_none()
+                    })
+                    .ok_or_else(|| {
+                        error(
+                            PlatformErrorCode::PermissionDenied,
+                            "activation-lineage-not-authorized",
+                        )
+                    })?;
+                if envelope.activation_id == envelope.root_activation_id {
+                    return Err(error(
+                        PlatformErrorCode::PermissionDenied,
+                        "activation-lineage-not-authorized",
+                    ));
+                }
+                parent.root_serial
+            }
+            None if envelope.root_activation_id == envelope.activation_id => serial,
+            None => {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "activation-lineage-not-authorized",
+                ))
+            }
+        };
         let registration = register()?;
         state.next_serial = next_serial;
-        let record = Record::new(
+        let mut record = Record::new(
             tenant.clone(),
             &envelope.activation_id,
             serial,
             sample.unix_millis(),
             record_bytes,
+        );
+        record.parent = envelope.parent_activation_id.clone();
+        record.principal_kind = envelope.principal.kind;
+        record.caller_service = envelope.principal.service.clone();
+        record.target_service = envelope.target.service.clone();
+        record.root = envelope.root_activation_id.clone();
+        record.root_serial = root_serial;
+        state.lineage_order.insert(
+            (tenant.clone(), root_serial, serial),
+            envelope.activation_id.clone(),
         );
         state
             .records

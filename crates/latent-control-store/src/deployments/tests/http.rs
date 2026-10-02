@@ -35,6 +35,7 @@ use std::sync::{atomic::Ordering, Arc};
 
 mod recovery;
 mod selection;
+mod target_inspection;
 mod writers;
 
 struct StaticWebHost;
