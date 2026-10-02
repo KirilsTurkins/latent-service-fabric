@@ -6,8 +6,8 @@ and `random` installations also enable the maintained activation-clock and
 OS-entropy providers. Explicit `secrets` installs the protected local guest-secret
 provider. `metrics` shares the node's telemetry exporter, and `localService`
 selects a bounded local caller/callee binding. `events` installs the maintained
-TLS NATS immediate publisher. Streaming HTTP and S3 have no installation entry
-here. The
+TLS NATS immediate publisher. `httpStreaming` explicitly installs the existing
+typed HTTP 0.3 provider. S3 has no installation entry here. The
 [configuration schema](../../schemas/node-providers.schema.json) describes the
 closed input. This example is the provider section of a protected node file:
 
@@ -53,6 +53,73 @@ and approved credential header. Secret bytes are neither configuration values
 nor public configuration digests, CLI outputs, guest imports, or diagnostics.
 The shared workflow writes a clearly public test-only credential, not a real
 credential. Production credentials must be supplied by the operator.
+
+## Streaming HTTP installation
+
+The `httpStreaming` entry uses the same explicit HTTP destination, DNS, TLS and
+protected file-credential configuration. Its `limits` object is required and
+selects finite transfer, chunk and retained-chunk ceilings. This example installs
+one plain HTTP test origin; it does not grant a consumer access to that origin:
+
+```json
+{
+  "providers": {
+    "formatVersion": 1,
+    "httpStreaming": {
+      "identity": {"id": "http-streaming", "tenant": "tests", "service": "http-stream-host", "epoch": 1},
+      "configuration": {
+        "formatVersion": 1,
+        "destinations": [{
+          "origin": {"scheme": "http", "host": "127.0.0.1", "port": 32123},
+          "addresses": {"networks": ["127.0.0.1/32"], "specialAddresses": ["127.0.0.1"]},
+          "resolution": {"kind": "static", "addresses": ["127.0.0.1"]},
+          "allowedRequestHeaders": ["accept", "user-agent", "x-conformance"],
+          "redirectDestinations": []
+        }],
+        "limits": {"maximumRequestBodyBytes": 4096, "maximumResponseBodyBytes": 4096,
+          "maximumEncodedResponseBytes": 8192, "maximumHeaderBytes": 1024,
+          "maximumHeaders": 8, "maximumRedirects": 0},
+        "extraRoots": [], "publicRoots": false
+      },
+      "limits": {"maximumInputBytes": 4096, "maximumOutputBytes": 4096,
+        "maximumChunkBytes": 1024, "maximumOutstandingChunks": 2}
+    },
+    "bindings": [{"name": "http-stream-binding", "tenant": "tests", "consumerService": "guest-http",
+      "providerService": "http-stream-host", "contract": "latent:http/streaming@0.3.0",
+      "providerBinding": "http-stream-installed"}]
+  }
+}
+```
+
+Use the actual `bounded-streaming-http-identity-v1` descriptor's configuration
+digest and epoch in the provider-binding policy. Its digest includes the stream
+limits. A changed limit/configuration or provider epoch requires the corresponding
+current binding; a buffered HTTP 0.2 binding does not match this interface.
+Capability policy and deployment grants still authorize exact method/path/header
+resources. This entry does not install opaque sockets or infer their authority.
+
+The existing hard ceilings remain 63 MiB input/output, 64 KiB per chunk and 32
+outstanding chunks. Root budgets, policies, broker/I/O windows and shared pool
+limits can be narrower. Increasing a setting cannot raise those other ceilings.
+Requests retain their original deadline and owners through upload, response,
+trailers, cancellation and physical destruction. The provider adds no automatic
+retry, redirect, decompression or background HTTP driver; nonidentity response
+encoding is rejected explicitly. See [streaming HTTP](../runtime/streaming-http.md)
+for the authoritative body and uncertainty behavior.
+
+Credentials are independently scoped to this provider identity and origin and
+are unavailable to guest secret reads without their separate authority. Startup
+retains the credential store before later provider/binding steps can fail, and
+rollback and normal shutdown close it through the existing owned cleanup path.
+The node's stopped report includes its actual retained secret generations and
+references. Installation opens no destination connection and creates no guest
+Store. At source `4c47482b`, all four new configuration/startup controls pass on
+the pinned Linux Rust 1.97.1 image with ordinary production features. The lifecycle
+control starts and stops 32 normal nodes, observes no destination contact, and
+requires zero retained credential generations/references and I/O owners after
+shutdown. These controls do not qualify ordinary default language HTTP clients.
+
+## Other provider installations
 
 Guest secrets use a separate `secrets` entry with `identity`, a protected
 `directory` and one to eight `references`. Each reference contains a public

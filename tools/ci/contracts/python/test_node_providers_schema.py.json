@@ -4,7 +4,10 @@
     "NodeProvidersSchema.test_guest_secrets_only_accept_bounded_file_references_and_no_plaintext",
     "NodeProvidersSchema.test_local_service_configuration_has_no_remote_or_publication_grant_override",
     "NodeProvidersSchema.test_metrics_preserve_the_closed_bounded_descriptor_contract",
-    "NodeProvidersSchema.test_null_unknown_future_profiles_and_path_escape_are_rejected"
+    "NodeProvidersSchema.test_null_unknown_future_profiles_and_path_escape_are_rejected",
+    "StreamingProviderSchema.test_credentials_are_bounded_file_references_and_cannot_override_profile",
+    "StreamingProviderSchema.test_documented_streaming_installation_uses_the_exact_current_contract",
+    "StreamingProviderSchema.test_null_unknown_missing_and_unbounded_stream_limits_are_rejected"
   ],
   "guards": {
     "NodeProvidersSchema.test_documented_blob_and_shared_real_workflow_http_configuration": {
@@ -66,10 +69,46 @@
         "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
       ],
       "skipSites": []
+    },
+    "StreamingProviderSchema.test_credentials_are_bounded_file_references_and_cannot_override_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
+        "class:setup-sha256:250443b4aef5bc0f492a065d7e8e6ca617f3e5bad636d7fb8eeacb965600904c"
+      ],
+      "skipSites": []
+    },
+    "StreamingProviderSchema.test_documented_streaming_installation_uses_the_exact_current_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
+        "class:setup-sha256:250443b4aef5bc0f492a065d7e8e6ca617f3e5bad636d7fb8eeacb965600904c"
+      ],
+      "skipSites": []
+    },
+    "StreamingProviderSchema.test_null_unknown_missing_and_unbounded_stream_limits_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
+        "class:setup-sha256:250443b4aef5bc0f492a065d7e8e6ca617f3e5bad636d7fb8eeacb965600904c"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_node_providers_schema.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add three closed streaming-HTTP node schema controls and preserve existing provider cases, setup guards and execution.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

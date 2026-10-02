@@ -96,5 +96,52 @@ class NodeProvidersSchema(unittest.TestCase):
             self.assertFalse(VALIDATOR.is_valid(changed))
 
 
+class StreamingProviderSchema(unittest.TestCase):
+    def setUp(self):
+        guide = (ROOT / "docs/reference/standalone-providers.md").read_text(encoding="utf-8")
+        documents = [json.loads(raw) for raw in re.findall(r"```json\n(.*?)\n```", guide, re.S)]
+        self.value = next(item["providers"] for item in documents if "httpStreaming" in item.get("providers", {}))
+
+    def test_documented_streaming_installation_uses_the_exact_current_contract(self):
+        VALIDATOR.validate(self.value)
+        self.assertEqual(self.value["bindings"][0]["contract"], "latent:http/streaming@0.3.0")
+        self.assertNotIn("http", self.value)
+        self.assertNotIn("outboundStreams", self.value)
+
+    def test_null_unknown_missing_and_unbounded_stream_limits_are_rejected(self):
+        for key, changed in (("maximumInputBytes", 66060289), ("maximumOutputBytes", 0),
+                             ("maximumChunkBytes", 65537), ("maximumOutstandingChunks", 33),
+                             ("maximumChunkBytes", True), ("timeoutMillis", 5000)):
+            value = copy.deepcopy(self.value)
+            value["httpStreaming"]["limits"][key] = changed
+            self.assertFalse(VALIDATOR.is_valid(value), key)
+        for field in ("httpStreaming", "limits", "configuration", "credentialDirectory"):
+            value = copy.deepcopy(self.value)
+            selected = value if field == "httpStreaming" else value["httpStreaming"]
+            selected[field] = None
+            self.assertFalse(VALIDATOR.is_valid(value), field)
+        value = copy.deepcopy(self.value)
+        del value["httpStreaming"]["limits"]
+        self.assertFalse(VALIDATOR.is_valid(value))
+
+    def test_credentials_are_bounded_file_references_and_cannot_override_profile(self):
+        value = copy.deepcopy(self.value)
+        value["httpStreaming"]["credentialDirectory"] = "private-provider-credentials"
+        value["httpStreaming"]["credentials"] = [{"reference": "test", "file": "authorization",
+                                                 "destination": 0, "header": "authorization"}]
+        VALIDATOR.validate(value)
+        for field, changed in (("profile", "buffered-http"), ("authorization", "PRIVATE"),
+                               ("credentials", []), ("credentials", value["httpStreaming"]["credentials"] * 9)):
+            damaged = copy.deepcopy(value)
+            damaged["httpStreaming"][field] = changed
+            self.assertFalse(VALIDATOR.is_valid(damaged), field)
+        damaged = copy.deepcopy(value)
+        del damaged["httpStreaming"]["credentialDirectory"]
+        self.assertFalse(VALIDATOR.is_valid(damaged))
+        damaged = copy.deepcopy(value)
+        damaged["httpStreaming"]["credentials"][0]["file"] = "../escape"
+        self.assertFalse(VALIDATOR.is_valid(damaged))
+
+
 if __name__ == "__main__":
     unittest.main()
