@@ -114,8 +114,8 @@ public final class CompletableFutureAdvancedModelControl {
             String identity = model.getName();
             transform.invoke(plugin, model, context);
             require(model.getName().equals(identity), "advanced-model-identity-preserved");
-            references(model, source);
         }
+        for (ClassHolder model : models) references(model, source);
         method(future, new MethodDescriptor("orTimeout", ValueType.LONG, UNIT, FUTURE));
         method(future, new MethodDescriptor("completeOnTimeout", ValueType.object("java.lang.Object"), ValueType.LONG, UNIT, FUTURE));
         method(future, new MethodDescriptor("delayedExecutor", ValueType.LONG, UNIT, EXECUTOR));
