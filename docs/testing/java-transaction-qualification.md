@@ -212,6 +212,12 @@ tenant, loads the actual signed companion and retained package assets, and
 retains current purpose-specific policy decisions under the real native state
 profile. Native recovery purposes use a separate explicit administrator rule;
 every policy/binding operation array retains its original 16-operation bound.
+The helper refuses any actual retained decision that requires a durable audit
+acknowledgement: this bridge has no recovery audit append port and never treats
+an operator ID, snapshot receipt or configuration as that acknowledgement. The
+finite fixture proposal does not request mandatory audit. Its authenticated
+actor and original action IDs remain attributable through the native receipts;
+this does not qualify recovery under a policy that requires durable audit.
 The installed Java codec reviewer executes finite reader, writer and fixed
 migration-recipe conformance against the original schema/source associations.
 That native conformance does not establish Java runtime qualification.
@@ -224,6 +230,13 @@ size ceiling to the retained operator grant. Original retained command, result,
 effect, payload and schema identities remain recognizable, and unresolved local
 work blocks recovery review. A retained pending effect does not establish whether
 an external request was sent or completed.
+
+This bridge authorizes one tenant, namespace and incarnation. It refuses a
+second namespace even when that namespace has no business cells, including its
+original operation receipts and history rows. Retained effects and expired
+command floors must belong to the same scope. An installed tenant accounting
+manifest must contain exactly that tenant; the helper cannot widen its selected
+namespace grant into a tenant-wide or multi-tenant snapshot grant.
 
 Restore, migration, reconciliation and resume recheck their actual retained
 purpose and current publication at the existing final writer/publication fences.

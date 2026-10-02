@@ -21,6 +21,8 @@ mod operation;
 mod profile;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod request;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod scope;
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub use execution::NativeRecoveryReport;
