@@ -7,6 +7,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod phase4;
 pub mod platform_error;
 
 /// Control-plane APIs from the `latent.control.v1` Protobuf package.
@@ -20,6 +21,14 @@ pub mod control {
 pub mod invocation {
     pub mod v1 {
         tonic::include_proto!("latent.invocation.v1");
+    }
+}
+
+/// Negotiated Phase 4 application command/query/recovery APIs. Definitions do
+/// not establish transport integration or an installed state engine.
+pub mod transaction {
+    pub mod v1 {
+        tonic::include_proto!("latent.transaction.v1");
     }
 }
 

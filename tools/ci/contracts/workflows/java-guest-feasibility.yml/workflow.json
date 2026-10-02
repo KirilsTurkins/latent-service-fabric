@@ -23,6 +23,7 @@
         ],
         "paths": [
           "sdk/java-guest/**",
+          "sdk/transaction-contract/**",
           "tools/**",
           "apps/**",
           "crates/**",
@@ -43,7 +44,7 @@
   "requiredJobs": [
     "compiler-component"
   ],
-  "reviewReason": "Add the exact Java server guide path while preserving required Java compiler job, branches, permissions and concurrency. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
