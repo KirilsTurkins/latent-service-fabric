@@ -1,7 +1,10 @@
 //! Forward only closed host-failure and currentness vocabulary from host traps.
 //! This observation never changes the outer failure, retryability or authority.
 
-use latent_core::{error::ADMISSION_CURRENTNESS_REASONS, ErrorDetail, Metadata, PlatformErrorCode};
+use latent_core::{
+    error::{GuestTrapKind, ADMISSION_CURRENTNESS_REASONS},
+    ErrorDetail, Metadata, PlatformErrorCode,
+};
 use latent_executor::GuestTrap;
 
 pub(super) fn host_failure_detail(trap: &GuestTrap) -> Option<ErrorDetail> {
@@ -34,6 +37,23 @@ pub(super) fn host_failure_detail(trap: &GuestTrap) -> Option<ErrorDetail> {
     Some(ErrorDetail {
         kind: "activation.guest-host-failure".into(),
         fields: Metadata::from([("code".into(), code.wire_code().into())]),
+    })
+}
+
+pub(super) fn trap_kind_detail(trap: &GuestTrap) -> Option<ErrorDetail> {
+    let label = trap.metadata.get("trap").map(String::as_str);
+    let classification = trap.metadata.get("classification").map(String::as_str);
+    let kind = match (trap.code.as_str(), label, classification) {
+        ("guest-trap", Some(label), None) => GuestTrapKind::from_wire_name(label)
+            .filter(|kind| *kind != GuestTrapKind::RuntimeError)?,
+        ("guest-runtime-error", None, Some("runtime-error")) => GuestTrapKind::RuntimeError,
+        _ => return None,
+    };
+    // Select a static token. Never forward message, backtrace, request bytes or
+    // arbitrary metadata, including a contradictory backend classification.
+    Some(ErrorDetail {
+        kind: "activation.guest-trap-kind".into(),
+        fields: Metadata::from([("kind".into(), kind.wire_name().into())]),
     })
 }
 
@@ -257,5 +277,78 @@ mod tests {
         ] {
             assert_eq!(mapped("guest-runtime-error", metadata).details.len(), 1);
         }
+    }
+    #[test]
+    fn fixed_trap_kinds_survive_mapping_without_private_context() {
+        for kind in GuestTrapKind::ALL {
+            let (code, key) = if *kind == GuestTrapKind::RuntimeError {
+                ("guest-runtime-error", "classification")
+            } else {
+                ("guest-trap", "trap")
+            };
+            let error = mapped(
+                code,
+                Metadata::from([
+                    (key.into(), kind.wire_name().into()),
+                    ("request".into(), "private-request".into()),
+                    ("credential".into(), "private-secret-token".into()),
+                    ("backtrace".into(), "private-engine-frame".into()),
+                ]),
+            );
+            assert_eq!(error.details.len(), 2);
+            assert_eq!(error.details[1].kind, "activation.guest-trap-kind");
+            assert_eq!(
+                error.details[1].fields,
+                Metadata::from([("kind".into(), kind.wire_name().into())])
+            );
+        }
+    }
+
+    #[test]
+    fn unknown_or_contradictory_trap_kinds_remain_unclassified() {
+        for (code, label, classification) in [
+            ("guest-trap", Some("future-trap"), None),
+            ("guest-trap", Some("unreachable-code secret-token"), None),
+            ("guest-trap", Some("unreachable-code "), None),
+            ("guest-trap", Some("runtime-error"), None),
+            ("guest-trap", None, Some("runtime-error")),
+            (
+                "guest-trap",
+                Some("unreachable-code"),
+                Some("runtime-error"),
+            ),
+            (
+                "guest-runtime-error",
+                None,
+                Some("runtime-error secret-token"),
+            ),
+            ("guest-runtime-error", None, Some("guest-fault")),
+            (
+                "guest-runtime-error",
+                Some("unreachable-code"),
+                Some("runtime-error"),
+            ),
+            ("unknown-kind", Some("unreachable-code"), None),
+            ("guest-runtime-error", None, None),
+            ("guest-trap", None, None),
+        ] {
+            let mut metadata = Metadata::new();
+            if let Some(label) = label {
+                metadata.insert("trap".into(), label.into());
+            }
+            if let Some(classification) = classification {
+                metadata.insert("classification".into(), classification.into());
+            }
+            assert_eq!(mapped(code, metadata).details.len(), 1);
+        }
+        assert_eq!(
+            mapped(
+                "guest-trap",
+                Metadata::from([("trap".into(), "private-secret-token".repeat(128))]),
+            )
+            .details
+            .len(),
+            1
+        );
     }
 }
