@@ -25,7 +25,7 @@ interface api {
 
 world service {
     import latent:context/context@0.1.0;
-    import latent:state/key-value@0.1.0;
+    import latent:state/key-value@0.2.0;
     import latent:timer/scheduler@0.1.0;
     import latent:events/publisher@0.1.0;
     export api;

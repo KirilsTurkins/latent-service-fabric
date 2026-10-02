@@ -14,3 +14,7 @@ workspace = true
 latent-core = { path = "../latent-core" }
 latent-state = { path = "../latent-state" }
 latent-effects = { path = "../latent-effects" }
+sha2.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
