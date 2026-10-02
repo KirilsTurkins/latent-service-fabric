@@ -215,6 +215,13 @@ impl Runtime {
         let mut owner = Self::default();
         let profile = latent_core::activation_runtime::PROFILE;
         let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
+        // Exercise the same per-operation fuel requirements as ordinary
+        // protected node installation, including fixed and pending results.
+        let charges = ACTIVATION_OPERATIONS.map(|operation| ProviderBudgetRequirement {
+            operation,
+            dimension: BudgetDimension::CpuFuel,
+            minimum: 100,
+        });
         let registration = broker
             .register_provider(ProviderConfiguration {
                 capability: ACTIVATION,
@@ -222,7 +229,7 @@ impl Runtime {
                 configuration_digest: digest.as_str(),
                 configuration_epoch: 1,
                 restriction_json: br#"{"operations":[]}"#,
-                minimum_call_charges: &[],
+                minimum_call_charges: &charges,
             })
             .unwrap();
         owner.add_operations(registration.reference(), &ACTIVATION_OPERATIONS);
