@@ -157,7 +157,10 @@ Compiler invocations use their independently curated environment.
 
 Source controls perform real capture, graph/inventory verification, offline
 review, descriptor/path/tamper denial and staged imports. Native Node/npm outputs
-and remote frontend dispatch are deliberately modelled. These controls do not
+and remote frontend dispatch are deliberately modelled. The
+[source-control receipt](../testing/evidence/typescript-library-authoring-source-2026-10-02.json)
+records the exact checked source, test inventory and remaining acceptance work.
+These controls do not
 establish actual private-feed interoperability, signed module execution or
 installed frontend/watch qualification. Those gates retain their actual compiler,
 package, invocation and cleanup receipts. Async runtime/default fetch support
