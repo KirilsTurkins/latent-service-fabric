@@ -967,7 +967,13 @@
                     "namespace-quiesce",
                     "namespace-retire",
                     "namespace-destroy",
-                    "namespace-recreate"
+                    "namespace-recreate",
+                    "namespace-snapshot",
+                    "namespace-inspect-restore",
+                    "namespace-restore",
+                    "namespace-schema-migrate",
+                    "namespace-review-recovery",
+                    "namespace-resume"
                   ]
                 }
               },

@@ -50,13 +50,14 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
             validator.validate(empty)  # Legal data; evaluator tests prove default deny.
 
     def test_policy_operation_table_matches_each_frozen_wit_interface(self):
-        matrix = json.loads((ROOT / "wit/host-abi-phase3-v4.json").read_text(encoding="utf-8"))
-        transactions = json.loads((ROOT / "wit/host-abi-phase4-v1.json").read_text(encoding="utf-8"))
+        matrices = [json.loads((ROOT / f"wit/host-abi-phase3-v{version}.json").read_text(encoding="utf-8"))
+                    for version in (2, 3, 4)]
+        matrices.append(json.loads((ROOT / "wit/host-abi-phase4-v1.json").read_text(encoding="utf-8")))
         rust = (ROOT / "crates/latent-policy/src/capability.rs").read_text(encoding="utf-8")
         actual = {cap: set(re.findall(r'"([a-z0-9-]+)"', operations))
                   for cap, operations in re.findall(r'"(latent:[^\"]+)"\s*=>\s*&\[(.*?)\]', rust, re.S)}
         expected = {}
-        for entry in matrix["interfaces"] + transactions["interfaces"]:
+        for entry in [item for matrix in matrices for item in matrix["interfaces"]]:
             interface = entry["interface"].split("/")[1].split("@")[0]
             text = (ROOT / entry["source"]).read_text(encoding="utf-8")
             active = False
@@ -77,12 +78,16 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
                 if depth == 0:
                     break
             self.assertTrue(operations, entry["interface"])
+            if entry["interface"] in expected:
+                self.assertEqual(expected[entry["interface"]], operations)
             expected[entry["interface"]] = operations
         # These independently enumerated host-domain labels are current policy
         # operations, never extra guest WIT imports or guest commit authority.
         host_operations = {"commit", "read-result", "inspect-effect", "cancel-command",
                            "namespace-create", "namespace-inspect", "namespace-list",
-                           "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate"}
+                           "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate",
+                           "namespace-snapshot", "namespace-inspect-restore", "namespace-restore",
+                           "namespace-schema-migrate", "namespace-review-recovery", "namespace-resume"}
         self.assertTrue(expected["latent:state/key-value@0.2.0"].isdisjoint(host_operations))
         expected["latent:state/key-value@0.2.0"].update(host_operations)
         # Dispatch is a separately authorized native purpose. The frozen guest
@@ -94,6 +99,10 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         constraints = SCHEMAS["capability-policy"]["$defs"]["rule"]["allOf"]
         self.assertEqual({v["if"]["properties"]["capability"]["const"]:
                           set(v["then"]["properties"]["operations"]["items"]["enum"]) for v in constraints}, expected)
+        bindings = SCHEMAS["capability-provider-binding"]["allOf"]
+        self.assertEqual({v["if"]["properties"]["capability"]["const"]:
+                          set(v["then"]["properties"]["restriction"]["properties"]["operations"]["items"]["enum"])
+                          for v in bindings}, expected)
 
     def test_state_scopes_require_explicit_entity_and_bounded_exact_policy_tuple(self):
         scope = {"namespace": "orders", "incarnation": 1, "entity": None,
