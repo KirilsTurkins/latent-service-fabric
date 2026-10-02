@@ -341,6 +341,95 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         Objects.requireNonNull(supplier); Objects.requireNonNull(executor); submit(this, executor, supplier, true); return this;
     }
 
+    private static final class Timeout<U> implements Runnable {
+        private final CompletableFuture<U> future;
+        private final U replacement;
+        private final boolean exceptional;
+        private final long nanos;
+        private final long started;
+        private Activation.Lease queued;
+        private Thread thread;
+        private boolean cancelled;
+        private boolean completing;
+
+        Timeout(CompletableFuture<U> future, U replacement, boolean exceptional, long nanos) {
+            this.future = future;
+            this.replacement = replacement;
+            this.exceptional = exceptional;
+            this.nanos = nanos;
+            started = System.nanoTime();
+            queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+        }
+        synchronized void start() {
+            if (cancelled) return;
+            Thread selected = new Thread(this, "activation-completable-timeout");
+            thread = selected;
+            try { Activation.startDeferred(selected); }
+            catch (Throwable error) {
+                thread = null;
+                cancelled = true;
+                retire();
+                throw error;
+            }
+        }
+        synchronized void cancel() {
+            cancelled = true;
+            if (thread == null) retire();
+            else if (!completing) thread.interrupt();
+        }
+        private synchronized boolean isCancelled() { return cancelled; }
+        private synchronized void retire() {
+            if (queued != null) { queued.close(); queued = null; }
+        }
+        @Override public void run() {
+            try {
+                while (!isCancelled()) {
+                    long remaining = nanos <= 0 ? 0 : nanos - (System.nanoTime() - started);
+                    if (remaining <= 0) break;
+                    // Use the maintained logical sleep and activation pump's
+                    // bounded native wait. Deadline payloads stay in the heap.
+                    Thread.sleep(remaining / 1_000_000, (int)(remaining % 1_000_000));
+                }
+                synchronized (this) {
+                    if (cancelled) return;
+                    completing = true;
+                }
+                if (exceptional) future.completeExceptionally(new TimeoutException());
+                else future.complete(replacement);
+            } catch (InterruptedException interrupted) {
+                if (!isCancelled()) future.completeExceptionally(interrupted);
+            } finally { retire(); }
+        }
+    }
+    private static final class Canceller implements BiConsumer<Object, Throwable> {
+        private final Timeout<?> timeout;
+        Canceller(Timeout<?> timeout) { this.timeout = timeout; }
+        @Override public void accept(Object value, Throwable failure) { timeout.cancel(); }
+    }
+    private void arrangeTimeout(T replacement, boolean exceptional, long nanos) {
+        if (isDone()) return;
+        Timeout<T> timeout = new Timeout<>(this, replacement, exceptional, nanos);
+        CompletableFuture<T> cancellation = null;
+        try {
+            cancellation = whenComplete(new Canceller(timeout));
+            timeout.start();
+        } catch (Throwable error) {
+            // Failed admission must detach the cancellation listener without
+            // changing this future or refunding an already running producer.
+            if (cancellation != null) cancellation.cancel(false);
+            timeout.cancel();
+            throw error;
+        }
+    }
+    public CompletableFuture<T> orTimeout(long timeout, TimeUnit unit) {
+        arrangeTimeout(null, true, Objects.requireNonNull(unit).toNanos(timeout));
+        return this;
+    }
+    public CompletableFuture<T> completeOnTimeout(T value, long timeout, TimeUnit unit) {
+        arrangeTimeout(value, false, Objects.requireNonNull(unit).toNanos(timeout));
+        return this;
+    }
+
     private synchronized Throwable error() { return failure; }
     private synchronized T successful() {
         if (!completed) throw new IllegalStateException("activation-future-input-not-ready");

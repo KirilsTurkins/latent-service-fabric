@@ -86,6 +86,15 @@ public final class Activation {
 
     public static boolean closing() { return closing; }
 
+    /** Deferred completion stays a real accepted task through Thread's finally scope. */
+    public static void startDeferred(Thread thread) {
+        if (!entered || retiringPools || closing && !acceptedContinuation())
+            throw new IllegalStateException("activation-runtime-deferred-entry");
+        // The normal Thread.start transformation acquires Task ownership before
+        // TeaVM queues the fiber; this path creates no host timer worker.
+        thread.start();
+    }
+
     /** One activation-local default pool; accepted callbacks share no host worker. */
     public static synchronized java.util.concurrent.Executor defaultAsyncExecutor(
             java.util.function.Supplier<java.util.concurrent.Executor> factory) {
