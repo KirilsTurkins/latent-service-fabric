@@ -352,3 +352,15 @@ records the compiler, native producers, input seals, original failures and exact
 completion boundaries. The successful full build and signing establish that
 authoring path; successful normal CompletableFuture execution, advanced methods,
 library behavior and the complete #741 profile remain open.
+
+A separate actual Windows JDK comparison at the same implementation source found
+an ordinary executor failure defect. If an executor queues a callback and then
+throws, the JDK still runs an accepted `supplyAsync` callback and keeps a
+`completeAsync` target pending until its queued callback runs. The port eagerly
+fails that work and skips the supplier. Its private source ledger also reports
+zero callback and result owners while one callback remains physically queued.
+Both `RejectedExecutionException` and a generic exception reproduced the public
+difference. These [paired source observations](../testing/evidence/java-completable-executor-throw-2026-10-02.json)
+identify an unimplemented repair and preserve all original controls and counts.
+They do not explain the normal mode-0 trap, whose application uses the default
+executor, or qualify TeaVM lowering or native admission.
