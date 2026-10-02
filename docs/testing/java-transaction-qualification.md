@@ -154,9 +154,13 @@ candidate must be reviewed separately. It cannot be combined with the offline
 schema/restore program because their combined node restarts exceed the original
 six-session limit.
 
-Trap, fuel and cancellation cases must retain the original terminal activation
-and producer reason, positive accounting for the actual state put and captured
-intent, and the original durable server-issued abort fence. A fresh query must
+Every fault case must retain the privileged `transactionStaging` witness from
+the original native host after captured-intent insertion. The activation serial,
+command, attempt, transaction and publication must match the same original
+root and durable command. Trap, fuel and cancellation cases also retain the
+original terminal activation and producer reason, supplemental state/intent
+accounting, and the original durable server-issued abort fence. Charged counters
+without that matching witness cannot qualify staging. A fresh query must
 retain the same business value and key version; every original recipient
 business counter must remain zero. Passing additionally requires clean physical
 node retirement and a fresh query after reopening the same store. The memory
@@ -165,11 +169,17 @@ native memory-exhaustion reason; a generic guest trap does not qualify it.
 
 Cancellation discovers the actual HTTP root through the bounded privileged
 activation journal and reads the same original command key before making one
-cancellation request. A running row selects the original attempt but does not
-prove staging. Only terminal accounting and the durable abort fence can qualify
-that case. Request loss, a timeout, `InProgress`, process exit and transport
+cancellation request. At most eight tree reads under the original ten-second
+cutoff must observe the live host witness before that request. Terminal
+inspection must retain its exact serial, original claim and insertion progress;
+the terminal counters must cover that observation. A running row selects the
+original attempt and alone proves neither staging nor disposition. The native
+journal preserves the last execution phase (`running`) in terminal records;
+the separate terminal state, outcome and accounting establish completion.
+Request loss, a timeout, `InProgress`, process exit and transport
 cleanup never supply durable disposition. Crash before commitment remains
-unqualified until a common positive live staging witness is available.
+unqualified until the controlled process/recovery campaign is actually executed,
+even when the common positive live staging witness is available.
 
 The focused tests use synthetic compiler frames and socket owners. They verify
 decoder, accounting, concurrency and refusal boundaries; they do not establish
