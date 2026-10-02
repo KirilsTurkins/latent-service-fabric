@@ -62,7 +62,10 @@ class PackagedProbe(unittest.TestCase):
         from tools.java_http_composition import packaged
 
         pwd = SimpleNamespace(getpwuid=lambda _uid: SimpleNamespace(pw_dir=str(self.root)))
-        with patch.dict(sys.modules, pwd=pwd), patch.object(os, 'geteuid', return_value=23001, create=True):
+        # Keep the real POSIX file owner for the unchanged private-root check;
+        # Windows only needs a bounded UID for the mocked pwd discovery port.
+        uid = os.geteuid() if os.name == 'posix' else 23001
+        with patch.dict(sys.modules, pwd=pwd), patch.object(os, 'geteuid', return_value=uid, create=True):
             with self.assertRaises((DevError, FileNotFoundError)):
                 packaged._installed_workspace('test-real-workspace')
             base = self.root / '.lsf-dev'
