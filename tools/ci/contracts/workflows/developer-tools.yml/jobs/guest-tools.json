@@ -40,6 +40,10 @@
         }
       },
       {
+        "name": "Select the runner-owned compiler archive cache",
+        "run": "printf 'LSF_DEV_COMPILER_CACHE=%s\\n' \"$RUNNER_TEMP/compiler-archives\" >> \"$GITHUB_ENV\""
+      },
+      {
         "id": "compiler-cache",
         "name": "Restore untrusted pinned compiler archives",
         "uses": "actions/cache/restore",
@@ -291,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain the reviewed runner.temp scope at the compiler assembly step and cache action inputs, together with the development CI dependency caches and overlap of independent checks; preserve every historical execution obligation.",
+  "reviewReason": "Retain every historical guest-tool step, six-language matrix, deadline and immutable tool pin while adopting the reviewed runner-owned compiler cache selection from development.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
