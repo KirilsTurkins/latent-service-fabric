@@ -187,7 +187,7 @@ async fn operate(
                 .inspect_restore(request, codecs.authority.deadline)?
                 .await?;
             Ok(
-                serde_json::json!({"action":"inspect-restore", "snapshot":snapshot(&observed.snapshot)?,
+                serde_json::json!({"action":"inspect-restore", "snapshot":snapshot(&observed.snapshot),
                 "windowDigest":digest(observed.window.digest().map_err(OfflineRecoveryError::Review)?),
                 "window":observed.window}),
             )
