@@ -127,6 +127,12 @@ build materials after the entire build succeeds. The compatibility check capture
 the frozen V5 ABI from the declared WIT surface. Operator provider installation
 and grants remain separate requirements.
 
+Keep the selected world and exported contracts in the project tenant's namespace.
+The isolated example signer uses tenant `examples`. The normal full activation
+build and its first signed execution attempt are recorded in
+[Java activation fibers](../runtime/java-activation-fibers.md); that invocation
+failed and does not establish complete CompletableFuture execution support.
+
 `--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
 dependency cache. Gradle writes locks and updates to the build's private home.
 Choose one cache mode per build. Profile selection does not change invocation

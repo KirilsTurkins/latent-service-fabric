@@ -1,0 +1,367 @@
+{
+  "schemaVersion": "latent.java-activation-authoring-observation.v1",
+  "sourceCommit": "8d860547c78247073b219d60522afead1ffb8d3d",
+  "sourceTree": "735e9e4fd8a74f83d5a661066faa2491e42070e3",
+  "scope": "normal-full-authoring-and-first-signed-invocation-observation",
+  "runtimeProfile": "teavm-activation-fibers-v1",
+  "sourceOnlyControls": {
+    "tests": 168,
+    "stages": [
+      {
+        "name": "SDK-source-controls",
+        "exitCode": 0,
+        "tests": 86,
+        "outputBytes": 98
+      },
+      {
+        "name": "authoring-ABI-controls",
+        "exitCode": 0,
+        "tests": 60,
+        "outputBytes": 99
+      },
+      {
+        "name": "Java-archive-controls",
+        "exitCode": 0,
+        "tests": 22,
+        "outputBytes": 98
+      }
+    ],
+    "zeroSkips": true,
+    "inputFiles": 2210,
+    "sourceInputsUnchanged": true
+  },
+  "toolchainProducerSource": "4c817c050b6b19a85af09291e4774e65ddcdda29",
+  "toolchainInputsDigest": "sha256:90084065888bd8044720b7c6c4319af94ff429d45976ab38e2730d687beb2250",
+  "compilerClosureDigest": "sha256:e9e1a750e16700f4d9be37bdb876adfb39e28cb377ba2a9651f2b4a7da0e14ed",
+  "executionImage": "sha256:4b6db7a7c996a9a3d3fac8481858674a32fb958db6856b046bd5459bf6441e2c",
+  "compilerHelpers": {
+    "wit-bindgen": {
+      "bytes": 19856344,
+      "sha256": "aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72"
+    },
+    "wasm-tools": {
+      "bytes": 20231696,
+      "sha256": "cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6"
+    }
+  },
+  "nativeProducerSource": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+  "nativeProducerImage": "sha256:8f7c460350512f11d0205403f34bbf78fac7a8c9b425bbf1e34510585edb04c5",
+  "nativeBinaries": {
+    "latent": {
+      "bytes": 58818504,
+      "sha256": "ef3a3b8a7d33e382df7ec1bd816f0a4161b90b1a05d18a9d58785612c463de72"
+    },
+    "latentd": {
+      "bytes": 145996024,
+      "sha256": "5ff1a8f9495c2a9d689fab19e4bb3ad63ca4b4c89bf441eb28c21ce70da356ee"
+    },
+    "package": {
+      "bytes": 14133128,
+      "sha256": "9cbc5d4df321d67aad292ffb422cbb20667c99bd7b00a2d0d15d58945c886c9c"
+    },
+    "capsule_contracts": {
+      "bytes": 7092904,
+      "sha256": "126823c1e61399838268d1fef6af420ed6926069d99567bf334fa3300be30000"
+    },
+    "capsule_authoring": {
+      "bytes": 19342776,
+      "sha256": "7bddb57cd549eba58bd123306329d38cea3030ae69a6333b5f4e17999d9e73f7"
+    }
+  },
+  "capturedApplication": {
+    "inputsDigest": "sha256:f6d29ad35dde9c8779a86e9a06a4ef6053dc8732c40743d24bcb48f7a17e3d65",
+    "originalJavaSourceDigest": "sha256:332d25d65c8835f201d253c5f6d266c2bfb7aa94b5e4bad92f252ad97b4b2c81",
+    "selectedWitDigest": "sha256:5e097e2e2e752d5971cc7d9676aadc0a993a42a37419d309e2bb209743f31d78",
+    "originalConformanceWitDigest": "sha256:14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236",
+    "namespaceInputChanges": [
+      {
+        "file": "wit/world.wit",
+        "field": "package",
+        "before": "tests:caller@1.0.0",
+        "after": "examples:caller@1.0.0"
+      },
+      {
+        "file": "capsule-project.json",
+        "field": "world",
+        "before": "tests:caller/service@1.0.0",
+        "after": "examples:caller/service@1.0.0"
+      }
+    ],
+    "originalJavaSourceUnchanged": true,
+    "originalFourModesAndThreeCallsUnchanged": true,
+    "world": "examples:caller/service@1.0.0",
+    "function": "examples:caller/api@1.0.0#run"
+  },
+  "component": {
+    "digest": "sha256:a5d9b4778e937581dbc1777f2ea200f15e80e985df838e5f7abc84ea2fe7bd16",
+    "bytes": 4239792
+  },
+  "fullAuthoring": {
+    "actualMaintainedBuildRan": true,
+    "packageAndInspectSucceeded": true,
+    "buildSeconds": 97.467233,
+    "outerSeconds": 133.06441,
+    "buildObservationDigest": "sha256:4601ccae07c755d28296e7f8a0f060412aa6239d278b47e8735ce7af1e8db514",
+    "buildObservationIdentity": {
+      "bytes": 3452,
+      "sha256": "4601ccae07c755d28296e7f8a0f060412aa6239d278b47e8735ce7af1e8db514"
+    },
+    "sourceBinding": {
+      "repository": "https://github.com/KirilsTurkins/latent-service-fabric",
+      "revision": "f6d29ad35dde9c8779a86e9a06a4ef6053dc8732c40743d24bcb48f7a17e3d65",
+      "snapshotDigest": "sha256:f6d29ad35dde9c8779a86e9a06a4ef6053dc8732c40743d24bcb48f7a17e3d65",
+      "repositoryTrust": "operator-asserted",
+      "capture": "explicit-input-files"
+    },
+    "materialNames": [
+      "build-recipe",
+      "clang",
+      "compiler-closure",
+      "contracts-tool",
+      "dependency-lock",
+      "generated-bindings",
+      "gradle",
+      "java",
+      "java-runtime-profile",
+      "java-source-origins",
+      "package-inputs",
+      "packager",
+      "source-snapshot",
+      "toolchain-config",
+      "wasm-tools",
+      "wit-bindgen"
+    ],
+    "honestCompleteness": {
+      "hermetic": false,
+      "reproducibility": "not-checked",
+      "dependencyCompleteness": "declared-inputs-incomplete"
+    },
+    "limits": {
+      "overallSeconds": 900,
+      "commandSeconds": 600,
+      "cpu": 2,
+      "memoryBytes": 4294967296,
+      "tmpfsBytes": 536870912,
+      "persistentBytes": 33554432,
+      "network": "none"
+    },
+    "nativeBuildPerformed": false,
+    "compilerCacheCopied": false,
+    "inputSealsUnchanged": true,
+    "physicalProducerExit": {
+      "exitCode": 0,
+      "pid": 0,
+      "oomKilled": false
+    },
+    "referenceJdkObservations": [
+      {
+        "iteration": 0,
+        "modes": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "results": [
+          42,
+          42,
+          42,
+          42
+        ]
+      },
+      {
+        "iteration": 1,
+        "modes": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "results": [
+          42,
+          42,
+          42,
+          42
+        ]
+      },
+      {
+        "iteration": 2,
+        "modes": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "results": [
+          42,
+          42,
+          42,
+          42
+        ]
+      }
+    ]
+  },
+  "normalSignedAttempt": {
+    "actualStrictSignerSucceeded": true,
+    "actualNormalNodeStarted": true,
+    "actualPublicationOriginalThreeGrantsAndDeploymentSucceeded": true,
+    "signingCommands": [
+      {
+        "stage": "demo-sign",
+        "exitCode": 0,
+        "seconds": 0.892235
+      }
+    ],
+    "signedObservationDigest": "sha256:85265c4afbba7f3d24bf7561dd4130944a65ebcd50ab4c83225e0acd776faca0",
+    "signedPackageDigest": "sha256:5e7f9840136e241512af11a01dcd2549a61235b13bcd25fd05eb365307ddac06",
+    "grantCapabilitySet": [
+      "latent:runtime/activation@0.1.0",
+      "latent:clock/monotonic@0.1.0",
+      "latent:clock/wall@0.1.0"
+    ],
+    "originalRuntimeLimits": {
+      "tasks": 5,
+      "executors": 3,
+      "queuedWork": 8,
+      "waits": 8,
+      "timers": 2,
+      "results": 8,
+      "nativeOwners": 2
+    },
+    "originalGuestLimits": {
+      "cpuFuel": 10000000000,
+      "memoryBytes": 67108864,
+      "wallTimeLimitMillis": 120000,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 0,
+      "effectCount": 0
+    },
+    "originalPolicyCeilings": {
+      "operations": 4096,
+      "inputBytes": 0,
+      "outputBytes": 32768,
+      "wallTimeMillis": 120000
+    },
+    "controlRpcTimeoutMillis": 15000,
+    "controlProcessMaximumSeconds": 25,
+    "invocationRpcTimeoutMillis": 120000,
+    "invocationProcessMaximumSeconds": 123,
+    "plannedInvocations": 12,
+    "actualInvocations": 1,
+    "remainingNotRun": 11,
+    "firstInvocation": {
+      "activation": "java-completable-0-0",
+      "exitCode": 4,
+      "startedAtUnixMillis": "1790938592062",
+      "elapsedNanos": "15238798056",
+      "decoded": null,
+      "response": {
+        "category": "platform-failure",
+        "command": "invoke",
+        "data": {
+          "activationId": "java-completable-0-0",
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "5771223",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9373512",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "15105178"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:fedbf5022432e21879475f5c375cd79c6ccf09b869e92b177d2635579d4dd447",
+            "releaseDigest": "sha256:a5d9b4778e937581dbc1777f2ea200f15e80e985df838e5f7abc84ea2fe7bd16",
+            "revisionId": "revision-v1:sha256:95bb860a1cd5d0b76a60822dd3831be4daae602b2ab4bb5af4a4fb2cc933614b",
+            "routeGeneration": "2"
+          },
+          "terminalState": "guest_trap"
+        },
+        "error": {
+          "code": "guest-trap",
+          "details": [],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    },
+    "causeProven": false,
+    "auditProjection": {
+      "records": 97,
+      "pages": 8,
+      "complete": false,
+      "maximumPages": 8,
+      "maximumBytes": 262144,
+      "retainedBytes": 241240,
+      "sha256": "d3638c8f51873436814f5aca547234f29b6bcc8864d143b25ee938995b710aeb"
+    },
+    "hostHelperBinding": {
+      "source": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+      "manifestDigest": "7485ece1745ea88a1f0142ef9e076eeedbf1bea7939323137d5d6bfb225eab7e",
+      "selectedFiles": 734,
+      "selectedBytes": 6211011,
+      "scope": "selected-exact-manifest-bytes-only",
+      "noRecreatedVolumeIdentity": true
+    },
+    "postCleanupInputCounts": {
+      "completedBuildFiles": 97,
+      "applicationFiles": 125,
+      "nativeTools": 5,
+      "selectedHostHelpers": 734
+    },
+    "allInputsUnchanged": true,
+    "physicalRetirement": {
+      "producerExitCode": 1,
+      "producerPid": 0,
+      "oomKilled": false,
+      "nodeGroupReaped": true,
+      "nodeReturnCode": -9,
+      "cleanNodeShutdownProven": false
+    },
+    "rawPrivateBackup": {
+      "bytes": 529314,
+      "sha256": "a9aca1ca8652f8589cda0f8607a3c3b2eeab8dba282d2ab8eefa4715521d888c",
+      "contents": "private signing inputs and raw node/CLI results retained outside Git"
+    },
+    "noInvocationReplay": true
+  },
+  "preservedEarlierAttempts": [
+    {
+      "attempt": "full-authoring-r1",
+      "result": "missing-wit-bindgen-before-compilation",
+      "qualified": false
+    },
+    {
+      "attempt": "full-authoring-r2",
+      "componentDigest": "sha256:9d619d3a9bea72a83c4af0fb87c3214d8f94a74be974d55803cb1765d28a8841",
+      "result": "unsupported-package-capsule-manifest-with-original-tests-namespace",
+      "qualified": false
+    },
+    {
+      "attempt": "normal-signing-node-r1",
+      "result": "strict-signing-passed-private-config-file-exists-before-node",
+      "qualified": false
+    }
+  ],
+  "qualificationBoundaries": {
+    "originalTestsNamespaceE58Component": "prepared-only-partial",
+    "normalTwelveCallCompletableFutureExecution": "failed-first-case",
+    "timedOrAdvancedCompletableFutureControls": "separate-source-model-candidate",
+    "fullJavaProfileIssue741": "open",
+    "sdkMilestone": "open",
+    "publishedLibraryDefaultFactoryPerformanceAndLifecycleCriteria": "not-established-by-this-observation"
+  }
+}

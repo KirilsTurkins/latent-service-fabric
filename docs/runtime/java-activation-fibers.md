@@ -321,4 +321,32 @@ compilation but failed TeaVM C generation: a broad helper rewrite redirected ten
 generated callback references into absent SDK classes. The original failure and
 all generated source, class and command records are preserved. The emitted-callback
 control reproduces that identity failure and passes after the narrower helper
-mapping. A new component preparation and signed execution are still required.
+mapping. The repaired guest-only component at `e58ae4c2` has digest
+`sha256:9d619d3a9bea72a83c4af0fb87c3214d8f94a74be974d55803cb1765d28a8841`
+and remains a preparation result. Its original `tests:caller` namespace did not
+complete the normal example-tenant package/signing path.
+
+At source `8d860547`, a separately captured normal-authoring fixture changed
+only the WIT package declaration and selected project world to `examples:caller`.
+The original Java source, four modes, three repetitions, imports, and budgets
+were preserved. The actual full Java builder completed compilation, contracts,
+V5 compatibility, packaging and inspection in 97.467 seconds. All twelve fresh
+JDK observations returned 42. The new component has digest
+`sha256:a5d9b4778e937581dbc1777f2ea200f15e80e985df838e5f7abc84ea2fe7bd16`
+and size 4,239,792 bytes; it has its own completed build observation.
+
+The normal strict signer, release publication, three explicit grants and
+deployment succeeded using normal host tools from `acb7988`. The first mode-0
+invocation then returned a known `guest-trap`, with 5,771,223 fuel, 9,373,512 bytes
+of peak memory and zero effects or outbound calls. The remaining eleven calls
+were not run. The bounded audit projection includes completed runtime operations
+but is incomplete and does not establish the trap's cause. The failed node group
+was physically reaped; a clean node shutdown and guest ownership retirement were
+not qualified. The original task limits and guest ceilings of 120 seconds,
+10 billion fuel, and 64 MiB were retained.
+
+The [source-bound observation](../testing/evidence/java-activation-authoring-normal-2026-10-02.json)
+records the compiler, native producers, input seals, original failures and exact
+completion boundaries. The successful full build and signing establish that
+authoring path; successful normal CompletableFuture execution, advanced methods,
+library behavior and the complete #741 profile remain open.
