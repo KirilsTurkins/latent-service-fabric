@@ -269,19 +269,28 @@ The isolated CompletableFuture candidate supplies pending `CompletableFuture`,
 `CompletionStage` and `CompletionException` through their unchanged standard
 class identities. It implements the synchronous and asynchronous stage families,
 composition, recovery, aggregation, pending `get`/`join`, cancellation and default
-factories. Default asynchronous work uses one managed cached pool per activation;
+factories. Default asynchronous work creates one managed cached pool per activation
+when its first callback is dispatched;
 applications supply no executor adapter or shutdown hook. Cancellation removes
 waiting listeners, while a queued or running callback retains its original
 queued-work and result owners until physical callback completion. Timed completion,
 delayed executors, obtrusion and minimal-stage conveniences remain unsupported.
 
-The maintained compiler preparation first compares 55 standard observables against
-the pinned JDK and the SDK port source. A separate strict host ledger checks 401
+Failed unary, compose and either stages preserve the input failure without
+dispatching their callbacks. An installed binary listener also propagates a failed
+input before dispatch, while an already-ready binary stage keeps the reference
+JDK's executor dispatch. Successful exceptional composition relays its input
+without dispatching recovery; ordinary exceptional recovery, observation and
+handling retain the JDK's dispatch behavior. Reading the default executor or
+propagating a failed unary input creates no worker pool.
+
+The maintained compiler preparation first compares 82 standard observables against
+the pinned JDK and the SDK port source. A separate strict host ledger checks 419
 ownership observables and 32 completion/cancellation races. The ledger and host
 executor exist only in those source controls and are excluded from the component.
-Ten verified, locked TeaVM model JARs also check 178 actual method bodies,
+Ten verified, locked TeaVM model JARs also check 180 actual method bodies,
 canonical standard and private helper identities, resolved reference closure,
-unsupported-method rejection, and 24 coroutine bodies containing 23 monitor
+unsupported-method rejection, and 25 coroutine bodies containing 24 monitor
 scopes. Neither application nor port classes are initialized during that model
 inspection. These source and model results still require actual default-pool,
 dynamic callback and guest-binding behavior in signed execution. Prepare and select the independent,
@@ -296,3 +305,10 @@ LSF_GUEST_SDK_LANGUAGE=java LSF_JAVA_COMPLETABLE_FIXTURE=/tmp/java-completable-f
   runtime::signed_java_completable_futures_use_default_activation_executor \
   -- --ignored --exact --nocapture
 ```
+
+For a completed, immutable Gradle 9.1 dependency cache, add
+`--read-only-cache /path/to/caches/modules-2`. This uses Gradle's read-only
+dependency input in place, runs offline, retains strict dependency verification,
+and keeps locks and transformed artifacts in a fresh compiler directory. The
+captured cache joins the compiler's before/after identity checks. It cannot be
+combined with `--offline-cache`, which retains the existing private-copy behavior.

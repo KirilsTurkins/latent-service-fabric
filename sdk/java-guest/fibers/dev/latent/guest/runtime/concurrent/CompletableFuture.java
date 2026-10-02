@@ -26,8 +26,20 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
 
     public CompletableFuture() { }
 
+    private static final class DefaultExecutor implements Executor {
+        private Executor pool;
+        @Override public void execute(Runnable command) {
+            Objects.requireNonNull(command);
+            Executor selected;
+            synchronized (this) {
+                if (pool == null) pool = Executors.newCachedThreadPool();
+                selected = pool;
+            }
+            selected.execute(command);
+        }
+    }
     private static Executor asyncPool() {
-        return Activation.defaultAsyncExecutor(() -> Executors.newCachedThreadPool());
+        return Activation.defaultAsyncExecutor(DefaultExecutor::new);
     }
     public Executor defaultExecutor() { return asyncPool(); }
     public <U> CompletableFuture<U> newIncompleteFuture() { return new CompletableFuture<>(); }
@@ -65,6 +77,9 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         final boolean both;
         final Executor executor;
         final Runnable body;
+        // 1 propagates a failed input; 2 relays a successful recovery input.
+        // Both paths complete without dispatching an application callback.
+        final int inputShortcut;
         private Activation.Lease queued;
         volatile boolean dispatched;
         volatile boolean finished;
@@ -75,12 +90,17 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         }
         Action(CompletableFuture<?> destination, CompletableFuture<?> left, CompletableFuture<?> right,
                boolean both, Executor executor, Runnable body, boolean evenIfCompleted) {
+            this(destination, left, right, both, executor, body, evenIfCompleted, 0);
+        }
+        Action(CompletableFuture<?> destination, CompletableFuture<?> left, CompletableFuture<?> right,
+               boolean both, Executor executor, Runnable body, boolean evenIfCompleted, int inputShortcut) {
             this.destination = destination;
             this.left = left;
             this.right = right;
             this.both = both;
             this.executor = executor;
             this.body = body;
+            this.inputShortcut = inputShortcut;
             queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
             try {
                 if (!destination.accept(this, evenIfCompleted)) { queued.close(); queued = null; finished = true; }
@@ -120,7 +140,16 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             synchronized (this) { if (finished || dispatched) return; dispatched = true; }
             detach();
             try {
-                if (executor == null) run();
+                Throwable inputFailure = null;
+                if (inputShortcut == 1) {
+                    CompletableFuture<?> selected = right != null && !both && !left.isDone() ? right : left;
+                    inputFailure = selected.error();
+                    if (inputFailure == null && right != null && both) inputFailure = right.error();
+                }
+                if (inputFailure != null) {
+                    try { destination.asyncFailure(inputFailure); }
+                    finally { finish(); }
+                } else if (executor == null || inputShortcut == 2 && left.error() == null) run();
                 else executor.execute(this);
             } catch (Throwable error) {
                 try { destination.asyncFailure(error); }
@@ -320,7 +349,8 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     private <U> CompletableFuture<U> unary(Function<? super T, ? extends U> fn, Executor executor) {
         Objects.requireNonNull(fn);
         CompletableFuture<U> destination = newIncompleteFuture();
-        new Action(destination, this, null, true, executor, () -> destination.complete(fn.apply(successful()))).install();
+        new Action(destination, this, null, true, executor,
+            () -> destination.complete(fn.apply(successful())), false, 1).install();
         return destination;
     }
     private <U, V> CompletableFuture<V> binary(CompletionStage<? extends U> other,
@@ -328,8 +358,11 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         Objects.requireNonNull(fn);
         CompletableFuture<? extends U> right = Objects.requireNonNull(other).toCompletableFuture();
         CompletableFuture<V> destination = newIncompleteFuture();
+        // The reference JDK dispatches an already-ready binary stage even on
+        // failure, but an installed listener propagates failure before dispatch.
+        int shortcut = isDone() && right.isDone() ? 0 : 1;
         new Action(destination, this, right, true, executor,
-            () -> destination.complete(fn.apply(successful(), right.successful()))).install();
+            () -> destination.complete(fn.apply(successful(), right.successful())), false, shortcut).install();
         return destination;
     }
     private <U> CompletableFuture<U> either(CompletionStage<? extends T> other,
@@ -338,7 +371,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<? extends T> right = Objects.requireNonNull(other).toCompletableFuture();
         CompletableFuture<U> destination = newIncompleteFuture();
         new Action(destination, this, right, false, executor,
-            () -> destination.complete(fn.apply(isDone() ? successful() : right.successful()))).install();
+            () -> destination.complete(fn.apply(isDone() ? successful() : right.successful())), false, 1).install();
         return destination;
     }
     private <U> CompletableFuture<U> handled(BiFunction<? super T, Throwable, ? extends U> fn, Executor executor) {
@@ -378,7 +411,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         Objects.requireNonNull(fn);
         CompletableFuture<U> destination = newIncompleteFuture();
         new Action(destination, this, null, true, executor,
-            () -> Objects.requireNonNull(fn.apply(successful())).toCompletableFuture().relay(destination)).install();
+            () -> Objects.requireNonNull(fn.apply(successful())).toCompletableFuture().relay(destination), false, 1).install();
         return destination;
     }
     private CompletableFuture<T> recovered(Function<Throwable, ? extends T> fn, Executor executor) {
@@ -392,7 +425,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             Throwable error = error();
             if (error == null) destination.complete(successful());
             else Objects.requireNonNull(fn.apply(error)).toCompletableFuture().relay(destination);
-        }).install();
+        }, false, 2).install();
         return destination;
     }
 
@@ -428,7 +461,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         CompletableFuture<Void> destination = newIncompleteFuture();
         new Action(destination, this, right, false, executor, () -> {
             if (isDone()) successful(); else right.successful(); fn.run(); destination.complete(null);
-        }).install();
+        }, false, 1).install();
         return destination;
     }
     @Override public <U> CompletableFuture<U> thenCompose(Function<? super T, ? extends CompletionStage<U>> fn) { return composed(fn, null); }

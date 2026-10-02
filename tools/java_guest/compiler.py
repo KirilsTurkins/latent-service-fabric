@@ -94,10 +94,29 @@ def tool_inventory(roots: dict[str, Path]) -> bytes:
     return canonical(files)
 
 
+def read_only_dependency_cache(path: Path) -> Path:
+    """Select the completed pinned module cache without copying its artifacts.
+
+    Gradle 9.1 reads this cache through GRADLE_RO_DEP_CACHE and keeps every lock,
+    transformation and update in this compiler's private Gradle user home.
+    """
+    if path.name != "modules-2" or path.is_symlink():
+        raise ValueError("invalid read-only Gradle module cache")
+    path = path.resolve(strict=True)
+    if not all((path / name).is_dir() and not (path / name).is_symlink()
+               for name in ("files-2.1", "metadata-2.107")):
+        raise ValueError("incomplete pinned read-only Gradle module cache")
+    tool_inventory({"gradle-cache": path})
+    return path
+
+
 class Compiler:
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
                  platform: Path | None = None, config: dict | None = None, timeout=900,
-                 offline_cache: Path | None = None):
+                 offline_cache: Path | None = None, read_only_cache: Path | None = None):
+        if offline_cache is not None and read_only_cache is not None:
+            raise ValueError("Java dependency cache selections are mutually exclusive")
+        selected_cache = read_only_dependency_cache(read_only_cache) if read_only_cache is not None else None
         self.directory, self.wasi_sdk = directory.resolve(), wasi_sdk.resolve()
         self.sdk = sdk or ROOT / "sdk/java-guest"
         self.platform = platform or ROOT / "wit/platform"
@@ -109,13 +128,17 @@ class Compiler:
         # An explicit JDK may be needed by Gradle's Java toolchain discovery.
         if "JAVA_HOME" in os.environ: self.environment["JAVA_HOME"] = os.environ["JAVA_HOME"]
         self.environment["GRADLE_USER_HOME"] = str(self.directory / "gradle-home")
-        self.offline = offline_cache is not None
+        self.offline = offline_cache is not None or selected_cache is not None
+        self.dependency_cache = self.directory / "gradle-home/caches/modules-2/files-2.1"
         if offline_cache is not None:
             # Only a captured, checksummed dependency cache is accepted. Gradle
             # locks and metadata updates belong to this private compilation.
             offline_cache = offline_cache.resolve(strict=True)
             tool_inventory({"gradle-cache": offline_cache})
             shutil.copytree(offline_cache, self.directory / "gradle-home/caches/modules-2")
+        if selected_cache is not None:
+            self.environment["GRADLE_RO_DEP_CACHE"] = str(selected_cache.parent)
+            self.dependency_cache = selected_cache / "files-2.1"
         self.deadline = time.monotonic() + timeout
         self.records = []
         self.retained_bytes = 0
@@ -147,6 +170,7 @@ class Compiler:
         self.original_sdk = sdk_snapshot(self.sdk)
         self.tool_roots = {"wasi-sdk": self.wasi_sdk, "jdk": self.paths["java"].parent.parent,
                            "gradle": self.paths["gradle"].parent.parent}
+        if selected_cache is not None: self.tool_roots["gradle-cache"] = selected_cache
         self.compiler_inputs = tool_inventory(self.tool_roots)
         from tools.java_guest.lock import verify
         self.binding_digest = verify(self.run, self.sdk, self.platform, self.directory / "sdk-reference")
@@ -284,7 +308,7 @@ class Compiler:
             })
         self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)
         retain = source_module(self.sdk / "tools/dependencies.py").retain
-        retained = retain(self.directory / "gradle-home/caches/modules-2/files-2.1", project, destination, False)
+        retained = retain(self.dependency_cache, project, destination, False)
         generated = project / "build/teavm-c/c"
         adapt = source_module(self.sdk / "tools/teavm_platform.py").adapt
         adaptation = adapt(generated)

@@ -90,7 +90,7 @@ public final class CompletableFutureModelControl {
         transform.setAccessible(true);
         var plugin = new RuntimePlugin();
         List<ClassHolder> models = new ArrayList<>(List.of(future, stage, exception));
-        for (String name : List.of("Action", "Aggregate")) {
+        for (String name : List.of("Action", "Aggregate", "DefaultExecutor")) {
             ClassHolder helper = source.get(SDK + "CompletableFuture$" + name);
             require(helper != null && helper.getName().equals(SDK + "CompletableFuture$" + name), "one-private-helper-identity");
             models.add(helper);

@@ -23,6 +23,11 @@ public final class CompletableFutureNativeControl {
         try { if (!latch.await(3, TimeUnit.SECONDS)) throw new AssertionError("source-control-watchdog"); }
         catch (InterruptedException error) { throw new AssertionError(error); }
     }
+    private static void failed(CompletableFuture<?> future, Throwable original) throws Exception {
+        require(future.isDone());
+        try { future.get(); throw new AssertionError("failed-stage-succeeded"); }
+        catch (ExecutionException error) { require(error.getCause() == original); }
+    }
     public static void main(String[] arguments) throws Exception {
         CompletableFuture<Integer> pending = new CompletableFuture<>();
         int[] calls = {0};
@@ -103,6 +108,38 @@ public final class CompletableFutureNativeControl {
         CompletableFuture<Integer> rejectedStage = right.thenApplyAsync(value -> value + 1, reject);
         try { rejectedStage.get(); throw new AssertionError(); }
         catch (ExecutionException error) { require(error.getCause() instanceof RejectedExecutionException); }
+
+        // Failed unary/either inputs relay their failure without accepting
+        // executor work. Already-ready binary stages retain JDK dispatch.
+        failed(failed.thenApplyAsync(value -> { throw new AssertionError(); }, queue), cause);
+        failed(failed.thenApplyAsync(value -> { throw new AssertionError(); }, reject), cause);
+        failed(failed.thenAcceptAsync(value -> { throw new AssertionError(); }, queue), cause);
+        failed(failed.thenRunAsync(() -> { throw new AssertionError(); }, queue), cause);
+        failed(failed.thenComposeAsync(value -> { throw new AssertionError(); }, queue), cause);
+        failed(failed.applyToEitherAsync(new CompletableFuture<>(), value -> { throw new AssertionError(); }, queue), cause);
+        failed(failed.runAfterEitherAsync(right, () -> { throw new AssertionError(); }, queue), cause);
+        require(queue.work.isEmpty());
+        CompletableFuture<Integer> pendingBinaryInput = new CompletableFuture<>();
+        CompletableFuture<Integer> failedBinary = failed.thenCombineAsync(pendingBinaryInput, Integer::sum, reject);
+        require(!failedBinary.isDone()); pendingBinaryInput.complete(1); failed(failedBinary, cause);
+        CompletableFuture<Integer> readyBinary = failed.thenCombineAsync(right, Integer::sum, queue);
+        require(!readyBinary.isDone() && queue.work.size() == 1);
+        queue.run(); failed(readyBinary, cause);
+        CompletableFuture<Integer> failedLaterInput = new CompletableFuture<>();
+        CompletableFuture<Integer> failedLater = failedLaterInput.thenApplyAsync(value -> value, reject);
+        failedLaterInput.completeExceptionally(cause); failed(failedLater, cause);
+        CompletableFuture<Integer> successRelay = right.exceptionallyComposeAsync(error -> {
+            throw new AssertionError("successful-recovery-callback");
+        }, reject);
+        require(successRelay.isDone() && successRelay.join() == 41);
+        CompletableFuture<Integer> relayInput = new CompletableFuture<>();
+        CompletableFuture<Integer> relayOutput = relayInput.exceptionallyComposeAsync(error -> {
+            throw new AssertionError("successful-pending-recovery-callback");
+        }, queue);
+        relayInput.complete(42); require(relayOutput.isDone() && relayOutput.join() == 42 && queue.work.isEmpty());
+        CompletableFuture<Integer> queuedRecovery = right.exceptionallyAsync(error -> 0, queue);
+        require(!queuedRecovery.isDone() && queue.work.size() == 1);
+        queue.run(); require(queuedRecovery.join() == 41);
 
         ThreadLocal<String> local = new ThreadLocal<>(); local.set("root");
         require(CompletableFuture.supplyAsync(() -> Thread.currentThread() != original && local.get() == null).get());

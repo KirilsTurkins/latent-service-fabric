@@ -10,11 +10,52 @@ from unittest.mock import patch
 
 from tools.build_process import BuildProcessError
 from tools.java_capsule_build import retain_logs
-from tools.java_guest.compiler import Compiler, stage_sdk_service
+from tools.java_guest.compiler import Compiler, stage_sdk_service, read_only_dependency_cache, tool_inventory
 from tools.java_guest.class_origin import checkpoint_index, source_file
 
 
 class Diagnostics(unittest.TestCase):
+    def test_dependency_cache_choices_fail_before_output_or_tool_execution(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for read_only, offline in ((root / "modules-2", root / "offline"), (root / "wrong-name", None)):
+                output = root / "compiler"
+                with patch("tools.java_guest.compiler.run_bounded_result") as run, self.assertRaises(ValueError):
+                    Compiler(output, root, offline_cache=offline, read_only_cache=read_only)
+                run.assert_not_called()
+                self.assertFalse(output.exists())
+
+    def test_read_only_cache_requires_pinned_metadata_and_a_bound_regular_closure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "modules-2"
+            (root / "files-2.1").mkdir(parents=True)
+            with self.assertRaisesRegex(ValueError, "incomplete pinned"):
+                read_only_dependency_cache(root)
+            (root / "metadata-2.107").mkdir()
+            jar = root / "files-2.1/artifact.jar"
+            jar.write_bytes(b"captured artifact")
+            self.assertEqual(read_only_dependency_cache(root), root.resolve())
+            before = tool_inventory({"gradle-cache": root})
+            jar.write_bytes(b"changed artifact")
+            self.assertNotEqual(before, tool_inventory({"gradle-cache": root}))
+
+    def test_changed_read_only_cache_invalidates_the_final_compiler_receipt(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "modules-2"
+            root.mkdir()
+            jar = root / "artifact.jar"
+            jar.write_bytes(b"captured artifact")
+            compiler = Compiler.__new__(Compiler)
+            compiler.sdk = root
+            compiler.original_sdk = {}
+            compiler.tool_roots = {"gradle-cache": root}
+            compiler.compiler_inputs = tool_inventory(compiler.tool_roots)
+            compiler.materials = []
+            jar.write_bytes(b"changed artifact")
+            with patch("tools.java_guest.compiler.sdk_snapshot", return_value={}), \
+                    self.assertRaisesRegex(ValueError, "distribution changed"):
+                compiler.check_unchanged()
+
     def test_activation_profile_selection_is_explicit_before_output_or_compilation(self):
         compiler = Compiler.__new__(Compiler)
         with tempfile.TemporaryDirectory() as temporary:

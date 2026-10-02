@@ -42,6 +42,33 @@ public final class CompletableFutureOwnerControl {
         owners(0, 0);
         Queue queue = new Queue();
         AtomicInteger calls = new AtomicInteger();
+        require(dev.latent.guest.runtime.concurrent.Executors.pools() == 0);
+        CompletableFuture<Integer> failedInput = CompletableFuture.failedFuture(new IllegalStateException("original-input"));
+        Executor defaultExecutor = failedInput.defaultExecutor();
+        require(defaultExecutor == failedInput.defaultExecutor());
+        require(dev.latent.guest.runtime.concurrent.Executors.pools() == 0);
+        CompletableFuture<Integer> failedDefault = failedInput.thenApplyAsync(value -> {
+            throw new AssertionError("failed-default-callback");
+        });
+        require(failedDefault.isCompletedExceptionally()); owners(0, 0);
+        require(dev.latent.guest.runtime.concurrent.Executors.pools() == 0);
+        CompletableFuture<Integer> defaultResult = CompletableFuture.supplyAsync(() -> 42);
+        require(defaultResult.get() == 42);
+        require(dev.latent.guest.runtime.concurrent.Executors.pools() == 1);
+        Activation.cleanup(); owners(0, 0);
+        require(dev.latent.guest.runtime.concurrent.Executors.pools() == 0);
+        CompletableFuture<Integer> failureInput = new CompletableFuture<>();
+        CompletableFuture<Integer> failureRelay = failureInput.thenApplyAsync(value -> {
+            throw new AssertionError("failed-pending-callback");
+        }, queue);
+        owners(1, 1);
+        failureInput.completeExceptionally(new IllegalArgumentException("pending-input-failure"));
+        require(failureRelay.isCompletedExceptionally() && queue.size() == 0);
+        owners(0, 0); require(failureInput.getNumberOfDependents() == 0);
+        CompletableFuture<Integer> readyFailure = failedInput.thenCombineAsync(
+            CompletableFuture.completedFuture(42), Integer::sum, queue);
+        owners(1, 1); require(queue.size() == 1 && !readyFailure.isDone());
+        queue.run(); owners(0, 0); require(readyFailure.isCompletedExceptionally());
         CompletableFuture<Integer> queued = CompletableFuture.supplyAsync(() -> {
             calls.incrementAndGet(); return 42;
         }, queue);

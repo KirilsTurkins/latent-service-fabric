@@ -2,7 +2,6 @@ package dev.latent.guest.runtime;
 
 import dev.latent.generated.Bindings;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -47,12 +46,7 @@ public final class Activation {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (owners() != 0 && System.nanoTime() < deadline) Thread.sleep(1);
         if (owners() != 0) throw new AssertionError("source-control-unretired-owner");
-        if (pool != null) {
-            ExecutorService service = (ExecutorService)pool;
-            service.shutdown();
-            if (!service.awaitTermination(5, TimeUnit.SECONDS))
-                throw new AssertionError("source-control-pool-not-reaped");
-            pool = null;
-        }
+        dev.latent.guest.runtime.concurrent.Executors.cleanup();
+        pool = null;
     }
 }

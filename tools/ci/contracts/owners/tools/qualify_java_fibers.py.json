@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all existing thread, wait, coroutine and reference-JDK obligations; add distinct standard CompletableFuture fixture and source ownership and locked-model controls without declaring whole-profile qualification",
+  "reviewReason": "Retain original signed thread fixture and pending whole-profile status; compare failed-stage dispatch and lazy default-pool ownership with the pinned JDK, and permit captured immutable Gradle 9.1 dependencies in place with strict verification and before/after identities",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "682433fd2150b8fa5adb13dfc0b4482f6fef9b4add8d099b1a434e3eeb6851bc"
+  "sha256": "85dfc1a12e3a4c602c46876ee5743c349f9ce1d086e37007bbead0f8a23df478"
 }

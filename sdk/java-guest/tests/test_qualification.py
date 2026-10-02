@@ -43,6 +43,27 @@ class ThrowableModelIntegrity(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "integrity mismatch"):
                 fibers.throwable_model_control(compiler, root / "model")
             compiler.run.assert_not_called()
+
+    def test_model_tooling_is_verified_in_place_without_copying_the_read_only_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = self.fixture(root, include_platform=True)
+            original = compiler.directory / "gradle-home/caches/modules-2"
+            selected = root / "read-only/modules-2"
+            selected.parent.mkdir()
+            shutil.move(original, selected)
+            compiler.dependency_cache = selected / "files-2.1"
+            classpath, identities = fibers.locked_model_classpath(compiler, include_platform=True)
+            self.assertEqual(len(identities), 10)
+            self.assertTrue(all(Path(path).is_relative_to(selected) for path in classpath.split(fibers.os.pathsep)))
+            self.assertFalse(original.exists())
+            first = Path(classpath.split(fibers.os.pathsep)[0])
+            first.write_bytes(b"changed read-only tooling")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.completable_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse(original.exists())
+            self.assertFalse((root / "model").exists())
             self.assertFalse((root / "model").exists())
 
     def test_capsule_digest_prefix_cannot_replace_maven_inventory_identity(self):
@@ -233,8 +254,8 @@ class CompletableSourceIntegrity(unittest.TestCase):
 
     @staticmethod
     def complete_receipts():
-        native = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=55"
-        owners = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=401;raceRounds=32"
+        native = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
+        owners = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
         return ["", native, "", native + "\n" + owners]
 
     def test_incomplete_standard_observables_stop_before_sdk_control_compilation(self):
@@ -264,7 +285,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             report = fibers.completable_source_control(compiler, root / "control")
             self.assertEqual(len(report["sourceInputs"]), 9)
             self.assertEqual((report["referenceObservables"], report["sourceOwnershipObservables"], report["raceRounds"]),
-                             (55, 401, 32))
+                             (82, 419, 32))
             self.assertFalse(report["componentExecutionPerformed"])
             self.assertFalse(report["actualGuestBindingsUsed"])
             original = (compiler.sdk / "fibers/conformance/compiler/CompletableFutureNativeControl.java").read_text()

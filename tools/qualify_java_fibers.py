@@ -30,7 +30,7 @@ def locked_model_classpath(compiler: Compiler, *, include_platform: bool = False
                  if Path(item["path"]).parts[-3] in names and item["path"].startswith("org/teavm/")]
     if (len(artifacts) != len(names) or {Path(item["path"]).parts[-3] for item in artifacts} != names):
         raise ValueError("Java runtime model requires the exact locked tooling closure")
-    cache = compiler.directory / "gradle-home/caches/modules-2/files-2.1"
+    cache = getattr(compiler, "dependency_cache", compiler.directory / "gradle-home/caches/modules-2/files-2.1")
     jars, identities = [], {}
     for item in sorted(artifacts, key=lambda row: row["path"]):
         parts = Path(item["path"]).parts
@@ -139,7 +139,7 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     reference, private = output / "reference", output / "private"
     reference.mkdir(); private.mkdir()
     compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference, native)
-    expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=55"
+    expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
     observed = compiler.run("completable-reference-run", "java", "-Xmx256m", "-cp", reference,
                             "CompletableFutureNativeControl").strip()
     if observed != expected: raise ValueError("Java CompletableFuture reference control did not complete")
@@ -152,15 +152,15 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     private_native.write_text(text, encoding="utf-8")
     compiler.run("completable-source-compile", "javac", "-proc:none", "--release", "25", "-d", private,
                  private_native, owners, *stubs, *ports)
-    owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=401;raceRounds=32"
+    owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
     observed = compiler.run("completable-source-run", "java", "-Xmx256m", "-cp", private,
                             "PrivateSourceRunner").strip()
     if observed.splitlines() != [expected, owner_result]:
         raise ValueError("Java CompletableFuture source ownership controls did not complete")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java CompletableFuture control inputs changed during execution")
-    return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 55,
-            "sourceOwnershipObservables": 401, "raceRounds": 32, "sourceInputs": inputs,
+    return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 82,
+            "sourceOwnershipObservables": 419, "raceRounds": 32, "sourceInputs": inputs,
             "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
 
@@ -183,14 +183,14 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     compiler.run("completable-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", output, *sources)
     expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
-        "resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=23;owned-callback-bodies=24;"
-        "bodies=178;application-identity")
+        "resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=24;owned-callback-bodies=25;"
+        "bodies=180;application-identity")
     observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
     if observed != expected: raise ValueError("Java CompletableFuture model control did not complete")
-    return {"status": "actual-locked-classlib-model-passed", "modelMethodBodies": 178,
-            "coroutineMonitorBodies": 23, "ownedCallbackBodies": 24, "jarDigests": identities,
+    return {"status": "actual-locked-classlib-model-passed", "modelMethodBodies": 180,
+            "coroutineMonitorBodies": 24, "ownedCallbackBodies": 25, "jarDigests": identities,
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
 
 
@@ -202,8 +202,11 @@ def recipe_inputs() -> dict[str, str]:
     return {path.relative_to(ROOT).as_posix(): digest(read_file(path)) for path in paths}
 
 
-def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None, fixture="threads"):
+def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None,
+            read_only_cache: Path | None = None, fixture="threads"):
     if fixture not in {"threads", "completable"}: raise ValueError("unknown Java fiber fixture")
+    if offline_cache is not None and read_only_cache is not None:
+        raise ValueError("Java dependency cache selections are mutually exclusive")
     output = fresh(output)
     common = ROOT / "sdk/java-guest/fibers/conformance"
     selected = common if fixture == "threads" else common / "completable"
@@ -221,7 +224,8 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
               "fixture": fixture}
     report["recipeInputs"] = before
     try:
-        compiler = Compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache, timeout=1200)
+        compiler = Compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
+                            read_only_cache=read_only_cache, timeout=1200)
         control = output / "reference-jdk"
         control.mkdir()
         main = control / "Main.java"
@@ -262,10 +266,13 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--wasi-sdk", type=Path, required=True)
     parser.add_argument("--gradle", default="gradle")
-    parser.add_argument("--offline-cache", type=Path)
+    caches = parser.add_mutually_exclusive_group()
+    caches.add_argument("--offline-cache", type=Path)
+    caches.add_argument("--read-only-cache", type=Path)
     parser.add_argument("--fixture", choices=("threads", "completable"), default="threads")
     args = parser.parse_args()
-    prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache, fixture=args.fixture)
+    prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache,
+            read_only_cache=args.read_only_cache, fixture=args.fixture)
 
 
 if __name__ == "__main__": main()
