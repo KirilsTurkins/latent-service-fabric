@@ -170,6 +170,16 @@
         "entryDocument": {"$ref": "#/$defs/staticDocumentPath"},
         "directoryIndex": {"enum": ["disabled", "redirect"]},
         "directoryIndexDocument": {"$ref": "#/$defs/staticDocumentPath"},
+        "errorDocument": {
+          "description": "Optional development extension. Older closed validators reject it. A same-publication HTML navigation miss remains 404 with private no-store; this is not a wildcard or an error renderer.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["profile", "document"],
+          "properties": {
+            "profile": {"const": "html-not-found-v1"},
+            "document": {"$ref": "#/$defs/staticErrorDocumentPath"}
+          }
+        },
         "fallback": {
           "type": "object",
           "additionalProperties": false,
@@ -246,6 +256,12 @@
   "title": "LSF exact web application package metadata",
   "$comment": "At metadata/web-application.json; <=256 KiB. At most 252 assets, leaving four package layers for capture metadata, SBOM and input receipt. Rust additionally checks portable noncolliding paths, order, aggregate asset bytes, MIME suffixes, exact package/layer/profile hashes, static document references to admitted HTML, package kind and actual async renderer WIT. Schema/layout alone confers no admission. Angular profile is recognizable but is not installed by declaring it.",
   "$defs": {
+    "staticErrorDocumentPath": {
+      "allOf": [
+        {"$ref": "#/$defs/staticDocumentPath"},
+        {"not": {"pattern": "(?:^|/)\\.|^/_[Ll][Ss][Ff](?:/|$)|(?:^|/)(?:[Ss][Ee][Rr][Vv][Ee][Rr](?:[.-]|/|$)|[Ss][Ss][Rr](?:/|$)|[Pp][Rr][Ii][Vv][Aa][Tt][Ee](?:/|$)|[Ss][Ee][Cc][Rr][Ee][Tt][Ss](?:/|$)|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll][Ss](?:[.]|/|$)|[Nn][Oo][Dd][Ee]_[Mm][Oo][Dd][Uu][Ll][Ee][Ss](?:/|$)|[Ss][Ee][Cc][Rr][Ee][Tt][.])|[.][Ss][Ee][Rr][Vv][Ee][Rr][.]"}}
+      ]
+    },
     "staticDocumentPath": {
       "type": "string",
       "minLength": 2,

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/static_site.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Review the optional signed bounded HTML 404 capture contract and unchanged trust boundary",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "bf037162dcb6b332b50f4dd88175425b87bd2b209645e754ad6bddf74daedbd3"
+  "sha256": "3049cf14f4a1684827d3057624de9c3615ab8eb9bcfeb04f56fbbef29a91ace9"
 }
