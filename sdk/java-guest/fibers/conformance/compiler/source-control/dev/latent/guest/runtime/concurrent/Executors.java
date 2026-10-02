@@ -7,7 +7,13 @@ import java.util.concurrent.TimeUnit;
 /** Host source control only. Component controls use the actual managed SDK pool. */
 public final class Executors {
     private static final ArrayList<ExecutorService> pools = new ArrayList<>();
+    public static volatile RuntimeException failNextFactory;
     public static synchronized ExecutorService newCachedThreadPool() {
+        if (failNextFactory != null) {
+            RuntimeException error = failNextFactory;
+            failNextFactory = null;
+            throw error;
+        }
         ExecutorService pool = java.util.concurrent.Executors.newCachedThreadPool();
         pools.add(pool);
         return pool;

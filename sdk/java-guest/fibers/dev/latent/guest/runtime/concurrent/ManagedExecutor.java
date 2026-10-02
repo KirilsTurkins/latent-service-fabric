@@ -44,14 +44,15 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
 
     @Override public synchronized void execute(Runnable command) {
         Objects.requireNonNull(command);
-        if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
-            throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
-        Activation.Lease queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+        Activation.Lease queued = null;
         FutureTask<?> future = command instanceof FutureTask<?> ? (FutureTask<?>)command : null;
         boolean acceptedResult = false;
         Item item = null;
         boolean installed = false;
         try {
+            if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
+                throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+            queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
             if (future != null) acceptedResult = future.accept();
             item = new Item(command, queued);
             queue.addLast(item);
@@ -62,8 +63,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         } catch (Throwable error) {
             if (!installed || queue.remove(item)) {
                 if (installed) pendingWork--;
-                queued.close();
+                if (queued != null) queued.close();
                 if (acceptedResult) future.rejectAcceptance();
+                CompletableFuture.rejectedBeforeAcceptance(command);
             }
             throw error;
         }

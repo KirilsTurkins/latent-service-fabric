@@ -98,7 +98,9 @@ public final class RuntimePlugin implements TeaVMPlugin {
             || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$")
             || suffix.startsWith("TimeUnit$") || suffix.equals("CompletableFuture$Action")
             || suffix.equals("CompletableFuture$Aggregate") || suffix.equals("CompletableFuture$DefaultExecutor")
-            || suffix.equals("CompletableFuture$Timeout") || suffix.equals("CompletableFuture$Canceller");
+            || suffix.equals("CompletableFuture$Timeout") || suffix.equals("CompletableFuture$Canceller")
+            || suffix.equals("CompletableFuture$DeferredCommand") || suffix.equals("CompletableFuture$DelayedExecutor")
+            || suffix.equals("CompletableFuture$DelayedSubmission") || suffix.equals("CompletableFuture$DelayedDelivery");
     }
 
     private static String concurrentReference(String name) {

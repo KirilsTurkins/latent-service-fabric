@@ -11,9 +11,28 @@ public final class Activation {
     private static Executor pool;
     private static int queued;
     private static int results;
+    private static int executors;
     private static boolean closing;
     private static final ArrayList<Thread> deferred = new ArrayList<>();
-    public static String denyNext;
+    private static final ArrayList<Thread> managed = new ArrayList<>();
+    public static volatile String denyNext;
+
+    public interface ManagedPool {
+        boolean hasPendingWork();
+        void closeAtRoot();
+    }
+    public static synchronized void manage(ManagedPool pool) { admission(); }
+    public static synchronized boolean acceptedContinuation() {
+        return deferred.contains(Thread.currentThread()) || managed.contains(Thread.currentThread());
+    }
+    public static synchronized boolean closing() { return closing; }
+    public static void checkpoint() { Thread.yield(); }
+    public static synchronized void startManaged(Thread thread) {
+        admission();
+        managed.add(thread);
+        try { thread.start(); }
+        catch (Throwable error) { managed.remove(thread); throw error; }
+    }
 
     public static synchronized Executor defaultAsyncExecutor(Supplier<Executor> factory) {
         admission();
@@ -21,7 +40,7 @@ public final class Activation {
         return pool;
     }
     private static void admission() {
-        if (closing && !deferred.contains(Thread.currentThread()))
+        if (closing && !acceptedContinuation())
             throw new IllegalStateException("source-control-root-admission-closed");
     }
     public static synchronized void startDeferred(Thread thread) {
@@ -40,6 +59,7 @@ public final class Activation {
         for (Thread thread : deferred) if (thread.getState() != Thread.State.TERMINATED) count++;
         return count;
     }
+    public static synchronized Thread deferredForControl() { return deferred.getLast(); }
     public static synchronized void closeForControl() { closing = true; }
     public static final class Lease implements AutoCloseable {
         private final Bindings.LatentRuntimeActivationOwnerKind kind;
@@ -50,8 +70,9 @@ public final class Activation {
                 if (closed) throw new AssertionError("duplicate-physical-retirement");
                 closed = true;
                 if (kind == Bindings.LatentRuntimeActivationOwnerKind.QueuedWork) queued--;
-                else results--;
-                if (queued < 0 || results < 0) throw new AssertionError("negative-owner-count");
+                else if (kind == Bindings.LatentRuntimeActivationOwnerKind.Result) results--;
+                else executors--;
+                if (queued < 0 || results < 0 || executors < 0) throw new AssertionError("negative-owner-count");
             }
         }
     }
@@ -62,15 +83,18 @@ public final class Activation {
             throw new IllegalStateException("source-control-admission-denied");
         }
         if (kind == Bindings.LatentRuntimeActivationOwnerKind.QueuedWork && queued >= 8
-                || kind == Bindings.LatentRuntimeActivationOwnerKind.Result && results >= 8)
+                || kind == Bindings.LatentRuntimeActivationOwnerKind.Result && results >= 8
+                || kind == Bindings.LatentRuntimeActivationOwnerKind.Executor && executors >= 3)
             throw new IllegalStateException("source-control-original-owner-capacity");
         if (kind == Bindings.LatentRuntimeActivationOwnerKind.QueuedWork) queued++;
-        else results++;
+        else if (kind == Bindings.LatentRuntimeActivationOwnerKind.Result) results++;
+        else executors++;
         return new Lease(kind);
     }
     public static synchronized int queuedOwners() { return queued; }
     public static synchronized int resultOwners() { return results; }
-    public static synchronized int owners() { return queued + results; }
+    public static synchronized int executorOwners() { return executors; }
+    public static synchronized int owners() { return queued + results + executors; }
     public static void cleanup() throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (owners() != 0 && System.nanoTime() < deadline) Thread.sleep(1);
@@ -80,6 +104,11 @@ public final class Activation {
             if (thread.isAlive()) throw new AssertionError("source-control-unretired-deferred-thread");
         }
         deferred.clear();
+        for (Thread thread : managed) {
+            thread.join(Math.max(1, TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime())));
+            if (thread.isAlive()) throw new AssertionError("source-control-unretired-managed-thread");
+        }
+        managed.clear();
         dev.latent.guest.runtime.concurrent.Executors.cleanup();
         pool = null;
         closing = false;

@@ -31,9 +31,14 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         @Override public void execute(Runnable command) {
             Objects.requireNonNull(command);
             Executor selected;
-            synchronized (this) {
-                if (pool == null) pool = Executors.newCachedThreadPool();
-                selected = pool;
+            try {
+                synchronized (this) {
+                    if (pool == null) pool = Executors.newCachedThreadPool();
+                    selected = pool;
+                }
+            } catch (Throwable error) {
+                rejectedBeforeAcceptance(command);
+                throw error;
             }
             selected.execute(command);
         }
@@ -56,7 +61,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     }
     private synchronized void retired(Action action) {
         if (!accepted.remove(action)) throw new IllegalStateException("activation-future-callback-owner");
-        if (completed && accepted.isEmpty() && resultOwner != null) {
+        if (accepted.isEmpty() && resultOwner != null) {
             resultOwner.close();
             resultOwner = null;
         }
@@ -428,6 +433,118 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     public CompletableFuture<T> completeOnTimeout(T value, long timeout, TimeUnit unit) {
         arrangeTimeout(value, false, Objects.requireNonNull(unit).toNanos(timeout));
         return this;
+    }
+
+    /** Only the SDK's own queue can witness a failed physical admission. */
+    interface DeferredCommand extends Runnable {
+        void rejectedBeforeAcceptance();
+    }
+    static void rejectedBeforeAcceptance(Runnable command) {
+        if (command instanceof DeferredCommand) ((DeferredCommand)command).rejectedBeforeAcceptance();
+    }
+    private static final class DelayedExecutor implements Executor {
+        private final long nanos;
+        private final Executor executor;
+        DelayedExecutor(long nanos, Executor executor) { this.nanos = nanos; this.executor = executor; }
+        @Override public void execute(Runnable command) {
+            // Null is forwarded after the delay, exactly like the standard API.
+            new DelayedSubmission(command, executor, nanos).start();
+        }
+    }
+    private static final class DelayedSubmission implements Runnable {
+        private final Runnable command;
+        private final Executor executor;
+        private final long nanos;
+        private final long startedAt;
+        private Activation.Lease queued;
+        private boolean running;
+        private boolean retired;
+        DelayedSubmission(Runnable command, Executor executor, long nanos) {
+            this.command = command;
+            this.executor = executor;
+            this.nanos = nanos;
+            startedAt = System.nanoTime();
+            queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+        }
+        void start() {
+            try { Activation.startDeferred(new Thread(this, "activation-completable-delayed")); }
+            catch (Throwable error) { rejected(); throw error; }
+        }
+        synchronized boolean begin() {
+            if (running || retired) return false;
+            running = true;
+            return true;
+        }
+        synchronized void retire() {
+            if (retired) return;
+            retired = true;
+            try { queued.close(); }
+            finally { queued = null; notifyAll(); }
+        }
+        void rejected() {
+            synchronized (this) {
+                if (running || retired) return;
+                retire();
+            }
+            // A rejected producer leaves the standard future pending. Its
+            // accepted callback/result leases can still physically retire.
+            if (command instanceof Action) ((Action)command).finish();
+        }
+        private void awaitRetirement() {
+            boolean interrupted = false;
+            try {
+                synchronized (this) {
+                    while (!retired) {
+                        try { wait(); }
+                        catch (InterruptedException logicalInterrupt) { interrupted = true; }
+                    }
+                }
+            } finally { if (interrupted) Thread.currentThread().interrupt(); }
+        }
+        @Override public void run() {
+            boolean dispatchEntered = false;
+            try {
+                for (;;) {
+                    long remaining = nanos <= 0 ? 0 : nanos - (System.nanoTime() - startedAt);
+                    if (remaining <= 0) break;
+                    Thread.sleep(remaining / 1_000_000, (int)(remaining % 1_000_000));
+                }
+                Executor selected = executor == null ? asyncPool() : executor;
+                dispatchEntered = true;
+                try { selected.execute(command == null ? null : new DelayedDelivery(this, command)); }
+                catch (Throwable uncertain) {
+                    // Arbitrary executors can enqueue and then throw, including
+                    // RejectedExecutionException. Only the owned queue witness
+                    // may establish that this runnable is physically absent.
+                }
+                if (command == null) retire(); // No runnable exists to execute.
+                awaitRetirement();
+            } catch (InterruptedException cancelledActivation) {
+                if (!dispatchEntered) rejected();
+            } catch (Throwable beforeDispatch) {
+                if (!dispatchEntered) rejected();
+            }
+        }
+    }
+    private static final class DelayedDelivery implements DeferredCommand {
+        private final DelayedSubmission submission;
+        private final Runnable command;
+        DelayedDelivery(DelayedSubmission submission, Runnable command) {
+            this.submission = submission; this.command = command;
+        }
+        @Override public void rejectedBeforeAcceptance() { submission.rejected(); }
+        @Override public void run() {
+            if (!submission.begin()) return;
+            try { command.run(); }
+            finally { submission.retire(); }
+        }
+    }
+    public static Executor delayedExecutor(long delay, TimeUnit unit, Executor executor) {
+        long nanos = Objects.requireNonNull(unit).toNanos(delay);
+        return new DelayedExecutor(nanos, Objects.requireNonNull(executor));
+    }
+    public static Executor delayedExecutor(long delay, TimeUnit unit) {
+        return new DelayedExecutor(Objects.requireNonNull(unit).toNanos(delay), null);
     }
 
     private synchronized Throwable error() { return failure; }
