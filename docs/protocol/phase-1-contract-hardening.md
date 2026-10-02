@@ -497,6 +497,28 @@ does not by itself enable Angular T1, additional renderer imports or providers.
 The [management reference](../reference/management-services.md#web-publication-and-preparation)
 defines the trust fence, finite ownership and uncertainty boundary.
 
+### Phase 4 transaction and state wire contracts (#380, #382)
+
+The normalized descriptor baseline deliberately adds the two files already
+listed in the exhaustive Protobuf manifest: `latent/transaction/v1/transaction.proto`
+and `latent/control/v1/state.proto`. The application `TransactionService` adds
+command invocation, query, command/commit lookup, effect inspection/history and
+cancellation messages. The distinct management `StateService` adds namespace
+inspection, entity selection, fenced mutation and operation-receipt lookup.
+
+Buf 1.72.0 generates these descriptors from the current source. All 13 existing
+file descriptors remain exactly equal after location-only normalization,
+including field numbers, types, cardinality, presence, oneofs, enum defaults,
+reservations, imports, options and RPC signatures. The golden now contains 15
+files; its existing drift-rejection tests and assertions remain enforced.
+
+This baseline contains no dispatcher-management descriptor or new audit
+metadata. Its state mutation values remain 0 through 4; it does not include a
+command-floor-release mutation. Later additive management contracts require a
+separate compatibility review from their actual source. Recording these wire
+declarations grants no management authority and does not qualify an installed
+transaction runtime, durable engine or effect provider.
+
 ## Alpha removal of component-only release selectors
 
 Release get, lifecycle inspection, revoke/retire and evidence renewal now require
