@@ -151,7 +151,7 @@ def catalog(client, publications):
         require(original["publication"]["id"] == publication, "original-publication-operation-receipt")
         result["publications"][name] = original
     for kind in ("provider-binding", "policy"):
-        observed = client.call("policy", "--kind", kind, "list", "--page-size", "32")["data"]
+        observed = client.call("policy", "--kind", kind, "list", "--page-size", str(cfg.POLICY_PAGE_RECORDS))["data"]
         require(set(observed) == {"policies", "catalogGeneration", "nextPageToken"}
                 and observed["policies"] == [] and observed["nextPageToken"] is None
                 and isinstance(observed["catalogGeneration"], str)

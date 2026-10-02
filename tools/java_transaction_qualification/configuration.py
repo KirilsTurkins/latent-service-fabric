@@ -27,6 +27,7 @@ ALICE = "java-transaction-alice"
 BOB = "java-transaction-bob"
 FOREIGN = "java-transaction-foreign"
 OPERATOR = "workflow-operator"
+POLICY_PAGE_RECORDS = 16
 # These credentials belong only to this private disposable test configuration.
 TOKENS = {ALICE: "LSF-PUBLIC-JAVA-TRANSACTION-ALICE-TEST-ONLY",
           BOB: "LSF-PUBLIC-JAVA-TRANSACTION-BOB-TEST-ONLY",
@@ -89,7 +90,7 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
                        "maximumStateWriteBytes": 2097152, "maximumEffects": 1},
         capabilityPolicies={"formatVersion": 1, "maximumControlJobs": 2,
             "store": {"maximumRecords": 64, "maximumOutcomes": 256, "maximumCatalogBytes": 4194304,
-                      "maximumReadOwners": 64, "maximumPageRecords": 16}})
+                      "maximumReadOwners": 64, "maximumPageRecords": POLICY_PAGE_RECORDS}})
     value["cells"][0].update(capacity=2, queueCapacity=4, maximumMemoryBytes=134217728)
     value["execution"].update(maximumWallTimeMillis=120000)
     value["cache"].update(sourceBytes=128 * 1024 * 1024, compiledImageBytes=256 * 1024 * 1024)

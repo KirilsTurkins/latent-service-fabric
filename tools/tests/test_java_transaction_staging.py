@@ -294,12 +294,17 @@ class CatalogAndOrderingOracle(unittest.TestCase):
             if arguments[0] == "release":
                 name = arguments[2].removeprefix("java-publish-")
                 return {"data": {"receipt": {"publication": {"id": published[name]}, "originalOperation": arguments[2]}}}
+            self.assertEqual(arguments[:2], ("policy", "--kind"))
+            self.assertIn(arguments[2], ("provider-binding", "policy"))
+            self.assertEqual(arguments[3:5], ("list", "--page-size"))
+            # The actual disposable native store refuses requests above 16.
+            self.assertLessEqual(int(arguments[5]), 16)
             return {"data": {"policies": [], "catalogGeneration": "18446744073709551615", "nextPageToken": None}}
 
         observed = staging.catalog(SimpleNamespace(call=call), published)
         self.assertEqual(len(calls), 6)
         self.assertEqual(set(observed["publications"]), set(published))
-        self.assertTrue(all(row[:2] == ("release", "operation") or row[-3:] == ("list", "--page-size", "32")
+        self.assertTrue(all(row[:2] == ("release", "operation") or row[-3:] == ("list", "--page-size", "16")
                             for row in calls))
         self.assertTrue(all("apply" not in row and "publish-package" not in row for row in calls))
 
