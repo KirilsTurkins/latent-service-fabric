@@ -77,6 +77,21 @@ these qualification executables solely for the consented reproduction.
 Compilation receives no signing keys. Failed attempts keep their original
 `BUILD-FAILED.json`, `QUALIFICATION-FAILED.json`, node receipts and bounded logs.
 
+The composed drain fixture declares 10 billion CPU fuel in its domain and adapter
+before the compiler captures those projects; the independent compatible revision
+declares one less. The SDK creator retains its original one-billion default and
+the node retains its original ten-billion ceiling. Generator checks run against
+the exact generated adapter before this recorded fixture declaration edit.
+`projects/qualification-budgets.json` preserves both descriptor digests and every
+original non-CPU dimension. It is source evidence, with execution unqualified
+until the new components are independently built, signed, admitted and observed.
+The [failed one-billion attempt](java-composition-evidence/2026-10-02-canary-fuel-failure.json)
+remains a failure: its real service child exhausted its halved fuel grant during
+promotion and released its cells. Drain qualification
+continues to require both physical owners and quota reservations after promotion,
+followed by original cancellation and physical release; no failed attempt is
+retried or relabelled as a drain success.
+
 To exercise the delivered native `latent-dev` frontend against this same running
 standalone node, add `--native-frontend /absolute/path/latent-dev` and
 `--native-frontend-build-receipt /absolute/path/build.json`. The original native

@@ -3,15 +3,38 @@ from pathlib import Path
 import json
 
 from tools.java_capsule_build import build
-from tools.java_capsule_project import create
+from tools.java_capsule_project import create, validate
 from tools.java_http_composition.revision import create_revision
 from tools.java_http_generation.project import generate, check
 from tools.java_http_generation.probes import qualify as qualify_generation
-from tools.rust_capsule_project import ROOT, digest, read_json, write_json
+from tools.rust_capsule_project import ROOT, digest, read_json, snapshot, write_json
+
+COMPOSITION_CPU_FUEL = 10_000_000_000
 
 
-def projects(output: Path) -> dict[str, Path]:
+def qualification_budget(project: Path) -> dict:
+    """Capture a fresh fixture declaration before compilation and signing."""
+    before = snapshot(project)
+    descriptor, _, _ = validate(before)
+    if descriptor["limits"]["cpuFuel"] != 1_000_000_000:
+        raise ValueError("java-composition-default-cpu-budget-changed")
+    previous = dict(descriptor["limits"])
+    descriptor["limits"]["cpuFuel"] = COMPOSITION_CPU_FUEL
+    (project / "capsule-project.json").write_text(json.dumps(descriptor, indent=2) + "\n", encoding="utf-8")
+    after = snapshot(project)
+    validate(after)
+    if set(before) != set(after) or any(before[name] != after[name]
+            for name in before if name != "capsule-project.json"):
+        raise ValueError("java-composition-budget-changed-other-source")
+    return {"beforeDescriptorDigest": digest(before["capsule-project.json"]),
+        "afterDescriptorDigest": digest(after["capsule-project.json"]),
+        "beforeLimits": previous, "afterLimits": descriptor["limits"],
+        "signedExecutionQualified": False}
+
+
+def projects(output: Path, *, generation_cases: Path | None = None) -> dict[str, Path]:
     result = {}
+    budgets = {}
     for name in ("domain", "context-required"):
         project = create(output / name, "greeting", "java-http-" + name)
         fixture = ROOT / "examples/java-http-composition" / name
@@ -27,18 +50,28 @@ def projects(output: Path) -> dict[str, Path]:
                             "sourceDigest": digest((fixture / "Capsule.java").read_bytes()),
                             "witDigest": digest((fixture / "world.wit").read_bytes())}
         (project / "sdk-lock.json").write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
+        if name == "domain":
+            budgets[name] = qualification_budget(project)
         result[name] = project
     selection = ROOT / "examples/java-http-composition/routes.json"
     result["adapter"] = generate(result["domain"], selection, output / "adapter")
     check(result["domain"], selection, result["adapter"])
+    if generation_cases is not None:
+        qualify_generation(result["domain"], selection, result["adapter"], generation_cases)
+    budgets["adapter"] = qualification_budget(result["adapter"])
     result["adapter-next"] = create_revision(result["adapter"], output / "adapter-next")
+    write_json(output / "qualification-budgets.json", {
+        "schemaVersion": "latent.java-http.fixture-budgets.v1",
+        "purpose": "bounded composed drain qualification", "captures": budgets,
+        "candidateCpuFuel": read_json(result["adapter-next"] / "capsule-project.json")["limits"]["cpuFuel"],
+        "generatorCheckedBeforeFixtureEdit": True,
+        "generationNegativeCasesChecked": generation_cases is not None,
+        "signedExecutionQualified": False})
     return result
 
 
 def compile_pair(output: Path, wasi_sdk: Path, binaries: dict) -> dict[str, Path]:
-    selected = projects(output / "projects")
-    qualify_generation(selected["domain"], ROOT / "examples/java-http-composition/routes.json",
-        selected["adapter"], output / "generation-cases")
+    selected = projects(output / "projects", generation_cases=output / "generation-cases")
     return {name: build(project, output / "builds" / name,
         binaries["examples/capsule_contracts"], binaries["examples/package"],
         "https://github.com/KirilsTurkins/latent-service-fabric", wasi_sdk)

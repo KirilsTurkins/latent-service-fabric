@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "JavaCompositionBudgetTests.test_changed_or_repeated_input_refuses_without_overwriting_its_owner",
+    "JavaCompositionBudgetTests.test_fresh_capture_preserves_source_and_every_other_budget_dimension",
+    "JavaCompositionBudgetTests.test_generation_obligations_precede_fixture_budget_and_revision_capture",
+    "JavaCompositionBudgetTests.test_independent_revision_retains_exact_parent_capture_and_smaller_ceiling"
+  ],
+  "guards": {
+    "JavaCompositionBudgetTests.test_changed_or_repeated_input_refuses_without_overwriting_its_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77f1e680cbbbfc1a369123cab337ee957d029f2425557b814512f072a2c7c37f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaCompositionBudgetTests.test_fresh_capture_preserves_source_and_every_other_budget_dimension": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77f1e680cbbbfc1a369123cab337ee957d029f2425557b814512f072a2c7c37f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaCompositionBudgetTests.test_generation_obligations_precede_fixture_budget_and_revision_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77f1e680cbbbfc1a369123cab337ee957d029f2425557b814512f072a2c7c37f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaCompositionBudgetTests.test_independent_revision_retains_exact_parent_capture_and_smaller_ceiling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77f1e680cbbbfc1a369123cab337ee957d029f2425557b814512f072a2c7c37f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_http_composition_budget.py",
+  "reviewReason": "Add bounded authored-project capture and generator-order regressions for the finite composition-only drain declaration; preserve all historical source guards and runtime oracles.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
