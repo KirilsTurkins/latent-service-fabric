@@ -23,9 +23,18 @@ database locking. Filesystem qualification, persisted formats, bounded workers,
 startup readiness and uncertain-write recovery remain the storage owner's
 responsibility; a valid descriptor alone is not state readiness.
 
+`create_mutable_file` is the separate exclusive initialization operation. It
+refuses every existing leaf, including empty or malformed checkpoint files, and
+uses the same anchored descriptor, permission and named-inode checks. The new
+file and its directory are synchronized before publication. If initialization
+fails after creation, the leaf remains for explicit recovery; it is never
+removed or overwritten by a subsequent initialization. The existing
+`open_mutable_file` operation continues to open valid existing files without
+truncation.
+
 ## Validation
 
-The registered `latent-protected-files` library suite contains 18 tests. On
+The previous `latent-protected-files` library suite contained 18 tests. On
 2026-09-30 the normal Linux run passed 17 tests, and the existing privileged
 ownership test passed when selected explicitly with `--ignored`. Four new
 tests verify creation/reopen without truncation, unsafe names/types/links/modes
@@ -38,3 +47,8 @@ The source and Cargo registry were read-only mounts, and each compilation used
 a session-owned target volume. The security fixtures were created on the Linux
 container filesystem. This is descriptor-security evidence; it does not claim
 power-loss durability, disk-full behavior or complete storage-owner delivery.
+
+Three additional exclusive-create cases are registered for existing empty and
+malformed leaves, simultaneous creation with one winning inode, and unsafe
+bounds or changed ancestors before creation. Native execution and strict lint
+of these additions remain pending; compilation is paused for local disk space.

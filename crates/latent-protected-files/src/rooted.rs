@@ -138,6 +138,50 @@ impl ProtectedRoot {
         Ok((file, fence))
     }
 
+    /// Create a new explicitly configured mutable leaf, refusing every existing
+    /// entry, including an empty or malformed file. Retain the returned fence
+    /// with the descriptor and check it before each bounded control operation.
+    /// This performs file and directory synchronization on the storage worker.
+    /// A failed initialization never removes or replaces the created leaf.
+    pub fn create_mutable_file(
+        &self,
+        name: &str,
+        maximum_bytes: u64,
+    ) -> Result<(File, ProtectedMutableFile), PlatformError> {
+        if !valid_leaf(name) || maximum_bytes == 0 || maximum_bytes > 1_073_741_824 {
+            return Err(state_failure());
+        }
+        self.check().map_err(|_| state_failure())?;
+        let directory = &self.chain.last().expect("root anchor").file;
+        let file = File::from(
+            fs::openat(
+                directory,
+                name,
+                OFlags::RDWR
+                    | OFlags::CREATE
+                    | OFlags::EXCL
+                    | OFlags::NOFOLLOW
+                    | OFlags::CLOEXEC
+                    | OFlags::NONBLOCK,
+                Mode::RUSR | Mode::WUSR,
+            )
+            .map_err(|_| state_failure())?,
+        );
+        file.sync_all().map_err(|_| state_failure())?;
+        directory.sync_all().map_err(|_| state_failure())?;
+        platform::require_mode_only_permissions(&file).map_err(|()| state_failure())?;
+        let metadata = file.metadata().map_err(|_| state_failure())?;
+        mutable_metadata(&metadata, self.uid, maximum_bytes)?;
+        let fence = ProtectedMutableFile {
+            name: name.into(),
+            root_identity: self.identity(),
+            file_identity: (metadata.dev(), metadata.ino()),
+            maximum_bytes,
+        };
+        self.check_mutable_file(&fence)?;
+        Ok((file, fence))
+    }
+
     /// Validate permissions, type, bounded file length and the current named
     /// inode/ancestor chain before accepting a storage operation. Engine locking
     /// and qualified filesystem/durability selection belong to the store owner.
