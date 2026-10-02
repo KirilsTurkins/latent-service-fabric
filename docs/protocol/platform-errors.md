@@ -26,7 +26,8 @@ Every platform failure carries a stable code, human-readable message, explicit r
 
 Guest failures keep the public `guest-trap` code. When the backend supplies a
 known classification, the node adds an `activation.guest-trap-kind` detail with
-one `kind` field. The CLI accepts only the fixed vocabulary in
+one `kind` field. Public invocation and retained-status conversion and the CLI
+accept only the fixed vocabulary in
 [`GuestTrapKind`](../../crates/latent-core/src/error/guest_trap_kind.rs): Wasmtime
 trap labels and `runtime-error` for host-import or component-model failures.
 Unknown, contradictory or text-bearing classifications stay unclassified.
