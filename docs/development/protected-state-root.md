@@ -48,7 +48,17 @@ a session-owned target volume. The security fixtures were created on the Linux
 container filesystem. This is descriptor-security evidence; it does not claim
 power-loss durability, disk-full behavior or complete storage-owner delivery.
 
-Three additional exclusive-create cases are registered for existing empty and
+On 2026-10-02 the exclusive-create addition at source `0ac1aca0` passed all 21
+Linux cases: 20 in the normal run and the existing ownership case selected
+explicitly with `--ignored`. The measured native listing matched all 21
+registered names and the original ignored case. Pinned formatting and strict
+Clippy for all targets passed. The three additions cover existing empty and
 malformed leaves, simultaneous creation with one winning inode, and unsafe
-bounds or changed ancestors before creation. Native execution and strict lint
-of these additions remain pending; compilation is paused for local disk space.
+bounds or changed ancestors before creation.
+
+This focused run used a new source clone and the same owner's existing warm
+target on Ubuntu 24.04 with Rust 1.97.1. The original CI source, resource-owner
+qualification and watch diagnostics were preserved. The single compiler was
+guarded by a local free-space cutoff, and every child process retired before
+the owner returned to idle. This does not replace complete CI or qualify
+power-loss and disk-full behavior.
