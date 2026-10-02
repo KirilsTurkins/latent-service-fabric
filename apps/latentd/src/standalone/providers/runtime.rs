@@ -249,7 +249,7 @@ impl ProviderRuntime {
         installation
             .deferred
             .iter()
-            .map(|deferred| {
+            .map(move |deferred| {
                 publisher
                     .deferred_adapter(
                         &installation.identity.tenant,
