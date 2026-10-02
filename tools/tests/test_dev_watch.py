@@ -157,7 +157,7 @@ from pathlib import Path
 sys.path.insert(0,sys.argv[1])
 from tools.build_process import run_bounded_result
 from tools.dev_workflow.process import environment
-child="import os,time;from pathlib import Path;Path('../live').write_text(str(os.getpid()));time.sleep(60)"
+child="import os,time;from pathlib import Path;pending=Path('../live.pending');pending.write_text(str(os.getpid()));pending.replace('../live');time.sleep(60)"
 run_bounded_result([sys.executable,'-c',child],cwd=Path.cwd(),env=environment(),timeout_seconds=12,max_output_bytes=1024)
 """
                 paths.write_new(source / "src/slow.py", program)
@@ -196,6 +196,7 @@ except common.DevError as error:
                                 time.sleep(0.02)
                                 continue
                             live = root / "builds" / (active.get("attempt") or "absent") / "source/live"
+                            # Existence witnesses only the atomically published, complete PID.
                             if live.is_file():
                                 break
                             time.sleep(0.02)
