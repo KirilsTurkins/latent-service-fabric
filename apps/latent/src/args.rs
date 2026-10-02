@@ -4,6 +4,7 @@ pub mod audit;
 mod invoke;
 mod package;
 pub mod phase3;
+pub mod phase4;
 pub mod policy;
 pub mod release;
 pub mod rollout;
@@ -80,6 +81,12 @@ pub enum Command {
     Trigger(phase3::TriggerCommand),
     #[command(subcommand)]
     Capability(phase3::CapabilityCommand),
+    /// Inspect or change state lifecycle with explicit original operation preconditions.
+    #[command(subcommand)]
+    State(phase4::StateCommand),
+    /// Invoke once or inspect the original durable command/effect; never auto-retry.
+    #[command(subcommand)]
+    Transaction(phase4::TransactionCommand),
     /// Manage bounded tenant policies and provider binding metadata.
     Policy(policy::PolicyArgs),
     #[command(subcommand)]
