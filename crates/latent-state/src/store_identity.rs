@@ -8,6 +8,7 @@ use crate::embedded::{
 pub const KEY: &[u8] = b"transaction-store-identity-v1\0";
 const FORMAT: &[u8] = b"LSI\0\x01";
 const MAXIMUM_IDENTITY_BYTES: usize = 128;
+pub const MAXIMUM_ENCODED_BYTES: usize = FORMAT.len() + 2 + MAXIMUM_IDENTITY_BYTES;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StoreIdentity(String);

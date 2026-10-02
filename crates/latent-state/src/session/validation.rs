@@ -16,6 +16,54 @@ pub struct StateUsage {
     pub encoded_bytes: u64,
     pub tombstones: u64,
 }
+
+/// Descriptive data from one borrowed engine view and the original cell codec.
+/// This does not acquire a query session, bypass a paused namespace, or grant
+/// result access. Native recovery must retain its own current read authority.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ObservedCell {
+    pub scope: StateScope,
+    pub key: Vec<u8>,
+    pub generation: u64,
+    pub value: Option<contract::Value>,
+}
+
+pub fn inspect_cell(
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+) -> Result<ObservedCell, StoreError> {
+    if key.family != Family::State || !key.key.starts_with(b"state-v1\0") {
+        return Err(StoreError::UnsupportedFormat);
+    }
+    let mut input = KeyInput(&key.key[b"state-v1\0".len()..]);
+    let tenant = TenantId(input.text()?);
+    let id = StateNamespaceId(input.text()?);
+    let incarnation = input.number()?;
+    let entity = match input.byte()? {
+        0 => None,
+        1 => Some(input.text()?),
+        _ => return Err(StoreError::Corrupt),
+    };
+    if input.0.is_empty() || input.0.len() > contract::KEY_BYTES {
+        return Err(StoreError::Corrupt);
+    }
+    let namespace = namespace_in(view, &tenant, &id, incarnation)?;
+    let cell = codec::Cell::decode(bytes, namespace.version.generation).map_err(storage)?;
+    Ok(ObservedCell {
+        scope: StateScope {
+            tenant,
+            namespace: id,
+            incarnation,
+            state_schema: namespace.state_schema,
+            entity,
+            mode: StateMode::Query,
+        },
+        key: input.0.to_vec(),
+        generation: cell.generation,
+        value: cell.value,
+    })
+}
 pub fn inspect_usage(
     view: &ReadView,
     namespace: &NamespaceRecord,
@@ -53,22 +101,7 @@ pub fn inspect_usage(
 pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     match key.family {
         Family::State if key.key.starts_with(b"state-v1\0") => {
-            let mut input = KeyInput(&key.key[b"state-v1\0".len()..]);
-            let tenant = TenantId(input.text()?);
-            let namespace = StateNamespaceId(input.text()?);
-            let incarnation = input.number()?;
-            match input.byte()? {
-                0 => {}
-                1 => {
-                    input.text()?;
-                }
-                _ => return Err(StoreError::Corrupt),
-            }
-            if input.0.is_empty() || input.0.len() > contract::KEY_BYTES {
-                return Err(StoreError::Corrupt);
-            }
-            let namespace = namespace_in(view, &tenant, &namespace, incarnation)?;
-            codec::Cell::decode(bytes, namespace.version.generation).map_err(storage)?;
+            inspect_cell(view, key, bytes)?;
         }
         Family::Maintenance if key.key.starts_with(b"state-usage-v1\0") => {
             let rest = &key.key[b"state-usage-v1\0".len()..];
@@ -92,6 +125,21 @@ pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
         _ => return Err(StoreError::UnsupportedFormat),
     }
     Ok(())
+}
+
+/// The existing full state/usage validator owns the tenant association. This
+/// descriptor neither opens a session nor substitutes the per-namespace view.
+pub fn tenant_for_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<TenantId, StoreError> {
+    validate_row(view, key, bytes)?;
+    let rest = if key.family == Family::State {
+        key.key.strip_prefix(b"state-v1\0")
+    } else {
+        key.key
+            .strip_prefix(b"state-usage-v1\0")
+            .and_then(|rest| rest.strip_prefix(b"ns-v1\0"))
+    }
+    .ok_or(StoreError::UnsupportedFormat)?;
+    Ok(TenantId(KeyInput(rest).text()?))
 }
 
 fn namespace_in(

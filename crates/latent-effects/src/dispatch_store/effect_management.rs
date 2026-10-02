@@ -1,6 +1,7 @@
 //! Finite original-operation plans and receipts in the same atomic engine.
 //! Plans reserve disposition capacity; they are descriptions, never grants.
 
+mod accounting;
 mod catalog;
 mod codec;
 mod validation;
