@@ -18,7 +18,7 @@ FORBIDDEN = {
     "latentd", "latent-node", "latent-wasmtime", "latent-http", "latent-nats",
     "latent-state", "latent-vault", "latent-secrets", "latent-blobs",
 }
-PACKAGES = ("latent-core", "latent-testkit", "latent-admission", "latent-scheduler")
+PACKAGES = ("latent-core", "latent-test-process", "latent-testkit", "latent-admission", "latent-scheduler")
 
 
 def check_workspace(root: Path) -> None:
@@ -30,12 +30,13 @@ def check_workspace(root: Path) -> None:
     if errors:
         raise RuntimeError("\n".join(errors))
     graph = foundation.workspace_dependency_graph(root)
-    missing = set(PACKAGES) - graph.keys()
+    missing = {*PACKAGES, "latent-state"} - graph.keys()
     if missing:
         raise RuntimeError(f"missing helper graph owners: {sorted(missing)}")
-    if graph["latent-core"]:
-        raise RuntimeError("neutral core helpers must not depend on another workspace crate")
-    for package in ("latent-admission", "latent-scheduler"):
+    for package in ("latent-core", "latent-test-process"):
+        if graph[package]:
+            raise RuntimeError(f"neutral {package} helpers must not depend on another workspace crate")
+    for package in ("latent-admission", "latent-scheduler", "latent-state"):
         manifest = tomllib.loads((root / "crates" / package / "Cargo.toml").read_text())
         if "latent-testkit" in graph[package]:
             raise RuntimeError(f"{package} must not depend back on latent-testkit")
@@ -61,7 +62,7 @@ def check_selected(package: str, output: str) -> None:
     if package not in names:
         raise RuntimeError(f"{package}: missing selected graph root")
     forbidden = FORBIDDEN | ({"latent-activation", "latent-executor", "latent-telemetry"}
-                             if package in ("latent-core", "latent-testkit") else set())
+                             if package in ("latent-core", "latent-test-process", "latent-testkit") else set())
     offenders = sorted(name for name in names if name in forbidden or name.startswith("wasmtime"))
     if offenders:
         raise RuntimeError(f"{package} inherited heavy dependencies: {offenders}\n{output}")
