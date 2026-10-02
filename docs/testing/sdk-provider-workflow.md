@@ -44,6 +44,29 @@ explicit arguments, for example an absolute `node` and absolute participant
 module. Executable/module identities, CLI/node hashes and exact signed guest
 fixture identities are retained in the bounded final evidence.
 
+## Controlled upstream framing
+
+The maintained HTTP peer accepts decimal `Content-Length` requests and bounded
+HTTP/1.1 `chunked` requests, including an empty chunked GET or HEAD. Both keep
+the original 8,192-byte header limit, 16-field limit and 4,096-byte decoded-body
+limit. Chunked input has at most 16 data chunks, 16 bytes per size line and
+1,024 framing bytes; total received chunk bytes are at most 5,120. Extensions,
+trailers, duplicated framing fields, combined `Content-Length` and
+`Transfer-Encoding`, unsupported coding chains, malformed sizes or terminators,
+truncation and unexpected payload are rejected. GET and HEAD require empty
+bodies. A final nonblocking check rejects already queued extra bytes without
+extending the original caller deadline or two-second read ceiling. Authorization,
+the exact route, the 32-request ceiling and physical-close rendezvous stay in
+the existing fixture path.
+
+The [framing source controls](evidence/sdk-provider-peer-framing-source-2026-10-02.json)
+record 37 passing Windows Python 3.13.5 tests using real socket pairs, including
+one-byte reads and the exact size boundaries. The original parser independently
+rejects all 16 valid empty-chunked subcases. These results establish the controlled
+peer's source behavior. The held original-component wire observer and fresh normal
+default-HttpClient replay remain required; no component result or normal replay
+success follows from these parser tests.
+
 ## Participant input
 
 The input's `schemaVersion` is `latent.sdk.provider.workflow.input.v1`. It has

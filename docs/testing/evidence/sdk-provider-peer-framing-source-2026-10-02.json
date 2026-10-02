@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "latent.sdk.provider-peer.source-controls.v1",
+  "baselineSourceRevision": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+  "testedAt": "2026-10-02T04:01:57.265275+00:00",
+  "platform": "win32",
+  "pythonVersion": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+  "status": "passed-source-controls-only",
+  "newFramingCases": 16,
+  "totalCases": 37,
+  "baselineParser": {
+    "sha256": "5f6339e874f7835bd511cc24cbf230fe273692107daefdc6622592332f5b3e2a",
+    "testFunctions": 1,
+    "rejectedValidFramingSubcases": 16,
+    "closedReason": "unsupported request framing",
+    "stderrSha256": "69787f9fb47f7f4b28bf43e83b6debcb32f59b35177ec5f1d2eef77fb3b06298"
+  },
+  "candidateFiles": {
+    "tools/sdk_provider_http_fixture.py": {
+      "size": 11412,
+      "sha256": "0d5fed1d58ed847a3956385f6ea552183d74cf2528fa5f59aa628c8e6f06f433"
+    },
+    "tools/tests/test_sdk_provider_http_framing.py": {
+      "size": 10915,
+      "sha256": "1405576ca15cc3b608798af77608d7bf11796f28b555d1bcee968ca3f64480f5"
+    },
+    "tools/tests/test_sdk_provider_lifetime.py": {
+      "size": 16086,
+      "sha256": "832e047737155213f2b3891fc8c40177ad6e46b420e8be82ff8484e4ac585798"
+    }
+  },
+  "command": [
+    "python3.13",
+    "-B",
+    "-X",
+    "utf8",
+    "-m",
+    "unittest",
+    "-v",
+    "tools.tests.test_sdk_provider_http_framing",
+    "tools.tests.test_sdk_provider_lifetime",
+    "tools.tests.test_sdk_provider_rendezvous",
+    "tools.tests.test_sdk_provider_scenario",
+    "tools.tests.test_sdk_provider_matrix"
+  ],
+  "exitCode": 0,
+  "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrSha256": "571de61668528fd08e1206146c73e58bc3032b0fc3d7bd0ff91c81fba60a7f55",
+  "limits": {
+    "headerBytes": 8192,
+    "headerFields": 16,
+    "decodedBodyBytes": 4096,
+    "dataChunks": 16,
+    "chunkSizeLineBytes": 16,
+    "chunkFramingBytes": 1024,
+    "chunkWireBytes": 5120,
+    "requests": 32,
+    "perReadSeconds": 2,
+    "originalAbsoluteOwnerDeadlineRetained": true
+  },
+  "sourcePreparationOnly": true,
+  "linuxSourceControlsQualified": false,
+  "originalComponentWireRejectionObserved": false,
+  "normalDefaultHttpClientReplayPassed": false,
+  "originalApplicationGuestGrantsAndQuotasChanged": false,
+  "nativeCompilerContainerOrComponentInvocation": false,
+  "heldPrivatePeerObserverRelabelled": false,
+  "retainedOriginalSourceControlReceipt": {
+    "size": 2524,
+    "sha256": "8d460d35fdbdc6aa7f3fac2b3341f07bedaa86f69451fe788f365f6d3f4d12cc"
+  }
+}
