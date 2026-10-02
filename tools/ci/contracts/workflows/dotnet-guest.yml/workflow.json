@@ -1,25 +1,13 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "dotnet-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": ".NET guest qualification",
     "on": {
       "pull_request": {
         "paths": [
           "sdk/dotnet-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
           "tools/dotnet_guest*",
           "tools/dotnet_guest/**",
           "tools/dotnet_capsule.py",
@@ -45,12 +33,26 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "dotnet-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Preserve every historical and Phase4 compiler qualification while combining the reviewed missing-fixture schedule with all required native CI lane checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
