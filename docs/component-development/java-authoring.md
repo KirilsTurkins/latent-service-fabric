@@ -365,7 +365,7 @@ SDK binding drift means the SDK and generator pins disagree; do not edit the loc
 to bypass it. A denied publication commonly means the policy expired, the exact
 source approval differs, or an evidence file is missing. A denied HTTP call
 requires checking the deployment grant, provider binding and allowed destination.
-<!-- Immutable resource compiler implementation; emitted-component qualification is separate. -->
+<!-- Immutable resource compiler and bounded signed application qualification. -->
 
 Captured JAR lookup bytes and declared `capsule-resources.json` bytes select the
 SDK's `java-immutable-classloader-v1` compiler port. It changes the maintained
@@ -387,7 +387,20 @@ SDK snapshot rather than modifying an old vendored lock.
 The original actual two-library build failed at TeaVM's unsupported JavaScript
 resource methods. The [pinned class-library model control](../testing/evidence/java-immutable-resource-model-2026-10-02.json)
 preserved all nine standard ClassLoader method owners and passed fresh-stream,
-exact-byte, missing-name and changed-preimage controls. Source/model controls
-for this port and actual emitted,
-signed resource calls are separate qualification stages; issue #682 and issue
-#681 remain open until their full acceptance evidence passes.
+exact-byte, missing-name and changed-preimage controls. The subsequent
+[two-library signed node control](../testing/evidence/java-two-library-resource-node-2026-10-02.json)
+captured Commons Text and Commons Codec independently, Text's Commons Lang
+dependency, and a newly compiled developer-owned JAR. Its ordinary library
+calls and `Arithmetic.class.getResourceAsStream("badge.txt")` remained unchanged.
+After the original local JAR was deleted, the full offline recipe compiled,
+validated and packaged the actual component with 135 captured resource names.
+
+The strict signer and enforced node passed ten successful calls, including a
+fresh resource read after grant denial, and two missing or withdrawn clock
+grant controls. Every invocation was reaped; normal deletion, dormant owner
+observations and clean node shutdown passed. These finite checks used the
+recorded source and independently qualified native tools, with explicit
+provenance for both. They are contributor qualification; installed frontend,
+private credentials, isolated processors and the full hostile-input and runtime
+matrix still need their own actual checks. Issue #682 and issue #681 remain
+open until their full acceptance evidence passes.
