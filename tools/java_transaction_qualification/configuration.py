@@ -55,8 +55,8 @@ class Configuration:
     authority: str
     recipient_origin: dict
 
-    def selected(self, path: Path, operations: list[dict]) -> Path:
-        require(isinstance(operations, list) and len(operations) <= 12,
+    def selected(self, path: Path, operations: list[dict], *, diagnostic=False) -> Path:
+        require(type(diagnostic) is bool and isinstance(operations, list) and len(operations) <= (15 if diagnostic else 12),
                 "bounded-installed-operation-set")
         value = dict(self.value)
         value["state"] = dict(value["state"], operations=operations)
@@ -150,6 +150,13 @@ def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
     require(re.fullmatch(r"[0-9a-f]{64}", recipient_incarnation), "actual-recipient-incarnation")
     result = []
     accepted = tuple(item for item in items if item.name != "forbidden-http")
+    from .diagnostic_inputs import NAME
+    from .inputs import VARIANTS
+    expected_names = set(VARIANTS) - {"forbidden-http"}
+    if any(item.name == NAME for item in accepted):
+        expected_names.add(NAME)
+    require(len(accepted) == len(expected_names) and {item.name for item in accepted} == expected_names,
+            "exact-original-components-and-optional-diagnostic")
     require(set(publications) == {item.name for item in accepted}, "exact-admitted-publication-set")
     for item in accepted:
         require(re.fullmatch(r"publication:sha256:[0-9a-f]{64}", publications[item.name]),
@@ -177,6 +184,7 @@ def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
                     "stagingPolicies": [STAGING_POLICY], "dispatchBinding": "java-dispatch-installed",
                     "dispatchPolicies": [DISPATCH_POLICY]}
             result.append(row)
-    require(len(result) == 12 and len({(row["publication"], row["function"]) for row in result}) == 12,
+    count = len(expected_names) * 3
+    require(len(result) == count and len({(row["publication"], row["function"]) for row in result}) == count,
             "exact-original-twelve-operation-set")
     return result

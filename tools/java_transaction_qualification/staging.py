@@ -141,9 +141,13 @@ def write_once(file, value):
 
 def catalog(client, publications):
     from .inputs import VARIANTS
-    require(isinstance(publications, dict) and set(publications) == set(VARIANTS) - {"forbidden-http"}
+    from .diagnostic_inputs import NAME
+    expected = set(VARIANTS) - {"forbidden-http"}
+    if NAME in publications:
+        expected.add(NAME)
+    require(isinstance(publications, dict) and set(publications) == expected
             and all(isinstance(value, str) and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", value)
-                    for value in publications.values()) and len(set(publications.values())) == 4,
+                    for value in publications.values()) and len(set(publications.values())) == len(expected),
             "original-four-publication-catalog-scope")
     result = {"publications": {}, "policies": {}}
     for name, publication in publications.items():
@@ -162,6 +166,16 @@ def catalog(client, publications):
     return result
 
 
+def sources(args):
+    from .diagnostic_inputs import selection
+    result = {"native": args.native_source_commit, "conductor": args.conductor_source_commit,
+              "portable": str(args.portable)}
+    selected = selection(args)
+    if selected is not None:
+        result["diagnostic"] = selected
+    return result
+
+
 def capture(root, original_clock, args, record, prepared, client, node, peer):
     require(client.node is None and node.process is None and type(node.ordinal) is int
             and node.ordinal == 1 and len(node.shutdown) == 1
@@ -177,8 +191,7 @@ def capture(root, original_clock, args, record, prepared, client, node, peer):
             "authority-staging-cannot-have-application-provider-requests")
     value = {"schemaVersion": "latent.java-transaction.authority-candidate.v1", "root": str(root),
         "rootIdentity": root_identity(root), "clock": original_clock,
-        "sources": {"native": args.native_source_commit, "conductor": args.conductor_source_commit,
-                    "portable": str(args.portable)},
+        "sources": sources(args),
         "nativeTools": record["nativeTools"], "collectors": record["collectorDigests"],
         "originalInputs": record["originalInputs"], "prepared": prepared,
         "recipient": {"directory": peer.directory.relative_to(root).as_posix(),
@@ -187,6 +200,9 @@ def capture(root, original_clock, args, record, prepared, client, node, peer):
         "node": {"directory": node.directory.relative_to(root).as_posix(),
                  "ordinal": node.ordinal, "shutdown": node.shutdown},
         "cliCalls": client.calls, "evidence": client.evidence.summary(), "files": files(root)}
+    if "diagnostic" in value["sources"]:
+        require(isinstance(record.get("diagnosticInput"), dict), "original-diagnostic-candidate-input-required")
+        value["diagnosticInput"] = record["diagnosticInput"]
     return write_once(root / NAME, value)
 
 
@@ -198,12 +214,13 @@ def retain(args, tools, collectors):
     require(re.fullmatch(r"sha256:[0-9a-f]{64}", args.candidate_digest or "")
             and digest(raw) == args.candidate_digest, "exact-reviewed-candidate-digest-required")
     value = decode(raw, 1048576)
-    require(isinstance(value, dict) and set(value) == FIELDS
+    selected_sources = sources(args)
+    expected_fields = FIELDS | ({"diagnosticInput"} if "diagnostic" in selected_sources else set())
+    require(isinstance(value, dict) and set(value) == expected_fields
             and value["schemaVersion"] == "latent.java-transaction.authority-candidate.v1"
             and value["root"] == str(args.output)
             and value["rootIdentity"] == root_identity(args.output), "original-candidate-root-identity")
-    require(value["sources"] == {"native": args.native_source_commit, "conductor": args.conductor_source_commit,
-            "portable": str(args.portable)} and value["nativeTools"] == tools and value["collectors"] == collectors,
+    require(value["sources"] == selected_sources and value["nativeTools"] == tools and value["collectors"] == collectors,
             "original-candidate-source-or-tool-drift")
     until = deadline(value["clock"], args.timeout)
     integer(value["cliCalls"], 255)

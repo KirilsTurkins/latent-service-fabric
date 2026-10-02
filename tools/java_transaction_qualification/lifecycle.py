@@ -193,7 +193,9 @@ def publish(client, signed: Path, items) -> dict[str, str]:
                 "original-publication-operation-lookup")
         result[item.name] = actual["publication"]["id"]
         client.evidence.passed("publish-" + item.name, {"signed": original, "admission": actual})
-    require(len(result) == 4 and len(set(result.values())) == 4, "exact-distinct-original-publications")
+    from .diagnostic_inputs import NAME
+    expected = 5 if any(item.name == NAME for item in items) else 4
+    require(len(result) == expected and len(set(result.values())) == expected, "exact-distinct-original-publications")
     return result
 
 
@@ -201,7 +203,7 @@ def inspect(client, node: Path, configuration: Path, operations, *, stage="trans
     from .policies import ObservedHosts
     value = decode(native(client, node, stage, "inspect-transaction-hosts",
                           "--config", configuration, timeout=120), 262144)
-    return ObservedHosts.read(value, operations)
+    return ObservedHosts.read(value, operations, diagnostic=len(operations) == 15)
 
 
 def namespace_arguments(publication: str):

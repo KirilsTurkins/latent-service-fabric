@@ -53,9 +53,10 @@ class Campaign:
         self.transport = http.Http(configuration.authority, client.deadline)
         self.originals = {}
         self.request_count = 0
+        self.diagnostic = None
 
     def socket(self, mode, *, original_key=None, body=None, condition=None, subject=cfg.ALICE,
-               lose_body=False, path=None, minimum=None):
+               lose_body=False, path=None, minimum=None, request_owner=None):
         headers = [("Authorization", "Bearer " + cfg.TOKENS[subject])]
         if original_key is not None:
             headers.append(("Idempotency-Key", original_key))
@@ -69,7 +70,7 @@ class Campaign:
             "originalPrecondition": condition, "minimumView": minimum, "path": path or lifecycle.PATHS[mode],
             "bodyBase64": None if body is None else base64.b64encode(body).decode()})
         result = self.transport.request("POST" if mode == "command" else "GET", path or lifecycle.PATHS[mode],
-            body=body, headers=headers, lose_body=lose_body)
+            body=body, headers=headers, lose_body=lose_body, owner=request_owner)
         raw = result.get("body")
         if raw is not None:
             self.client.evidence.write(f"http-{self.request_count:03d}.body", raw)
@@ -131,6 +132,10 @@ class Campaign:
         after = lifecycle.inspect_namespace(self.client, publication)
         require(before["commandCount"] == after["commandCount"] == "0", "fresh-query-creates-no-command-rows")
         self.client.evidence.passed("fresh-query-no-command", {"before": before, "after": after, "query": view})
+        diagnostic_scenarios = []
+        if self.diagnostic is not None:
+            from .diagnostic_campaign import DiagnosticCampaign
+            diagnostic_scenarios = DiagnosticCampaign(self, self.diagnostic).execute()
         self._lost_and_duplicate(publication, initial)
         self._rejection(publication)
         self._isolation_and_preconditions(publication)
@@ -144,6 +149,7 @@ class Campaign:
             "originalSourceDigest": self.items[legacy].source_digest,
             "freshInvocationGuard": "original-enter-counter", "guestCompilerInvoked": False})
         return {"httpRequests": self.transport.requests,
+                "qualifiedDiagnosticScenarios": diagnostic_scenarios,
                 "originalCommands": {key: value for key, value in self.originals.items()}}
 
     def _lost_and_duplicate(self, publication, initial):

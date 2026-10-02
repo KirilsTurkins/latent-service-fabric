@@ -10,7 +10,7 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import fresh, inventory, read_file, snapshot, write_json
 from tools.transaction_guest_project import package_companion
 
-from .inputs import ComponentInput, COMPILER_SOURCE, WORLD, decode, digest, load, require
+from .inputs import ComponentInput, WORLD, decode, digest, load, require
 
 COMPANION_MEDIA = "application/vnd.latent.transaction-binding.v1+json"
 LAYER_MEDIA = {"component.wasm": ("component", "application/wasm"),
@@ -78,6 +78,10 @@ def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, c
     assets.update(schema_assets(files))
     if item.requirements_digest:
         assets["deferred-http-requirements.json"] = files["deferred-http-requirements.json"]
+    if "transaction-diagnostic-inputs.json" in files:
+        from .diagnostic_inputs import declaration
+        declaration(files["transaction-diagnostic-inputs.json"], files)
+        assets["transaction-diagnostic-inputs.json"] = files["transaction-diagnostic-inputs.json"]
     if "application-schema-inputs.json" in files:
         recipe = Path(__file__).resolve().parents[2] / "contracts/state/java-aggregate-v1-to-v2-migration.json"
         assets["java-aggregate-v1-to-v2-migration.json"] = read_file(recipe)
@@ -126,7 +130,7 @@ def _fixture(item, output, files, report, contracts, signer):
              "dependencyCompleteness": "declared-inputs-incomplete"}
     write_json(output / "fixture-provenance-input.json", {
         "schemaVersion": "latent.component.signing-fixture-input.v1", "evidenceKind": "synthetic-native-package-trust",
-        "compilerSource": COMPILER_SOURCE, "compilerReportDigest": digest(read_file(output / "compiler-report.json")),
+        "compilerSource": item.compiler_source, "compilerReportDigest": digest(read_file(output / "compiler-report.json")),
         "sourceArchiveDigest": digest(read_file(output / "source.tar.gz", 32*1024*1024)),
         "sourceSnapshotDigest": item.source_digest, "componentDigest": item.component_digest,
         "companionDigest": item.companion_digest, "requirementsDigest": item.requirements_digest,
@@ -134,9 +138,15 @@ def _fixture(item, output, files, report, contracts, signer):
         "signedNodeExecutionQualified": False, "provenanceModel": model})
 
 
-def package(portable: Path, output: Path, contracts_tool: Path, signer: Path, *, timeout=600) -> Path:
+def package(portable: Path, output: Path, contracts_tool: Path, signer: Path, *, timeout=600, diagnostic=None) -> Path:
     require(type(timeout) is int and 0 < timeout <= 1800, "original-packaging-deadline")
     items = load(portable)
+    if diagnostic is not None:
+        from .diagnostic_inputs import NAME
+        require(isinstance(diagnostic, ComponentInput) and diagnostic.name == NAME
+                and diagnostic.component_digest not in {item.component_digest for item in items},
+                "one-separate-diagnostic-component-required")
+        items += (diagnostic,)
     output = fresh(output)
     command = Commands(output, output, build_environment(output), deadline_seconds=timeout, command_seconds=min(timeout,600))
     record = {"schemaVersion": "latent.java-transaction-package-fixture.v1", "passed": False,
