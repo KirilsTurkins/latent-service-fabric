@@ -237,3 +237,19 @@ remain Root-owned. Staged imported rows still require complete original linked
 validation. A restored Pending/no-attempt effect may have succeeded after the
 backup, so neither this review nor an old due index authorizes automatic send,
 redrive, garbage collection or restoration of source control authority.
+
+A retained technical-abort fence proves only its original schema/recovery
+history. An explicit retry may have completed after the backup and disappeared
+from older restored rows. New `PreparedAdmission::retry` therefore compares
+the original terminal NV2 epochs with the same current namespace history,
+and retains exact history and global recovery-guard CAS observations through
+the actual writer. A changed history requires recovery; neither an old abort
+nor a reviewed global guard renews that proof. Namespace generation changes
+alone preserve the original fingerprint and user preconditions. Fresh work
+positively aborted in the current history retains the explicit retry path.
+
+Recovering an already accepted retry receipt stays a historical read under
+present access checks, without a new attempt or rewritten result. Six source
+schedules cover those paths, including exact absent/present history and guard
+races before acceptance and retained original results after reopen. They are
+registered but have not been compiled or executed under the native hold.

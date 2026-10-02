@@ -20,6 +20,7 @@ mod accounted;
 mod captured;
 mod census;
 mod managed_accounting;
+mod retry_history;
 mod supported_formats;
 mod view_tokens;
 

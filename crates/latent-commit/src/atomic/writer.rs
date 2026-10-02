@@ -21,6 +21,8 @@ use latent_state::{
     session::StatePlan,
 };
 
+mod retry_history;
+
 pub enum AdmissionDecision {
     New(PreparedAdmission),
     Existing(CommandRecord),
@@ -368,6 +370,7 @@ impl PreparedAdmission {
         {
             return Err(AtomicError::Expired);
         }
+        let retry_history = retry_history::capture(view, &old)?;
         let (mut namespace, namespace_key, namespace_bytes) =
             namespace(view, &old.key, &old.source.state_schema)?;
         let mut record = old.clone();
@@ -533,6 +536,10 @@ impl PreparedAdmission {
                 value: Some(index_bytes),
             });
         }
+        batch.expectations.push(retry_history.history_expectation());
+        batch
+            .expectations
+            .push(retry_history.recovery_expectation());
         super::accounting::apply(view, &TenantId(record.key.tenant.clone()), &mut batch)?;
         Ok(AdmissionDecision::New(Self { record, batch }))
     }
