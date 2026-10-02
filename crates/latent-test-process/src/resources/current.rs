@@ -96,7 +96,7 @@ mod tests {
                 Command::new(std::env::current_exe().unwrap())
                     .args([
                         "--exact",
-                        NAME.trim_start_matches("latent_testkit::"),
+                        NAME.trim_start_matches("latent_test_process::"),
                         "--test-threads=1",
                     ])
                     .env(CHILD, NAME)
