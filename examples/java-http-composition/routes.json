@@ -1,0 +1,20 @@
+{
+  "profile": "latent.java-http.adapter.v1",
+  "adapterName": "java-http-adapter",
+  "domain": {
+    "service": "examples/java-http-domain",
+    "contract": "examples:java-http-domain/api@1.0.0",
+    "route": "java-http-domain"
+  },
+  "privateOperations": ["private-admin", "publishing", "provider-event"],
+  "routes": [
+    {"method": "GET", "path": "/api/status", "operation": "status", "clientName": "status"},
+    {"method": "POST", "path": "/api/echo", "operation": "echo", "clientName": "echo"},
+    {"method": "POST", "path": "/api/nested", "operation": "echo-nested", "clientName": "nested"},
+    {"method": "POST", "path": "/api/text", "operation": "text", "clientName": "text"},
+    {"method": "POST", "path": "/api/items", "operation": "items", "clientName": "items"},
+    {"method": "GET", "path": "/api/fail", "operation": "fail", "clientName": "fail"},
+    {"method": "GET", "path": "/api/throw", "operation": "throw-error", "clientName": "throwError"},
+    {"method": "GET", "path": "/api/spin", "operation": "spin", "clientName": "spin"}
+  ]
+}

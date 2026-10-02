@@ -22,6 +22,10 @@ public sealed partial class BoundedClient
                 break;
             case Profile.CancelRequest cancel: Require(Text(cancel.ActivationId, 256) && Text(cancel.Reason, 1024, true)); break;
             case Profile.GetActivationRequest activation: Require(Text(activation.ActivationId, 256)); break;
+            case Profile.InspectActivationTreeRequest tree:
+                Require(Text(tree.ActivationId, 512) && !tree.ActivationId.Any(char.IsWhiteSpace) && !tree.ActivationId.Any(char.IsControl)
+                    && (tree.Page is null || tree.Page.PageSize <= 128 && OptionalText(tree.Page.PageToken, 160)));
+                break;
             case Profile.GetPolicyRequest policy: Require(Text(policy.Id, 256) && RecordKind(policy.RecordKind)); break;
             case Profile.ListPoliciesRequest policies:
                 Require(RecordKind(policies.RecordKind) && policies.Page is not null && policies.Page.PageSize is >= 1 and <= 32 && OptionalText(policies.Page.PageToken, 117));
@@ -65,6 +69,18 @@ public sealed partial class BoundedClient
                 break;
             case Profile.ListPoliciesResponse policies:
                 Require(policies.Policies.Count <= ((Profile.ListPoliciesRequest)request).Page!.PageSize && OptionalText(policies.Page?.NextPageToken, 117));
+                break;
+            case Profile.InspectActivationTreeResponse tree:
+                uint maximum = ((Profile.InspectActivationTreeRequest)request).Page?.PageSize ?? 0;
+                Require(tree.SchemaVersion == 1 && tree.RetainedHistoryOnly && tree.Page is not null && tree.Nodes.Count <= (maximum == 0 ? 32 : maximum)
+                    && OptionalText(tree.Page?.NextPageToken, 160) && (tree.HistoryAvailable || tree.Nodes.Count == 0 && tree.Page?.NextPageToken is null));
+                foreach (var node in tree.Nodes)
+                {
+                    Require(Text(node.ActivationId, 512) && Text(node.RootActivationId, 512) && OptionalText(node.ParentActivationId, 512) && OptionalText(node.CallerService, 512)
+                        && Text(node.Phase, 64, true) && Text(node.PrincipalKind, 64, true) && OptionalText(node.TerminalState, 64));
+                    if (node.Diagnostic is { } diagnostic)
+                        Require(diagnostic.SchemaVersion == 1 && (diagnostic.ProfileDigest is null || diagnostic.ProfileDigest.Length == 64 && diagnostic.ProfileDigest.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f')));
+                }
                 break;
             case Profile.ListCapabilitiesResponse capabilities:
                 uint requested = ((Profile.ListCapabilitiesRequest)request).Page?.PageSize ?? 0;

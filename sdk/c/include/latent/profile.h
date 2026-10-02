@@ -30,6 +30,41 @@ typedef int32_t latent_profile_capability_policy_record_kind;
 #define LATENT_PROFILE_CAPABILITY_POLICY_RECORD_KIND_POLICY ((latent_profile_capability_policy_record_kind)1)
 #define LATENT_PROFILE_CAPABILITY_POLICY_RECORD_KIND_PROVIDER_BINDING ((latent_profile_capability_policy_record_kind)2)
 
+typedef int32_t latent_profile_diagnostic_stage;
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_UNSPECIFIED ((latent_profile_diagnostic_stage)0)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_ADMISSION ((latent_profile_diagnostic_stage)1)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_QUEUE ((latent_profile_diagnostic_stage)2)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_PREPARATION ((latent_profile_diagnostic_stage)3)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_BINDING ((latent_profile_diagnostic_stage)4)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_EXECUTION ((latent_profile_diagnostic_stage)5)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_PROVIDER ((latent_profile_diagnostic_stage)6)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_CLEANUP ((latent_profile_diagnostic_stage)7)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_OUTPUT_VALIDATION ((latent_profile_diagnostic_stage)8)
+
+typedef int32_t latent_profile_diagnostic_reason;
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_UNSPECIFIED ((latent_profile_diagnostic_reason)0)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_SIGNATURE_ALLOCATION_LIMIT ((latent_profile_diagnostic_reason)1)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_VALUE_ALLOCATION_LIMIT ((latent_profile_diagnostic_reason)2)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_UNSUPPORTED_COMPONENT_SURFACE ((latent_profile_diagnostic_reason)3)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_UNSUPPORTED_ENGINE_PROFILE ((latent_profile_diagnostic_reason)4)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_PROVIDER_ABSENT ((latent_profile_diagnostic_reason)5)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_BINDING_ABSENT ((latent_profile_diagnostic_reason)6)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_ADMISSION_DENIED ((latent_profile_diagnostic_reason)7)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_GRANT_DENIED ((latent_profile_diagnostic_reason)8)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_QUEUE_PRESSURE ((latent_profile_diagnostic_reason)9)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_GUEST_MEMORY_EXHAUSTED ((latent_profile_diagnostic_reason)10)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_GUEST_FUEL_EXHAUSTED ((latent_profile_diagnostic_reason)11)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_GUEST_RESOURCE_EXHAUSTED ((latent_profile_diagnostic_reason)12)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_PROVIDER_TIMEOUT ((latent_profile_diagnostic_reason)13)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_DEADLINE_EXCEEDED ((latent_profile_diagnostic_reason)14)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_CANCELLED ((latent_profile_diagnostic_reason)15)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_HTTP_RESPONSE_REJECTED ((latent_profile_diagnostic_reason)16)
+
+typedef int32_t latent_profile_diagnostic_profile;
+#define LATENT_PROFILE_DIAGNOSTIC_PROFILE_UNSPECIFIED ((latent_profile_diagnostic_profile)0)
+#define LATENT_PROFILE_DIAGNOSTIC_PROFILE_WASMTIME_SERVICE_VALUES_V1 ((latent_profile_diagnostic_profile)1)
+#define LATENT_PROFILE_DIAGNOSTIC_PROFILE_WASMTIME_BUFFERED_WEB_VALUES_V1 ((latent_profile_diagnostic_profile)2)
+
 typedef int32_t latent_profile_failure_category;
 #define LATENT_PROFILE_FAILURE_CATEGORY_UNSPECIFIED ((latent_profile_failure_category)0)
 #define LATENT_PROFILE_FAILURE_CATEGORY_LOCAL_CANCELLED ((latent_profile_failure_category)1)
@@ -386,6 +421,64 @@ typedef struct latent_profile_publication_ref {
     latent_string tenant;
 } latent_profile_publication_ref;
 
+typedef struct latent_profile_activation_diagnostic {
+    uint32_t schema_version;
+    latent_profile_diagnostic_stage stage;
+    latent_profile_diagnostic_reason reason;
+    bool has_profile;
+    latent_profile_diagnostic_profile profile;
+    bool has_profile_digest;
+    latent_string profile_digest;
+    bool has_configured_bound;
+    uint64_t configured_bound;
+    bool has_calculated_requirement;
+    uint64_t calculated_requirement;
+    bool has_fixed_bytes;
+    uint64_t fixed_bytes;
+    bool has_lifting_fuel;
+    uint64_t lifting_fuel;
+    bool has_lift_multiplier;
+    uint64_t lift_multiplier;
+} latent_profile_activation_diagnostic;
+
+typedef struct latent_profile_activation_tree_node {
+    latent_string activation_id;
+    bool has_parent_activation_id;
+    latent_string parent_activation_id;
+    latent_string root_activation_id;
+    latent_string phase;
+    bool has_terminal_state;
+    latent_string terminal_state;
+    uint64_t last_updated_unix_millis;
+    bool has_diagnostic;
+    latent_profile_activation_diagnostic diagnostic;
+    latent_string principal_kind;
+    bool has_caller_service;
+    latent_string caller_service;
+    bool has_granted_budget;
+    latent_profile_resource_budget granted_budget;
+    bool has_effective_deadline_unix_millis;
+    uint64_t effective_deadline_unix_millis;
+    bool diagnostic_is_terminal;
+} latent_profile_activation_tree_node;
+
+typedef struct latent_profile_inspect_activation_tree_request {
+    latent_string activation_id;
+    bool has_page;
+    latent_profile_page_request page;
+} latent_profile_inspect_activation_tree_request;
+
+typedef struct latent_profile_inspect_activation_tree_response {
+    uint32_t schema_version;
+    const latent_profile_activation_tree_node * nodes;
+    size_t nodes_count;
+    bool has_page;
+    latent_profile_page_response page;
+    bool history_available;
+    bool cursor_expired;
+    bool retained_history_only;
+} latent_profile_inspect_activation_tree_response;
+
 typedef struct latent_profile_publication_identity {
     latent_profile_publication_ref publication;
     latent_string component_digest;
@@ -473,6 +566,16 @@ typedef void (*latent_profile_get_activation_callback)(
     const latent_profile_client_failure *failure,
     void *user_data);
 
+typedef struct latent_profile_inspect_activation_tree_result {
+    latent_profile_inspect_activation_tree_response value;
+    latent_profile_response_metadata metadata;
+} latent_profile_inspect_activation_tree_result;
+
+typedef void (*latent_profile_inspect_activation_tree_callback)(
+    const latent_profile_inspect_activation_tree_result *response,
+    const latent_profile_client_failure *failure,
+    void *user_data);
+
 typedef struct latent_profile_get_policy_result {
     latent_profile_get_policy_response value;
     latent_profile_response_metadata metadata;
@@ -543,6 +646,13 @@ typedef struct latent_profile_client_vtable {
         const latent_profile_get_activation_request *request,
         const latent_profile_call_options *options,
         latent_profile_get_activation_callback callback,
+        void *user_data);
+
+    latent_profile_call *(*inspect_activation_tree)(
+        latent_profile_client *client,
+        const latent_profile_inspect_activation_tree_request *request,
+        const latent_profile_call_options *options,
+        latent_profile_inspect_activation_tree_callback callback,
         void *user_data);
 
     latent_profile_call *(*get_policy)(

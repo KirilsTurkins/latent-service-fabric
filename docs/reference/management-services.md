@@ -576,3 +576,8 @@ The focused Linux test entry point is
 and servers over an in-memory duplex connection, real small directory catalogs,
 fixed authenticated fixture principals, and five-second transport/shutdown
 bounds. No guest workload, scale publication, or long-running soak is required.
+
+The bounded tenant administrator `NodeService.InspectActivationTree` query and
+`latent activation tree` command project retained lineage and safe producer
+observations. See [activation inspection](activation-inspection.md) for paging,
+retention, authority and execution-versus-cleanup semantics.

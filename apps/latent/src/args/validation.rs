@@ -50,6 +50,10 @@ impl Cli {
             Command::Completions { .. } | Command::Route(_) => Ok(()),
             Command::Invoke(args) => invoke(args),
             Command::Activation(ActivationCommand::Get(args)) => identifier(&args.id, 512),
+            Command::Activation(ActivationCommand::Tree(args)) => {
+                identifier(&args.id, 512)?;
+                page_token(args.page_token.as_deref(), args.page_size)
+            }
             Command::Activation(ActivationCommand::Cancel(args)) => {
                 identifier(&args.id, 512)?;
                 if args.reason.len() > 256 {

@@ -37,6 +37,7 @@ func TestSharedWireVectors(test *testing.T) {
 	}
 	models := []any{
 		profile.ResourceBudget{}, profile.ErrorDetail{}, profile.PlatformError{}, profile.ObjectMetadata{}, profile.PageRequest{}, profile.PageResponse{}, profile.AuditAck{},
+		profile.ActivationDiagnostic{}, profile.ActivationTreeNode{}, profile.InspectActivationTreeRequest{}, profile.InspectActivationTreeResponse{},
 		profile.InvocationTarget{}, profile.InvokeRequest{}, profile.BudgetConsumption{}, profile.Success{}, profile.DeclaredError{}, profile.InvokeResponse{},
 		profile.CancelRequest{}, profile.CancelResponse{}, profile.GetActivationRequest{}, profile.ActivationSuccessSummary{}, profile.ActivationStatus{},
 		profile.Policy{}, profile.ApplyPolicyRequest{}, profile.CapabilityPolicyOperation{}, profile.ApplyPolicyResponse{}, profile.GetPolicyRequest{}, profile.GetPolicyResponse{},
@@ -47,6 +48,7 @@ func TestSharedWireVectors(test *testing.T) {
 	descriptors := []protoreflect.FileDescriptor{
 		controlv1.File_latent_control_v1_common_proto, controlv1.File_latent_control_v1_policy_proto,
 		controlv1.File_latent_control_v1_capability_proto, invocationv1.File_latent_invocation_v1_invocation_proto,
+		controlv1.File_latent_control_v1_node_proto,
 	}
 	covered := 0
 	for _, fixture := range fixtures.Cases {

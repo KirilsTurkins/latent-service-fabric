@@ -83,7 +83,7 @@ class Graph:
             raise ValueError("Java profile currently requires one nonempty exported interface")
         if len(self.imports) > 256 or len(self.exports) > 64:
             raise ValueError("Java function inventory exceeds its finite limit")
-        self.live = set()
+        self.live, self.heights, self.active = set(), {}, set()
         for function in self.imports + self.exports:
             for parameter in function["params"]: self.visit(parameter["type"])
             self.visit(function.get("result"))
@@ -95,6 +95,56 @@ class Graph:
         for index in self.resources:
             if self.types[index]["owner"]["interface"] in self.export_ids:
                 raise ValueError("Java profile does not yet support exported resources")
+
+    @classmethod
+    def preflight(cls, data: dict, world: str):
+        """Validate Java shape constraints before invoking the C ABI generator.
+
+        This uses the same graph constructor and type checks. Placeholder C
+        declarations only supply the constructor's parameter-count bookkeeping;
+        the real C declarations are independently checked during generation.
+        """
+        if set(data) != {"worlds", "interfaces", "types", "packages"}:
+            raise ValueError("unsupported wasm-tools WIT graph format")
+        if len(data["types"]) > 1024 or len(data["interfaces"]) > 128:
+            raise ValueError("Java binding graph exceeds its finite limits")
+        selected = []
+        for item in data["worlds"]:
+            package = data["packages"][item["package"]]["name"]
+            base, _, version = package.partition("@")
+            identity = base + "/" + item["name"] + ("@" + version if version else "")
+            if world in (item["name"], identity): selected.append(item)
+        if len(selected) != 1: raise ValueError("Java binding world must resolve exactly once")
+        probe = cls.__new__(cls)
+        probe.data = data
+        header = []
+        for direction in ("imports", "exports"):
+            for item in selected[0][direction].values():
+                if set(item) != {"interface"} or set(item["interface"]) != {"id"}:
+                    raise ValueError("Java profile requires named interface imports and exports")
+                index = item["interface"]["id"]
+                interface = data["interfaces"][index]
+                if interface.get("package") is None or not interface.get("name"):
+                    raise ValueError("Java profile rejects anonymous inline WIT interfaces")
+                prefix = probe.c_prefix(index, direction == "exports")
+                for function in interface["functions"].values():
+                    params = ["probe_value arg" + str(i) for i, _ in enumerate(function["params"])]
+                    if function.get("result") is not None: params.append("probe_value *result")
+                    header.append("void " + prefix + "_" + snake(function["name"]) + "(" + (", ".join(params) or "void") + ");")
+        graph = cls(data, world, "\n".join(header))
+        # Generated Java identifiers are part of this profile, not WIT rules.
+        names = [graph.name(index) for index in sorted(graph.live)]
+        if len(names) != len(set(names)): raise ValueError("Java profile type-name collision; rename the WIT types")
+        exports = [jident(function["name"]) for function in graph.exports]
+        if len(exports) != len(set(exports)): raise ValueError("Java profile operation-name collision; rename the WIT operations")
+        for index in graph.live:
+            kind = graph.types[index]["kind"]
+            if not isinstance(kind, dict): continue
+            form, body = next(iter(kind.items()))
+            fields = body.get("fields", body.get("cases", [])) if isinstance(body, dict) else []
+            names = [jident(field["name"]) for field in fields]
+            if len(names) != len(set(names)): raise ValueError("Java profile member-name collision; rename the WIT members")
+        return graph
 
     def reject_export_resources(self, value, depth=0):
         if value is None or isinstance(value, str): return
@@ -122,16 +172,24 @@ class Graph:
 
     def visit(self, value, depth=0):
         if value is None: return
+        if depth > 32: raise ValueError("invalid or excessively nested WIT type")
         if isinstance(value, str):
             if value not in PRIMITIVES: raise ValueError("unsupported Java WIT scalar: " + value)
             return
         if type(value) is not int or not 0 <= value < len(self.types) or depth > 32:
             raise ValueError("invalid or excessively nested WIT type")
-        if value in self.live: return
+        if value in self.active: raise ValueError("recursive WIT type is unsupported")
+        if value in self.heights:
+            if depth + self.heights[value] > 32: raise ValueError("invalid or excessively nested WIT type")
+            return
+        self.active.add(value)
         self.live.add(value)
         definition = self.types[value]
         kind = definition["kind"]
-        if kind == "resource": return
+        if kind == "resource":
+            self.active.remove(value)
+            self.heights[value] = 0
+            return
         if not isinstance(kind, dict) or len(kind) != 1: raise ValueError("unsupported WIT type")
         form, body = next(iter(kind.items()))
         if form in ("type", "list", "option"): children = [body]
@@ -146,7 +204,10 @@ class Graph:
             children = []
             if form == "flags" and len(body["flags"]) > 64: raise ValueError("Java supports at most 64 WIT flags")
         else: raise ValueError("unsupported Java WIT type: " + form)
+        if len(children) > 1024: raise ValueError("Java WIT type member inventory exceeds its finite limit")
         for child in children: self.visit(child, depth + 1)
+        self.heights[value] = max((1 + self.heights.get(child, 0) for child in children if child is not None), default=0)
+        self.active.remove(value)
 
     def name(self, index: int) -> str:
         definition = self.types[index]

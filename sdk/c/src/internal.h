@@ -13,7 +13,7 @@
 #define LSF_MAX_TIMEOUT 300000u
 
 typedef enum lsf_operation {
-    LSF_INVOKE, LSF_CANCEL, LSF_GET_ACTIVATION, LSF_GET_POLICY,
+    LSF_INVOKE, LSF_CANCEL, LSF_GET_ACTIVATION, LSF_INSPECT_ACTIVATION_TREE, LSF_GET_POLICY,
     LSF_LIST_POLICIES, LSF_LIST_CAPABILITIES, LSF_APPLY_POLICY, LSF_GET_POLICY_OPERATION
 } lsf_operation;
 
@@ -21,6 +21,7 @@ typedef union lsf_callback {
     latent_profile_invoke_callback invoke;
     latent_profile_cancel_callback cancel;
     latent_profile_get_activation_callback get_activation;
+    latent_profile_inspect_activation_tree_callback inspect_activation_tree;
     latent_profile_get_policy_callback get_policy;
     latent_profile_list_policies_callback list_policies;
     latent_profile_list_capabilities_callback list_capabilities;
@@ -32,6 +33,7 @@ typedef union lsf_result {
     latent_profile_invoke_result invoke;
     latent_profile_cancel_result cancel;
     latent_profile_get_activation_result get_activation;
+    latent_profile_inspect_activation_tree_result inspect_activation_tree;
     latent_profile_get_policy_result get_policy;
     latent_profile_list_policies_result list_policies;
     latent_profile_list_capabilities_result list_capabilities;

@@ -143,3 +143,40 @@ pub(super) fn nodes(value: proto::ListNodesResponse) -> Result<Outcome, Failure>
 fn token(page: Option<proto::PageResponse>) -> Result<Option<String>, Failure> {
     Ok(page.ok_or_else(invalid_response)?.next_page_token)
 }
+
+pub(super) fn activation_tree(
+    value: proto::InspectActivationTreeResponse,
+) -> Result<Outcome, Failure> {
+    let nodes = value.nodes.into_iter().map(|node| {
+        let diagnostic = node.diagnostic.map(|value| json!({
+            "schemaVersion":value.schema_version,
+            "stage":value.stage, "stageName":proto::DiagnosticStage::try_from(value.stage).ok().map(|value| value.as_str_name()),
+            "reason":value.reason, "reasonName":proto::DiagnosticReason::try_from(value.reason).ok().map(|value| value.as_str_name()),
+            "profile":value.profile, "profileDigest":value.profile_digest,
+            "configuredBound":value.configured_bound.map(|value| value.to_string()),
+            "calculatedRequirement":value.calculated_requirement.map(|value| value.to_string()),
+            "fixedBytes":value.fixed_bytes.map(|value| value.to_string()),
+            "liftingFuel":value.lifting_fuel.map(|value| value.to_string()),
+            "liftMultiplier":value.lift_multiplier.map(|value| value.to_string()),
+        }));
+        json!({"activationId":node.activation_id,"parentActivationId":node.parent_activation_id,
+            "rootActivationId":node.root_activation_id,"phase":node.phase,"terminalState":node.terminal_state,
+            "lastUpdatedUnixMillis":node.last_updated_unix_millis.to_string(),"diagnostic":diagnostic,
+            "diagnosticIsTerminal":node.diagnostic_is_terminal,
+            "principalKind":node.principal_kind,"callerService":node.caller_service,
+            "grantedBudget":node.granted_budget.map(|value| json!({
+                "cpuFuel":value.cpu_fuel.to_string(),"memoryBytes":value.memory_bytes.to_string(),
+                "wallTimeLimitMillis":value.wall_time_limit_millis.map(|value| value.to_string()),
+                "childCalls":value.child_calls,"outboundRequests":value.outbound_requests,
+                "stateReadBytes":value.state_read_bytes.to_string(),"stateWriteBytes":value.state_write_bytes.to_string(),
+                "blobReadBytes":value.blob_read_bytes.to_string(),"blobWriteBytes":value.blob_write_bytes.to_string(),
+                "logBytes":value.log_bytes.to_string(),"effectCount":value.effect_count})),
+            "effectiveDeadlineUnixMillis":node.effective_deadline_unix_millis.map(|value| value.to_string())})
+    }).collect::<Vec<_>>();
+    Ok(Outcome::success(
+        json!({"schemaVersion":value.schema_version,"nodes":nodes,
+        "nextPageToken":token(value.page)?,"historyAvailable":value.history_available,
+        "cursorExpired":value.cursor_expired,"retainedHistoryOnly":value.retained_history_only,
+        "externalCompletion":"unknown"}),
+    ))
+}

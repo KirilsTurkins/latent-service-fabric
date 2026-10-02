@@ -202,4 +202,96 @@ service NodeService {
   rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
   // Phase 1 standalone: returns the bounded local node list only.
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+  // Tenant-scoped operator inspection. Never invokes, cancels or fetches results.
+  rpc InspectActivationTree(InspectActivationTreeRequest) returns (InspectActivationTreeResponse);
+}
+
+enum DiagnosticStage {
+  DIAGNOSTIC_STAGE_UNSPECIFIED = 0;
+  DIAGNOSTIC_STAGE_ADMISSION = 1;
+  DIAGNOSTIC_STAGE_QUEUE = 2;
+  DIAGNOSTIC_STAGE_PREPARATION = 3;
+  DIAGNOSTIC_STAGE_BINDING = 4;
+  DIAGNOSTIC_STAGE_EXECUTION = 5;
+  DIAGNOSTIC_STAGE_PROVIDER = 6;
+  DIAGNOSTIC_STAGE_CLEANUP = 7;
+  DIAGNOSTIC_STAGE_OUTPUT_VALIDATION = 8;
+}
+
+enum DiagnosticReason {
+  DIAGNOSTIC_REASON_UNSPECIFIED = 0;
+  DIAGNOSTIC_REASON_SIGNATURE_ALLOCATION_LIMIT = 1;
+  DIAGNOSTIC_REASON_VALUE_ALLOCATION_LIMIT = 2;
+  DIAGNOSTIC_REASON_UNSUPPORTED_COMPONENT_SURFACE = 3;
+  DIAGNOSTIC_REASON_UNSUPPORTED_ENGINE_PROFILE = 4;
+  DIAGNOSTIC_REASON_PROVIDER_ABSENT = 5;
+  DIAGNOSTIC_REASON_BINDING_ABSENT = 6;
+  DIAGNOSTIC_REASON_ADMISSION_DENIED = 7;
+  DIAGNOSTIC_REASON_GRANT_DENIED = 8;
+  DIAGNOSTIC_REASON_QUEUE_PRESSURE = 9;
+  DIAGNOSTIC_REASON_GUEST_MEMORY_EXHAUSTED = 10;
+  DIAGNOSTIC_REASON_GUEST_FUEL_EXHAUSTED = 11;
+  DIAGNOSTIC_REASON_GUEST_RESOURCE_EXHAUSTED = 12;
+  DIAGNOSTIC_REASON_PROVIDER_TIMEOUT = 13;
+  DIAGNOSTIC_REASON_DEADLINE_EXCEEDED = 14;
+  DIAGNOSTIC_REASON_CANCELLED = 15;
+  DIAGNOSTIC_REASON_HTTP_RESPONSE_REJECTED = 16;
+}
+
+enum DiagnosticProfile {
+  DIAGNOSTIC_PROFILE_UNSPECIFIED = 0;
+  DIAGNOSTIC_PROFILE_WASMTIME_SERVICE_VALUES_V1 = 1;
+  DIAGNOSTIC_PROFILE_WASMTIME_BUFFERED_WEB_VALUES_V1 = 2;
+}
+
+message ActivationDiagnostic {
+  uint32 schema_version = 1;
+  DiagnosticStage stage = 2;
+  DiagnosticReason reason = 3;
+  optional DiagnosticProfile profile = 4;
+  // Exact producer profile SHA-256, lowercase hex; no user-supplied labels.
+  optional string profile_digest = 5;
+  optional uint64 configured_bound = 6;
+  optional uint64 calculated_requirement = 7;
+  optional uint64 fixed_bytes = 8;
+  optional uint64 lifting_fuel = 9;
+  optional uint64 lift_multiplier = 10;
+}
+
+message ActivationTreeNode {
+  string activation_id = 1;
+  optional string parent_activation_id = 2;
+  string root_activation_id = 3;
+  string phase = 4;
+  optional string terminal_state = 5;
+  uint64 last_updated_unix_millis = 6;
+  optional ActivationDiagnostic diagnostic = 7;
+  // Captured trusted caller class/service, excluding subject, claims and secrets.
+  string principal_kind = 8;
+  optional string caller_service = 9;
+  // Absent before successful admission; zero is a real granted zero.
+  optional ResourceBudget granted_budget = 10;
+  optional uint64 effective_deadline_unix_millis = 11;
+  // False means a caught broker observation, not the terminal failure cause.
+  // Neither value proves physical provider cleanup or external disposition.
+  bool diagnostic_is_terminal = 12;
+}
+
+message InspectActivationTreeRequest {
+  // A retained authorized parent, root or child. IDs confer no authority.
+  string activation_id = 1;
+  // Maximum 128 nodes / 64 KiB. Zero selects 32. One page per request.
+  PageRequest page = 2;
+}
+
+message InspectActivationTreeResponse {
+  uint32 schema_version = 1;
+  repeated ActivationTreeNode nodes = 2;
+  PageResponse page = 3;
+  // False for unknown, expired, evicted or unauthorized anchor, without
+  // distinguishing foreign history. Absence never proves no external mutation.
+  bool history_available = 4;
+  bool cursor_expired = 5;
+  // Always true: volatile bounded retention cannot certify a complete graph.
+  bool retained_history_only = 6;
 }
