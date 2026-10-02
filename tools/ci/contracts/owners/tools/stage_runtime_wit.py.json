@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed selected V5 aggregate world exclusion from package dependencies; historical worlds remain exact and unchanged, no staging overlap guard is removed.",
+  "reviewReason": "Preserve current-development Phase 4 type-use selectors and all aggregate runtime world exclusions including V5 activation; no staging overlap guard or historical case removed.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "178ecd8f660301fbd939246ac76e1d7c3d95f8e6be2b817b5c3bc042fd0a3d2b"
+  "sha256": "234ad8fe192e3ebb0c859c69c0b2688828a0cb63f97c7382b28ba5fe6b80063a"
 }

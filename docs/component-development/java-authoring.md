@@ -79,10 +79,13 @@ files and update the selected world in `capsule-project.json` when renaming
 the contract. Keep the SDK files unchanged. The build rejects SDK drift,
 path escapes and unsupported contract shapes. Put additional `.java` sources beneath `src`.
 Your entry class `dev.latent.app.Capsule` implements the generated
-`dev.latent.generated.Bindings.Exports`. The supported build captures Java source,
-not arbitrary JARs, application Gradle scripts or Maven projects. The compiler's
-70-JAR closure is version-locked and checksum-verified; downloaded application
-dependencies, JNI, reflection-based loading and dynamic class loading are not supported.
+`dev.latent.generated.Bindings.Exports`. The build captures Java source and explicitly
+reviewed [application JARs](java-dependencies.md). The compiler's 70-JAR closure
+is version-locked and checksum-verified. Application JARs have a separate
+captured lock; arbitrary unreviewed JARs, application Gradle scripts and Maven
+projects are rejected. Reachable JNI, reflection-based loading and dynamic class
+loading still require compatible compiler/runtime support and emitted-component
+evidence.
 
 The `word-count` and `shipping` templates provide equivalent Java implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory

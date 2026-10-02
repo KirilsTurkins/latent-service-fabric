@@ -8,7 +8,18 @@
     "JavaDependencies.test_resolver_owns_script_and_retains_native_conditions",
     "JavaDependencies.test_service_provider_metadata_preserved_and_duplicate_policy_explicit",
     "JavaDependencies.test_shaded_names_preserved_and_platform_override_denied",
-    "JavaDependencies.test_teavm_host_extension_services_cannot_execute_as_guest_inputs"
+    "JavaDependencies.test_teavm_host_extension_services_cannot_execute_as_guest_inputs",
+    "JavaResourceArtifacts.test_changing_unknown_coordinates_changes_child_attribution_without_catalogue_gate",
+    "JavaResourceArtifacts.test_legacy_whole_jar_resource_lock_requires_explicit_recapture",
+    "JavaResourceArtifacts.test_multi_release_resource_binds_original_zip_entry_and_selected_version",
+    "JavaResourceArtifacts.test_package_owner_cannot_be_forged_from_whole_jar_identity",
+    "JavaResourceArtifacts.test_resource_child_requires_selected_edge_role_and_exact_origin",
+    "JavaResourceArtifacts.test_resource_name_duplicates_and_finite_resource_graph_limits_fail",
+    "JavaResourceArtifacts.test_service_metadata_stays_opaque_and_teavm_host_spi_fails_before_capture",
+    "JavaResourceArtifacts.test_source_lock_receipt_and_profile_drift_cannot_package_resources",
+    "JavaResourceArtifacts.test_staged_source_and_store_resource_byte_tamper_are_rejected",
+    "JavaResourceArtifacts.test_unknown_transitive_resource_children_survive_original_input_removal",
+    "JavaResourceArtifacts.test_verified_resource_children_enter_actual_package_layers_with_source_and_lock_binding"
   ],
   "guards": {
     "JavaDependencies.test_duplicate_class_and_duplicate_resource_are_rejected": {
@@ -118,10 +129,142 @@
         "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
       ],
       "skipSites": []
+    },
+    "JavaResourceArtifacts.test_changing_unknown_coordinates_changes_child_attribution_without_catalogue_gate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_legacy_whole_jar_resource_lock_requires_explicit_recapture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_multi_release_resource_binds_original_zip_entry_and_selected_version": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_package_owner_cannot_be_forged_from_whole_jar_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_resource_child_requires_selected_edge_role_and_exact_origin": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_resource_name_duplicates_and_finite_resource_graph_limits_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_service_metadata_stays_opaque_and_teavm_host_spi_fails_before_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_source_lock_receipt_and_profile_drift_cannot_package_resources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_staged_source_and_store_resource_byte_tamper_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_unknown_transitive_resource_children_survive_original_input_removal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_verified_resource_children_enter_actual_package_layers_with_source_and_lock_binding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_application_dependencies.py",
-  "reviewReason": "Review native JAR selection and executable TeaVM compiler service denial",
+  "reviewReason": "Capture and verify selected JAR resource children, original multirelease origins, bounds and actual package layers",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -17,6 +17,8 @@ from tools.dev_workflow import paths, project, scenarios, snapshot, tool_invento
 from tools.dev_workflow.common import HOST_ABI, digest, encode, require
 from tools.install_guest_bindgen import ARCHIVE_SHA256, VERSION as BINDGEN_VERSION
 from tools.rust_capsule_cases import TUTORIAL_CASES
+from tools.guest_dependency_inputs import RECIPE as FRONTEND_DEPENDENCY_RECIPE
+from tools.guest_authoring_frontend import RECIPE as AUTHORING_FRONTEND_RECIPE
 
 ROOT = Path(__file__).resolve().parents[1]
 WASM_VERSION = "1.254.0"
@@ -113,7 +115,8 @@ def registry(payload: Path, cargo_home: Path) -> None:
 def recipe(payload: Path, language: str) -> None:
     owner = {"rust": rust_capsule_build, "c": c_capsule_build, "java": java_capsule_build,
              "dotnet": dotnet_build, "go": go_capsule_build, "typescript": typescript_build}[language]
-    names = {*owner.RECIPE, "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
+    names = {*owner.RECIPE, *FRONTEND_DEPENDENCY_RECIPE, *AUTHORING_FRONTEND_RECIPE,
+             "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
              "tools/dev_workflow/__init__.py", "tools/dev_workflow/common.py", "tools/dev_workflow/paths.py",
              "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"}
     if language in {"java", "dotnet", "go", "typescript"}:
