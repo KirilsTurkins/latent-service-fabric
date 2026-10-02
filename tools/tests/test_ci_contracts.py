@@ -656,37 +656,76 @@ class RepositoryMigrationTests(unittest.TestCase):
     def test_every_historical_obligation_and_current_expectation_is_accounted_for(self):
         legacy = contracts.read_json(ROOT / "tools/ci/history/commands-v1.json")
         data = contracts.load(ROOT)
-        for field in ("before", "coverage", "baselineRevision"):
+        for field in ("before", "baselineRevision"):
             self.assertEqual(data[field], legacy[field], field)
+        self.assertEqual(set(data["coverage"]), set(legacy["coverage"]))
+        for key, obligation in legacy["coverage"].items():
+            self.assertEqual(data["coverage"][key]["after"], obligation["after"], key)
         self.assertEqual(len(legacy["before"]), 88)
         self.assertEqual(len(legacy["after"]), 208)
         self.assertEqual(len(legacy["delegatedOwners"]), 124)
         self.assertEqual(len(legacy["pythonTestModules"]), 260)
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
-        for key, value in legacy["after"].items():
+        performance_extensions = {
+            ".github/workflows/ci.yml:rust:integration_lanes": [
+                "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
+                '--renderer "$CI_LANE_RENDERER"', '--workers "$CI_LANE_WORKERS"', '--lane "$CI_NATIVE_LANE"',
+                '--output "$RUNNER_TEMP/ci-lanes"'],
+            ".github/workflows/ci.yml:contracts:Validate contracts, echo component, and generated bindings": ["tools/validate_contracts.sh"],
+            ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": ["python3 tools/run_optimization_benchmarks.py --profile smoke"],
+            ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": [
+                "npm run test:build", "npm run test:theme", "npm run test:examples", "npm run test:versions", "npm run test:discovery", 'wait "$versions_pid"', 'exit "$status"'],
+            ".github/workflows/docs-site.yml:website:Install the pinned test browser and its OS prerequisites": ["npm run browser:install"],
+            ".github/workflows/typescript-guest.yml:boundary:Install pinned component validator": ['test "$(wasm-tools --version | cut -d \' \' -f 1,2)" = \'wasm-tools 1.254.0\''],
+            ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": [
+                "cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go",
+                'test "$(wasm-tools --version | cut -d \' \' -f 1,2)" = \'wasm-tools 1.254.0\'',
+                "sha256sum --check --strict"],
+            ".github/workflows/go-guest.yml:upstream-probe:Retain pinned reproduction tools": [
+                'cp "$HOME/.cargo/bin/componentize-go" "$(command -v wasm-tools)" "$out/"',
+                'sha256sum "$out/componentize-go" "$out/wasm-tools"'],
+        }
+        lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
+        for key, original in legacy["after"].items():
+            value = dict(original)
+            if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
+                # Exact commands survive; the reviewed fixed matrix allocates
+                # every obligation to its required, failure-propagating lane.
+                value["stepIf"] = lane_baseline[value["job"]]["step_conditions"].get(value["name"], value["stepIf"])
+                if value["name"] == "Qualify actual Angular on the protected T1 node":
+                    value["run"] = value["run"].replace(
+                        '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
+                        '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
             host_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
             if key == host_fixture:
-                # State now has real engine consumers. Preserve its original
-                # selected subset and runner, and explicitly prove full CI is
-                # still selected alongside this smaller host qualification.
+                # State keeps its independent full-CI precheck. The fixed
+                # Identity source proves the real nonempty proper subset under
+                # the unchanged optimizer-owned eligibility policy.
                 expected = dict(value)
                 expected["run"] = value["run"].replace(
+                    "selection = classify_paths(['crates/latent-state/src/lib.rs'])\n"
                     "assert selection.profile == 'fast'\n",
                     "from tools import ci_suite_inventory as registry\n"
+                    "assert classify_paths(['crates/latent-state/src/lib.rs']).profile == 'full'\n"
+                    "selection = classify_paths(['crates/latent-identity/src/lib.rs'])\n"
                     "assert selection.profile == 'full'\n"
                     "assert selection.fast_packages\n"
                     "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
                 )
                 self.assertEqual(data["after"][key], expected, key)
-            elif key != reviewed_extension:
+            elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:
                 self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
                                  {k: v for k, v in value.items() if k != "run"})
-                old_modules = {word for word in value["run"].split() if word.startswith("tools.tests.")}
-                self.assertTrue(old_modules <= set(data["after"][key]["run"].split()))
+                if key == reviewed_extension:
+                    old_modules = {word for word in value["run"].split() if word.startswith("tools.tests.")}
+                    self.assertTrue(old_modules <= set(data["after"][key]["run"].split()))
+                else:
+                    for command in performance_extensions[key]:
+                        self.assertIn(command, data["after"][key]["run"], key)
         self.assertTrue(set(legacy["delegatedOwners"]) <= set(data["delegatedOwners"]))
         for name, cases in legacy["pythonCases"].items():
             self.assertTrue(set(cases) <= set(data["pythonCases"][name]), name)
