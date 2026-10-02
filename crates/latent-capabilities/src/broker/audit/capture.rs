@@ -102,6 +102,7 @@ pub(super) fn class(value: ResourceTarget<'_>) -> AuditCapabilityResourceClass {
         ResourceTarget::Events { .. } => AuditCapabilityResourceClass::Events,
         ResourceTarget::Telemetry { .. } => AuditCapabilityResourceClass::Telemetry,
         ResourceTarget::Service { .. } => AuditCapabilityResourceClass::Service,
+        ResourceTarget::State { .. } => AuditCapabilityResourceClass::State,
     }
 }
 pub(super) fn bounded_resource(value: ResourceTarget<'_>) -> bool {
@@ -126,6 +127,20 @@ pub(super) fn bounded_resource(value: ResourceTarget<'_>) -> bool {
             service,
             publication,
         } => service.len() <= 128 && publication.len() <= 128,
+        ResourceTarget::State {
+            namespace,
+            incarnation,
+            entity,
+            recovery_scope,
+            result_policy,
+            ..
+        } => {
+            namespace.len() <= 256
+                && incarnation != 0
+                && entity.is_none_or(|value| value.len() <= 256)
+                && recovery_scope.len() <= 256
+                && result_policy.len() <= 256
+        }
     }
 }
 
@@ -185,6 +200,28 @@ pub(in crate::broker) fn request_digest(
             part(b"service");
             part(service.as_bytes());
             part(publication.as_bytes());
+        }
+        ResourceTarget::State {
+            namespace,
+            incarnation,
+            entity,
+            recovery_kind,
+            recovery_scope,
+            result_policy,
+        } => {
+            part(b"state");
+            part(namespace.as_bytes());
+            part(&incarnation.to_le_bytes());
+            part(&[u8::from(entity.is_some())]);
+            part(entity.unwrap_or_default().as_bytes());
+            part(&[match recovery_kind {
+                latent_policy::capability::RecoveryScopeKind::OriginalCaller => 1,
+                latent_policy::capability::RecoveryScopeKind::ServiceIntegration => 2,
+                latent_policy::capability::RecoveryScopeKind::Delegated => 3,
+                latent_policy::capability::RecoveryScopeKind::Shared => 4,
+            }]);
+            part(recovery_scope.as_bytes());
+            part(result_policy.as_bytes());
         }
     }
     part(input);

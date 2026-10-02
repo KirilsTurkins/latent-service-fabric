@@ -37,6 +37,54 @@
       "type": "object", "additionalProperties": false, "required": ["requestId", "expectedAbort"],
       "properties": {"requestId": {"$ref": "#/$defs/identity"}, "expectedAbort": {"$ref": "#/$defs/abortFence"}}
     },
+    "digest": {"type": "string", "minLength": 71, "maxLength": 71, "pattern": "^sha256:[0-9a-f]{64}$"},
+    "sourceIdentity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["publicationId", "revisionId", "releaseDigest", "componentDigest", "routeGeneration", "contractDigest", "stateSchema", "inputFormat", "resultFormat"],
+      "properties": {
+        "publicationId": {"$ref": "#/$defs/identity"}, "revisionId": {"$ref": "#/$defs/identity"},
+        "releaseDigest": {"$ref": "#/$defs/digest"}, "componentDigest": {"$ref": "#/$defs/digest"},
+        "routeGeneration": {"$ref": "#/$defs/u64"}, "contractDigest": {"$ref": "#/$defs/digest"},
+        "stateSchema": {"$ref": "#/$defs/digest"}, "inputFormat": {"$ref": "#/$defs/identity"}, "resultFormat": {"$ref": "#/$defs/identity"}
+      }
+    },
+    "viewIdentity": {
+      "type": "object", "additionalProperties": false, "required": ["namespace", "incarnation", "version", "stateSchema"],
+      "properties": {"namespace": {"$ref": "#/$defs/identity"}, "incarnation": {"$ref": "#/$defs/identity"},
+        "version": {"$ref": "#/$defs/opaque"}, "stateSchema": {"$ref": "#/$defs/digest"}}
+    },
+    "retention": {
+      "type": "object", "additionalProperties": false, "required": ["recordFormat", "recordVersion", "requiredRecordIds", "payloadAvailable"],
+      "properties": {
+        "recordFormat": {"enum": ["lsf-command-result-v1", "lsf-effect-intent-v1", "lsf-inbox-record-v1", "lsf-ordering-record-v1", "lsf-checkpoint-record-v1"]},
+        "recordVersion": {"const": 1}, "payloadExpiresAtUnixMillis": {"$ref": "#/$defs/u64"},
+        "identityExpiresAtUnixMillis": {"$ref": "#/$defs/u64"}, "remainingRecoveryMillis": {"$ref": "#/$defs/u64"},
+        "requiredRecordIds": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/identity"}},
+        "payloadAvailable": {"type": "boolean"}
+      }
+    },
+    "commitReceipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["commandId", "attemptId", "transactionId", "receiptId", "committedVersion", "committedAtUnixMillis", "effectIds", "sourceIdentity"],
+      "properties": {
+        "commandId": {"$ref": "#/$defs/identity"}, "attemptId": {"$ref": "#/$defs/identity"}, "transactionId": {"$ref": "#/$defs/identity"},
+        "receiptId": {"$ref": "#/$defs/identity"}, "committedVersion": {"$ref": "#/$defs/opaque"}, "committedAtUnixMillis": {"$ref": "#/$defs/u64"},
+        "effectIds": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/identity"}},
+        "sourceIdentity": {"$ref": "#/$defs/sourceIdentity"}
+      }
+    },
+    "effectReceipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effectId", "commandId", "commandAttemptId", "dispatchAttempt", "disposition", "occurredAtUnixMillis", "retention", "providerProfile"],
+      "properties": {
+        "effectId": {"$ref": "#/$defs/identity"}, "commandId": {"$ref": "#/$defs/identity"}, "commandAttemptId": {"$ref": "#/$defs/identity"},
+        "dispatchAttempt": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "disposition": {"enum": ["pending", "dispatching", "provider-acknowledged", "known-failure", "uncertain-after-dispatch", "expired", "policy-blocked", "administratively-terminated"]},
+        "occurredAtUnixMillis": {"$ref": "#/$defs/u64"}, "providerProfile": {"$ref": "#/$defs/identity"},
+        "providerReceipt": {"$ref": "#/$defs/identity"}, "failureCode": {"$ref": "#/$defs/identity"},
+        "retention": {"$ref": "#/$defs/retention"}, "managementOperationReceiptId": {"$ref": "#/$defs/identity"}
+      }
+    },
     "command": {
       "type": "object", "additionalProperties": false,
       "required": ["kind", "profile", "namespace", "incarnation", "operation", "clientKey", "inputFormat", "input", "expectedVersions"],
@@ -67,7 +115,30 @@
         "metadataDurable": {"type": "boolean"}, "applicationStateCommitted": {"type": "boolean"}, "result": {"$ref": "#/$defs/value"},
         "commandId": {"$ref": "#/$defs/identity"}, "attemptId": {"$ref": "#/$defs/identity"}, "receiptId": {"$ref": "#/$defs/identity"},
         "viewVersion": {"$ref": "#/$defs/opaque"}, "provenAbort": {"$ref": "#/$defs/abortFence"},
-        "remainingRecoveryMillis": {"$ref": "#/$defs/u64"}, "resultFormat": {"$ref": "#/$defs/identity"}}
+        "remainingRecoveryMillis": {"$ref": "#/$defs/u64"}, "resultFormat": {"$ref": "#/$defs/identity"},
+        "sourceIdentity": {"$ref": "#/$defs/sourceIdentity"}, "viewIdentity": {"$ref": "#/$defs/viewIdentity"},
+        "commitReceipt": {"$ref": "#/$defs/commitReceipt"}, "retention": {"$ref": "#/$defs/retention"},
+        "effects": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/effectReceipt"}},
+        "cleanupFailure": {"$ref": "#/$defs/identity"}},
+      "allOf": [
+        {"if": {"properties": {"outcome": {"const": "committed"}}}, "then": {
+          "required": ["commandId", "attemptId", "receiptId", "commitReceipt", "sourceIdentity", "retention"],
+          "properties": {"metadataDurable": {"const": true}, "applicationStateCommitted": {"const": true}}, "not": {"required": ["provenAbort"]}}},
+        {"if": {"properties": {"outcome": {"const": "rejected"}}}, "then": {
+          "required": ["commandId", "attemptId", "receiptId", "sourceIdentity", "retention"],
+          "properties": {"metadataDurable": {"const": true}, "applicationStateCommitted": {"const": false}, "effects": {"maxItems": 0}},
+          "not": {"anyOf": [{"required": ["commitReceipt"]}, {"required": ["provenAbort"]}]}}},
+        {"if": {"properties": {"outcome": {"const": "aborted"}}}, "then": {
+          "required": ["commandId", "attemptId", "receiptId", "retention"],
+          "properties": {"metadataDurable": {"const": true}, "applicationStateCommitted": {"const": false}}, "not": {"required": ["commitReceipt"]}}},
+        {"if": {"properties": {"outcome": {"enum": ["unknown", "in-progress", "recovery-required", "expired"]}}}, "then": {
+          "properties": {"applicationStateCommitted": {"const": false}},
+          "not": {"anyOf": [{"required": ["provenAbort"]}, {"required": ["commitReceipt"]}]}}},
+        {"if": {"properties": {"outcome": {"const": "query-returned"}}}, "then": {
+          "required": ["sourceIdentity", "viewIdentity", "result", "resultFormat"],
+          "properties": {"metadataDurable": {"const": false}, "applicationStateCommitted": {"const": false}},
+          "not": {"anyOf": [{"required": ["commandId"]}, {"required": ["attemptId"]}, {"required": ["receiptId"]}, {"required": ["provenAbort"]}, {"required": ["commitReceipt"]}, {"required": ["retention"]}, {"required": ["effects"]}]}}}
+      ]
     }
   }
 }
