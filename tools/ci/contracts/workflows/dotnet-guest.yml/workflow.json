@@ -1,20 +1,6 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "dotnet-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": ".NET guest qualification",
     "on": {
       "pull_request": {
@@ -31,6 +17,8 @@
           "tools/guest_runtime_grants.py",
           "tools/wait_capsule_audit_idle.py",
           "tools/tests/test_dotnet_capsule_authoring.py",
+          "tools/tests/test_dotnet_http_errors.py",
+          "tools/probe_dotnet_http_errors.py",
           "docs/component-development/dotnet-authoring.md",
           "crates/latent-signing/**",
           "crates/latent-packaging/**",
@@ -47,12 +35,26 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "dotnet-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate; retain the accepted CI performance dependency caches, correctness guards and independent execution obligations.",
+  "reviewReason": "Preserve every original .NET execution and exact captured BCL control, add the reviewed transaction compiler evidence, and retain both parents receipt paths without changing authority, guards or dependency cache obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

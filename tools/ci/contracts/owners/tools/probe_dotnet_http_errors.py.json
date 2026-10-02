@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/probe_dotnet_http_errors.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Execute the actual captured WASI BCL and fresh-output/preimage denial controls without a guest-client claim",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a4abd96bc9db449af72edec2113b82422fd54310de200b2e09797d1890b82e1c"
+}

@@ -11,6 +11,8 @@ import tempfile
 from tools.build_observation import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.dotnet_guest.sdk import install as install_sdk
+from tools.dotnet_guest import runtime, http_errors
+from tools.guest_compatibility_build import interface_names
 
 SDK_VERSION = "10.0.100"
 COMPONENT_VERSION = "0.8.0-preview00011"
@@ -19,7 +21,7 @@ COMPONENT_VERSION = "0.8.0-preview00011"
 def runtime_inputs(root: Path) -> bytes:
     files = {"sdk/dotnet-guest/runtime/" + name: value
              for name, value in snapshot(root / "sdk/dotnet-guest/runtime").items()}
-    for name in ("Cargo.toml", "Cargo.lock", "tools/toolchain-smoke/examples/dotnet_closed_runtime.rs"):
+    for name in ("Cargo.toml", "Cargo.lock", "tools/toolchain-smoke/Cargo.toml", *runtime.EXAMPLES):
         files[name] = read_file(root / name)
     return inventory(files)
 
@@ -103,6 +105,11 @@ class Compiler:
         self.roots["package-hash"] = tools / "package-hash"
         if snapshot(tools / "package-hash-source") != snapshot(self.sdk / "tools/package-hash"):
             raise ValueError("NuGet content-hash source differs from the captured SDK")
+        http_error_tool = http_errors.verify_installed(self.sdk, tools)
+        self.roots["http-errors"] = tools / "http-errors"
+        self.roots["http-errors-source"] = tools / "http-errors-source"
+        self.http_error_port = None
+        self.generated_materials = []
         self.roots.update(packages(json.loads(read_file(self.sdk / "probes/smoke/packages.lock.json")), tools / "packages",
             lambda archive: commands.run("nuget-content-hash", self.dotnet, tools / "package-hash/PackageHash.dll", archive).decode().strip()))
         self.wasi_sdk = Path(json.loads(read_file(tools / "wasi-sdk.json"))["path"]).resolve(strict=True)
@@ -110,17 +117,23 @@ class Compiler:
                 "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
             raise ValueError("WASI SDK compiler version drift")
         self.roots["wasi-sdk"] = self.wasi_sdk
-        self.runtime = tools / "runtime.wasm"
+        self.runtimes = {name: tools / filename for name, (_example, filename) in runtime.ADAPTERS.items()}
         if read_file(tools / "runtime-inputs.json") != runtime_inputs(vendor):
-            raise ValueError("installed closed runtime source capture differs from the project SDK")
+            raise ValueError("installed runtime source capture differs from the project SDK")
         self.wac = tools / "packages/bytecodealliance.componentize.dotnet.wasm.sdk" / COMPONENT_VERSION / "tools/linux-x64/wac"
         self.materials = [file_identity(path, name) for name, path in (
-            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen), ("closed-runtime", self.runtime))]
+            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen),
+            *((runtime.ADAPTERS[name][0].removeprefix("dotnet-"), path)
+              for name, path in self.runtimes.items()))]
+        self.materials.append(http_error_tool)
         self.before = tree_identity(self.roots)
 
     def compile(self, work: Path, world: str, output: Path):
         output.mkdir()
         command, source = self.commands, work / "wit"
+        declared = interface_names(json.loads(command.run("declared-runtime-wit", self.wasm,
+            "component", "wit", source, "--json")), world)["imports"]
+        runtime.select(declared, [])
         generated = output / "generated"
         binding = work / "vendor/lsf/tools/dotnet_guest_bindings.py"
         command.run("bindings", sys.executable, "-I", "-B", binding, "c-sharp", source, "--world", world,
@@ -150,6 +163,8 @@ class Compiler:
             # prohibits restore from silently reaching the network on a miss.
             (project / "nuget.config").write_text(
                 '<configuration><packageSources><clear /></packageSources></configuration>\n', encoding="utf-8")
+        self.http_error_port = http_errors.prepare(self.sdk, self.tools, self.dotnet, declared, project,
+            output, command.output, command.run)
         command.run("locked-restore", self.dotnet, "restore", project / "Capsule.csproj", "--configfile",
             project / "nuget.config", "--locked-mode", "--packages", self.tools / "packages", "--disable-parallel",
             "-p:NuGetAudit=false")
@@ -171,20 +186,53 @@ class Compiler:
         if len(actual) != 1 or json.loads(read_file(actual[0], 16 * 1024 * 1024))["outputs"] != receipt["outputs"]:
             raise ValueError("actual NativeAOT binding inputs differ from independent drift generation")
         raw = project / "bin/Release/net10.0/wasi-wasm/publish/Capsule.wasm"
+        # Preserve the actual bounded compiler bytes before a profile or
+        # composition rejection can retire its private workspace.
+        (command.output / "native-aot-raw.wasm").write_bytes(read_file(raw, 64 * 1024 * 1024))
+        raw_wit = command.run("native-runtime-wit", self.wasm, "component", "wit", raw, "--json")
+        if len(raw_wit) > 4 * 1024 * 1024:
+            raise ValueError("native-aot-raw-wit-byte-limit")
+        (command.output / "native-aot-raw.wit.json").write_bytes(raw_wit)
+        actual = interface_names(json.loads(raw_wit))["imports"]
+        http_error_port = None
+        if self.http_error_port is not None:
+            http_error_port = self.http_error_port.finish(project, command.output)
+            self.generated_materials.append(self.http_error_port.identity)
+        profile = runtime.select(declared, actual)
+        adapter = self.runtimes[profile]
+        selection = {"schemaVersion": "latent.dotnet.runtime.v1", "profile": profile,
+            "declaredImports": declared, "emittedImports": actual,
+            "rawComponent": file_identity(raw, "raw-native-aot-component", 64 * 1024 * 1024),
+            "adapter": file_identity(adapter, runtime.ADAPTERS[profile][0].removeprefix("dotnet-"))}
+        write_json(command.output / "runtime-profile.json", selection)
         component = output / "component.wasm"
-        command.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", self.runtime, "-o", component)
+        command.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter, "-o", component)
         command.run("validate", self.wasm, "validate", component)
+        final = interface_names(json.loads(command.run("runtime-final-wit", self.wasm,
+            "component", "wit", component, "--json")))["imports"]
+        if not set(final) <= set(declared):
+            raise ValueError("runtime adapter introduced undeclared authority:" +
+                             ",".join(sorted(set(final) - set(declared))))
         surface = command.run("surface", self.wasm, "component", "wit", component).decode()
         if "import wasi:" in surface or "wasi_snapshot_preview1" in surface:
             raise ValueError("ambient WASI import survived the closed runtime composition")
         (output / "component.wit").write_text(surface, encoding="utf-8")
-        return component, {"bindings": receipt, "capabilities": facades,
+        generated_receipt = {"bindings": receipt, "capabilities": facades,
+            "runtimeProfile": selection,
             "filesDigest": digest(json.dumps(receipt["outputs"], sort_keys=True).encode())}
+        if http_error_port is not None:
+            generated_receipt["httpErrorPort"] = http_error_port
+        return component, generated_receipt
 
     def check_unchanged(self):
         if tree_identity(self.roots) != self.before:
             raise ValueError("observed .NET compiler inputs changed during build")
         after = [file_identity(path, name) for name, path in (
-            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen), ("closed-runtime", self.runtime))]
+            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen),
+            *((runtime.ADAPTERS[name][0].removeprefix("dotnet-"), path)
+              for name, path in self.runtimes.items()))]
+        after.append(http_errors.verify_installed(self.sdk, self.tools))
         if after != self.materials:
             raise ValueError(".NET compiler or runtime adapter changed during build")
+        if self.http_error_port is not None:
+            self.http_error_port.recheck()

@@ -13,6 +13,7 @@ from tools import build_process, qualify_rust_capsules, wait_capsule_audit_idle 
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.project import create, validate
 from tools.dotnet_guest.compiler import packages
+from tools.dotnet_guest import runtime
 from tools.build_dotnet_guest_capsules import NAMES, project
 from tools.rust_capsule_project import TEMPLATES, snapshot
 from tools.tests.test_build_process import _alive
@@ -118,6 +119,71 @@ class DotnetAuthoringTests(unittest.TestCase):
         self.assertEqual(receipt["stage"], "contracts")
         self.assertFalse((output / "component.wasm").exists())
         self.assertFalse((output / "BUILD-COMPLETE.json").exists())
+
+
+class RuntimeProfileTests(unittest.TestCase):
+    def test_retained_http_imports_do_not_create_network_authority(self):
+        emitted = ["wasi:http/types@0.2.0", "wasi:http/outgoing-handler@0.2.0",
+                   "wasi:io/streams@0.2.6", "wasi:io/poll@0.2.6"]
+        self.assertEqual(runtime.select([runtime.CLOCK], emitted), "closed")
+        self.assertEqual(runtime.select([runtime.CLOCK, runtime.ACTIVATION], emitted), "runtime")
+
+    def test_http_profile_requires_both_exact_declared_capabilities(self):
+        emitted = ["wasi:http/types@0.2.0", "wasi:http/outgoing-handler@0.2.0"]
+        self.assertEqual(runtime.select([runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION], emitted), "http")
+        self.assertEqual(runtime.select([runtime.CLOCK, runtime.HTTP], emitted), "closed")
+        self.assertEqual(runtime.select([runtime.CLOCK, runtime.ACTIVATION], emitted), "runtime")
+
+    def test_http_profile_requires_actual_outgoing_wasi_graph(self):
+        declared = [runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION]
+        for emitted in ([], [runtime.HTTP], ["wasi:io/streams@0.2.6"],
+                        ["wasi:http/types@0.2.0"], ["wasi:http/outgoing-handler@0.2.0"]):
+            with self.subTest(emitted=emitted):
+                self.assertEqual(runtime.select(declared, emitted), "runtime")
+        self.assertEqual(runtime.select(declared, [runtime.HTTP, *sorted(runtime.WASI_HTTP_IMPORTS)]), "http")
+
+    def test_generated_streaming_sdk_keeps_its_independent_runtime_profile(self):
+        with tempfile.TemporaryDirectory(prefix="lsf-dotnet-streaming-profile-") as temporary:
+            source = project(Path(temporary) / "streaming", "streaming")
+            files = snapshot(source)
+            validate(files)
+            declared = re.findall(r"(?m)^\s*import\s+([^\s;]+);", files["wit/world.wit"].decode())
+            self.assertEqual(set(declared), {runtime.CLOCK, runtime.HTTP})
+            # Preflight has no emitted graph yet. The actual SDK call remains a
+            # direct typed import even if NativeAOT retains unused WASI HTTP.
+            self.assertEqual(runtime.select(declared, []), "closed")
+            self.assertEqual(runtime.select(declared, [runtime.HTTP]), "closed")
+            self.assertEqual(runtime.select(declared, [runtime.HTTP, *sorted(runtime.WASI_HTTP_IMPORTS)]), "closed")
+
+    def test_opaque_stream_authority_cannot_enable_standard_http(self):
+        self.assertEqual(runtime.select([runtime.CLOCK, runtime.ACTIVATION,
+            "latent:network/streams@0.1.0"], ["wasi:http/outgoing-handler@0.2.0"]), "runtime")
+
+    def test_undeclared_emitted_lsf_authority_is_rejected(self):
+        for name in (runtime.ACTIVATION, runtime.HTTP, "latent:network/streams@0.1.0"):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "undeclared-emitted-import"):
+                runtime.select([runtime.CLOCK], [name])
+
+    def test_unknown_wasi_versions_and_sockets_are_rejected(self):
+        for name in ("wasi:http/types@0.2.1", "wasi:io/streams@0.2.0", "wasi:sockets/tcp@0.2.6"):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "unsupported-wasi-import"):
+                runtime.select([runtime.CLOCK, runtime.ACTIVATION, runtime.HTTP], [name])
+
+    def test_source_ambient_authority_and_changed_profile_versions_are_rejected(self):
+        for name in ("wasi:http/outgoing-handler@0.2.0", "latent:runtime/activation@0.1.1",
+                     "latent:http/streaming@0.3.1"):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                runtime.select([runtime.CLOCK, name], [])
+        with self.assertRaisesRegex(ValueError, "requires-declared-monotonic-clock"):
+            runtime.select([runtime.ACTIVATION, runtime.HTTP], [])
+
+    def test_runtime_capture_rejects_modified_backend_sources(self):
+        with tempfile.TemporaryDirectory(prefix="lsf-dotnet-runtime-capture-") as temporary:
+            original = snapshot(create(Path(temporary) / "project", "greeting"))
+            for path in (*runtime.EXAMPLES, "tools/toolchain-smoke/Cargo.toml"):
+                name = "vendor/lsf/" + path
+                with self.subTest(path=path), self.assertRaisesRegex(ValueError, "vendored SDK changed"):
+                    validate({**original, name: original[name] + b"\n// changed backend source\n"})
 
 
 class AuditDrainTests(unittest.TestCase):

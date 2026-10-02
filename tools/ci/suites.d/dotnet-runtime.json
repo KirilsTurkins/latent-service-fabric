@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.dotnet-activation-runtime",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": ["linux-x86_64"],
+      "prerequisites": ["pinned Rust toolchain", "successful source-matched Cargo artifact inventory"],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/dotnet_activation_runtime.rs",
+      "target": "dotnet-activation-runtime",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.dotnet-http-runtime",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": ["linux-x86_64"],
+      "prerequisites": ["pinned Rust toolchain", "successful source-matched Cargo artifact inventory"],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/dotnet_http_runtime.rs",
+      "target": "dotnet-http-runtime",
+      "timeoutSeconds": 900
+    }
+  ]
+}
