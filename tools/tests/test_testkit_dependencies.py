@@ -23,13 +23,16 @@ class TestkitDependencyTests(unittest.TestCase):
         path.write_text(f'[package]\nname = "{name}"\nversion = "0.0.0"\n{extra}', encoding="utf-8")
 
     def fixture(self):
-        names = (*subject.PACKAGES, "latent-node")
+        names = (*subject.PACKAGES, "latent-node", "latent-capabilities", "latent-state")
         members = ", ".join(f'"crates/{name}"' for name in names)
         (self.root / "Cargo.toml").write_text(f"[workspace]\nmembers = [{members}]\n", encoding="utf-8")
         self.manifest("latent-core", '[features]\ntest-support = []\n')
         # These optional edges remain real architecture edges with defaults off.
-        self.manifest("latent-testkit", '[dependencies]\nlatent-core = { path = "../latent-core", features = ["test-support"] }\nlatent-node = { path = "../latent-node", optional = true }\n[features]\ndefault = ["runtime"]\nruntime = ["dep:latent-node"]\n')
-        self.manifest("latent-node", '[dependencies]\nlatent-admission = { path = "../latent-admission" }\nlatent-scheduler = { path = "../latent-scheduler" }\n')
+        self.manifest("latent-test-process")
+        self.manifest("latent-testkit", '[dependencies]\nlatent-core = { path = "../latent-core", features = ["test-support"] }\nlatent-test-process = { path = "../latent-test-process" }\nlatent-node = { path = "../latent-node", optional = true }\n[features]\ndefault = ["runtime"]\nruntime = ["dep:latent-node"]\n')
+        self.manifest("latent-node", '[dependencies]\nlatent-admission = { path = "../latent-admission" }\nlatent-scheduler = { path = "../latent-scheduler" }\nlatent-capabilities = { path = "../latent-capabilities" }\n')
+        self.manifest("latent-capabilities", '[dependencies]\nlatent-state = { path = "../latent-state" }\n')
+        self.manifest("latent-state", '[dev-dependencies]\nlatent-core = { path = "../latent-core", features = ["test-support"] }\nlatent-test-process = { path = "../latent-test-process" }\n')
         for name in ("latent-admission", "latent-scheduler"):
             self.manifest(name, '[dependencies]\nlatent-core = { path = "../latent-core" }\n[dev-dependencies]\nlatent-core = { path = "../latent-core", features = ["test-support"] }\n')
 
@@ -52,6 +55,18 @@ class TestkitDependencyTests(unittest.TestCase):
                     with self.assertRaisesRegex(RuntimeError, "workspace dependency cycle"):
                         subject.main(self.root)
                     cargo.assert_not_called()
+
+    def test_phase4_storage_cannot_select_feature_hidden_testkit_runtime_cycle(self):
+        self.append("latent-state", 'latent-testkit = { path = "../latent-testkit", default-features = false }\n')
+        with patch.object(subject.subprocess, "run") as cargo:
+            with self.assertRaisesRegex(RuntimeError, "workspace dependency cycle"):
+                subject.main(self.root)
+            cargo.assert_not_called()
+
+    def test_neutral_process_helpers_cannot_gain_even_optional_workspace_edges(self):
+        self.append("latent-test-process", '[dependencies]\nlatent-core = { path = "../latent-core", optional = true }\n')
+        with self.assertRaisesRegex(RuntimeError, "neutral latent-test-process helpers"):
+            subject.check_workspace(self.root)
 
     def test_target_specific_optional_and_build_cycles_remain_errors(self):
         for table in ('target.\'cfg(unix)\'.dependencies', "build-dependencies", "dependencies"):
@@ -78,9 +93,10 @@ class TestkitDependencyTests(unittest.TestCase):
             subject.check_workspace(self.root)
 
     def test_selected_graph_rejects_empty_or_heavy_results(self):
-        for output in ("", "latent-core v0.0.0\nwasmtime v48.0.3\n", "latent-core v0.0.0\nlatent-node v0.0.0\n"):
-            with self.subTest(output=output), self.assertRaises(RuntimeError):
-                subject.check_selected("latent-core", output)
+        for package in ("latent-core", "latent-test-process"):
+            for output in ("", f"{package} v0.0.0\nwasmtime v48.0.3\n", f"{package} v0.0.0\nlatent-node v0.0.0\n", f"{package} v0.0.0\nlatent-activation v0.0.0\n"):
+                with self.subTest(package=package, output=output), self.assertRaises(RuntimeError):
+                    subject.check_selected(package, output)
         subject.check_selected("latent-core", "latent-core v0.0.0\ntokio v1.53.1\n")
 
     def test_selected_checks_include_test_dependencies(self):

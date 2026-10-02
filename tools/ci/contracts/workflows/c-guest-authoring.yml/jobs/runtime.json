@@ -94,7 +94,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Preserve exact existing standalone and captured C SDK library isolation qualification plus Phase4 compiler and authored aggregate evidence with both artifact sets. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }
