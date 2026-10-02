@@ -222,6 +222,7 @@ pub(super) fn startup_footprint(
         .resident_bytes
         .checked_add(namespace_bytes)
         .and_then(|bytes| bytes.checked_add(super::STARTUP_APPLICATION_BYTES))
+        .and_then(|bytes| bytes.checked_add(latent_state::protected_store::STATE_MODE_NATIVE_BYTES))
         .is_none_or(|resident| resident > work)
     {
         return Err(invalid("native"));

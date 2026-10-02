@@ -155,6 +155,19 @@ async fn fresh_protected_kernel_creates_checkpoint_before_one_paused_same_owner_
     let snapshot = effects.snapshot().unwrap();
     assert!(snapshot.paused && !snapshot.admission_closed);
     assert_eq!(snapshot.claims, 0);
+    let mode = std::fs::read(
+        fixture
+            .settings
+            .store
+            .root
+            .join(latent_state::protected_store::STATE_MODE_FILE),
+    )
+    .unwrap();
+    assert!(mode.starts_with(b"LSM\0\x01"));
+    assert_eq!(
+        latent_state::store_identity::StoreIdentity::decode(&mode[5..]).unwrap(),
+        fixture.settings.store_identity
+    );
     let checkpoint =
         ExternalCheckpoint::decode(&std::fs::read(fixture.checkpoint()).unwrap()).unwrap();
     assert_eq!(checkpoint.identity(), &fixture.settings.store_identity);
@@ -172,6 +185,46 @@ async fn fresh_protected_kernel_creates_checkpoint_before_one_paused_same_owner_
     assert!(report.store.snapshot.physically_retired());
     assert!(report.native.snapshot.physically_retired());
     assert_eq!(report.namespace_owners, 0);
+}
+
+#[tokio::test]
+async fn missing_persisted_state_mode_refuses_restart_before_any_dispatch_epoch_write() {
+    let fixture = Fixture::new();
+    let (kernel, mut effects) = StateKernel::start(
+        fixture.bootstrap(),
+        &fixture.settings,
+        fixture.authority.clone(),
+        Vec::new(),
+        &AdapterClock::default(),
+        tokio::runtime::Handle::current(),
+    )
+    .await
+    .unwrap();
+    let deadline = fixture.clock.monotonic_now() + Duration::from_secs(20);
+    assert!(effects.shutdown(deadline).await.unwrap().clean);
+    drop(effects);
+    assert!(kernel.shutdown(deadline).await.unwrap().clean);
+    let checkpoint = std::fs::read(fixture.checkpoint()).unwrap();
+    let dispatch = fixture.persisted_dispatch();
+    let mode = fixture
+        .settings
+        .store
+        .root
+        .join(latent_state::protected_store::STATE_MODE_FILE);
+    std::fs::remove_file(&mode).unwrap();
+    let failure = StateKernel::start(
+        fixture.bootstrap(),
+        &fixture.settings,
+        fixture.authority.clone(),
+        Vec::new(),
+        &AdapterClock::default(),
+        tokio::runtime::Handle::current(),
+    )
+    .await;
+    assert!(failure.is_err());
+    assert!(!mode.exists());
+    assert_eq!(std::fs::read(fixture.checkpoint()).unwrap(), checkpoint);
+    assert_eq!(fixture.persisted_dispatch(), dispatch);
 }
 
 #[tokio::test]

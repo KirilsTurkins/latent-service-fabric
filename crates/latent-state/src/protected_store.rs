@@ -5,6 +5,7 @@ mod checkpoint;
 mod config;
 mod custody;
 mod dispatcher;
+mod mode;
 mod native_capacity;
 mod operation;
 mod physical;
@@ -20,6 +21,7 @@ pub use checkpoint::{
 };
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
+pub use mode::{StateModeObservation, STATE_MODE_FILE, STATE_MODE_NATIVE_BYTES};
 pub use operation::ProtectedStoreOperation;
 pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
 pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};

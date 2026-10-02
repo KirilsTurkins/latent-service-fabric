@@ -119,6 +119,25 @@ impl StateKernel {
                 return Err(failure);
             }
         };
+        // The mode leaf uses this actual initializer's sealed Fresh metadata.
+        // Verify it before checkpoint consumes the once-only witness and before
+        // dispatcher history writes. Neither reopened equality nor config may
+        // recreate a missing persisted mode marker.
+        let marker =
+            store.ensure_state_mode_marker(settings.store_identity.clone(), bootstrap.original());
+        let marker = match marker {
+            Ok(marker) => tokio::time::timeout_at(bootstrap.deadline.into(), marker).await,
+            Err(_) => {
+                drop(namespaces);
+                retire_failed_bootstrap(bootstrap).await;
+                return Err(super::unavailable());
+            }
+        };
+        if !matches!(marker, Ok(Ok(Ok(_)))) {
+            drop(namespaces);
+            retire_failed_bootstrap(bootstrap).await;
+            return Err(super::unavailable());
+        }
         let protected = EffectRuntime::start_protected(ProtectedEffectStartup {
             dispatcher: settings.dispatcher.clone(),
             store: Arc::clone(&store),
