@@ -20,6 +20,7 @@ use std::os::unix::fs::PermissionsExt;
 const DEFINITION: &[u8] =
     include_bytes!("../../../../../contracts/state/application-aggregate-v1.schema.json");
 
+mod response;
 mod review;
 
 fn row(key: &RowKey, value: &[u8]) -> Result<(), StoreError> {
@@ -42,6 +43,19 @@ fn source() -> (
 
 fn source_with_clock(
     clock: Arc<dyn ActivationClock>,
+) -> (
+    tempfile::TempDir,
+    ProtectedStoreOwner,
+    NativeCapacityOwner,
+    Arc<NativeReservation>,
+    SnapshotMetadata,
+) {
+    source_with_response(clock, 1024 * 1024)
+}
+
+fn source_with_response(
+    clock: Arc<dyn ActivationClock>,
+    response_bytes: u64,
 ) -> (
     tempfile::TempDir,
     ProtectedStoreOwner,
@@ -75,7 +89,7 @@ fn source_with_clock(
                 NativeReservationRequest {
                     request_bytes: 8192,
                     work_bytes: 9 * 1024 * 1024,
-                    response_bytes: 1024 * 1024,
+                    response_bytes,
                 },
                 clock.monotonic_now() + std::time::Duration::from_secs(30),
             )

@@ -18,7 +18,12 @@ use crate::recovery::snapshot::{
 use crate::store_io::{StoreIoError, StoreIoKind, StoreIoRetirement, StoreIoRetirementWitness};
 
 mod native;
+mod response;
 pub(super) use native::SnapshotFile;
+pub use response::{
+    ProtectedSnapshotManifestFrame, ProtectedSnapshotReceipt, ProtectedSnapshotReceiptJob,
+    SnapshotReceiptOwners, SnapshotReceiptReadFence, SNAPSHOT_RECEIPT_RESPONSE_BYTES,
+};
 
 const RESOURCE_BYTES: u64 = 64 * 1024;
 const WORK_BYTES: u64 = 8 * 1024 * 1024;

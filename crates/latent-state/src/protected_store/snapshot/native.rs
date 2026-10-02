@@ -26,6 +26,7 @@ pub(in crate::protected_store) struct SnapshotFile {
     current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
     migration_owner: Mutex<Option<Arc<dyn crate::protected_store::AggregateMigrationOwners>>>,
     restore_input_owner: Mutex<Option<Arc<dyn crate::protected_store::RestoreInputOwners>>>,
+    receipt_owner: Mutex<Option<Arc<dyn super::SnapshotReceiptOwners>>>,
     original: Arc<NativeReservation>,
 }
 
@@ -86,6 +87,7 @@ impl SnapshotFile {
             current,
             migration_owner: Mutex::new(None),
             restore_input_owner: Mutex::new(None),
+            receipt_owner: Mutex::new(None),
             original,
         };
         result.check().map_err(|_| SnapshotError::Output)?;
@@ -141,6 +143,28 @@ impl SnapshotFile {
 
     pub(in crate::protected_store) fn retain_original(&self) -> Arc<NativeReservation> {
         Arc::clone(&self.original)
+    }
+
+    pub(super) fn retain_current(&self) -> Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync> {
+        Arc::clone(&self.current)
+    }
+
+    pub(super) fn retain_receipt_owner(
+        &self,
+        owner: &Arc<dyn super::SnapshotReceiptOwners>,
+    ) -> Result<(), StoreError> {
+        let mut held = self
+            .receipt_owner
+            .lock()
+            .map_err(|_| StoreError::Unavailable)?;
+        match held.as_ref() {
+            Some(original) if Arc::ptr_eq(original, owner) => Ok(()),
+            Some(_) => Err(StoreError::Conflict),
+            None => {
+                *held = Some(Arc::clone(owner));
+                Ok(())
+            }
+        }
     }
 
     pub(in crate::protected_store) fn retain_migration_owner(

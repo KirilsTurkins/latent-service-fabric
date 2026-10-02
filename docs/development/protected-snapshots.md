@@ -61,6 +61,38 @@ Nested vectors and identity strings are bounded during decoding, before
 allocation. Unknown fields, duplicate fields, row-order changes, trailing data,
 unsupported versions, incomplete streams and checksum mismatches refuse.
 
+`inspect_retained_snapshot` adds a retained metadata response to that same affine
+file and Recovery worker without changing the creator/open/read contracts. It
+requires the exact original snapshot and manifest digests, rereads the original
+stream, checks required immutable artifacts and invokes an installed current
+read/audit reviewer. The same reviewer is retained once on the file; another
+reviewer cannot replace it or refresh its rejected decision. Its final short
+fence must consume the original native read-acceptance gate. IDs and digests are
+preconditions, not permissions or fresh-destination evidence.
+
+The native response reserves 8 MiB before decoding. This conservative finite
+charge covers the closed 1 MiB manifest, bounded namespace/format/artifact
+metadata and one canonical encoded manifest. Capacity refusal happens before
+decoding or returning data and does not quarantine a healthy business store.
+The nonclone `ProtectedSnapshotReceipt` retains actual read/audit and catalog
+inputs, buffer permit and original reservation. `encode_manifest` keeps those
+same owners in `ProtectedSnapshotManifestFrame`, suitable for the existing
+transport `Bytes::from_owner` pattern; it exposes metadata rather than the
+private backup payload. The service still checks present read authority before
+physical delivery. Revocation or original expiry blocks delivery without
+refunding physically retained bytes.
+
+Decoded metadata and encoded bytes die before the original permit/reservation.
+Positive snapshot file retirement can reopen store custody while the response
+still consumes its original global Recovery capacity. Waiter loss retains the
+accepted worker, file and response until actual cleanup. Six source-registered
+schedules cover this split, original deadline during a held review, revocation,
+finite response pressure, exact digest/artifact/current-owner refusal and ignored
+acceptance gates. They use controlled reviewers; native compilation, execution
+and Clippy remain pending the shared compiler hold. Production authenticated
+backup/restore RPC/CLI composition and Fresh/checkpoint approval are separate
+requirements; this adapter supplies neither a restore grant nor a new engine.
+
 The manifest captures every namespace across every tenant in the full unit,
 including distinct tenants using the same namespace name and incarnation.
 Every namespace must be durably quiesced. The metadata tenant describes the

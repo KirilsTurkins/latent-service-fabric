@@ -34,7 +34,11 @@ pub use restore_input::{
 pub use resume::{
     MigrationResumeCommitFence, ProtectedMigrationResumeJob, ProtectedMigrationResumeReceipt,
 };
-pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};
+pub use snapshot::{
+    ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob,
+    ProtectedSnapshotManifestFrame, ProtectedSnapshotReceipt, ProtectedSnapshotReceiptJob,
+    SnapshotReceiptOwners, SnapshotReceiptReadFence, SNAPSHOT_RECEIPT_RESPONSE_BYTES,
+};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
 
