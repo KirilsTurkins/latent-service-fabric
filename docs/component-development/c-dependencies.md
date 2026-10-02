@@ -247,3 +247,25 @@ The [October 1 observation](../development/c-capsule-qualification.md#captured-l
 records actual source and static-archive component runs and these controls at
 their exact inputs. Full maintained SDK, printed-guide and final-source CI
 qualification remain separate requirements.
+
+`c_capsule.py test` and `watch` use the existing frontend commands. When running
+from a staged language recipe, select the separately authenticated standalone
+frontend explicitly:
+
+```powershell
+python ./recipe/tools/c_capsule.py test ./my-c --workspace test-c --environment node --frontend C:/LSF/dist/latent-dev/latent-dev.exe --frontend-sha256 $reviewedFrontendSha --state-root C:/LSF/controller-state
+python ./recipe/tools/c_capsule.py watch ./my-c --workspace test-c --frontend C:/LSF/dist/latent-dev/latent-dev.exe --frontend-sha256 $reviewedFrontendSha --state-root C:/LSF/controller-state --frontend-timeout 3600
+```
+
+Take `$reviewedFrontendSha` from the authenticated installation's executable
+inventory, and keep the whole installed frontend directory unchanged. On Linux,
+use that installation's absolute `latent-dev` path. The wrapper has a 600-second
+default lifetime and a one-MiB combined output bound. These bounds apply to the
+frontend process and leave invocation, deployment and watch-operation budgets
+unchanged. An interrupted or uncertain operation retains its original status;
+use the same frontend's `dev status` and `dev recover` before continuing.
+
+Source invocations retain the same-tree controller seam. Staged recipes require
+both explicit frontend options and never search for another controller through
+`PATH` or Python imports. Executable selection does not authorize a changed
+application recipe or dependency graph; use the existing `dev trust` workflow.

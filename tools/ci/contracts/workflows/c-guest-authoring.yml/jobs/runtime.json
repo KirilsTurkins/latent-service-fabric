@@ -68,7 +68,7 @@
       },
       {
         "name": "Qualify captured C libraries with enforced compiler isolation",
-        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\nLSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_c_static_symbols tools.tests.test_captured_compiler_isolation tools.tests.test_application_dependency_tools\npython3 tools/qualify_c_capsules.py --application-dependencies --static-application-dependencies --output \"$RUNNER_TEMP/c-application-library\"\n"
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\nLSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_c_static_symbols tools.tests.test_captured_compiler_isolation tools.tests.test_application_dependency_tools tools.tests.test_c_dependency_authoring tools.tests.test_c_authoring_frontend\npython3 tools/qualify_c_capsules.py --application-dependencies --static-application-dependencies --output \"$RUNNER_TEMP/c-application-library\"\n"
       },
       {
         "name": "Qualify actual C archive and isolated generated-header rejection controls",
