@@ -111,6 +111,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_watch.py",
-  "reviewReason": "Atomically publish compiler PID readiness and accept only the guarded concurrent state-replacement race; preserve every case, both cancellation reasons, original deadlines and physical reaping assertions",
+  "reviewReason": "Preserve both parents' cases and all original execution/skip guards; reconcile reviewed deterministic fixture and exact dependency staging changes onto b06.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

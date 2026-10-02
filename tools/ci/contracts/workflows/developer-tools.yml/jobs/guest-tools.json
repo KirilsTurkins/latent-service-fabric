@@ -295,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Preserve incoming dependency approval and every compiler/compatibility command; scope runner.temp to supported step env/cache inputs while retaining independently verified archive restore/save behavior. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Reconcile runner-owned compiler-cache step metadata while retaining every parent command, six-language matrix, timeout, original source identity and retained failure evidence.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
