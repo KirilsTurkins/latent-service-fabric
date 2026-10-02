@@ -201,6 +201,35 @@ and explicitly lists missing schema/restore, trap/fuel, precommit cancellation,
 memory exhaustion and full retention-window scenarios. A pass of this focused
 campaign does not complete the full Java or Phase 4 acceptance checklist.
 
+To include the installed schema and terminal-history restore sequence, also pass
+`--recovery-helper /native/transaction_recovery` and
+`--recovery-source-commit <exact-binary-build-commit>`. The helper must come from
+the same source as all five native executables and is hashed before and after
+execution. The conductor waits for actual quiescence and positive physical
+shutdown before each of its twelve offline calls. It supplies the native
+snapshot/manifest digests, original 67-byte views and exact observed restore-window
+acknowledgement to the installed current-purpose reviewer. It never supplies an
+approval, grant or clock-continuity field.
+
+The sequence stages and completes the fixed migration, explicitly resumes it,
+then queries the real V2 Java writer and replays the original V1 commitment and
+business rejection through current result-read authority. It rejects the old
+query minimum. A later V2 command establishes a deliberate post-backup loss
+window before fresh-root restore, current review and explicit resume. Recovery
+must preserve the original result bytes and IDs, invalidate the old query view,
+and return unknown for the lost newer command without rerunning it.
+
+One private bounded recipient observation records its actual GET/PUT counters
+before replies or accepted disconnects. It does not establish LSF commitment or
+recipient delivery. Migration and terminal-history restore/replay must leave
+those counters unchanged, including before recovery review. The recipient keeps
+its original 64-request, 32-retained-record and 69-directory-entry bounds.
+Snapshots and credentials stay in the private output root. The case status and
+remaining-scenario list change only after the actual sequence completes. This
+terminal-effect snapshot does not qualify the separate pending-effect restore
+reconciliation case, nor trap/fuel, precommit cancellation, memory exhaustion,
+full retention expiry or packaged distribution acceptance.
+
 ## Installed native offline actions
 
 On Linux x86-64, `transaction_recovery --request-file <protected-json>` selects

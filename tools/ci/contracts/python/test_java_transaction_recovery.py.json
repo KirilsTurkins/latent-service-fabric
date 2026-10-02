@@ -3,9 +3,14 @@
     "NativeRecoveryOracle.test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement",
     "NativeRecoveryOracle.test_cleanup_failure_preserves_the_original_success_result",
     "NativeRecoveryOracle.test_commit_uncertain_is_not_changed_to_known_not_committed_after_retirement",
+    "NativeRecoveryOracle.test_native_epoch_advance_keeps_original_scope_incarnation_and_other_history",
     "NativeRecoveryOracle.test_native_view_is_copied_exactly_and_never_reconstructed_as_current",
+    "NativeRecoveryOracle.test_optional_recovery_tool_requires_paired_exact_original_native_source",
+    "NativeRecoveryOracle.test_original_cli_generation_refuses_numeric_zero_unicode_and_overflow",
     "NativeRecoveryOracle.test_original_digest_refuses_unbounded_changed_encoding_and_zero_identity",
     "NativeRecoveryOracle.test_report_refuses_approval_fields_booleans_as_counts_and_duplicate_json_fields",
+    "NativeRecoveryOracle.test_restored_selection_retains_catalogs_credentials_clock_and_quotas_without_mutating_original",
+    "NativeRecoveryOracle.test_snapshot_keeps_original_native_manifest_and_refuses_changed_actor_scope_and_approval",
     "NativeRecoveryOracle.test_success_receipt_requires_actual_physical_and_catalog_retirement"
   ],
   "guards": {
@@ -45,7 +50,43 @@
       ],
       "skipSites": []
     },
+    "NativeRecoveryOracle.test_native_epoch_advance_keeps_original_scope_incarnation_and_other_history": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "NativeRecoveryOracle.test_native_view_is_copied_exactly_and_never_reconstructed_as_current": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeRecoveryOracle.test_optional_recovery_tool_requires_paired_exact_original_native_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeRecoveryOracle.test_original_cli_generation_refuses_numeric_zero_unicode_and_overflow": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -81,6 +122,30 @@
       ],
       "skipSites": []
     },
+    "NativeRecoveryOracle.test_restored_selection_retains_catalogs_credentials_clock_and_quotas_without_mutating_original": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeRecoveryOracle.test_snapshot_keeps_original_native_manifest_and_refuses_changed_actor_scope_and_approval": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "NativeRecoveryOracle.test_success_receipt_requires_actual_physical_and_catalog_retirement": {
       "bases": [
         "unittest.TestCase"
@@ -96,6 +161,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_recovery.py",
-  "reviewReason": "Register seven source-only native receipt oracles: closed producer failure enums, actual physical and catalog retirement, original view/digest identity, and refusal to infer node retirement from absence. No Java/native execution qualification is inferred.",
+  "reviewReason": "Preserve all seven original closed receipt and retirement cases; add five source-only original-generation, snapshot attribution, scoped epoch, deliberate root selection and coherent native input refusal cases.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
