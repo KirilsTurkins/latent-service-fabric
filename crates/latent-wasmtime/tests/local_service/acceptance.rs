@@ -134,10 +134,19 @@ async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_c
     assert_eq!(success.consumption.child_calls, 2);
     assert!(success.consumption.cpu_fuel < super::packages::budget().cpu_fuel);
     assert!(success.consumption.peak_memory_bytes <= super::packages::budget().memory_bytes);
+    let actual = value(receipt);
+    if actual != ANSWER {
+        // The recorder already discarded messages, payloads and private details.
+        // Observe the original failure without invoking or accepting another call.
+        eprintln!(
+            "local-service-child-failures {:?}",
+            f.observations.child_failures.snapshot()
+        );
+    }
     let child_failures = f.observations.child_failures.snapshot();
     assert!(child_failures.records.is_empty(), "{child_failures:?}");
     assert!(!child_failures.incomplete);
-    assert_eq!(value(receipt), ANSWER);
+    assert_eq!(actual, ANSWER);
     assert_eq!(f.observations.starts.lock().unwrap().len(), 3);
     f.idle().await;
     let mut request = f.request("one-child-grant", 3);

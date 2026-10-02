@@ -2,6 +2,11 @@
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
   "before": {},
   "coverage": {},
+  "jobId": "guest-tools",
+  "kind": "job",
+  "reviewReason": "Preserve both reviewed compiler cache ownership and incoming retained-dispatch compiler cache selection; all compiler, signed-node, resource and historical obligations remain required. Retain every original guest compiler/application/evidence command, exact source-owned cache environment, and historical obligation while composing incoming bounded cache, browser, and qualification output isolation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-tools.yml",
   "definition": {
     "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
     "name": "Guest tool bundle and maintained application builds (${{ matrix.language }})",
@@ -292,10 +297,5 @@
         }
       }
     ]
-  },
-  "jobId": "guest-tools",
-  "kind": "job",
-  "reviewReason": "Preserve both reviewed compiler cache ownership and incoming retained-dispatch compiler cache selection; all compiler, signed-node, resource and historical obligations remain required.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/developer-tools.yml"
+  }
 }

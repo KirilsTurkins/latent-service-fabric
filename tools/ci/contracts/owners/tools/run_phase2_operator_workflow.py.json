@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_phase2_operator_workflow.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain closed deadline-operation inspection observations in the failed workflow receipt after the existing subprocess and registry cleanup.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "84bfef7775efacb0bba2db710f2bec01c1eda2a144086b986c4e94fee86a1f1b"
+  "sha256": "1c3bbece60e94d95728ccfa9db7cec7038b5d6bfb16e92e0ca3a5872ba883660"
 }
