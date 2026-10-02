@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "TransactionFixtureRecovery.test_current_read_publication_never_changes_original_command_scope",
+    "TransactionFixtureRecovery.test_explicit_attempt_copies_original_input_scope_and_cas_with_observed_fence",
+    "TransactionFixtureRecovery.test_transport_loss_rejection_success_expiry_and_uncertain_abort_cannot_create_an_attempt",
+    "TransactionFixtureWire.test_bounded_lists_and_exact_sixteen_operation_closure",
+    "TransactionFixtureWire.test_optional_zero_and_maximum_versions_use_exact_wire_bits",
+    "TransactionFixtureWire.test_precondition_absence_false_and_present_empty_are_distinct",
+    "TransactionFixtureWire.test_request_and_response_reject_duplicate_unknown_and_wrong_wire_fields",
+    "TransactionFixtureWire.test_utf8_binary_map_and_presence_survive_an_invocation_fixture"
+  ],
+  "guards": {
+    "TransactionFixtureRecovery.test_current_read_publication_never_changes_original_command_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:58f54370db1a3710ba57925cff5be5ac503fdce1f73571eb3993f74771634eb7",
+        "class:setup-sha256:ff92b53b7dcdbac8291be170c3fd7b122801b3bd06ad234143a9ed21ac22947f"
+      ],
+      "skipSites": []
+    },
+    "TransactionFixtureRecovery.test_explicit_attempt_copies_original_input_scope_and_cas_with_observed_fence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:58f54370db1a3710ba57925cff5be5ac503fdce1f73571eb3993f74771634eb7",
+        "class:setup-sha256:ff92b53b7dcdbac8291be170c3fd7b122801b3bd06ad234143a9ed21ac22947f"
+      ],
+      "skipSites": []
+    },
+    "TransactionFixtureRecovery.test_transport_loss_rejection_success_expiry_and_uncertain_abort_cannot_create_an_attempt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:58f54370db1a3710ba57925cff5be5ac503fdce1f73571eb3993f74771634eb7",
+        "class:setup-sha256:ff92b53b7dcdbac8291be170c3fd7b122801b3bd06ad234143a9ed21ac22947f"
+      ],
+      "skipSites": []
+    },
+    "TransactionFixtureWire.test_bounded_lists_and_exact_sixteen_operation_closure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:58f54370db1a3710ba57925cff5be5ac503fdce1f73571eb3993f74771634eb7",
+        "class:setup-sha256:5894341f593bc639bd62ccadd015461ad36feef62b4c8ddef29d2a3ccbcfa57b"
+      ],
+      "skipSites": []
+    },
+    "TransactionFixtureWire.test_optional_zero_and_maximum_versions_use_exact_wire_bits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:58f54370db1a3710ba57925cff5be5ac503fdce1f73571eb3993f74771634eb7",
+        "class:setup-sha256:5894341f593bc639bd62ccadd015461ad36feef62b4c8ddef29d2a3ccbcfa57b"
+      ],
+      "skipSites": []
+    },
+    "TransactionFixtureWire.test_precondition_absence_false_and_present_empty_are_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:58f54370db1a3710ba57925cff5be5ac503fdce1f73571eb3993f74771634eb7",
+        "class:setup-sha256:5894341f593bc639bd62ccadd015461ad36feef62b4c8ddef29d2a3ccbcfa57b"
+      ],
+      "skipSites": []
+    },
+    "TransactionFixtureWire.test_request_and_response_reject_duplicate_unknown_and_wrong_wire_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:58f54370db1a3710ba57925cff5be5ac503fdce1f73571eb3993f74771634eb7",
+        "class:setup-sha256:5894341f593bc639bd62ccadd015461ad36feef62b4c8ddef29d2a3ccbcfa57b"
+      ],
+      "skipSites": []
+    },
+    "TransactionFixtureWire.test_utf8_binary_map_and_presence_survive_an_invocation_fixture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:58f54370db1a3710ba57925cff5be5ac503fdce1f73571eb3993f74771634eb7",
+        "class:setup-sha256:5894341f593bc639bd62ccadd015461ad36feef62b4c8ddef29d2a3ccbcfa57b"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_transaction_node_participant.py",
+  "reviewReason": "Bound original transaction fixture wire, lossless presence/u64 and explicit observed-abort recovery without authorizing execution",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -113,6 +113,11 @@ python3 tools/transaction_client_rust_shapes.py --check
 ```
 
 This source milestone includes six model sets and all six current transport facades.
+The [transaction client node campaign](../testing/transaction-client-node-campaign.md)
+provides maintained participant source and explicit build commands for all six
+clients. The shared fixture vectors preserve full-width integers, original input
+and preconditions, and explicit observed-abort recovery. Native participant builds
+and authenticated node scenarios remain pending.
 Backup/migration and the complete management
 profile operations, separate-node six-client scenario matrix and browser HTTP
 execution remain outstanding. Generated model checks, codec tests and compiler

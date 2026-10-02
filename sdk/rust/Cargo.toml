@@ -40,3 +40,7 @@ required-features = ["transport"]
 [[example]]
 name = "provider_workflow"
 required-features = ["transport"]
+
+[[example]]
+name = "transaction_node_workflow"
+required-features = ["transport"]

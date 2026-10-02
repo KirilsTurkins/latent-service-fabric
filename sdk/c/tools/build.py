@@ -147,6 +147,7 @@ def main():
         "private-config-tests": SDK / "tests/private_config.c",
         "provider-workflow": SDK / "examples/provider_workflow.c",
         "provider-client": SDK / "examples/provider_client.c",
+        "transaction-node-workflow": SDK / "examples/transaction_node_workflow.c",
     }
     for name, source in programs.items():
         if source.exists():

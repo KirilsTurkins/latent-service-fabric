@@ -9,8 +9,10 @@ internal static partial class Program
     private static readonly Profile.CallOptions Defaults = new(null);
     private static int assertions;
 
-    private static async Task<int> Main()
+    private static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--node-fixture") return await TransactionNodeWorkflow(args);
+        if (args.Length != 0) return 1;
         try
         {
             SharedVectors();
