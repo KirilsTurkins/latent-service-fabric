@@ -295,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Preserve the step-owned compiler cache environment and every compiler/application/evidence gate; restrict compiler archive cache publication to an explicit development dispatch as reviewed by the CI performance change.",
+  "reviewReason": "Retain every original guest compiler/application/evidence command, exact source-owned cache environment, and historical obligation while composing incoming bounded cache, browser, and qualification output isolation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
