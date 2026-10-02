@@ -120,23 +120,28 @@ interruption instead of replacing it with cleanup cancellation.
 Three additional normal-suite regressions exercise 40 completed cycles under
 the original 16-call session ceiling, exact import counts, live pending-call
 reservations, cancellation/drop, and malformed sync/async result destinations.
-Their native execution on this repair remains pending. The prior signed Java
-executor failure and its closed `resource-exhausted` receipt are retained; a
-successful source repair alone does not qualify the expanded Java profile.
+The [normal native required-cost controls](../testing/evidence/activation-runtime-required-cost-native-2026-10-02.json)
+passed all ten runtime cases with the fixture enforcing the installed profile's
+100-fuel minimum for every operation. This receipt identifies the integrated
+`acb79889` source, all 7,402 input bodies, normal binaries and unchanged limits.
+The prior signed Java executor failure and its closed `resource-exhausted`
+receipt are retained; these host cases do not qualify the expanded Java profile.
 
 These checks are implementation evidence for #736. Remaining requirements
 include the complete signed cross-tenant, late-wake and node-stop matrix,
 measured cold/active/parked physical owner plateaus, tenant/node fairness,
 standard-language scheduler ports and API-specific error aggregation. ADR-0060
-remains Proposed. Language profiles and the larger #695/#677 qualification gates
-remain open until those requirements are exercised under their exact source,
-compiler, runtime, policy and artifact identities.
+remains Proposed. The #695 research qualification is closed after its separate
+acceptance audit and actual-component evidence. Language delivery and the larger
+#677 qualification gate remain open until their requirements are exercised under
+their exact source, compiler, runtime, policy and artifact identities.
 
 The [retained default HttpClient diagnostic](../testing/evidence/activation-runtime-call-cost-diagnostic-2026-10-02.json)
 places an original-component trap in timer subscription after activation
 registration authority was allowed. Source inspection found that the bridge
-omitted the installed profile's required fuel charge. The narrow cost repair and
-the fixture's matching minimum requirements await native execution. This private
+omitted the installed profile's required fuel charge. The matching minimum is
+now enforced by the ten passing normal host cases. The unchanged default
+HttpClient signed-node replay remains pending physical capacity. The private
 trace used an explicitly older observer and proves neither corrected normal-node
 execution nor the ordinary CLR Task/ThreadPool profile. Original failed normal
 and private attempts remain retained.
