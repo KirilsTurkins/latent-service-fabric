@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_static_sites.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "retained finite generator packages now expose capture budget diagnostics beside unchanged signed inputs",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "bf5d76c43245cfe687c2e390e60dc2f2626ccc9f902bcd0d6a31d734543cff9a"
+  "sha256": "132e857ad9d997a3efef6b779b9cb2204a555d102419e8cb3437b1c34e15ade4"
 }

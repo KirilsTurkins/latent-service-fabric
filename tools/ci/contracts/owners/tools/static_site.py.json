@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/static_site.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Immutable budget uses authoritative finite limits exact encoded manifest bounded descriptor and no rescan; diagnostics excluded from signed inputs",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "bf037162dcb6b332b50f4dd88175425b87bd2b209645e754ad6bddf74daedbd3"
+  "sha256": "27e7d215ffd0205d3b149eae7986f1dc5602510a8c0845b53e7325652391cebc"
 }

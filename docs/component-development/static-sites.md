@@ -81,6 +81,62 @@ fixture at both root and mounted paths. See the
 [capacity decision](../../adr/0045-bound-larger-static-documentation-inventories.md)
 for the coupled package, SBOM, memory and serving limits.
 
+## Review budget headroom before signing
+
+Current development capture tools add `budget` to their JSON inspection output,
+with version `latent.static-site.budget.v1`. The standalone
+[budget schema](../../schemas/static-site-budget.schema.json) describes this
+diagnostic object. For a compact human rendering, use the same capture command
+with `--format human`; it still requires a new output directory:
+
+```sh
+python3 tools/static_site.py --build-output target/site-build \
+  --input static-site.json --output target/site-reviewed-inputs --format human
+```
+
+The summary identifies the capture/web/routing profiles, package name/version,
+exact descriptor and manifest digests, and the operator-supplied source
+observation. Each numeric capture limit includes actual usage, maximum and exact
+remaining headroom. It reports public count, largest file, logical aggregate,
+encoded web manifest, descriptor, paths/segments, exclusions, style identities
+and observations. The five largest public assets sort by size descending, then
+public path ascending for ties. No source directory is rescanned to make the
+report: it uses the already bounded captured bytes and exact encoded manifest.
+
+Every public path contributes its full size even when content digests repeat.
+The separate distinct-digest byte observation describes deduplication only; it
+does not reduce logical admission charges or measure a node's catalog capacity.
+Generated web/capture metadata, package-source and SBOM-input byte counts are
+separate from public bytes and explicitly describe capture inputs before
+assembly. Framework builders may add declared dependency records to the SBOM
+input afterward; final generated inventory bytes are inspected during packaging.
+The standard package projection reserves four of
+256 layers for metadata/SBOM inputs; added custom layers use that same ceiling.
+Final generated package bytes and configured node/catalog capacity are not
+observed by capture and require their own inspection/admission checks.
+
+The JSON/human report is diagnostic output. It is excluded from
+`metadata/static-observation.json`, web metadata, SBOM inputs and signed asset
+bytes. Provenance remains operator supplied, with no framework build or
+reproducibility claim. A failed bounded capture emits its existing error and no
+complete report or package inputs. Neither successful headroom nor a zero
+remaining count proves signing, admission, CSP compatibility or serving readiness.
+
+The maintained framework and finite-generator builders save
+`capture-budget.json` beside their unsigned packages and expose `captureBudget`
+in `summary.json`. The current Node frontend release helper likewise emits
+`capture-budget.json` and includes `captureBudget` in its preparation result
+before the signing request. It binds provenance to the unchanged capture
+observation bytes, rather than including this diagnostic in builder evidence.
+These new helper receipts remain separate from historical alpha.5 qualification.
+
+For the versioned Angular/PrimeNG and Docusaurus recipe, reuse
+[Serve Angular and Docusaurus sites](../how-to/serve-angular-and-docusaurus.md).
+It covers external scripts/styles, the reviewed WOFF2/font preparation above,
+critical CSS and base handling, exact style identities and supported client
+hydration. Keep its maintained examples and pinned dependencies together;
+an arbitrary Angular server bundle is not a static publication recipe.
+
 ## Sitemaps and fonts
 
 Include your generated `sitemap.xml` and sitemap index in the explicit asset
@@ -148,6 +204,59 @@ entry as the SPA fallback. For static-generator output, choose `redirect` with
 `/index.html` as the directory-index document and `{"mode":"none"}` as fallback.
 Include `/guide/index.html` explicitly to serve `/guide/`. A request to `/guide`
 then redirects to `/guide/` with status 308; `/guide/missing` remains 404.
+
+### Optional signed 404 document (development)
+
+The development capture/native tools support an optional finite extension:
+
+```json
+"errorDocument": {"profile": "html-not-found-v1", "document": "/404.html"}
+```
+
+Add it to `static-site-input-v1` and include `/404.html` in the ordinary reviewed
+asset map. Capture copies the same object into `staticRouting.errorDocument`.
+It must name a same-publication admitted `text/html` asset with the normal
+immutable digest, size and count/byte charges. Missing, non-HTML, private,
+hidden, reserved, remote or malformed references fail before publication.
+The profile fixes status 404 and cannot name a renderer or another publication.
+
+This is an optional closed-contract extension, retaining `lsf.web-release.v1`
+and `static-site-v1`. Omitting it preserves existing manifests and empty-miss
+behavior. Older closed readers, including the retained alpha.4/alpha.5 tools,
+reject the new member: use matching development capture, package, admission and
+node tools, then recapture, resign and republish. Do not patch an existing signed
+manifest. Historical release receipts and documentation remain unchanged.
+
+Resolution remains exact signed route, exact asset, directory index, then SPA
+fallback. An eligible navigation that still misses can select the 404 document;
+SPA fallback continues to return its configured 200 entry before this step.
+The error document's own missing/corrupt bytes cannot recurse to another fallback.
+The maintained finite generator emits a styled `404.html`; the pinned realistic
+Docusaurus example selects its existing generated page at root and `/docs`.
+Set all error-page links/assets to the build's reviewed mount, as on other pages.
+
+The error body requires the existing current route, tenant/publication and
+browser admission. With Fetch Metadata present, both `Sec-Fetch-Mode: navigate`
+and `Sec-Fetch-Dest: document` are required. Missing/unknown/partial metadata
+does not qualify; with all Fetch Metadata absent, explicit positive `text/html`
+Accept qualifies. `*/*` alone does not. Malformed Accept or duplicate/oversized
+fields receive the normal bounded 400/431 rejection. Unsupported metadata values
+retain the host's normal empty 403 rejection. Metadata is not authority:
+missing non-HTML filename extensions and the site-local `/api` and `/_lsf`
+namespaces cannot select an error document even with spoofed navigation fields.
+Keep other API namespaces on their more-specific operator-owned API triggers;
+ordinary browser fetch/script/style/image/font requests never qualify.
+
+The response retains 404, host CSP/security headers, the selected HTML's ETag,
+Content-Type and Content-Length, and uses `Cache-Control: private, no-store`.
+HEAD has identical representation metadata and no body. Valid If-Match and
+If-None-Match are ignored for the unsuccessful navigation: no 200, 304 or 412
+upgrade is possible. Malformed preconditions are still rejected. Denied methods,
+unauthorized requests, retired/revoked publications and internal read failures
+keep their ordinary empty rejection responses. The host does not mutate HTML.
+Shared asset-read/cache ownership remains bounded; no guest activation, renderer
+heap, execution cell or per-site worker is created. Current authority is checked
+again before output, including cached error bytes and HEAD.
 
 The operator controls the host and mount in the static HTTP trigger. The signed
 web manifest controls entry, directory indexes and fallback. Changing any routing
@@ -250,6 +359,15 @@ and retains `static-site-receipt.json` with the other delivery receipts. The
 adapter's adversarial tests and the real HTTP tests additionally cover path
 aliases, private outputs, symlinks, saturation, corrupt assets, revocation
 between selection and delivery and blocking-read ownership during shutdown.
+
+For an unconfigured or denied navigation, the node sends an empty, uncached
+403 or 404. Chromium can replace that response with its own privileged error
+document. The browser oracle checks the origin status, zero content length and
+cache policy separately from that document's identity; the bounded HTTP client
+checks the actual origin body. The same required lane runs controlled Chromium
+vectors that reject nonempty origin errors, incorrect status, cacheable errors
+and missing zero-length framing. These vectors validate the oracle; the signed
+publication workflow supplies the real-node evidence.
 
 ## Apply a static publication and recover an operation
 

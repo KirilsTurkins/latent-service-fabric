@@ -168,6 +168,7 @@ fn static_web_upload() -> PackageAdmissionUpload {
                 mode: StaticFallbackMode::Spa,
                 document: Some("/index.html".into()),
             },
+            error_document: None,
         }),
         renderer: None,
     };
