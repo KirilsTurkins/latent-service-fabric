@@ -26,7 +26,7 @@ use latent_node::{
 use latent_policy::capability::PolicyStore;
 use latent_state::{
     namespace::{catalog::NamespaceCatalog, NamespaceQuota},
-    protected_store::{ProtectedStoreConfig, ProtectedStoreOwner},
+    protected_store::{ProtectedStoreConfig, ProtectedStoreOwner, ProtectedStoreStartup},
 };
 use latent_wire::{
     management::LocalManagementPolicy,
@@ -103,7 +103,7 @@ impl StateRuntime {
                 &effect_time,
             ),
         )?;
-        let store = open_store(settings, Arc::clone(&clock)).await?;
+        let store = open_accounted_store(settings, Arc::clone(&clock), &native, &installed).await?;
         let effects = super::super::EffectRuntime::start(
             DispatcherConfig::default(),
             Arc::clone(&store),
@@ -293,6 +293,7 @@ async fn finish_open(
 async fn open_store(
     settings: &NodeSettings,
     clock: Arc<dyn ActivationClock>,
+    validator: super::validation::StartupValidation,
 ) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
     let mut config = ProtectedStoreConfig::bounded_linux(settings.data_directory.join("state"));
     config.create_if_missing = settings
@@ -300,20 +301,55 @@ async fn open_store(
         .as_ref()
         .ok_or_else(super::denied)?
         .create_if_missing;
-    let startup = ProtectedStoreOwner::start_validated_view_with_clock(
+    let mut startup = ProtectedStoreOwner::start_validated_view_with_clock(
         config,
-        4 * 1024 * 1024,
-        super::validate_view,
+        super::validation::STARTUP_VALIDATION_BYTES,
+        move |view| validator.validate(view),
         clock,
     )
     .map_err(|reason| {
         record(Stage::ProtectedStoreAdmission, reason);
         super::unavailable()
     })?;
-    startup.await.map(Arc::new).map_err(|reason| {
-        record(Stage::ProtectedStoreStartup, reason);
-        super::unavailable()
-    })
+    match (&mut startup).await {
+        Ok(owner) => Ok(Arc::new(owner)),
+        Err(reason) => {
+            record(Stage::ProtectedStoreStartup, reason);
+            retire_failed_startup(
+                &startup,
+                std::time::Instant::now() + settings.shutdown_grace(),
+            )
+            .await;
+            Err(super::unavailable())
+        }
+    }
+}
+async fn open_accounted_store(
+    settings: &NodeSettings,
+    clock: Arc<dyn ActivationClock>,
+    native: &NativeCapacityOwner,
+    installed: &[Arc<InstalledTransactionOperation>],
+) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
+    let state = settings.state.as_ref().ok_or_else(super::denied)?;
+    let deadline = std::time::Instant::now() + settings.shutdown_grace();
+    let validator = platform(
+        Stage::StateConfiguration,
+        super::validation::startup(state, deadline),
+    )?;
+    let store = open_store(settings, clock, validator).await?;
+    if let Err(error) = platform(
+        Stage::ProtectedStoreStartup,
+        super::tenant_setup::install(&store, native, &state.tenant_quotas, installed, deadline)
+            .await,
+    ) {
+        retire_startup_store(
+            &store,
+            std::time::Instant::now() + settings.shutdown_grace(),
+        )
+        .await;
+        return Err(error);
+    }
+    Ok(store)
 }
 fn startup_capacity(
     clock: &Arc<dyn ActivationClock>,
@@ -337,6 +373,16 @@ async fn retire_startup_store(store: &ProtectedStoreOwner, deadline: std::time::
     };
     if !drain.await.clean || store.reap_retired_threads().is_err() {
         store.quarantine();
+    }
+}
+async fn retire_failed_startup(startup: &ProtectedStoreStartup, deadline: std::time::Instant) {
+    startup.close();
+    let Ok(drain) = startup.drain_async(deadline, tokio::time::sleep_until(deadline.into())) else {
+        startup.quarantine();
+        return;
+    };
+    if !drain.await.clean || startup.reap_retired_threads().is_err() {
+        startup.quarantine();
     }
 }
 fn management(

@@ -16,6 +16,70 @@ deployment, binding, signed companion digest, namespace incarnation,
 result policy, and bounded state-policy IDs. Optional entity and route values
 are fixed installation constraints. No configuration field grants access.
 
+Populated `operations` require explicit `tenantQuotas` for every selected tenant.
+There are at most 32 declarations, each with all twelve finite integer limits.
+The following `state` object selects the disposable `examples` tenant used by the
+maintained Java transaction configuration. Supply the actual protected absolute
+checkpoint path and separately admitted operations for a deployment:
+
+```json
+{
+  "formatVersion": 1,
+  "createIfMissing": true,
+  "configurationEpoch": 1,
+  "clockCheckpoint": "/var/lib/lsf/clock-checkpoint.json",
+  "operations": [],
+  "tenantQuotas": [{
+    "tenant": "examples",
+    "limits": {
+      "stateKeys": 8192,
+      "stateBytes": 16777216,
+      "tombstoneKeys": 8192,
+      "tombstoneBytes": 16777216,
+      "resultRows": 8192,
+      "resultBytes": 16777216,
+      "effectRows": 8192,
+      "effectBytes": 16777216,
+      "payloadBytes": 16777216,
+      "recoveryBytes": 8388608,
+      "metadataRows": 8192,
+      "metadataBytes": 16777216
+    }
+  }]
+}
+```
+
+These are aggregate ownership ceilings across a tenant's namespaces, including
+original promised result, effect, payload, recovery and metadata capacity. They
+are not remaining execution fuel. The original physical file, row and native
+worker limits also apply. A separate fixed allowance admits at most 64 rows and
+256 KiB of producer-validated global control metadata; foreign rows fail closed.
+
+Before starting deferred dispatch, protected initialization compares the exact
+installed declarations and durable tenant counters with every producer-validated
+row during the original linked full walk. Dispatcher/control prefix checks stay
+in place. The validator reserves the original 4 MiB plus 128 KiB for at most 32
+bounded counter originals, declarations and the installation guard, inside the
+unchanged 40 MiB initialization-job and 128 MiB retained-owner limits. A diagnosis
+uses this same settings-bound read-only validation and does not install quotas.
+
+A fresh store installs its reviewed quotas through the existing reserved recovery
+writer before effect startup or namespace creation. Installation prepays 32 KiB
+of request capacity, 256 KiB of work and an 8 KiB fixed retained margin. Accepted
+physical work keeps that original native owner until retirement; the final
+publication checks its original deadline and each retained publication's current
+eligibility. Exact installation replay does not increment generations or rewrite
+counter bytes. Changed or omitted declarations, orphan accounting, validly
+encoded counter drift and unowned rows refuse startup without reconstruction.
+An empty `operations`/empty-quota bootstrap accepts no existing business or
+accounting rows. Existing legacy business data needs separately reviewed migration
+and cannot be upgraded implicitly during startup.
+
+The original native lease also survives physical completion through a fresh
+deadline/publication check before installer success. A late or refused completion
+retains any already committed accounting rows, closes/drains startup and grants
+no readiness. It does not erase durable outcomes or replace the original lease.
+
 The loader retains the actual admitted signed package and requires an Asset
 named `transaction-binding.json` with media type
 `application/vnd.latent.transaction-binding.v1+json`. Its declared digest must
