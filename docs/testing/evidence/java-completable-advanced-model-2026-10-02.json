@@ -1,0 +1,1036 @@
+{
+  "schemaVersion": "latent.sdk.java.completable-advanced-model-evidence.v1",
+  "implementationSourceCommit": "a2d102b4ab0fc7fe32518d39fcfd4d336a179ab6",
+  "publicCancellationReportingRepairCommit": "f0cddb7282d90fe77199b58927ec0e09df043565",
+  "precedingTimedDelayedImplementationSourceCommit": "ef6e14fb4668c1d57516cfe83cbc67535076ace0",
+  "status": "source-reporting-pair-and-independent-model-pass-full-control-run-task-capacity-failure",
+  "sdkInputFiles": 130,
+  "sdkInputBytes": 580450,
+  "sdkInputs": {
+    "bindings.lock.json": {
+      "bytes": 973,
+      "sha256": "sha256:82250bf8bc0dfd03e836f03d25b6304e5cc4e52c4825ed8983ee80af70c82966"
+    },
+    "compiler.gradle": {
+      "bytes": 1514,
+      "sha256": "sha256:a088e5d7049510389915cef55dc7833f0415155a847373a67be8b4da651840ef"
+    },
+    "conformance/Capsule.java": {
+      "bytes": 1834,
+      "sha256": "sha256:82f5e8143b3d4288219eb8a8cf3a1f44655fa78e1cb2c67463728084046af086"
+    },
+    "conformance/world.wit": {
+      "bytes": 631,
+      "sha256": "sha256:290940b6f20b5fd15488dcbe38bde3d7d215768d6dfc75783acfe669d58e8349"
+    },
+    "examples/blob.java": {
+      "bytes": 2305,
+      "sha256": "sha256:926cdffdd0318189985a7086967d8a5572242fa60defbbdaa703dab032a5a868"
+    },
+    "examples/callee.java": {
+      "bytes": 378,
+      "sha256": "sha256:3fbf1754232b3d4f2b4062da7dd77d2309cd46666e12f942b66a1bb55b411155"
+    },
+    "examples/events.java": {
+      "bytes": 1116,
+      "sha256": "sha256:2ea114adc1bcaca4cc28fb8601a5a2146f6a31b6dc8524a6b939080649f82084"
+    },
+    "examples/http.java": {
+      "bytes": 1025,
+      "sha256": "sha256:4e09ae99bc29ee215c86024c749439746fa8348e259b92959fd66a70c928cd55"
+    },
+    "examples/metrics.java": {
+      "bytes": 959,
+      "sha256": "sha256:9e94b7e71c99aa7638dcad202e518f8c6813608be6b58cf2bfaedc4acd3d758c"
+    },
+    "examples/random.java": {
+      "bytes": 798,
+      "sha256": "sha256:214efd6b32fe87bc1a3ab5dd78c5ac51209acc72025d1dd09861090414d49cb7"
+    },
+    "examples/secrets.java": {
+      "bytes": 1548,
+      "sha256": "sha256:36597a1cf38d7fc73505587304ad1726e6c78aea24bb8c715af7a9c91c20f24d"
+    },
+    "examples/service.java": {
+      "bytes": 1550,
+      "sha256": "sha256:05a4bf812b64f1dfbbc753867901c58cbfed12b3baf7c9c354b94ebc8dd7704a"
+    },
+    "examples/streaming.java": {
+      "bytes": 1971,
+      "sha256": "sha256:326ebca705f52d657e85e0af5b4af947be66c0de1a129ba498e1aa68049ad8b7"
+    },
+    "feasibility/.gitignore": {
+      "bytes": 18,
+      "sha256": "sha256:93579b58fc86ec5cba9cf7479f71821e42339affb3f040689e93d156d41f290c"
+    },
+    "feasibility/bridge.c": {
+      "bytes": 980,
+      "sha256": "sha256:c2d02146b56554e24dd85b5d31f2d7979464b21d3d4489722d4c15f03264c9e0"
+    },
+    "feasibility/build.gradle": {
+      "bytes": 1597,
+      "sha256": "sha256:ab17bfdc9cd20d51c74c57b35f64a0df70a054fa072f831e8f68701a2f550341"
+    },
+    "feasibility/closed-runtime.wat": {
+      "bytes": 1191,
+      "sha256": "sha256:5cc7f5b37abb698acc319a9ae1589fbbb54788abf46c0027fb0933bd2e6e0874"
+    },
+    "feasibility/dependencies.lock.json": {
+      "bytes": 16525,
+      "sha256": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4"
+    },
+    "feasibility/gradle/verification-metadata.xml": {
+      "bytes": 46640,
+      "sha256": "sha256:2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30"
+    },
+    "feasibility/platform.c": {
+      "bytes": 480,
+      "sha256": "sha256:d5d3662aa5def128b7858e61c5746038a26d47a409c22bb731bc72fbed336aad"
+    },
+    "feasibility/settings.gradle": {
+      "bytes": 127,
+      "sha256": "sha256:23755faa9365a644fa70a39f8a1ef83e99422914fc67b85d6df51e60984d7982"
+    },
+    "feasibility/src/main/java/dev/latent/guest/NativeEntrypoints.java": {
+      "bytes": 738,
+      "sha256": "sha256:f6f58ab9c90d59490953f167a9c38779001325f4df93e62e7eb417e2d82c5588"
+    },
+    "feasibility/src/main/java/dev/latent/guest/Probe.java": {
+      "bytes": 1840,
+      "sha256": "sha256:02e0a6911b72e3ba7cd1c7df651df1572a75fa409e1ba75136e04f42a161e557"
+    },
+    "feasibility/wit/world.wit": {
+      "bytes": 444,
+      "sha256": "sha256:d569e23879f53ca23e42fc6f5de4a703a254411c6139f09055b9e662f2994b5a"
+    },
+    "fibers/analysis/SourceOrigins.java": {
+      "bytes": 4125,
+      "sha256": "sha256:ea08f33555c785740a1c132987525ceb3ac98d32673a9350f4d73fc312041c5b"
+    },
+    "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java": {
+      "bytes": 873,
+      "sha256": "sha256:fc7253b0e968b1d9d961a14f72ae3a7a1d32ffdd61eb3d9be4e9c3e16c79b278"
+    },
+    "fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java": {
+      "bytes": 10375,
+      "sha256": "sha256:4820f3b9a4a76c22b6c6110488c98f7094fae05f4d4c628513206491b057a587"
+    },
+    "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java": {
+      "bytes": 9381,
+      "sha256": "sha256:8b97f32245f484cfee16e265c8d0d4e57a72116b3b79a857b121acb7a7de73c1"
+    },
+    "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java": {
+      "bytes": 1334,
+      "sha256": "sha256:7f5c0b54e8ec17ac62f79224914105da4085cb8f73792c025cb27786240006f4"
+    },
+    "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java": {
+      "bytes": 9183,
+      "sha256": "sha256:ff3318393a22fac68998cf7ba6e219e71f454e6e5bf53162ae583f07a5609161"
+    },
+    "fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java": {
+      "bytes": 3528,
+      "sha256": "sha256:c8942a70c5f6b0dd789474f7238eb0db2e2dce9ff02561d52c6e9d4b858f202e"
+    },
+    "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java": {
+      "bytes": 3945,
+      "sha256": "sha256:e8e69c388a711c5630c0adc8b4f10e2ab913f27dacb5bc524ab1ac67e23bbc98"
+    },
+    "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java": {
+      "bytes": 4229,
+      "sha256": "sha256:33f89cb353b7a2a01049d883094872a5d8ff60e6ee48bef39da42f45221a9e81"
+    },
+    "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java": {
+      "bytes": 7510,
+      "sha256": "sha256:e0f0c8a78d0b51b46c9d671c93e085717750934af415aa9a46d18e710c3b64f8"
+    },
+    "fibers/conformance/Capsule.java": {
+      "bytes": 12668,
+      "sha256": "sha256:6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8"
+    },
+    "fibers/conformance/compiler/CompletableFutureAdvancedModelControl.java": {
+      "bytes": 15568,
+      "sha256": "sha256:9b89d5f7fb5adae6338437c60592f40eea9058ff66ca36075903b2ee7ae9cedf"
+    },
+    "fibers/conformance/compiler/CompletableFutureCancellationReferenceControl.java": {
+      "bytes": 3442,
+      "sha256": "sha256:a7778ac8ff795707dc8dd140437e4f4d67c09c9567488ad728c4a1056157ad7b"
+    },
+    "fibers/conformance/compiler/CompletableFutureDelayedManagedControl.java": {
+      "bytes": 2616,
+      "sha256": "sha256:2ecd5e7143e0065c019a010395eb5fe887293620dbafda253fb56b5874c9d6f4"
+    },
+    "fibers/conformance/compiler/CompletableFutureDelayedNativeControl.java": {
+      "bytes": 5352,
+      "sha256": "sha256:f9debdf09a31331f14678f2f0993f2a535ac82269e7a6be80cb9de689812c9b3"
+    },
+    "fibers/conformance/compiler/CompletableFutureDelayedOwnerControl.java": {
+      "bytes": 8417,
+      "sha256": "sha256:a20d50ea7f0082f950bfdbed299a3b018c5db616bb823cb4c084d3889bc076c2"
+    },
+    "fibers/conformance/compiler/CompletableFutureDelayedReferenceControl.java": {
+      "bytes": 3799,
+      "sha256": "sha256:5df47ff8b1be873358efe39e0b4be51b868afc526f7bd74b05b613950462334c"
+    },
+    "fibers/conformance/compiler/CompletableFutureDelayedUncertainControl.java": {
+      "bytes": 1981,
+      "sha256": "sha256:7f9446f99ef8e3c250c6a1edc360e1f3559c82289f1f373488c551cbfd8ef5e6"
+    },
+    "fibers/conformance/compiler/CompletableFutureModelControl.java": {
+      "bytes": 14370,
+      "sha256": "sha256:8524af8f6945912baacf6a533b89487b61f431f11956b8e67c2d3c46ec66831e"
+    },
+    "fibers/conformance/compiler/CompletableFutureNativeControl.java": {
+      "bytes": 11705,
+      "sha256": "sha256:da3ba1825f109a9424e5fcc51c54f68d3dd0bd3229434301b845e47a28a97f2a"
+    },
+    "fibers/conformance/compiler/CompletableFutureOwnerControl.java": {
+      "bytes": 10393,
+      "sha256": "sha256:ac9e61fb0fc4aa8b81efbbcde717989a8d6bf406486e0afb758d695643ea0e5f"
+    },
+    "fibers/conformance/compiler/CompletableFutureTimedLateReferenceControl.java": {
+      "bytes": 4787,
+      "sha256": "sha256:5a239eba7530833fced1ddbe7d5df5783403c95a955bab36ddebd20c458c67f6"
+    },
+    "fibers/conformance/compiler/CompletableFutureTimedNativeControl.java": {
+      "bytes": 6504,
+      "sha256": "sha256:3424b94bd45627ecf08114d45a9ae13722e262dfc8bc56a94cfdd5a0ffa82534"
+    },
+    "fibers/conformance/compiler/CompletableFutureTimedOwnerControl.java": {
+      "bytes": 5565,
+      "sha256": "sha256:2600a7284e5a064c9d65ad524229e38f25fb8795b6279c6cdeeedc47c980cc08"
+    },
+    "fibers/conformance/compiler/source-control/dev/latent/generated/Bindings.java": {
+      "bytes": 227,
+      "sha256": "sha256:c281b00345890e252b4f48bc379ea4255bddae8ff780adaf70c198aaa2595f4d"
+    },
+    "fibers/conformance/compiler/source-control/dev/latent/guest/runtime/Activation.java": {
+      "bytes": 5585,
+      "sha256": "sha256:280c2864bc8a2506b1bfc66e0bc7183af6083c7cff424500bf51f71920724237"
+    },
+    "fibers/conformance/compiler/source-control/dev/latent/guest/runtime/concurrent/Executors.java": {
+      "bytes": 1171,
+      "sha256": "sha256:3d9e0c6287e6a550bccb4361600677b0abe735ae4eacd7f02a661ca83d1914b8"
+    },
+    "fibers/conformance/compiler/source-control/org/teavm/dependency/LambdaEmitterControlContext.java": {
+      "bytes": 2366,
+      "sha256": "sha256:62946adf455a102ed57550b933d5832894299551a484c6a9652e55d26262ca43"
+    },
+    "fibers/conformance/compiler/source-control/PrivateSourceRunner.java": {
+      "bytes": 362,
+      "sha256": "sha256:c17f10e805098a2d75924349b850e580c6c6d61fa6917bbfd7301742ffd37cd1"
+    },
+    "fibers/conformance/compiler/ThrowableInitializationControl.java": {
+      "bytes": 5517,
+      "sha256": "sha256:054d9c090494b09886c68cac7a9c6692571680c135b2cc0a0aaab492331b298f"
+    },
+    "fibers/conformance/compiler/TimeUnitModelControl.java": {
+      "bytes": 7100,
+      "sha256": "sha256:0c3ce1612aefbe767dd76561fca4eccf134723b73b17f6dea0fa5174add62304"
+    },
+    "fibers/conformance/compiler/TimeUnitNativeControl.java": {
+      "bytes": 2437,
+      "sha256": "sha256:c0b184f181cb90458118cd5c6ecaff0b9102e02a02c22a757b6256995b8e0f18"
+    },
+    "fibers/conformance/compiler/WaitFrameModelControl.java": {
+      "bytes": 17508,
+      "sha256": "sha256:e6f87114da8deb730fcdc534f0bcef15b246a54326a1ee4a6d5608243dfc95b9"
+    },
+    "fibers/conformance/compiler/WaitFramePluginOrder.java": {
+      "bytes": 580,
+      "sha256": "sha256:c7b55b90997026a26068ef354cb9b6f19c164bf3ea29848abc98f6c100024933"
+    },
+    "fibers/conformance/completable/Capsule.java": {
+      "bytes": 6091,
+      "sha256": "sha256:332d25d65c8835f201d253c5f6d266c2bfb7aa94b5e4bad92f252ad97b4b2c81"
+    },
+    "fibers/conformance/completable/Main.java": {
+      "bytes": 616,
+      "sha256": "sha256:5d176eccd17d12d61b8fb05de2272c5bec8f033715b8ee0daca3c7f823e19149"
+    },
+    "fibers/conformance/Main.java": {
+      "bytes": 843,
+      "sha256": "sha256:a96aca25de5763b79e0a38c8198d8fdb31be39c041f4379975b3b45238077b55"
+    },
+    "fibers/conformance/service.wit": {
+      "bytes": 340,
+      "sha256": "sha256:14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236"
+    },
+    "fibers/dev/latent/guest/runtime/Activation.java": {
+      "bytes": 12279,
+      "sha256": "sha256:0459860239c8e628b8c4c26fb2ee69cf443fe5bfb7e13df6d4c549240dc63ffa"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/AbstractExecutorService.java": {
+      "bytes": 6647,
+      "sha256": "sha256:3654119185bc8dbef26f1e28a310395cef9f5fbe851e4534fc15b0387be25ece"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/CompletableFuture.java": {
+      "bytes": 40160,
+      "sha256": "sha256:5bdab80025cf17527c91b410da1cc0bf94280e9ab5b35e5b55ac1d7001f94cd0"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/CompletionException.java": {
+      "bytes": 452,
+      "sha256": "sha256:e745f58e7e0e41d42b55303d2a7329799348a0ab77a2cde81810466a3d256482"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/CompletionStage.java": {
+      "bytes": 4596,
+      "sha256": "sha256:e980415748ea784a24510b3916ecedb7747d692dd9267459e0587e085c827140"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/Executors.java": {
+      "bytes": 2026,
+      "sha256": "sha256:f1f0173e8f335675fdefe64aaf6d16d907044b7bbd660fd28b7b06ac4729bd50"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/ExecutorService.java": {
+      "bytes": 1609,
+      "sha256": "sha256:c115a8e148278b324414a8ad4b4ad3cda23ce8daaf9e58ba40581b72ea6805bb"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/Future.java": {
+      "bytes": 1746,
+      "sha256": "sha256:4a688803e8209e56ce331ece8291740cfee79d63e063fbab441aa6dd36e87f76"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/FutureTask.java": {
+      "bytes": 5953,
+      "sha256": "sha256:e5c19c5fe00bd0d773c51ac1635a30e59299c2d3d60e412c3f0e026ce116d5c3"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/ManagedExecutor.java": {
+      "bytes": 7651,
+      "sha256": "sha256:5d818112205e7c62ee93fa06dd437a6595bebc4d4544ca9428e99bf1d32a7900"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/RejectedExecutionException.java": {
+      "bytes": 403,
+      "sha256": "sha256:e21010bc97c6990e75877998547ed8bef4c185294a3feb3e3b1d5b16c622b4ba"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/RunnableFuture.java": {
+      "bytes": 133,
+      "sha256": "sha256:cf3e9e8bab8aecf190dab76e5f7e7e4333057b65ea9112670dd6cb8521fd6328"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/ThreadFactory.java": {
+      "bytes": 117,
+      "sha256": "sha256:1aed06e12da6b8111a47dbc2266ee0eb0d51db5f4a9c25e9e59eb70c3cd4e0b6"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/TimeoutException.java": {
+      "bytes": 195,
+      "sha256": "sha256:9b0d6e7a88746f81b0fdb8804d25a727459db8463d35738afcfee3830a3ae462"
+    },
+    "fibers/dev/latent/guest/runtime/concurrent/TimeUnit.java": {
+      "bytes": 4554,
+      "sha256": "sha256:6c829473167d1cbe05f4fcb858a0f5f355209711ee3959ec58f2d6c569ac1ab1"
+    },
+    "fibers/dev/latent/guest/runtime/lang/IllegalThreadStateException.java": {
+      "bytes": 317,
+      "sha256": "sha256:83947523c65623a32529382307165d76e834cbb7db43f0fdd49b541b8ce2b5ee"
+    },
+    "fibers/dev/latent/guest/runtime/Monitors.java": {
+      "bytes": 4300,
+      "sha256": "sha256:a802e5a589cb04937e119ee33eb5436de7a2241e2b460750e453a1baef32aaf6"
+    },
+    "fibers/services/META-INF/services/org.teavm.extension.spi.substitution.SubstitutionPolicy": {
+      "bytes": 54,
+      "sha256": "sha256:63aeefe90f3f53194148af50cd1979161641af701e99afcaf933f7d47f331722"
+    },
+    "fibers/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": {
+      "bytes": 48,
+      "sha256": "sha256:fc6191902956c60cc7a13507ed9e3cba8f233269ff133bc41aa9882e06ea1410"
+    },
+    "README.md": {
+      "bytes": 8857,
+      "sha256": "sha256:15c8f1592af74cb68b665f79f7d98bfff574cf285c6c6f87695be9f9eca42aa7"
+    },
+    "runtime/bridge.h": {
+      "bytes": 3641,
+      "sha256": "sha256:66428dca085509e2aa2aa543af4927949f8f1176255351a6e24b73641b078ec3"
+    },
+    "runtime/dev/latent/guest/Handle.java": {
+      "bytes": 949,
+      "sha256": "sha256:5d00dda66f7c167bd8e7f3e98d8e5be5c69225b8cd4744426f2dcabc1d63a63a"
+    },
+    "runtime/dev/latent/guest/Option.java": {
+      "bytes": 502,
+      "sha256": "sha256:aa45393e65f74c005bdb2e0b9ac32a5a4e8b717090bc4c1ff8b9ec7cda681468"
+    },
+    "runtime/dev/latent/guest/Resource.java": {
+      "bytes": 1231,
+      "sha256": "sha256:5ec05ea064c1ff25a4af8c3ff2948beef46ba3e711a956016481fb2b65449da2"
+    },
+    "runtime/dev/latent/guest/Result.java": {
+      "bytes": 981,
+      "sha256": "sha256:0a65cdf987fe048f3d467a090662b4ab4d340b74bdcb35598ca4f7e2c6142743"
+    },
+    "runtime/dev/latent/guest/SensitiveBytes.java": {
+      "bytes": 555,
+      "sha256": "sha256:27cf682fc87999875f81611c9575674e2e43bfee0e1fe55950e357ceec83f870"
+    },
+    "runtime/dev/latent/guest/Text.java": {
+      "bytes": 992,
+      "sha256": "sha256:0d1909cfe30b5cf0fb0a312ac03fbced5171c4c5e971d43f6d736e46872920cc"
+    },
+    "runtime/dev/latent/guest/Unit.java": {
+      "bytes": 53,
+      "sha256": "sha256:4fbf8085595c1c3f7c5494e3ce1efcb0a738161960863e85d24b0489a7500cf8"
+    },
+    "runtime/dev/latent/guest/Unsigned64.java": {
+      "bytes": 725,
+      "sha256": "sha256:dfd26b2b11e82aa30a2cfacf95d05d30ca1b9473f8fa4391065d7653ac693fb5"
+    },
+    "runtime/dev/latent/guest/Wire.java": {
+      "bytes": 6322,
+      "sha256": "sha256:e172958b5869bbf93a8766e65f1c074cdaa9136df19b68a4d9ac5db9a64458e3"
+    },
+    "runtime/native.h": {
+      "bytes": 306,
+      "sha256": "sha256:cdbf1bdf723470622a1d27e8b9e6034a4781aa6787c0d80aa872f3680ceeb5a1"
+    },
+    "server/analysis/ServerAnalyzer.java": {
+      "bytes": 21508,
+      "sha256": "sha256:772ae8f4f718ca410738e78eb9421e45e9a0cabf11bc4157a262f99357e93395"
+    },
+    "server/compiler/dev/latent/guest/server/compiler/ServerPlugin.java": {
+      "bytes": 2188,
+      "sha256": "sha256:4246ac20a4c21c5a150ed1f059153f75bcb990ae66969655c941cd65d53bbf70"
+    },
+    "server/compiler/dev/latent/guest/server/compiler/ServerSubstitution.java": {
+      "bytes": 897,
+      "sha256": "sha256:483fe84624df6f79152ff69fc2b8721ce2c660e0e379e2467b7a2638ca4d48e0"
+    },
+    "server/dev/latent/guest/server/http/Headers.java": {
+      "bytes": 3911,
+      "sha256": "sha256:6da1f6d198e54bc633f105f0df5435457132ba4608142905d86373ddcc30d8fc"
+    },
+    "server/dev/latent/guest/server/http/HttpContext.java": {
+      "bytes": 837,
+      "sha256": "sha256:fe9a9da991c3f4d9d49c39758bf4bc73dd8943e4d2ab577e47f3ccb3dd1a3b14"
+    },
+    "server/dev/latent/guest/server/http/HttpExchange.java": {
+      "bytes": 8859,
+      "sha256": "sha256:1efb3e2b9551d65e9e11100ad481ae92c5db8ddca15bdcc5f5c4340df82a7331"
+    },
+    "server/dev/latent/guest/server/http/HttpHandler.java": {
+      "bytes": 181,
+      "sha256": "sha256:3fea23b3c8b978170eca701be3ab5fef603d6bb8bb6c4561c90b81bca228075c"
+    },
+    "server/dev/latent/guest/server/http/HttpServer.java": {
+      "bytes": 5351,
+      "sha256": "sha256:b3269969f2586abb102f56f5f0ef0378557263bbe1a28bed034c2cc140fec33b"
+    },
+    "server/dev/latent/guest/server/http/ServerSession.java": {
+      "bytes": 1300,
+      "sha256": "sha256:777a4cc4f820d0663d13c61fa06fd1acc109be055a6394f6cde275ffb2124df8"
+    },
+    "server/dev/latent/guest/server/net/InetAddress.java": {
+      "bytes": 1141,
+      "sha256": "sha256:74d701369d130ea81f7f9c35b9baf6befd6a91e544abae20ca495b009ef301ad"
+    },
+    "server/dev/latent/guest/server/net/InetSocketAddress.java": {
+      "bytes": 1824,
+      "sha256": "sha256:994f142ef502bab2608cffbe46e66552a04d8ba04cbf18f199229326804ea41b"
+    },
+    "server/dev/latent/guest/server/net/SocketAddress.java": {
+      "bytes": 233,
+      "sha256": "sha256:3cc5189d87ac04d8235eb51ceeafe248251ccdf71c2aa688c44b767e24d92d22"
+    },
+    "server/services/META-INF/services/org.teavm.extension.spi.substitution.SubstitutionPolicy": {
+      "bytes": 52,
+      "sha256": "sha256:a6eb63f9ae2476f7a3860488a805e585cccb413d7100b1bc563be2c2af4c2da1"
+    },
+    "server/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": {
+      "bytes": 46,
+      "sha256": "sha256:cc3f5ed31c1f82703c77282c6414f5026f06c1a7b4141f69210462124f6c594f"
+    },
+    "server/templates/Capsule.java": {
+      "bytes": 2690,
+      "sha256": "sha256:18d4a66f11bae7f68ebb9a85a2054d6d0a24872bd3f570788131145d3ff15fda"
+    },
+    "server/templates/Server.java": {
+      "bytes": 643,
+      "sha256": "sha256:2a6ab95d8f76295a5e19cf15850cc3e6719d353d68a8664c79407468577cec12"
+    },
+    "templates/greeting.java": {
+      "bytes": 571,
+      "sha256": "sha256:b3ef5de6dd9c15fc8c292112b657375b55e07722296a387bf0fe776ccbd95b62"
+    },
+    "templates/http-status.java": {
+      "bytes": 801,
+      "sha256": "sha256:d9fd6b5f0a8e1b2f138a1ace7bce59ef86757663184ee5b47bc5b77e98c1e9a6"
+    },
+    "templates/recovery.java": {
+      "bytes": 735,
+      "sha256": "sha256:93fa2fe75d40c688ed730666a4d4d4551fd398356852daf7ee0f6dea3c045b95"
+    },
+    "templates/shipping.java": {
+      "bytes": 445,
+      "sha256": "sha256:52c40e4a0af92515a923d0d53c2f2d5adfd712e82319206b2d4037370a5cd127"
+    },
+    "templates/word-count.java": {
+      "bytes": 785,
+      "sha256": "sha256:36924c01937175faa45beff0c09f716b40e85f4b3a988b207077eb434fd26334"
+    },
+    "tests/Ownership.java": {
+      "bytes": 2099,
+      "sha256": "sha256:3fe507272d73ef8431c2ae10695321f5e9b87abfa799f10435c7701e1ac998b5"
+    },
+    "tests/probes/CSpillDeclarations.java": {
+      "bytes": 778,
+      "sha256": "sha256:5459412789e1d821f359151af9d82dd5b4f94b26764f50983ab64d8886bf9f33"
+    },
+    "tests/test_bindings.py": {
+      "bytes": 6675,
+      "sha256": "sha256:534af0bcaab0623ca1c285b062ad4f207b6141ae9ebd03ce1641ef61eb880bf3"
+    },
+    "tests/test_compiler.py": {
+      "bytes": 9806,
+      "sha256": "sha256:4ca28d7176090ca4859cdea0699975c4e988c78d822ae8cb376be3ca27342a74"
+    },
+    "tests/test_dependencies.py": {
+      "bytes": 7226,
+      "sha256": "sha256:148e83cb3d31c9a6cef641edde8d6ffaed39879f3ce33ec3664fc3275193644f"
+    },
+    "tests/test_exception_array_spills.py": {
+      "bytes": 4050,
+      "sha256": "sha256:9c751763dc233c62c60862d028e8d3e1307dfae38b4a12b95aeaf2b9355a763f"
+    },
+    "tests/test_exception_spills.py": {
+      "bytes": 5788,
+      "sha256": "sha256:cf200db4b536a5a9a2396f0f21fc1b72ebaa989d0f64397b790739f74ef53976"
+    },
+    "tests/test_feasibility.py": {
+      "bytes": 6853,
+      "sha256": "sha256:71a9f377ce4d1a41c38cec25a8c66883ad215caeac7f69301b16f52604b49d64"
+    },
+    "tests/test_platform.py": {
+      "bytes": 1407,
+      "sha256": "sha256:763fd598a9faf36a799942e895d6c2dc7b1e47630182ed9eea9a6e6e32ee4c23"
+    },
+    "tests/test_projects.py": {
+      "bytes": 4062,
+      "sha256": "sha256:2c9344adfd0e63766798a36fa1c4379bfdcddde1301de0baa2a94927194b9a3e"
+    },
+    "tests/test_qualification.py": {
+      "bytes": 26878,
+      "sha256": "sha256:9f3ee76cb31cd364285b28c1d56e9ed1af9bca493150c8de9e8f3f0a3bfd0e67"
+    },
+    "tools/capture.py": {
+      "bytes": 1246,
+      "sha256": "sha256:99283643627ff4905a51112888994a6ed599c894824b531967cfb7e248746939"
+    },
+    "tools/dependencies.py": {
+      "bytes": 6562,
+      "sha256": "sha256:770a90fc706bdbe961fb25757784b8b6d0826f1a194cc95da91a6f06fd01a9b1"
+    },
+    "tools/feasibility.py": {
+      "bytes": 12327,
+      "sha256": "sha256:429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
+    },
+    "tools/teavm_platform.py": {
+      "bytes": 11103,
+      "sha256": "sha256:0e1a6aa652e6012081f27faf7fca36ae023d74fa21ddaf61848d97fc6f178247"
+    },
+    "wit/world.wit": {
+      "bytes": 663,
+      "sha256": "sha256:806182a284782a4db4e5fc2e4f5f3bf47b78b04fa291d1eab8cef8f177f71882"
+    }
+  },
+  "hostToolTuple": "Windows Temurin 25.0.3+9-LTS; exact SDK-locked TeaVM 0.15.0 jars",
+  "originalLinuxToolTupleAvailable": false,
+  "jdkMaterials": {
+    "bin/java.exe": {
+      "bytes": 50344,
+      "sha256": "d5f1b9e03e298ebfb04d2326ecc1e2af3e6817f9b4d7f9f151fe856d56975650"
+    },
+    "bin/javac.exe": {
+      "bytes": 24744,
+      "sha256": "74f283ef1e26b3dfccfb56673d74a8a720d2c142e80881aa0084ce2e0379004e"
+    },
+    "bin/server/jvm.dll": {
+      "bytes": 15437992,
+      "sha256": "cc41822287eaee64f23763819100155b3a2bd55768bffd45c67be03dbbe91520"
+    },
+    "lib/modules": {
+      "bytes": 144925330,
+      "sha256": "9f715db742c59445339601abf0f19b6f3932158335c18dee45d8ec580fe77c2c"
+    },
+    "release": {
+      "bytes": 1639,
+      "sha256": "de67b271327ff2059d2cd4ee0d94fa9e4387af18f0cfaf700504f091a3a4113e"
+    }
+  },
+  "lockedJarInputs": {
+    "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar": {
+      "bytes": 17718996,
+      "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410"
+    },
+    "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar": {
+      "bytes": 2956367,
+      "sha256": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df"
+    },
+    "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar": {
+      "bytes": 16527,
+      "sha256": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49"
+    },
+    "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar": {
+      "bytes": 12599,
+      "sha256": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f"
+    },
+    "org/teavm/teavm-platform/0.15.0/teavm-platform-0.15.0.jar": {
+      "bytes": 101636,
+      "sha256": "999d369ab15aa83c17987d048ba59560759169891de7e13a5a1c2bd93dd060a8"
+    },
+    "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar": {
+      "bytes": 34800,
+      "sha256": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c"
+    },
+    "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar": {
+      "bytes": 73343,
+      "sha256": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140"
+    },
+    "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar": {
+      "bytes": 51412,
+      "sha256": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b"
+    },
+    "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar": {
+      "bytes": 126383,
+      "sha256": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018"
+    },
+    "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar": {
+      "bytes": 1509391,
+      "sha256": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6"
+    }
+  },
+  "recipeInputs": {
+    "tools/build_process.py": {
+      "bytes": 8564,
+      "sha256": "2f38f9152dfa8eaeb374439bcedf9a96a065e1ac2f91d681c942bdb785ab045c"
+    },
+    "tools/build_process_windows.py": {
+      "bytes": 7409,
+      "sha256": "3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd"
+    },
+    "tools/qualify_java_fibers.py": {
+      "bytes": 18561,
+      "sha256": "d2eb09500d3f88a521d802fcff2af44528386e15173a82835bdef1b67d3131ad"
+    }
+  },
+  "limits": {
+    "windowsJobCpuAffinityCount": 1,
+    "windowsJobMemoryBytes": 536870912,
+    "windowsJobActiveProcessLimit": 1,
+    "jvmHeapBytes": 268435456,
+    "overallSeconds": 90,
+    "commandSeconds": 30,
+    "commandOutputBytes": 262144,
+    "freshOutputCeilingBytes": 8388608,
+    "requiredCFreeBytes": 1207959552
+  },
+  "publicRetrievalComparison": {
+    "referenceObservables": 40,
+    "portObservables": 40,
+    "exactReferenceOutput": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0",
+    "beforeFixActualFailureAttempt": "r4",
+    "beforeFixSourceCommit": "666607bb3d7a68cddd9fbe9f1eb67e534ebea07d",
+    "firstFailedObservable": 3,
+    "firstFailedOperation": "get()",
+    "retrievalForms": [
+      "get()",
+      "get(long, TimeUnit)",
+      "join()",
+      "getNow(T)"
+    ],
+    "terminalModes": [
+      "ordinary cancel(true)",
+      "completeExceptionally(CancellationException with supplied nested cause)"
+    ],
+    "freshReportedException": true,
+    "reportedCauseIsOriginalStoredCancellation": true,
+    "methodNameDetails": [
+      "get",
+      "get",
+      "join",
+      "getNow"
+    ],
+    "originalInternalJoinResultAndSuccessfulPropagationUnchanged": true,
+    "originalCancellationStateAndLateCallbackCauseUnchanged": true,
+    "timersCreated": 0,
+    "executorsCreated": 0,
+    "privateSourceOwnersAndTasksNaturallyRetired": true,
+    "actualNormalRuntimeOrStoreProofClaimed": false,
+    "adapterChangesOnlyDeclaredCompletableFutureAndCompletionExceptionImports": true
+  },
+  "independentAdvancedModel": {
+    "status": "passed-at-actual-model-stage",
+    "implementedMethods": 4,
+    "privateHelperCount": 9,
+    "actualMethodBodies": 209,
+    "coroutineMonitorBodies": 33,
+    "ownedCoroutineBodies": 37,
+    "actualGeneratedCallbacks": 23,
+    "exactOutput": "COMPLETABLE_FUTURE_ADVANCED_MODEL_CONTROL PASS actual-methods=4;actual-helpers=9;bodies=209;coroutine-monitors=33;owned-coroutines=37;actual-generated-callbacks=23;unsupported-obtrusion-and-minimal-stage;physical-wait-lowered;application-identity",
+    "timedAndDelayedMethods": [
+      "orTimeout(long, TimeUnit)",
+      "completeOnTimeout(T, long, TimeUnit)",
+      "delayedExecutor(long, TimeUnit)",
+      "delayedExecutor(long, TimeUnit, Executor)"
+    ],
+    "privateHelpers": [
+      "Action",
+      "Aggregate",
+      "DefaultExecutor",
+      "Timeout",
+      "Canceller",
+      "DeferredCommand",
+      "DelayedExecutor",
+      "DelayedSubmission",
+      "DelayedDelivery"
+    ],
+    "actualLockedEmitterGeneratedCallbacks": true,
+    "declaredAndInheritedFieldPositives": true,
+    "absentFieldAndTypeMismatchFailClosed": true,
+    "actualSleepWaitAndOwnedPhysicalRetirementLowering": true,
+    "originalClosureMinimaAndUnsupportedObtrusionMinimalStageNegativesRetained": true,
+    "canonicalApiPrivateHelperAndApplicationIdentityGuardsRetained": true,
+    "portOrApplicationClassesInitializedInModel": false,
+    "defaultMaintainedGuardPassClaimed": false,
+    "componentGenerationProofClaimed": false
+  },
+  "originalMaintainedProfile": {
+    "guardAndPreparationBytesUnchanged": true,
+    "originalExpectedCountsUnchanged": true,
+    "guard": "fibers/conformance/compiler/CompletableFutureModelControl.java",
+    "guardIdentity": {
+      "bytes": 14370,
+      "sha256": "sha256:8524af8f6945912baacf6a533b89487b61f431f11956b8e67c2d3c46ec66831e"
+    },
+    "originalObservedFailureSourceCommit": "ef6e14fb4668c1d57516cfe83cbc67535076ace0",
+    "originalObservedFailureReceiptIdentity": {
+      "bytes": 49644,
+      "sha256": "sha256:837c56b8406720c75e25b4dd8501157e8dba01b2bed5f5dc6a4402719a542283"
+    },
+    "observedFailure": "unsupported-method-no-fallback",
+    "originalModelGuardPassed": false,
+    "originalFailureRetainedAsFailure": true,
+    "currentDefaultPreparationPassClaimed": false
+  },
+  "completeCurrentRun": {
+    "status": "failed",
+    "receiptIdentity": {
+      "bytes": 67411,
+      "sha256": "sha256:d7108d1e6bc0ee1a208217e29cc4c8bf10cc97ba4219373553e3778f19239ab1"
+    },
+    "seconds": 16.39612,
+    "stages": [
+      {
+        "label": "reference-compile",
+        "exitCode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "label": "reference-timed",
+        "exitCode": 0,
+        "stdoutSha256": "25844aa553ad7a006f8b10770dd29c2fd5a29d94856dd23c60129ab1e4c5360b",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "label": "reference-cancel",
+        "exitCode": 0,
+        "stdoutSha256": "e46702e319a59dfaa1843c4d2841677f881af59c951110cb91a2e7f1bd7cd95d",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "label": "advanced-compile",
+        "exitCode": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "label": "port-cancel",
+        "exitCode": 0,
+        "stdoutSha256": "0415bcb6f5c869f95a8ec537cf09bc41c12d6055c3174d891d18d5297e5af84b",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "label": "advanced-model",
+        "exitCode": 0,
+        "stdoutSha256": "a4ad6735fdd55d75f88ce364707499bb83cd580c0d3a859e7c0c56a64b37be8e",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "label": "port-owner",
+        "exitCode": 0,
+        "stdoutSha256": "4836265ff1f4cd03a5c0b9e2ec5b02ebf587e474d80d497827f2b2ea5bb9a60d",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "label": "port-timed",
+        "exitCode": 1,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "6ab5e2d27daf077fb3dbcef5b25a3b9d172836dea3fc8f79a032871626121e66"
+      }
+    ],
+    "timedReferenceObservables": 120,
+    "timedPrivateOwnershipObservables": 52,
+    "finalUnchangedTimedPortControlPassed": false,
+    "finalFailure": "source-control-original-task-capacity",
+    "finalFailureControl": "CompletableFutureTimedNativeControl.java:84",
+    "physicalDeferredTaskAdmissionLimit": 4,
+    "totalTaskCeilingIncludingRoot": 5,
+    "logicalCancellationNotCountedAsPhysicalTaskRetirement": true,
+    "originalControlAndAdmissionCeilingsUnchanged": true,
+    "allEightOwnedJobsPhysicallyRetired": true,
+    "remainingActiveProcesses": 0,
+    "allInputAndSourceSealsUnchanged": true,
+    "retainedBytesBeforeReceipt": 286869,
+    "rawReceiptHistoricalDiagnosticFlagNote": "The r9 recipe retains r8 diagnostic metadata; its actual field-walk control change and outcomes are reported separately here."
+  },
+  "lockedFieldApiInspection": {
+    "receiptIdentity": {
+      "bytes": 4410,
+      "sha256": "sha256:2f74bdc3a2ce4d8f3945fccc7eacd553b1e51b81738e660e1db0c23e67c9c470"
+    },
+    "sourceCommit": "0a5c26335260bc72f10bf6cd2b53863e013337d4",
+    "seconds": 0.976484,
+    "exitCode": 0,
+    "stdoutIdentity": {
+      "bytes": 20029,
+      "sha256": "sha256:0207db8c086fb963340ac245e24c30803d348a99614c424b950a6ee07cbe52cb"
+    },
+    "finding": "locked ClassHierarchy field overload recurses parents/interfaces without checking declared ClassReader fields",
+    "modelOrApplicationExecuted": false,
+    "jarOrCompilerVersionPatched": false,
+    "controlUsesExplicitActualDeclaredInterfaceParentFieldWalk": true,
+    "ownedJobPhysicallyRetired": true,
+    "remainingActiveProcesses": 0
+  },
+  "preservedAttempts": [
+    {
+      "attempt": "r1",
+      "sourceCommit": "d10a78f731c97b98871cbb9ab797f9c56d76fd59",
+      "receiptIdentity": {
+        "bytes": 50827,
+        "sha256": "sha256:824c0f210958ce70a3387af9316b1e0b484095fa8517bb19fde76d5bf2705055"
+      },
+      "status": "failed",
+      "seconds": 11.768879,
+      "classification": "reference-control-wrong-cancellation-identity-expectation",
+      "failedStage": "reference-late",
+      "observationsCompletedBeforeFailure": {
+        "reference-compile": "",
+        "reference-timed": "completable-timed-standard-observables=120"
+      },
+      "ownedJobsPhysicallyRetired": 3,
+      "remainingActiveProcesses": 0,
+      "allInputAndSourceSealsUnchanged": true,
+      "retainedBytesBeforeReceipt": 69793,
+      "negativeOrControlFailureNotCountedAsWholeRunPass": true
+    },
+    {
+      "attempt": "r2",
+      "sourceCommit": "6be2182fdde9f47ca8f5c9cbf49d1a5ebd203406",
+      "receiptIdentity": {
+        "bytes": 59586,
+        "sha256": "sha256:ec76e80f7add724c5d00a7b63e267af3d9ea599650eb176cc7eda3616c726b61"
+      },
+      "status": "failed",
+      "seconds": 14.928625,
+      "classification": "private-port-adapter-missing-CompletionException-import-translation",
+      "failedStage": "port-timed",
+      "observationsCompletedBeforeFailure": {
+        "reference-compile": "",
+        "reference-timed": "completable-timed-standard-observables=120",
+        "reference-late": "COMPLETABLE_TIMED_LATE_REFERENCE PASS observables=78;settled-before-late-producer;terminal-state-and-cause-retained;single-callback",
+        "advanced-compile": ""
+      },
+      "ownedJobsPhysicallyRetired": 5,
+      "remainingActiveProcesses": 0,
+      "allInputAndSourceSealsUnchanged": true,
+      "retainedBytesBeforeReceipt": 267399,
+      "negativeOrControlFailureNotCountedAsWholeRunPass": true
+    },
+    {
+      "attempt": "r3",
+      "sourceCommit": "6be2182fdde9f47ca8f5c9cbf49d1a5ebd203406",
+      "receiptIdentity": {
+        "bytes": 59586,
+        "sha256": "sha256:3911413494b8139ea4f14344385ea2fbf3ae0e73ae27b27998591a91f1147ff0"
+      },
+      "status": "failed",
+      "seconds": 9.951286,
+      "classification": "unchanged-original-port-timed-control-physical-task-capacity",
+      "failedStage": "port-timed",
+      "observationsCompletedBeforeFailure": {
+        "reference-compile": "",
+        "reference-timed": "completable-timed-standard-observables=120",
+        "reference-late": "COMPLETABLE_TIMED_LATE_REFERENCE PASS observables=78;settled-before-late-producer;terminal-state-and-cause-retained;single-callback",
+        "advanced-compile": ""
+      },
+      "ownedJobsPhysicallyRetired": 5,
+      "remainingActiveProcesses": 0,
+      "allInputAndSourceSealsUnchanged": true,
+      "retainedBytesBeforeReceipt": 267236,
+      "negativeOrControlFailureNotCountedAsWholeRunPass": true
+    },
+    {
+      "attempt": "r4",
+      "sourceCommit": "666607bb3d7a68cddd9fbe9f1eb67e534ebea07d",
+      "receiptIdentity": {
+        "bytes": 60907,
+        "sha256": "sha256:6a42f062dbaa379486d5c4a9fc5c0c0eb1237f3d344166c169884274492872d3"
+      },
+      "status": "failed",
+      "seconds": 12.718501,
+      "classification": "actual-public-port-cancellation-reporting-discrepancy-before-fix",
+      "failedStage": "port-cancel",
+      "observationsCompletedBeforeFailure": {
+        "reference-compile": "",
+        "reference-timed": "completable-timed-standard-observables=120",
+        "reference-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0",
+        "advanced-compile": ""
+      },
+      "ownedJobsPhysicallyRetired": 5,
+      "remainingActiveProcesses": 0,
+      "allInputAndSourceSealsUnchanged": true,
+      "retainedBytesBeforeReceipt": 281700,
+      "negativeOrControlFailureNotCountedAsWholeRunPass": true
+    },
+    {
+      "attempt": "r5",
+      "sourceCommit": "f0cddb7282d90fe77199b58927ec0e09df043565",
+      "receiptIdentity": {
+        "bytes": 64045,
+        "sha256": "sha256:4d0f41850a51f2edd2836789d95c6218267d414a317ab7e5fec43d2536941cb3"
+      },
+      "status": "failed",
+      "seconds": 10.984477,
+      "classification": "additive-model-control-closure-before-helper-transform",
+      "failedStage": "advanced-model",
+      "observationsCompletedBeforeFailure": {
+        "reference-compile": "",
+        "reference-timed": "completable-timed-standard-observables=120",
+        "reference-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0",
+        "advanced-compile": "",
+        "port-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0\r\nCANCEL_SOURCE_OWNER_CONTROL PASS owners=0;tasks=0;natural-retirement"
+      },
+      "ownedJobsPhysicallyRetired": 6,
+      "remainingActiveProcesses": 0,
+      "allInputAndSourceSealsUnchanged": true,
+      "retainedBytesBeforeReceipt": 283057,
+      "negativeOrControlFailureNotCountedAsWholeRunPass": true
+    },
+    {
+      "attempt": "r6",
+      "sourceCommit": "df1a0d1a36576a6e35d7b60ae9d56cbd96f517b8",
+      "receiptIdentity": {
+        "bytes": 64346,
+        "sha256": "sha256:4918560a88e2150710869ba49f94b02ea5aad90859d021809191ad73cf462ada"
+      },
+      "status": "failed",
+      "seconds": 13.866657,
+      "classification": "additive-model-control-declared-only-field-lookup-misses-inheritance",
+      "failedStage": "advanced-model",
+      "observationsCompletedBeforeFailure": {
+        "reference-compile": "",
+        "reference-timed": "completable-timed-standard-observables=120",
+        "reference-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0",
+        "advanced-compile": "",
+        "port-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0\r\nCANCEL_SOURCE_OWNER_CONTROL PASS owners=0;tasks=0;natural-retirement"
+      },
+      "ownedJobsPhysicallyRetired": 6,
+      "remainingActiveProcesses": 0,
+      "allInputAndSourceSealsUnchanged": true,
+      "retainedBytesBeforeReceipt": 283155,
+      "negativeOrControlFailureNotCountedAsWholeRunPass": true
+    },
+    {
+      "attempt": "r7",
+      "sourceCommit": "f21f9de4dd293d37799e67417921997a724645bf",
+      "receiptIdentity": {
+        "bytes": 64791,
+        "sha256": "sha256:697ec2be2480cee2469d0e4d0f8aa9176bec692879ff0a6a20ba319115d9fbd8"
+      },
+      "status": "failed",
+      "seconds": 14.021716,
+      "classification": "additive-model-control-locked-hierarchy-field-api-returns-null",
+      "failedStage": "advanced-model",
+      "observationsCompletedBeforeFailure": {
+        "reference-compile": "",
+        "reference-timed": "completable-timed-standard-observables=120",
+        "reference-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0",
+        "advanced-compile": "",
+        "port-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0\r\nCANCEL_SOURCE_OWNER_CONTROL PASS owners=0;tasks=0;natural-retirement"
+      },
+      "ownedJobsPhysicallyRetired": 6,
+      "remainingActiveProcesses": 0,
+      "allInputAndSourceSealsUnchanged": true,
+      "retainedBytesBeforeReceipt": 284435,
+      "negativeOrControlFailureNotCountedAsWholeRunPass": true
+    },
+    {
+      "attempt": "r8",
+      "sourceCommit": "0a5c26335260bc72f10bf6cd2b53863e013337d4",
+      "receiptIdentity": {
+        "bytes": 65005,
+        "sha256": "sha256:2b99212482a572ae5830b896cec006d6697723d9f3b9c19d390730c8df547a1a"
+      },
+      "status": "failed",
+      "seconds": 15.042981,
+      "classification": "actual-field-api-null-diagnostic-with-unchanged-conditions",
+      "failedStage": "advanced-model",
+      "observationsCompletedBeforeFailure": {
+        "reference-compile": "",
+        "reference-timed": "completable-timed-standard-observables=120",
+        "reference-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0",
+        "advanced-compile": "",
+        "port-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0\r\nCANCEL_SOURCE_OWNER_CONTROL PASS owners=0;tasks=0;natural-retirement"
+      },
+      "ownedJobsPhysicallyRetired": 6,
+      "remainingActiveProcesses": 0,
+      "allInputAndSourceSealsUnchanged": true,
+      "retainedBytesBeforeReceipt": 285189,
+      "negativeOrControlFailureNotCountedAsWholeRunPass": true
+    },
+    {
+      "attempt": "r9",
+      "sourceCommit": "a2d102b4ab0fc7fe32518d39fcfd4d336a179ab6",
+      "receiptIdentity": {
+        "bytes": 67411,
+        "sha256": "sha256:d7108d1e6bc0ee1a208217e29cc4c8bf10cc97ba4219373553e3778f19239ab1"
+      },
+      "status": "failed",
+      "seconds": 16.39612,
+      "classification": "advanced-model-and-cancellation-pair-pass-final-original-timed-task-capacity-failure",
+      "failedStage": "port-timed",
+      "observationsCompletedBeforeFailure": {
+        "reference-compile": "",
+        "reference-timed": "completable-timed-standard-observables=120",
+        "reference-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0",
+        "advanced-compile": "",
+        "port-cancel": "COMPLETABLE_CANCELLATION_REFERENCE PASS observables=40;public-wrappers=fresh;stored-cause-and-method-details;late-callback-cause-preserved;timers=0;executors=0\r\nCANCEL_SOURCE_OWNER_CONTROL PASS owners=0;tasks=0;natural-retirement",
+        "advanced-model": "COMPLETABLE_FUTURE_ADVANCED_MODEL_CONTROL PASS actual-methods=4;actual-helpers=9;bodies=209;coroutine-monitors=33;owned-coroutines=37;actual-generated-callbacks=23;unsupported-obtrusion-and-minimal-stage;physical-wait-lowered;application-identity",
+        "port-owner": "completable-timed-source-owner-observables=52"
+      },
+      "ownedJobsPhysicallyRetired": 8,
+      "remainingActiveProcesses": 0,
+      "allInputAndSourceSealsUnchanged": true,
+      "retainedBytesBeforeReceipt": 286869,
+      "negativeOrControlFailureNotCountedAsWholeRunPass": true
+    }
+  ],
+  "normalSignedInvocations": 0,
+  "componentBuildPerformed": false,
+  "nativeBuildPerformed": false,
+  "gradleInvoked": false,
+  "cargoInvoked": false,
+  "dockerInvoked": false,
+  "signingPerformed": false,
+  "earlierE58ComponentProofTransferredToChangedBytes": false,
+  "guestLimitsUnchanged": {
+    "activationSeconds": 120,
+    "fuel": 10000000000,
+    "linearMemoryBytes": 67108864
+  },
+  "remainingQualification": [
+    "maintained preparation or separately reviewed advanced compiler selection",
+    "actual component generation from changed SDK bytes",
+    "normal installed signing and all original twelve calls",
+    "physical node and store retirement",
+    "all remaining issue741 acceptance criteria"
+  ],
+  "issue741Closed": false
+}
