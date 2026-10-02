@@ -42,6 +42,10 @@ and global Docusaurus component classes. No theme implementation is copied or
 swizzled. The one pinned narrow selector for code-line-number `::before` restores
 normal-text contrast instead of the upstream 0.4 opacity; its computed opacity
 and pairing are browser-tested. Re-review that selector on a Docusaurus upgrade.
+Prism foregrounds and surfaces reference those same semantic CSS variables, so
+the server's default theme cannot leave a light code surface inside the first
+dark frame. Code text and line numbers are checked with hydration held and
+again after hydration.
 
 System preference and explicit light/dark choice use Docusaurus's maintained
 color-mode initialization and keyboard control. First contentful paint with

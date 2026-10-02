@@ -241,12 +241,12 @@ pub(crate) fn configure_epoch<T: 'static>(
 
 pub(crate) fn interrupted_outcome(
     kind: GuestInterruptionKind,
-    reason: String,
+    reason: &str,
     consumption: BudgetConsumption,
 ) -> GuestOutcome {
     GuestOutcome::Interrupted {
         kind,
-        reason: bounded_text(&reason, MAX_DIAGNOSTIC_BYTES),
+        reason: bounded_text(reason, MAX_DIAGNOSTIC_BYTES),
         consumption,
     }
 }
@@ -258,7 +258,7 @@ pub(crate) fn classify_runtime_error(
     consumption: BudgetConsumption,
 ) -> Result<GuestOutcome, PlatformError> {
     if let Some(kind) = stop.observe() {
-        return Ok(interrupted_outcome(kind, stop.reason(kind), consumption));
+        return Ok(interrupted_outcome(kind, &stop.reason(kind), consumption));
     }
     let mut outcome = classify_runtime_failure(
         None,
@@ -295,12 +295,12 @@ fn classify_runtime_failure(
             GuestInterruptionKind::FuelExhausted => "activation CPU fuel exhausted",
             GuestInterruptionKind::MemoryExhausted => "activation linear-memory limit exceeded",
         };
-        return Ok(interrupted_outcome(kind, reason.to_owned(), consumption));
+        return Ok(interrupted_outcome(kind, reason, consumption));
     }
     if memory_exhausted {
         return Ok(interrupted_outcome(
             GuestInterruptionKind::MemoryExhausted,
-            "activation linear-memory limit exceeded".to_owned(),
+            "activation linear-memory limit exceeded",
             consumption,
         ));
     }
@@ -309,7 +309,7 @@ fn classify_runtime_failure(
         if matches!(trap, Trap::OutOfFuel) {
             return Ok(interrupted_outcome(
                 GuestInterruptionKind::FuelExhausted,
-                "activation CPU fuel exhausted".to_owned(),
+                "activation CPU fuel exhausted",
                 consumption,
             ));
         }
@@ -321,7 +321,7 @@ fn classify_runtime_failure(
             ));
         }
 
-        let label = trap_label(trap);
+        let label = trap_label(*trap);
         let mut metadata = Metadata::new();
         metadata.insert("trap".to_owned(), label.to_owned());
         return Ok(GuestOutcome::Trapped {
@@ -352,7 +352,7 @@ fn classify_runtime_failure(
     })
 }
 
-fn trap_label(trap: &Trap) -> &'static str {
+fn trap_label(trap: Trap) -> &'static str {
     match trap {
         Trap::StackOverflow => "stack-overflow",
         Trap::MemoryOutOfBounds => "memory-out-of-bounds",
@@ -472,7 +472,11 @@ mod tests {
     fn first_stop_cause_is_sticky_across_repeated_epoch_observations() {
         let probe = Arc::new(TestCancellationProbe::new(false));
         let stop = StopControl::new(
-            Some(Instant::now() - Duration::from_millis(1)),
+            Some(
+                Instant::now()
+                    .checked_sub(Duration::from_millis(1))
+                    .unwrap(),
+            ),
             Some(probe.clone()),
         );
 
@@ -500,7 +504,7 @@ mod tests {
                 self.sample().monotonic()
             }
         }
-        let origin = Instant::now() + Duration::from_secs(60);
+        let origin = Instant::now() + Duration::from_mins(1);
         let deadline = origin + Duration::from_millis(10);
         let clock = Arc::new(Clock(std::sync::Mutex::new(latent_core::ClockSample::new(
             1000, origin,
@@ -528,7 +532,14 @@ mod tests {
     #[test]
     fn cancellation_wins_when_cancellation_and_deadline_are_first_visible_together() {
         let probe = Arc::new(TestCancellationProbe::new(true));
-        let stop = StopControl::new(Some(Instant::now() - Duration::from_millis(1)), Some(probe));
+        let stop = StopControl::new(
+            Some(
+                Instant::now()
+                    .checked_sub(Duration::from_millis(1))
+                    .unwrap(),
+            ),
+            Some(probe),
+        );
 
         assert_eq!(stop.observe(), Some(GuestInterruptionKind::Cancelled));
         assert_eq!(stop.observe(), Some(GuestInterruptionKind::Cancelled));

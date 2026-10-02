@@ -2,16 +2,22 @@
 
 #![forbid(unsafe_code)]
 
+pub mod transaction;
+
 use std::sync::Arc;
 
+mod preparation_inspection;
 mod preparation_read_wait;
 mod prepared_activation;
 mod prepared_readiness;
 mod prepared_use;
+mod transaction_input;
+pub use preparation_inspection::PreparationInspection;
 pub use preparation_read_wait::PreparationReadWait;
 pub use prepared_activation::PreparedActivation;
 pub use prepared_readiness::PreparedReadiness;
 pub use prepared_use::PreparedUse;
+pub use transaction_input::CanonicalTransactionInput;
 
 use latent_activation::ActivationEnvelope;
 use latent_artifacts::{ArtifactRepository, CapsuleArtifact};
@@ -92,14 +98,6 @@ impl GuestInterruptionKind {
             BudgetDimension::CpuFuel => Some(Self::FuelExhausted),
             BudgetDimension::MemoryBytes => Some(Self::MemoryExhausted),
             BudgetDimension::WallTime => Some(Self::DeadlineExceeded),
-            BudgetDimension::ChildCalls
-            | BudgetDimension::OutboundRequests
-            | BudgetDimension::StateReadBytes
-            | BudgetDimension::StateWriteBytes
-            | BudgetDimension::BlobReadBytes
-            | BudgetDimension::BlobWriteBytes
-            | BudgetDimension::LogBytes
-            | BudgetDimension::EffectCount => None,
             _ => None,
         }
     }
@@ -145,6 +143,13 @@ pub trait ExecutionCancellation: Send + Sync {
     fn activation_id(&self) -> &ActivationId;
     fn is_cancelled(&self) -> bool;
     fn reason(&self) -> Option<String>;
+
+    /// The node's already admitted activation-scoped transaction access. This
+    /// optional host port cannot be selected or constructed by a guest and is
+    /// never retained by a preparation/cache entry. Stateless owners omit it.
+    fn transaction_host(&self) -> Option<Arc<dyn transaction::TransactionHost>> {
+        None
+    }
 
     /// The activation owner's existing accounting state, when available.
     /// Backends clone this handle instead of admitting or registering a second
@@ -244,11 +249,11 @@ pub trait ExecutionBackend: Send + Sync {
     /// A backend may retain this owned repository during bounded background work.
     /// The compatibility default wraps the original prepared owner intact; it
     /// cannot promise that an external backend defers instance reservations.
-    fn prepare_ready_from_repository<'a>(
-        &'a self,
+    fn prepare_ready_from_repository(
+        &self,
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
-    ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
+    ) -> BoxFuture<'_, Result<PreparedReadiness, PlatformError>> {
         Box::pin(async move {
             self.prepare_from_repository(repository.as_ref(), &key)
                 .await
@@ -270,6 +275,28 @@ pub trait ExecutionBackend: Send + Sync {
         self.prepare_ready_from_repository(repository, key)
     }
 
+    /// Canonicalizes parameters using this readiness owner's actual component
+    /// types before a durable command claim. Retains its original pin, deadline,
+    /// budget and cancellation; no cell, Store or guest may be created. Generic
+    /// JSON rewriting and the legacy backend fallback cannot certify this input.
+    fn canonicalize_transaction_input<'a>(
+        &'a self,
+        ready: PreparedReadiness,
+        _envelope: &'a ActivationEnvelope,
+        _budget: &'a latent_core::ActivationBudget,
+        _wait: &'a dyn PreparationReadWait,
+    ) -> BoxFuture<'a, Result<(PreparedReadiness, CanonicalTransactionInput), PlatformError>> {
+        Box::pin(async move {
+            drop(ready);
+            Err(PlatformError {
+                code: PlatformErrorCode::IncompatibleContract,
+                message: "prepared transaction parameter codec is unavailable".to_owned(),
+                retryable: false,
+                details: Vec::new(),
+            })
+        })
+    }
+
     /// Converts the same readiness pin into activation ownership after a cell
     /// is assigned. It must not repeat repository lookup or compilation.
     fn materialize_ready(
@@ -279,6 +306,17 @@ pub trait ExecutionBackend: Send + Sync {
         ready
             .into_activation()
             .map_err(|_| owned_preparation_unsupported())
+    }
+
+    /// Consumes and rechecks the ORIGINAL readiness pin to describe actual
+    /// preparation without reserving a cell, creating a Store or invoking code.
+    /// Unsupported backends retire their pin and report unavailable context.
+    fn inspect_ready(
+        &self,
+        ready: PreparedReadiness,
+    ) -> Result<PreparationInspection, PlatformError> {
+        drop(ready);
+        Err(owned_preparation_unsupported())
     }
 
     /// Retains the same readiness owner while an opt-in backend waits only for
@@ -340,10 +378,7 @@ pub trait ExecutionBackend: Send + Sync {
         })
     }
 
-    fn release<'a>(
-        &'a self,
-        prepared: PreparedComponent,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn release(&self, prepared: PreparedComponent) -> BoxFuture<'_, Result<(), PlatformError>>;
 }
 
 fn owned_preparation_unsupported() -> PlatformError {

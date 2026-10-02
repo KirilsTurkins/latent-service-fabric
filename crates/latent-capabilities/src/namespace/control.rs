@@ -5,6 +5,7 @@ use latent_core::{PlatformError, TenantId};
 use latent_policy::capability::{
     EvaluationInput, PolicyStore, ResourceTarget, SealedPolicyDecision,
 };
+mod retained;
 use latent_state::{
     embedded::{AtomicBatch, EmbeddedStore},
     namespace::{
@@ -15,6 +16,10 @@ use latent_state::{
         lifecycle::{NamespaceLifecycleCompletion, NamespaceLifecycleRegistry},
         NamespaceError, NamespaceRecord, NamespaceTransition,
     },
+};
+pub use retained::{
+    PreparedRetainedNamespaceControl, RetainedNamespaceControlFence,
+    RetainedNamespaceControlRequest,
 };
 
 pub struct NamespaceControl;
@@ -75,51 +80,13 @@ impl NamespaceControl {
     ) -> Result<(), PlatformError> {
         let mut action = Some(action);
         store.with_current(decision, &mut |actual, _| {
-            let ResourceTarget::State {
-                namespace,
-                incarnation,
-                entity,
-                recovery_kind,
-                recovery_scope,
-                ..
-            } = actual.resource
-            else {
-                return Err(denied());
-            };
-            let caller = CallerScope::derive(actual.principal, &RecoverySelection::OriginalCaller)?;
-            let record = current.record();
-            if actual.capability != STATE_CONTRACT
-                || actual.operation != "namespace-inspect"
-                || actual.principal.tenant.as_ref() != Some(&record.tenant)
-                || namespace != record.id.0
-                || incarnation != record.version.incarnation
-                || entity.is_some()
-                || recovery_kind != caller.kind
-                || recovery_scope != caller.scope
-            {
-                return Err(denied());
-            }
-            if receipt.is_some_and(|value| {
-                value.context.tenant != record.tenant
-                    || value.record.tenant != record.tenant
-                    || value.record.id != record.id
-                    || value.record.version.incarnation != incarnation
-                    || value.context.actor != format!("{}:{}", caller.owner_kind, caller.scope)
-            }) {
-                return Err(denied());
-            }
-            let mut failure = None;
-            let result = lifecycle.with_current_record(current, || {
-                action.take().ok_or(NamespaceError::PermissionDenied)?().map_err(|error| {
-                    failure = Some(error);
-                    NamespaceError::PermissionDenied
-                })
-            });
-            if let Some(error) = failure {
-                Err(error)
-            } else {
-                result.map_err(platform)
-            }
+            inspection_actual(
+                actual,
+                lifecycle,
+                current,
+                receipt,
+                action.take().ok_or_else(denied)?,
+            )
         })
     }
 
@@ -377,5 +344,60 @@ fn platform(error: NamespaceError) -> PlatformError {
         message: "namespace-operation-rejected".into(),
         retryable: false,
         details: vec![],
+    }
+}
+
+fn inspection_actual(
+    actual: &EvaluationInput<'_>,
+    lifecycle: &NamespaceLifecycleRegistry,
+    current: &NamespaceRead,
+    receipt: Option<&NamespaceOperationReceipt>,
+    action: impl FnOnce() -> Result<(), PlatformError>,
+) -> Result<(), PlatformError> {
+    let mut action = Some(action);
+    let ResourceTarget::State {
+        namespace,
+        incarnation,
+        entity,
+        recovery_kind,
+        recovery_scope,
+        ..
+    } = actual.resource
+    else {
+        return Err(denied());
+    };
+    let caller = CallerScope::derive(actual.principal, &RecoverySelection::OriginalCaller)?;
+    let record = current.record();
+    if actual.capability != STATE_CONTRACT
+        || actual.operation != "namespace-inspect"
+        || actual.principal.tenant.as_ref() != Some(&record.tenant)
+        || namespace != record.id.0
+        || incarnation != record.version.incarnation
+        || entity.is_some()
+        || recovery_kind != caller.kind
+        || recovery_scope != caller.scope
+    {
+        return Err(denied());
+    }
+    if receipt.is_some_and(|value| {
+        value.context.tenant != record.tenant
+            || value.record.tenant != record.tenant
+            || value.record.id != record.id
+            || value.record.version.incarnation != incarnation
+            || value.context.actor != format!("{}:{}", caller.owner_kind, caller.scope)
+    }) {
+        return Err(denied());
+    }
+    let mut failure = None;
+    let result = lifecycle.with_current_record(current, || {
+        action.take().ok_or(NamespaceError::PermissionDenied)?().map_err(|error| {
+            failure = Some(error);
+            NamespaceError::PermissionDenied
+        })
+    });
+    if let Some(error) = failure {
+        Err(error)
+    } else {
+        result.map_err(platform)
     }
 }

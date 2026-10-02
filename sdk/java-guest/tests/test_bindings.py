@@ -48,6 +48,25 @@ class Bindings(unittest.TestCase):
         graph.types[2]["kind"] = {"type": 2}
         with self.assertRaisesRegex(ValueError, "recursive Java resource alias"):
             graph.resource_index(2)
+    def test_reused_shallow_types_cannot_hide_an_excessive_graph_depth(self):
+        data = document()
+        data["types"] = [{"name": None, "owner": None, "kind": {"list": index + 1 if index < 34 else "string"}}
+                         for index in range(35)]
+        data["interfaces"][0]["functions"] = {
+            "shallow": {"name": "shallow", "kind": "freestanding", "params": [], "result": 31},
+            "deep": {"name": "deep", "kind": "freestanding", "params": [], "result": 0},
+        }
+        with self.assertRaisesRegex(ValueError, "excessively nested"):
+            Graph.preflight(data, "service")
+
+    def test_c_bridge_expansion_of_a_shared_type_graph_is_bounded(self):
+        data = document()
+        data["types"] = [{"name": None, "owner": None, "kind": {"record": {"fields": [
+            {"name": "left", "type": index + 1 if index < 16 else "string"},
+            {"name": "right", "type": index + 1 if index < 16 else "string"}]}}} for index in range(17)]
+        graph = Graph(data, "service", HEADER)
+        with self.assertRaisesRegex(ValueError, "C bridge traversal"):
+            c.generate(graph)
 
     def test_surface_preserves_async_width_identity_and_ignores_parser_ids(self):
         original = document()

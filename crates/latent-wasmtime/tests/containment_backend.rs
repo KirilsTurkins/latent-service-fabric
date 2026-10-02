@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 use std::env;
+use std::fmt::Write;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -8,6 +9,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use latent_activation::{ActivationEnvelope, ActivationManager, ActivationOutcome, TraceContext};
 use latent_artifacts::{ArtifactDescriptor, CapsuleArtifact};
+use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
 use latent_core::{
     ActivationId, ArtifactReference, CapabilityId, CellId, ContractId, FunctionId,
     InvocationPrincipal, Metadata, NodeId, PrincipalKind, ReleaseDigest, ResourceBudget, ServiceId,
@@ -134,9 +136,16 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
         .await
         .expect("containment fixture must prepare");
 
+    assert_trap_and_fuel(&backend, &prepared).await;
+    assert_deadline_and_cancellation(&backend, &prepared, &config).await;
+    assert_memory_and_repeated_failures(&backend, &prepared).await;
+    assert_concurrent_reuse(&backend, prepared).await;
+}
+
+async fn assert_trap_and_fuel(backend: &Phase0WasmtimeBackend, prepared: &PreparedComponent) {
     let trap_id = ActivationId("containment-trap".to_owned());
     let trap = invoke(
-        &backend,
+        backend,
         prepared.clone(),
         trap_id.clone(),
         TRAP_MODE,
@@ -152,12 +161,12 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
         }
         other => panic!("controlled trap must be classified as a guest trap: {other:?}"),
     }
-    assert_backend_reclaimed(&backend);
-    assert_healthy_echo(&backend, &prepared, 1).await;
+    assert_backend_reclaimed(backend);
+    assert_healthy_echo(backend, prepared, 1).await;
 
     let fuel_id = ActivationId("containment-fuel".to_owned());
     let fuel = invoke(
-        &backend,
+        backend,
         prepared.clone(),
         fuel_id.clone(),
         INFINITE_MODE,
@@ -166,9 +175,15 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
     )
     .await;
     assert_interrupted(fuel, GuestInterruptionKind::FuelExhausted);
-    assert_backend_reclaimed(&backend);
-    assert_healthy_echo(&backend, &prepared, 2).await;
+    assert_backend_reclaimed(backend);
+    assert_healthy_echo(backend, prepared, 2).await;
+}
 
+async fn assert_deadline_and_cancellation(
+    backend: &Phase0WasmtimeBackend,
+    prepared: &PreparedComponent,
+    config: &Phase0WasmtimeConfig,
+) {
     let deadline_id = ActivationId("containment-deadline".to_owned());
     let requested_deadline = Duration::from_millis(25);
     let deadline = now_unix_millis().saturating_add(
@@ -176,7 +191,7 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
     );
     let deadline_started = Instant::now();
     let timed_out = invoke(
-        &backend,
+        backend,
         prepared.clone(),
         deadline_id.clone(),
         INFINITE_MODE,
@@ -186,9 +201,9 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
     .await;
     let deadline_elapsed = deadline_started.elapsed();
     assert_interrupted(timed_out, GuestInterruptionKind::DeadlineExceeded);
-    assert_deadline_tolerance(deadline_elapsed, requested_deadline, &config);
-    assert_backend_reclaimed(&backend);
-    assert_healthy_echo(&backend, &prepared, 3).await;
+    assert_deadline_tolerance(deadline_elapsed, requested_deadline, config);
+    assert_backend_reclaimed(backend);
+    assert_healthy_echo(backend, prepared, 3).await;
 
     let cancellation_id = ActivationId("containment-cancel".to_owned());
     let cancellation = TestCancellation::never(cancellation_id.clone());
@@ -209,13 +224,18 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
         cancelled.expect("running cancellation remains a guest outcome"),
         GuestInterruptionKind::Cancelled,
     );
-    assert_backend_reclaimed(&backend);
-    assert_healthy_echo(&backend, &prepared, 4).await;
+    assert_backend_reclaimed(backend);
+    assert_healthy_echo(backend, prepared, 4).await;
+}
 
+async fn assert_memory_and_repeated_failures(
+    backend: &Phase0WasmtimeBackend,
+    prepared: &PreparedComponent,
+) {
     let memory_id = ActivationId("containment-memory".to_owned());
     let granted_memory = 8 * 1024 * 1024;
     let memory = invoke(
-        &backend,
+        backend,
         prepared.clone(),
         memory_id.clone(),
         MEMORY_MODE,
@@ -229,13 +249,13 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
         "reported peak {} exceeded grant {granted_memory}",
         memory_consumption.peak_memory_bytes
     );
-    assert_backend_reclaimed(&backend);
-    assert_healthy_echo(&backend, &prepared, 5).await;
+    assert_backend_reclaimed(backend);
+    assert_healthy_echo(backend, prepared, 5).await;
 
     for index in 0..24_u64 {
         let activation_id = ActivationId(format!("containment-repeat-{index}"));
         let outcome = invoke(
-            &backend,
+            backend,
             prepared.clone(),
             activation_id.clone(),
             if index % 2 == 0 {
@@ -255,19 +275,21 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
             outcome,
             GuestOutcome::Trapped { .. } | GuestOutcome::Interrupted { .. }
         ));
-        assert_backend_reclaimed(&backend);
+        assert_backend_reclaimed(backend);
     }
+}
 
-    let concurrent_a = concurrent_echo(&backend, prepared.clone(), 10, "alpha");
-    let concurrent_b = concurrent_echo(&backend, prepared.clone(), 11, "beta");
-    let concurrent_c = concurrent_echo(&backend, prepared.clone(), 12, "gamma");
-    let concurrent_d = concurrent_echo(&backend, prepared, 13, "delta");
+async fn assert_concurrent_reuse(backend: &Phase0WasmtimeBackend, prepared: PreparedComponent) {
+    let concurrent_a = concurrent_echo(backend, prepared.clone(), 10, "alpha");
+    let concurrent_b = concurrent_echo(backend, prepared.clone(), 11, "beta");
+    let concurrent_c = concurrent_echo(backend, prepared.clone(), 12, "gamma");
+    let concurrent_d = concurrent_echo(backend, prepared, 13, "delta");
     let (a, b, c, d) = tokio::join!(concurrent_a, concurrent_b, concurrent_c, concurrent_d);
     assert_returned(a, b"alpha");
     assert_returned(b, b"beta");
     assert_returned(c, b"gamma");
     assert_returned(d, b"delta");
-    assert_backend_reclaimed(&backend);
+    assert_backend_reclaimed(backend);
     assert_eq!(backend.cache_snapshot().entries, 1);
 }
 
@@ -418,7 +440,7 @@ fn load_containment_artifact() -> CapsuleArtifact {
             fusion_eligible: false,
         },
         minimum_fabric_version: "0.1.0-alpha.0".to_owned(),
-        runtime_requirements: Default::default(),
+        runtime_requirements: latent_manifest::RuntimeRequirements::default(),
     };
 
     CapsuleArtifact {
@@ -520,20 +542,19 @@ fn budget(cpu_fuel: u64, memory_bytes: u64, deadline: Option<u64>) -> ResourceBu
 }
 
 fn required_env_path(name: &str) -> PathBuf {
-    env::var_os(name)
-        .map(PathBuf::from)
-        .unwrap_or_else(|| panic!("{name} must be set by the contract validation gate"))
+    env::var_os(name).map_or_else(
+        || panic!("{name} must be set by the contract validation gate"),
+        PathBuf::from,
+    )
 }
 
 fn component_digest(bytes: &[u8]) -> String {
-    let digest = Sha256::digest(bytes);
-    format!(
-        "sha256:{}",
-        digest
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>()
-    )
+    Sha256::digest(bytes)
+        .iter()
+        .fold(String::from("sha256:"), |mut encoded, byte| {
+            write!(&mut encoded, "{byte:02x}").unwrap();
+            encoded
+        })
 }
 
 fn now_unix_millis() -> u64 {
@@ -567,7 +588,7 @@ async fn healthy_activations_remain_correct_while_an_infinite_activation_times_o
             let started = Instant::now();
             let outcome = runner
                 .invoke(activation_envelope(
-                    failure_id,
+                    &failure_id,
                     INFINITE_MODE,
                     budget(MAXIMUM_FUEL, 16 * 1024 * 1024, Some(deadline)),
                 ))
@@ -588,6 +609,7 @@ async fn healthy_activations_remain_correct_while_an_infinite_activation_times_o
         latent_core::ActivationTerminalState::DeadlineExceeded,
         latent_core::PlatformErrorCode::DeadlineExceeded,
         "activation.deadline-exceeded",
+        Some(DiagnosticReason::DeadlineExceeded),
     );
     assert!(consumption.wall_time_micros > 0);
     assert_deadline_tolerance(elapsed, requested_deadline, &config);
@@ -610,7 +632,7 @@ async fn healthy_activations_remain_correct_while_another_activation_traps() {
         tokio::spawn(async move {
             runner
                 .invoke(activation_envelope(
-                    failure_id,
+                    &failure_id,
                     "__latent_test_mixed_trap",
                     budget(MAXIMUM_FUEL, 16 * 1024 * 1024, None),
                 ))
@@ -632,6 +654,7 @@ async fn healthy_activations_remain_correct_while_another_activation_traps() {
         latent_core::ActivationTerminalState::GuestTrap,
         latent_core::PlatformErrorCode::GuestTrap,
         "activation.guest-trap",
+        None,
     );
     assert_mixed_healthy(healthy, &backend, "trap").await;
     assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
@@ -661,7 +684,7 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
         tokio::spawn(async move {
             runner
                 .invoke(activation_envelope(
-                    failure_id,
+                    &failure_id,
                     DELAYED_MEMORY_MODE,
                     budget(MAXIMUM_FUEL, granted_memory, None),
                 ))
@@ -712,6 +735,7 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
         latent_core::ActivationTerminalState::ResourceExhausted,
         latent_core::PlatformErrorCode::ResourceExhausted,
         "activation.memory-exhausted",
+        Some(DiagnosticReason::GuestMemoryExhausted),
     );
     assert!(
         consumption.peak_memory_bytes <= granted_memory,
@@ -746,8 +770,10 @@ async fn runner_fixture_with_log_sink(
     Arc<Phase0WasmtimeBackend>,
     Phase0WasmtimeConfig,
 ) {
-    let mut services = WasmtimeHostServices::default();
-    services.log_sink = Some(log_sink);
+    let services = WasmtimeHostServices {
+        log_sink: Some(log_sink),
+        ..WasmtimeHostServices::default()
+    };
     runner_fixture_with_services(capacity, services).await
 }
 
@@ -830,7 +856,7 @@ fn spawn_mixed_healthy_with_prefix(
             let task = tokio::spawn(async move {
                 runner
                     .invoke(activation_envelope(
-                        task_activation_id,
+                        &task_activation_id,
                         &input,
                         budget(MAXIMUM_FUEL, 16 * 1024 * 1024, None),
                     ))
@@ -925,7 +951,7 @@ async fn describe_activation_task(mut task: tokio::task::JoinHandle<ActivationOu
 }
 
 fn activation_envelope(
-    activation_id: ActivationId,
+    activation_id: &ActivationId,
     message: &str,
     budget: ResourceBudget,
 ) -> ActivationEnvelope {
@@ -987,6 +1013,7 @@ fn assert_activation_failure(
     terminal_state: latent_core::ActivationTerminalState,
     code: latent_core::PlatformErrorCode,
     detail_kind: &str,
+    diagnostic_reason: Option<DiagnosticReason>,
 ) -> latent_core::BudgetConsumption {
     match outcome {
         ActivationOutcome::Failed {
@@ -998,12 +1025,22 @@ fn assert_activation_failure(
             assert_eq!(error.code, code);
             assert!(!error.retryable);
             assert!(error.message.len() <= 512);
-            assert_eq!(error.details.len(), 1);
+            assert_eq!(
+                error.details.len(),
+                1 + usize::from(diagnostic_reason.is_some())
+            );
             assert_eq!(error.details[0].kind, detail_kind);
             assert!(error.details[0]
                 .fields
                 .iter()
                 .all(|(name, value)| name.len() <= 64 && value.len() <= 256));
+            if let Some(reason) = diagnostic_reason {
+                assert_eq!(
+                    error.details[1],
+                    ActivationDiagnostic::new(DiagnosticStage::Execution, reason).detail(),
+                    "only the exact producer-owned diagnostic accompanies the failure"
+                );
+            }
             consumption
         }
         ActivationOutcome::Succeeded(success) => {

@@ -3,7 +3,7 @@
 use super::preparation::{
     counters, empty_component, metadata_overflow, ComponentIntegrity, PreparationCounters,
 };
-use super::{bounded_error, sha256_digest, PreparedRuntime};
+use super::{bounded_error, sha256_digest};
 use crate::bindings;
 use crate::config::{WasmtimeConfig, PHASE0_BACKEND_ID};
 use crate::containment::platform_error;
@@ -14,7 +14,7 @@ use latent_artifacts::{AdmissionAuthority, ArtifactPreparationIdentity, CapsuleA
 use latent_core::{Metadata, PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedComponent};
 use latent_manifest::{ExecutionBackendKind, StateModel, ThreadingModel};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
@@ -32,7 +32,7 @@ pub(super) struct PreparationContext {
     pub(super) config: WasmtimeConfig,
     pub(super) preparation: Arc<PreparationCounters>,
     pub(super) observer: PreparationObserver,
-    pub(super) uncached: Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>,
+    pub(super) uncached: super::UncachedPrepared,
 }
 
 impl PreparationContext {
@@ -84,11 +84,40 @@ impl PreparationContext {
         Ok(component_digest)
     }
 
+    fn install_transaction_imports(
+        &self,
+        linker: &mut Linker<HostState>,
+    ) -> Result<(), PlatformError> {
+        if self.config.transactional_state {
+            crate::host::transaction::install(linker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind scoped transaction imports",
+                    false,
+                )
+            })?;
+        }
+        Ok(())
+    }
+
     pub(super) fn link_component(
         &self,
         component: &Component,
+        type_imports: &std::collections::BTreeSet<String>,
     ) -> Result<InstancePre<HostState>, PlatformError> {
         let mut linker = Linker::<HostState>::new(&self.engine);
+        // Surface validation has proved these interfaces contain no callable
+        // imports or resources. Empty instances satisfy structural type imports
+        // without installing host I/O, context or provider authority.
+        for name in type_imports {
+            linker.instance(name).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::IncompatibleContract,
+                    "structural type import cannot be linked",
+                    false,
+                )
+            })?;
+        }
         bindings::install_context_log_clock(&mut linker).map_err(|error| {
             platform_error(
                 PlatformErrorCode::Internal,
@@ -96,6 +125,7 @@ impl PreparationContext {
                 false,
             )
         })?;
+        self.install_transaction_imports(&mut linker)?;
         if let Some(invoker) = self.local_services() {
             crate::host::service::install(&mut linker, invoker).map_err(|error| {
                 platform_error(
@@ -252,11 +282,15 @@ impl PreparationContext {
             || key.target_triple != self.profile.target_triple
             || key.cpu_feature_set != self.profile.cpu_feature_set
         {
-            return Err(platform_error(
+            return Err(latent_core::diagnostic::ActivationDiagnostic::new(
+                latent_core::diagnostic::DiagnosticStage::Preparation,
+                latent_core::diagnostic::DiagnosticReason::UnsupportedEngineProfile,
+            )
+            .attach(platform_error(
                 PlatformErrorCode::IncompatibleContract,
                 "preparation key does not match the active Wasmtime engine profile",
                 false,
-            ));
+            )));
         }
         Ok(())
     }

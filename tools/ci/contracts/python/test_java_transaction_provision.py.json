@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "OriginalHttpRequest.test_header_overflow_and_injection_refuse_before_any_network_request",
+    "OriginalHttpRequest.test_real_bodyless_query_and_result_transport_carry_no_content_type",
+    "ProvisioningOracle.test_configuration_or_unknown_field_cannot_substitute_native_authority",
+    "ProvisioningOracle.test_duplicate_or_wrong_provider_contract_never_provisions_a_binding",
+    "ProvisioningOracle.test_effect_profile_requires_exact_original_publication_and_purpose",
+    "ProvisioningOracle.test_http_and_rpc_scope_must_be_same_original_authenticated_user",
+    "ProvisioningOracle.test_missing_duplicate_or_changed_native_effect_profiles_refuse",
+    "ProvisioningOracle.test_original_publication_set_cannot_be_guessed_or_aliased",
+    "ProvisioningOracle.test_prior_runtime_without_transport_principal_observation_refuses",
+    "ProvisioningOracle.test_selected_configuration_preserves_original_checkpoint_and_refuses_large_input",
+    "ProvisioningOracle.test_state_and_dispatch_proposals_keep_distinct_current_caller_purposes"
+  ],
+  "guards": {
+    "OriginalHttpRequest.test_header_overflow_and_injection_refuse_before_any_network_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OriginalHttpRequest.test_real_bodyless_query_and_result_transport_carry_no_content_type": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProvisioningOracle.test_configuration_or_unknown_field_cannot_substitute_native_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProvisioningOracle.test_duplicate_or_wrong_provider_contract_never_provisions_a_binding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProvisioningOracle.test_effect_profile_requires_exact_original_publication_and_purpose": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProvisioningOracle.test_http_and_rpc_scope_must_be_same_original_authenticated_user": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProvisioningOracle.test_missing_duplicate_or_changed_native_effect_profiles_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProvisioningOracle.test_original_publication_set_cannot_be_guessed_or_aliased": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProvisioningOracle.test_prior_runtime_without_transport_principal_observation_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProvisioningOracle.test_selected_configuration_preserves_original_checkpoint_and_refuses_large_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProvisioningOracle.test_state_and_dispatch_proposals_keep_distinct_current_caller_purposes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_provision.py",
+  "reviewReason": "Add eleven bounded native-observation and original HTTP transport regressions; synthetic inputs confer no authority and all historical qualification cases remain",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

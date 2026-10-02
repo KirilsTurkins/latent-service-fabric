@@ -930,12 +930,12 @@ impl ActivationBudget {
             return (finalized.consumption().clone(), true);
         }
         let mut snapshot = state.consumption.clone();
-        if self.profile() == BudgetProfile::Phase3 {
+        if self.profile().supports_descendants() {
             snapshot.peak_memory_bytes = state
                 .own_memory_peak
                 .max(state.pending_runtime_memory.unwrap_or(0))
-                + state.host_reserved_memory
-                + state.child_reserved_memory;
+                + state.child_reserved_memory
+                + state.host_reserved_memory;
         }
         snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
             now.saturating_duration_since(self.inner.started_at),
@@ -949,10 +949,10 @@ impl ActivationBudget {
     #[must_use]
     pub fn remaining_at(&self, now: Instant) -> ResourceBudget {
         let (snapshot, finalized) = self.capacity_snapshot_at(now);
-        if finalized && self.inner.profile == BudgetProfile::Phase3 {
+        if finalized && self.inner.profile.supports_descendants() {
             return profile::closed_budget();
         }
-        let phase3 = self.inner.profile == BudgetProfile::Phase3;
+        let phase3 = self.inner.profile.supports_descendants();
         ResourceBudget {
             cpu_fuel: self
                 .inner
@@ -981,8 +981,22 @@ impl ActivationBudget {
             } else {
                 0
             },
-            state_read_bytes: 0,
-            state_write_bytes: 0,
+            state_read_bytes: if self.inner.profile == BudgetProfile::Phase4 {
+                self.inner
+                    .granted
+                    .state_read_bytes
+                    .saturating_sub(snapshot.state_read_bytes)
+            } else {
+                0
+            },
+            state_write_bytes: if self.inner.profile == BudgetProfile::Phase4 {
+                self.inner
+                    .granted
+                    .state_write_bytes
+                    .saturating_sub(snapshot.state_write_bytes)
+            } else {
+                0
+            },
             blob_read_bytes: if phase3 {
                 self.inner
                     .granted
@@ -1004,7 +1018,14 @@ impl ActivationBudget {
                 .granted
                 .log_bytes
                 .saturating_sub(snapshot.log_bytes),
-            effect_count: 0,
+            effect_count: if self.inner.profile == BudgetProfile::Phase4 {
+                self.inner
+                    .granted
+                    .effect_count
+                    .saturating_sub(snapshot.effect_count)
+            } else {
+                0
+            },
         }
     }
 
@@ -1043,7 +1064,7 @@ impl ActivationBudget {
             .store(true, std::sync::atomic::Ordering::Release);
         // Phase 3 terminal observations conservatively retain occupied capacity.
         // Only the actual reservation owner can retire it after this boundary.
-        let phase3 = self.inner.profile == BudgetProfile::Phase3;
+        let phase3 = self.inner.profile.supports_descendants();
         let reconciliation = if phase3 {
             reported.and_then(|report| self.reconcile_phase3_report(&mut state, report).err())
         } else {
@@ -1059,8 +1080,8 @@ impl ActivationBudget {
                 state
                     .own_memory_peak
                     .max(state.pending_runtime_memory.unwrap_or(0))
-                    + state.host_reserved_memory
-                    + state.child_reserved_memory,
+                    + state.child_reserved_memory
+                    + state.host_reserved_memory,
             );
         }
         consumption.wall_time_micros =

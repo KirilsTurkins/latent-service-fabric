@@ -1,7 +1,7 @@
 # Shared state store ownership
 
 `latent_state::protected_store::ProtectedStoreOwner` owns one node database on
-the [selected redb profile](../../adr/0061-select-redb-for-transactional-host-state.md).
+the [selected redb profile](../../adr/0063-select-redb-for-transactional-host-state.md).
 It runs protected opening, engine verification, bounded logical-record validation,
 ordinary storage jobs, snapshot retirement, the final flush and engine destruction
 on the same fixed workers. A future poll does no engine or filesystem I/O.
@@ -115,6 +115,23 @@ change its command key or report a business abort.
 
 ## Cancellation and shutdown
 
+`reserve_operation` installs a bounded affine physical operation pin before
+claiming durable work or starting provider I/O. It retains exclusive root
+ownership through physical cleanup, without opening another native snapshot.
+`ProtectedStoreOperation::retire` and `ProtectedStoreView::retire` return a
+preallocated `StoreIoRetirement` receipt. The receipt becomes ready only after
+the fixed worker finishes the actual destructor and releases physical ownership.
+Command cleanup awaits native view/buffer retirement before retiring its own
+operation pin and accepting prior-owner proof. Dropping a receipt detaches
+observation without cancelling cleanup. Unexpected operation-pin drop
+quarantines and preserves its bounded reservation/root until process loss.
+
+The pin and receipt qualification passed all 73 state tests and strict Linux
+all-target/all-feature Clippy. Deterministic schedules prove receipt readiness
+waits through a paused destructor, detached waiters retain physical bytes, and
+operation pins preserve the real root lock through deadline quarantine while
+remaining able to retire after logical close.
+
 Dropping a job waiter detaches its response. An accepted queued or active write
 still runs once and keeps its buffers/reservation. Completed result memory stays
 charged until delivered or actually destroyed. Native view destruction is always
@@ -192,3 +209,65 @@ The shared owner is implemented here; standalone activation readiness, complete
 command envelopes, retention/restore and six-language runtime conformance remain
 their Phase 4 integration tickets. This document makes no packaged-node or
 power-loss qualification claim.
+
+The dispatcher obtains one `ProtectedStoreDispatcher` registration from this
+same physical store. Cloned readiness handles cannot advance a new dispatch
+epoch while that registration remains live. Its bounded physical slot and
+protected root pin retire on a fixed storage worker only after provider work
+and attempt pins have actually retired. An unexpected registration drop gates
+the store and preserves its pin for recovery. This protects against overlapping
+dispatcher startup without introducing another engine or process registry.
+The actual Linux registration lifecycle test and all 74 state cases passed,
+along with strict all-target/all-feature Clippy on the pinned image above.
+
+Before a host moves a view through a cancellable read call, it may capture
+`view.retirement_witness()`. One non-clone status witness is issued for the
+entire affine view lifetime. `has_retired()` becomes true only after the native
+destructor and physical reservation release, including a detached `with_view`
+response. It uses the pre-reserved retirement signal and no waiter, so the
+existing `retire()` receipt remains the single bounded future observer. The
+generic paused-destructor test verifies this distinction; the real Linux test
+drops an accepted paused read's response, closes admission, and proves the view
+and root remain owned until actual fixed-worker retirement. All 75 state cases
+and strict combined state/effects Clippy passed on the pinned Linux image.
+
+
+## Physically reserved recovery admission
+
+`StoreIoKind::RecoveryRead` and `RecoveryWrite` use a separate preallocated queue,
+accepted-owner cap and retained-byte partition on this same engine. The protected
+production profile has four fixed workers: the original three ordinary workers
+and one reserved recovery worker. Ordinary retirement callbacks also stay on
+ordinary workers, so a paused native destructor cannot occupy that reserve.
+Ordinary reads, writes, retained native views
+and completed response owners cannot consume the recovery partition. The
+provider-dispatch job owner explicitly disables this extra lane; it is not a
+second storage engine or an additional unbounded blocking pool.
+
+Recovery reads can progress while every ordinary worker and ordinary queue,
+accepted-owner quota or native-byte partition is full. Recovery writes share the
+same physical single-writer limit. They cannot steal a live write or declare it
+retired; a stalled device/physical writer may still prevent a recovery mutation.
+The original finite management deadline and explicit failure remain required.
+Unknown store readiness, logical close and quarantine reject fresh recovery
+admission. Already accepted buffers and workers remain accounted until actual
+physical destruction, including after waiter cancellation.
+
+Recovery capacity is finite: one worker, four queued jobs, eight accepted owners,
+16 MiB retained bytes and 8 MiB plus 8 KiB metadata per job in the protected profile. These bytes are
+a disjoint partition of the existing 128 MiB owner ceiling; engine cache/fixed
+metadata still remain resident until engine destruction. Snapshot fields report
+recovery queue, accepted owners, bytes, reads and writes separately. Queue and
+retirement metadata account both finite classes. No recovery job changes engine
+durability settings or evicts guaranteed records.
+
+Windows Rust 1.97.1: all 93 state library cases and strict all-target/all-feature
+state/effects Clippy passed, including four deterministic physical recovery
+schedules. A fifth focused portable schedule passed after adding isolation from
+an ordinary paused native destructor. They demonstrate ordinary saturation, retained detached buffers,
+finite recovery caps and unavailable/invalid configuration, and read progress
+past an actual live writer without a second write. The sixth registered case
+uses the real protected Linux engine and verifies the committed row while all
+three ordinary workers and their queue are paused. Its Linux execution is pending
+the shared Docker filesystem recovery. This admission port does not by itself
+complete #397's durable quota, linked retention or compaction requirements.

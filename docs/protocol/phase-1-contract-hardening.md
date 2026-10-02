@@ -512,16 +512,82 @@ explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
 
-## Additive Phase 4 transaction definitions
+## Additive privileged activation-tree inspection
 
-The descriptor baseline includes `latent/transaction/v1/transaction.proto` and
-`latent/control/v1/state.proto`, plus `AuditCapabilityResourceClass` value 11
-for state resources. The Buf-generated descriptor was reviewed against every
-existing file: all previous field numbers, types, enum values, messages and RPC
-signatures remain unchanged. The exhaustive descriptor oracle includes both
-new files and still rejects unreviewed semantic changes.
+Issue #709 adds `NodeService.InspectActivationTree` and its four messages and
+three closed diagnostic enums. Every earlier declaration, field number and RPC
+is preserved. Producer details use `activation.diagnostic.v1` internally;
+public invocation and browser errors continue to discard that detail.
+Unknown enum numbers and optional zero values survive all six common models
+and native transports. See [activation inspection](../reference/activation-inspection.md).
 
-These definitions describe [transaction and recovery contracts](transactions.md).
-They do not establish that a host implements the profile or grant access from
-a namespace, command, effect or receipt identifier. WIT guest ABI versions and
-durable storage formats retain their separate compatibility boundaries.
+Caller-supplied root/parent IDs now reject before an external activation is
+accepted. These IDs cannot authorize a tree edge. Trusted local service brokers
+derive lineage from the actual parent owner and authenticated tenant.
+
+## Additive immutable target inspection
+
+Issue #716 adds the unary `NodeService.InspectHttpTarget` method, eight bounded
+inspection messages and three observation enums. The descriptor contract
+preserves every existing file, message, field number, enum value and RPC. The
+node descriptor additionally imports the existing release descriptor for exact
+publication identities.
+
+The authenticated tenant administrator receives coherent, stale or unavailable
+observations of the selected catalog and policy owners. Optional preparation
+inspects the same admitted readiness owner without materialization or guest and
+provider execution. The reply reports actual provider imports and validated
+structural type imports separately, and preserves numeric option presence and
+future enum values. See [target inspection](../reference/target-inspection.md).
+
+Engine configuration digests and internal sealed metadata fingerprints retain
+their separate meanings. Live grant checks are explicitly absent; an inspection
+does not grant execution or mutation authority. Public invocation and browser
+error projections retain their existing disclosure rules.
+
+## Additive Phase 4 transaction and recovery descriptors
+
+The descriptor golden includes `latent/transaction/v1/transaction.proto` and
+the control `state.proto` and `dispatcher.proto` files. Their seven application
+transaction methods, five namespace/state methods and three dispatcher methods
+use separate typed services. All thirteen earlier files preserve their message
+shapes, field numbers, optional presence, enum values and RPC signatures.
+
+The audit contract adds `AuditIdentities.state` at field 25 and `dispatcher` at
+field 26 with their bounded target messages. `AuditControlAction` adds namespace
+actions 13 through 18, dispatcher actions 19 through 22 and command-floor release
+23. `AuditCapabilityResourceClass` adds state at value 11. Earlier audit values
+retain their numbers and meanings.
+
+These descriptors preserve complete transaction profiles, original operation
+identities, namespace incarnations, opaque view bytes, current authorization
+targets and explicit recovery preconditions. Command, commit, retained response,
+effect and cleanup outcomes remain distinct. Namespace/state mutation receipts
+and audit acknowledgement remain separate; dispatcher admission and physical
+retirement remain separate. The state mutation discriminator includes bounded
+expired command-floor release at value 5 without renumbering the earlier values.
+
+Schema generation and descriptor validation do not install a transaction engine,
+grant application or management authority, enable restored effect dispatch or
+qualify a release. Installed owners must enforce their current profile, scope,
+policy, quotas and recovery fences. See the
+[Phase 4 transaction contract](transactions.md) and
+[state management reference](state-management.md).
+
+## Additive privileged transaction staging witness
+
+The privileged activation tree adds optional `transaction_staging` at field 15
+and the bounded `TransactionStagingWitness` message. All sixteen existing files,
+message declarations, field numbers, enum values and RPC signatures remain
+unchanged. The shared clients preserve optional absence and full-width unsigned
+values while rejecting malformed identities and progress outside the original
+reported grant. Existing diagnostic unknown enum values remain descriptive.
+
+Only the original native command host can bind the original journal owner before
+guest access. The witness advances after successful captured-intent insertion,
+and pins the activation serial, original command, attempt, transaction and
+publication. Tree and root inspection retain their existing tenant administrator,
+paging, byte and retention limits. Public invocation status and browser responses
+expose no witness. A witness does not establish commitment, abort, physical
+retirement, retry authority or external completion. See
+[activation inspection](../reference/activation-inspection.md).

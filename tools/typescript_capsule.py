@@ -7,7 +7,7 @@ import shutil
 import sys
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.rust_capsule_project import ROOT, TEMPLATES, fresh, read_file
+from tools.rust_capsule_project import ROOT, AUTHORING_TEMPLATES, fresh, read_file
 from tools.rust_capsule_build import Commands
 from tools.build_observation import build_environment
 from tools.typescript_guest.project import create
@@ -42,7 +42,7 @@ def main():
     tools.add_argument("directory", type=Path)
     new = commands.add_parser("new", help="Create an independent editable project")
     new.add_argument("directory", type=Path)
-    new.add_argument("--template", choices=TEMPLATES, default="greeting")
+    new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
     compile_ = commands.add_parser("build", help="Typecheck, compile and package captured sources")
     compile_.add_argument("project", type=Path)

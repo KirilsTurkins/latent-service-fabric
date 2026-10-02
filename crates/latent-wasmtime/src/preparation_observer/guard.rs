@@ -182,10 +182,10 @@ impl PreparationStageGuard {
         before: Option<PreparationThreadCpu>,
         started: u64,
     ) -> Self {
-        let mut state = inner.lock();
-        let totals = &mut state.stages[stage.index()];
+        let mut totals_state = inner.lock();
+        let totals = &mut totals_state.stages[stage.index()];
         totals.started = totals.started.saturating_add(1);
-        if let Some(entry) = state
+        if let Some(entry) = totals_state
             .running
             .iter_mut()
             .find(|entry| entry.job_id == job_id)
@@ -194,8 +194,8 @@ impl PreparationStageGuard {
             entry.started_nanos = started;
             entry.thread = before.map(|sample| sample.identity);
         }
-        let waker = state.changed();
-        drop(state);
+        let waker = totals_state.changed();
+        drop(totals_state);
         wake(waker);
         // Start the measured interval after publishing/waking observers. The
         // running-entry timestamp records registration, not an earlier compile.

@@ -28,8 +28,25 @@ func validateRequest(request any, maximum int) error {
 		if !validIdentity(value.ActivationId) {
 			return errShape
 		}
+	case profile.InspectHttpTargetRequest:
+		if !targetRequestValid(value) {
+			return errShape
+		}
 	case profile.GetPolicyRequest:
 		if !validKind(value.RecordKind) || !validIdentity(value.Id) {
+			return errShape
+		}
+	case profile.InspectActivationTreeRequest:
+		selected := value.ActivationId
+		if value.Service != nil {
+			if value.ActivationId != "" {
+				return errShape
+			}
+			selected = *value.Service
+		} else if value.FromUnixMillis != nil {
+			return errShape
+		}
+		if selected == "" || len(selected) > 512 || strings.IndexFunc(selected, func(c rune) bool { return unicode.IsControl(c) || unicode.IsSpace(c) }) >= 0 || (value.Page != nil && (value.Page.PageSize > 128 || !validToken(value.Page.PageToken, 160))) {
 			return errShape
 		}
 	case profile.ListPoliciesRequest:
@@ -75,6 +92,10 @@ func validateResponse(response, request any, state *callState) error {
 		return state.fail(profile.FailureCategoryDecode, "response contradicts the bounded profile")
 	}
 	switch value := response.(type) {
+	case *profile.InspectHttpTargetResponse:
+		if !targetResponseValid(value, request.(profile.InspectHttpTargetRequest)) {
+			return invalid()
+		}
 	case *profile.InvokeResponse:
 		if !recordActivation(value.ActivationId, state) || value.Consumption == nil ||
 			present(value.Success != nil, value.DeclaredError != nil, value.PlatformFailure != nil) != 1 {
@@ -139,6 +160,43 @@ func validateResponse(response, request any, state *callState) error {
 		if len(value.Policies) > int(page.PageSize) || (value.Page != nil && !validToken(value.Page.NextPageToken, 117)) {
 			return invalid()
 		}
+	case *profile.InspectActivationTreeResponse:
+		selector := request.(profile.InspectActivationTreeRequest)
+		page := request.(profile.InspectActivationTreeRequest).Page
+		maximum := 32
+		if page != nil && page.PageSize != 0 {
+			maximum = int(page.PageSize)
+		}
+		if value.SchemaVersion != 1 || !value.RetainedHistoryOnly || value.Page == nil || len(value.Nodes) > maximum || !validToken(value.Page.NextPageToken, 160) || (!value.HistoryAvailable && (len(value.Nodes) != 0 || value.Page.NextPageToken != nil)) {
+			return invalid()
+		}
+		for _, node := range value.Nodes {
+			if witness := node.TransactionStaging; witness != nil {
+				grant := node.GrantedBudget
+				if witness.SchemaVersion != 1 || witness.ActivationSerial == 0 || !stagingHex(witness.CommandId) || !stagingHex(witness.AttemptId) || !stagingHex(witness.TransactionId) || !strings.HasPrefix(witness.PublicationId, "publication:sha256:") || !stagingHex(strings.TrimPrefix(witness.PublicationId, "publication:sha256:")) || witness.StagedMutations > 128 || witness.CapturedIntents == 0 || witness.CapturedIntents > 128 || grant == nil || witness.CapturedIntents > grant.EffectCount || witness.StateWriteBytes == 0 || witness.StateWriteBytes > grant.StateWriteBytes || witness.ObservedAtUnixMillis < node.ReceivedAtUnixMillis {
+					return invalid()
+				}
+			}
+			if len(node.TargetService) > 512 || (selector.Service != nil && (node.TargetService != *selector.Service || node.ParentActivationId != nil || node.ActivationId != node.RootActivationId || (selector.FromUnixMillis != nil && node.ReceivedAtUnixMillis < *selector.FromUnixMillis))) {
+				return invalid()
+			}
+			for _, id := range []*string{&node.ActivationId, &node.RootActivationId, node.ParentActivationId, node.CallerService} {
+				if id != nil && (*id == "" || len(*id) > 512 || strings.IndexFunc(*id, func(c rune) bool { return unicode.IsControl(c) || unicode.IsSpace(c) }) >= 0) {
+					return invalid()
+				}
+			}
+			if len(node.Phase) > 64 || len(node.PrincipalKind) > 64 || (node.TerminalState != nil && len(*node.TerminalState) > 64) {
+				return invalid()
+			}
+			if node.Diagnostic != nil {
+				if node.Diagnostic.SchemaVersion != 1 {
+					return invalid()
+				}
+				if digest := node.Diagnostic.ProfileDigest; digest != nil && (len(*digest) != 64 || strings.Trim(*digest, "0123456789abcdef") != "") {
+					return invalid()
+				}
+			}
+		}
 	case *profile.ListCapabilitiesResponse:
 		page := request.(profile.ListCapabilitiesRequest).Page
 		maximum := 128
@@ -167,6 +225,10 @@ func validateResponse(response, request any, state *callState) error {
 	}
 	state.metadata.Outcome = profile.OutcomeKnowledgeObserved
 	return nil
+}
+
+func stagingHex(value string) bool {
+	return len(value) == 64 && strings.Trim(value, "0123456789abcdef") == ""
 }
 
 func recordActivation(identity string, state *callState) bool {

@@ -70,17 +70,27 @@ def mode(control, selected):
     temporary.replace(control / "mode")
 
 
-def rendezvous(client, control, name):
+def rendezvous(client, control, name, *, process=None, peer=None):
     deadline = min(client.deadline, time.monotonic() + 3)
-    while not (control / name).exists():
-        client.cancellation.check()
-        client.node.drain()
-        require(time.monotonic() < deadline, "authoring-provider-rendezvous")
-        time.sleep(0.005)
-    require((control / name).read_bytes() == b"observed\n", "authoring-provider-marker")
+    try:
+        while not (control / name).exists():
+            client.cancellation.check()
+            client.node.drain()
+            require(time.monotonic() < deadline, "authoring-provider-rendezvous")
+            time.sleep(0.005)
+        require((control / name).read_bytes() == b"observed\n", "authoring-provider-marker")
+    except BaseException:
+        if process is not None:
+            try:
+                from tools.capsule_provider_diagnostics import capture
+                capture(client, process, control, name, peer=peer)
+            except BaseException:
+                # Even interruption of diagnostics preserves the first failure.
+                pass
+        raise
 
 
-def http_cases(client, node, fixture, target, publication, port, control, probe, result, population):
+def http_cases(client, node, fixture, target, publication, port, control, probe, result, population, *, peer=None):
     target = grant_http(client, node, fixture, publication, target, port)
     allowed = f"http://localhost:{port}/allowed"
     denied = f"http://localhost:{port}/denied"
@@ -96,7 +106,7 @@ def http_cases(client, node, fixture, target, publication, port, control, probe,
         process = start_call(client, target, "http-status", "check", [allowed], "authoring-" + kind,
                              wall=100 if kind == "deadline" else None)
         try:
-            rendezvous(client, control, "started-" + selected)
+            rendezvous(client, control, "started-" + selected, process=process, peer=peer)
             if kind != "deadline":
                 result["samples"].append(sample(client, probe, "active-" + kind, population, active=True))
             if kind == "cancel":

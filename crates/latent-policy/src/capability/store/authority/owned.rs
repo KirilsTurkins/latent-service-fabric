@@ -39,6 +39,17 @@ pub struct OwnedPolicyDecision {
     require_audit: bool,
 }
 impl OwnedPolicyDecision {
+    /// Original bounded document identities. Observing these revisions cannot
+    /// renew a replaced policy or bypass the retained currentness fence.
+    pub fn policy_revisions(&self) -> impl Iterator<Item = super::CapabilityPolicyRevision<'_>> {
+        self.snapshot.policy_revisions()
+    }
+
+    #[must_use]
+    pub fn binding_revision(&self) -> super::CapabilityPolicyRevision<'_> {
+        self.snapshot.binding_revision()
+    }
+
     #[must_use]
     pub const fn requires_audit(&self) -> bool {
         self.require_audit
@@ -70,6 +81,7 @@ impl PolicyStore {
                     tenant: original.tenant.clone(),
                     policies: original.policies.clone(),
                     binding: original.binding.clone(),
+                    generation: original.generation,
                     lease,
                 },
                 publication: decision.publication.clone(),
@@ -101,7 +113,62 @@ impl PolicyStore {
         operation: &SealedPolicyDecision<'_>,
         action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        self.with_current_decisions(&[&captured.borrowed(), operation], action)
+        self.with_captured_decisions(&[captured], operation, action)
+    }
+
+    /// Intersect original sealed purposes and a current operation in the same
+    /// policy/publication fence. Additional captured grants can only narrow the
+    /// accepted action; replaced snapshots cannot revive their original stamps.
+    pub fn with_captured_decisions(
+        &self,
+        captured: &[&OwnedPolicyDecision],
+        operation: &SealedPolicyDecision<'_>,
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if captured.is_empty() || captured.len() > 8 {
+            return Err(denied());
+        }
+        let borrowed: Vec<_> = captured
+            .iter()
+            .map(|original| original.borrowed())
+            .collect();
+        let mut decisions: Vec<_> = borrowed.iter().collect();
+        decisions.push(operation);
+        self.with_current_decisions(&decisions, action)
+    }
+
+    /// Recheck the original retained owner, row stamps and publication under the
+    /// existing short currentness fence. This does not acquire a replacement
+    /// grant or expose a reusable borrowed authorization object. The callback
+    /// must not wait, perform I/O, call guests or recursively enter this fence.
+    pub fn with_retained_decision(
+        &self,
+        captured: &OwnedPolicyDecision,
+        action: &mut dyn FnMut(
+            &EvaluationInput<'_>,
+            CapabilityCeiling,
+        ) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        self.with_current(&captured.borrowed(), action)
+    }
+
+    /// Recheck several original retained decisions under one policy/publication
+    /// fence. This preserves the same lock order as `with_current_decisions`;
+    /// callbacks must be short and must not perform I/O or enter another fence.
+    pub fn with_retained_decisions(
+        &self,
+        captured: &[&OwnedPolicyDecision],
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if captured.is_empty() || captured.len() > 8 {
+            return Err(denied());
+        }
+        let borrowed: Vec<_> = captured
+            .iter()
+            .map(|decision| decision.borrowed())
+            .collect();
+        let references: Vec<_> = borrowed.iter().collect();
+        self.with_current_decisions(&references, action)
     }
 }
 

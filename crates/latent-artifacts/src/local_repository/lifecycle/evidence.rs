@@ -172,7 +172,17 @@ impl DirectoryArtifactRepository {
         } = verified;
         // Reuse the ordinary bounded manifest/descriptor/capacity validator;
         // the temporary prepared bytes are discarded without staging anything.
-        let artifact = self.prepare_publication(artifact)?.artifact;
+        let transaction_profile = super::super::transaction_profile::from_upload(
+            &upload,
+            grant.binding(),
+            &artifact.manifest,
+        )?;
+        if transaction_profile != metadata.is_transaction_execution_profile() {
+            return Err(corrupt("renewal-immutable-profile-mismatch"));
+        }
+        let artifact = self
+            .prepare_publication_with_transaction_profile(artifact, transaction_profile)?
+            .artifact;
         if artifact.descriptor != *metadata.descriptor()
             || artifact.manifest != *metadata.manifest()
             || artifact.contracts != metadata.contracts()

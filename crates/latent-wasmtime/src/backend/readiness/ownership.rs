@@ -23,6 +23,66 @@ struct Materialization {
 }
 
 impl WasmtimeBackend {
+    pub(in crate::backend) fn inspect_readiness(
+        &self,
+        ready: PreparedReadiness,
+    ) -> Result<latent_executor::PreparationInspection, PlatformError> {
+        let pending = self.checked_readiness(ready)?;
+        let runtime = &pending.owner.runtime;
+        self.shared.preparation_context.check_runtime(runtime)?;
+        let surface = &runtime.surface;
+        if surface
+            .imports
+            .len()
+            .saturating_add(surface.type_imports.len())
+            > 64
+            || surface
+                .imports
+                .iter()
+                .chain(&surface.type_imports)
+                .any(|contract| contract.len() > 512)
+        {
+            return Err(platform_error(
+                PlatformErrorCode::ResourceExhausted,
+                "preparation-inspection-import-limit",
+                false,
+            ));
+        }
+        let profile =
+            if surface.has_web_application() && self.config.buffered_web_value_profile.is_some() {
+                latent_core::diagnostic::DiagnosticProfile::WasmtimeBufferedWebValuesV1
+            } else {
+                latent_core::diagnostic::DiagnosticProfile::WasmtimeServiceValuesV1
+            };
+        // Validate the aggregate name bound before cloning either collection.
+        let exports = surface.inspection_exports()?;
+        Ok(latent_executor::PreparationInspection {
+            key: pending.descriptor.key.clone(),
+            component_digest: latent_core::ReleaseDigest(
+                runtime.descriptor.metadata["component-digest"].clone(),
+            ),
+            profile,
+            import_count: (surface.imports.len() + surface.type_imports.len()) as u64,
+            function_count: surface.function_count() as u64,
+            hostcall_fuel: surface.hostcall_fuel as u64,
+            maximum_lifted_bytes: surface.value_codec_limits.max_lifted_bytes as u64,
+            maximum_type_nodes: surface.value_codec_limits.max_type_nodes as u64,
+            declared_budget: runtime.declared_budget.clone(),
+            sealed_metadata_fingerprint: runtime
+                .authentication
+                .as_ref()
+                .map(|identity| *identity.metadata().digest()),
+            imports: surface.imports.iter().cloned().map(ContractId).collect(),
+            type_imports: surface
+                .type_imports
+                .iter()
+                .cloned()
+                .map(ContractId)
+                .collect(),
+            exports,
+        })
+    }
+
     pub(in crate::backend) fn ready_owner(
         &self,
         pin: ReadyPin<PreparedRuntime>,
@@ -67,6 +127,85 @@ impl WasmtimeBackend {
             })
             .await?;
         self.finish_materialization(pending)
+    }
+
+    pub(in crate::backend) async fn canonicalize_readiness_input(
+        &self,
+        ready: PreparedReadiness,
+        envelope: &latent_activation::ActivationEnvelope,
+        budget: &latent_core::ActivationBudget,
+        wait: &dyn PreparationReadWait,
+    ) -> Result<
+        (
+            PreparedReadiness,
+            latent_executor::CanonicalTransactionInput,
+        ),
+        PlatformError,
+    > {
+        let pending = self.checked_readiness(ready)?;
+        let revision = envelope
+            .resolved_revision
+            .as_ref()
+            .ok_or_else(invalid_owner)?;
+        let imports = &pending.owner.runtime.surface.imports;
+        if budget.profile() != latent_core::BudgetProfile::Phase4
+            || envelope.budget != *budget.granted()
+            || !self.config.transactional_state
+            || envelope.input_media_type != crate::values::MEDIA_TYPE
+            || pending.descriptor.key.release != revision.release
+            || pending.descriptor.key.publication != revision.publication
+            || (!imports.contains(crate::surface::transaction::STATE)
+                && !imports.contains(crate::surface::transaction::INTENTS))
+        {
+            return Err(invalid_owner());
+        }
+        let window = super::wait::Window::new(Some(wait));
+        window
+            .check(|| {
+                self.shared
+                    .preparation_context
+                    .check_runtime(&pending.owner.runtime)
+            })
+            .await?;
+        let function = pending
+            .owner
+            .runtime
+            .surface
+            .function(&envelope.target.contract.0, &envelope.target.function.0)
+            .ok_or_else(invalid_owner)?;
+        let limits = self.config.value_codec_limits;
+        // Cover decoded values and the legacy diagnostic JSON representation
+        // concurrently, without changing either codec's existing ceilings.
+        let scratch_bytes = limits
+            .max_decoded_value_bytes
+            .checked_mul(2)
+            .and_then(|bytes| bytes.checked_add(limits.max_input_bytes))
+            .and_then(|bytes| u64::try_from(bytes).ok())
+            .ok_or_else(input_memory)?;
+        let scratch = budget
+            .reserve_host_memory(scratch_bytes)
+            .map_err(|_| input_memory())?;
+        let output_memory = budget
+            .reserve_host_memory(
+                u64::try_from(limits.max_output_bytes).map_err(|_| input_memory())?,
+            )
+            .map_err(|_| input_memory())?;
+        let bytes = crate::values::canonical_params(
+            &function.params,
+            &envelope.input,
+            &envelope.input_media_type,
+            limits,
+        )?;
+        drop(scratch);
+        let Materialization {
+            descriptor,
+            imports,
+            owner,
+        } = pending;
+        Ok((
+            PreparedReadiness::new(descriptor, imports, owner),
+            latent_executor::CanonicalTransactionInput::new(bytes, output_memory),
+        ))
     }
 
     fn checked_readiness(
@@ -121,6 +260,14 @@ fn invalid_owner() -> PlatformError {
     platform_error(
         PlatformErrorCode::InvalidArgument,
         "readiness belongs to another runtime or descriptor",
+        false,
+    )
+}
+
+fn input_memory() -> PlatformError {
+    platform_error(
+        PlatformErrorCode::ResourceExhausted,
+        "canonical transaction input exceeds original activation memory",
         false,
     )
 }

@@ -76,7 +76,7 @@ impl CheckedPackageSbom {
 pub(crate) fn inspect(
     layout: &PackageLayout,
     layers: &[(String, Vec<u8>)],
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<Option<CheckedPackageSbom>, PlatformError> {
     let config = layout.config();
     let Some(layer) = config.layers.iter().find(|layer| layer.path == SBOM_PATH) else {

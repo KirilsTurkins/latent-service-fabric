@@ -1,7 +1,7 @@
 use latent_core::Metadata;
 
 use super::{DispatchMode, InstanceAllocator, WasmtimeConfig, WASMTIME_VERSION};
-use crate::WasmtimeEngineProfile;
+use crate::{ExecutionContainment, WasmtimeEngineProfile};
 
 impl WasmtimeConfig {
     #[cfg(test)]
@@ -32,9 +32,11 @@ impl WasmtimeConfig {
             cpu_feature_set: self.cpu_feature_set.clone(),
             pooling_allocator: matches!(self.instance_allocator, InstanceAllocator::Pooling),
             copy_on_write_images: self.copy_on_write_images,
-            async_support: true,
-            fuel_enabled: true,
-            epoch_interruption_enabled: true,
+            containment: ExecutionContainment {
+                async_support: true,
+                fuel_enabled: true,
+                epoch_interruption_enabled: true,
+            },
             configuration,
         }
     }
@@ -82,46 +84,7 @@ impl WasmtimeConfig {
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
         if mode == DispatchMode::Generic {
-            if self.angular_renderer {
-                fields.insert(
-                    "renderer-profile-digest".into(),
-                    latent_manifest::RendererRequirement::angular().profile_digest,
-                );
-            }
-            fields.insert(
-                "execution-isolation-profile".into(),
-                self.execution_isolation_profile.name().into(),
-            );
-            let abi = latent_core::PHASE3_HOST_ABI_CURRENT;
-            fields.insert("host-abi-profile".into(), abi.id.into());
-            fields.insert(
-                "host-abi-digest".into(),
-                format!(
-                    "{:x}",
-                    latent_core::digest::HexDigest(crate::bindings::host_abi_digest())
-                ),
-            );
-            for (name, value) in [
-                ("compiler-workers", self.effective_compiler_workers()),
-                (
-                    "maximum-preparation-waiters",
-                    self.maximum_preparation_waiters,
-                ),
-                (
-                    "maximum-waiters-per-preparation",
-                    self.maximum_waiters_per_preparation,
-                ),
-                (
-                    "maximum-ready-preparations",
-                    self.maximum_ready_preparations,
-                ),
-                (
-                    "maximum-preparation-document-bytes",
-                    self.maximum_preparation_document_bytes,
-                ),
-            ] {
-                fields.insert(name.to_owned(), value.to_string());
-            }
+            self.include_generic_policy(&mut fields);
         }
         self.include_value_policy(&mut fields);
         #[cfg(feature = "development-clock-fixture")]
@@ -136,6 +99,59 @@ impl WasmtimeConfig {
         }
         self.context_policy.append_profile_fields(&mut fields);
         fields
+    }
+
+    fn include_generic_policy(&self, fields: &mut Metadata) {
+        if self.angular_renderer {
+            fields.insert(
+                "renderer-profile-digest".into(),
+                latent_manifest::RendererRequirement::angular().profile_digest,
+            );
+        }
+        fields.insert(
+            "execution-isolation-profile".into(),
+            self.execution_isolation_profile.name().into(),
+        );
+        let abi = latent_core::PHASE3_HOST_ABI_CURRENT;
+        fields.insert("host-abi-profile".into(), abi.id.into());
+        fields.insert(
+            "host-abi-digest".into(),
+            format!(
+                "{:x}",
+                latent_core::digest::HexDigest(crate::bindings::host_abi_digest())
+            ),
+        );
+        if self.transactional_state {
+            fields.insert(
+                "transaction-host-profile".into(),
+                latent_core::PHASE4_HOST_ABI_V1.id.into(),
+            );
+            fields.insert(
+                "transaction-host-digest".into(),
+                latent_manifest::phase4_host_abi_digest(),
+            );
+        }
+        for (name, value) in [
+            ("compiler-workers", self.effective_compiler_workers()),
+            (
+                "maximum-preparation-waiters",
+                self.maximum_preparation_waiters,
+            ),
+            (
+                "maximum-waiters-per-preparation",
+                self.maximum_waiters_per_preparation,
+            ),
+            (
+                "maximum-ready-preparations",
+                self.maximum_ready_preparations,
+            ),
+            (
+                "maximum-preparation-document-bytes",
+                self.maximum_preparation_document_bytes,
+            ),
+        ] {
+            fields.insert(name.to_owned(), value.to_string());
+        }
     }
 
     fn include_resource_policy(&self, fields: &mut Metadata) {
@@ -254,6 +270,36 @@ impl WasmtimeConfig {
             "value-max-decoded-value-bytes",
             values.max_decoded_value_bytes
         );
+        // Selection is an authenticated component-surface decision, not a
+        // caller hint. Both policies and the selection version bind every
+        // prepared/native artifact even when the selected component is small.
+        include!("value-profile-selection", "actual-web-export-v1");
+        include!("structural-type-imports", "resource-free-values-v1");
+        if let Some(web) = self.buffered_web_value_profile {
+            include!("buffered-web-profile", "bounded-buffered-web-v1");
+            include!("buffered-web-hostcall-fuel", web.hostcall_fuel);
+            include!("buffered-web-max-input-bytes", web.limits.max_input_bytes);
+            include!("buffered-web-max-output-bytes", web.limits.max_output_bytes);
+            include!("buffered-web-max-depth", web.limits.max_depth);
+            include!("buffered-web-max-nodes", web.limits.max_nodes);
+            include!("buffered-web-max-string-bytes", web.limits.max_string_bytes);
+            include!(
+                "buffered-web-max-collection-items",
+                web.limits.max_collection_items
+            );
+            include!("buffered-web-max-type-nodes", web.limits.max_type_nodes);
+            include!(
+                "buffered-web-max-type-name-bytes",
+                web.limits.max_type_name_bytes
+            );
+            include!("buffered-web-max-lifted-bytes", web.limits.max_lifted_bytes);
+            include!(
+                "buffered-web-max-decoded-value-bytes",
+                web.limits.max_decoded_value_bytes
+            );
+        } else {
+            include!("buffered-web-profile", "absent");
+        }
     }
 }
 

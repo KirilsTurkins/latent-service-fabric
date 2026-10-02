@@ -80,6 +80,9 @@ impl ExecutionCancellation for CapturedCancellation<'_> {
     fn budget_accounting(&self) -> Option<&ActivationBudget> {
         self.budget.as_ref()
     }
+    fn transaction_host(&self) -> Option<Arc<dyn latent_executor::transaction::TransactionHost>> {
+        self.inner.transaction_host()
+    }
     fn effective_deadline(&self) -> Option<&latent_core::EffectiveDeadline> {
         let owned = self.budget.as_ref().map(ActivationBudget::deadline);
         match (owned, self.inner.effective_deadline()) {
@@ -121,11 +124,11 @@ impl ExecutionBackend for BudgetedExecutionBackend {
         self.inner.prepare_from_repository(repository, key)
     }
 
-    fn prepare_ready_from_repository<'a>(
-        &'a self,
+    fn prepare_ready_from_repository(
+        &self,
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
-    ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
+    ) -> BoxFuture<'_, Result<PreparedReadiness, PlatformError>> {
         self.inner.prepare_ready_from_repository(repository, key)
     }
 

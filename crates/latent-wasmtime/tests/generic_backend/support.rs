@@ -90,7 +90,10 @@ impl ExecutionCancellation for Cancellation {
 
 pub fn config() -> WasmtimeConfig {
     WasmtimeConfig {
-        java_guest: guest_runtime::java(),
+        guest_languages: latent_wasmtime::GuestLanguageProfiles {
+            java_guest: guest_runtime::java(),
+            ..Default::default()
+        },
         fuel_async_yield_interval: guest_runtime::java().then_some(10_000),
         maximum_memory_bytes: guest_runtime::memory(MEMORY),
         maximum_fuel: MAX_FUEL,

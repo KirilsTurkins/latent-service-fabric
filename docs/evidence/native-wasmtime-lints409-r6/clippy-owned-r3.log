@@ -1,0 +1,160 @@
+    Checking latent-core v0.1.0-alpha.5 (/work/crates/latent-core)
+    Checking wit-parser v0.259.0
+   Compiling wasm-encoder v0.254.0
+    Checking wasmprinter v0.254.0
+    Checking cranelift-codegen v0.135.3
+   Compiling wit-parser v0.254.0
+    Checking hyper v1.11.1
+    Checking tokio-rustls v0.26.5
+   Compiling latent-component-bindings v0.1.0-alpha.5 (/work/crates/latent-component-bindings)
+    Checking latent-network v0.1.0-alpha.5 (/work/crates/latent-network)
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/work/crates/latent-wasmtime)
+    Checking hyper-util v0.1.20
+    Checking latent-manifest v0.1.0-alpha.5 (/work/crates/latent-manifest)
+    Checking latent-contracts v0.1.0-alpha.5 (/work/crates/latent-contracts)
+    Checking latent-audit v0.1.0-alpha.5 (/work/crates/latent-audit)
+    Checking latent-protected-files v0.1.0-alpha.5 (/work/crates/latent-protected-files)
+    Checking latent-identity v0.1.0-alpha.5 (/work/crates/latent-identity)
+    Checking wasmtime-environ v48.0.3
+    Checking latent-state v0.1.0-alpha.5 (/work/crates/latent-state)
+   Compiling wasm-metadata v0.254.0
+    Checking latent-routing v0.1.0-alpha.5 (/work/crates/latent-routing)
+    Checking latent-artifacts v0.1.0-alpha.5 (/work/crates/latent-artifacts)
+    Checking latent-activation v0.1.0-alpha.5 (/work/crates/latent-activation)
+    Checking latent-admission v0.1.0-alpha.5 (/work/crates/latent-admission)
+   Compiling wit-component v0.254.0
+    Checking latent-telemetry v0.1.0-alpha.5 (/work/crates/latent-telemetry)
+    Checking latent-triggers v0.1.0-alpha.5 (/work/crates/latent-triggers)
+    Checking latent-ingress v0.1.0-alpha.5 (/work/crates/latent-ingress)
+    Checking latent-scheduler v0.1.0-alpha.5 (/work/crates/latent-scheduler)
+    Checking latent-effects v0.1.0-alpha.5 (/work/crates/latent-effects)
+   Compiling wasmtime-internal-wit-bindgen v48.0.3
+    Checking latent-commit v0.1.0-alpha.5 (/work/crates/latent-commit)
+   Compiling wasmtime-internal-component-macro v48.0.3
+    Checking latent-packaging v0.1.0-alpha.5 (/work/crates/latent-packaging)
+    Checking latent-signing v0.1.0-alpha.5 (/work/crates/latent-signing)
+    Checking latent-executor v0.1.0-alpha.5 (/work/crates/latent-executor)
+    Checking wasmtime-internal-fiber v48.0.3
+    Checking latent-policy v0.1.0-alpha.5 (/work/crates/latent-policy)
+    Checking latent-capabilities v0.1.0-alpha.5 (/work/crates/latent-capabilities)
+    Checking latent-http v0.1.0-alpha.5 (/work/crates/latent-http)
+    Checking latent-node v0.1.0-alpha.5 (/work/crates/latent-node)
+    Checking latent-secrets v0.1.0-alpha.5 (/work/crates/latent-secrets)
+    Checking cranelift-native v0.135.3
+    Checking cranelift-frontend v0.135.3
+    Checking wasmtime-internal-unwinder v48.0.3
+    Checking latent-vault v0.1.0-alpha.5 (/work/crates/latent-vault)
+    Checking latent-blobs v0.1.0-alpha.5 (/work/crates/latent-blobs)
+    Checking wasmtime-internal-cranelift v48.0.3
+    Checking latent-control-store v0.1.0-alpha.5 (/work/crates/latent-control-store)
+    Checking latent-nats v0.1.0-alpha.5 (/work/crates/latent-nats)
+    Checking wasmtime v48.0.3
+error: unused import: `InvocationInputDropReason`
+  --> crates/latent-wasmtime/src/backend.rs:34:17
+   |
+34 |     InputTrace, InvocationInputDropReason, InvocationInputObserver, InvocationInputPhase,
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `-D unused-imports` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: unused import: `PreparedRuntime`
+ --> crates/latent-wasmtime/src/backend/preparation_context.rs:6:43
+  |
+6 | use super::{bounded_error, sha256_digest, PreparedRuntime};
+  |                                           ^^^^^^^^^^^^^^^
+
+error[E0603]: function `request` is private
+  --> crates/latent-wasmtime/src/host/accounting/tests.rs:13:14
+   |
+13 | use support::request;
+   |              ^^^^^^^ private function
+   |
+note: the function `request` is defined here
+  --> crates/latent-wasmtime/src/host/accounting/tests/support.rs:9:1
+   |
+ 9 | pub(super) fn request() -> ExecutionRequest {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0603]: function `request` is private
+  --> crates/latent-wasmtime/src/backend/readiness/tests/invocation.rs:56:30
+   |
+56 |     let mut request = input::request();
+   |                              ^^^^^^^ private function
+   |
+note: the function `request` is defined here
+  --> crates/latent-wasmtime/src/host/accounting/tests/support.rs:9:1
+   |
+ 9 | pub(super) fn request() -> ExecutionRequest {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0560]: struct `cache::accounting::ledger::PreparedRuntimeCost` has no field named `metadata_bytes`
+   --> crates/latent-wasmtime/src/backend/preparation/compilation.rs:241:17
+    |
+241 |                 metadata_bytes,
+    |                 ^^^^^^^^^^^^^^ `cache::accounting::ledger::PreparedRuntimeCost` does not have this field
+    |
+    = note: available fields are: `metadata`
+
+error[E0308]: mismatched types
+   --> crates/latent-wasmtime/src/backend.rs:977:26
+    |
+977 |                 message: &error.message,
+    |                          ^^^^^^^^^^^^^^ expected `String`, found `&String`
+    |
+help: consider removing the borrow
+    |
+977 -                 message: &error.message,
+977 +                 message: error.message,
+    |
+
+error[E0308]: mismatched types
+    --> crates/latent-wasmtime/src/backend.rs:1002:30
+     |
+1002 |                     message: &error.message,
+     |                              ^^^^^^^^^^^^^^ expected `String`, found `&String`
+     |
+help: consider removing the borrow
+     |
+1002 -                     message: &error.message,
+1002 +                     message: error.message,
+     |
+
+error[E0560]: struct `cache::accounting::ledger::PreparedRuntimeCost` has no field named `compiled_image_bytes`
+  --> crates/latent-wasmtime/src/cache/reservation.rs:84:17
+   |
+84 |                 compiled_image_bytes,
+   |                 ^^^^^^^^^^^^^^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+84 -                 compiled_image_bytes,
+84 +                 compiled_image,
+   |
+
+Some errors have detailed explanations: E0308, E0560.
+For more information about an error, try `rustc --explain E0308`.
+error: could not compile `latent-wasmtime` (lib) due to 6 previous errors
+warning: build failed, waiting for other jobs to finish...
+error[E0609]: no field `compiled_image_bytes` on type `cache::accounting::ledger::PreparedRuntimeCost`
+  --> crates/latent-wasmtime/src/cache/accounting/tests/failures.rs:40:25
+   |
+40 |                 altered.compiled_image_bytes,
+   |                         ^^^^^^^^^^^^^^^^^^^^ unknown field
+   |
+help: a field with a similar name exists
+   |
+40 -                 altered.compiled_image_bytes,
+40 +                 altered.compiled_image,
+   |
+
+error[E0609]: no field `metadata_bytes` on type `cache::accounting::ledger::PreparedRuntimeCost`
+  --> crates/latent-wasmtime/src/cache/accounting/tests/failures.rs:41:25
+   |
+41 |                 altered.metadata_bytes
+   |                         ^^^^^^^^^^^^^^ unknown field
+   |
+   = note: available fields are: `source`, `metadata`, `compiled_image`
+
+Some errors have detailed explanations: E0308, E0560, E0603, E0609.
+error: could not compile `latent-wasmtime` (lib test) due to 10 previous errors

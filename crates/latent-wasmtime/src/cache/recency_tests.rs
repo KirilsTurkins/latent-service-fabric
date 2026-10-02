@@ -153,7 +153,7 @@ fn seeded_hits_misses_invalidation_and_arena_reuse_match_reference() {
     for capacity in [4, 64, 4096] {
         let (cache, mut model) = fixture(capacity);
         let mut random = 0x6c72_755f_7472_6163_u64;
-        for step in 0..8192 {
+        for step in 0..8192_u64 {
             random ^= random << 13;
             random ^= random >> 7;
             random ^= random << 17;
@@ -166,7 +166,7 @@ fn seeded_hits_misses_invalidation_and_arena_reuse_match_reference() {
                     }
                 }
                 1 | 4 => lookup(&cache, &mut model, &selected),
-                2 => publish(&cache, &mut model, selected, step as u64 + 10_000),
+                2 => publish(&cache, &mut model, selected, step + 10_000),
                 _ => {
                     invalidate(&cache, &mut model, &selected, false);
                     invalidate(&cache, &mut model, &selected, true);

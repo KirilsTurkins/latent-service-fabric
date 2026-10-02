@@ -44,10 +44,8 @@ pub async fn run(session: &mut Session) -> (Vec<Value>, Value) {
             "work-observe" => 1,
             _ => 2,
         };
-        let direct_telemetry =
-            telemetry::observe(&session.node, &direct, "tests", ROOT, PARENT, log_count).await;
-        let remote_telemetry =
-            telemetry::observe(&session.node, &remote, "tests", ROOT, PARENT, log_count).await;
+        let direct_telemetry = telemetry::observe(&session.node, &direct, "tests", log_count).await;
+        let remote_telemetry = telemetry::observe(&session.node, &remote, "tests", log_count).await;
         let direct = evidence::call(&direct, &direct_status, direct_telemetry);
         let remote = evidence::call(&remote, &remote_status, remote_telemetry);
         assertions::check(function, &direct, before, after);
@@ -68,8 +66,6 @@ pub async fn run(session: &mut Session) -> (Vec<Value>, Value) {
     (rows, tenant_telemetry.unwrap())
 }
 
-pub const ROOT: &str = "capability-root";
-pub const PARENT: &str = "capability-parent";
 pub const FUEL: u64 = 100_000_000;
 pub const MEMORY: u64 = 67_108_864;
 pub const LOG: u64 = 16_384;
@@ -78,8 +74,6 @@ pub const WALL: u64 = 4000;
 fn request(function: &str, id: &str) -> proto::InvokeRequest {
     proto::InvokeRequest {
         activation_id: Some(id.to_owned()),
-        root_activation_id: Some(ROOT.to_owned()),
-        parent_activation_id: Some(PARENT.to_owned()),
         target: Some(proto::InvocationTarget {
             tenant: "tests".to_owned(),
             service: fixture::SHARED.to_owned(),

@@ -3,34 +3,113 @@ use std::sync::OnceLock;
 use super::physical::PhysicalStore;
 use super::{ProtectedStoreError, ProtectedStoreOwner};
 use crate::embedded::{ReadView, StoreError};
-use crate::store_io::{StoreIoJob, StoreIoKind, StoreIoRetained};
+use crate::store_io::{
+    StoreIoJob, StoreIoKind, StoreIoRetained, StoreIoRetirement, StoreIoRetirementWitness,
+};
 
 /// Coherent host snapshot. The native handle has no public accessor and every
 /// read borrows it inside a fixed worker. Drop retires it on those same workers.
 pub struct ProtectedStoreView {
-    retained: StoreIoRetained<OnceLock<PhysicalStore>, ReadView>,
+    retained: StoreIoRetained<OnceLock<PhysicalStore>, RetainedReadView>,
+}
+
+// Declaration order matters: destroy the actual native snapshot before
+// releasing the original admission owner on the same storage worker.
+struct RetainedReadView {
+    view: ReadView,
+    _owner: Option<Box<dyn Send>>,
+}
+
+impl ProtectedStoreView {
+    /// Capture before moving this view through a job whose response may detach.
+    /// One observer is permitted for the entire affine lifetime. A positive
+    /// observation proves actual native destruction and physical charge release.
+    pub fn retirement_witness(&mut self) -> Option<StoreIoRetirementWitness> {
+        self.retained.retirement_witness()
+    }
+
+    /// Observe actual native view destruction on the fixed storage workers.
+    /// Dropping this receipt detaches observation without cancelling cleanup.
+    pub fn retire(self) -> StoreIoRetirement {
+        self.retained.retire()
+    }
 }
 
 pub type ProtectedViewResult<T> = (ProtectedStoreView, Result<T, ProtectedStoreError>);
 pub type ProtectedViewJob<T> = StoreIoJob<ProtectedViewResult<T>>;
 
+pub type ProtectedViewOpenJob = StoreIoJob<Result<ProtectedStoreView, ProtectedStoreError>>;
+type ViewOpening = (ProtectedViewOpenJob, Option<StoreIoRetirementWitness>);
+
 impl ProtectedStoreOwner {
-    pub fn open_view(
+    pub fn open_view(&self) -> Result<ProtectedViewOpenJob, ProtectedStoreError> {
+        self.open_view_inner(false, None).map(|(job, _)| job)
+    }
+
+    /// Retain an already admitted physical owner through opening, response
+    /// detachment and actual native destruction. This does not admit new work.
+    pub fn open_view_retaining<T: Send + 'static>(
         &self,
-    ) -> Result<StoreIoJob<Result<ProtectedStoreView, ProtectedStoreError>>, ProtectedStoreError>
-    {
+        owner: T,
+    ) -> Result<ProtectedViewOpenJob, ProtectedStoreError> {
+        self.open_view_inner(false, Some(Box::new(owner)))
+            .map(|(job, _)| job)
+    }
+
+    /// Issue the single native retirement observer before accepting an open.
+    /// The host keeps it across failed opening, response detachment and every
+    /// move of the view. No elapsed deadline can complete this observer.
+    pub fn open_view_observed(
+        &self,
+    ) -> Result<(ProtectedViewOpenJob, StoreIoRetirementWitness), ProtectedStoreError> {
+        self.observed_opening(None)
+    }
+
+    /// Issue the original retirement observer while retaining the admitted
+    /// owner inside the native snapshot until its actual worker destruction.
+    pub fn open_view_observed_retaining<T: Send + 'static>(
+        &self,
+        owner: T,
+    ) -> Result<(ProtectedViewOpenJob, StoreIoRetirementWitness), ProtectedStoreError> {
+        self.observed_opening(Some(Box::new(owner)))
+    }
+
+    fn observed_opening(
+        &self,
+        owner: Option<Box<dyn Send>>,
+    ) -> Result<(ProtectedViewOpenJob, StoreIoRetirementWitness), ProtectedStoreError> {
+        self.open_view_inner(true, owner).map(|(job, witness)| {
+            (
+                job,
+                witness.expect("fresh affine view issues its first observer"),
+            )
+        })
+    }
+
+    fn open_view_inner(
+        &self,
+        observed: bool,
+        owner: Option<Box<dyn Send>>,
+    ) -> Result<ViewOpening, ProtectedStoreError> {
         self.available()?;
         let mut retained = self
             .ready
-            .reserve_retained::<ReadView>(8192)
+            .reserve_retained::<RetainedReadView>(8192)
             .map_err(ProtectedStoreError::Io)?;
-        self.ready
+        let witness = if observed {
+            retained.retirement_witness()
+        } else {
+            None
+        };
+        let job = self
+            .ready
             .submit(StoreIoKind::Read, 0, move |store| {
                 store.check()?;
                 let view = store.classify(store.engine().snapshot())?;
-                // This affine reserved slot was created empty. On every failure it
-                // schedules retirement, including detachment before publication.
-                if let Err(view) = retained.attach(view) {
+                if let Err(view) = retained.attach(RetainedReadView {
+                    view,
+                    _owner: owner,
+                }) {
                     drop(view); // already on the native worker
                     return Err(ProtectedStoreError::Io(
                         crate::store_io::StoreIoError::RecoveryRequired,
@@ -39,7 +118,8 @@ impl ProtectedStoreOwner {
                 store.check()?;
                 Ok(ProtectedStoreView { retained })
             })
-            .map_err(ProtectedStoreError::Io)
+            .map_err(ProtectedStoreError::Io)?;
+        Ok((job, witness))
     }
 
     /// Move the complete host transaction payload into `operation`, declaring
@@ -60,7 +140,7 @@ impl ProtectedStoreOwner {
                 let result = (|| {
                     store.check()?;
                     let native = view.retained.get().expect("worker-owned opened read view");
-                    let result = store.classify(operation(native));
+                    let result = store.classify(operation(&native.view));
                     store.check()?;
                     result
                 })();

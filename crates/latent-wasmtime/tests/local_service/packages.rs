@@ -6,9 +6,7 @@ use latent_packaging::{PackageBundle, PackageInput};
 use serde_json::{json, Value};
 #[path = "../../../latent-packaging/tests/fixtures/mod.rs"]
 mod fixture;
-#[path = "../generic_backend/support.rs"]
-#[allow(dead_code)]
-mod runtime_fixture;
+use crate::support as runtime_fixture;
 
 pub fn budget() -> latent_core::ResourceBudget {
     latent_core::ResourceBudget {

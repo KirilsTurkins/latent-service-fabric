@@ -163,7 +163,7 @@ impl Inner {
         );
         let mut envelope = self.local_envelope(call, request, &target, grant)?;
         let activation_id = envelope.activation_id.clone();
-        let (journal, cancellation) = self.journal.begin_with(&envelope, || {
+        let (journal, cancellation) = self.journal.begin_broker_child(&envelope, call, || {
             self.cancellations.register(activation_id.clone())
         })?;
         let transport_stop = Arc::new(TransportStop::default());
@@ -211,7 +211,7 @@ impl Inner {
             Err(failure) => {
                 // Publish the actual admission/capacity failure, including a
                 // zero-use finalization if the child was admitted but never ran.
-                let _ = lifecycle.complete(failure_for_platform_error(
+                let _ = lifecycle.complete_admission_failure(failure_for_platform_error(
                     failure.clone(),
                     BudgetConsumption::default(),
                 ));
@@ -244,11 +244,15 @@ impl Inner {
             });
             let activation_id = lifecycle.activation_id().clone();
             let resolved_revision = lifecycle.resolved.clone();
-            let outcome = lifecycle.complete(outcome);
+            let (outcome, transaction, delivery_failure, result_delivery_fence) =
+                lifecycle.complete(outcome).await.into_parts();
             ActivationReceipt {
                 activation_id,
                 resolved_revision,
                 outcome,
+                transaction,
+                delivery_failure,
+                result_delivery_fence,
             }
         });
         ActivationHandle {

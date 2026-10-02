@@ -30,9 +30,7 @@ use crate::host::accounting::InvocationAccounting;
 use crate::host::{
     validate_request_context, ActivationHostContext, BoundedLogSink, HostCallTiming, HostState,
 };
-use crate::invocation_input_observer::{
-    InputTrace, InvocationInputDropReason, InvocationInputObserver, InvocationInputPhase,
-};
+use crate::invocation_input_observer::{InputTrace, InvocationInputObserver, InvocationInputPhase};
 use crate::preparation_observer::{PreparationJob, PreparationObserver, PreparationStage};
 use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0InvocationTiming};
 use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
@@ -40,6 +38,7 @@ use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, Wasmt
 mod admission;
 #[cfg(test)]
 mod dispatch_tests;
+mod execution;
 mod input;
 mod owned;
 mod preparation;
@@ -92,6 +91,8 @@ impl crate::cache::TrackedPreparedValue for PreparedRuntime {
     }
 }
 
+type UncachedPrepared = Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>;
+
 /// Immutable compiled state and bounded diagnostics owned by one node factory.
 pub(crate) struct SharedRuntime {
     // Join compiler jobs before the ticker, components and engine references.
@@ -100,7 +101,7 @@ pub(crate) struct SharedRuntime {
     epoch_ticker: EpochTicker,
     cache: Arc<PreparedCache<PreparedRuntime>>,
     instances: Arc<ActiveInstanceGate>,
-    uncached_prepared: Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>,
+    uncached_prepared: UncachedPrepared,
     pub(crate) log_sink: BoundedLogSink,
     pub(crate) capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
     clock: Arc<dyn ActivationClock>,
@@ -141,7 +142,7 @@ impl SharedRuntime {
         services: WasmtimeHostServices,
         epoch_ticker: EpochTicker,
         engine: Engine,
-        profile: WasmtimeEngineProfile,
+        profile: &WasmtimeEngineProfile,
         admission: Option<Arc<dyn AdmissionAuthority>>,
         lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
         runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
@@ -430,7 +431,7 @@ impl WasmtimeBackend {
 
     async fn invoke_inner_timed(
         &self,
-        mut request: ExecutionRequest,
+        request: ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
         timing: &mut Phase0InvocationTiming,
         prepared: Option<WasmtimePreparedUse>,
@@ -476,7 +477,7 @@ impl WasmtimeBackend {
                 Err(error) if error.code == PlatformErrorCode::DeadlineExceeded => {
                     return Ok(interrupted_outcome(
                         latent_executor::GuestInterruptionKind::DeadlineExceeded,
-                        bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
+                        &error.message,
                         BudgetConsumption::default(),
                     ));
                 }
@@ -494,116 +495,22 @@ impl WasmtimeBackend {
             Ok(eligibility) => eligibility,
             Err(outcome) => return Ok(outcome),
         };
-        let function = self.requested_function(&runtime, &request)?;
-        let temporary_buffer_guard = self.shared.resources.temporary_buffer();
-        let raw_input = input::RawInvocationInput::new(
-            std::mem::take(&mut request.activation.input),
-            input_trace,
-        );
-        let input = values::decode_params(
-            &function.params,
-            raw_input.bytes(),
-            &request.activation.input_media_type,
-            self.config.value_codec_limits,
-        )?;
-
-        let capabilities = self
-            .shared
-            .capabilities
-            .as_ref()
-            .map(|owner| {
-                let publication = runtime.eligibility.as_ref().ok_or_else(|| {
-                    platform_error(
-                        PlatformErrorCode::PermissionDenied,
-                        "capability publication owner required",
-                        false,
-                    )
-                })?;
-                owner.open_session(&request, cancellation, publication, accounting.deadline())
-            })
-            .transpose()?;
-        *capability_observer = capabilities
-            .as_ref()
-            .map(latent_capabilities::broker::CapabilitySession::observer);
-        if let Some(kind) = stop.observe() {
-            return Ok(interrupted_outcome(
-                kind,
-                stop.reason(kind),
-                BudgetConsumption::default(),
-            ));
-        }
-
-        let contained_execution_started = self.shared.clock.monotonic_now();
-        let host_state_guard = self.shared.resources.host_state();
-        let store_guard = self.shared.resources.store();
-        let mut store =
-            AccountedStore::new(self.invocation_store(request, &stop, accounting, capabilities)?);
-        // Decoding and every borrowed validation have completed. The Store now
-        // owns only the moved context; destroy the actual raw input before call.
-        raw_input.release(InvocationInputDropReason::BeforeGuestCall);
-
-        let component_instance_guard = self.shared.resources.component_instance();
-        let mut output = vec![Val::Bool(false); function.results.len()];
-        if let Some(trace) = input_trace {
-            trace.stage(InvocationInputPhase::BeforeCallExport);
-        }
-        let call_result = call_export(
-            &runtime,
-            function,
-            &mut store,
-            &input,
-            &mut output,
-            timing,
-            setup_started,
-            input_trace,
-        )
-        .await;
-        // Wasmtime 47's safe dynamic call completes canonical ABI post-return
-        // before resolving, including propagation of post-return traps.
-        let component_post_return_started = Instant::now();
-        let wall_time_micros = u64::try_from(
-            self.shared
-                .clock
-                .monotonic_now()
-                .saturating_duration_since(contained_execution_started)
-                .as_micros(),
-        )
-        .unwrap_or(u64::MAX);
-        let (consumption, accounting_error) =
-            invocation_accounting(&mut store, wall_time_micros, timing);
-        let memory_exhausted = call_result
-            .as_ref()
-            .err()
-            .is_some_and(is_memory_limit_error);
-        timing.component_post_return_micros = elapsed_micros(component_post_return_started);
-
-        let encoded = call_result.as_ref().ok().map(|()| {
-            values::encode_result(&function.results, &output, self.config.value_codec_limits)
-        });
-        // Cleanup order is intentional: after the guest call and its
-        // component-model post-return complete, the actual component instance,
-        // store/host state, temporary input, and all activation-owned guards
-        // are reclaimed before a reusable proof escapes.
-        let reclamation_started = Instant::now();
-        drop(store);
-        drop(component_instance_guard);
-        drop(store_guard);
-        drop(host_state_guard);
-        drop(input);
-        drop(output);
-        drop(temporary_buffer_guard);
-        timing.activation_resource_reclamation_micros = elapsed_micros(reclamation_started);
-
-        let outcome = reclamation::finish(runtime, instance_permit, timing, || {
-            classify_call_result(
-                call_result,
-                encoded,
-                &stop,
-                memory_exhausted,
-                consumption,
-                accounting_error,
+        let outcome = self
+            .invoke_contained(
+                execution::ContainedInvocation {
+                    request,
+                    runtime,
+                    instance_permit,
+                    accounting,
+                    stop: &stop,
+                    setup_started,
+                    input_trace,
+                },
+                cancellation,
+                timing,
+                capability_observer,
             )
-        });
+            .await;
 
         let reusable_proof_started = Instant::now();
         drop(stop);
@@ -655,6 +562,8 @@ impl WasmtimeBackend {
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
+        transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
+        hostcall_fuel: usize,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -691,12 +600,17 @@ impl WasmtimeBackend {
         );
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
-        host_state.currentness_read_wait = self.shared.currentness_read_wait.clone();
+        if let Some(transaction) = transaction {
+            host_state.transaction = crate::host::transaction::Access::attach(transaction);
+        }
+        host_state
+            .currentness_read_wait
+            .clone_from(&self.shared.currentness_read_wait);
         if self.config.java_guest {
             host_state.limiter.reserve_exception_heap()?;
         }
         let mut store = Store::new(&self.engine, host_state);
-        store.set_hostcall_fuel(self.config.hostcall_fuel);
+        store.set_hostcall_fuel(hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
         store.set_fuel(initial_fuel).map_err(|error| {
             platform_error(
@@ -733,17 +647,27 @@ impl WasmtimeBackend {
         imports: &[latent_executor::BoundImport],
         required: &BTreeSet<String>,
     ) -> Result<(), PlatformError> {
-        // Validated component surfaces admit at most the four known host
-        // interfaces. Count each required contract exactly once without a
-        // temporary allocated set, preserving arbitrary binding order.
-        if imports.len() != required.len()
-            || !required.iter().all(|name| {
-                imports
-                    .iter()
-                    .filter(|import| import.contract == *name)
-                    .count()
-                    == 1
-            })
+        // Fixed transaction hosts attach through invocation_transaction after
+        // this check. Prepared surface validation already requires the explicit
+        // Phase 4 installation and exact own/borrow/async shapes. They receive
+        // no provider handles; every ordinary host still needs its exact binding.
+        let provider_import = |name: &str| {
+            !matches!(
+                name,
+                crate::surface::transaction::STATE | crate::surface::transaction::INTENTS
+            )
+        };
+        if imports.len() != required.iter().filter(|name| provider_import(name)).count()
+            || !required
+                .iter()
+                .filter(|name| provider_import(name))
+                .all(|name| {
+                    imports
+                        .iter()
+                        .filter(|import| import.contract == *name)
+                        .count()
+                        == 1
+                })
             || imports.iter().any(|import| import.opaque_handle.is_empty())
         {
             return Err(platform_error(
@@ -815,11 +739,30 @@ impl WasmtimeBackend {
 }
 
 impl ExecutionBackend for WasmtimeBackend {
-    fn prepare_ready_from_repository<'a>(
+    fn canonicalize_transaction_input<'a>(
         &'a self,
+        ready: latent_executor::PreparedReadiness,
+        envelope: &'a latent_activation::ActivationEnvelope,
+        budget: &'a latent_core::ActivationBudget,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            (
+                latent_executor::PreparedReadiness,
+                latent_executor::CanonicalTransactionInput,
+            ),
+            PlatformError,
+        >,
+    > {
+        Box::pin(self.canonicalize_readiness_input(ready, envelope, budget, wait))
+    }
+
+    fn prepare_ready_from_repository(
+        &self,
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
-    ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
+    ) -> BoxFuture<'_, Result<latent_executor::PreparedReadiness, PlatformError>> {
         Box::pin(self.prepare_ready_repository(repository, key, None))
     }
 
@@ -848,6 +791,13 @@ impl ExecutionBackend for WasmtimeBackend {
     }
     fn backend_id(&self) -> &str {
         &self.profile.id
+    }
+
+    fn inspect_ready(
+        &self,
+        ready: latent_executor::PreparedReadiness,
+    ) -> Result<latent_executor::PreparationInspection, PlatformError> {
+        self.inspect_readiness(ready)
     }
 
     fn preparation_key(
@@ -1122,7 +1072,7 @@ fn cancellation_before_execution(
     if cancellation.is_cancelled() {
         return Ok(Some(interrupted_outcome(
             latent_executor::GuestInterruptionKind::Cancelled,
-            cancellation.reason().map_or_else(
+            &cancellation.reason().map_or_else(
                 || "cancelled before guest execution".to_owned(),
                 |reason| bounded_text(&reason, MAX_DIAGNOSTIC_BYTES),
             ),

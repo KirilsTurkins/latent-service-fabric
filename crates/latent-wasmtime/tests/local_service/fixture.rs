@@ -43,8 +43,7 @@ mod admission_fixture;
 mod authority;
 #[path = "diagnostics.rs"]
 mod diagnostics;
-#[path = "../guest_sdk/runtime.rs"]
-mod guest_runtime;
+use crate::support::guest_runtime;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
@@ -203,7 +202,10 @@ impl Fixture {
             (catalog, caller, callee)
         };
         let config = WasmtimeConfig {
-            java_guest: guest_runtime::java(),
+            guest_languages: latent_wasmtime::GuestLanguageProfiles {
+                java_guest: guest_runtime::java(),
+                ..Default::default()
+            },
             fuel_async_yield_interval: guest_runtime::java().then_some(10_000),
             maximum_memory_bytes: packages::budget().memory_bytes,
             maximum_fuel: packages::budget().cpu_fuel,
@@ -455,7 +457,7 @@ impl Fixture {
             _root: root,
         }
     }
-    pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
+    pub fn request(id: &str, which: u32) -> ActivationRequest {
         let mut request = admission_fixture::request(id);
         request.target.service = ServiceId("caller".into());
         request.target.contract = ContractId(component::CALLER.into());

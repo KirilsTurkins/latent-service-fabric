@@ -1,4 +1,4 @@
-//! Actual guest publication through bounded authenticated TLS JetStream.
+//! Actual guest publication through bounded authenticated TLS `JetStream`.
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "nats_events/component.rs"]
 mod component;

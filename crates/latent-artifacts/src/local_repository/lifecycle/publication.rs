@@ -124,7 +124,7 @@ impl DirectoryArtifactRepository {
         request: &mut Request,
         upload: ManagedPublicationUpload,
     ) -> Result<Candidate, PlatformError> {
-        let (artifact, files, mut proof) = match upload {
+        let (artifact, files, mut proof, transaction_profile) = match upload {
             ManagedPublicationUpload::Local(artifact) => {
                 if self.admission.is_some() {
                     return Err(error(
@@ -144,7 +144,7 @@ impl DirectoryArtifactRepository {
                         "publication-tenant-mismatch",
                     ));
                 }
-                (artifact, None, None)
+                (artifact, None, None, false)
             }
             ManagedPublicationUpload::Package(upload) => {
                 let config = self.admission.as_ref().ok_or_else(|| {
@@ -161,6 +161,11 @@ impl DirectoryArtifactRepository {
                 })?;
                 let verified = config.authority.verify(tenant, upload)?;
                 self.validate_verified(tenant, &verified)?;
+                let transaction_profile = super::super::transaction_profile::from_upload(
+                    &verified.upload,
+                    verified.grant.binding(),
+                    &verified.artifact.manifest,
+                )?;
                 request.component = Some(verified.grant.binding().release.clone());
                 request.package = Some(
                     verified
@@ -185,10 +190,15 @@ impl DirectoryArtifactRepository {
                         verified.grant,
                         Arc::clone(&config.owner),
                     )),
+                    transaction_profile,
                 )
             }
         };
-        let mut publication = self.prepare_publication(artifact)?;
+        let mut publication = if transaction_profile {
+            self.prepare_publication_with_transaction_profile(artifact, true)?
+        } else {
+            self.prepare_publication(artifact)?
+        };
         let release = publication.artifact.descriptor.release_digest.clone();
         request.component = Some(release.clone());
         let reference = match proof.as_ref() {

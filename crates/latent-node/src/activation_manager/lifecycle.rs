@@ -32,6 +32,11 @@ pub(super) struct Lifecycle {
     pub(super) resolved: Option<ResolvedRevision>,
     pub(super) scheduled: Option<ScheduledActivation>,
     pub(super) child_control: Option<Arc<super::probes::ActivationControl>>,
+    pub(super) transaction_admission: Option<Arc<dyn super::TransactionActivationAdmission>>,
+    pub(super) transaction_host: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
+    pub(super) transaction_hook: Option<Arc<dyn super::TransactionCompletionHook>>,
+    pub(super) transaction_completion: Option<super::TransactionCompletion>,
+    pub(super) canonical_input_memory: Option<latent_core::HostMemoryReservation>,
     pub(super) execution_started: bool,
     pub(super) quarantine_reason: Option<String>,
     pub(super) assigned: bool,
@@ -57,6 +62,11 @@ impl Lifecycle {
             resolved: None,
             scheduled: None,
             child_control: None,
+            transaction_admission: None,
+            transaction_host: None,
+            transaction_hook: None,
+            transaction_completion: None,
+            canonical_input_memory: None,
             execution_started: false,
             quarantine_reason: None,
             assigned: false,
@@ -108,6 +118,14 @@ impl Lifecycle {
         phase: ActivationPhase,
         attributes: Metadata,
     ) -> Result<(), PlatformError> {
+        if phase == ActivationPhase::Admitted {
+            if let Some(budget) = &self.budget {
+                self.journal
+                    .as_ref()
+                    .expect("live lifecycle journal")
+                    .record_grant(budget);
+            }
+        }
         let stamp = self
             .journal
             .as_mut()
@@ -133,6 +151,13 @@ impl Lifecycle {
     }
 
     fn reclaim(&mut self) {
+        if !self.execution_started {
+            if let Some(host) = &self.transaction_host {
+                // No guest Store or accepted continuation entered the backend.
+                // Native I/O still needs its independent retirement witness.
+                host.finish_guest_access();
+            }
+        }
         // An unfilled inbound reservation has never received an execution cell.
         drop(self.inbound_permit.take());
         self.observe_cancellation();
@@ -153,16 +178,54 @@ impl Lifecycle {
         self.observe_cleanup(disposition);
     }
 
-    pub(super) fn complete(mut self, outcome: ActivationOutcome) -> ActivationOutcome {
+    pub(super) fn complete_admission_failure(
+        mut self,
+        outcome: ActivationOutcome,
+    ) -> ActivationOutcome {
+        assert!(self.transaction_host.is_none() && self.transaction_hook.is_none());
         self.reclaim();
-        self.publish(outcome)
+        self.publish(outcome, false).0
     }
 
-    fn publish(&mut self, mut outcome: ActivationOutcome) -> ActivationOutcome {
+    pub(super) async fn complete(
+        mut self,
+        outcome: ActivationOutcome,
+    ) -> super::TransactionCompletion {
+        self.reclaim();
+        let completion = if let Some(completion) = self.transaction_completion.take() {
+            completion
+        } else if let Some(hook) = self.transaction_hook.take() {
+            match super::control::CatchPanic::new(hook.complete(outcome)).await {
+                Ok(completion) => completion,
+                Err(()) => super::TransactionCompletion::ordinary(failure_for_platform_error(
+                    error(
+                        PlatformErrorCode::Internal,
+                        "transaction completion panicked",
+                    ),
+                    BudgetConsumption::default(),
+                )),
+            }
+        } else {
+            super::TransactionCompletion::ordinary(outcome)
+        };
+        let durable = completion.durable_command().is_some();
+        let (outcome, delivery_failure) = self.publish(completion.outcome().clone(), durable);
+        completion.with_delivery(outcome, delivery_failure)
+    }
+
+    fn publish(
+        &mut self,
+        mut outcome: ActivationOutcome,
+        durable: bool,
+    ) -> (ActivationOutcome, Option<PlatformError>) {
+        let mut delivery_failure = None;
         if let Some(stop) = self.transport_stop.failure() {
             // Raw interruption is provisional, not an accepted explicit Cancel.
             // Existing deadline/finalization checks and the registry winner below
             // keep their authority. Cleanup disposition was already observed.
+            if durable {
+                delivery_failure = Some(stop.clone());
+            }
             outcome = failure_for_platform_error(stop, outcome_consumption(&outcome));
         }
         if let Some(budget) = &self.budget {
@@ -172,6 +235,9 @@ impl Lifecycle {
             let finalized = budget.finalize_at(Some(&outcome_consumption(&outcome)), now);
             let consumption = finalized.consumption().clone();
             outcome = if let Some(error) = deadline.or_else(|| finalized.violation().cloned()) {
+                if durable {
+                    delivery_failure = Some(error.to_platform_error());
+                }
                 failure_for_platform_error(error.to_platform_error(), consumption)
             } else {
                 replace_consumption(outcome, consumption)
@@ -184,6 +250,9 @@ impl Lifecycle {
             // ledger construction. They still retain the original ingress limit;
             // an accepted explicit cancellation keeps its registry winner below.
             if expired {
+                if durable {
+                    delivery_failure = Some(super::control::deadline_error());
+                }
                 outcome = failure_for_platform_error(
                     super::control::deadline_error(),
                     outcome_consumption(&outcome),
@@ -192,6 +261,9 @@ impl Lifecycle {
         }
         let journal = self.journal.as_ref().expect("one terminal publication");
         if let Err(failure) = journal.validate_terminal(&outcome) {
+            if durable {
+                delivery_failure = Some(failure.clone());
+            }
             outcome = failure_for_platform_error(failure, outcome_consumption(&outcome));
         }
         // Linearize the winner before recording the result. Registration stays
@@ -202,6 +274,9 @@ impl Lifecycle {
         let cancellation_accepted = publication.cancellation_reason.is_some();
         if publication.state == ActivationTerminalState::Cancelled {
             if let Some(reason) = publication.cancellation_reason {
+                if durable {
+                    delivery_failure = Some(error(PlatformErrorCode::Cancelled, &reason));
+                }
                 outcome = failure_for_platform_error(
                     error(PlatformErrorCode::Cancelled, &reason),
                     outcome_consumption(&outcome),
@@ -229,7 +304,7 @@ impl Lifecycle {
             }
             observation.terminal(&outcome, stamp, self.resolved.as_ref());
         }
-        outcome
+        (outcome, delivery_failure)
     }
 
     fn record_deadline_decision(
@@ -279,6 +354,6 @@ impl Drop for Lifecycle {
         };
         let outcome =
             failure_for_platform_error(error(code, message), BudgetConsumption::default());
-        let _ = self.publish(outcome);
+        let _ = self.publish(outcome, false);
     }
 }

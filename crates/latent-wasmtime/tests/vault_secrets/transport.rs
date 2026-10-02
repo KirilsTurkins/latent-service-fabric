@@ -32,7 +32,7 @@ impl Relay {
         let task = tokio::spawn(async move {
             for _ in 0..16 {
                 let (mut client, _) = tokio::select! {
-                    _ = stop.notified() => return,
+                    () = stop.notified() => return,
                     value = listener.accept() => value.unwrap(),
                 };
                 let selected = state.load(Ordering::Acquire);
@@ -42,9 +42,9 @@ impl Relay {
                 }
                 if selected == 1 {
                     tokio::select! {
-                        _ = stop.notified() => return,
-                        _ = tokio::time::sleep(Duration::from_secs(6)) => continue,
-                        _ = release.notified() => (),
+                        () = stop.notified() => return,
+                        () = tokio::time::sleep(Duration::from_secs(6)) => continue,
+                        () = release.notified() => (),
                     }
                 }
                 let exchange = async {
@@ -67,7 +67,7 @@ impl Relay {
                     let _ = tokio::try_join!(forward, backward);
                 };
                 tokio::select! {
-                    _ = stop.notified() => return,
+                    () = stop.notified() => return,
                     _ = tokio::time::timeout(Duration::from_secs(6), exchange) => (),
                 }
             }
@@ -117,8 +117,8 @@ async fn real_vault_transport_cancellation_outage_tls_and_healthy_reuse() {
     let future = f.provider.read(&session, "allowed".into()).unwrap();
     tokio::pin!(future);
     tokio::select! {
-        _ = tokio::time::sleep(Duration::from_secs(2)) => panic!("relay accept deadline"),
-        _ = relay.accepted.notified() => (),
+        () = tokio::time::sleep(Duration::from_secs(2)) => panic!("relay accept deadline"),
+        () = relay.accepted.notified() => (),
         _ = &mut future => panic!("blocked TLS unexpectedly completed"),
     }
     assert!(f.provider.snapshot().unwrap().retained_plaintext_bytes > 0);

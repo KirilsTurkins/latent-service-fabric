@@ -81,6 +81,14 @@ impl LocalActivationManager {
                 "inbound request builder panicked",
             )
         })??;
+        if envelope.parent_activation_id.is_some()
+            || envelope.root_activation_id != envelope.activation_id
+        {
+            return Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "activation lineage requires a trusted broker",
+            ));
+        }
         let (journal, cancellation) = self.inner.journal.begin_with(&envelope, || {
             self.inner
                 .cancellations
@@ -119,7 +127,7 @@ impl LocalActivationManager {
         })();
         if let Err(failure) = admitted {
             drop(envelope);
-            let _ = lifecycle.complete(failure_for_platform_error(
+            let _ = lifecycle.complete_admission_failure(failure_for_platform_error(
                 failure.clone(),
                 BudgetConsumption::default(),
             ));
@@ -134,6 +142,30 @@ impl LocalActivationManager {
 }
 
 impl InboundActivationReservation {
+    /// Install the trusted direct transaction binding on this exact admitted
+    /// request. The normal runner supplies its original cancellation/budget
+    /// control before any durable claim or guest scheduling can occur.
+    pub fn bind_transaction(
+        &mut self,
+        admission: Arc<dyn super::TransactionActivationAdmission>,
+    ) -> Result<(), PlatformError> {
+        self.checkpoint()?;
+        let budget = self.lifecycle.budget.as_ref().expect("inbound budget");
+        if self.lifecycle.transaction_admission.is_some()
+            || budget.profile() != latent_core::BudgetProfile::Phase4
+            || self.envelope.parent_activation_id.is_some()
+            || budget.granted().child_calls != 0
+            || budget.granted().outbound_requests != 0
+        {
+            return Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "strict inbound transaction binding required",
+            ));
+        }
+        self.lifecycle.transaction_admission = Some(admission);
+        Ok(())
+    }
+
     #[must_use]
     pub fn activation_id(&self) -> &ActivationId {
         &self.envelope.activation_id
@@ -213,10 +245,12 @@ impl InboundActivationReservation {
 
     fn reject(self, failure: PlatformError) -> Result<ActivationHandle, PlatformError> {
         drop(self.envelope);
-        let _ = self.lifecycle.complete(failure_for_platform_error(
-            failure.clone(),
-            BudgetConsumption::default(),
-        ));
+        let _ = self
+            .lifecycle
+            .complete_admission_failure(failure_for_platform_error(
+                failure.clone(),
+                BudgetConsumption::default(),
+            ));
         Err(failure)
     }
 }

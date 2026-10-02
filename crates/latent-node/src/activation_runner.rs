@@ -192,7 +192,7 @@ impl Phase0ActivationRunner {
                 biased;
                 () = cancellation.cancelled() => LeaseResolution::Cancelled,
                 () = &mut deadline_wait => LeaseResolution::DeadlineExceeded,
-                result = &mut acquire => LeaseResolution::Acquired(result),
+                result = &mut acquire => LeaseResolution::Acquired(Box::new(result)),
             }
         };
 
@@ -205,10 +205,12 @@ impl Phase0ActivationRunner {
                 let _ = self.pool.cancel_waiting(&activation_id).await;
                 return deadline_failure();
             }
-            LeaseResolution::Acquired(Ok(lease)) => lease,
-            LeaseResolution::Acquired(Err(error)) => {
-                return failure_for_platform_error(error, BudgetConsumption::default());
-            }
+            LeaseResolution::Acquired(result) => match *result {
+                Ok(lease) => lease,
+                Err(error) => {
+                    return failure_for_platform_error(error, BudgetConsumption::default());
+                }
+            },
         };
 
         if cancellation.is_cancelled() {
@@ -358,7 +360,7 @@ impl Phase0ActivationRunner {
 }
 
 impl ActivationManager for Phase0ActivationRunner {
-    fn invoke<'a>(&'a self, envelope: ActivationEnvelope) -> BoxFuture<'a, ActivationOutcome> {
+    fn invoke(&self, envelope: ActivationEnvelope) -> BoxFuture<'_, ActivationOutcome> {
         Box::pin(async move {
             self.counters
                 .total_invocations
@@ -404,7 +406,7 @@ impl ActivationManager for Phase0ActivationRunner {
 }
 
 enum LeaseResolution {
-    Acquired(Result<CellLease, PlatformError>),
+    Acquired(Box<Result<CellLease, PlatformError>>),
     Cancelled,
     DeadlineExceeded,
 }
@@ -600,10 +602,12 @@ fn execution_result_consumption(
     outcome: &Result<GuestOutcome, PlatformError>,
 ) -> BudgetConsumption {
     match outcome {
-        Ok(GuestOutcome::Returned { consumption, .. })
-        | Ok(GuestOutcome::DeclaredError { consumption, .. })
-        | Ok(GuestOutcome::Trapped { consumption, .. })
-        | Ok(GuestOutcome::Interrupted { consumption, .. }) => consumption.clone(),
+        Ok(
+            GuestOutcome::Returned { consumption, .. }
+            | GuestOutcome::DeclaredError { consumption, .. }
+            | GuestOutcome::Trapped { consumption, .. }
+            | GuestOutcome::Interrupted { consumption, .. },
+        ) => consumption.clone(),
         Err(_) => BudgetConsumption::default(),
     }
 }
@@ -735,10 +739,15 @@ pub(crate) fn failure_for_platform_error(
     error: PlatformError,
     consumption: BudgetConsumption,
 ) -> ActivationOutcome {
+    let diagnostic = latent_core::diagnostic::ActivationDiagnostic::from_error(&error);
     let error = match error.code {
         PlatformErrorCode::Cancelled => cancellation_error(Some(error.message)),
         PlatformErrorCode::DeadlineExceeded => deadline_error(),
         _ => sanitize_error(error),
+    };
+    let error = match diagnostic {
+        Some(diagnostic) => diagnostic.attach(error),
+        None => error,
     };
     failure(error, consumption)
 }
@@ -787,10 +796,63 @@ pub(crate) fn disposition_failure(
 }
 
 fn failure(error: PlatformError, consumption: BudgetConsumption) -> ActivationOutcome {
+    let error = producer_diagnostic(error);
     ActivationOutcome::Failed {
         terminal_state: terminal_state_for_error(error.code),
         error,
         consumption,
+    }
+}
+
+fn producer_diagnostic(error: PlatformError) -> PlatformError {
+    use latent_core::diagnostic::{
+        ActivationDiagnostic, DiagnosticReason as R, DiagnosticStage as S,
+    };
+    // Only already-typed producer details can classify an observation. Platform
+    // resource-exhausted alone says nothing about guest linear memory.
+    if ActivationDiagnostic::from_error(&error).is_some() {
+        return error;
+    }
+    let known = error
+        .details
+        .iter()
+        .take(16)
+        .find_map(|detail| match detail.kind.as_str() {
+            "activation.fuel-exhausted" => Some((S::Execution, R::GuestFuelExhausted)),
+            "activation.memory-exhausted" => Some((S::Execution, R::GuestMemoryExhausted)),
+            "activation.resource-exhausted" => Some((S::Execution, R::GuestResourceExhausted)),
+            "activation.cancelled" => Some((S::Execution, R::Cancelled)),
+            "activation.deadline-exceeded" => Some((S::Execution, R::DeadlineExceeded)),
+            "scheduler.limit"
+                if detail.fields.get("reason").is_some_and(|reason| {
+                    matches!(reason.as_str(), "queue-full" | "all-cells-quarantined")
+                }) =>
+            {
+                Some((S::Queue, R::QueuePressure))
+            }
+            "admission.limit"
+                if detail.fields.get("reason").is_some_and(|reason| {
+                    matches!(
+                        reason.as_str(),
+                        "capacity-exhausted" | "node-overloaded" | "queue-deadline-infeasible"
+                    )
+                }) =>
+            {
+                Some((S::Admission, R::QueuePressure))
+            }
+            "admission.limit"
+                if matches!(
+                    error.code,
+                    PlatformErrorCode::PermissionDenied | PlatformErrorCode::AdmissionRejected
+                ) =>
+            {
+                Some((S::Admission, R::AdmissionDenied))
+            }
+            _ => None,
+        });
+    match known {
+        Some((stage, reason)) => ActivationDiagnostic::new(stage, reason).attach(error),
+        None => error,
     }
 }
 
@@ -812,7 +874,6 @@ fn terminal_state_for_error(code: PlatformErrorCode) -> ActivationTerminalState 
         | PlatformErrorCode::IncompatibleContract
         | PlatformErrorCode::CorruptArtifact
         | PlatformErrorCode::AdmissionRejected => ActivationTerminalState::Rejected,
-        PlatformErrorCode::Internal => ActivationTerminalState::PlatformFailed,
         _ => ActivationTerminalState::PlatformFailed,
     }
 }
@@ -820,8 +881,8 @@ fn terminal_state_for_error(code: PlatformErrorCode) -> ActivationTerminalState 
 pub(crate) fn outcome_consumption(outcome: &ActivationOutcome) -> BudgetConsumption {
     match outcome {
         ActivationOutcome::Succeeded(success) => success.consumption.clone(),
-        ActivationOutcome::DeclaredError { consumption, .. } => consumption.clone(),
-        ActivationOutcome::Failed { consumption, .. } => consumption.clone(),
+        ActivationOutcome::DeclaredError { consumption, .. }
+        | ActivationOutcome::Failed { consumption, .. } => consumption.clone(),
     }
 }
 

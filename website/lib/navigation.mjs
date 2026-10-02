@@ -19,7 +19,8 @@ export function buildSidebars(pages) {
   const howTo = new Set(['phase-2-delivery', 'component-development/portable-tests', 'component-development/devcontainer']);
   const references = new Set(['phase-2-operator-workflows', 'phase-2-rollouts', 'phase-2-rollback',
     'phase-2-canary-promotion', 'phase-2-canary-observation', 'phase-2-audit',
-    'component-development/guest-sdk', 'component-development/packaging', 'component-development/sbom', 'component-development/static-sites',
+    'component-development/guest-sdk', 'component-development/transactional-authoring',
+    'component-development/packaging', 'component-development/sbom', 'component-development/static-sites',
     ...['rust', 'c', 'typescript', 'go', 'java', 'dotnet'].map(language => `component-development/${language}-authoring`)]);
   const maintenance = new Set(['operations/maintained-security-monitoring', 'operations/native-release-promotion',
     'how-to/exercise-provider-failure-and-recovery']);
@@ -65,7 +66,8 @@ export function buildSidebars(pages) {
     {label: 'Command-line tools', ids: ['reference/operator-cli']},
     {label: 'Capsule language profiles', ids: ['rust', 'c', 'typescript', 'go', 'java', 'dotnet'].map(language => `component-development/${language}-authoring`)},
     {label: 'Client SDKs', match: id => /^reference\/.+-client$/.test(id)},
-    {label: 'Capsules and publication', ids: ['component-development/guest-sdk', 'reference/developer-test-fixtures', 'component-development/packaging', 'component-development/sbom'],
+    {label: 'Capsules and publication', ids: ['component-development/guest-sdk', 'component-development/transactional-authoring',
+      'reference/developer-test-fixtures', 'component-development/packaging', 'component-development/sbom'],
       match: id => /^reference\/(?:publication|publisher|package|build-provenance|release|oci|raw-artifact)/.test(id)},
     {label: 'HTTP and web delivery', ids: ['component-development/static-sites'], match: id => /^reference\/(?:http|web)/.test(id)},
     {label: 'Rollouts and recovery', match: id => id.startsWith('phase-2-')},

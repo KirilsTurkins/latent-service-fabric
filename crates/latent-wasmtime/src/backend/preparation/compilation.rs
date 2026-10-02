@@ -202,20 +202,45 @@ impl super::super::PreparationContext {
             &self.config,
             surface::Providers {
                 local_services: self.local_services().is_some(),
-                http: self.http().is_some(),
-                streaming_http: self.streaming_http().is_some(),
-                blobs: self.blobs().is_some(),
-                secrets: self.secrets().is_some(),
-                events: self.events().is_some(),
-                random: self.random().is_some(),
-                metrics: self.metrics().is_some(),
+                network: surface::NetworkProviders {
+                    http: self.http().is_some(),
+                    streaming_http: self.streaming_http().is_some(),
+                },
+                storage: surface::StorageProviders {
+                    blobs: self.blobs().is_some(),
+                    secrets: self.secrets().is_some(),
+                },
+                signals: surface::SignalProviders {
+                    events: self.events().is_some(),
+                    random: self.random().is_some(),
+                    metrics: self.metrics().is_some(),
+                },
             },
-        )?;
+        )
+        .map_err(|mut error| {
+            // Bind the selected surface observation to the original trusted
+            // engine/cache profile, including both finite transfer policies.
+            for detail in &mut error.details {
+                if let Some(mut observation) =
+                    latent_core::diagnostic::ActivationDiagnostic::from_detail(detail)
+                {
+                    observation.profile_digest = self
+                        .profile
+                        .configuration
+                        .get("configuration-digest")
+                        .and_then(|value| value.strip_prefix("blake3:"))
+                        .and_then(|value| blake3::Hash::from_hex(value).ok())
+                        .map(|value| *value.as_bytes());
+                    *detail = observation.detail();
+                }
+            }
+            error
+        })?;
         let metadata_bytes = input
             .metadata_bytes
             .checked_add(surface.retained_bytes)
             .ok_or_else(metadata_overflow)?;
-        let pre = self.link_component(component)?;
+        let pre = self.link_component(component, &surface.type_imports)?;
         if self.profile.id == PHASE0_BACKEND_ID {
             crate::phase0::validate_prepared(&pre)?;
         }
@@ -231,9 +256,9 @@ impl super::super::PreparationContext {
         let lifetime_charge = self
             .runtime_ledger
             .register(crate::cache::PreparedRuntimeCost {
-                source_bytes: artifact.component_bytes.len(),
-                metadata_bytes,
-                compiled_image_bytes: image_bytes,
+                source: artifact.component_bytes.len(),
+                metadata: metadata_bytes,
+                compiled_image: image_bytes,
             })?;
         let declared_budget = artifact.manifest.execution.resource_budget_ceiling.clone();
         let imports = artifact

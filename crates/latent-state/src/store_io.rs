@@ -14,7 +14,9 @@
 
 mod drain;
 mod job;
+mod recovery;
 mod retained;
+mod retirement;
 mod startup;
 mod state;
 mod types;
@@ -22,11 +24,13 @@ mod worker;
 
 pub use drain::StoreIoDrain;
 pub use job::StoreIoJob;
+pub use recovery::{StoreIoRecoveryCapacity, StoreIoRecoverySnapshot};
 pub use retained::StoreIoRetained;
+pub use retirement::{StoreIoRetirement, StoreIoRetirementWitness};
 pub use startup::{StoreIoReady, StoreIoStartup};
 pub use types::{
     StoreIoAdmissionError, StoreIoEnginePhase, StoreIoError, StoreIoKind, StoreIoLimits,
-    StoreIoShutdown, StoreIoSnapshot, StoreIoStartError,
+    StoreIoRecoveryLimits, StoreIoShutdown, StoreIoSnapshot, StoreIoStartError,
 };
 
 use std::future::Future;
@@ -101,10 +105,22 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         for index in 0..workers {
             let worker_control = Arc::clone(&control);
             let worker_engine = Arc::clone(&engine);
+            let recovery = control
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .limits
+                .recovery
+                .is_some_and(|limits| index < limits.workers);
+            let name = if recovery {
+                format!("latent-store-recovery-{index}")
+            } else {
+                format!("latent-store-io-{index}")
+            };
             if let Ok(thread) = std::thread::Builder::new()
-                .name(format!("latent-store-io-{index}"))
+                .name(name)
                 .stack_size(1024 * 1024)
-                .spawn(move || worker::run(worker_control, worker_engine))
+                .spawn(move || worker::run(worker_control, worker_engine, recovery))
             {
                 owner
                     .inner
@@ -177,7 +193,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             let charge = retained_bytes
                 .checked_add(metadata)
                 .ok_or(StoreIoError::Exhausted)?;
-            state.admit(charge)?;
+            state.admit(kind.is_recovery(), charge)?;
             let next = state
                 .next_job
                 .checked_add(1)
@@ -189,19 +205,24 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             Err(reason) => return Err(StoreIoAdmissionError { reason, operation }),
         };
         state.next_job = next;
-        state.accepted += 1;
-        state.retained_bytes += charge;
+        state.reserve(kind.is_recovery(), charge);
         let completion = Arc::new(Completion::new());
         let reservation = Reservation {
             control: Arc::clone(control),
             bytes: charge,
+            recovery: kind.is_recovery(),
         };
         let work = TypedWork {
             operation,
             completion: Arc::clone(&completion),
             reservation,
         };
-        state.queue.push_back(QueuedWork {
+        let queue = if kind.is_recovery() {
+            &mut state.recovery_queue
+        } else {
+            &mut state.queue
+        };
+        queue.push_back(QueuedWork {
             kind,
             work: Box::new(work),
         });

@@ -50,6 +50,7 @@ pub(crate) struct CompilationResult<T> {
     pub(crate) observation: PreparationJob,
 }
 
+#[derive(Clone, Copy)]
 pub(crate) struct QueueWindow {
     pub(crate) started_nanos: u64,
     pub(crate) finished_nanos: u64,
@@ -109,15 +110,14 @@ impl<T: Send + Sync + 'static> CompilerPool<T> {
         };
         for worker in 0..config.effective_compiler_workers() {
             let core = Arc::clone(&pool.core);
-            match std::thread::Builder::new()
+            if let Ok(handle) = std::thread::Builder::new()
                 .name(format!("latent-compiler-{worker}"))
                 .spawn(move || worker::run(core, worker))
             {
-                Ok(handle) => pool.workers.push(handle),
-                Err(_) => {
-                    pool.stop_and_join()?;
-                    return Err(capacity_error("compiler-thread-start"));
-                }
+                pool.workers.push(handle);
+            } else {
+                pool.stop_and_join()?;
+                return Err(capacity_error("compiler-thread-start"));
             }
         }
         Ok(pool)

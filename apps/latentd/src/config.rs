@@ -7,6 +7,8 @@ mod capability_policies;
 mod derive;
 #[cfg(feature = "development-test-node")]
 mod development;
+#[cfg(feature = "development-test-node")]
+mod development_preparation;
 mod engine;
 pub(crate) mod http;
 mod input;
@@ -18,6 +20,7 @@ mod renderer;
 mod rollouts;
 mod runtime;
 mod security;
+pub(crate) mod state;
 mod supply_chain;
 #[cfg(test)]
 mod tests;
@@ -34,6 +37,8 @@ pub use budgets::BudgetConfig;
 pub use capability_policies::CapabilityPolicyConfig;
 #[cfg(feature = "development-test-node")]
 pub use development::DevelopmentTestConfig;
+#[cfg(feature = "development-test-node")]
+pub use development_preparation::DevelopmentPreparationProfile;
 pub use http::{
     HttpAuthentication, HttpIngressConfig, HttpIngressLimits, HttpOrigin, HttpTransport,
 };
@@ -50,6 +55,9 @@ pub use providers::{
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
 pub use security::ExecutionProfileReport;
+pub use state::{
+    DeferredHttpConfig, StateConfig, StateOperationConfig, TenantLimitsConfig, TenantQuotaConfig,
+};
 pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
@@ -69,6 +77,7 @@ pub struct NodeSettings {
     pub(crate) audit: Option<latent_audit::AuditLimits>,
     pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
+    pub(crate) state: Option<state::StateSettings>,
     pub(crate) providers: Option<Box<ConfiguredProviders>>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) budget_profile: latent_core::BudgetProfile,

@@ -34,7 +34,7 @@ pub async fn measure(rows: &mut Vec<Value>) {
         };
         let peer = stub::Stub::new(stub::Mode::Healthy).await;
         let prepared = Instant::now();
-        let fixture = Fixture::new(peer.config.clone(), None, limits.clone()).await;
+        let fixture = Fixture::new(peer.config.clone(), None, limits).await;
         let mut fixed = capture(&fixture, "fixed", ceiling);
         fixed["preparationNanos"] = json!(prepared.elapsed().as_nanos().to_string());
         rows.push(fixed);
@@ -121,34 +121,7 @@ pub async fn measure(rows: &mut Vec<Value>) {
             panic!("held publications must reach the peer before cancellation: ceiling={ceiling}, received={}, snapshot={}",
                 peer.publishes.load(Ordering::Acquire), capture(&fixture, "timeout", ceiling));
         });
-        for report in reports {
-            assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
-            match report.outcome {
-                Ok(GuestOutcome::Returned { output, .. }) => {
-                    assert_eq!(
-                        serde_json::from_slice::<Vec<String>>(&output).unwrap(),
-                        ["1007"]
-                    );
-                }
-                Ok(GuestOutcome::Interrupted { kind, .. }) => {
-                    assert_eq!(kind, GuestInterruptionKind::Cancelled);
-                }
-                Err(error) => assert_eq!(error.code, latent_core::PlatformErrorCode::Cancelled),
-                other => panic!("unexpected event cancellation: {other:?}"),
-            }
-        }
-        fixture.idle();
-        assert_eq!(
-            fixture.io.snapshot(),
-            latent_capabilities::broker::io::IoSnapshot::default()
-        );
-        assert_eq!(observation::pool_snapshot(&fixture.pools).0.connections, 0);
-        assert_eq!(fixture.provider.snapshot().active_publishes, 0);
-        let mut recovered = capture(&fixture, "recovery", ceiling);
-        recovered["after"] = json!("guest-cancellation-after-peer-received-publication");
-        recovered["receivedUnacknowledgedPublications"] =
-            json!(peer.publishes.load(Ordering::Acquire));
-        rows.push(recovered);
+        record_cancelled_recovery(rows, &fixture, &peer, ceiling, reports);
         shutdown(&fixture).await;
         peer.close().await;
     }
@@ -186,4 +159,40 @@ async fn shutdown(fixture: &Fixture) {
         .await
         .unwrap()
         .is_clean());
+}
+
+fn record_cancelled_recovery(
+    rows: &mut Vec<Value>,
+    fixture: &Fixture,
+    peer: &stub::Stub,
+    ceiling: usize,
+    reports: Vec<latent_executor::ExecutionReport>,
+) {
+    for report in reports {
+        assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+        match report.outcome {
+            Ok(GuestOutcome::Returned { output, .. }) => {
+                assert_eq!(
+                    serde_json::from_slice::<Vec<String>>(&output).unwrap(),
+                    ["1007"]
+                );
+            }
+            Ok(GuestOutcome::Interrupted { kind, .. }) => {
+                assert_eq!(kind, GuestInterruptionKind::Cancelled);
+            }
+            Err(error) => assert_eq!(error.code, latent_core::PlatformErrorCode::Cancelled),
+            other => panic!("unexpected event cancellation: {other:?}"),
+        }
+    }
+    fixture.idle();
+    assert_eq!(
+        fixture.io.snapshot(),
+        latent_capabilities::broker::io::IoSnapshot::default()
+    );
+    assert_eq!(observation::pool_snapshot(&fixture.pools).0.connections, 0);
+    assert_eq!(fixture.provider.snapshot().active_publishes, 0);
+    let mut recovered = capture(fixture, "recovery", ceiling);
+    recovered["after"] = json!("guest-cancellation-after-peer-received-publication");
+    recovered["receivedUnacknowledgedPublications"] = json!(peer.publishes.load(Ordering::Acquire));
+    rows.push(recovered);
 }

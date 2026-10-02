@@ -270,3 +270,41 @@ fn command_name_and_offline_preflight_do_not_contact_a_node() {
     };
     assert_eq!(command.name(), "state inspect");
 }
+
+#[test]
+fn floor_release_preparation_and_recovery_preserve_original_command_and_canonical_view() {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    let mut version = b"NV\x02".to_vec();
+    version.extend_from_slice(&[1; 32]);
+    for word in [target().incarnation.parse::<u64>().unwrap(), 7, 2, 3] {
+        version.extend_from_slice(&word.to_le_bytes());
+    }
+    let command = StateCommand::ReleaseExpiredCommandFloor(ReleaseCommandFloorArgs {
+        target: target(),
+        operation_id: "cleanup-original".into(),
+        command_id: "a".repeat(64),
+        expected_version: STANDARD.encode(&version),
+        expected_policy_digest: format!("sha256:{}", "b".repeat(64)),
+        reason: "approved identity cleanup".into(),
+    });
+    let Operation::Phase4(request) = prepare_state(&command, &config()).unwrap() else {
+        panic!("phase4");
+    };
+    let Request::MutateState(value) = request.as_ref() else {
+        panic!("state operation");
+    };
+    assert_eq!(value.record_id.as_deref(), Some("a".repeat(64).as_str()));
+    assert_eq!(value.expected_version, version);
+    assert_eq!(
+        value.mutation,
+        c::StateMutationKind::ReleaseExpiredCommandFloor as i32
+    );
+    let recovery = recovery(&request).unwrap();
+    assert_eq!(recovery["operationId"], "cleanup-original");
+    assert_eq!(recovery["recordId"], "a".repeat(64));
+    assert_eq!(
+        recovery["expectedVersion"]["data"],
+        STANDARD.encode(version)
+    );
+    assert_eq!(recovery["authorizationPublication"]["id"], publication());
+}

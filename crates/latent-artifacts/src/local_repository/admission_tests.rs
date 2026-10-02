@@ -12,6 +12,8 @@ mod publication_lease;
 mod read_wait;
 #[path = "admission_tests/retained_package.rs"]
 mod retained_package;
+#[path = "admission_tests/transaction_profile.rs"]
+mod transaction_profile;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;

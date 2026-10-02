@@ -1,0 +1,841 @@
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/work/crates/latent-wasmtime)
+error: long literal lacking separators
+   --> crates/latent-wasmtime/tests/local_blobs/fixture.rs:513:56
+    |
+513 |                 "ceiling":{"operations":1,"inputBytes":131072,"outputBytes":65536,"wallTimeMillis":wall_millis}
+    |                                                        ^^^^^^ help: consider: `131_072`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#unreadable_literal
+    = note: `-D clippy::unreadable-literal` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::unreadable_literal)]`
+
+error: item in documentation is missing backticks
+ --> crates/latent-wasmtime/tests/dotnet_guest.rs:1:22
+  |
+1 | //! Execute the real NativeAOT output; raw WASI is never admitted by LSF.
+  |                      ^^^^^^^^^
+  |
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#doc_markdown
+  = note: `-D clippy::doc-markdown` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::doc_markdown)]`
+help: try
+  |
+1 - //! Execute the real NativeAOT output; raw WASI is never admitted by LSF.
+1 + //! Execute the real `NativeAOT` output; raw WASI is never admitted by LSF.
+  |
+
+error: this function has too many lines (152/100)
+  --> crates/latent-wasmtime/tests/dotnet_guest.rs:18:7
+   |
+18 | async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_heap() {
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+   = note: `-D clippy::too-many-lines` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: this function has too many lines (137/100)
+  --> crates/latent-wasmtime/tests/async_application/web.rs:13:7
+   |
+13 | async fn real_web_contract_transfers_maximum_body_and_keeps_host_principal_on_reuse() {
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+   = note: `-D clippy::too-many-lines` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: casting `u64` to `usize` may truncate the value on targets with 32-bit wide pointers
+   --> crates/latent-wasmtime/tests/dotnet_guest.rs:205:22
+    |
+205 |         .memory_size(MEMORY as usize)
+    |                      ^^^^^^^^^^^^^^^
+    |
+    = help: if this is intentional allow the lint with `#[allow(clippy::cast_possible_truncation)]` ...
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#cast_possible_truncation
+    = note: `-D clippy::cast-possible-truncation` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::cast_possible_truncation)]`
+help: ... or use `try_from` and handle the error accordingly
+    |
+205 -         .memory_size(MEMORY as usize)
+205 +         .memory_size(usize::try_from(MEMORY))
+    |
+
+error: this function has too many lines (144/100)
+   --> crates/latent-wasmtime/tests/containment_backend.rs:120:7
+    |
+120 | async fn contains_real_component_failures_and_reclaims_every_invocation_resource() {
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+    = note: `-D clippy::too-many-lines` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: could not compile `latent-wasmtime` (test "dotnet_guest") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `latent-wasmtime` (test "async_application") due to 1 previous error
+error: calling `RuntimeRequirements::default()` is more clear than this expression
+   --> crates/latent-wasmtime/tests/containment_backend.rs:421:31
+    |
+421 |         runtime_requirements: Default::default(),
+    |                               ^^^^^^^^^^^^^^^^^^ help: try: `RuntimeRequirements::default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#default_trait_access
+    = note: `-D clippy::default-trait-access` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::default_trait_access)]`
+
+error: called `map(<f>).unwrap_or_else(<g>)` on an `Option` value
+   --> crates/latent-wasmtime/tests/containment_backend.rs:523:5
+    |
+523 | /     env::var_os(name)
+524 | |         .map(PathBuf::from)
+525 | |         .unwrap_or_else(|| panic!("{name} must be set by the contract validation gate"))
+    | |________________________________________________________________________________________^ help: try: `env::var_os(name).map_or_else(|| panic!("{name} must be set by the contract validation gate"), PathBuf::from)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#map_unwrap_or
+    = note: `-D clippy::map-unwrap-or` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::map_unwrap_or)]`
+
+error: adding items after statements is confusing, since items exist from the start of the scope
+   --> crates/latent-wasmtime/tests/isolated_aot/prepared_negative.rs:134:5
+    |
+134 |     use std::io::Write;
+    |     ^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#items_after_statements
+    = note: `-D clippy::items-after-statements` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::items_after_statements)]`
+
+error: use of `format!` to build up a string from an iterator
+   --> crates/latent-wasmtime/tests/containment_backend.rs:532:9
+    |
+532 | /         digest
+533 | |             .iter()
+534 | |             .map(|byte| format!("{byte:02x}"))
+535 | |             .collect::<String>()
+    | |________________________________^
+    |
+help: call `fold` instead
+   --> crates/latent-wasmtime/tests/containment_backend.rs:534:14
+    |
+534 |             .map(|byte| format!("{byte:02x}"))
+    |              ^^^
+help: ... and use the `write!` macro here
+   --> crates/latent-wasmtime/tests/containment_backend.rs:534:25
+    |
+534 |             .map(|byte| format!("{byte:02x}"))
+    |                         ^^^^^^^^^^^^^^^^^^^^^
+    = note: this can be written more efficiently by appending to a `String` directly
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#format_collect
+    = note: `-D clippy::format-collect` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::format_collect)]`
+
+error: field assignment outside of initializer for an instance created with Default::default()
+   --> crates/latent-wasmtime/tests/containment_backend.rs:750:5
+    |
+750 |     services.log_sink = Some(log_sink);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: consider initializing the variable with `latent_wasmtime::WasmtimeHostServices { log_sink: Some(log_sink), ..Default::default() }` and removing relevant reassignments
+   --> crates/latent-wasmtime/tests/containment_backend.rs:749:5
+    |
+749 |     let mut services = WasmtimeHostServices::default();
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#field_reassign_with_default
+    = note: `-D clippy::field-reassign-with-default` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::field_reassign_with_default)]`
+
+error: this argument is passed by value, but not consumed in the function body
+   --> crates/latent-wasmtime/tests/containment_backend.rs:928:20
+    |
+928 |     activation_id: ActivationId,
+    |                    ^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_pass_by_value
+    = note: `-D clippy::needless-pass-by-value` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::needless_pass_by_value)]`
+help: consider taking a reference instead
+    |
+928 |     activation_id: &ActivationId,
+    |                    +
+
+error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
+   --> crates/latent-wasmtime/tests/isolated_aot/prepared.rs:165:9
+    |
+165 | /         match std::env::var_os("LSF_AOT_TEST_INPUTS") {
+166 | |             Some(path) => {
+167 | |                 let expected = std::env::var("LSF_AOT_TEST_INPUTS_SHA256")
+168 | |                     .map_err(|_| "missing-manifest-identity")?;
+...   |
+180 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#single_match_else
+    = note: `-D clippy::single-match-else` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::single_match_else)]`
+help: try
+    |
+165 ~         if let Some(path) = std::env::var_os("LSF_AOT_TEST_INPUTS") {
+166 +             let expected = std::env::var("LSF_AOT_TEST_INPUTS_SHA256")
+167 +                 .map_err(|_| "missing-manifest-identity")?;
+168 +             load(Path::new(&path), parse_digest(&expected)?, role, &original)
+169 +         } else {
+170 +             if std::env::var_os("LSF_AOT_TEST_EXECUTION_ONLY").is_some() {
+171 +                 return Err("missing-prepared-inputs");
+172 +             }
+173 +             Ok(Executable {
+174 +                 digest: digest(&original)?,
+175 +                 path: original,
+176 +             })
+177 +         }
+    |
+
+error: file is loaded as a module multiple times: `crates/latent-wasmtime/tests/local_service/../guest_sdk/runtime.rs`
+  |
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#duplicate_mod
+  = note: `-D clippy::duplicate-mod` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::duplicate_mod)]`
+
+error: could not compile `latent-wasmtime` (test "isolated_aot") due to 2 previous errors
+error: could not compile `latent-wasmtime` (test "containment_backend") due to 6 previous errors
+error: this function has too many lines (108/100)
+  --> crates/latent-wasmtime/tests/admission/packages.rs:55:7
+   |
+55 | async fn same_wasm_packages_and_tenants_keep_independent_enforced_runtime_grants() {
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+   = note: `-D clippy::too-many-lines` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: this function has too many lines (124/100)
+  --> crates/latent-wasmtime/tests/admission/publications.rs:49:7
+   |
+49 | async fn independent_ready_and_warm_owners_check_publication_at_real_guest_start() {
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+
+error: calling `BTreeMap::default()` is more clear than this expression
+   --> crates/latent-wasmtime/tests/admission/publications.rs:122:21
+    |
+122 |         attributes: Default::default(),
+    |                     ^^^^^^^^^^^^^^^^^^ help: try: `BTreeMap::default()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#default_trait_access
+    = note: `-D clippy::default-trait-access` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::default_trait_access)]`
+
+error: could not compile `latent-wasmtime` (test "admission") due to 3 previous errors
+error: used underscore-prefixed binding
+   --> crates/latent-wasmtime/tests/local_blobs/fixture.rs:390:23
+    |
+390 |         let mut key = self._factory.preparation_key(revision.release.clone());
+    |                       ^^^^^^^^^^^^^
+    |
+note: binding is defined here
+   --> crates/latent-wasmtime/tests/local_blobs/fixture.rs:99:5
+    |
+ 99 |     _factory: WasmtimeComponentEngineFactory,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#used_underscore_binding
+    = note: `-D clippy::used-underscore-binding` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::used_underscore_binding)]`
+
+error: assigning the result of `Clone::clone()` may be inefficient
+   --> crates/latent-wasmtime/tests/local_blobs/fixture.rs:391:9
+    |
+391 |         key.publication = revision.publication.clone();
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use `clone_from()`: `key.publication.clone_from(&revision.publication)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#assigning_clones
+    = note: `-D clippy::assigning-clones` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::assigning_clones)]`
+
+error: long literal lacking separators
+   --> crates/latent-wasmtime/tests/guest_sdk/../local_blobs/fixture.rs:513:56
+    |
+513 |                 "ceiling":{"operations":1,"inputBytes":131072,"outputBytes":65536,"wallTimeMillis":wall_millis}
+    |                                                        ^^^^^^ help: consider: `131_072`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#unreadable_literal
+    = note: `-D clippy::unreadable-literal` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::unreadable_literal)]`
+
+error: could not compile `latent-wasmtime` (test "local_blobs") due to 3 previous errors
+error: struct `Snapshot` is never constructed
+  --> crates/latent-wasmtime/tests/local_service/diagnostics.rs:34:12
+   |
+34 | pub struct Snapshot {
+   |            ^^^^^^^^
+   |
+   = note: `-D dead-code` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: method `snapshot` is never used
+  --> crates/latent-wasmtime/tests/local_service/diagnostics.rs:71:12
+   |
+55 | impl Recorder {
+   | ------------- method in this implementation
+...
+71 |     pub fn snapshot(&self) -> Snapshot {
+   |            ^^^^^^^^
+
+error: consider adding a `;` to the last statement for consistent formatting
+  --> crates/latent-wasmtime/tests/local_service/acceptance.rs:57:17
+   |
+57 |                 tokio::task::yield_now().await
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: add a `;` here: `tokio::task::yield_now().await;`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#semicolon_if_nothing_returned
+   = note: `-D clippy::semicolon-if-nothing-returned` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::semicolon_if_nothing_returned)]`
+
+error: consider adding a `;` to the last statement for consistent formatting
+  --> crates/latent-wasmtime/tests/vault_secrets/audit.rs:26:17
+   |
+26 |                 tokio::task::yield_now().await
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: add a `;` here: `tokio::task::yield_now().await;`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#semicolon_if_nothing_returned
+   = note: `-D clippy::semicolon-if-nothing-returned` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::semicolon_if_nothing_returned)]`
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/vault_secrets/bounds.rs:19:9
+   |
+19 |         _ = server.event.notified() => (),
+   |         ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+   = note: `-D clippy::ignored-unit-patterns` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::ignored_unit_patterns)]`
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/vault_secrets/bounds.rs:20:9
+   |
+20 |         _ = tokio::time::sleep(Duration::from_secs(1)) => panic!("server request deadline"),
+   |         ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: this function has too many lines (115/100)
+  --> crates/latent-wasmtime/tests/vault_secrets/bounds.rs:48:7
+   |
+48 | async fn replacement_requires_a_fresh_plan_and_keeps_old_owners_until_drain() {
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+   = note: `-D clippy::too-many-lines` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: matching over `()` is more explicit
+   --> crates/latent-wasmtime/tests/vault_secrets/bounds.rs:264:9
+    |
+264 |         _ = server.event.notified() => (),
+    |         ^ help: use `()` instead of `_`: `()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: matching over `()` is more explicit
+   --> crates/latent-wasmtime/tests/vault_secrets/bounds.rs:265:9
+    |
+265 |         _ = tokio::time::sleep(Duration::from_secs(1)) => panic!("server request deadline"),
+    |         ^ help: use `()` instead of `_`: `()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: used underscore-prefixed binding
+   --> crates/latent-wasmtime/tests/local_secrets/fixture.rs:524:9
+    |
+524 |         self._guest_runtime.entropy_calls()
+    |         ^^^^^^^^^^^^^^^^^^^
+    |
+note: binding is defined here
+   --> crates/latent-wasmtime/tests/local_secrets/fixture.rs:100:5
+    |
+100 |     _guest_runtime: support::guest_runtime::Runtime,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#used_underscore_binding
+    = note: `-D clippy::used-underscore-binding` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::used_underscore_binding)]`
+
+error: unused `self` argument
+   --> crates/latent-wasmtime/tests/local_service/fixture.rs:461:20
+    |
+461 |     pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
+    |                    ^^^^^
+    |
+    = help: consider refactoring to an associated function
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#unused_self
+    = note: `-D clippy::unused-self` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::unused_self)]`
+
+error: item in documentation is missing backticks
+ --> crates/latent-wasmtime/tests/nats_events.rs:1:64
+  |
+1 | //! Actual guest publication through bounded authenticated TLS JetStream.
+  |                                                                ^^^^^^^^^
+  |
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#doc_markdown
+  = note: `-D clippy::doc-markdown` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::doc_markdown)]`
+help: try
+  |
+1 - //! Actual guest publication through bounded authenticated TLS JetStream.
+1 + //! Actual guest publication through bounded authenticated TLS `JetStream`.
+  |
+
+error: duplicated attribute
+ --> crates/latent-wasmtime/tests/guest_sdk/../local_service/component.rs:1:10
+  |
+1 | #![allow(dead_code)]
+  |          ^^^^^^^^^
+  |
+note: first defined here
+ --> crates/latent-wasmtime/tests/guest_sdk/service.rs:3:9
+  |
+3 | #[allow(dead_code)]
+  |         ^^^^^^^^^
+help: remove this attribute
+ --> crates/latent-wasmtime/tests/guest_sdk/../local_service/component.rs:1:10
+  |
+1 | #![allow(dead_code)]
+  |          ^^^^^^^^^
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#duplicated_attributes
+  = note: `-D clippy::duplicated-attributes` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::duplicated_attributes)]`
+
+error: large future with a size of 17024 bytes
+  --> crates/latent-wasmtime/tests/local_service/load.rs:50:5
+   |
+50 |     parent_and_child(true).await;
+   |     ^^^^^^^^^^^^^^^^^^^^^^ help: consider `Box::pin` on it: `Box::pin(parent_and_child(true))`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_futures
+   = note: `-D clippy::large-futures` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::large_futures)]`
+
+error: large future with a size of 17024 bytes
+  --> crates/latent-wasmtime/tests/local_service/load.rs:55:5
+   |
+55 |     parent_and_child(false).await;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^ help: consider `Box::pin` on it: `Box::pin(parent_and_child(false))`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_futures
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/vault_secrets/transport.rs:35:21
+   |
+35 |                     _ = stop.notified() => return,
+   |                     ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/vault_secrets/transport.rs:45:25
+   |
+45 |                         _ = stop.notified() => return,
+   |                         ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/vault_secrets/transport.rs:46:25
+   |
+46 |                         _ = tokio::time::sleep(Duration::from_secs(6)) => continue,
+   |                         ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/vault_secrets/transport.rs:47:25
+   |
+47 |                         _ = release.notified() => (),
+   |                         ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/vault_secrets/transport.rs:70:21
+   |
+70 |                     _ = stop.notified() => return,
+   |                     ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: matching over `()` is more explicit
+   --> crates/latent-wasmtime/tests/vault_secrets/transport.rs:120:9
+    |
+120 |         _ = tokio::time::sleep(Duration::from_secs(2)) => panic!("relay accept deadline"),
+    |         ^ help: use `()` instead of `_`: `()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: matching over `()` is more explicit
+   --> crates/latent-wasmtime/tests/vault_secrets/transport.rs:121:9
+    |
+121 |         _ = relay.accepted.notified() => (),
+    |         ^ help: use `()` instead of `_`: `()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+
+error: consider adding a `;` to the last statement for consistent formatting
+  --> crates/latent-wasmtime/tests/nats_events/audit.rs:33:17
+   |
+33 |                 tokio::task::yield_now().await
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: add a `;` here: `tokio::task::yield_now().await;`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#semicolon_if_nothing_returned
+   = note: `-D clippy::semicolon-if-nothing-returned` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::semicolon_if_nothing_returned)]`
+
+error: could not compile `latent-wasmtime` (test "local_service") due to 7 previous errors
+error: could not compile `latent-wasmtime` (test "vault_secrets") due to 14 previous errors
+error: consider adding a `;` to the last statement for consistent formatting
+  --> crates/latent-wasmtime/tests/nats_events/faults.rs:41:13
+   |
+41 |             assert_eq!(kind, latent_executor::GuestInterruptionKind::Cancelled)
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: add a `;` here: `assert_eq!(kind, latent_executor::GuestInterruptionKind::Cancelled);`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#semicolon_if_nothing_returned
+
+error: this let-binding has unit value
+  --> crates/latent-wasmtime/tests/nats_events/proxy.rs:87:75
+   |
+87 |                     result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+   |                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#let_unit_value
+   = note: `-D clippy::let-unit-value` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::let_unit_value)]`
+help: omit the `let` binding
+   |
+87 -                     result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+87 +                     result=children.join_next(),if !children.is_empty()=>{result.unwrap().unwrap();},
+   |
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/nats_events/proxy.rs:87:79
+   |
+87 |                     result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+   |                                                                               ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+   = note: `-D clippy::ignored-unit-patterns` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::ignored_unit_patterns)]`
+
+error: binding's name is too similar to existing binding
+  --> crates/latent-wasmtime/tests/guest_sdk/service.rs:17:9
+   |
+17 |     let callee_name = format!("{language}-callee");
+   |         ^^^^^^^^^^^
+   |
+note: existing binding defined here
+  --> crates/latent-wasmtime/tests/guest_sdk/service.rs:16:9
+   |
+16 |     let caller_name = format!("{language}-service");
+   |         ^^^^^^^^^^^
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#similar_names
+   = note: `-D clippy::similar-names` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::similar_names)]`
+
+error: binding's name is too similar to existing binding
+  --> crates/latent-wasmtime/tests/guest_sdk/service.rs:19:9
+   |
+19 |     let callee = package::bundle(&package::input(&callee_name));
+   |         ^^^^^^
+   |
+note: existing binding defined here
+  --> crates/latent-wasmtime/tests/guest_sdk/service.rs:18:9
+   |
+18 |     let caller = package::bundle(&package::input(&caller_name));
+   |         ^^^^^^
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#similar_names
+
+error: file is loaded as a module multiple times: `crates/latent-wasmtime/tests/guest_sdk/../../../latent-control-store/tests/admission/support.rs`
+  |
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#duplicate_mod
+  = note: `-D clippy::duplicate-mod` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::duplicate_mod)]`
+
+error: file is loaded as a module multiple times: `crates/latent-wasmtime/tests/guest_sdk/../local_blobs/../../../latent-packaging/tests/fixtures/component.rs`
+  |
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#duplicate_mod
+
+error: file is loaded as a module multiple times: `crates/latent-wasmtime/tests/guest_sdk/../local_blobs/../../../latent-packaging/tests/fixtures/host.rs`
+  |
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#duplicate_mod
+
+error: file is loaded as a module multiple times: `crates/latent-wasmtime/tests/guest_sdk/../local_blobs/../../../latent-packaging/tests/fixtures/mod.rs`
+  |
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#duplicate_mod
+
+error: file is loaded as a module multiple times: `crates/latent-wasmtime/tests/generic_backend/support.rs`
+  --> crates/latent-wasmtime/tests/guest_sdk.rs:45:1
+   |
+45 | / #[path = "generic_backend/support.rs"]
+46 | | #[allow(dead_code)]
+47 | | mod support;
+   | |____________^ first loaded here
+   |
+  ::: crates/latent-wasmtime/tests/guest_sdk/../local_service/packages.rs:9:1
+   |
+ 9 | / #[path = "../generic_backend/support.rs"]
+10 | | #[allow(dead_code)]
+11 | | mod runtime_fixture;
+   | |____________________^ loaded again here
+   |
+   = help: replace all but one `mod` item with `use` items
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#duplicate_mod
+
+error: file is loaded as a module multiple times: `crates/latent-wasmtime/tests/generic_backend/../guest_sdk/runtime.rs`
+  |
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#duplicate_mod
+
+error: could not compile `latent-wasmtime` (test "nats_events") due to 5 previous errors
+error: unused `self` argument
+   --> crates/latent-wasmtime/tests/phase3_resource/../local_service/fixture.rs:461:20
+    |
+461 |     pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
+    |                    ^^^^^
+    |
+    = help: consider refactoring to an associated function
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#unused_self
+    = note: `-D clippy::unused-self` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::unused_self)]`
+
+error: this let-binding has unit value
+  --> crates/latent-wasmtime/tests/phase3_resource/../nats_events/proxy.rs:87:75
+   |
+87 |                     result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+   |                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#let_unit_value
+   = note: `-D clippy::let-unit-value` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::let_unit_value)]`
+help: omit the `let` binding
+   |
+87 -                     result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+87 +                     result=children.join_next(),if !children.is_empty()=>{result.unwrap().unwrap();},
+   |
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/phase3_resource/../nats_events/proxy.rs:87:79
+   |
+87 |                     result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+   |                                                                               ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+   = note: `-D clippy::ignored-unit-patterns` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::ignored_unit_patterns)]`
+
+error: this function has too many lines (124/100)
+  --> crates/latent-wasmtime/tests/phase3_resource/events.rs:27:1
+   |
+27 | pub async fn measure(rows: &mut Vec<Value>) {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+   = note: `-D clippy::too-many-lines` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: using `clone` on type `ProviderPoolLimits` which implements the `Copy` trait
+  --> crates/latent-wasmtime/tests/phase3_resource/events.rs:37:63
+   |
+37 |         let fixture = Fixture::new(peer.config.clone(), None, limits.clone()).await;
+   |                                                               ^^^^^^^^^^^^^^ help: try removing the `clone` call: `limits`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#clone_on_copy
+   = note: `-D clippy::clone-on-copy` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::clone_on_copy)]`
+
+error: allocating a local array larger than 16384 bytes
+   --> crates/latent-wasmtime/tests/phase3_resource/observation.rs:205:21
+    |
+205 |     let mut bytes = [0; 65536];
+    |                     ^^^^^^^^^^
+    |
+    = help: consider allocating on the heap with `vec![0; 65536].into_boxed_slice()`
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_stack_arrays
+    = note: `-D clippy::large-stack-arrays` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::large_stack_arrays)]`
+
+error: used underscore-prefixed binding
+   --> crates/latent-wasmtime/tests/phase3_resource/../local_secrets/fixture.rs:524:9
+    |
+524 |         self._guest_runtime.entropy_calls()
+    |         ^^^^^^^^^^^^^^^^^^^
+    |
+note: binding is defined here
+   --> crates/latent-wasmtime/tests/phase3_resource/../local_secrets/fixture.rs:100:5
+    |
+100 |     _guest_runtime: support::guest_runtime::Runtime,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#used_underscore_binding
+    = note: `-D clippy::used-underscore-binding` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::used_underscore_binding)]`
+
+error: large future with a size of 17848 bytes
+  --> crates/latent-wasmtime/tests/phase3_resource.rs:48:9
+   |
+48 | /         tokio::time::timeout(
+49 | |             std::time::Duration::from_secs(30),
+50 | |             child::measure(&mut observations),
+51 | |         )
+   | |_________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_futures
+   = note: `-D clippy::large-futures` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::large_futures)]`
+help: consider `Box::pin` on it
+   |
+48 ~         Box::pin(tokio::time::timeout(
+49 +             std::time::Duration::from_secs(30),
+50 +             child::measure(&mut observations),
+51 +         ))
+   |
+
+error: used underscore-prefixed binding
+   --> crates/latent-wasmtime/tests/guest_sdk/../local_blobs/fixture.rs:390:23
+    |
+390 |         let mut key = self._factory.preparation_key(revision.release.clone());
+    |                       ^^^^^^^^^^^^^
+    |
+note: binding is defined here
+   --> crates/latent-wasmtime/tests/guest_sdk/../local_blobs/fixture.rs:99:5
+    |
+ 99 |     _factory: WasmtimeComponentEngineFactory,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#used_underscore_binding
+    = note: `-D clippy::used-underscore-binding` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::used_underscore_binding)]`
+
+error: assigning the result of `Clone::clone()` may be inefficient
+   --> crates/latent-wasmtime/tests/guest_sdk/../local_blobs/fixture.rs:391:9
+    |
+391 |         key.publication = revision.publication.clone();
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use `clone_from()`: `key.publication.clone_from(&revision.publication)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#assigning_clones
+    = note: `-D clippy::assigning-clones` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::assigning_clones)]`
+
+error: calling `ProviderPoolLimits::default()` is more clear than this expression
+  --> crates/latent-wasmtime/tests/guest_sdk/blob.rs:17:66
+   |
+17 |         let (_root, f) = configured(&format!("{language}-blob"), Default::default()).await;
+   |                                                                  ^^^^^^^^^^^^^^^^^^ help: try: `ProviderPoolLimits::default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#default_trait_access
+   = note: `-D clippy::default-trait-access` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::default_trait_access)]`
+
+error: could not compile `latent-wasmtime` (test "phase3_resource") due to 8 previous errors
+error: calling `MetricActivationLimits::default()` is more clear than this expression
+  --> crates/latent-wasmtime/tests/guest_sdk/metrics.rs:19:39
+   |
+19 |             Fixture::with_publication(Default::default(), config(), None, Some(publication)).await;
+   |                                       ^^^^^^^^^^^^^^^^^^ help: try: `MetricActivationLimits::default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#default_trait_access
+
+error: calling `RandomLimits::default()` is more clear than this expression
+  --> crates/latent-wasmtime/tests/guest_sdk/random.rs:16:49
+   |
+16 |         let f = Fixture::with_publication(None, Default::default(), None, Some(publication)).await;
+   |                                                 ^^^^^^^^^^^^^^^^^^ help: try: `RandomLimits::default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#default_trait_access
+
+error: used underscore-prefixed binding
+   --> crates/latent-wasmtime/tests/guest_sdk/../local_secrets/fixture.rs:524:9
+    |
+524 |         self._guest_runtime.entropy_calls()
+    |         ^^^^^^^^^^^^^^^^^^^
+    |
+note: binding is defined here
+   --> crates/latent-wasmtime/tests/guest_sdk/../local_secrets/fixture.rs:100:5
+    |
+100 |     _guest_runtime: support::guest_runtime::Runtime,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#used_underscore_binding
+
+error: calling `ProviderPoolLimits::default()` is more clear than this expression
+  --> crates/latent-wasmtime/tests/guest_sdk/secrets.rs:21:13
+   |
+21 |             Default::default(),
+   |             ^^^^^^^^^^^^^^^^^^ help: try: `ProviderPoolLimits::default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#default_trait_access
+
+error: consider adding a `;` to the last statement for consistent formatting
+  --> crates/latent-wasmtime/tests/guest_sdk.rs:91:13
+   |
+91 |             assert_eq!(kind, latent_executor::GuestInterruptionKind::Cancelled)
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: add a `;` here: `assert_eq!(kind, latent_executor::GuestInterruptionKind::Cancelled);`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#semicolon_if_nothing_returned
+   = note: `-D clippy::semicolon-if-nothing-returned` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::semicolon_if_nothing_returned)]`
+
+error: this let-binding has unit value
+  --> crates/latent-wasmtime/tests/guest_sdk/../nats_events/proxy.rs:87:75
+   |
+87 |                     result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+   |                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#let_unit_value
+   = note: `-D clippy::let-unit-value` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::let_unit_value)]`
+help: omit the `let` binding
+   |
+87 -                     result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+87 +                     result=children.join_next(),if !children.is_empty()=>{result.unwrap().unwrap();},
+   |
+
+error: matching over `()` is more explicit
+  --> crates/latent-wasmtime/tests/guest_sdk/../nats_events/proxy.rs:87:79
+   |
+87 |                     result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+   |                                                                               ^ help: use `()` instead of `_`: `()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ignored_unit_patterns
+   = note: `-D clippy::ignored-unit-patterns` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::ignored_unit_patterns)]`
+
+error: calling `ProviderPoolLimits::default()` is more clear than this expression
+  --> crates/latent-wasmtime/tests/guest_sdk/events.rs:62:17
+   |
+62 |                 Default::default(),
+   |                 ^^^^^^^^^^^^^^^^^^ help: try: `ProviderPoolLimits::default()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#default_trait_access
+
+error: unused `self` argument
+   --> crates/latent-wasmtime/tests/guest_sdk/../local_service/fixture.rs:461:20
+    |
+461 |     pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
+    |                    ^^^^^
+    |
+    = help: consider refactoring to an associated function
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#unused_self
+    = note: `-D clippy::unused-self` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::unused_self)]`
+
+error: large future with a size of 19280 bytes
+  --> crates/latent-wasmtime/tests/guest_sdk/service.rs:48:21
+   |
+48 |             let f = configured(root.path(), permit, language).await;
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider `Box::pin` on it: `Box::pin(configured(root.path(), permit, language))`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_futures
+   = note: `-D clippy::large-futures` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::large_futures)]`
+
+error: could not compile `latent-wasmtime` (test "guest_sdk") due to 23 previous errors

@@ -13,6 +13,7 @@ public sealed partial class BoundedClient
     {
         switch (request)
         {
+            case Profile.InspectHttpTargetRequest target: ValidateTargetRequest(target); break;
             case Profile.InvokeRequest invoke:
                 Require(invoke.Target is not null && invoke.Budget is not null && Text(invoke.MediaType, 128) && invoke.Metadata is not null &&
                     OptionalText(invoke.ActivationId, 256) && OptionalText(invoke.RootActivationId, 256) && OptionalText(invoke.ParentActivationId, 256) &&
@@ -22,6 +23,12 @@ public sealed partial class BoundedClient
                 break;
             case Profile.CancelRequest cancel: Require(Text(cancel.ActivationId, 256) && Text(cancel.Reason, 1024, true)); break;
             case Profile.GetActivationRequest activation: Require(Text(activation.ActivationId, 256)); break;
+            case Profile.InspectActivationTreeRequest tree:
+                string selector = tree.Service ?? tree.ActivationId;
+                Require((tree.Service is not null ? tree.ActivationId == "" : tree.FromUnixMillis is null)
+                    && Text(selector, 512) && !selector.Any(char.IsWhiteSpace) && !selector.Any(char.IsControl)
+                    && (tree.Page is null || tree.Page.PageSize <= 128 && OptionalText(tree.Page.PageToken, 160)));
+                break;
             case Profile.GetPolicyRequest policy: Require(Text(policy.Id, 256) && RecordKind(policy.RecordKind)); break;
             case Profile.ListPoliciesRequest policies:
                 Require(RecordKind(policies.RecordKind) && policies.Page is not null && policies.Page.PageSize is >= 1 and <= 32 && OptionalText(policies.Page.PageToken, 117));
@@ -48,6 +55,7 @@ public sealed partial class BoundedClient
         Profile.OutcomeKnowledge outcome = Profile.OutcomeKnowledge.Observed;
         switch (response)
         {
+            case Profile.InspectHttpTargetResponse target: ValidateTargetResponse(target, (Profile.InspectHttpTargetRequest)request); break;
             case Profile.InvokeResponse invocation:
                 Require(Text(invocation.ActivationId, 256) && invocation.Consumption is not null &&
                     Count(invocation.Success, invocation.DeclaredError, invocation.PlatformFailure) == 1 &&
@@ -66,6 +74,30 @@ public sealed partial class BoundedClient
             case Profile.ListPoliciesResponse policies:
                 Require(policies.Policies.Count <= ((Profile.ListPoliciesRequest)request).Page!.PageSize && OptionalText(policies.Page?.NextPageToken, 117));
                 break;
+            case Profile.InspectActivationTreeResponse tree:
+                var treeSelector = (Profile.InspectActivationTreeRequest)request;
+                uint maximum = ((Profile.InspectActivationTreeRequest)request).Page?.PageSize ?? 0;
+                Require(tree.SchemaVersion == 1 && tree.RetainedHistoryOnly && tree.Page is not null && tree.Nodes.Count <= (maximum == 0 ? 32 : maximum)
+                    && OptionalText(tree.Page?.NextPageToken, 160) && (tree.HistoryAvailable || tree.Nodes.Count == 0 && tree.Page?.NextPageToken is null));
+                foreach (var node in tree.Nodes)
+                {
+                    Require(Text(node.TargetService, 512, true) && (treeSelector.Service is null || node.TargetService == treeSelector.Service
+                        && node.ParentActivationId is null && node.ActivationId == node.RootActivationId
+                        && (treeSelector.FromUnixMillis is null || node.ReceivedAtUnixMillis >= treeSelector.FromUnixMillis)));
+                    Require(Text(node.ActivationId, 512) && Text(node.RootActivationId, 512) && OptionalText(node.ParentActivationId, 512) && OptionalText(node.CallerService, 512)
+                        && Text(node.Phase, 64, true) && Text(node.PrincipalKind, 64, true) && OptionalText(node.TerminalState, 64));
+                    if (node.Diagnostic is { } diagnostic)
+                        Require(diagnostic.SchemaVersion == 1 && (diagnostic.ProfileDigest is null || diagnostic.ProfileDigest.Length == 64 && diagnostic.ProfileDigest.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f')));
+                    if (node.TransactionStaging is { } witness)
+                        Require(witness.SchemaVersion == 1 && witness.ActivationSerial != 0 && StagingHex(witness.CommandId)
+                            && StagingHex(witness.AttemptId) && StagingHex(witness.TransactionId)
+                            && witness.PublicationId.StartsWith("publication:sha256:", StringComparison.Ordinal)
+                            && StagingHex(witness.PublicationId[19..]) && witness.StagedMutations <= 128
+                            && witness.CapturedIntents is > 0 and <= 128 && node.GrantedBudget is { } grant
+                            && witness.CapturedIntents <= grant.EffectCount && witness.StateWriteBytes > 0
+                            && witness.StateWriteBytes <= grant.StateWriteBytes && witness.ObservedAtUnixMillis >= node.ReceivedAtUnixMillis);
+                }
+                break;
             case Profile.ListCapabilitiesResponse capabilities:
                 uint requested = ((Profile.ListCapabilitiesRequest)request).Page?.PageSize ?? 0;
                 Require(capabilities.Capabilities.Count <= (requested == 0 ? 128 : requested) && OptionalText(capabilities.Page?.NextPageToken, 160));
@@ -83,4 +115,5 @@ public sealed partial class BoundedClient
     }
 
     private static int Count(object? first, object? second, object? third) => (first is null ? 0 : 1) + (second is null ? 0 : 1) + (third is null ? 0 : 1);
+    private static bool StagingHex(string value) => value.Length == 64 && value.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
 }
