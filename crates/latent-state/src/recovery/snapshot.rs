@@ -54,6 +54,8 @@ pub struct RequiredArtifact {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SnapshotMetadata {
+    /// Original operator/audit context. A full-unit snapshot captures every
+    /// namespace; this descriptive field is neither a row filter nor a grant.
     #[serde(deserialize_with = "limits::identity")]
     pub tenant: String,
     #[serde(deserialize_with = "limits::identity")]
@@ -183,9 +185,12 @@ impl SnapshotManifest {
         let mut identities = std::collections::BTreeSet::new();
         for namespace in &self.namespaces {
             let (record, _) = namespace.decode()?;
-            if record.tenant.0 != self.metadata.tenant
-                || record.status == NamespaceStatus::Active
-                || !identities.insert((record.id.0.clone(), record.version.incarnation))
+            if record.status == NamespaceStatus::Active
+                || !identities.insert((
+                    record.tenant.0.clone(),
+                    record.id.0.clone(),
+                    record.version.incarnation,
+                ))
             {
                 return Err(StoreError::Conflict);
             }
@@ -308,7 +313,7 @@ pub(crate) fn export_snapshot(
         .map_err(SnapshotError::source)?
         .ok_or(SnapshotError::Review(StoreError::UnsupportedFormat))?
         .encode();
-    let namespaces = capture_namespaces(&view, &metadata.tenant).map_err(SnapshotError::source)?;
+    let namespaces = capture_namespaces(&view).map_err(SnapshotError::source)?;
     let closure = validate(&view).map_err(SnapshotError::source)?;
     closure
         .require_declared(&metadata)
@@ -625,16 +630,12 @@ fn require_schema_artifacts(
     Ok(())
 }
 
-pub(super) fn capture_namespaces(
-    view: &ReadView,
-    tenant: &str,
-) -> Result<Vec<NamespaceSnapshot>, StoreError> {
-    capture_namespace_rows(view, tenant, true)
+pub(super) fn capture_namespaces(view: &ReadView) -> Result<Vec<NamespaceSnapshot>, StoreError> {
+    capture_namespace_rows(view, true)
 }
 
 fn capture_namespace_rows(
     view: &ReadView,
-    tenant: &str,
     require_quiesced: bool,
 ) -> Result<Vec<NamespaceSnapshot>, StoreError> {
     let page = view.scan_after(
@@ -651,9 +652,7 @@ fn capture_namespace_rows(
     for (key, bytes) in page.rows {
         NamespaceCatalog::validate_row(&key, &bytes).map_err(|_| StoreError::Corrupt)?;
         let record = NamespaceRecord::decode(&bytes).map_err(|_| StoreError::Corrupt)?;
-        if record.tenant.0 != tenant
-            || (require_quiesced && record.status == NamespaceStatus::Active)
-        {
+        if require_quiesced && record.status == NamespaceStatus::Active {
             return Err(StoreError::Conflict);
         }
         let (history, _) = NamespaceHistory::capture(view, &record)?;
