@@ -44,6 +44,29 @@ class FoundationRecipeTests(unittest.TestCase):
                     self.foundation.validate_cargo_workflow(self.workflow)
                 self.assertTrue(any("do not enforce command" in error for error in self.foundation.ERRORS))
 
+    def test_matrix_exclusions_missing_lanes_and_failure_masking_do_not_satisfy_foundation(self):
+        import yaml
+        for edit in ("missing", "excluded", "ignored-job", "ignored-step", "fail-fast", "wrong-lane"):
+            document = yaml.load(self.workflow, Loader=yaml.BaseLoader)
+            job = document["jobs"]["rust"]
+            binding = next(step for step in job["steps"] if step.get("name") == "Check generated RPC and Component Model bindings")
+            if edit == "missing":
+                job["strategy"]["matrix"]["lane"].remove("checks")
+            elif edit == "excluded":
+                job["strategy"]["matrix"]["exclude"] = [{"lane": "checks"}]
+            elif edit == "ignored-job":
+                job["continue-on-error"] = "true"
+            elif edit == "ignored-step":
+                binding["continue-on-error"] = "true"
+            elif edit == "fail-fast":
+                job["strategy"]["fail-fast"] = "true"
+            else:
+                binding["if"] = "matrix.lane == 'other'"
+            with self.subTest(edit=edit):
+                self.foundation.ERRORS.clear()
+                self.foundation.validate_cargo_workflow(yaml.safe_dump(document))
+                self.assertIn("CI workflow does not invoke foundation recipe: bindings", self.foundation.ERRORS)
+
     def test_workspace_locked_scope_is_not_optional(self):
         from dataclasses import replace
         invocation = self.foundation.RECIPES["workspace-check"][0]

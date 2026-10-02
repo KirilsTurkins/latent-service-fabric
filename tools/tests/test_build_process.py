@@ -271,12 +271,41 @@ class BuildProcessTests(unittest.TestCase):
             signal.raise_signal(signal.SIGINT)
             return process
 
-        with patch.object(subprocess, "Popen", interrupt):
-            with self.assertRaises(KeyboardInterrupt):
-                self.run_python("import time; time.sleep(30)")
-        self.assertEqual(signal.getsignal(signal.SIGINT), previous)
-        self.assertIsNotNone(created[0].returncode)
-        self.assert_gone(created[0].pid)
+        # A background CI suite inherits SIG_IGN from its shell. This schedule
+        # specifically owns a deliverable interrupt; ordinary ignored signals
+        # must remain ignored by the production process owner.
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+        try:
+            with patch.object(subprocess, "Popen", interrupt):
+                with self.assertRaises(KeyboardInterrupt):
+                    self.run_python("import time; time.sleep(30)")
+            self.assertEqual(signal.getsignal(signal.SIGINT), signal.default_int_handler)
+            self.assertIsNotNone(created[0].returncode)
+            self.assert_gone(created[0].pid)
+        finally:
+            signal.signal(signal.SIGINT, previous)
+
+    def test_ignored_sigint_during_constructor_preserves_success_and_handler(self):
+        created = []
+        factory = subprocess.Popen
+        previous = signal.getsignal(signal.SIGINT)
+
+        def interrupt(*args, **kwargs):
+            process = factory(*args, **kwargs)
+            created.append(process)
+            signal.raise_signal(signal.SIGINT)
+            return process
+
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            with patch.object(subprocess, "Popen", interrupt):
+                result = self.run_python("print('ok')")
+            self.assertEqual(result.stdout, b"ok" + os.linesep.encode())
+            self.assertEqual(signal.getsignal(signal.SIGINT), signal.SIG_IGN)
+            self.assertEqual(created[0].returncode, 0)
+            self.assert_gone(created[0].pid)
+        finally:
+            signal.signal(signal.SIGINT, previous)
 
     def test_repeated_success_and_failure_do_not_retain_handles_or_threads(self):
         self.run_python("pass")  # Load platform DLL/module before the baseline.
@@ -318,6 +347,93 @@ class BuildProcessTests(unittest.TestCase):
                 with self.assertRaisesRegex(BuildProcessError, "^process-ownership$"):
                     owner.finish(time.monotonic() + 1)
                 signal_group.assert_not_called()
+
+
+class WindowsThreadSnapshotTests(unittest.TestCase):
+    def setUp(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools import build_process_windows
+
+        self.windows = build_process_windows
+        self.process = SimpleNamespace(pid=123, _handle=456)
+        self.api = Mock()
+        self.api.AssignProcessToJobObject.return_value = True
+        self.api.CreateToolhelp32Snapshot.return_value = 789
+        self.api.Thread32First.side_effect = self.first
+        self.api.Thread32Next.return_value = False
+        self.api.OpenThread.return_value = 987
+        self.api.GetProcessIdOfThread.return_value = self.process.pid
+        self.api.ResumeThread.return_value = 1
+        self.job = self.windows._Job.__new__(self.windows._Job)
+        self.job.api = self.api
+        self.job.handle = 654
+
+    def first(self, _snapshot, pointer):
+        pointer._obj.owner = self.process.pid
+        pointer._obj.id = 321
+        return True
+
+    def test_original_deadline_expiring_in_snapshot_is_not_a_row_limit(self):
+        with patch.object(self.windows.time, "monotonic", return_value=10):
+            with self.assertRaisesRegex(BuildProcessError, "^command-deadline$"):
+                self.job.assign_and_resume(self.process, 10)
+        self.api.OpenThread.assert_not_called()
+        self.api.ResumeThread.assert_not_called()
+        self.api.CloseHandle.assert_called_once_with(789)
+
+    def test_thread_snapshot_row_limit_remains_262144(self):
+        def first(snapshot, pointer):
+            self.first(snapshot, pointer)
+            pointer._obj.owner = self.process.pid + 1
+            return True
+
+        count = 0
+
+        def next_row(_snapshot, _pointer):
+            nonlocal count
+            count += 1
+            return True
+
+        self.api.Thread32First.side_effect = first
+        self.api.Thread32Next = next_row
+        with patch.object(self.windows.time, "monotonic", new=lambda: 0):
+            with self.assertRaisesRegex(BuildProcessError, "^thread-snapshot-limit$"):
+                self.job.assign_and_resume(self.process, 10)
+        self.assertEqual(count, 262144)
+        self.api.OpenThread.assert_not_called()
+        self.api.ResumeThread.assert_not_called()
+        self.api.CloseHandle.assert_called_once_with(789)
+
+    def test_deadline_expiring_during_owner_verification_never_resumes(self):
+        now = [0]
+
+        def verify(_thread):
+            now[0] = 10
+            return self.process.pid
+
+        self.api.GetProcessIdOfThread.side_effect = verify
+        with patch.object(self.windows.time, "monotonic", new=lambda: now[0]):
+            with self.assertRaisesRegex(BuildProcessError, "^command-deadline$"):
+                self.job.assign_and_resume(self.process, 10)
+        self.api.OpenThread.assert_called_once_with(0x0802, False, 321)
+        self.api.GetProcessIdOfThread.assert_called_once_with(987)
+        self.api.ResumeThread.assert_not_called()
+        self.assertEqual([call.args for call in self.api.CloseHandle.call_args_list], [(987,), (789,)])
+
+    def test_current_owned_initial_thread_resumes_once_and_releases_handles(self):
+        with patch.object(self.windows.time, "monotonic", return_value=9):
+            self.job.assign_and_resume(self.process, 10)
+        self.api.ResumeThread.assert_called_once_with(987)
+        self.assertEqual([call.args for call in self.api.CloseHandle.call_args_list], [(987,), (789,)])
+
+    def test_reused_thread_id_still_rejects_foreign_owner(self):
+        self.api.GetProcessIdOfThread.return_value = self.process.pid + 1
+        with patch.object(self.windows.time, "monotonic", return_value=9):
+            with self.assertRaisesRegex(BuildProcessError, "^initial-thread-owner$"):
+                self.job.assign_and_resume(self.process, 10)
+        self.api.ResumeThread.assert_not_called()
+        self.assertEqual([call.args for call in self.api.CloseHandle.call_args_list], [(987,), (789,)])
 
 
 if __name__ == "__main__":
