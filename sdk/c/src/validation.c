@@ -246,6 +246,16 @@ bool lsf_response_valid(latent_profile_call *call) {
                     || !bounded(node->principal_kind, 64) || (node->has_terminal_state && !bounded(node->terminal_state, 64))) return false;
                 if (node->has_diagnostic && (node->diagnostic.schema_version != 1
                     || (node->diagnostic.has_profile_digest && !digest(node->diagnostic.profile_digest, "")))) return false;
+                if (node->has_transaction_staging) {
+                    const latent_profile_transaction_staging_witness *witness = &node->transaction_staging;
+                    if (witness->schema_version != 1 || witness->activation_serial == 0 || !digest(witness->command_id, "")
+                        || !digest(witness->attempt_id, "") || !digest(witness->transaction_id, "")
+                        || !digest(witness->publication_id, "publication:sha256:") || witness->staged_mutations > 128
+                        || witness->captured_intents == 0 || witness->captured_intents > 128 || !node->has_granted_budget
+                        || witness->captured_intents > node->granted_budget.effect_count || witness->state_write_bytes == 0
+                        || witness->state_write_bytes > node->granted_budget.state_write_bytes
+                        || witness->observed_at_unix_millis < node->received_at_unix_millis) return false;
+                }
             }
             return true;
         }

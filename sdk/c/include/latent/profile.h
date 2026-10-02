@@ -467,6 +467,19 @@ typedef struct latent_profile_activation_diagnostic {
     uint64_t lift_multiplier;
 } latent_profile_activation_diagnostic;
 
+typedef struct latent_profile_transaction_staging_witness {
+    uint32_t schema_version;
+    uint64_t activation_serial;
+    latent_string command_id;
+    latent_string attempt_id;
+    latent_string transaction_id;
+    latent_string publication_id;
+    uint32_t staged_mutations;
+    uint32_t captured_intents;
+    uint64_t state_write_bytes;
+    uint64_t observed_at_unix_millis;
+} latent_profile_transaction_staging_witness;
+
 typedef struct latent_profile_activation_tree_node {
     latent_string activation_id;
     bool has_parent_activation_id;
@@ -488,6 +501,8 @@ typedef struct latent_profile_activation_tree_node {
     bool diagnostic_is_terminal;
     latent_string target_service;
     uint64_t received_at_unix_millis;
+    bool has_transaction_staging;
+    latent_profile_transaction_staging_witness transaction_staging;
 } latent_profile_activation_tree_node;
 
 typedef struct latent_profile_inspect_activation_tree_request {

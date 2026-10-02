@@ -26,6 +26,7 @@ pub(super) struct Record {
     pub granted_budget: Option<latent_core::ResourceBudget>,
     pub effective_deadline_unix_millis: Option<u64>,
     pub observed_diagnostic: Option<latent_core::diagnostic::ActivationDiagnostic>,
+    pub staging: Option<super::staging::BoundStaging>,
 }
 
 impl Record {
@@ -54,6 +55,7 @@ impl Record {
             granted_budget: None,
             effective_deadline_unix_millis: None,
             observed_diagnostic: None,
+            staging: None,
             status: ActivationStatus {
                 activation_id: id.clone(),
                 phase: ActivationPhase::Received,

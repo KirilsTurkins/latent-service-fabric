@@ -56,3 +56,29 @@ full-width unsigned values, unknown enum numbers and early preparation failure.
 Final workload qualification uses the synthetic Java adapter/domain fixture
 from #708 with the actual packaged node profile; facade or fixture compilation
 alone is not that qualification.
+
+## Native transaction staging observation
+
+For a retained native command activation, each privileged tree or root node may
+include `transactionStaging`. The value remains absent until the original host
+successfully inserts a captured intent. Its `schemaVersion` is 1;
+`activationSerial`, `stateWriteBytes` and `observedAtUnixMillis` use unsigned
+decimal strings in CLI JSON. `commandId`, `attemptId`, `transactionId` and
+`publicationId` identify the original claim and signed publication.
+`stagedMutations` counts distinct staged state changes and `capturedIntents`
+counts successful intent insertions, each bounded by the original host limits.
+
+The manager binds a serial-scoped observer before guest access. Guest metadata,
+ordinary activation attributes, a cancellation request and a running phase
+cannot create or replace this observation. A terminal record retains its last
+witness until normal journal eviction; an old observer cannot update a reused
+activation ID. Inspection allocates no state session, worker or provider call.
+The journal charges one bounded observation per command, and the existing page
+byte bound includes it.
+
+This is privileged descriptive evidence of staging. Durable disposition, final
+accounting, original abort fencing and positive physical retirement require
+their own original owner observations. A pending or lost response, process exit,
+a charged effect counter or the witness alone establishes none of those facts.
+Native component and crash qualification must use separately recorded actual
+execution evidence; schema generation and source tests do not provide it.

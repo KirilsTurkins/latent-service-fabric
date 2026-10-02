@@ -2751,14 +2751,21 @@
         "journal::tests::tree::retention_removes_index_entries_and_explains_expired_anchor_without_certifying_absence",
         "journal::tests::tree::root_discovery_is_scoped_bounded_filtered_and_keeps_one_serial_horizon",
         "journal::tests::unowned_append_is_rejected_without_changing_a_live_history",
-        "transaction_runtime::command_completion::history::tests::actual_retained_view_allows_business_advance_and_refuses_new_recovery_or_schema"
+        "transaction_runtime::command_completion::history::tests::actual_retained_view_allows_business_advance_and_refuses_new_recovery_or_schema",
+        "journal::tests::staging::accepted_cancellation_is_not_terminal_and_terminal_observers_cannot_overwrite_staging",
+        "journal::tests::staging::expired_retention_and_reused_activation_ids_reject_the_original_serial_observer",
+        "journal::tests::staging::staging_identity_and_one_owner_charge_refuse_malformed_duplicate_and_unadmitted_binding",
+        "journal::tests::staging::staging_observer_requires_positive_progress_and_preserves_original_tree_and_root_scope",
+        "journal::tests::staging::staging_progress_rejects_metadata_forgery_zero_skips_budget_excess_and_regressions",
+        "transaction_runtime::staging::tests::competing_trusted_staging_observers_bind_exactly_one_original_slot",
+        "transaction_runtime::staging::tests::staging_observer_binding_refuses_closed_released_and_reused_guest_access"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 102,
+      "minimumCases": 109,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -4521,14 +4528,16 @@
         "network::tests::audit_uncertainty_does_not_turn_a_rejection_into_a_known_mutation_outcome",
         "network::tests::capacity_is_refunded_only_after_the_last_physical_body_owner_retires",
         "network::tests::configuration_is_explicit_bounded_redacted_and_does_not_start_io",
-        "network::tests::typed_platform_details_require_canonical_codes_and_never_enable_retries"
+        "network::tests::typed_platform_details_require_canonical_codes_and_never_enable_retries",
+        "network::profile::responses::staging_tests::staging_projection_preserves_absence_and_maximum_unsigned_original_progress",
+        "network::profile::responses::staging_tests::staging_projection_refuses_malformed_identity_versions_bounds_and_missing_original_grant"
       ],
       "expectedIgnored": [],
       "id": "latent-sdk.lib.latent-sdk",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "sdk/rust/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 9,
       "mode": "libtest",
       "package": "latent-sdk",
       "platforms": [
@@ -5107,14 +5116,15 @@
         "tenant::tests::missing_changed_or_malformed_tenant_record_refuses_instead_of_auto_upgrading_legacy",
         "tenant::tests::noisy_tenant_saturation_and_stale_counter_fence_do_not_consume_another_tenant_or_partial_business_commit",
         "tenant::tests::same_atomic_envelope_merges_state_and_command_counter_once_and_rejects_overflow_without_partial_rows",
-        "tenant::tests::typed_accounting_reads_and_setup_existence_checks_refuse_oversized_bytes_before_copying_values"
+        "tenant::tests::typed_accounting_reads_and_setup_existence_checks_refuse_oversized_bytes_before_copying_values",
+        "session::tests::staged_mutation_observation_counts_real_distinct_changes_without_publishing_state"
       ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 198,
+      "minimumCases": 199,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
@@ -8457,14 +8467,15 @@
         "package::registry::tests::cancellation::denied_pull_does_not_export_and_diagnostics_exclude_credentials",
         "package::registry::tests::copy_budget_and_complete_push_association_are_checked_before_transfer",
         "package::registry::tests::partial_push_retains_confirmed_package_and_uncertain_evidence_without_retry",
-        "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners"
+        "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners",
+        "management::tests::activation_tree_staging_preserves_original_claim_and_full_width_unsigned_progress"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 145,
+      "minimumCases": 146,
       "mode": "libtest",
       "package": "latent",
       "platforms": [

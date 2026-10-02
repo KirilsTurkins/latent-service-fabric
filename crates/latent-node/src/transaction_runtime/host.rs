@@ -5,7 +5,8 @@ use latent_core::{
 };
 use latent_executor::transaction::{
     CommandInfo, Entry, Intent, IntentFailure, Mode, Page, PageInfo, RetainedTransfer,
-    StateFailure, TransactionHost, VersionedValue, ViewIdentity,
+    StateFailure, TransactionHost, TransactionStagingIdentity, TransactionStagingObserver,
+    TransactionStagingProgress, VersionedValue, ViewIdentity,
 };
 use std::sync::atomic::Ordering;
 
@@ -42,8 +43,44 @@ impl StateTransactionHost {
             state_schema: self.scope.state_schema.clone(),
         })
     }
+    fn observe_staging(&self, payload: &super::SessionPayload) {
+        if let (Ok(mutations), Ok(intents), Ok(observer)) = (
+            u32::try_from(payload.session.staged_mutation_count()),
+            u32::try_from(payload.intents.len()),
+            self.staging_observer.lock(),
+        ) {
+            if let Some(observer) = observer.as_ref() {
+                observer.observe(TransactionStagingProgress {
+                    staged_mutations: mutations,
+                    captured_intents: intents,
+                    state_write_bytes: self
+                        .budget()
+                        .snapshot_at(std::time::Instant::now())
+                        .state_write_bytes,
+                });
+            }
+        }
+    }
 }
 impl TransactionHost for StateTransactionHost {
+    fn staging_identity(&self) -> Option<TransactionStagingIdentity> {
+        self.staging_identity.clone()
+    }
+    fn bind_staging_observer(
+        &self,
+        observer: std::sync::Arc<dyn TransactionStagingObserver>,
+    ) -> Result<(), StateFailure> {
+        if self.mode != Mode::Command || self.command.is_none() || self.staging_identity.is_none() {
+            return Err(StateFailure::WrongMode);
+        }
+        super::staging::bind(
+            &self.staging_observer,
+            &self.acquired,
+            &self.guest_closed,
+            &self.released,
+            observer,
+        )
+    }
     fn activation_id(&self) -> &latent_core::ActivationId {
         &self.activation
     }
@@ -337,6 +374,7 @@ impl TransactionHost for StateTransactionHost {
                 .commit()
                 .map_err(|error| intent_budget_error(&error))?;
             payload.intents.push(captured);
+            self.observe_staging(payload);
             Ok(sequence)
         })
     }

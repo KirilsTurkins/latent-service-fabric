@@ -260,6 +260,17 @@ final class Protocol {
                         require(diagnostic.schemaVersion() == 1);
                         diagnostic.profileDigest().ifPresent(digest -> require(digest.matches("[0-9a-f]{64}")));
                     });
+                    node.transactionStaging().ifPresent(witness -> {
+                        var grant = node.grantedBudget().orElseThrow(Invalid::new);
+                        require(witness.schemaVersion() == 1 && witness.activationSerial() != 0
+                            && witness.commandId().matches("[0-9a-f]{64}") && witness.attemptId().matches("[0-9a-f]{64}")
+                            && witness.transactionId().matches("[0-9a-f]{64}") && witness.publicationId().matches("publication:sha256:[0-9a-f]{64}")
+                            && Integer.compareUnsigned(witness.stagedMutations(), 128) <= 0 && witness.capturedIntents() != 0
+                            && Integer.compareUnsigned(witness.capturedIntents(), 128) <= 0
+                            && Integer.compareUnsigned(witness.capturedIntents(), grant.effectCount()) <= 0
+                            && witness.stateWriteBytes() != 0 && Long.compareUnsigned(witness.stateWriteBytes(), grant.stateWriteBytes()) <= 0
+                            && Long.compareUnsigned(witness.observedAtUnixMillis(), node.receivedAtUnixMillis()) >= 0);
+                    });
                 });
             }
             case Management.ListPoliciesResponse response -> {
