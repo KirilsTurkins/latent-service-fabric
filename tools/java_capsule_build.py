@@ -7,7 +7,7 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build
+from tools import guest_compatibility_build, guest_resources
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.application_dependencies import prepare
@@ -28,6 +28,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py", "tools/java_guest/sdk.py",
           "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_resources.RECIPE
 
 
 def retain_logs(source: Path, output: Path) -> None:
