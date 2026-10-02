@@ -158,6 +158,8 @@ digests and static failure categories.
 Source controls perform real capture, graph/native/inventory verification,
 offline review/materialization, path/descriptor/tamper denial and staged imports.
 Go process outputs and remote frontend dispatch are deliberately modelled.
+The [source-control receipt](../testing/evidence/go-library-authoring-source-2026-10-02.json)
+records the exact checked source, test inventory and remaining acceptance work.
 These controls do not establish actual private-proxy interoperability, signed
 module execution, embedded-resource execution or installed frontend/watch
 qualification. Those gates require their actual compiler, package, invocation
