@@ -100,14 +100,14 @@ fn explicit_phase4_profile_keeps_immediate_providers_denied_and_bounds_state() {
     // Detected host facts remain stable. Transaction installation belongs to
     // the preparation policy and capability identity, not the native CPU facts.
     assert_eq!(zero.runtime_profile, ordinary.runtime_profile);
-    let ordinary_preparation = latent_wasmtime::aot::ValidatedAotProfile::from_config(
+    let ordinary_preparation = latent_wasmtime::ValidatedAotProfile::from_config(
         &ordinary.wasmtime,
-        latent_wasmtime::aot::AotCompilerLimits::default(),
+        latent_wasmtime::AotCompilerLimits::default(),
     )
     .unwrap();
-    let transaction_preparation = latent_wasmtime::aot::ValidatedAotProfile::from_config(
+    let transaction_preparation = latent_wasmtime::ValidatedAotProfile::from_config(
         &zero.wasmtime,
-        latent_wasmtime::aot::AotCompilerLimits::default(),
+        latent_wasmtime::AotCompilerLimits::default(),
     )
     .unwrap();
     assert_ne!(
