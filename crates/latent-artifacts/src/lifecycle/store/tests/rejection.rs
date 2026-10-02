@@ -136,3 +136,45 @@ fn lifecycle_observer_registration_refuses_duplicate_late_or_retired_actual_owne
         .is_err());
     assert!(eligibility.check_current().is_err());
 }
+
+#[test]
+fn unpublished_evidence_recovery_preserves_registration_but_live_reclamation_seals_it() {
+    let root = Root::new();
+    let first = identity(b"startup-evidence-registration");
+    let store = open(
+        &root,
+        std::slice::from_ref(&first),
+        LifecycleLimits::default(),
+    );
+    let initial = AuthorityRejectionOwner::new(1).unwrap();
+    store
+        .handle()
+        .install_rejection_observer(initial.observer())
+        .unwrap();
+    assert!(store.record(&first.release).unwrap().is_some());
+    drop(store);
+    let reopened = open(
+        &root,
+        std::slice::from_ref(&first),
+        LifecycleLimits::default(),
+    );
+    let current = AuthorityRejectionOwner::new(1).unwrap();
+    reopened
+        .handle()
+        .install_rejection_observer(current.observer())
+        .unwrap();
+    assert!(reopened.record(&first.release).unwrap().is_some());
+    drop(reopened);
+    let reopened = open(
+        &root,
+        std::slice::from_ref(&first),
+        LifecycleLimits::default(),
+    );
+    // Even an actual no-op public maintenance operation exposes the owner.
+    // Recovered/empty evidence never makes late registration permissible.
+    reopened.reclaim_evidence().unwrap();
+    assert!(reopened
+        .handle()
+        .install_rejection_observer(current.observer())
+        .is_err());
+}
