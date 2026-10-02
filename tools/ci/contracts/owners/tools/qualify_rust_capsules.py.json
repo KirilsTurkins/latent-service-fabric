@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Qualify captured npm dependencies through the signed TypeScript capsule path.",
+  "reviewReason": "Bind the exact TypeScript reviewed authoring and selected frontend helpers in qualification fingerprints; preserve all native, SDK, signed node and printed guide operations",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8791ae7e7dd72c5d310ddc2bfccec6b19f13882c6053fcf5a55788ed46b401d4"
+  "sha256": "f0078a5576a170a7400bfd5a188490434afcdd85883a72626251afc65a780265"
 }
