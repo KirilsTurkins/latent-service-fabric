@@ -1,0 +1,6 @@
+package latent:context@0.1.0;
+
+interface context {
+  activation-id: func() -> string;
+}
+
