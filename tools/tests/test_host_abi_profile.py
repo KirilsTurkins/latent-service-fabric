@@ -15,6 +15,7 @@ from jsonschema import Draft202012Validator
 HISTORICAL_MATRICES = {
     2: "dc045e56df0bfbf132a485e24c89447768fa5c8d3eb2787c322e2426b43c261f",
     3: "e566e93362c4c9174a5fc50aa7b7cd93c3414719d0f69df7f08b7bf1c13dd58f",
+    4: "3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
 }
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -22,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class HostAbiProfileTests(unittest.TestCase):
     def test_frozen_matrix_matches_exact_sources_world_and_pinned_generators(self):
-        for version, world_directory in [(2, "runtime-phase3"), (3, "runtime-phase3-streaming"), (4, "runtime-phase3-blobs")]:
+        for version, world_directory in [(2, "runtime-phase3"), (3, "runtime-phase3-streaming"), (4, "runtime-phase3-blobs"), (5, "runtime-phase3-activation")]:
             with self.subTest(version=version):
                 self.check_matrix(version, world_directory)
 
@@ -65,22 +66,22 @@ class HostAbiProfileTests(unittest.TestCase):
     def check_generator_pins(self, version, matrix, dependencies):
         self.assertEqual(matrix["id"], f"lsf-host-abi-phase3-v{version}")
         if version in HISTORICAL_MATRICES:
-            self.assertEqual(matrix["wasmtimeVersion"], "47.0.4")
+            self.assertEqual(matrix["wasmtimeVersion"], "48.0.3" if version == 4 else "47.0.4")
             self.assertEqual(matrix["guestGenerator"], "wit-bindgen@0.62.0")
         else:
-            self.assertEqual(version, 4, "new active ABI profiles require explicit review")
+            self.assertEqual(version, 5, "new active ABI profiles require explicit review")
             self.assertEqual(dependencies["wasmtime"]["version"], "=" + matrix["wasmtimeVersion"])
             self.assertEqual("wit-bindgen@" + dependencies["wit-bindgen"].lstrip("="), matrix["guestGenerator"])
 
     def test_active_and_historical_generator_mismatches_are_rejected(self):
         dependencies = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]["dependencies"]
-        for version in (2, 3, 4):
+        for version in (2, 3, 4, 5):
             matrix = json.loads((ROOT / f"wit/host-abi-phase3-v{version}.json").read_bytes())
             for field, invalid in (("wasmtimeVersion", "0.0.0"), ("guestGenerator", "wit-bindgen@0.0.0")):
                 with self.subTest(version=version, field=field), self.assertRaises(AssertionError):
                     self.check_generator_pins(version, {**matrix, field: invalid}, dependencies)
         with self.assertRaises(AssertionError):
-            self.check_generator_pins(5, {**matrix, "id": "lsf-host-abi-phase3-v5"}, dependencies)
+            self.check_generator_pins(6, {**matrix, "id": "lsf-host-abi-phase3-v6"}, dependencies)
 
 
 if __name__ == "__main__":

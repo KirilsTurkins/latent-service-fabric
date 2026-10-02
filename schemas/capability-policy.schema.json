@@ -426,6 +426,9 @@
         },
         {
           "$ref": "#/$defs/state"
+        },
+        {
+          "$ref": "#/$defs/stream"
         }
       ]
     },
@@ -538,7 +541,9 @@
             "latent:telemetry/custom@0.1.0",
             "latent:service/invoke@0.1.0",
             "latent:state/key-value@0.2.0",
-            "latent:intents/staging@0.1.0"
+            "latent:intents/staging@0.1.0",
+            "latent:runtime/activation@0.1.0",
+            "latent:network/streams@0.1.0"
           ]
         },
         "operations": {
@@ -1002,6 +1007,75 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:runtime/activation@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "register",
+                    "park",
+                    "wake",
+                    "settle",
+                    "close",
+                    "observe",
+                    "wait-for",
+                    "wait-until",
+                    "timer-start",
+                    "timer-next",
+                    "timer-stop"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/clock"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:network/streams@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "connect",
+                    "read",
+                    "write",
+                    "ready",
+                    "chunk-bytes",
+                    "inspect",
+                    "shutdown",
+                    "close"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/stream"
+              }
+            }
+          }
         }
       ]
     },
@@ -1076,6 +1150,55 @@
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/stateScope"
+          }
+        }
+      }
+    },
+    "streamEndpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "port",
+        "transport"
+      ],
+      "properties": {
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 253,
+          "pattern": "^[a-z0-9.:-]+$(?![\\s\\S])"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "host-tls"
+          ]
+        }
+      }
+    },
+    "stream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "endpoints"
+      ],
+      "properties": {
+        "kind": {
+          "const": "stream"
+        },
+        "endpoints": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/streamEndpoint"
           }
         }
       }

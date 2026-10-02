@@ -36,7 +36,9 @@
         "latent:telemetry/custom@0.1.0",
         "latent:service/invoke@0.1.0",
         "latent:state/key-value@0.2.0",
-        "latent:intents/staging@0.1.0"
+        "latent:intents/staging@0.1.0",
+        "latent:runtime/activation@0.1.0",
+        "latent:network/streams@0.1.0"
       ]
     },
     "providerProfile": {
@@ -547,6 +549,83 @@
               },
               "resources": {
                 "$ref": "capability-policy.schema.json#/$defs/state"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:runtime/activation@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "register",
+                    "park",
+                    "wake",
+                    "settle",
+                    "close",
+                    "observe",
+                    "wait-for",
+                    "wait-until",
+                    "timer-start",
+                    "timer-next",
+                    "timer-stop"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/clock"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:network/streams@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "connect",
+                    "read",
+                    "write",
+                    "ready",
+                    "chunk-bytes",
+                    "inspect",
+                    "shutdown",
+                    "close"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/stream"
               }
             }
           }

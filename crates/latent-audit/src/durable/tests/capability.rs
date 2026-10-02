@@ -121,6 +121,21 @@ fn closed_capability_records_require_exact_identity_and_terminal_association() {
     let mut invalid = done;
     invalid.result = AuditOperationResult::NotStarted;
     assert!(codec::conclusion(&invalid).is_err());
+
+    let mut runtime = value;
+    let context = runtime.identities.capability.as_mut().unwrap();
+    context.capability = "latent:runtime/activation@0.1.0".into();
+    context.operation = "wait-for".into();
+    context.provider_profile = "activation-owned-v1".into();
+    context.resource_class = AuditCapabilityResourceClass::Clock;
+    codec::attempt(&runtime).unwrap();
+    let completed = terminal(&runtime, AuditProviderOutcome::HostCompleted);
+    codec::conclusion(&completed).unwrap();
+    codec::capability_pair(&runtime, &completed).unwrap();
+    assert!(codec::conclusion(&terminal(&runtime, AuditProviderOutcome::BlobSealed)).is_err());
+    runtime.identities.capability.as_mut().unwrap().capability =
+        "latent:runtime/activation@0.2.0".into();
+    assert!(codec::attempt(&runtime).is_err());
 }
 
 #[test]

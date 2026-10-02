@@ -1,4 +1,4 @@
-"""Review tripwire for the one audited native-loader exception.
+"""Review tripwire for the audited native-loader and fixed-result exceptions.
 
 Rust's deny/forbid lints enforce unsafe-code policy. This source guard also makes
 changes to the reviewed exception and its dependency pin explicit in CI; it is
@@ -7,6 +7,7 @@ not a Rust parser or a substitute for reviewing provenance and owner lifetimes.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import tomllib
 from pathlib import Path
@@ -30,6 +31,14 @@ wit_bindgen::generate!({
 use super::Adapter;
 export!(Adapter);'''
 LOADER = f"{CRATE}/src/aot/loader.rs"
+# This separate exception implements only the pinned ComponentType/Lower
+# delegation for four resource-free results. It never deserializes code, reads
+# raw memory, changes canonical storage, or releases an accepted native owner
+# before actual result lowering completes. Its whole normalized source is
+# reviewed; another unsafe site, result shape, allowance or implementation
+# requires a new review. The engine version is checked above both exceptions.
+FIXED_RESULT = f"{CRATE}/src/host/runtime/fixed_result.rs"
+FIXED_RESULT_SHA256 = "7122f099bd89829ec74f652620cf61f9710674b1e6deab4a38b4bb4c1fc77e23"
 ALLOW = '''#[allow(
     unsafe_code,
     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
@@ -76,7 +85,7 @@ def validate(root: Path) -> list[str]:
         elif lints != {"workspace": True}:
             errors.append(f"{member} must inherit workspace unsafe-code prohibition")
     if "#![deny(unsafe_code)]" not in (root / CRATE / "src/lib.rs").read_text(encoding="utf-8"):
-        errors.append("Wasmtime crate must deny unsafe code outside the audited function")
+        errors.append("Wasmtime crate must deny unsafe code outside the audited boundaries")
     loader = (root / LOADER).read_text(encoding="utf-8")
     if loader.count(ALLOW) != 1:
         errors.append("native loader must have exactly its reviewed unsafe allowance")
@@ -95,6 +104,11 @@ def validate(root: Path) -> list[str]:
             source = source.replace(ALLOW, "", 1)
             if start >= 0 and end >= 0:
                 source = source.replace(loader[start:end], "", 1)
+        elif relative == FIXED_RESULT:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != FIXED_RESULT_SHA256:
+                errors.append("audited fixed-result lowering changed; review its pinned ABI and original physical owner")
+            else:
+                source = ""
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")
     return errors
