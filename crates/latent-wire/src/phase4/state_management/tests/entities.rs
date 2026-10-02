@@ -135,7 +135,7 @@ async fn authenticated_entity_discovery_observes_real_cells_tombstones_and_criti
         value.encoded_len() as u64
     );
     assert!(value.page.as_ref().unwrap().next_cursor.is_none());
-    contract::validate_response(&reply.response, &original.into()).unwrap();
+    reply.response.validate_for(&original.into()).unwrap();
     let rows = fixture
         .store
         .with_store(StoreIoKind::RecoveryRead, 65536, |engine| {
