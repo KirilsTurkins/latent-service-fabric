@@ -51,11 +51,12 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
 
     def test_policy_operation_table_matches_each_frozen_wit_interface(self):
         matrix = json.loads((ROOT / "wit/host-abi-phase3-v4.json").read_text(encoding="utf-8"))
+        transactions = json.loads((ROOT / "wit/host-abi-phase4-v1.json").read_text(encoding="utf-8"))
         rust = (ROOT / "crates/latent-policy/src/capability.rs").read_text(encoding="utf-8")
         actual = {cap: set(re.findall(r'"([a-z0-9-]+)"', operations))
                   for cap, operations in re.findall(r'"(latent:[^\"]+)"\s*=>\s*&\[(.*?)\]', rust, re.S)}
         expected = {}
-        for entry in matrix["interfaces"]:
+        for entry in matrix["interfaces"] + transactions["interfaces"]:
             interface = entry["interface"].split("/")[1].split("@")[0]
             text = (ROOT / entry["source"]).read_text(encoding="utf-8")
             active = False
@@ -77,10 +78,45 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
                     break
             self.assertTrue(operations, entry["interface"])
             expected[entry["interface"]] = operations
+        # These independently enumerated host-domain labels are current policy
+        # operations, never extra guest WIT imports or guest commit authority.
+        host_operations = {"commit", "read-result", "inspect-effect", "cancel-command",
+                           "namespace-create", "namespace-inspect", "namespace-list",
+                           "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate"}
+        self.assertTrue(expected["latent:state/key-value@0.2.0"].isdisjoint(host_operations))
+        expected["latent:state/key-value@0.2.0"].update(host_operations)
         self.assertEqual(actual, expected)
         constraints = SCHEMAS["capability-policy"]["$defs"]["rule"]["allOf"]
         self.assertEqual({v["if"]["properties"]["capability"]["const"]:
                           set(v["then"]["properties"]["operations"]["items"]["enum"]) for v in constraints}, expected)
+
+    def test_state_scopes_require_explicit_entity_and_bounded_exact_policy_tuple(self):
+        scope = {"namespace": "orders", "incarnation": 1, "entity": None,
+                 "recoveryKind": "original-caller", "recoveryScope": "recovery:sha256:" + "1" * 64,
+                 "resultPolicy": "visibility-v1"}
+        rule = {"id": "state", "effect": "allow", "principals": [{"kind": "user", "subject": "alice"}],
+                "services": ["echo"], "publications": ["publication:sha256:" + "1" * 64],
+                "capability": "latent:state/key-value@0.2.0", "operations": ["put"],
+                "resources": {"kind": "state", "scopes": [scope]},
+                "ceiling": {"operations": 1, "inputBytes": 1024, "outputBytes": 1024, "wallTimeMillis": 100}}
+        policy = self.validator("capability-policy")
+        policy.validate({"formatVersion": 1, "tenant": "a", "rules": [rule]})
+        resource = self.validator("capability-policy-resource")
+        request = {"kind": "state", **scope}
+        resource.validate(request)
+        for key in scope:
+            changed = copy.deepcopy(request)
+            del changed[key]
+            self.assertFalse(resource.is_valid(changed), key)
+        for change in ({"namespace": ""}, {"namespace": "x" * 257}, {"namespace": "orders\n"},
+                       {"incarnation": 0}, {"incarnation": 2 ** 64}, {"entity": "e" * 257},
+                       {"recoveryKind": "claimed-admin"}, {"resultPolicy": ""}, {"unexpected": True}):
+            self.assertFalse(resource.is_valid({**request, **change}), change)
+        for scopes in ([scope, scope], [dict(scope, namespace=f"n-{index}") for index in range(17)]):
+            changed = {**rule, "resources": {"kind": "state", "scopes": scopes}}
+            self.assertFalse(policy.is_valid({"formatVersion": 1, "tenant": "a", "rules": [changed]}))
+        self.assertFalse(policy.is_valid({"formatVersion": 1, "tenant": "a",
+                                         "rules": [{**rule, "capability": "latent:state/key-value@0.1.0"}]}))
 
     def test_identifiers_and_paths_reject_trailing_newlines_and_dot_segments(self):
         policy = self.validator("capability-policy")

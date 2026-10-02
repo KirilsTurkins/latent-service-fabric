@@ -84,12 +84,19 @@ not arbitrary JARs, application Gradle scripts or Maven projects. The compiler's
 70-JAR closure is version-locked and checksum-verified; downloaded application
 dependencies, JNI, reflection-based loading and dynamic class loading are not supported.
 
+Each Java project captures the SDK's exact `latent:clock@0.1.0` definition in
+`wit/deps/clock`, so WIT inspection can resolve the declared monotonic and wall
+clock imports before compiler staging. The operator grants those clocks when
+deploying the capsule.
+
 The `word-count` and `shipping` templates provide equivalent Java implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory
 and replace `greeting` in the creation command with either template name.
 `http-status` adds a typed, asynchronous HTTP call; its import still needs an
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
+
+Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers canonical imported owners, `Unsigned64`, try-with-resources and the captured profile, schema and binding companion. The host owns commitment. The signed transaction and HTTP recovery matrix is tracked by #389 and required Java slice #718. The tutorial below retains its existing stateless profile.
 
 ## 2. Build and package the project
 

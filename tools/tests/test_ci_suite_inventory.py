@@ -62,6 +62,18 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(decision.profile, 'full')
         self.assertTrue(decision.renderer)
 
+        original = ci_profile.classify_paths(['crates/latent-workflows/src/lib.rs'])
+        self.assertEqual(original.profile, 'full')
+        self.assertFalse(original.renderer)
+        self.assertTrue(original.fast_packages)
+        self.assertLess(set(original.fast_packages), set(registry.load()['fastPackages']))
+        graph['latent-node'] = registry.Package(node.name, node.directory, node.dependencies | {'latent-workflows'})
+        with patch.object(registry, 'workspace', return_value=graph):
+            expanded = ci_profile.classify_paths(['crates/latent-workflows/src/lib.rs'])
+        self.assertEqual(expanded.profile, 'full')
+        self.assertTrue(expanded.renderer)
+        self.assertLess(set(original.fast_packages), set(expanded.fast_packages))
+
     def test_workspace_alias_inherited_optional_dev_build_and_platform_edges(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -14,6 +14,7 @@ use crate::values::validate_signature;
 
 pub(crate) mod blob;
 pub(crate) mod streaming;
+pub(crate) mod transaction;
 
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
 pub const LOG_IMPORT: &str = "latent:log/log@0.1.0";
@@ -204,12 +205,25 @@ fn validate_imports(
     providers: Providers,
 ) -> Result<BTreeSet<String>, PlatformError> {
     let mut imports = BTreeSet::new();
+    let transactional = component_type
+        .imports(engine)
+        .any(|(name, _)| name == transaction::STATE || name == transaction::INTENTS);
+    if transactional && !config.transactional_state {
+        return Err(incompatible("scoped transaction host is unavailable"));
+    }
+    let profile = if transactional {
+        latent_core::PHASE4_HOST_ABI_V1
+    } else {
+        latent_core::PHASE3_HOST_ABI_CURRENT
+    };
+    let transaction_resource = transaction::command_resource(component_type, engine);
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
-        let specification = latent_core::PHASE3_HOST_ABI_CURRENT
+        let specification = profile
             .interface(name)
             .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
         if specification.binding == latent_core::HostInterfaceBinding::Provider
+            && !(transactional && (name == transaction::STATE || name == transaction::INTENTS))
             && !providers.supports(name)
         {
             // Recognition is data-only. Providers require an installed trusted port;
@@ -241,7 +255,11 @@ fn validate_imports(
                 ComponentItem::ComponentFunc(function) => {
                     signature_with_resources(
                         &function,
-                        specification.asynchronous,
+                        if specification.interface == transaction::STATE {
+                            transaction::is_async(name)?
+                        } else {
+                            specification.asynchronous
+                        },
                         config,
                         remaining,
                         &resources,
@@ -250,6 +268,7 @@ fn validate_imports(
                         match specification.interface {
                             latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            transaction::STATE | transaction::INTENTS => transaction::validate(specification.interface, name, &function, &interface, engine, transaction_resource)?,
                             _ => return Err(incompatible("unsupported host resource interface")),
                         }
                     }
