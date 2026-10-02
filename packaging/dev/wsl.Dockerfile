@@ -6,8 +6,9 @@ ARG UBUNTU_SNAPSHOT=20260924T120000Z
 # The pinned Python image supplies TLS roots until the pinned Ubuntu CA package
 # is installed. Repository signatures remain checked by Ubuntu's archive keyring.
 COPY --from=python /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-RUN apt-get update -qq --snapshot "$UBUNTU_SNAPSHOT" \
-    && apt-get install -y --no-install-recommends --snapshot "$UBUNTU_SNAPSHOT" \
+# Bounded retries preserve the signed snapshot and fail on incomplete indexes.
+RUN apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 update -qq --error-on=any --snapshot "$UBUNTU_SNAPSHOT" \
+    && apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 install -y --no-install-recommends --snapshot "$UBUNTU_SNAPSHOT" \
     ca-certificates=20260601~24.04.1 openssl=3.0.13-0ubuntu3.15 \
     libexpat1=2.6.1-2ubuntu0.5 libgdbm6t64=1.23-5.1build1 \
     libgdbm-compat4t64=1.23-5.1build1 libreadline8t64=8.2-4build1 \
