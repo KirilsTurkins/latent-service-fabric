@@ -168,7 +168,7 @@ fn original_lcm3_lct1_retry_receipt_replays_without_a_retention_index_or_implici
         panic!("legacy retry must never renew execution")
     };
     assert_eq!(replayed.durable_format(), ("latent.command.v1", 3));
-    assert_eq!(replayed.outcome(), Outcome::Succeeded);
+    assert_eq!(replayed.outcome(), Outcome::Committed);
     assert_eq!(replayed.source, record.source);
     assert_eq!(replayed.fingerprint, record.fingerprint);
     assert_eq!(
