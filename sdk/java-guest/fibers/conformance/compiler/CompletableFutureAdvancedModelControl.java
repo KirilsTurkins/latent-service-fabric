@@ -58,12 +58,16 @@ public final class CompletableFutureAdvancedModelControl {
                 } else if (instruction instanceof GetFieldInstruction field && owned(field.getField().getClassName())) {
                     FieldReader resolved = hierarchy.resolve(field.getField());
                     require(resolved != null && resolved.getType().equals(field.getFieldType()),
-                        "advanced-resolved-owned-read:" + field.getField());
+                        "advanced-resolved-owned-read:" + field.getField()
+                            + ";declared=" + (resolved == null ? null : resolved.getType())
+                            + ";instruction=" + field.getFieldType() + ";in=" + method.getReference());
                     canonical(field.getFieldType());
                 } else if (instruction instanceof PutFieldInstruction field && owned(field.getField().getClassName())) {
                     FieldReader resolved = hierarchy.resolve(field.getField());
                     require(resolved != null && resolved.getType().equals(field.getFieldType()),
-                        "advanced-resolved-owned-write:" + field.getField());
+                        "advanced-resolved-owned-write:" + field.getField()
+                            + ";declared=" + (resolved == null ? null : resolved.getType())
+                            + ";instruction=" + field.getFieldType() + ";in=" + method.getReference());
                     canonical(field.getFieldType());
                 }
             }
