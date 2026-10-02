@@ -175,7 +175,7 @@ impl ExternalCheckpoint {
         if checksum.as_slice() != &encoded[checksum_offset..] {
             return Err(StoreError::Corrupt);
         }
-        let value = |index| {
+        let value = |index: usize| {
             u64::from_be_bytes(
                 encoded[7 + index * 8..7 + (index + 1) * 8]
                     .try_into()
