@@ -4,8 +4,9 @@ FROM ubuntu@sha256:008173c23f95b170204355c12626cb5a965d779a7e1283b09e9cffbb1bf33
 ARG DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_SNAPSHOT=20260924T120000Z
 COPY --from=python /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-RUN apt-get update -qq --snapshot "$UBUNTU_SNAPSHOT" \
-    && apt-get install -y --no-install-recommends --snapshot "$UBUNTU_SNAPSHOT" \
+# Bounded retries preserve the signed snapshot and fail on incomplete indexes.
+RUN apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 update -qq --error-on=any --snapshot "$UBUNTU_SNAPSHOT" \
+    && apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 install -y --no-install-recommends --snapshot "$UBUNTU_SNAPSHOT" \
        ca-certificates=20260601~24.04.1 openssl=3.0.13-0ubuntu3.15 \
        openssh-client=1:9.6p1-3ubuntu13.19 openssh-server=1:9.6p1-3ubuntu13.19 \
        python3=3.12.3-0ubuntu2.1 libexpat1=2.6.1-2ubuntu0.5 \

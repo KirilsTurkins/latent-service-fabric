@@ -515,8 +515,8 @@ no deprecation interval or obsolete client compatibility is promised.
 ## Phase 4 transaction and management descriptor additions
 
 The Buf 1.72.0 descriptor baseline adds `latent/transaction/v1/transaction.proto`,
-`latent/control/v1/state.proto` and `latent/control/v1/dispatcher.proto`. The six
-transaction, seven state and three dispatcher methods use independent bounded
+`latent/control/v1/state.proto` and `latent/control/v1/dispatcher.proto`. The seven
+transaction, six state and three dispatcher methods use independent bounded
 messages. Every prior file, field, enum value and service signature is preserved.
 The audit descriptor adds state and dispatcher targets at fields 25 and 26,
 state resource class 11 and control actions 13 through 29; all prior audit rows
@@ -536,3 +536,7 @@ The checked-in golden was generated from the actual current Buf descriptor and
 reviewed against every prior named row, rather than inferred from the source
 messages. The [transaction client reference](../development/transaction-clients.md)
 describes transport ownership and the outstanding real-node qualification gates.
+
+These definitions describe [transaction and recovery contracts](transactions.md).
+They confer no authority from namespace, command, effect or receipt identifiers;
+WIT ABI and durable-format compatibility remain independent.

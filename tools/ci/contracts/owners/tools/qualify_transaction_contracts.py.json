@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_transaction_contracts.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Label only known public .NET binding SHA256 fields after exact compiler and reproducibility qualification; preserve raw compiler inventory and all tool/profile gates",
+  "reviewReason": "Reconcile development812 source while retaining all sixteen typed RPCs, both parent cases/decorators/skips, raw workflow commands, matrices/deadlines and verified neutral process delegation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "946d67e50de7f52cc21b727c1147b08ef2f868a0efe295d4f7100a5bd6759db7"
 }
