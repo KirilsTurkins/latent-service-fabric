@@ -49,7 +49,7 @@ A package name alone cannot make an unobserved file a trusted resource.
 | TypeScript | Captured bundled asset modules | Dynamic asset lookup still requires component evidence |
 | Go | Captured `//go:embed` data | Exact embedded lookup APIs still require component evidence |
 | Java | Captured selected classpath resource bytes | `getResourceAsStream` integration and emitted component tests pending |
-| .NET | Captured selected embedded resource inputs | `GetManifestResourceStream` integration and emitted component tests pending |
+| .NET | Compiler-owned `EmbeddedResource` items from the captured selection | Signed NativeAOT and installed component evidence pending |
 
 This table identifies the ingestion paths and outstanding runtime acceptance;
 package assembly does not prove those APIs execute. The index records
@@ -58,6 +58,19 @@ must execute the unchanged standard API in a signed admitted component, includin
 transitive data, outside-checkout/offline and lifecycle cases, before advertising
 that path as supported. A runtime lookup cannot resolve dependencies or fall
 back to the host filesystem.
+
+The .NET builder validates the selection before invoking compiler tools and
+embeds those same bytes in its generated project. Use the declared logical name
+with `Assembly.GetExecutingAssembly().GetManifestResourceStream(name)`; the
+compiler keeps names literal through MSBuild evaluation and disables implicit
+resource selection. Equal payloads can have separate logical names. The
+`embeddedResourceInputs` entry in `bindings.json` records the exact selection and
+generated project identity; both are rechecked after compilation. Application
+MSBuild overrides remain outside this profile. The maintained
+`tools/qualify_dotnet_resources.py` probe exercises standard lookup, original
+binary/UTF-8 bytes, independent streams, closure and missing names using the
+pinned host CLR. Its receipt explicitly distinguishes that evidence from a
+signed NativeAOT capsule invocation and does not qualify other languages.
 
 Scratch storage is separate and currently unsupported by this resource profile.
 It grants no writable filesystem, temporary directory, durable state, ambient

@@ -84,7 +84,7 @@
       },
       {
         "name": "Check independent editable projects and closed provenance profiles",
-        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas\n"
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_dotnet_resources tools.tests.test_build_provenance_schemas\npython3 tools/qualify_dotnet_resources.py --dotnet \"$(command -v dotnet)\" --output \"$RUNNER_TEMP/dotnet-standard-resources\"\n"
       },
       {
         "name": "Generate and independently check current typed guest bindings",
@@ -129,7 +129,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "SDK #681: review the new bounded .NET embedding controls and actual standard CLR resource probe; preserve all historical jobs, commands, Python cases, guards and native/signed qualification requirements.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

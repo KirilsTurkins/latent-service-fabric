@@ -29,6 +29,9 @@
           "tools/guest_runtime_grants.py",
           "tools/wait_capsule_audit_idle.py",
           "tools/tests/test_dotnet_capsule_authoring.py",
+          "tools/tests/test_dotnet_resources.py",
+          "tools/guest_resources.py",
+          "tools/qualify_dotnet_resources.py",
           "docs/component-development/dotnet-authoring.md",
           "crates/latent-signing/**",
           "crates/latent-packaging/**",
@@ -50,7 +53,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "SDK #681: review the new bounded .NET embedding controls and actual standard CLR resource probe; preserve all historical jobs, commands, Python cases, guards and native/signed qualification requirements.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

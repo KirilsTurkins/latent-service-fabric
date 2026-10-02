@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "DotnetResourceTests.test_alias_missing_and_limit_rejection_precedes_owned_output_writes",
+    "DotnetResourceTests.test_captured_transitive_owner_is_required_and_is_preserved",
+    "DotnetResourceTests.test_compiler_and_package_select_same_binary_bytes_and_deduplicate_payloads",
+    "DotnetResourceTests.test_empty_and_absent_declarations_preserve_closed_source_project",
+    "DotnetResourceTests.test_generated_byte_metadata_and_inventory_mutations_are_detected",
+    "DotnetResourceTests.test_invalid_selection_is_rejected_before_contract_or_compiler_execution",
+    "DotnetResourceTests.test_logical_names_cannot_expand_msbuild_properties_items_or_xml"
+  ],
+  "guards": {
+    "DotnetResourceTests.test_alias_missing_and_limit_rejection_precedes_owned_output_writes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54000225ed3f8bf372d030774aa99a9afaa98bd329fbb8bfd8e7aa13da5e32ef",
+        "class:setup-sha256:dc9d464fabe6c24294f6cb5fff158e9d1a7142288cfa685b44fcf4f3ff4430fa"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceTests.test_captured_transitive_owner_is_required_and_is_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54000225ed3f8bf372d030774aa99a9afaa98bd329fbb8bfd8e7aa13da5e32ef",
+        "class:setup-sha256:dc9d464fabe6c24294f6cb5fff158e9d1a7142288cfa685b44fcf4f3ff4430fa"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceTests.test_compiler_and_package_select_same_binary_bytes_and_deduplicate_payloads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54000225ed3f8bf372d030774aa99a9afaa98bd329fbb8bfd8e7aa13da5e32ef",
+        "class:setup-sha256:dc9d464fabe6c24294f6cb5fff158e9d1a7142288cfa685b44fcf4f3ff4430fa"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceTests.test_empty_and_absent_declarations_preserve_closed_source_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54000225ed3f8bf372d030774aa99a9afaa98bd329fbb8bfd8e7aa13da5e32ef",
+        "class:setup-sha256:dc9d464fabe6c24294f6cb5fff158e9d1a7142288cfa685b44fcf4f3ff4430fa"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceTests.test_generated_byte_metadata_and_inventory_mutations_are_detected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54000225ed3f8bf372d030774aa99a9afaa98bd329fbb8bfd8e7aa13da5e32ef",
+        "class:setup-sha256:dc9d464fabe6c24294f6cb5fff158e9d1a7142288cfa685b44fcf4f3ff4430fa"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceTests.test_invalid_selection_is_rejected_before_contract_or_compiler_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54000225ed3f8bf372d030774aa99a9afaa98bd329fbb8bfd8e7aa13da5e32ef",
+        "class:setup-sha256:dc9d464fabe6c24294f6cb5fff158e9d1a7142288cfa685b44fcf4f3ff4430fa"
+      ],
+      "skipSites": []
+    },
+    "DotnetResourceTests.test_logical_names_cannot_expand_msbuild_properties_items_or_xml": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54000225ed3f8bf372d030774aa99a9afaa98bd329fbb8bfd8e7aa13da5e32ef",
+        "class:setup-sha256:dc9d464fabe6c24294f6cb5fff158e9d1a7142288cfa685b44fcf4f3ff4430fa"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_resources.py",
+  "reviewReason": "SDK #681: review the new bounded .NET embedding controls and actual standard CLR resource probe; preserve all historical jobs, commands, Python cases, guards and native/signed qualification requirements.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

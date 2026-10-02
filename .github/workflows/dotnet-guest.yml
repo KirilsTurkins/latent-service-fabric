@@ -13,6 +13,9 @@ on:
       - 'tools/guest_runtime_grants.py'
       - 'tools/wait_capsule_audit_idle.py'
       - 'tools/tests/test_dotnet_capsule_authoring.py'
+      - 'tools/tests/test_dotnet_resources.py'
+      - 'tools/guest_resources.py'
+      - 'tools/qualify_dotnet_resources.py'
       - 'docs/component-development/dotnet-authoring.md'
       - 'crates/latent-signing/**'
       - 'crates/latent-packaging/**'
@@ -119,7 +122,8 @@ jobs:
       - name: Check independent editable projects and closed provenance profiles
         run: |
           python3 -m pip install -r tools/requirements.lock
-          python3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas
+          python3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_dotnet_resources tools.tests.test_build_provenance_schemas
+          python3 tools/qualify_dotnet_resources.py --dotnet "$(command -v dotnet)" --output "$RUNNER_TEMP/dotnet-standard-resources"
       - name: Generate and independently check current typed guest bindings
         run: |
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-guest/tools"

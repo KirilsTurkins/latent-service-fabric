@@ -15,7 +15,7 @@ from tools.dotnet_guest.project import validate
 
 BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
-    "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest/resources.py", "tools/dotnet_guest_bindings.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
@@ -38,6 +38,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     try:
         files = snapshot(project_path)
         project, lock, pins = validate(files)
+        stage = "resource-inputs"
+        guest_resources.select(files)
         source_inputs = inventory(files)
         recipe = inventory({name: read_file(ROOT / name) for name in RECIPE})
         (output / "source-inputs.json").write_bytes(source_inputs)

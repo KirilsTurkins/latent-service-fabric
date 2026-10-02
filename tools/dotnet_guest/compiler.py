@@ -11,6 +11,7 @@ import tempfile
 from tools.build_observation import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.dotnet_guest.sdk import install as install_sdk
+from tools.dotnet_guest.resources import install as install_resources
 
 SDK_VERSION = "10.0.100"
 COMPONENT_VERSION = "0.8.0-preview00011"
@@ -144,6 +145,7 @@ class Compiler:
             "component.wit": command.run("canonical-wit", self.wasm, "component", "wit", source, "--no-docs"),
         }.items():
             (project / name).write_bytes(data)
+        resources = install_resources(snapshot(work), project)
         facades = install_sdk(self.sdk, generated, project / "lsf")
         if self.offline:
             # All locked packages must already be present. An empty source list
@@ -178,8 +180,11 @@ class Compiler:
         if "import wasi:" in surface or "wasi_snapshot_preview1" in surface:
             raise ValueError("ambient WASI import survived the closed runtime composition")
         (output / "component.wit").write_text(surface, encoding="utf-8")
+        if resources is not None:
+            resources.check_unchanged()
         return component, {"bindings": receipt, "capabilities": facades,
-            "filesDigest": digest(json.dumps(receipt["outputs"], sort_keys=True).encode())}
+            "filesDigest": digest(json.dumps(receipt["outputs"], sort_keys=True).encode()),
+            **({"embeddedResourceInputs": resources.observation} if resources is not None else {})}
 
     def check_unchanged(self):
         if tree_identity(self.roots) != self.before:
