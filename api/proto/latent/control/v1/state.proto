@@ -3,10 +3,40 @@ syntax = "proto3";
 package latent.control.v1;
 
 import "latent/transaction/v1/transaction.proto";
+import "latent/control/v1/release.proto";
+import "latent/control/v1/common.proto";
 
 message InspectNamespaceRequest {
   latent.transaction.v1.TransactionProfile profile = 1;
   latent.transaction.v1.NamespaceSelector namespace = 2;
+  // A requested current target, not a grant or historical execution authority.
+  // The existing publication/binding resolver checks its authenticated tenant,
+  // installed exact service/publication and current state read/write policy.
+  PublicationRef authorization_publication = 3;
+}
+
+enum NamespaceStatus {
+  NAMESPACE_STATUS_UNSPECIFIED = 0;
+  NAMESPACE_STATUS_ACTIVE = 1;
+  NAMESPACE_STATUS_QUIESCING = 2;
+  NAMESPACE_STATUS_RETIRED = 3;
+  NAMESPACE_STATUS_TOMBSTONE = 4;
+}
+
+message NamespaceQuota {
+  uint64 state_keys = 1;
+  uint64 state_bytes = 2;
+  uint64 result_rows = 3;
+  uint64 result_bytes = 4;
+  uint64 effect_rows = 5;
+  uint64 effect_bytes = 6;
+  uint64 payload_bytes = 7;
+  uint64 recovery_bytes = 8;
+}
+
+message NamespaceConfiguration {
+  string state_schema = 1;
+  NamespaceQuota quota = 2;
 }
 
 message NamespaceInspection {
@@ -17,6 +47,58 @@ message NamespaceInspection {
   repeated latent.transaction.v1.LinkedRetention retained_formats = 5;
   string engine_profile = 6;
   string engine_profile_digest = 7;
+  NamespaceStatus status = 8;
+  NamespaceQuota quota = 9;
+  uint64 generation = 10;
+}
+
+enum NamespaceMutationKind {
+  NAMESPACE_MUTATION_KIND_UNSPECIFIED = 0;
+  NAMESPACE_MUTATION_KIND_CREATE = 1;
+  NAMESPACE_MUTATION_KIND_QUIESCE = 2;
+  NAMESPACE_MUTATION_KIND_RETIRE = 3;
+  NAMESPACE_MUTATION_KIND_DESTROY = 4;
+  NAMESPACE_MUTATION_KIND_RECREATE = 5;
+}
+
+message MutateNamespaceRequest {
+  InspectNamespaceRequest namespace = 1;
+  string operation_id = 2;
+  NamespaceMutationKind mutation = 3;
+  // Create requires a present zero generation; transitions require positive.
+  // The host preserves this original precondition through receipt recovery.
+  optional uint64 expected_generation = 4;
+  // Required only for create/recreate; no arbitrary state key/value editing.
+  NamespaceConfiguration configuration = 5;
+}
+
+enum StateOperationDisposition {
+  STATE_OPERATION_DISPOSITION_UNSPECIFIED = 0;
+  STATE_OPERATION_DISPOSITION_COMMITTED = 1;
+  STATE_OPERATION_DISPOSITION_CONFLICT = 2;
+  STATE_OPERATION_DISPOSITION_REJECTED = 3;
+  STATE_OPERATION_DISPOSITION_UNKNOWN = 4;
+  STATE_OPERATION_DISPOSITION_RECOVERY_REQUIRED = 5;
+}
+
+message NamespaceOperationReceipt {
+  string operation_id = 1;
+  string receipt_id = 2;
+  NamespaceMutationKind mutation = 3;
+  latent.transaction.v1.NamespaceSelector namespace = 4;
+  string authenticated_operator = 5;
+  optional uint64 before_generation = 6;
+  uint64 after_generation = 7;
+  NamespaceStatus status = 8;
+  string state_schema = 9;
+  StateOperationDisposition disposition = 10;
+}
+
+message MutateNamespaceResponse {
+  NamespaceOperationReceipt receipt = 1;
+  bool replayed = 2;
+  // A known operation outcome and audit persistence are independent facts.
+  AuditAck audit_ack = 3;
 }
 
 message SelectEntityRequest {
@@ -64,6 +146,7 @@ message StateOperationReceipt {
   uint64 completed_at_unix_millis = 8;
   optional string record_id = 9;
   string policy_digest = 10;
+  StateOperationDisposition disposition = 11;
 }
 
 message GetStateOperationReceiptRequest {
@@ -74,6 +157,7 @@ message GetStateOperationReceiptRequest {
 // All calls require management credentials; HTTP application routes and guest
 // resources never carry this authority. Mutations require current fenced state.
 service StateService {
+  rpc MutateNamespace(MutateNamespaceRequest) returns (MutateNamespaceResponse);
   rpc InspectNamespace(InspectNamespaceRequest) returns (InspectNamespaceResponse);
   rpc SelectEntity(SelectEntityRequest) returns (SelectEntityResponse);
   rpc MutateState(MutateStateRequest) returns (MutateStateResponse);
@@ -86,8 +170,10 @@ message InspectNamespaceResponse {
 
 message MutateStateResponse {
   StateOperationReceipt receipt = 1;
+  AuditAck audit_ack = 2;
 }
 
 message GetStateOperationReceiptResponse {
   StateOperationReceipt receipt = 1;
+  NamespaceOperationReceipt namespace_receipt = 2;
 }
