@@ -18,6 +18,7 @@
     "CDependencyAuthoring.test_reviewed_executable_input_is_not_execution_approval",
     "CDependencyAuthoring.test_reviewed_update_changes_actual_watch_snapshot_and_requires_fresh_trust",
     "CDependencyAuthoring.test_stale_manifest_and_tampered_or_missing_cas_never_accept_candidate",
+    "CDependencyAuthoring.test_test_and_watch_reject_inner_descriptor_before_frontend_and_preserve_reviewed_inputs",
     "CDependencyAuthoring.test_test_and_watch_use_actual_frontend_parser_and_preserve_uncertain_outcome",
     "CDependencyAuthoring.test_update_remove_each_require_new_review_and_keep_original_lock"
   ],
@@ -238,6 +239,18 @@
       ],
       "skipSites": []
     },
+    "CDependencyAuthoring.test_test_and_watch_reject_inner_descriptor_before_frontend_and_preserve_reviewed_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e9f776faa3edb6d2791d6e314e330b2872f12b78cf505564afbc9b41bbb92357",
+        "class:setup-sha256:c7c59914f97b4dc013577d056523a3bae9a08b438b5e696f864c01a728432060"
+      ],
+      "skipSites": []
+    },
     "CDependencyAuthoring.test_test_and_watch_use_actual_frontend_parser_and_preserve_uncertain_outcome": {
       "bases": [
         "unittest.TestCase"
@@ -265,6 +278,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_c_dependency_authoring.py",
-  "reviewReason": "Reject inner descriptor redirection through C CLI, component and archive entrypoints",
+  "reviewReason": "Reject inner descriptor redirection through C CLI, component and archive entrypoints; additive actual test/watch refusal before frontend delegation preserves all20 prior bodies and guards",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -295,6 +295,7 @@ def frontend(project: Path, action: str, *, workspace: str, state_root: Path | N
              tool_root: str | None = None, selections: tuple[str, ...] = (), environment='node') -> list[str]:
     from tools.dev_workflow import common, dependencies, project as dev_project
     root = regular_path(project)
+    layout(root)
     descriptor, _ = dev_project.load(root)
     common.require(descriptor['language'] == 'c', 'c-dependency-project-language')
     dependencies.verify(root, descriptor)

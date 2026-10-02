@@ -326,6 +326,31 @@ class CDependencyAuthoring(unittest.TestCase):
             Store(self.project / 'dependency-inputs/objects', create=False).path(captured['digest']).write_bytes(b'tampered')
             self.assertEqual(self.call('test', self.project, '--workspace', 'test-c')[0], 1)
 
+    def test_test_and_watch_reject_inner_descriptor_before_frontend_and_preserve_reviewed_inputs(self):
+        self.review()
+        self.descriptor()
+        app = self.project / 'app'
+        (app / 'nested').mkdir()
+        inner = copy.deepcopy(project.load(self.project)[0])
+        inner['build']['workingDirectory'] = 'nested'
+        inner['inputRoots'] = ['nested']
+        (app / 'latent.project.json').write_bytes(common.encode(inner))
+        retained = {name: (self.project / name).read_bytes() for name in (
+            inputs.MANIFEST, inputs.LOCK, 'sdk-lock.json', 'latent.project.json',
+            'app/sdk-lock.json', 'app/latent.project.json')}
+        with patch.object(cli, 'main', side_effect=AssertionError('ambiguous project reached frontend')) as delegated:
+            for action in ('test', 'watch'):
+                with self.subTest(action=action):
+                    code, out, err = self.call(action, self.project, '--workspace', 'test-c')
+                    self.assertEqual((code, out), (1, ''))
+                    failure = json.loads(err)
+                    self.assertEqual(failure['reason'], 'dependency-frontend-ambiguous-project-descriptor')
+                    self.assertFalse(failure['compilerExecution'])
+                    self.assertEqual(retained, {name: (self.project / name).read_bytes() for name in retained})
+            delegated.assert_not_called()
+        self.assertFalse((self.project / 'output').exists())
+        self.assertFalse((self.root / 'node').exists())
+
     def test_maintained_app_layout_build_and_archive_consume_outer_reviewed_closure(self):
         from tools import c_capsule_build, c_capsule_project, c_static_archive_build
         app = c_capsule_project.create(self.project / 'app', 'greeting')
