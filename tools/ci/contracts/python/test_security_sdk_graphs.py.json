@@ -13,6 +13,9 @@
     "SdkGraphTests.test_go_generator_binding_is_checked_against_selected_graph_and_manifest",
     "SdkGraphTests.test_go_missing_checksum_changed_manifest_and_duplicate_module_fail",
     "SdkGraphTests.test_go_unresolved_replacement_or_missing_tool_is_not_scanned_as_safe",
+    "SdkGraphTests.test_http_error_helpers_keep_exact_manifest_pins_and_the_scanned_compiler_dependency",
+    "SdkGraphTests.test_http_error_legacy_directory_absence_cannot_hide_partial_or_orphan_manifests",
+    "SdkGraphTests.test_http_error_manifest_changes_cannot_add_a_package_import_or_replace_cecil",
     "SdkGraphTests.test_isolated_rust_fixture_requires_reviewed_manifest_and_its_own_lock",
     "SdkGraphTests.test_maven_changed_build_registry_path_platform_or_digest_fail",
     "SdkGraphTests.test_nuget_entities_and_hidden_dependency_loading_fail_without_execution",
@@ -180,6 +183,42 @@
       ],
       "skipSites": []
     },
+    "SdkGraphTests.test_http_error_helpers_keep_exact_manifest_pins_and_the_scanned_compiler_dependency": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_http_error_legacy_directory_absence_cannot_hide_partial_or_orphan_manifests": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_http_error_manifest_changes_cannot_add_a_package_import_or_replace_cecil": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
     "SdkGraphTests.test_isolated_rust_fixture_requires_reviewed_manifest_and_its_own_lock": {
       "bases": [
         "unittest.TestCase"
@@ -291,6 +330,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_security_sdk_graphs.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add exact HTTP-helper manifest, locked compiler-owner and legacy omission controls while preserving all prior SDK graph guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
