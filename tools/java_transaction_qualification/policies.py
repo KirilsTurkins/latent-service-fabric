@@ -17,6 +17,8 @@ DATA_OPERATIONS = ["acquire-command", "acquire-query", "info", "query-info", "ge
 MANAGEMENT_OPERATIONS = ["namespace-create", "namespace-inspect", "namespace-list", "namespace-quiesce",
                          "namespace-retire", "namespace-destroy", "namespace-recreate", "read-result",
                          "inspect-effect", "cancel-command"]
+RECOVERY_OPERATIONS = ["namespace-snapshot", "namespace-inspect-restore", "namespace-restore",
+                       "namespace-schema-migrate", "namespace-review-recovery", "namespace-resume"]
 CALLER_FIELDS = {"subject", "ownerKind", "tenant", "service", "recoveryKind", "recoveryScope"}
 PROVIDER_FIELDS = {"id", "tenant", "service", "capability", "profile", "configurationDigest", "configurationEpoch"}
 EFFECT_FIELDS = {"tenant", "service", "publication", "namespace", "incarnation", "logicalBinding", "operation",
@@ -155,12 +157,18 @@ def documents(hosts: ObservedHosts, publications: dict[str, str]) -> dict:
     result = {"bindings": {}, "policies": {}, "deploymentGrants": []}
     result["bindings"]["transaction-java-aggregate"] = binding(STATE_CONTRACT,
         hosts.value["stateProviderProfile"], hosts.value["stateConfigurationDigest"],
-        hosts.value["stateConfigurationEpoch"], list(dict.fromkeys(DATA_OPERATIONS + MANAGEMENT_OPERATIONS)))
+        hosts.value["stateConfigurationEpoch"], [])
     state_rules = []
     for caller, operations in ((hosts.alice, DATA_OPERATIONS + ["inspect-effect", "cancel-command"]),
                                (hosts.operator, MANAGEMENT_OPERATIONS)):
         state_rules.append(rule(caller["ownerKind"], caller["ownerKind"], caller["subject"], pubs,
             STATE_CONTRACT, operations, {"kind": "state", "scopes": [scope(caller)]}))
+    # Empty binding restriction preserves explicit, purpose-specific caller
+    # rules. The native resolver canary qualifies this inheritance; the binding
+    # never grants an operation by itself, and each rule remains within 16.
+    state_rules.append(rule("native-recovery", "administrator", hosts.operator["subject"], pubs,
+        STATE_CONTRACT, RECOVERY_OPERATIONS, {"kind": "state", "scopes": [scope(hosts.operator)]},
+        input_bytes=64 * 1024 * 1024, output_bytes=64 * 1024 * 1024, calls=1, wall=60000))
     result["policies"][STATE_POLICY] = {"formatVersion": 1, "tenant": TENANT, "rules": state_rules}
     for name, (capability, operation) in CLOCKS.items():
         descriptor = hosts.providers[name]
