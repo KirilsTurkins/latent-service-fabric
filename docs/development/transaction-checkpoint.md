@@ -46,9 +46,41 @@ checkpoint against the installed identity and one coherent
 `DispatchCatalog::checkpoint` observation, keep dispatch paused, establish the
 new actual owner epoch, persist that epoch and floor, and positively retire the
 file session. Protected clock metadata must come from the same
-`SupplyChainAuthority::covered_clock` owner; configuration or wall-clock labels
+`SupplyChainAuthority::covered_clock_source` owner; configuration or wall-clock labels
 cannot prove continuity. Later recovery work requires a new separately admitted
 existing-file session. It cannot renew the original session's deadline.
+
+`EffectRuntime::start_protected` implements this bootstrap sequence on the
+admitted store. Its checkpoint work reservation is 64 KiB from that store's
+original global Recovery partition. It consumes the fresh witness before dispatcher
+startup, inspects the external file on the original recovery workers, starts the
+singleton paused, binds the same native owner, advances the checkpoint from the
+actual durable dispatch observation and awaits a positive file-retirement
+witness before returning a command source. It remains paused for the caller's
+normal readiness sequence. This port grants no restore review or management
+resume. Timeout or dropped startup observation quarantines the same store while
+accepted native work keeps its original keeper through destruction.
+
+Optional trusted `ProtectedStatePreparation` runs after the actual checkpoint
+opens and is inspected, before dispatch starts. Fresh evidence therefore remains
+valid while the engine contains only its initializer identity. This finite
+callback installs or validates tenant/bootstrap rows on the same Recovery
+writer. It declares at most 1 MiB of retained input and temporary work; the
+original startup reservation prepays those bytes and keeps its buffer permit
+through actual job/result retirement. Every tenant publication retains this
+same original keeper and deadline in its actual owner fence. The callback
+returns only bounded unit/status and grants no namespace or policy permission.
+
+The returned `ProtectedEffectClock` combines the original process clock with
+actual covered authority reads. Each accepted sample checks the original
+wall/monotonic anchor, the last accepted pair, the nondecreasing authority epoch
+and the current finite lease. Authority contention grants no positive sample;
+actual rollback, lost coverage or uncertainty irreversibly rejects that clock.
+Renewing the authority's lease cannot revive a clock that already lost coverage.
+These observations perform no filesystem operation or lease renewal.
+The covered-clock source reads coherent accepted metadata from the original
+authority, including inside its actual admission fence. It never recursively
+acquires the authority's admission/ledger mutex or publishes a cached grant.
 
 Updates compare the exact original supported checkpoint before writing. They
 synchronize the file and verify the bytes and original fences afterward. Any
@@ -64,3 +96,7 @@ for this addition are held by the current local disk limit. The earlier
 exclusive-create and generic resource ports retain their separate measured
 proofs. This checkpoint source does not establish completed standalone startup,
 backup/restore, power-loss durability or full CI qualification.
+The protected effect bootstrap adds three portable clock-boundary cases and
+three Linux cases using an actual protected authority for retirement, regression
+and lease-loss/renewal. Their native execution and the actual standalone caller
+composition are also pending.
