@@ -8615,6 +8615,9 @@
         "config::rollouts::tests::configuration_is_closed_and_null_is_not_enablement",
         "config::rollouts::tests::configured_boundaries_reject_overflow_and_inconsistent_domains",
         "config::rollouts::tests::optional_manual_configuration_requires_audit_and_has_finite_defaults",
+        "config::state::root::tests::default_and_explicit_roots_preserve_original_constraints_without_creating_files",
+        "config::state::root::tests::native::selected_native_owner_reopens_exact_root_and_refuses_links_and_malformed_existing_store",
+        "config::state::root::tests::null_relative_traversal_control_and_oversized_root_inputs_refuse",
         "config::state::tenant::tests::installed_targets_require_explicit_tenant_limits_while_empty_bootstrap_is_separate",
         "config::state::tenant::tests::missing_duplicate_oversized_or_changed_tenant_declarations_refuse_configuration",
         "config::state::tenant::tests::tenant_constraints_reject_grants_null_unknown_and_noninteger_limits",
@@ -8928,7 +8931,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 274,
+      "minimumCases": 277,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

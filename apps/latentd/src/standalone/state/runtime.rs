@@ -294,7 +294,9 @@ async fn open_store(
     settings: &NodeSettings,
     clock: Arc<dyn ActivationClock>,
 ) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
-    let mut config = ProtectedStoreConfig::bounded_linux(settings.data_directory.join("state"));
+    let state = settings.state.as_ref().ok_or_else(super::denied)?;
+    let mut config =
+        ProtectedStoreConfig::bounded_linux(state.protected_root(&settings.data_directory));
     config.create_if_missing = settings
         .state
         .as_ref()

@@ -257,3 +257,13 @@ physical worker retirement and `catalogsRetired`. Cleanup failure preserves the
 original operation disposition. The example bounds serialized output to 4 MiB.
 These source interfaces and native codec/request cases still require compiled
 native and actual signed-Java schema/restore campaign evidence before acceptance.
+
+Deliberate staged-restore activation can select the fresh protected destination
+with the optional `state.stateRoot` configuration field. It must be an absolute,
+bounded operator path; omitting it preserves `dataDirectory/state`. The normal
+state owner, read-only host inspection, startup diagnosis and offline recovery
+all select that same root through the existing protected engine, lock and layout
+owner. Links, unsafe permissions and malformed existing stores remain refused.
+The artifact, publication, policy, provider and credential catalogs still use
+the original `dataDirectory`. Selecting a root does not grant access, update a
+checkpoint, establish continuity, approve a schema or resume paused history.
