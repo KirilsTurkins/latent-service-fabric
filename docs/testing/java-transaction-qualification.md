@@ -227,10 +227,11 @@ an external request was sent or completed.
 
 Restore, migration, reconciliation and resume recheck their actual retained
 purpose and current publication at the existing final writer/publication fences.
-The protected clock checkpoint must already cover the actual retained owner
-epoch and floor. Descriptive row numbers cannot update that checkpoint or mint
-clock continuity. A staged restore, missing current authority, incompatible
-codec or stale checkpoint stays refused. Migration remains quiesced and requires
+The retained owner must meet the original protected checkpoint's minimum epoch
+and floor, and actual continuous observed time must meet the retained floor.
+Descriptive row numbers cannot update that checkpoint or mint clock continuity.
+A staged restore, missing current authority, incompatible codec or rollback
+below that protected minimum stays refused. Migration remains quiesced and requires
 separate reviewed resume; neither action replays historical effects.
 
 The closed report separates `operationSucceeded` and its original result from

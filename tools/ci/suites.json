@@ -8847,6 +8847,7 @@
         "standalone::state::clock::tests::process_maintenance_boot_and_monotonic_origin_survive_clock_owner_reload",
         "standalone::state::effect_requirements::tests::claims_crossed_companions_ambiguous_payloads_and_unsigned_overflow_never_install",
         "standalone::state::effect_requirements::tests::original_signed_requirements_preserve_nul_payload_and_finite_native_ceilings",
+        "standalone::state::recovery::codecs::tests::native_offline_clock_uses_original_minimum_and_retained_floor_without_advancing_checkpoint",
         "standalone::state::recovery::profile::tests::installed_java_codecs_preserve_unsigned_maximum_and_refuse_wrong_media_tag_and_shape",
         "standalone::state::recovery::profile::tests::reviewed_profile_refuses_unknown_component_and_declaration_only_or_changed_source",
         "standalone::state::recovery::request::tests::native_request_refuses_approval_fields_arbitrary_actions_and_malformed_original_view",
@@ -8948,7 +8949,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 280,
+      "minimumCases": 281,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
