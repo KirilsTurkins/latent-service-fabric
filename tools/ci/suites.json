@@ -8837,6 +8837,8 @@
         "standalone::state::recovery::profile::tests::installed_java_codecs_preserve_unsigned_maximum_and_refuse_wrong_media_tag_and_shape",
         "standalone::state::recovery::profile::tests::reviewed_profile_refuses_unknown_component_and_declaration_only_or_changed_source",
         "standalone::state::recovery::request::tests::native_request_refuses_approval_fields_arbitrary_actions_and_malformed_original_view",
+        "standalone::state::recovery::scope::tests::actual_namespace_rows_receipts_and_histories_refuse_unrelated_empty_scopes",
+        "standalone::state::recovery::scope::tests::malformed_owned_namespace_rows_do_not_become_foreign_scope_refusals",
         "standalone::state::request::tests::command_ids_and_business_metadata_exclude_credentials_and_duplicates",
         "standalone::state::request::tests::query_preserves_absence_and_full_original_view_bytes",
         "standalone::state::validation::tests::linked_registry_reopens_real_dispatch_owner_and_rejects_malformed_migration",
@@ -8926,7 +8928,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 272,
+      "minimumCases": 274,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

@@ -3,6 +3,7 @@ use super::super::{effects::RecoveryProfile, InstalledTransactionOperation};
 use super::{
     assets::{self, SchemaEvidence},
     profile::Profile,
+    scope::Scope,
 };
 use latent_artifacts::DirectoryArtifactRepository;
 use latent_commit::atomic::{CommandRecord, Outcome, SourceIdentity};
@@ -28,7 +29,7 @@ impl Catalog {
     pub async fn capture(
         repository: &Arc<DirectoryArtifactRepository>,
         installed: &[Arc<InstalledTransactionOperation>],
-        effects: Vec<RecoveryProfile>,
+        mut effects: Vec<RecoveryProfile>,
         publication: &str,
     ) -> Result<Self, PlatformError> {
         if installed.len() > 128 || effects.len() > 128 {
@@ -61,6 +62,15 @@ impl Catalog {
             .iter()
             .position(|schema| schema.operation.publication().publication().as_str() == publication)
             .ok_or_else(super::super::denied)?;
+        effects.retain(|effect| {
+            effect.scope.tenant == original.target().tenant.0
+                && effect.scope.namespace == original.namespace()
+                && effect.scope.incarnation == original.incarnation()
+                && schemas.iter().any(|schema| {
+                    schema.operation.publication().publication().as_str()
+                        == effect.scope.publication
+                })
+        });
         let mut catalog = Self {
             selected,
             schemas,
@@ -119,6 +129,14 @@ impl Catalog {
     pub fn primary(&self) -> &SchemaEvidence {
         &self.schemas[self.selected]
     }
+    fn scope(&self) -> Scope<'_> {
+        let operation = &self.primary().operation;
+        Scope {
+            tenant: &operation.target().tenant,
+            namespace: operation.namespace(),
+            incarnation: operation.incarnation(),
+        }
+    }
     pub fn current(&self) -> Result<(), StoreError> {
         for evidence in &self.schemas {
             evidence
@@ -136,6 +154,7 @@ impl Catalog {
     ) -> Result<SnapshotClosure, StoreError> {
         self.current()?;
         super::super::validate_view(view)?;
+        self.scope().tenant_installation(view)?;
         let mut inventory = RetainedInventory::default();
         latent_state::recovery::snapshot::visit_view(view, deadline, |_, key, bytes| {
             self.observe(view, key, bytes, &mut inventory)
@@ -161,6 +180,23 @@ impl Catalog {
             unresolved: 0,
         };
         match key.family {
+            Family::Namespace => {
+                self.scope().namespace_row(key, bytes)?;
+                observe(inventory, RetainedKind::MigrationCheckpoint, LINKED, count)
+            }
+            Family::Command if latent_commit::atomic::RetiredCommand::is_present(bytes) => {
+                let floor = latent_commit::atomic::RetiredCommand::decode(bytes)
+                    .map_err(|_| StoreError::Corrupt)?;
+                let operation = &self.primary().operation;
+                if !floor.belongs_to_namespace(
+                    &operation.target().tenant,
+                    &latent_core::StateNamespaceId(operation.namespace().into()),
+                    operation.incarnation(),
+                ) {
+                    return Err(StoreError::UnsupportedFormat);
+                }
+                observe(inventory, RetainedKind::CommandAttempt, LINKED, count)
+            }
             Family::Command | Family::Attempt if bytes.starts_with(b"LCM\0") => {
                 self.command(bytes, inventory, count)
             }
@@ -216,6 +252,10 @@ impl Catalog {
             {
                 observe(inventory, RetainedKind::OrderingGroup, LINKED, count)
             }
+            Family::Maintenance if key.key.starts_with(latent_state::tenant::QUOTA_PREFIX) => {
+                self.scope().tenant_row(bytes)?;
+                observe(inventory, RetainedKind::MigrationCheckpoint, LINKED, count)
+            }
             _ => observe(inventory, RetainedKind::MigrationCheckpoint, LINKED, count),
         }
     }
@@ -257,6 +297,13 @@ impl Catalog {
     ) -> Result<(), StoreError> {
         let effect = EffectRecord::decode(bytes).map_err(|_| StoreError::Corrupt)?;
         let authority = effect.authority().map_err(|_| StoreError::Corrupt)?;
+        let scope = authority.scope();
+        if !self
+            .scope()
+            .contains(&scope.tenant, &scope.namespace, scope.incarnation)
+        {
+            return Err(StoreError::UnsupportedFormat);
+        }
         let profile = self
             .effects
             .iter()
