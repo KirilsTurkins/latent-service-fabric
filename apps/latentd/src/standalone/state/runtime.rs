@@ -103,7 +103,7 @@ impl StateRuntime {
                 &effect_time,
             ),
         )?;
-        let store = open_accounted_store(settings, Arc::clone(&clock), &native, &installed).await?;
+        let (store, startup_deadline) = open_validated_store(settings, Arc::clone(&clock)).await?;
         let effects = super::super::EffectRuntime::start(
             DispatcherConfig::default(),
             Arc::clone(&store),
@@ -114,7 +114,7 @@ impl StateRuntime {
             control,
         )
         .await;
-        let effects = match effects {
+        let mut effects = match effects {
             Ok(effects) => effects,
             Err(error) => {
                 retire_startup_store(
@@ -125,6 +125,19 @@ impl StateRuntime {
                 return Err(error);
             }
         };
+        // The original empty protected owner must spend its affine creation
+        // witness on the real dispatcher epoch before quota metadata is
+        // written. Tenant constraints still finish before any StateRuntime or
+        // Node admission is published, under the original startup cutoff.
+        finish_tenant_setup(
+            settings,
+            &store,
+            &native,
+            &installed,
+            &mut effects,
+            startup_deadline,
+        )
+        .await?;
         let (profile, digest) = store.inspection_profile();
         let configuration_digest = format!("sha256:{:x}", latent_core::digest::HexDigest(digest));
         let source = effects.command_admission_source();
@@ -275,16 +288,7 @@ async fn finish_open(
     match platform(Stage::StateManagement, management(&inner, clock, audit)) {
         Ok(management) => inner.management = management,
         Err(error) => {
-            effects.close();
-            let deadline = std::time::Instant::now() + grace;
-            if !effects
-                .shutdown(deadline)
-                .await
-                .is_ok_and(|report| report.clean)
-            {
-                inner.store.quarantine();
-            }
-            retire_startup_store(&inner.store, deadline).await;
+            retire_startup_services(&mut effects, &inner.store, grace).await;
             return Err(error);
         }
     }
@@ -326,12 +330,10 @@ async fn open_store(
         }
     }
 }
-async fn open_accounted_store(
+async fn open_validated_store(
     settings: &NodeSettings,
     clock: Arc<dyn ActivationClock>,
-    native: &NativeCapacityOwner,
-    installed: &[Arc<InstalledTransactionOperation>],
-) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
+) -> Result<(Arc<ProtectedStoreOwner>, std::time::Instant), PlatformError> {
     let state = settings.state.as_ref().ok_or_else(super::denied)?;
     let deadline = std::time::Instant::now() + settings.shutdown_grace();
     let validator = platform(
@@ -339,19 +341,42 @@ async fn open_accounted_store(
         super::validation::startup(state, deadline),
     )?;
     let store = open_store(settings, clock, validator).await?;
+    Ok((store, deadline))
+}
+async fn finish_tenant_setup(
+    settings: &NodeSettings,
+    store: &Arc<ProtectedStoreOwner>,
+    native: &NativeCapacityOwner,
+    installed: &[Arc<InstalledTransactionOperation>],
+    effects: &mut super::super::EffectRuntime,
+    deadline: std::time::Instant,
+) -> Result<(), PlatformError> {
+    let state = settings.state.as_ref().ok_or_else(super::denied)?;
     if let Err(error) = platform(
         Stage::ProtectedStoreStartup,
-        super::tenant_setup::install(&store, native, &state.tenant_quotas, installed, deadline)
+        super::tenant_setup::install(store, native, &state.tenant_quotas, installed, deadline)
             .await,
     ) {
-        retire_startup_store(
-            &store,
-            std::time::Instant::now() + settings.shutdown_grace(),
-        )
-        .await;
+        retire_startup_services(effects, store, settings.shutdown_grace()).await;
         return Err(error);
     }
-    Ok(store)
+    Ok(())
+}
+async fn retire_startup_services(
+    effects: &mut super::super::EffectRuntime,
+    store: &ProtectedStoreOwner,
+    grace: std::time::Duration,
+) {
+    effects.close();
+    let deadline = std::time::Instant::now() + grace;
+    if !effects
+        .shutdown(deadline)
+        .await
+        .is_ok_and(|report| report.clean)
+    {
+        store.quarantine();
+    }
+    retire_startup_store(store, deadline).await;
 }
 fn startup_capacity(
     clock: &Arc<dyn ActivationClock>,
@@ -433,3 +458,6 @@ fn management(
         bindings,
     )?))
 }
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod tests;
