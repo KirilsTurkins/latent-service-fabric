@@ -261,16 +261,32 @@ fn newer_publication_cannot_revive_revoked_original_redrive_scope() {
 #[test]
 fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_under_fence() {
     let (owner, mut rule, authority) = setup();
-    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
-    let deadline = context.deadline();
+    let mut original = owner.accept(&authority, 1, time(101)).unwrap();
+    let original_deadline = original.deadline();
     rule.policy_revision = 2;
     rule.credential_epoch = 2;
     rule.protected_credential_reference = "rotated-secret".into();
     rule.ceiling.maximum_response_bytes = 128;
     rule.ceiling.attempt_timeout_millis = 50;
     owner.publish(rule).unwrap();
+    // Rotation/narrowing irreversibly rejects the accepted original stamp.
+    // Revalidating it cannot issue another grant or refund its physical owner.
+    assert_eq!(
+        original.accept_with(&authority, 1, time(102), |_| {
+            panic!("rotated original context accepted adapter IO");
+        }),
+        Err(AuthorityError::Stale)
+    );
+    assert!(original.deadline() <= original_deadline);
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    original.retire().unwrap();
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+    // A fresh current context intersects the persisted original effect with
+    // the actually approved rule; this does not revive the retired stamp.
+    let mut context = owner.accept(&authority, 1, time(103)).unwrap();
+    let deadline = context.deadline();
     context
-        .accept_with(&authority, 1, time(102), |grant| {
+        .accept_with(&authority, 1, time(104), |grant| {
             assert_eq!(grant.effect(), authority.link().effect);
             assert_eq!(grant.attempt(), 1);
             assert_eq!(grant.scope(), authority.scope());
