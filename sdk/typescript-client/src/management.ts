@@ -22,6 +22,79 @@ export const CapabilityPolicyRecordKind = {
   ProviderBinding: 2,
 } as const;
 
+export type DiagnosticStage = number;
+export const DiagnosticStage = {
+  Unspecified: 0,
+  Admission: 1,
+  Queue: 2,
+  Preparation: 3,
+  Binding: 4,
+  Execution: 5,
+  Provider: 6,
+  Cleanup: 7,
+  OutputValidation: 8,
+} as const;
+
+export type DiagnosticReason = number;
+export const DiagnosticReason = {
+  Unspecified: 0,
+  SignatureAllocationLimit: 1,
+  ValueAllocationLimit: 2,
+  UnsupportedComponentSurface: 3,
+  UnsupportedEngineProfile: 4,
+  ProviderAbsent: 5,
+  BindingAbsent: 6,
+  AdmissionDenied: 7,
+  GrantDenied: 8,
+  QueuePressure: 9,
+  GuestMemoryExhausted: 10,
+  GuestFuelExhausted: 11,
+  GuestResourceExhausted: 12,
+  ProviderTimeout: 13,
+  DeadlineExceeded: 14,
+  Cancelled: 15,
+  HttpResponseRejected: 16,
+} as const;
+
+export type DiagnosticProfile = number;
+export const DiagnosticProfile = {
+  Unspecified: 0,
+  WasmtimeServiceValuesV1: 1,
+  WasmtimeBufferedWebValuesV1: 2,
+} as const;
+
+export type TargetObservationState = number;
+export const TargetObservationState = {
+  Unspecified: 0,
+  Coherent: 1,
+  Stale: 2,
+  Unavailable: 3,
+} as const;
+
+export type TargetReason = number;
+export const TargetReason = {
+  Unspecified: 0,
+  Current: 1,
+  ExportAbsent: 2,
+  ZeroRoutingWeight: 3,
+  PublicationUnavailable: 4,
+  BindingPlanUnavailable: 5,
+  PolicyChanged: 6,
+  ProviderUnavailable: 7,
+  InspectionUnavailable: 8,
+  UnmanagedPublication: 9,
+  HttpIncompatible: 10,
+} as const;
+
+export type TargetPreparationState = number;
+export const TargetPreparationState = {
+  Unspecified: 0,
+  Ready: 1,
+  Rejected: 2,
+  Unavailable: 3,
+  NotRequested: 4,
+} as const;
+
 export type FailureCategory = number;
 export const FailureCategory = {
   Unspecified: 0,
@@ -316,6 +389,150 @@ export interface PublicationRef {
   readonly tenant: string;
 }
 
+export interface ActivationDiagnostic {
+  readonly schemaVersion: number;
+  readonly stage: DiagnosticStage;
+  readonly reason: DiagnosticReason;
+  readonly profile?: DiagnosticProfile;
+  readonly profileDigest?: string;
+  readonly configuredBound?: bigint;
+  readonly calculatedRequirement?: bigint;
+  readonly fixedBytes?: bigint;
+  readonly liftingFuel?: bigint;
+  readonly liftMultiplier?: bigint;
+}
+
+export interface ActivationTreeNode {
+  readonly activationId: string;
+  readonly parentActivationId?: string;
+  readonly rootActivationId: string;
+  readonly phase: string;
+  readonly terminalState?: string;
+  readonly lastUpdatedUnixMillis: bigint;
+  readonly diagnostic?: ActivationDiagnostic;
+  readonly principalKind: string;
+  readonly callerService?: string;
+  readonly grantedBudget?: ResourceBudget;
+  readonly effectiveDeadlineUnixMillis?: bigint;
+  readonly diagnosticIsTerminal: boolean;
+  readonly targetService: string;
+  readonly receivedAtUnixMillis: bigint;
+}
+
+export interface InspectActivationTreeRequest {
+  readonly activationId: string;
+  readonly page?: PageRequest;
+  readonly service?: string;
+  readonly fromUnixMillis?: bigint;
+}
+
+export interface InspectActivationTreeResponse {
+  readonly schemaVersion: number;
+  readonly nodes: readonly ActivationTreeNode[];
+  readonly page?: PageResponse;
+  readonly historyAvailable: boolean;
+  readonly cursorExpired: boolean;
+  readonly retainedHistoryOnly: boolean;
+}
+
+export interface InspectHttpTargetRequest {
+  readonly service: string;
+  readonly contract: string;
+  readonly function: string;
+  readonly route?: string;
+  readonly revisionId?: string;
+  readonly publication?: PublicationRef;
+  readonly routingKey?: string;
+  readonly includePreparation: boolean;
+  readonly maximumWaitMillis: bigint;
+}
+
+export interface TargetDependencyRevision {
+  readonly id: string;
+  readonly digest: string;
+  readonly revision: bigint;
+}
+
+export interface TargetDependency {
+  readonly capability: string;
+  readonly state: string;
+  readonly policyIdentityDigest: string;
+  readonly providerConfigurationEpoch: bigint;
+  readonly binding?: TargetDependencyRevision;
+  readonly policies: readonly TargetDependencyRevision[];
+  readonly providerProfile: string;
+  readonly configurationDigest: string;
+}
+
+export interface PreparedTargetExport {
+  readonly contract: string;
+  readonly function: string;
+}
+
+export interface TargetPreparation {
+  readonly state: TargetPreparationState;
+  readonly diagnostic?: ActivationDiagnostic;
+  readonly profile?: DiagnosticProfile;
+  readonly engineVersion?: string;
+  readonly engineConfigurationDigest?: string;
+  readonly targetTriple?: string;
+  readonly cpuFeatureSet?: string;
+  readonly sealedMetadataFingerprint?: string;
+  readonly importCount?: bigint;
+  readonly functionCount?: bigint;
+  readonly hostcallFuel?: bigint;
+  readonly maximumLiftedBytes?: bigint;
+  readonly maximumTypeNodes?: bigint;
+  readonly declaredBudget?: ResourceBudget;
+  readonly imports: readonly string[];
+  readonly exports: readonly PreparedTargetExport[];
+  readonly typeImports: readonly string[];
+}
+
+export interface InspectedHttpBinding {
+  readonly id: string;
+  readonly generation: bigint;
+  readonly selectedDeploymentGeneration: bigint;
+  readonly state: string;
+}
+
+export interface TargetCandidate {
+  readonly deploymentId: string;
+  readonly deploymentGeneration: bigint;
+  readonly revisionId: string;
+  readonly componentDigest: string;
+  readonly publication?: PublicationRef;
+  readonly requestedPublication?: PublicationRef;
+  readonly packageDigest?: string;
+  readonly publicationGeneration?: bigint;
+  readonly routingWeight: number;
+  readonly exportCompatible: boolean;
+  readonly httpCompatible: boolean;
+  readonly eligible: boolean;
+  readonly reasons: readonly TargetReason[];
+  readonly dependencies: readonly TargetDependency[];
+  readonly preparation?: TargetPreparation;
+  readonly publicationKind?: string;
+  readonly httpBindings: readonly InspectedHttpBinding[];
+}
+
+export interface InspectHttpTargetResponse {
+  readonly schemaVersion: number;
+  readonly tenant: string;
+  readonly service: string;
+  readonly contract: string;
+  readonly function: string;
+  readonly route: string;
+  readonly state: TargetObservationState;
+  readonly catalogTransaction: bigint;
+  readonly routeGeneration: bigint;
+  readonly bindingGeneration: bigint;
+  readonly policyStoreGeneration?: bigint;
+  readonly candidates: readonly TargetCandidate[];
+  readonly selectedRevisionId?: string;
+  readonly liveGrantsChecked: boolean;
+}
+
 export interface PublicationIdentity {
   readonly publication: PublicationRef;
   readonly componentDigest: string;
@@ -368,11 +585,13 @@ export interface ClientProfile {
   invoke(request: InvokeRequest, options?: CallOptions): Promise<ClientResponse<InvokeResponse>>;
   cancel(request: CancelRequest, options?: CallOptions): Promise<ClientResponse<CancelResponse>>;
   getActivation(request: GetActivationRequest, options?: CallOptions): Promise<ClientResponse<ActivationStatus>>;
+  inspectActivationTree(request: InspectActivationTreeRequest, options?: CallOptions): Promise<ClientResponse<InspectActivationTreeResponse>>;
   getPolicy(request: GetPolicyRequest, options?: CallOptions): Promise<ClientResponse<GetPolicyResponse>>;
   listPolicies(request: ListPoliciesRequest, options?: CallOptions): Promise<ClientResponse<ListPoliciesResponse>>;
   listCapabilities(request: ListCapabilitiesRequest, options?: CallOptions): Promise<ClientResponse<ListCapabilitiesResponse>>;
   applyPolicy(request: ApplyPolicyRequest, options?: CallOptions): Promise<ClientResponse<ApplyPolicyResponse>>;
   getPolicyOperation(request: GetPolicyOperationRequest, options?: CallOptions): Promise<ClientResponse<GetPolicyOperationResponse>>;
+  inspectHttpTarget(request: InspectHttpTargetRequest, options?: CallOptions): Promise<ClientResponse<InspectHttpTargetResponse>>;
 }
 
 export class ClientError extends Error {

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/java-client/tools/build.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Select only actual protobuf service declarations for the pinned Java generated-source inventory; ignore comments while preserving protoc/plugins, dependency hashes, compilation, semantic and native transport obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f99f85ffe549d48a4c79c98aa244376b792b3338226013d899536b8328da1bed"
+  "sha256": "d7944a655c3f49db35e366356adb58afce6e650fa6d699169dc440125fc59640"
 }

@@ -17,6 +17,15 @@ pub(super) struct Record {
     pub events: Vec<ActivationEvent>,
     pub bytes: usize,
     pub terminal_at: Option<Instant>,
+    pub parent: Option<ActivationId>,
+    pub root: ActivationId,
+    pub root_serial: u64,
+    pub principal_kind: latent_core::PrincipalKind,
+    pub caller_service: Option<latent_core::ServiceId>,
+    pub target_service: latent_core::ServiceId,
+    pub granted_budget: Option<latent_core::ResourceBudget>,
+    pub effective_deadline_unix_millis: Option<u64>,
+    pub observed_diagnostic: Option<latent_core::diagnostic::ActivationDiagnostic>,
 }
 
 impl Record {
@@ -36,6 +45,15 @@ impl Record {
             events,
             bytes,
             terminal_at: None,
+            parent: None,
+            root: id.clone(),
+            root_serial: serial,
+            principal_kind: latent_core::PrincipalKind::Anonymous,
+            caller_service: None,
+            target_service: latent_core::ServiceId(String::new()),
+            granted_budget: None,
+            effective_deadline_unix_millis: None,
+            observed_diagnostic: None,
             status: ActivationStatus {
                 activation_id: id.clone(),
                 phase: ActivationPhase::Received,
@@ -54,6 +72,8 @@ pub(super) struct State {
     // Keep sparse index nodes small: unused B-tree slots contain pointers,
     // rather than reserving a full inline status and outcome for each slot.
     pub records: BTreeMap<ActivationId, Box<Record>>,
+    // One entry per retained record; evicted atomically with that record.
+    pub lineage_order: BTreeMap<(TenantId, u64, u64), ActivationId>,
     // Ordered by completion, not admission. B-tree nodes are freed on eviction
     // so an empty journal retains no vector's former terminal capacity.
     pub terminal_order: BTreeMap<u64, (ActivationId, u64)>,
@@ -113,6 +133,11 @@ impl State {
                 .is_some_and(|record| record.serial == serial && record.terminal_at.is_some())
             {
                 let record = self.records.remove(&id).expect("matching terminal record");
+                self.lineage_order.remove(&(
+                    record.tenant.clone(),
+                    record.root_serial,
+                    record.serial,
+                ));
                 self.snapshot.retained_bytes -= record.bytes;
                 self.snapshot.terminal -= 1;
                 self.snapshot.evicted = self.snapshot.evicted.saturating_add(1);
