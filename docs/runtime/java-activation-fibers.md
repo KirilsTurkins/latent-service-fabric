@@ -339,10 +339,12 @@ The normal strict signer, release publication, three explicit grants and
 deployment succeeded using normal host tools from `acb7988`. The first mode-0
 invocation then returned a known `guest-trap`, with 5,771,223 fuel, 9,373,512 bytes
 of peak memory and zero effects or outbound calls. The remaining eleven calls
-were not run. The bounded audit projection includes completed runtime operations
-but is incomplete and does not establish the trap's cause. The failed node group
-was physically reaped; a clean node shutdown and guest ownership retirement were
-not qualified. The original task limits and guest ceilings of 120 seconds,
+were not run. The bounded audit projection includes accepted host dispatches and
+completed host-call paths. The host records completion even when an operation
+returns a WIT error; those returned errors are absent from this projection. It is
+incomplete and does not establish logical admission or the trap's cause. The
+failed node group was physically reaped; a clean node shutdown and guest ownership
+retirement were not qualified. The original task limits and guest ceilings of 120 seconds,
 10 billion fuel, and 64 MiB were retained.
 
 The [source-bound observation](../testing/evidence/java-activation-authoring-normal-2026-10-02.json)
