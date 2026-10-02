@@ -48,7 +48,7 @@
       "type": "boolean"
     },
     "hostAbiProfile": {
-      "enum": ["lsf-host-abi-phase3-v2", "lsf-host-abi-phase3-v3", "lsf-host-abi-phase3-v4"]
+      "enum": ["lsf-host-abi-phase3-v2", "lsf-host-abi-phase3-v3", "lsf-host-abi-phase3-v4", "lsf-host-abi-phase4-v1"]
     },
     "wasmtimeVersion": {
       "const": "48.0.3"
@@ -75,6 +75,18 @@
     }
   },
   "allOf": [
+    {
+      "if": {
+        "properties": {
+          "hostAbiProfile": {"const": "lsf-host-abi-phase4-v1"}
+        }
+      },
+      "then": {
+        "properties": {
+          "admission": {"const": "enforced"}
+        }
+      }
+    },
     {
       "if": {
         "properties": {

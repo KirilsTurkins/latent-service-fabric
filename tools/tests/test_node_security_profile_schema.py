@@ -24,6 +24,17 @@ def report():
 
 
 class SecurityProfileSchema(unittest.TestCase):
+    def test_transactional_host_observations_require_actual_enforced_admission(self):
+        schema = validator("node-config-check.schema.json")
+        transactional = dict(report(), hostAbiProfile="lsf-host-abi-phase4-v1")
+        schema.validate(transactional)
+        local = dict(transactional, profile="local-experimental-v1", threatClass="T0",
+                     compiler="in-process", compilerSandbox=None, authenticatedNativeLoading=False)
+        schema.validate(local)
+        self.assertFalse(schema.is_valid(dict(local, admission="trusted-local")))
+        for profile in ("lsf-host-abi-phase4-v2", "lsf-host-abi-phase4-v1\n", "phase4"):
+            self.assertFalse(schema.is_valid(dict(local, hostAbiProfile=profile)), profile)
+
     def test_selector_is_exact_and_not_a_claim_of_runtime_enforcement(self):
         schema = validator("node-security-profile.schema.json")
         for value in ("local-experimental-v1", "external-capsule-v1"):
