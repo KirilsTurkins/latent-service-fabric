@@ -18,6 +18,12 @@ def augment(files: dict[str, bytes], project: dict) -> None:
         # namespace, recovery, result-read or provider authority.
         project["limits"].update(stateReadBytes=4 * 1024 * 1024,
                                  stateWriteBytes=2 * 1024 * 1024, effectCount=32)
+        # The real Phase 4 owner retains the bounded state ledger (11 MiB)
+        # and the Wire response/frame envelope (8 MiB + 16 KiB), in addition
+        # to guest memory. Capture this finite opt-in ceiling in the authored
+        # project instead of inheriting the stateless Rust/C 4 MiB seed.
+        project["limits"]["memoryBytes"] = max(project["limits"]["memoryBytes"], 32 * 1024 * 1024)
+        project["limits"]["wallTimeLimitMillis"] = max(project["limits"]["wallTimeLimitMillis"], 30_000)
         files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
     for package in ("state", "intents"):
         files["wit/deps/" + package + "/package.wit"] = (ROOT / "wit/platform" / package / "package.wit").read_bytes()

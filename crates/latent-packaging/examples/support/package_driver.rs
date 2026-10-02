@@ -10,7 +10,14 @@ use latent_packaging::{
 
 pub fn run(limits: PackagingLimits) -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
-    match args.as_slice() {
+    run_args(&args, limits)
+}
+
+pub fn run_args(
+    args: &[String],
+    limits: PackagingLimits,
+) -> Result<(), Box<dyn std::error::Error>> {
+    match args {
         [command, recipe, root, output] if command == "build" => {
             build(recipe, root, output, None, limits)?;
         }

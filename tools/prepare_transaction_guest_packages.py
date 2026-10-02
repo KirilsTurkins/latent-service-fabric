@@ -126,6 +126,7 @@ def prepare(language: str, output: Path, contracts_tool: Path, packager: Path, *
         command = None
         report = {"schemaVersion": "latent.transaction-guest.preparation.v1", "language": language,
                   "variant": variant, "evidenceKind": "authored-observed-package", "world": WORLD,
+                  "hostAbiDigest": read_json(ROOT / "wit/host-abi-phase4-v1.json")["digest"],
                   "status": "running", "compiled": False, "packageAssembled": False,
                   "signedNodeExecutionQualified": False, "admissionRejectionQualified": False}
         try:

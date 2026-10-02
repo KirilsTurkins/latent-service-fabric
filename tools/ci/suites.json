@@ -9160,6 +9160,95 @@
       "source": "../../sdk/transaction-contract/rust/component.rs",
       "target": "transaction-contract",
       "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-packaging.example.transaction-package",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/transaction_package.rs",
+      "target": "transaction_package",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "selected_command_preserves_stateless_bytes_and_refuses_output_replacement",
+        "selected_command_refuses_optional_transaction_import_and_raw_networking",
+        "selected_sbom_command_requires_the_actual_component_inventory",
+        "stateless_command_refuses_transaction_inputs_and_selected_command_builds_and_inspects"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-packaging.test.package-driver",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 4,
+      "mode": "libtest",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/package_driver.rs",
+      "target": "package_driver",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "authored_command_query_scan_and_rejection_use_actual_native_owners",
+        "authored_immediate_http_returns_typed_denial_without_starting_the_real_provider",
+        "authored_response_retains_read_authority_and_finite_frame_owner"
+      ],
+      "expectedIgnored": [
+        "authored_command_query_scan_and_rejection_use_actual_native_owners",
+        "authored_immediate_http_returns_typed_denial_without_starting_the_real_provider",
+        "authored_response_retains_read_authority_and_finite_frame_owner"
+      ],
+      "id": "latent-wasmtime.test.transaction-guests",
+      "ignoredLeaves": [
+        "authored_command_query_scan_and_rejection_use_actual_native_owners",
+        "authored_immediate_http_returns_typed_denial_without_starting_the_real_provider",
+        "authored_response_retains_read_authority_and_finite_frame_owner"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 3,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/transaction_guests.rs",
+      "target": "transaction_guests",
+      "timeoutSeconds": 900
     }
   ]
 }

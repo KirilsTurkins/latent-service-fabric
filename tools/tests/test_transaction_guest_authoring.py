@@ -34,8 +34,16 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
         from tools.java_capsule_project import validate as java
         from tools.dotnet_guest.project import validate as dotnet
         validators = dict(zip(LANGUAGES, (rust, c, typescript, go, java, dotnet), strict=True))
-        calls = ("latent_guest::http::send(", "latent_http_client_send(", "host(send(",
+        calls = ("latent_guest::http::send(", "latent_http_client_send(", "send(",
                  "http.Send(", "Bindings.LatentHttpClient.send(", "Http.Send(")
+        typed_denials = {
+            "rust": "Err(latent_guest::http::HttpError::PermissionDenied)",
+            "c": "frame->http_result.val.err.tag == LATENT_HTTP_CLIENT_HTTP_ERROR_PERMISSION_DENIED",
+            "typescript": "forbidden.tag === 'err' && forbidden.val.tag === 'permission-denied'",
+            "go": "!forbidden.IsOk() && forbidden.Err().Tag() == http.HttpErrorPermissionDenied",
+            "java": "Bindings.LatentHttpClientHttpError.permissionDenied().tag()",
+            "dotnet": "!forbidden.IsOk && forbidden.AsErr.Tag == HttpRaw.HttpError.Tags.PermissionDenied",
+        }
         with tempfile.TemporaryDirectory() as temporary:
             for language, call in zip(LANGUAGES, calls, strict=True):
                 with self.subTest(language=language):
@@ -55,6 +63,17 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                     code = files[SOURCES[language]].decode()
                     self.assertIn(call, code)
                     self.assertIn(URL, code)
+                    self.assertIn(typed_denials[language], code)
+                    staging = {"rust": '.stage(&mut command)', "c": 'lsf_intent_stage(',
+                               "typescript": '.stage(command)', "go": '.Stage(command)',
+                               "java": '.stage(command)', "dotnet": '.Stage(command)'}
+                    self.assertLess(code.index(staging[language]), code.index(call),
+                                    "real staging must precede the forbidden call so rejection tests rollback")
+                    # The native schedule sends reject=false. A declared
+                    # rejection therefore witnesses this exact typed error;
+                    # success, another HTTP error or a trap cannot satisfy it.
+                    self.assertIn("REJECTED" if language in ("c", "dotnet") else
+                                  "'rejected'" if language == "typescript" else "Rejected", code)
                     if language == "c":
                         self.assertIn("frame->http_returned = state == LSF_ASYNC_RETURNED || state == LSF_ASYNC_CANCELLED_RETURNED", code)
                         self.assertIn("else if (frame->phase != FORBIDDEN_HTTP) lsf_state_call_retire", code)
