@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_dev_http_portable.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Reviewed original Windows HTTP program: seven bounded cleanup guards, eight sharing-violation attempts under the same one-second cutoff, original validated temporary-owner path, no native execution retry or authority/resource change, and success receipt only after cleanup. Workflow commands and all historical test obligations remain identical.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "54550250e8f97a40db7ae737cb2029f70d8a20c61854835ef7738173cd2744a9"
+  "sha256": "f069f331bf858b5b3816c2533b15bc9a9c31ce6c345c6534f1886dbdd715841e"
 }
