@@ -63,9 +63,22 @@ impl ProtectedStoreOwner {
     /// Rejected submission and detached responses enqueue reserved destruction.
     pub fn initialize_resource<T: Send + 'static>(
         &self,
-        mut resource: ProtectedStoreResource<T>,
+        resource: ProtectedStoreResource<T>,
         retained_payload_bytes: u64,
         initializer: impl FnOnce(&EmbeddedStore) -> Result<T, StoreError> + Send + 'static,
+    ) -> Result<ProtectedResourceJob<T, ()>, ProtectedStoreError> {
+        self.initialize_native_resource(resource, retained_payload_bytes, move |store| {
+            initializer(store.engine())
+        })
+    }
+
+    /// Crate-private wrappers can inspect sealed physical-root metadata. The
+    /// public generic resource initializer still borrows only the engine.
+    pub(super) fn initialize_native_resource<T: Send + 'static>(
+        &self,
+        mut resource: ProtectedStoreResource<T>,
+        retained_payload_bytes: u64,
+        initializer: impl FnOnce(&PhysicalStore) -> Result<T, StoreError> + Send + 'static,
     ) -> Result<ProtectedResourceJob<T, ()>, ProtectedStoreError> {
         if !self.ready.owns_retained(&resource.retained) || resource.retained.get().is_some() {
             return Err(ProtectedStoreError::InvalidConfiguration);
@@ -76,8 +89,8 @@ impl ProtectedStoreOwner {
                 StoreIoKind::RecoveryWrite,
                 retained_payload_bytes,
                 move |store| {
-                    let result = store.with_store(StoreIoKind::RecoveryWrite, |engine| {
-                        let value = initializer(engine)?;
+                    let result = store.with_store(StoreIoKind::RecoveryWrite, |_| {
+                        let value = initializer(store)?;
                         if let Err(value) = resource.retained.attach(value) {
                             drop(value); // The native value is already on its worker.
                             return Err(StoreError::Invalid);

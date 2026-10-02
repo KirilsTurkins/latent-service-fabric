@@ -99,6 +99,36 @@ impl ProtectedStoreOwner {
         validator: impl FnOnce(&ReadView) -> Result<(), StoreError> + Send + 'static,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
+        Self::start_validated_view_inner(config, None, validator_retained_bytes, validator, clock)
+    }
+
+    /// Bind a store identity within the actual exclusive initializer, after
+    /// validating existing logical rows and before publishing this owner.
+    /// Only an actually committed empty-store identity batch can later produce
+    /// a once-only initialization witness; matching existing identity cannot.
+    pub fn start_bound_validated_view_with_clock(
+        config: ProtectedStoreConfig,
+        identity: crate::store_identity::StoreIdentity,
+        validator_retained_bytes: u64,
+        validator: impl FnOnce(&ReadView) -> Result<(), StoreError> + Send + 'static,
+        clock: Arc<dyn ActivationClock>,
+    ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
+        Self::start_validated_view_inner(
+            config,
+            Some(identity),
+            validator_retained_bytes,
+            validator,
+            clock,
+        )
+    }
+
+    fn start_validated_view_inner(
+        config: ProtectedStoreConfig,
+        identity: Option<crate::store_identity::StoreIdentity>,
+        validator_retained_bytes: u64,
+        validator: impl FnOnce(&ReadView) -> Result<(), StoreError> + Send + 'static,
+        clock: Arc<dyn ActivationClock>,
+    ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
         let initialization_bytes = config
             .validate()?
             .checked_add(8 * 1024 * 1024)
@@ -123,11 +153,16 @@ impl ProtectedStoreOwner {
         let io = config.io.clone();
         let started = StoreIoOwner::initialize_with_clock(
             move || {
-                PhysicalStore::initialize(&config, Arc::clone(&initializer_failure), validator)
-                    .map_err(|error| {
-                        initializer_failure.record(error);
-                        StoreIoError::InitializationFailed
-                    })
+                PhysicalStore::initialize(
+                    &config,
+                    Arc::clone(&initializer_failure),
+                    validator,
+                    identity,
+                )
+                .map_err(|error| {
+                    initializer_failure.record(error);
+                    StoreIoError::InitializationFailed
+                })
             },
             initialization_bytes,
             io,

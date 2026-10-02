@@ -44,6 +44,7 @@ pub(super) struct PhysicalStore {
     pub(super) status: StoreFileStatus,
     failure: Arc<FailureLatch>,
     pub(super) dispatcher: Arc<std::sync::atomic::AtomicBool>,
+    pub(super) fresh_identity: Mutex<Option<crate::store_identity::StoreIdentity>>,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     root: latent_protected_files::ProtectedRoot,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -60,6 +61,7 @@ impl PhysicalStore {
         config: &ProtectedStoreConfig,
         failure: Arc<FailureLatch>,
         validator: impl FnOnce(&ReadView) -> Result<(), StoreError>,
+        identity: Option<crate::store_identity::StoreIdentity>,
     ) -> Result<Self, ProtectedStoreError> {
         use latent_protected_files::ProtectedRoot;
         let root =
@@ -93,15 +95,43 @@ impl PhysicalStore {
             let view = engine.snapshot().map_err(ProtectedStoreError::Store)?;
             validator(&view).map_err(ProtectedStoreError::Store)?;
         }
+        // The engine is still private to its single initializer. No read/job,
+        // command or dispatcher consumer can race the coherent empty-store
+        // check and actual identity transaction before readiness publication.
+        let fresh_identity = if let Some(identity) = identity {
+            let batch = identity
+                .prepare_initialization(&engine.snapshot().map_err(ProtectedStoreError::Store)?)
+                .map_err(ProtectedStoreError::Store)?;
+            if let Some(batch) = batch {
+                root.check_mutable_file(&lock_fence)
+                    .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
+                root.check_mutable_file(&fence)
+                    .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
+                engine.apply(batch).map_err(ProtectedStoreError::Store)?;
+                Some(identity)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        let post_identity_root_error = if fresh_identity.is_some() {
+            ProtectedStoreError::CommitUncertain
+        } else {
+            ProtectedStoreError::UnsafeRoot
+        };
         root.check_mutable_file(&lock_fence)
-            .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
+            .map_err(|_| post_identity_root_error)?;
         root.check_mutable_file(&fence)
-            .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
+            .map_err(|_| post_identity_root_error)?;
         Ok(Self {
             engine: Some(engine),
             status,
             failure,
             dispatcher: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            // Set only after the real identity apply and both original root
+            // fences above succeeded. Reopen equality never grants Fresh.
+            fresh_identity: Mutex::new(fresh_identity),
             root,
             fence,
             root_lock,
@@ -114,12 +144,32 @@ impl PhysicalStore {
         _: &ProtectedStoreConfig,
         _: Arc<FailureLatch>,
         _: impl FnOnce(&ReadView) -> Result<(), StoreError>,
+        _: Option<crate::store_identity::StoreIdentity>,
     ) -> Result<Self, ProtectedStoreError> {
         Err(ProtectedStoreError::UnsupportedPlatform)
     }
 
     pub fn engine(&self) -> &EmbeddedStore {
         self.engine.as_ref().expect("worker-owned live engine")
+    }
+
+    /// Protected descriptor identity metadata only. The root itself never
+    /// escapes a fixed worker or becomes caller-provided confinement evidence.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn root_identity(&self) -> Result<(u64, u64), ProtectedStoreError> {
+        self.check()?;
+        Ok(self.root.identity())
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn is_separate_root(
+        &self,
+        other: &latent_protected_files::ProtectedRoot,
+    ) -> Result<bool, ProtectedStoreError> {
+        self.check()?;
+        self.root
+            .is_separate_from(other)
+            .map_err(|_| ProtectedStoreError::UnsafeRoot)
     }
 
     pub fn check(&self) -> Result<(), ProtectedStoreError> {

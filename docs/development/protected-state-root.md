@@ -32,6 +32,12 @@ removed or overwritten by a subsequent initialization. The existing
 `open_mutable_file` operation continues to open valid existing files without
 truncation.
 
+`is_separate_from` compares retained actual ancestry before opening a separate
+recovery root. It refuses equal roots and either root containing the other,
+while allowing siblings with a shared protected parent. Both chains are checked
+before and after comparison. The [transaction checkpoint](transaction-checkpoint.md)
+uses this metadata operation without exposing native descriptors.
+
 ## Validation
 
 The previous `latent-protected-files` library suite contained 18 tests. On
