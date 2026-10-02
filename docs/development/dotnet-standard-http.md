@@ -103,6 +103,16 @@ reference before recording a successful binding. Shared NuGet inputs stay
 unchanged. Unknown preimages, changed tool/source/target/derived bytes or
 ambiguous references deny the build.
 
+The security inventory binds both SDK HTTP-error project manifests to their
+exact reviewed bytes. Neither project restores an additional NuGet package
+graph. The compiler helper's `Mono.Cecil` assembly comes from the independently
+scanned `Microsoft.NET.ILLink.Tasks` 10.0.0 package in the existing NativeAOT
+lock; the compiler retains its additional assembly-digest checks. A project
+change, new sibling manifest or partly present legacy directory still fails
+the original inventory guard. The
+[inventory source controls](../testing/evidence/dotnet-http-helper-security-inventory-2026-10-02.json)
+retain the original two-manifest rejection and the repaired source-only boundary.
+
 `http-error-port-preparation.json` retains original framework, tool, source,
 target and derived identities even if later compilation fails.
 `http-error-port.json` adds observed reference binding after successful
