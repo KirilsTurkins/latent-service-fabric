@@ -19,6 +19,10 @@ pub use inspection::{
 pub use lifecycle::StateShutdownReport;
 pub(in crate::standalone) use recovery::failure::Failure as StartupFailure;
 pub use recovery::TransactionStoreDiagnosis;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(in crate::standalone) use recovery::{recover_namespace, RecoveryOwners};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub use recovery::{NativeRecoveryReport, NativeRecoveryRequest};
 pub use request::StateRequest;
 pub use runtime::StateRuntime;
 
