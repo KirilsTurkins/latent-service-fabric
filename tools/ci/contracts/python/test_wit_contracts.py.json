@@ -96,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_wit_contracts.py",
-  "reviewReason": "Add exact current intents dependency and transitive WIT use-type regression; preserve every prior case and execution guard.",
+  "reviewReason": "Reconcile the earlier squashed dependency stack with the retained kernel: preserve frozen16/native owner and all historical case/skip/command obligations, plus current target action pins and diagnostic coverage.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

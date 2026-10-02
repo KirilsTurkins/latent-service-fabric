@@ -2276,6 +2276,7 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "preparation_read_wait::tests::default_materialization_wait_delegates_once_without_timer_or_replaying_failure",
         "preparation_read_wait::tests::default_wait_api_delegates_once_without_consulting_timer_or_replaying_failure",
         "preparation_read_wait::tests::default_wait_api_preserves_unpolled_and_pending_future_ownership",
         "prepared_readiness::tests::failed_downcast_preserves_readiness_and_drops_exactly_once",
@@ -2283,8 +2284,7 @@
         "prepared_readiness::tests::legacy_fallback_moves_original_owner_and_import_allocation",
         "prepared_use::tests::an_unpolled_future_and_unwind_drop_the_original_owner",
         "prepared_use::tests::ownership_survives_failed_downcast_and_is_released_exactly_once",
-        "tests::budget_dimensions_have_deterministic_interruption_mappings",
-        "preparation_read_wait::tests::default_materialization_wait_delegates_once_without_timer_or_replaying_failure"
+        "tests::budget_dimensions_have_deterministic_interruption_mappings"
       ],
       "expectedIgnored": [],
       "id": "latent-executor.lib.latent-executor",
@@ -2449,6 +2449,7 @@
         "http::browser::tests::guest_cannot_override_security_headers_enable_cors_or_supply_encoded_bodies",
         "http::browser::tests::html_requires_explicit_utf8_and_does_not_claim_to_sanitize_application_html",
         "http::browser::tests::only_canonical_origin_relative_redirects_survive_and_never_split_headers",
+        "http::browser::tests::public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method",
         "http::cache::tests::isolation::absent_empty_duplicate_and_unapproved_vary_values_are_distinct",
         "http::cache::tests::isolation::alternate_tenants_public_principals_and_languages_never_cross_bytes",
         "http::cache::tests::isolation::credentials_cookies_unknown_headers_queries_and_user_principals_bypass",
@@ -2463,8 +2464,7 @@
         "http::cache::tests::response::browser_policy_rejection_discards_a_pending_fill_before_any_local_delivery",
         "http::cache::tests::response::no_store_private_cookies_unknown_vary_and_ttl_extensions_never_publish",
         "http::cache::tests::response::only_application_200_can_publish_and_failures_are_no_store",
-        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted",
-        "http::browser::tests::public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method"
+        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted"
       ],
       "expectedIgnored": [],
       "id": "latent-ingress.lib.latent-ingress",
@@ -5462,6 +5462,7 @@
         "custom::registry::tests::retirement::validated_custom_path_does_not_relax_the_original_runtime_dimension_allowlist",
         "custom::registry::tests::series_caps_separate_tenants_and_fixed_rate_windows_refund_rejections",
         "custom::registry::tests::validation::descriptors_reject_incompatible_reuse_reserved_names_and_unbounded_configuration",
+        "custom::registry::tests::validation::real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names",
         "custom::registry::tests::validation::selections_cannot_move_between_registries_or_trusted_sources_or_survive_retirement",
         "custom::registry::tests::validation::sum_overflow_rejects_without_mutating_the_aggregate_or_queue",
         "local::tests::bounded_records_preserve_structured_fields_without_implicit_payloads",
@@ -5509,8 +5510,7 @@
         "pipeline::tests::redacted_short_strings_with_large_retained_allocations_are_rejected",
         "pipeline::tests::shutdown_deadline_aborts_export_and_closes_retained_handles",
         "pipeline::tests::sink_errors_and_constructor_poll_and_drop_panics_are_isolated",
-        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting",
-        "custom::registry::tests::validation::real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names"
+        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting"
       ],
       "expectedIgnored": [],
       "id": "latent-telemetry.lib.latent-telemetry",
@@ -7002,7 +7002,9 @@
       "sourceSha256": "2715e19a626446efff35a2c03623b2d2f78fa4143eab62422e1f265181b4c83f",
       "successMarker": "AOT sandbox: 12 unprivileged real-entry probes and exact-policy syscall probe passed",
       "target": "aot_sandbox",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
@@ -7150,7 +7152,9 @@
       "sourceSha256": "4c1a85079da0baefb6178caa493f15aed5a528e6cc88808d2e75c56fc91149fb",
       "successMarker": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
       "target": "aot_supervisor",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
@@ -7870,6 +7874,7 @@
         "asynchronous_error_and_child_failure_forward_original_results_and_owners",
         "closed_constructor_shapes_have_distinct_safe_reasons",
         "dropping_unpolled_or_pending_invocations_preserves_inner_ownership",
+        "failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness",
         "full_contended_or_poisoned_observation_storage_never_changes_invocation_results",
         "successful_and_declared_outcomes_keep_payloads_and_owners_without_records",
         "synchronous_start_failure_is_forwarded_once_without_cloning",
@@ -7880,7 +7885,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 8,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
