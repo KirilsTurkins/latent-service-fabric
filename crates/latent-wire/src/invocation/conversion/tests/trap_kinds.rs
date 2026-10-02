@@ -61,7 +61,7 @@ fn known_trap_kinds_survive_retained_status_encoding_without_private_fields() {
     let limits = InvocationLimits::default();
     for kind in GuestTrapKind::ALL {
         let value = status(&trap_failure(private_details(*kind)));
-        validate_runtime_status(&value, &limits).unwrap();
+        validate_runtime_status(&value, &value.activation_id, &limits).unwrap();
         let mut expected = value.clone();
         let Some(RetainedActivationOutcome::PlatformFailure(error)) =
             &mut expected.terminal_outcome
@@ -92,7 +92,8 @@ fn arbitrary_trap_kinds_and_secret_fields_are_removed_from_public_outcomes() {
     ] {
         let outcome = trap_failure(vec![trap_detail(kind)]);
         validate_runtime_response(&response(outcome.clone()), &limits).unwrap();
-        validate_runtime_status(&status(&outcome), &limits).unwrap();
+        let retained = status(&outcome);
+        validate_runtime_status(&retained, &retained.activation_id, &limits).unwrap();
         let wire = public_invocation_response_to_proto(response(outcome.clone()), &limits);
         let Some(proto::invoke_response::Result::PlatformFailure(error)) = wire.result else {
             unreachable!()
