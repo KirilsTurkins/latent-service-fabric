@@ -323,3 +323,19 @@ and 57,016,320 peak bytes, with zero effects and outbound requests. The
 retains the successful build/admission boundaries, four authority denials and
 the unresolved execution failure. Successful default GET, pending CLR work
 and the remaining #693/#680/#746 acceptance criteria remain open.
+
+A separate [Windows host framing reference](../testing/evidence/dotnet-http-framing-windows-reference-2026-10-02.json)
+ran four actual loopback requests with SDK 10.0.303 and runtime 10.0.11. The
+unchanged 748-byte application emitted an empty unframed GET, accepted by both
+peer versions. A separate ordinary `HttpClient.SendAsync` control used standard
+`StreamContent` over an empty decoded `GZipStream`, whose content length was
+unknown. It emitted `Transfer-Encoding: chunked`, no Content-Length, and the
+five-byte terminal chunk `0\r\n\r\n`. The original peer rejected that valid
+empty request; the bounded repaired parser accepted it and returned the
+expected credential-denied response. No handler or application pump was
+injected. All four client processes, accepted sockets, listeners and peer
+threads retired. Source, framework references and output identities are
+retained, with the tool measurement timing stated explicitly. This host SDK
+receipt does not identify the pinned guest's wire failure or establish a
+successful signed default-client request; its original-component wire
+observation remains pending.
