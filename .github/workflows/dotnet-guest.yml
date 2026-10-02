@@ -136,7 +136,10 @@ jobs:
       - name: Check independent editable projects and closed provenance profiles
         run: |
           python3 -m pip install -r tools/requirements.lock
-          python3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_dotnet_resources tools.tests.test_build_provenance_schemas
+          python3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas
+      - name: Check bounded standard manifest resources
+        run: |
+          python3 -m unittest tools.tests.test_dotnet_resources
           python3 tools/qualify_dotnet_resources.py --dotnet "$(command -v dotnet)" --output "$RUNNER_TEMP/dotnet-standard-resources"
       - name: Preserve bounded errors in the actual captured WASI BCL
         run: |
@@ -212,5 +215,6 @@ jobs:
             ${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json
             ${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json
             ${{ runner.temp }}/dotnet-http-error-port/
+            ${{ runner.temp }}/dotnet-standard-resources/
           if-no-files-found: error
           retention-days: 7
