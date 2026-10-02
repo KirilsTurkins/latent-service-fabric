@@ -20,7 +20,7 @@ def prepare_primeicons(package: Path, output: Path) -> None:
             and package != output and package not in output.parents
             and not any(is_reparse(p) for p in [output.parent, *output.parents]), 'font-output')
     metadata = json.loads(read(package, 'package.json', 65536))
-    require(metadata.get('name') == 'primeicons' and metadata.get('version') == '8.0.1', 'font-package-version')
+    require(metadata.get('name') == 'primeicons' and metadata.get('version') == '8.0.2', 'font-package-version')
     css = read(package, 'primeicons.css', 128 * 1024).decode('utf-8')
     font = read(package, 'fonts/primeicons.woff2', 1024 * 1024)
     license_bytes = read(package, 'LICENSE.md', 65536)
