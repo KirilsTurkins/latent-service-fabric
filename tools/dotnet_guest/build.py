@@ -6,7 +6,7 @@ import tempfile
 import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_dependency_inputs
+from tools import guest_compatibility_build, guest_dependency_inputs, guest_resources
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
     read_file, read_json, snapshot, write_json)
@@ -29,6 +29,7 @@ RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_st
            'tools/application_dependency_approval.py', 'tools/captured_compiler_isolation.py', 'tools/dotnet_compiler_isolation.py',
            'tools/dotnet_application_dependencies.py')
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 
 
