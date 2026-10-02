@@ -53,6 +53,13 @@ Nested vectors and identity strings are bounded during decoding, before
 allocation. Unknown fields, duplicate fields, row-order changes, trailing data,
 unsupported versions, incomplete streams and checksum mismatches refuse.
 
+The manifest captures every namespace across every tenant in the full unit,
+including distinct tenants using the same namespace name and incarnation.
+Every namespace must be durably quiesced. The metadata tenant describes the
+original operator/audit context; it supplies neither filtering nor permission
+to read another tenant. The authenticated operator must hold the actual
+whole-unit read/recovery decision before the service admits this operation.
+
 The manifest records the source `StoreIdentity` bytes observed in that same
 view, namespace/schema/history epochs, actual row counts and digests, exact
 retained-format inventory, runtime identity and immutable required artifacts.

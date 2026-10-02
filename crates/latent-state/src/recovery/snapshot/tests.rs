@@ -182,6 +182,134 @@ fn actual_engine_snapshot_captures_all_ten_families_and_exact_source_identity() 
     assert_eq!(receipt, repeated);
 }
 
+fn add_foreign_namespace(fixture: &Fixture, active: bool) -> NamespaceRecord {
+    let schema = SchemaId::from_definition(DEFINITION).unwrap();
+    let record = NamespaceRecord::create(
+        TenantId("other-tenant".into()),
+        StateNamespaceId("business".into()),
+        schema.as_str().into(),
+        NamespaceQuota::default(),
+    )
+    .unwrap();
+    let record = if active {
+        record
+    } else {
+        record
+            .transition(record.version, &NamespaceTransition::Quiesce, 0)
+            .unwrap()
+    };
+    let mut history = NamespaceHistory::initial(&record);
+    history.epochs.schema = 4;
+    history.epochs.recovery = 7;
+    fixture
+        .store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![
+                RowMutation {
+                    key: RowKey {
+                        family: Family::Namespace,
+                        key: namespace_record_key(&record.tenant, &record.id).unwrap(),
+                    },
+                    value: Some(record.encode().unwrap()),
+                },
+                RowMutation {
+                    key: crate::namespace::history::history_key(
+                        &record.tenant,
+                        &record.id,
+                        record.version.incarnation,
+                    )
+                    .unwrap(),
+                    value: Some(history.encode().unwrap()),
+                },
+            ],
+        })
+        .unwrap();
+    record
+}
+
+#[test]
+fn full_unit_snapshot_captures_distinct_tenants_with_the_same_namespace_and_exact_history() {
+    let fixture = fixture();
+    let foreign = add_foreign_namespace(&fixture, false);
+    let (bytes, receipt) = export(&fixture);
+    assert_eq!(receipt.manifest.metadata.tenant, "tenant");
+    assert_eq!(receipt.manifest.namespaces.len(), 2);
+    assert_eq!(receipt.manifest.rows, 14);
+    let (record, history) = receipt
+        .manifest
+        .namespaces
+        .iter()
+        .map(|entry| entry.decode().unwrap())
+        .find(|(record, _)| record.tenant == foreign.tenant)
+        .unwrap();
+    assert_eq!(record, foreign);
+    assert_eq!(history.epochs.schema, 4);
+    assert_eq!(history.epochs.recovery, 7);
+    assert_eq!(
+        inspect_snapshot(&mut Cursor::new(&bytes), deadline(), validate_row).unwrap(),
+        receipt
+    );
+    let mut repeated = receipt.manifest.clone();
+    repeated.namespaces.push(repeated.namespaces[0].clone());
+    assert_eq!(repeated.encode(), Err(StoreError::Conflict));
+}
+
+#[test]
+fn an_active_foreign_namespace_refuses_the_full_unit_before_any_snapshot_output() {
+    let fixture = fixture();
+    add_foreign_namespace(&fixture, true);
+    let mut bytes = Vec::new();
+    assert_eq!(
+        export_snapshot(
+            &fixture.store,
+            fixture.metadata.clone(),
+            &mut bytes,
+            deadline(),
+            |view| closure(view, &fixture.metadata),
+            |_| Ok(())
+        ),
+        Err(SnapshotError::Review(StoreError::Conflict))
+    );
+    assert!(bytes.is_empty());
+    assert!(fixture.store.snapshot().is_ok());
+}
+
+#[test]
+fn full_unit_manifest_cannot_omit_a_tenant_or_relabel_its_original_history() {
+    let fixture = fixture();
+    let foreign = add_foreign_namespace(&fixture, false);
+    let (bytes, receipt) = export(&fixture);
+    let original_manifest_length = receipt.manifest.encode().unwrap().len();
+    for omit in [false, true] {
+        let mut changed = receipt.manifest.clone();
+        let index = changed
+            .namespaces
+            .iter()
+            .position(|entry| entry.decode().unwrap().0.tenant == foreign.tenant)
+            .unwrap();
+        if omit {
+            changed.namespaces.remove(index);
+        } else {
+            let (_, mut history) = changed.namespaces[index].decode().unwrap();
+            history.epochs.recovery += 1;
+            changed.namespaces[index].history = history.encode().unwrap();
+        }
+        // The altered canonical manifest has its own valid checksum. Matching
+        // the complete archived namespace roster and NSH bytes still refuses.
+        let manifest = changed.encode().unwrap();
+        let mut altered = bytes.clone();
+        altered.truncate(bytes.len() - original_manifest_length - 32 - 4);
+        altered.extend_from_slice(&(manifest.len() as u32).to_le_bytes());
+        altered.extend_from_slice(&manifest);
+        altered.extend_from_slice(&Sha256::digest(&manifest));
+        assert_eq!(
+            inspect_snapshot(&mut Cursor::new(altered), deadline(), validate_row),
+            Err(StoreError::Corrupt)
+        );
+    }
+}
+
 #[test]
 fn snapshot_source_faults_are_distinct_from_review_and_partial_output_refusal() {
     struct Broken {

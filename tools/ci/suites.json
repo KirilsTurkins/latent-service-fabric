@@ -5316,6 +5316,9 @@
         "protected_store::tests::validation::incoherent_logical_links_fail_before_ready_and_preserve_every_existing_row",
         "protected_store::tests::validation::unsupported_nonempty_logical_families_fail_readiness_without_data_reset",
         "recovery::snapshot::tests::actual_engine_snapshot_captures_all_ten_families_and_exact_source_identity",
+        "recovery::snapshot::tests::an_active_foreign_namespace_refuses_the_full_unit_before_any_snapshot_output",
+        "recovery::snapshot::tests::full_unit_manifest_cannot_omit_a_tenant_or_relabel_its_original_history",
+        "recovery::snapshot::tests::full_unit_snapshot_captures_distinct_tenants_with_the_same_namespace_and_exact_history",
         "recovery::snapshot::tests::manifest_history_matches_archived_rows_and_only_exact_supported_absence_falls_back",
         "recovery::snapshot::tests::snapshot_manifest_bounds_nested_fields_and_refuses_missing_original_decoders",
         "recovery::snapshot::tests::snapshot_source_faults_are_distinct_from_review_and_partial_output_refusal",
@@ -5420,7 +5423,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 204,
+      "minimumCases": 207,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
