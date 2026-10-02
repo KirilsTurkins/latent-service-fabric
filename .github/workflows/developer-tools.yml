@@ -165,6 +165,8 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - name: Select the runner-owned compiler archive cache
+        run: printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
       - name: Restore untrusted pinned compiler archives
         id: compiler-cache
         uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5

@@ -667,6 +667,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(len(legacy["pythonTestModules"]), 260)
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
+        reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -698,7 +699,15 @@ class RepositoryMigrationTests(unittest.TestCase):
                         '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
-            if key != reviewed_extension and key not in performance_extensions:
+            if key == reviewed_narrow_fixture:
+                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
+                                 {k: v for k, v in value.items() if k != "run"})
+                # Only the fixture path changes: real state dependencies now
+                # select the full profile. Keep every command and assertion.
+                self.assertEqual(data["after"][key]["run"].rstrip("\n"),
+                                 value["run"].replace("crates/latent-state/src/lib.rs",
+                                                      "crates/latent-workflows/src/lib.rs"))
+            elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:
                 self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
