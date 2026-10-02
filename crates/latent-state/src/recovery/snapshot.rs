@@ -261,7 +261,7 @@ pub enum SnapshotError {
 }
 
 impl SnapshotError {
-    fn source(error: StoreError) -> Self {
+    pub(crate) fn source(error: StoreError) -> Self {
         match error {
             StoreError::SnapshotExpired => Self::Deadline,
             StoreError::Capacity => Self::Capacity,
@@ -295,12 +295,33 @@ impl SnapshotClosure {
 
 /// Export after physical quiescence. A linked-row validator and immutable
 /// artifact verifier are mandatory; app schema declarations are not decoders.
+#[cfg(test)]
 pub(crate) fn export_snapshot(
     store: &EmbeddedStore,
     metadata: SnapshotMetadata,
     output: &mut impl Write,
     deadline: Instant,
     validate: impl FnOnce(&ReadView) -> Result<SnapshotClosure, StoreError>,
+    verify_artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError>,
+) -> Result<SnapshotReceipt, SnapshotError> {
+    export_reviewed_snapshot(
+        store,
+        metadata,
+        output,
+        deadline,
+        |view| validate(view).map_err(SnapshotError::source),
+        verify_artifact,
+    )
+}
+
+/// Same bounded producer with typed installed-owner review failures. A catalog,
+/// current-authority or decoder refusal never becomes a physical source fault.
+pub(crate) fn export_reviewed_snapshot(
+    store: &EmbeddedStore,
+    metadata: SnapshotMetadata,
+    output: &mut impl Write,
+    deadline: Instant,
+    validate: impl FnOnce(&ReadView) -> Result<SnapshotClosure, SnapshotError>,
     mut verify_artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError>,
 ) -> Result<SnapshotReceipt, SnapshotError> {
     metadata.validate().map_err(SnapshotError::Review)?;
@@ -314,7 +335,7 @@ pub(crate) fn export_snapshot(
         .ok_or(SnapshotError::Review(StoreError::UnsupportedFormat))?
         .encode();
     let namespaces = capture_namespaces(&view).map_err(SnapshotError::source)?;
-    let closure = validate(&view).map_err(SnapshotError::source)?;
+    let closure = validate(&view)?;
     closure
         .require_declared(&metadata)
         .map_err(SnapshotError::Review)?;

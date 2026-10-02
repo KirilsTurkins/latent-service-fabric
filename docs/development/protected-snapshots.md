@@ -15,6 +15,14 @@ dispatcher or clean flag cannot establish this custody. Persistent checkpoint
 and dispatcher native pins must retire through their original owners before
 this operation can begin. Namespace records must also be durably quiesced.
 
+`create_reviewed_snapshot` uses that same custody, file and worker implementation
+with a typed review result. Installed catalog, decoder or current-access refusal
+stays a healthy domain failure; capacity and original deadline refusal stay
+distinct. Actual source corruption or uncertain source I/O reaches the original
+quarantine path. The original `create_snapshot` signature and classifier remain
+supported. A rejected review still retains its private file and reservation
+until the returned affine resource actually retires.
+
 Custody closes both ordinary and generic Recovery submissions. Only its same
 affine resource can use the existing Recovery workers. Dropping an export
 waiter leaves the queued/physical callback and its resource charged. Native
@@ -73,6 +81,33 @@ open a substituted path or extend the deadline. Retire `ProtectedSnapshot`
 before resuming business admission. Its retirement witness proves physical
 cleanup, not restore or execution approval.
 
+`latent_commit::recovery_review::review_snapshot` composes the original atomic,
+dispatcher and state codecs on that same borrowed view. It checks each original
+link before feeding exactly one producer contribution into the installed whole
+unit `TenantCensus`. Trusted finite quota configuration must match every installed
+tenant; namespace ceilings or the metadata tenant cannot substitute for it.
+Physical encoded keys have the production 4096-byte bound, while business keys
+retain their independent 1024-byte bound. Counter drift, missing payloads,
+unsupported producer formats and partial tenant configuration refuse the unit.
+
+The review captures original publication, release, component, contract and schema
+artifacts, exact provider/adapter definitions and original inbox processing
+associations. Installed immutable owners compare the complete original records;
+current publications, recreated profiles or replacement consumers cannot supply
+that evidence. Every observed supported decoder is required independently,
+including actual LCM3/LCM4, result, rejection, inbox and effect history versions.
+Protected pending rows and uncertain effects remain in the inventory after
+expiry. Administrator termination does not turn an uncertain provider attempt
+into proven nonexecution or drained retention.
+
+The resulting review contains bounded descriptions only. Its source identity,
+dispatcher epoch/floor and paused recovery guard cannot authorize restoring
+control rows, changing clocks or resuming effects. The current whole-unit policy
+and critical audit owners, original global Recovery reservation, exact absolute
+deadline and positive native custody must survive independently through review,
+export, readback and cleanup. Immutable catalog callbacks run on the fixed worker
+outside currentness locks; currentness checks cannot perform I/O or renew grants.
+
 The schema review substrate hashes exact application definitions independently
 of engine, package, WIT and publication identities. An installed reviewer must
 accept exact package/declaration/evidence association. Compatible canary and
@@ -88,6 +123,15 @@ files. Native compilation, tests and strict Clippy are pending the current
 resource hold. It does not establish the authenticated management/CLI surface,
 the two-version guest campaign, full production retained-row closure, schema
 migration, restore staging, approved reconciliation/resume or complete CI.
+
+Fourteen additional registered source schedules cover durable rejection/inbox
+and uncertain effect history after reopen, substituted evidence, decoder removal,
+corrupt links and tenant counters, paused controls, maximum entity/business keys,
+original deadline/current-access refusal, actual namespace corruption and
+detached source-I/O uncertainty with retained native capacity. Those schedules
+have not yet been compiled or executed under the native resource hold. The
+installed production artifact-review adapter and migration/restore producer
+composition remain separate requirements.
 
 Restore must preserve producer ownership of the fresh destination identity,
 sticky owner marker, external checkpoint, protected clock floors, audit and

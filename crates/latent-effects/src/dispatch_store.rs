@@ -136,6 +136,27 @@ pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     Ok(())
 }
 
+/// Metadata from the original closed recovery codecs, after complete local
+/// key/record validation. Pending history slots remain distinct from receipts;
+/// their presence never proves provider execution or physical retirement.
+pub fn durable_row_format(key: &RowKey, bytes: &[u8]) -> Result<(&'static str, u32), StoreError> {
+    validate_row(key, bytes)?;
+    match key.family {
+        Family::Outbox => Ok(EffectRecord::decode(bytes)
+            .map_err(storage_error)?
+            .durable_format()),
+        Family::PayloadReference => Ok(PayloadRecord::decode(bytes)
+            .map_err(storage_error)?
+            .durable_format()),
+        Family::Attempt if codec::HistoryReservation::present(bytes) => {
+            codec::HistoryReservation::decode(bytes)?;
+            Ok(("latent.effect-attempt-pending.v1", 1))
+        }
+        Family::Attempt => Ok(HistoryRecord::decode(key, bytes)?.durable_format()),
+        _ => Err(StoreError::UnsupportedFormat),
+    }
+}
+
 pub fn initial_due_mutation(authority: &DurableEffectAuthority) -> Result<RowMutation, StoreError> {
     let record = DueRecord {
         due_millis: authority.committed_at_millis(),

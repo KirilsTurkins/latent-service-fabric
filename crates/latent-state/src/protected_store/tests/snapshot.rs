@@ -20,6 +20,8 @@ use std::os::unix::fs::PermissionsExt;
 const DEFINITION: &[u8] =
     include_bytes!("../../../../../contracts/state/application-aggregate-v1.schema.json");
 
+mod review;
+
 fn row(key: &RowKey, value: &[u8]) -> Result<(), StoreError> {
     if key == &StoreIdentity::row_key() {
         StoreIdentity::validate_row(key, value)
@@ -29,6 +31,18 @@ fn row(key: &RowKey, value: &[u8]) -> Result<(), StoreError> {
 }
 
 fn source() -> (
+    tempfile::TempDir,
+    ProtectedStoreOwner,
+    NativeCapacityOwner,
+    Arc<NativeReservation>,
+    SnapshotMetadata,
+) {
+    source_with_clock(Arc::new(SystemActivationClock))
+}
+
+fn source_with_clock(
+    clock: Arc<dyn ActivationClock>,
+) -> (
     tempfile::TempDir,
     ProtectedStoreOwner,
     NativeCapacityOwner,
@@ -47,12 +61,12 @@ fn source() -> (
                 })?;
                 Ok(())
             },
-            Arc::new(SystemActivationClock),
+            Arc::clone(&clock),
         )
         .unwrap(),
     )
     .unwrap();
-    let native = NativeCapacityOwner::new(Default::default()).unwrap();
+    let native = NativeCapacityOwner::with_clock(Default::default(), Arc::clone(&clock)).unwrap();
     owner.bind_native_capacity(&native).unwrap();
     let original = Arc::new(
         native
@@ -63,7 +77,7 @@ fn source() -> (
                     work_bytes: 9 * 1024 * 1024,
                     response_bytes: 1024 * 1024,
                 },
-                Instant::now() + std::time::Duration::from_secs(30),
+                clock.monotonic_now() + std::time::Duration::from_secs(30),
             )
             .unwrap(),
     );

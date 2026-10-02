@@ -6,6 +6,8 @@
 pub mod atomic;
 /// Executable ADR-0062 reference model; this is not a storage or runtime backend.
 pub mod model;
+/// Same-view retained recovery closure over original installed codec owners.
+pub mod recovery_review;
 
 use latent_core::{ActivationId, BoxFuture, Metadata, PlatformError};
 use latent_effects::{EffectIntent, EffectReceipt};

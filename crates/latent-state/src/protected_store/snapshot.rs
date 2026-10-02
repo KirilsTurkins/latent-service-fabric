@@ -12,7 +12,7 @@ use super::custody::{ProtectedCustodyJob, ProtectedStoreCustody};
 use super::{ProtectedStoreError, ProtectedStoreOwner};
 use crate::embedded::{ReadView, RowKey, StoreError};
 use crate::recovery::snapshot::{
-    export_snapshot, inspect_snapshot, RequiredArtifact, SnapshotClosure, SnapshotError,
+    export_reviewed_snapshot, inspect_snapshot, RequiredArtifact, SnapshotClosure, SnapshotError,
     SnapshotMetadata, SnapshotReceipt,
 };
 use crate::store_io::{StoreIoError, StoreIoKind, StoreIoRetirement, StoreIoRetirementWitness};
@@ -118,6 +118,32 @@ impl ProtectedStoreOwner {
         validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
         current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
     ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        self.create_reviewed_snapshot(
+            config,
+            metadata,
+            original,
+            |view| validate(view).map_err(SnapshotError::source),
+            verify_artifact,
+            validate_row,
+            current,
+        )
+    }
+
+    /// Typed installed-owner review on the same original snapshot implementation.
+    /// Healthy catalog/current-access/decoder/deadline refusal is independent
+    /// from actual physical corruption or uncertain store I/O. This adds no
+    /// owner, path, grant, lease, fallback engine or deadline extension.
+    #[allow(clippy::too_many_arguments)] // Separate mandatory codec/artifact/currentness owners.
+    pub fn create_reviewed_snapshot(
+        &self,
+        config: ProtectedSnapshotConfig,
+        metadata: SnapshotMetadata,
+        original: Arc<NativeReservation>,
+        validate: impl FnOnce(&ReadView) -> Result<SnapshotClosure, SnapshotError> + Send + 'static,
+        verify_artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError> + Send + 'static,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
         let bytes = config.validate()?;
         metadata.validate().map_err(ProtectedStoreError::Store)?;
         let custody = self.reserve_custody(bytes, WORK_BYTES, Arc::clone(&original))?;
@@ -127,7 +153,7 @@ impl ProtectedStoreOwner {
                 Err(SnapshotError::Source(error)) => return Err(error),
                 Err(error) => return Ok((None, Err(error))),
             };
-            let outcome = export_snapshot(
+            let outcome = export_reviewed_snapshot(
                 store.engine(),
                 metadata,
                 &mut file.cursor(),
