@@ -104,11 +104,16 @@ class ProvisioningOracle(unittest.TestCase):
         value, operations, publications = observation()
         hosts = policies.ObservedHosts.read(value, operations)
         proposal = policies.documents(hosts, publications)
-        user, admin = proposal['policies'][cfg.STATE_POLICY]['rules']
+        user, admin, recovery = proposal['policies'][cfg.STATE_POLICY]['rules']
         self.assertEqual(user['principals'], [{'kind': 'user', 'subject': cfg.ALICE}])
         self.assertEqual(admin['principals'], [{'kind': 'administrator', 'subject': cfg.OPERATOR}])
         self.assertNotIn('namespace-create', user['operations'])
         self.assertNotIn('acquire-command', admin['operations'])
+        self.assertEqual(recovery['operations'], policies.RECOVERY_OPERATIONS)
+        self.assertEqual(recovery['principals'], admin['principals'])
+        self.assertEqual(recovery['resources'], admin['resources'])
+        self.assertTrue(set(recovery['operations']).isdisjoint(user['operations']))
+        self.assertTrue(set(recovery['operations']).isdisjoint(admin['operations']))
         self.assertNotEqual(user['resources']['scopes'][0]['recoveryScope'],
                             admin['resources']['scopes'][0]['recoveryScope'])
         dispatch = proposal['policies'][cfg.DISPATCH_POLICY]['rules']
@@ -120,6 +125,11 @@ class ProvisioningOracle(unittest.TestCase):
             self.assertEqual(row['resources']['scopes'][0]['recoveryKind'], 'service-integration')
         self.assertEqual(proposal['bindings']['transaction-java-aggregate']['configurationDigest'],
                          value['stateConfigurationDigest'])
+        self.assertEqual(proposal['bindings']['transaction-java-aggregate']['restriction']['operations'], [])
+        self.assertTrue(all(len(binding['restriction']['operations']) <= 16
+                            for binding in proposal['bindings'].values()))
+        self.assertTrue(all(len(rule['operations']) <= 16
+                            for policy in proposal['policies'].values() for rule in policy['rules']))
         self.assertEqual(len(proposal['deploymentGrants']), 2)
         self.assertTrue(all(row['capability'].startswith('latent:clock/') for row in proposal['deploymentGrants']))
 
