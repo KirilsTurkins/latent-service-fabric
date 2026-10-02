@@ -257,8 +257,14 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         return failure instanceof CancellationException ? java.util.concurrent.Future.State.CANCELLED
             : java.util.concurrent.Future.State.FAILED;
     }
+    private static CancellationException cancellationReport(String details, CancellationException stored) {
+        CancellationException reported = new CancellationException(details);
+        reported.initCause(stored);
+        return reported;
+    }
     private T getResult() throws ExecutionException {
-        if (failure instanceof CancellationException) throw (CancellationException)failure;
+        if (failure instanceof CancellationException)
+            throw cancellationReport("get", (CancellationException)failure);
         if (failure != null) throw new ExecutionException(
             failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure);
         return value;
@@ -267,6 +273,11 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         if (failure instanceof CancellationException) throw (CancellationException)failure;
         if (failure != null) throw (CompletionException)wrapped(failure);
         return value;
+    }
+    private T joinResult(String details) {
+        if (failure instanceof CancellationException)
+            throw cancellationReport(details, (CancellationException)failure);
+        return joinResult();
     }
     @Override public T get() throws InterruptedException, ExecutionException {
         synchronized (this) {
@@ -301,11 +312,11 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
                     try { wait(); }
                     catch (InterruptedException wake) { interrupted = true; }
                 }
-                return joinResult();
+                return joinResult("join");
             }
         } finally { if (interrupted) Thread.currentThread().interrupt(); }
     }
-    public synchronized T getNow(T otherwise) { return completed ? joinResult() : otherwise; }
+    public synchronized T getNow(T otherwise) { return completed ? joinResult("getNow") : otherwise; }
     public synchronized int getNumberOfDependents() { return dependents.size(); }
     @Override public CompletableFuture<T> toCompletableFuture() { return this; }
     public CompletableFuture<T> copy() { return thenApply(Function.identity()); }
