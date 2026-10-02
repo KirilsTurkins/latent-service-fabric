@@ -295,9 +295,10 @@ scopes. The locked lambda emitter generates all 23 port callbacks and checks tha
 their construction references resolve after runtime normalization. Only the
 three declared port helpers retain an SDK identity; emitted callbacks retain
 their canonical caller identity. Neither application nor port classes are
-initialized during that model inspection. These source and model results still require actual default-pool,
-dynamic callback and guest-binding behavior in signed execution. Prepare and select the independent,
-ordinary CompletableFuture fixture with the original guest ceilings:
+initialized during that model inspection. These source and model results still
+require actual default-pool, dynamic callback and guest-binding behavior in
+signed execution. Prepare and select the independent, ordinary CompletableFuture
+fixture with the original guest ceilings:
 
 ```sh
 python3 tools/qualify_java_fibers.py --fixture completable \
@@ -321,4 +322,26 @@ compilation but failed TeaVM C generation: a broad helper rewrite redirected ten
 generated callback references into absent SDK classes. The original failure and
 all generated source, class and command records are preserved. The emitted-callback
 control reproduces that identity failure and passes after the narrower helper
-mapping. A new component preparation and signed execution are still required.
+mapping.
+
+The repaired source `e58ae4c2812752bfb345413e28ca97eba0e1604f` completed actual
+guest-only preparation in 98.924 seconds, exited successfully without OOM, and
+produced a 4,239,759-byte component with SHA-256
+`9d619d3a9bea72a83c4af0fb87c3214d8f94a74be974d55803cb1765d28a8841`.
+All 91 SDK input files and compiler recipe identities remained unchanged. The
+complete 914-file generated source, class, command and log closure is retained
+with the original failure; the successful attempt retained 5,685,227 bytes under
+its 32 MiB bound. This preparation used read-only pinned tools and dependencies,
+512 MiB of bounded RAM output, and no Cargo, native runtime rebuild or cache copy.
+The [source-bound receipt](../testing/evidence/java-completable-component-2026-10-02.json)
+records the exact component producer, controls, original finite ceilings and
+remaining qualification.
+
+The five normal host tools selected for the next signed run are separately
+attributed to `acb79889ff1ec6448fc33f9911203fafa21529d8`. Their hashes and all
+7,402 source Git blobs were independently verified. That input preflight executed
+no Java component. The twelve signed calls and physical node/owner retirement
+remain pending; neither this component build nor the earlier `local_service`
+thread proof closes #741 or establishes equivalence to the installed runtime's
+100-fuel operation requirements. Later guide updates do not relabel the frozen
+component as having been compiled from a new commit.
