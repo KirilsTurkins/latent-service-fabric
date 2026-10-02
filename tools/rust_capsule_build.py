@@ -15,6 +15,7 @@ from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, f
                                         inventory, decode_json, read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 from tools import guest_compatibility_build
+from tools import guest_authoring_frontend
 
 BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
@@ -23,6 +24,7 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
           "tools/stage_runtime_wit.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
+RECIPE += ("tools/rust_dependency_authoring.py", "tools/rust_capsule.lock") + guest_authoring_frontend.RECIPE
 RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
            "tools/dev_workflow/common.py", "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
            "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
@@ -68,6 +70,20 @@ class Commands:
         return result.stdout
 
 
+def validate_sdk_inputs(files: dict[str, bytes]) -> tuple[dict, dict[str, bytes]]:
+    """Check the immutable Rust SDK and toolchain without resolving application code."""
+    pins = decode_json(files["sdk-lock.json"])
+    if (not isinstance(pins, dict) or set(pins) != {"formatVersion", "toolchain", "sdk", "bindings", "template"}
+            or type(pins["formatVersion"]) is not int or pins["formatVersion"] != 1):
+        raise ValueError("unsupported SDK lock format")
+    actual = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
+    if json.loads(inventory(actual)) != pins["sdk"]:
+        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    if files["rust-toolchain.toml"] != actual.get("rust-toolchain.toml"):
+        raise ValueError("Rust toolchain configuration differs from the vendored SDK")
+    return pins, actual
+
+
 def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
     required = {"Cargo.toml", "Cargo.lock", "capsule-project.json", "sdk-lock.json", "src/lib.rs", "rust-toolchain.toml"}
     if not required <= files.keys():
@@ -80,15 +96,7 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
         raise ValueError("invalid Cargo capsule name")
     if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "tenant", "service", "world")):
         raise ValueError("invalid capsule identity")
-    pins = decode_json(files["sdk-lock.json"])
-    if (not isinstance(pins, dict) or set(pins) != {"formatVersion", "toolchain", "sdk", "bindings", "template"}
-            or type(pins["formatVersion"]) is not int or pins["formatVersion"] != 1):
-        raise ValueError("unsupported SDK lock format")
-    actual = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
-    if json.loads(inventory(actual)) != pins["sdk"]:
-        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
-    if files["rust-toolchain.toml"] != actual.get("rust-toolchain.toml"):
-        raise ValueError("Rust toolchain configuration differs from the vendored SDK")
+    pins, actual = validate_sdk_inputs(files)
     if any(Path(path).name in {"config", "config.toml"} and ".cargo" in Path(path).parts for path in files):
         raise ValueError("project Cargo configuration overrides are not supported")
     cargo = tomllib.loads(files["Cargo.toml"].decode())

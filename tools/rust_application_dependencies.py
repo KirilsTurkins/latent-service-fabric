@@ -10,7 +10,7 @@ import tempfile
 import tomllib
 from urllib.parse import parse_qs, urlsplit
 
-from tools.application_dependencies import LOCK, MANIFEST, capture, validate_manifest
+from tools.application_dependencies import LOCK, MANIFEST, MAX_LOCK, capture, validate_manifest
 from tools.application_dependency_store import DependencyError, Store, directory_files, read_bytes, regular_path, tree_identity
 from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded
@@ -83,7 +83,9 @@ def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[
         executable = [target['kind'] for target in package.get('targets', [])
                       if any(kind in {'proc-macro', 'custom-build'} for kind in target.get('kind', []))]
         key = (package['name'], package['version'], source)
-        sdk_owned = key in baseline and native_checksums.get(key) == baseline[key]
+        # An outside path crate can reuse SDK coordinates. A missing checksum
+        # establishes no SDK ownership and must not waive executable approval.
+        sdk_owned = bool(source and baseline.get(key) and native_checksums.get(key) == baseline[key])
         role = 'compiler' if sdk_owned else 'build-tool' if executable else 'application'
         row = {'id': package_identity(package), 'role': role, 'format': 'directory', 'mount': mount,
                'source': {'path': str(directory)}, 'dependencies': [],
@@ -107,10 +109,22 @@ def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[
 def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, selection: dict | None = None,
             registry_config: Path | None = None) -> dict:
     """Explicit fetch stage. Cargo metadata/vendor do not run application hooks."""
-    project = regular_path(project).resolve(strict=True)
+    from tools.rust_dependency_authoring import transaction
+    with transaction(project) as (owner, app, private, sdk):
+        return _resolve(owner, app, private, sdk, candidate, cargo=cargo,
+                        selection=selection, registry_config=registry_config)
+
+
+def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
+             cargo: Path | None, selection: dict | None, registry_config: Path | None) -> dict:
+    from tools.rust_dependency_authoring import candidate_location, optional, replace, unchanged
+    from tools.dev_workflow import paths
+    candidate = candidate_location(owner, candidate)
     recipe_before = file_identity(Path(__file__), 'cargo-capture-recipe')
-    if candidate.exists():
+    if os.path.lexists(candidate):
         raise DependencyError('dependency-candidate-exists')
+    previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
+    previous_graph = optional(project, 'cargo-resolved.lock.json')
     before = snapshot(project)
     original_lock = read_bytes(project / 'Cargo.lock')
     pins = tomllib.loads(read_bytes(project / 'vendor/lsf/rust-toolchain.toml').decode())
@@ -119,9 +133,11 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
         raise DependencyError('cargo-selection-fields-invalid')
     if selected.get('target', 'wasm32-unknown-unknown') != 'wasm32-unknown-unknown':
         raise DependencyError('cargo-target-profile-not-maintained')
+    if selected.get('runtimeProfile', 'wasm32-unknown-unknown-panic-abort-v1') != 'wasm32-unknown-unknown-panic-abort-v1':
+        raise DependencyError('cargo-runtime-profile-not-installed')
     features = selected.get('features', [])
     if (not isinstance(features, list) or len(features) > 256 or any(not isinstance(value, str)
-            or not re.fullmatch(r'[A-Za-z0-9_./+-]{1,128}', value) for value in features)
+            or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_./+-]{0,127}', value) for value in features)
             or any(type(selected.get(name, False)) is not bool for name in ('allFeatures', 'noDefaultFeatures'))):
         raise DependencyError('cargo-feature-selection-invalid')
     selected.update(target='wasm32-unknown-unknown', features=sorted(set(features)),
@@ -135,6 +151,9 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
     cargo = regular_path(Path(located)).resolve(strict=True)
     registries = {}
     if registry_config is not None:
+        registry_config = regular_path(registry_config)
+        if registry_config.is_relative_to(owner):
+            raise DependencyError('cargo-private-registry-config-must-stay-outside-project')
         declaration = json.loads(read_bytes(registry_config))
         if not isinstance(declaration, dict) or set(declaration) != {'registries'} or not isinstance(declaration['registries'], dict):
             raise DependencyError('cargo-registry-configuration-invalid')
@@ -153,7 +172,10 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
         environment = build_environment(temporary)
         environment.update(CARGO_HOME=str(temporary / 'cargo-home'), HOME=str(temporary / 'home'),
                            USERPROFILE=str(temporary / 'home'), RUSTUP_TOOLCHAIN=pins['toolchain']['channel'], RUSTUP_AUTO_INSTALL='0',
-                           RUSTC=str(cargo.parent / ('rustc.exe' if os.name == 'nt' else 'rustc')))
+                           RUSTC=str(cargo.parent / ('rustc.exe' if os.name == 'nt' else 'rustc')),
+                           GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(temporary / 'git-empty.config'),
+                           GIT_TERMINAL_PROMPT='0')
+        paths.write_new(temporary / 'git-empty.config', b'')
         # Private registry credentials are resolver-only opt-in environment.
         configuration_lines = []
         for alias, entry in registries.items():
@@ -206,7 +228,7 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
         artifacts.append({'id': root_id, 'role': 'build-tool' if build_script else 'generated', 'format': 'file', 'mount': 'application-vendor/cargo-project/Cargo.toml',
                           'source': {'path': str(project / 'Cargo.toml')}, 'dependencies': [row['id'] for row in artifacts],
                           'metadata': {'ecosystem': 'cargo', 'rootManifest': True, 'buildScript': build_script}})
-        store = Store(project / 'dependency-inputs/objects')
+        store = Store(owner / 'dependency-inputs/objects')
         transforms = []
         for row in artifacts:
             original_path = Path(row['source']['path']) / 'Cargo.toml' if row['format'] == 'directory' else Path(row['source']['path'])
@@ -233,23 +255,46 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
                 source['directory'] = 'dependencies/cargo-vendor'
         graph['sourceReplacement'] = config
         graph['selection'] = selected
-        native_path = project / 'cargo-resolved.lock.json'
-        native_path.write_bytes(canonical(graph) + b'\n')
+        prefix = project.relative_to(owner).as_posix() + '/' if project != owner else ''
         manifest = {'formatVersion': 1, 'language': 'rust', 'selection': selected,
-                    'nativeLocks': ['Cargo.lock', 'cargo-resolved.lock.json'], 'artifacts': artifacts, 'transformations': transforms}
-        (project / MANIFEST).write_bytes(canonical(manifest) + b'\n')
-        locked = capture(project)
+                    'nativeLocks': [prefix + name for name in ('Cargo.lock', 'cargo-resolved.lock.json')],
+                    'artifacts': artifacts, 'transformations': transforms}
+        manifest_raw, graph_raw = canonical(manifest) + b'\n', canonical(graph) + b'\n'
+        # Resolve into an owned review view first. Failed captures preserve all
+        # accepted application inputs, and native Cargo never edits SDK bytes.
+        staged = temporary / 'capture'
+        staged.mkdir(mode=0o700)
+        for name, raw_input in ((MANIFEST, manifest_raw), (prefix + 'Cargo.lock', original_lock),
+                                (prefix + 'cargo-resolved.lock.json', graph_raw)):
+            target = staged / name
+            target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            paths.write_new(target, raw_input)
+        locked = capture(staged, cache=owner / 'dependency-inputs/objects')
         # Captured directory originals survive removal of resolver temp paths.
         # The manifest source is provenance only; verification reconstructs CAS.
-        if read_bytes(project / 'Cargo.lock') != original_lock or any(read_bytes(project / name) != data
-                for name, data in before.items() if name not in {MANIFEST, LOCK, 'cargo-resolved.lock.json'}):
+        if snapshot(project) != before:
             raise DependencyError('cargo-resolution-input-mutated')
+        if optional(owner, MANIFEST) != previous_manifest or optional(owner, LOCK) != previous_lock:
+            raise DependencyError('cargo-authoring-concurrent-input-edit')
         if file_identity(cargo, 'cargo-resolver') != resolver['cargo']:
             raise DependencyError('cargo-resolver-mutated')
         if file_identity(Path(__file__), 'cargo-capture-recipe') != recipe_before:
             raise DependencyError('cargo-capture-recipe-mutated')
-        with candidate.open('xb') as output:
-            output.write(canonical(locked) + b'\n')
+        unchanged(owner, sdk)
+        for row in artifacts:
+            if row['format'] == 'directory' and candidate.is_relative_to(Path(row['source']['path'])):
+                raise DependencyError('cargo-candidate-inside-captured-source')
+        # Each edited file is atomic. An interrupted pair remains fail-closed
+        # against the unchanged accepted lock and requires another resolution.
+        replace(owner, private, prefix + 'cargo-resolved.lock.json', graph_raw, previous_graph, sdk)
+        replace(owner, private, MANIFEST, manifest_raw, previous_manifest, sdk)
+        if (read_bytes(owner / MANIFEST) != manifest_raw or read_bytes(project / 'cargo-resolved.lock.json') != graph_raw
+                or optional(owner, LOCK) != previous_lock):
+            raise DependencyError('cargo-authoring-concurrent-input-edit')
+        raw_candidate = canonical(locked) + b'\n'
+        if len(raw_candidate) > MAX_LOCK:
+            raise DependencyError('dependency-lock-limit')
+        paths.write_new(candidate, raw_candidate)
         return locked
 
 
