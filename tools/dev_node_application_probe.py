@@ -11,7 +11,7 @@ import re
 import socket
 import time
 
-from tools.dev_workflow import helper, node_scenarios, node_test_profile, paths, service, state
+from tools.dev_workflow import helper, node_diagnostics, node_scenarios, node_test_profile, paths, service, state
 from tools.dev_workflow.common import DevError, HOST_ABI, decode, digest, encode, require
 from tools.native_runtime import configuration
 from tools.native_runtime.layout import Layout
@@ -95,6 +95,7 @@ def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path,
     report = {"schemaVersion": "latent.dev.application-node-probe.v1", "language": descriptor["language"],
         "publisherAuthenticated": False, "cleanHost": False, "qualificationComplete": False,
         "passed": False, "cleanup": "unconfirmed", "phase": "source-runtime"}
+    diagnostics = node_diagnostics.Capture()
     uncertain = False
     began = time.monotonic()
     deadline = began + 900
@@ -110,7 +111,8 @@ def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path,
         report["phase"] = "publish-deploy"
         helper.deploy(root, deadline=deadline)
         report["phase"] = "common-scenarios"
-        report["tests"] = node_scenarios.run(root, {"environment": "node", "selection": selection or []}, deadline=deadline)
+        report["tests"] = node_scenarios.run(root, {"environment": "node", "selection": selection or []}, deadline=deadline,
+                                             diagnostic_observer=diagnostics.observer("common-scenarios"))
         state.atomic(output, "node-tests.json", report["tests"])
         report["scenarioDiagnostics"] = failed_diagnostics(root, report["tests"], deadline)
         require(report["tests"]["passed"], "source-node-application-scenarios-failed")
@@ -123,7 +125,7 @@ def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path,
         service.start(root, supplied / "helper.pyz")
         report["retained"] = node_scenarios.run(root, {"environment": "node", "selection":
                                                 retained_selection or [report["tests"]["selection"][0]]},
-                                                deadline=deadline)
+                                                deadline=deadline, diagnostic_observer=diagnostics.observer("retained-restart"))
         report["retainedDiagnostics"] = failed_diagnostics(root, report["retained"], deadline)
         require(report["retained"]["passed"] and state.load(root, "last-deployment.json") == selected,
                 "source-node-retained-invocation-must-not-redeploy")
@@ -154,13 +156,17 @@ def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path,
                 observation = state.load(root, "last-operation-observation.json")
                 if observation["id"] == pending["id"] and observation["kind"] == pending["kind"]:
                     report["operationObservation"] = observation
-            if uncertain or pending or dependency_pending or report.get("tests", {}).get("cleanup") == "client-cleanup-unconfirmed-node-retained":
+            if (uncertain or pending or dependency_pending
+                    or diagnostics.snapshot()["invocationClientCleanup"] == "unconfirmed"
+                    or report.get("tests", {}).get("cleanup") == "client-cleanup-unconfirmed-node-retained"):
                 report.update(passed=False, cleanup="unconfirmed-private-workspace-retained")
             else:
                 report["cleanup"] = "owned-node-and-client-processes-reaped"
         except BaseException as error:
             report.update(passed=False, cleanup="unconfirmed-private-workspace-retained",
                           cleanupFailure=error.code if isinstance(error, DevError) else type(error).__name__)
+        report["diagnostics"] = diagnostics.snapshot()
+        report["processCleanup"] = node_diagnostics.process_cleanup(report.get("shutdown"), report["diagnostics"])
         report["seconds"] = round(time.monotonic() - began, 3)
         state.atomic(root, "source-node-probe.json", report)
         state.atomic(output, "probe.json", report)

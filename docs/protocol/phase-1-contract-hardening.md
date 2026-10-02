@@ -544,3 +544,17 @@ Engine configuration digests and internal sealed metadata fingerprints retain
 their separate meanings. Live grant checks are explicitly absent; an inspection
 does not grant execution or mutation authority. Public invocation and browser
 error projections retain their existing disclosure rules.
+
+## Additive Phase 4 transaction definitions
+
+The descriptor baseline includes `latent/transaction/v1/transaction.proto` and
+`latent/control/v1/state.proto`, plus `AuditCapabilityResourceClass` value 11
+for state resources. The Buf-generated descriptor was reviewed against every
+existing file: all previous field numbers, types, enum values, messages and RPC
+signatures remain unchanged. The exhaustive descriptor oracle includes both
+new files and still rejects unreviewed semantic changes.
+
+These definitions describe [transaction and recovery contracts](transactions.md).
+They do not establish that a host implements the profile or grant access from
+a namespace, command, effect or receipt identifier. WIT guest ABI versions and
+durable storage formats retain their separate compatibility boundaries.

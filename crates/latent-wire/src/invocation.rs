@@ -26,6 +26,7 @@ pub use cleanup::{
     ActivationCleanupHandle, ActivationCleanupOwner, ActivationCleanupReservation,
     ActivationCleanupSnapshot, RetainedActivation,
 };
+pub(crate) use conversion::sanitize_platform_error;
 pub use conversion::{
     activation_status_from_proto, activation_status_to_proto, budget_from_proto, budget_to_proto,
     cancel_disposition_from_proto, cancel_disposition_to_proto, consumption_from_proto,
@@ -34,7 +35,8 @@ pub use conversion::{
     invocation_response_to_proto, platform_error_from_proto, platform_error_to_proto,
     InvocationConversionError,
 };
-use errors::{boundary_error, platform_status};
+use errors::boundary_error;
+pub(crate) use errors::platform_status;
 pub(crate) use errors::{public_platform_message, tonic_code};
 pub use latent_rpc::invocation::v1 as proto;
 pub use limits::InvocationLimits;

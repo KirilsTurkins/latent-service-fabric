@@ -9,6 +9,24 @@ from tools.phase3_resource_identity import inventory as tree_identity
 from tools.typescript_guest.probe import semantic, projection
 
 
+def declaration_aliases(source: str) -> str:
+    """Repair the exact pinned Jco reserved-word .d.ts declaration gap.
+
+    Jco 1.34.0 emits an exported alias for WIT `delete`, followed by a bare
+    function declaration. TypeScript 7 requires `declare` in a .d.ts file.
+    Names, parameters, return type and wire metadata remain generated inputs.
+    The finite exact match makes any different generator shape fail closed.
+    """
+    if "export { _delete as delete };" not in source:
+        return source
+    expected = ("export { _delete as delete };\n"
+                "function _delete(transaction: Transaction, key: Uint8Array): void;")
+    if (source.count(expected) != 1 or
+            "/** @module Interface latent:state/key-value@0.2.0 **/" not in source):
+        raise ValueError("unreviewed Jco reserved declaration alias shape")
+    return source.replace(expected, expected.replace("\nfunction ", "\ndeclare function "))
+
+
 def import_identities(graph: dict, selected: str) -> list[str]:
     def identity(package, name):
         base, separator, version = graph["packages"][package]["name"].rpartition("@")
@@ -89,6 +107,15 @@ class Compiler:
         command.run("generate-types", self.node, self.jco, "types", projected, "--world-name", world, "--name", "capsule", "--out-dir", generated)
         second = output / "generated-check"
         command.run("regenerate-types", self.node, self.jco, "types", projected, "--world-name", world, "--name", "capsule", "--out-dir", second)
+        # Preserve raw generated declarations separately from the reviewed
+        # compiler spelling projection and compare both independent outputs.
+        write_json(output / "raw-generated-bindings.json", tree_identity(generated))
+        for directory in (generated, second):
+            for path in sorted(directory.rglob("*.d.ts")):
+                original = path.read_text(encoding="utf-8")
+                adapted = declaration_aliases(original)
+                if adapted != original:
+                    path.write_text(adapted, encoding="utf-8")
         first_identity = tree_identity(generated)
         if first_identity != tree_identity(second):
             raise ValueError("generated binding drift between identical inputs")
