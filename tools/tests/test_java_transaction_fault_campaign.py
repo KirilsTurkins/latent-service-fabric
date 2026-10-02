@@ -23,6 +23,8 @@ from tools.rust_capsule_project import inventory
 from tools.tests.test_java_transaction_provision import observation
 from tools.tests.test_java_transaction_qualification import HEADERS, result
 
+PUBLICATION = "publication:sha256:" + "a" * 64
+
 
 def compiler_files(*, memory=False):
     source, world = b"source-only fixture, never executed", b"world fixture, never compiled"
@@ -88,14 +90,19 @@ def terminal(kind="fuel"):
     consumption.update(cpuFuel="1000000000", peakMemoryBytes="65536", wallTimeMicros="10000",
         stateReadBytes="128", stateWriteBytes=str(campaign.STAGE_WRITE_BYTES + 64),
         childCalls=0, outboundRequests=0, effectCount=1)
-    status = {"activationId": "original-host-root", "phase": "terminal", "terminalState": state,
+    status = {"activationId": "original-host-root", "phase": "running", "terminalState": state,
         "terminalOutcome": {"kind": "platform-failure", "error": {"code": code}},
-        "terminalAtUnixMillis": "1", "finalConsumption": consumption}
+        "terminalAtUnixMillis": "2000", "finalConsumption": consumption}
     node = {"activationId": status["activationId"], "rootActivationId": status["activationId"],
-        "parentActivationId": None, "phase": "terminal", "terminalState": state, "targetService": cfg.SERVICE,
+        "parentActivationId": None, "phase": "running", "terminalState": state, "targetService": cfg.SERVICE,
+        "receivedAtUnixMillis": "1000",
         "principalKind": "user", "grantedBudget": {name: value if name in campaign.NARROW else str(value)
             for name, value in selected.LIMITS.items()}, "diagnosticIsTerminal": reason is not None,
-        "diagnostic": None if reason is None else {"stage": 5, "reason": reason}}
+        "diagnostic": None if reason is None else {"stage": 5, "reason": reason},
+        "transactionStaging": {"schemaVersion": 1, "activationSerial": "1",
+            "commandId": "1" * 64, "attemptId": "2" * 64, "transactionId": "4" * 64,
+            "publicationId": PUBLICATION, "stagedMutations": 1, "capturedIntents": 1,
+            "stateWriteBytes": consumption["stateWriteBytes"], "observedAtUnixMillis": "1500"}}
     return status, node
 
 
@@ -107,7 +114,7 @@ def abort():
         "transaction-id": "4" * 64, "owner-fence": base64.b64encode(bytes(32)).decode()}
     record = {"commandId": value["command-id"], "attemptId": value["attempt-id"],
         "outcome": "COMMAND_OUTCOME_ABORTED", "metadataDurable": True, "applicationStateCommitted": False,
-        "commit": None, "source": {"publicationId": "original-publication", "componentDigest": item.component_digest},
+        "commit": None, "source": {"publicationId": PUBLICATION, "componentDigest": item.component_digest},
         "key": {"clientKey": "original-key", "operation": "update",
             "namespace": {"tenant": cfg.TENANT, "namespace": cfg.NAMESPACE, "incarnation": "1"}},
         "provenAbort": {"commandId": value["command-id"], "attemptId": value["attempt-id"], "transactionId": "4" * 64,
@@ -274,13 +281,13 @@ class RollbackOracle(unittest.TestCase):
     def test_each_fault_requires_original_terminal_accounting_and_fixed_producer_reason(self):
         for kind in campaign.EXPECTED:
             status, node = terminal(kind)
-            self.assertEqual(campaign.staged_terminal(status, node, kind)["effectCount"], 1)
+            self.assertEqual(campaign.staged_terminal(status, node, kind, abort()[2])["effectCount"], 1)
 
     def test_running_timeout_and_zero_stage_accounting_cannot_qualify_rollback(self):
         for change in ("running", "timeout", "no-effect", "no-put", "no-final", "external", "child", "boolean"):
             status, node = terminal()
             if change == "running":
-                status["phase"] = node["phase"] = "running"
+                status["terminalState"] = node["terminalState"] = None
             elif change == "timeout":
                 status["terminalState"] = node["terminalState"] = "deadline_exceeded"
             elif change == "no-effect":
@@ -294,7 +301,7 @@ class RollbackOracle(unittest.TestCase):
             else:
                 status["finalConsumption"]["outboundRequests" if change == "external" else "childCalls"] = 1
             with self.subTest(change=change), self.assertRaises(ValueError):
-                campaign.staged_terminal(status, node, "fuel")
+                campaign.staged_terminal(status, node, "fuel", abort()[2])
 
     def test_reduced_or_inflated_grant_and_generic_resource_reason_do_not_qualify_memory(self):
         for change in ("grant", "generic", "trap", "nonterminal"):
@@ -308,11 +315,11 @@ class RollbackOracle(unittest.TestCase):
             else:
                 node["diagnosticIsTerminal"] = False
             with self.subTest(change=change), self.assertRaises(ValueError):
-                campaign.staged_terminal(status, node, "memory")
+                campaign.staged_terminal(status, node, "memory", abort()[2])
 
     def test_original_durable_abort_proof_matches_current_authorized_http_receipt(self):
         item, value, record = abort()
-        campaign.aborted(record, value, item, "original-publication", "original-key")
+        campaign.aborted(record, value, item, PUBLICATION, "original-key")
         http.response(409, evidence.encoded(value), HEADERS)
 
     def test_missing_uncertain_committed_foreign_or_changed_abort_proof_cannot_qualify(self):
@@ -335,7 +342,7 @@ class RollbackOracle(unittest.TestCase):
             else:
                 value["result"] = {"invented": True}
             with self.subTest(change=change), self.assertRaises(ValueError):
-                campaign.aborted(record, value, item, "original-publication", "original-key")
+                campaign.aborted(record, value, item, PUBLICATION, "original-key")
 
     def test_unchanged_query_and_absent_recipient_put_are_both_required(self):
         query = {"count": "0", "key-version": {"none": None}}
@@ -371,6 +378,149 @@ class RollbackOracle(unittest.TestCase):
             self.assertFalse(isinstance(pending.result, dict) and "abort-fence" in pending.result)
         finally:
             sent.close()
+
+
+class StagingWitnessOracle(unittest.TestCase):
+    def test_charged_terminal_counters_without_native_witness_never_qualify_any_fault(self):
+        for kind in campaign.EXPECTED:
+            for missing in (None, {}):
+                status, node = terminal(kind)
+                node["transactionStaging"] = missing
+                self.assertEqual(status["finalConsumption"]["effectCount"], 1)
+                self.assertGreater(int(status["finalConsumption"]["stateWriteBytes"]), campaign.STAGE_WRITE_BYTES)
+                with self.subTest(kind=kind, witness=missing), self.assertRaisesRegex(ValueError, "staging-witness-required"):
+                    campaign.staged_terminal(status, node, kind, abort()[2])
+
+    def test_witness_requires_original_claim_serial_post_insertion_progress_and_observation_time(self):
+        for change in ("schema", "serial", "numeric-serial", "command", "attempt", "transaction", "publication",
+                       "no-put", "no-intent", "boolean-intent", "no-bytes", "before-root", "after-terminal", "unknown-field"):
+            status, node = terminal()
+            witness = node["transactionStaging"]
+            if change == "schema":
+                witness["schemaVersion"] = True
+            elif change == "serial":
+                witness["activationSerial"] = "0"
+            elif change == "numeric-serial":
+                witness["activationSerial"] = 1
+            elif change == "command":
+                witness["commandId"] = "5" * 64
+            elif change == "attempt":
+                witness["attemptId"] = "6" * 64
+            elif change == "transaction":
+                witness["transactionId"] = "7" * 64
+            elif change == "publication":
+                witness["publicationId"] = "publication:sha256:" + "8" * 64
+            elif change == "no-put":
+                witness["stagedMutations"] = 0
+            elif change == "no-intent":
+                witness["capturedIntents"] = 0
+            elif change == "boolean-intent":
+                witness["capturedIntents"] = True
+            elif change == "no-bytes":
+                witness["stateWriteBytes"] = str(campaign.STAGE_WRITE_BYTES)
+            elif change == "before-root":
+                witness["observedAtUnixMillis"] = "999"
+            elif change == "after-terminal":
+                witness["observedAtUnixMillis"] = "2001"
+            else:
+                witness["approved"] = True
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                campaign.staged_terminal(status, node, "fuel", abort()[2])
+
+    def test_terminal_inspection_keeps_original_live_serial_and_accounting_covers_its_progress(self):
+        status, node = terminal()
+        node["transactionStaging"]["activationSerial"] = str(2**64 - 1)
+        live = campaign.staging_witness(node, abort()[2])
+        self.assertEqual(campaign.staged_terminal(status, node, "fuel", abort()[2], live)["effectCount"], 1)
+        for change in ("serial", "transaction", "time", "insufficient-accounting"):
+            changed = copy.deepcopy(node)
+            final = copy.deepcopy(status)
+            if change == "insufficient-accounting":
+                final["finalConsumption"]["stateWriteBytes"] = str(campaign.STAGE_WRITE_BYTES + 32)
+            else:
+                key, value = {"serial": ("activationSerial", "1"), "transaction": ("transactionId", "8" * 64),
+                              "time": ("observedAtUnixMillis", "1501")}[change]
+                changed["transactionStaging"][key] = value
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                campaign.staged_terminal(final, changed, "fuel", abort()[2], live)
+
+    def test_live_stage_observation_is_bounded_read_only_and_refuses_running_without_insertion(self):
+        _, node = terminal()
+        node["terminalState"] = None
+        record = abort()[2]
+        record.update(outcome="COMMAND_OUTCOME_IN_PROGRESS", provenAbort=None)
+        pending = SimpleNamespace(thread=SimpleNamespace(is_alive=lambda: True))
+        collector = campaign.DiagnosticCampaign.__new__(campaign.DiagnosticCampaign)
+        for present, count in ((False, 8), (True, 1)):
+            calls = []
+            current = copy.deepcopy(node)
+            if not present:
+                current["transactionStaging"] = None
+            def call(*args, **kwargs):
+                calls.append((args, kwargs))
+                return {"data": {"schemaVersion": 1, "historyAvailable": True, "cursorExpired": False,
+                                  "nextPageToken": None, "nodes": [current]}}
+            collector.client = SimpleNamespace(call=call)
+            with self.subTest(present=present), patch.object(campaign.time, "sleep"):
+                if present:
+                    self.assertEqual(collector.live_staging(pending, node["activationId"], record, time.monotonic() + 10),
+                                     node["transactionStaging"])
+                else:
+                    with self.assertRaisesRegex(ValueError, "captured-intent-not-observed"):
+                        collector.live_staging(pending, node["activationId"], record, time.monotonic() + 10)
+            self.assertEqual(len(calls), count)
+            self.assertTrue(all(args == ("activation", "tree", node["activationId"], "--page-size", "8")
+                                and set(kwargs) == {"timeout"} and 0 < kwargs["timeout"] <= 10
+                                for args, kwargs in calls))
+            with self.assertRaisesRegex(ValueError, "not-running"):
+                collector.live_staging(pending, node["activationId"], record, time.monotonic() - 1)
+            self.assertEqual(len(calls), count)
+        sampled = time.monotonic()
+        with patch.object(campaign.time, "monotonic", side_effect=(sampled, sampled + 0.1, sampled + 10.1)), \
+                self.assertRaisesRegex(ValueError, "within-same-cutoff"):
+            collector.live_staging(pending, node["activationId"], record, sampled + 10)
+        self.assertEqual(len(calls), count + 1)
+
+    def test_single_cancellation_is_sent_only_after_original_live_staging_witness(self):
+        _, node = terminal("cancel")
+        node["terminalState"] = None
+        record = abort()[2]
+        record.update(outcome="COMMAND_OUTCOME_IN_PROGRESS", provenAbort=None)
+        pending = SimpleNamespace(thread=SimpleNamespace(is_alive=lambda: True))
+        collector = campaign.DiagnosticCampaign.__new__(campaign.DiagnosticCampaign)
+        collector.publication = PUBLICATION
+        collector.input = SimpleNamespace(item=SimpleNamespace(component_digest=record["source"]["componentDigest"]))
+        for present in (False, True):
+            calls, evidence_records = [], []
+            current = copy.deepcopy(node)
+            if not present:
+                current["transactionStaging"] = None
+            def call(*args, **kwargs):
+                calls.append((args, kwargs))
+                if args[:2] == ("activation", "tree"):
+                    return {"data": {"schemaVersion": 1, "historyAvailable": True, "cursorExpired": False,
+                                      "nextPageToken": None, "nodes": [current]}}
+                self.assertEqual(args[:2], ("transaction", "cancel"))
+                return {"data": {"cancellationDisposition": "COMMAND_CANCEL_DISPOSITION_REQUESTED", "command": record}}
+            collector.client = SimpleNamespace(call=call, deadline=time.monotonic() + 10,
+                evidence=SimpleNamespace(record=lambda name, value: evidence_records.append((name, value))))
+            with self.subTest(present=present), patch.object(campaign, "roots", return_value={node["activationId"]}), \
+                    patch.object(collector, "original_attempt", return_value=record), \
+                    patch.object(campaign.lifecycle, "as_user", return_value=nullcontext()), patch.object(campaign.time, "sleep"):
+                if present:
+                    self.assertEqual(collector.cancel(pending, set(), "original-key"),
+                                     (node["activationId"], node["transactionStaging"]))
+                else:
+                    with self.assertRaisesRegex(ValueError, "captured-intent-not-observed"):
+                        collector.cancel(pending, set(), "original-key")
+            cancellations = [args for args, _ in calls if args[:2] == ("transaction", "cancel")]
+            self.assertEqual(len(cancellations), int(present))
+            self.assertEqual(len(evidence_records), int(present))
+            if present:
+                self.assertIn(("--attempt-id", record["attemptId"]),
+                              list(zip(cancellations[0], cancellations[0][1:])))
+                self.assertIs(evidence_records[0][1]["livePostStageWitnessObserved"], True)
+                self.assertEqual(evidence_records[0][1]["originalStagingWitness"], node["transactionStaging"])
 
 
 class DiagnosticProgramOracle(unittest.TestCase):
