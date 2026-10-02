@@ -117,7 +117,7 @@ public final class CompletableFutureOwnerControl {
             catch (IllegalStateException denied) { require(denied.getMessage().equals("source-control-admission-denied")); }
             owners(0, 0); require(queue.size() == 0);
         }
-        Executor reject = task -> { throw new RejectedExecutionException("physical-owner-control"); };
+        Executor reject = dev.latent.guest.runtime.concurrent.Executors.rejected();
         try { CompletableFuture.supplyAsync(() -> 42, reject); throw new AssertionError("rejection-accepted"); }
         catch (RejectedExecutionException expected) { checks++; }
         owners(0, 0);

@@ -35,6 +35,11 @@ public final class Activation {
             denyNext = null;
             throw new IllegalStateException("source-control-admission-denied");
         }
+        // Match the original component fixture's QueuedWork/Result ceilings.
+        // This private source ledger remains outside the guest component.
+        if (kind == Bindings.LatentRuntimeActivationOwnerKind.QueuedWork && queued >= 8
+                || kind == Bindings.LatentRuntimeActivationOwnerKind.Result && results >= 8)
+            throw new IllegalStateException("source-control-original-owner-capacity");
         if (kind == Bindings.LatentRuntimeActivationOwnerKind.QueuedWork) queued++;
         else results++;
         return new Lease(kind);

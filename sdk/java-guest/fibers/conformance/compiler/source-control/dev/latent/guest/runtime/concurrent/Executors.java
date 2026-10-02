@@ -13,6 +13,12 @@ public final class Executors {
         return pool;
     }
     public static synchronized int pools() { return pools.size(); }
+    public static java.util.concurrent.Executor rejected() {
+        return command -> {
+            CompletableFuture.rejectedBeforeAcceptance(command);
+            throw new java.util.concurrent.RejectedExecutionException("source-control-owned-rejection");
+        };
+    }
     public static synchronized void cleanup() throws Exception {
         for (ExecutorService pool : pools) {
             pool.shutdown();

@@ -128,39 +128,76 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     fixture = compiler.sdk / "fibers/conformance/compiler"
     native = fixture / "CompletableFutureNativeControl.java"
     owners = fixture / "CompletableFutureOwnerControl.java"
+    executor_reference = fixture / "CompletableFutureExecutorThrowReferenceControl.java"
+    executor_owners = fixture / "CompletableFutureExecutorAcceptanceOwnerControl.java"
+    uncertain_owners = fixture / "CompletableFutureExecutorUncertainOwnerControl.java"
     stubs = [fixture / "source-control" / name for name in (
         "PrivateSourceRunner.java", "dev/latent/generated/Bindings.java",
         "dev/latent/guest/runtime/Activation.java", "dev/latent/guest/runtime/concurrent/Executors.java")]
     ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/concurrent/" + name + ".java")
              for name in ("CompletableFuture", "CompletionStage", "CompletionException")]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-              for path in (native, owners, *stubs, *ports)}
+              for path in (native, owners, executor_reference, executor_owners, uncertain_owners, *stubs, *ports)}
     output.mkdir()
     reference, private = output / "reference", output / "private"
     reference.mkdir(); private.mkdir()
-    compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference, native)
+    compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference,
+                 native, executor_reference)
     expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
     observed = compiler.run("completable-reference-run", "java", "-Xmx256m", "-cp", reference,
                             "CompletableFutureNativeControl").strip()
     if observed != expected: raise ValueError("Java CompletableFuture reference control did not complete")
+    executor_expected = compiler.run("completable-executor-reference-run", "java", "-Xmx256m", "-cp", reference,
+                                     "CompletableFutureExecutorThrowReferenceControl").strip()
+    executor_cases = [json.loads(line) for line in executor_expected.splitlines()]
+    if len(executor_cases) != 6: raise ValueError("Java CompletableFuture executor reference cases did not complete")
     text = read_file(native).decode("utf-8")
     for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
         original = "import java.util.concurrent." + name + ";"
         if text.count(original) != 1: raise ValueError("Java CompletableFuture source control import is ambiguous")
         text = text.replace(original, "import dev.latent.guest.runtime.concurrent." + name + ";")
+    # The original public JDK cases remain unchanged. The private ledger's
+    # immediate-retirement case must use an actual SDK-owned rejection witness,
+    # rather than infer physical absence from an arbitrary executor exception.
+    rejection = 'Executor reject = command -> { throw new RejectedExecutionException("source-control-denied"); };'
+    if text.count(rejection) != 1: raise ValueError("Java CompletableFuture rejection fixture is ambiguous")
+    text = text.replace(rejection, "Executor reject = dev.latent.guest.runtime.concurrent.Executors.rejected();")
     private_native = private / native.name
     private_native.write_text(text, encoding="utf-8")
+    text = read_file(executor_reference).decode("utf-8")
+    for name in ("CompletableFuture", "CompletionException"):
+        original = "import java.util.concurrent." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java CompletableFuture executor control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.concurrent." + name + ";")
+    private_executor = private / executor_reference.name
+    private_executor.write_text(text, encoding="utf-8")
     compiler.run("completable-source-compile", "javac", "-proc:none", "--release", "25", "-d", private,
-                 private_native, owners, *stubs, *ports)
+                 private_native, private_executor, owners, executor_owners, uncertain_owners, *stubs, *ports)
     owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
     observed = compiler.run("completable-source-run", "java", "-Xmx256m", "-cp", private,
                             "PrivateSourceRunner").strip()
     if observed.splitlines() != [expected, owner_result]:
         raise ValueError("Java CompletableFuture source ownership controls did not complete")
+    executor_observed = compiler.run("completable-executor-source-run", "java", "-Xmx256m", "-cp", private,
+                                     "CompletableFutureExecutorThrowReferenceControl").strip()
+    if [json.loads(line) for line in executor_observed.splitlines()] != executor_cases:
+        raise ValueError("Java CompletableFuture executor behavior differs from the actual reference JDK")
+    observed = compiler.run("completable-executor-owners-run", "java", "-Xmx256m", "-cp", private,
+                            "CompletableFutureExecutorAcceptanceOwnerControl").strip()
+    if observed != "COMPLETABLE_FUTURE_EXECUTOR_ACCEPTANCE_OWNER PASS observables=49":
+        raise ValueError("Java CompletableFuture executor acceptance ownership controls did not complete")
+    observed = compiler.run("completable-executor-uncertain-run", "java", "-Xmx256m", "-cp", private,
+                            "CompletableFutureExecutorUncertainOwnerControl").strip()
+    if observed != ("COMPLETABLE_FUTURE_EXECUTOR_UNCERTAIN_OWNER PASS observables=30;"
+                    "queued=8;results=8;cleanup-denied;activation-retirement-unqualified"):
+        raise ValueError("Java CompletableFuture uncertain executor capacity control did not complete")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java CompletableFuture control inputs changed during execution")
     return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 82,
             "sourceOwnershipObservables": 419, "raceRounds": 32, "sourceInputs": inputs,
+            "executorReferenceCases": 6, "executorAcceptanceOwnershipObservables": 49,
+            "uncertainExecutorOwnershipObservables": 30,
+            "uncertainAcceptanceAtOriginalOwnerCapacity": True, "uncertainActivationRetirementQualified": False,
             "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
 

@@ -32,7 +32,10 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             Objects.requireNonNull(command);
             Executor selected;
             synchronized (this) {
-                if (pool == null) pool = Executors.newCachedThreadPool();
+                if (pool == null) {
+                    try { pool = Executors.newCachedThreadPool(); }
+                    catch (Throwable error) { rejectedBeforeAcceptance(command); throw error; }
+                }
                 selected = pool;
             }
             selected.execute(command);
@@ -56,7 +59,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     }
     private synchronized void retired(Action action) {
         if (!accepted.remove(action)) throw new IllegalStateException("activation-future-callback-owner");
-        if (completed && accepted.isEmpty() && resultOwner != null) {
+        if (accepted.isEmpty() && resultOwner != null) {
             resultOwner.close();
             resultOwner = null;
         }
@@ -69,6 +72,11 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         action.fire(false);
     }
     private synchronized void unsubscribe(Action action) { dependents.remove(action); }
+
+    /** Only an SDK-owned queue can prove that this runnable was not accepted. */
+    static void rejectedBeforeAcceptance(Runnable command) {
+        if (command instanceof Action) ((Action)command).finish();
+    }
 
     private static class Action implements Runnable {
         final CompletableFuture<?> destination;
@@ -139,6 +147,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             if (!ready()) return;
             synchronized (this) { if (finished || dispatched) return; dispatched = true; }
             detach();
+            boolean executorEntered = false;
             try {
                 Throwable inputFailure = null;
                 if (inputShortcut == 1) {
@@ -150,10 +159,21 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
                     try { destination.asyncFailure(inputFailure); }
                     finally { finish(); }
                 } else if (executor == null || inputShortcut == 2 && left.error() == null) run();
-                else executor.execute(this);
+                else {
+                    executorEntered = true;
+                    executor.execute(this);
+                }
             } catch (Throwable error) {
-                try { destination.asyncFailure(error); }
-                finally { finish(); }
+                // The JDK propagates supplyAsync/completeAsync submission
+                // errors without failing an already queued producer. A stage
+                // submission records its error while its runnable stays owned.
+                try { if (!propagateRejection || !executorEntered) destination.asyncFailure(error); }
+                finally {
+                    // An arbitrary executor may queue and then throw, including
+                    // RejectedExecutionException. Only physical run or the SDK
+                    // rejection witness can refund these accepted leases.
+                    if (!executorEntered) finish();
+                }
                 if (propagateRejection) throw error;
             }
         }

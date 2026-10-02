@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain original signed thread and owned-continuation obligations; require the actual locked lambda emitter to prove all port callback references resolve without SDK aliasing, preserve immutable offline dependency verification and pending signed execution status",
+  "reviewReason": "Retain original signed thread and owned-continuation obligations; require the actual locked lambda emitter to prove all port callback references resolve without SDK aliasing, preserve immutable offline dependency verification and pending signed execution status; retain all 82 public and 419 ownership assertions and 32 race rounds while comparing six actual JDK executor cases, exercising 49 physical-acceptance and 30 uncertain-acceptance controls at the original eight queued/result owner ceilings, with immediate retirement only from an SDK-owned rejection witness and the unchanged model guard",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d2eb09500d3f88a521d802fcff2af44528386e15173a82835bdef1b67d3131ad"
+  "sha256": "a6c3c19d0104b3dbc6cae5e8ce0e68a84dc54067ef1633b3583ca2380d406886"
 }
