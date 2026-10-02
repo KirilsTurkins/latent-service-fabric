@@ -64,6 +64,9 @@ export function paletteCss(palette) {
 }
 
 export function prismTheme(tokens) {
+  // Resolve the actual document mode before React hydration. Hex colors from
+  // the server's default light theme otherwise mix with dark semantic CSS.
+  const reference = name => `var(--lsf-${name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)})`;
   const groups = {
     codeComment: ['comment', 'prolog', 'doctype', 'cdata'],
     codeKeyword: ['keyword', 'tag', 'selector', 'atrule'],
@@ -72,7 +75,7 @@ export function prismTheme(tokens) {
     codeFunction: ['function', 'class-name', 'builtin'],
     codeVariable: ['variable', 'property', 'symbol', 'attr-name', 'operator', 'punctuation'],
   };
-  return {plain: {color: tokens.codeText, backgroundColor: tokens.codeSurface}, styles: Object.entries(groups).map(([token, types]) => ({types, style: {color: tokens[token]}}))};
+  return {plain: {color: reference('codeText'), backgroundColor: reference('codeSurface')}, styles: Object.entries(groups).map(([token, types]) => ({types, style: {color: reference(token)}}))};
 }
 
 export function mermaidOptions(tokens) {
