@@ -655,6 +655,52 @@ class SourceNodeProbe(unittest.TestCase):
             self.assertEqual(other.read_bytes(), b"retain")
 
 
+@unittest.skipUnless(os.name == "posix", "Actual source probe imports Linux ownership helpers")
+class SourceNodeDiagnostics(unittest.TestCase):
+    def test_only_failed_original_activation_is_observed_without_invocation_retry(self):
+        from tools import dev_node_application_probe as probe
+        activation = "dev-" + "a" * 32
+        tree = {"schemaVersion": 1, "historyAvailable": True, "nodes": [{"activationId": activation,
+            "diagnostic": {"stage": 5, "reason": 11}, "consumption": {"cpuFuel": "1000"}}]}
+        client = Mock()
+        client.call.return_value = {"category": "success", "outcomeKnown": True, "data": tree}
+        scenarios = {"results": [{"status": "passed", "activationId": "dev-" + "b" * 32},
+            {"status": "failed", "activationId": activation}, {"status": "failed", "activationId": activation}]}
+        with patch.object(probe.helper, "client", return_value=(client, Mock())):
+            actual = probe.failed_diagnostics(Path("test-owned"), scenarios, time.monotonic() + 30)
+        self.assertEqual(actual, [{"activationId": activation, "state": "observed", "tree": tree}])
+        client.call.assert_called_once_with("--rpc-timeout-ms", "1500", "activation", "tree", activation,
+            "--page-size", "16", timeout=2)
+        self.assertEqual(scenarios["results"][1]["status"], "failed")
+
+    def test_unavailable_history_preserves_failure_without_raw_exception_or_retry(self):
+        from tools import dev_node_application_probe as probe
+        activation = "dev-" + "a" * 32
+        client = Mock()
+        client.call.side_effect = OSError("raw confidential producer message")
+        with patch.object(probe.helper, "client", return_value=(client, Mock())):
+            actual = probe.failed_diagnostics(Path("test-owned"), {"results": [
+                {"status": "failed", "activationId": activation}]}, time.monotonic() + 30)
+        self.assertEqual(actual, [{"activationId": activation, "state": "unavailable", "reason": "history-unavailable"}])
+        client.call.assert_called_once()
+        self.assertNotIn("confidential", str(actual))
+
+    def test_observation_deadline_bound_and_invalid_id_start_no_operator_command(self):
+        from tools import dev_node_application_probe as probe
+        rows = [{"status": "failed", "activationId": "dev-" + format(index, "032x")} for index in range(10)]
+        rows.insert(0, {"status": "failed", "activationId": "arbitrary external identity"})
+        client = Mock()
+        with patch.object(probe.helper, "client", return_value=(client, Mock())):
+            actual = probe.failed_diagnostics(Path("test-owned"), {"results": rows}, time.monotonic() - 1)
+        self.assertEqual(len(actual), 8)
+        self.assertTrue(all(row["reason"] == "observation-deadline" for row in actual))
+        client.call.assert_not_called()
+        with patch.object(probe.helper, "client") as initialize:
+            self.assertEqual(probe.failed_diagnostics(Path("test-owned"), {"results": [
+                {"status": "passed", "activationId": rows[1]["activationId"]}]}, time.monotonic() + 30), [])
+        initialize.assert_not_called()
+
+
 class InvocationRecovery(unittest.TestCase):
     def test_fault_probe_selects_signed_control_calls_without_matching_argument_data(self):
         from tools.dev_node_fault_probe import mutation

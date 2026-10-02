@@ -37,6 +37,134 @@ class PackagedProbe(unittest.TestCase):
         selected = extract(self.root, manifest, self.root / 'installed')
         self.assertEqual(selected.read_bytes(), b'harmless fixture 0')
 
+    def test_connect_negotiates_without_requiring_an_installed_workspace(self):
+        from types import SimpleNamespace
+        from tools.java_http_composition import packaged
+
+        frontend = self.root / 'frontend'
+        (frontend / 'bin').mkdir(parents=True)
+        (frontend / 'helper.pyz').write_bytes(b'owned test helper identity')
+        calls = []
+        api = SimpleNamespace(root=self.root, call=lambda *args: calls.append(args))
+        packaged._connect(api, SimpleNamespace(binary=frontend / 'bin' / 'latent-dev'), 'test-real-workspace')
+        self.assertEqual(calls, [('connect', '--workspace', 'test-real-workspace', '--backend-config',
+                                 self.root / 'test-real-workspace-backend.json')])
+        self.assertFalse((self.root / '.lsf-dev').exists())
+        config = json.loads((self.root / 'test-real-workspace-backend.json').read_bytes())
+        self.assertEqual(config['helperSha256'], 'sha256:' + hashlib.sha256(
+            b'owned test helper identity').hexdigest())
+
+    def test_installed_workspace_requires_the_real_private_owner_record(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.dev_workflow import paths, state
+        from tools.dev_workflow.common import DevError
+        from tools.java_http_composition import packaged
+
+        pwd = SimpleNamespace(getpwuid=lambda _uid: SimpleNamespace(pw_dir=str(self.root)))
+        with patch.dict(sys.modules, pwd=pwd), patch.object(os, 'geteuid', return_value=23001, create=True):
+            with self.assertRaises((DevError, FileNotFoundError)):
+                packaged._installed_workspace('test-real-workspace')
+            base = self.root / '.lsf-dev'
+            paths.new_directory(base)
+            original = state.workspace(base, 'test-real-workspace', create=True)
+            self.assertEqual(packaged._installed_workspace('test-real-workspace'), original)
+            state.atomic(original, 'owner.json', {'schemaVersion': 'latent.dev.owner.v1', 'id': 'other-workspace'})
+            with self.assertRaisesRegex(DevError, '^workspace-owner-mismatch$'):
+                packaged._installed_workspace('test-real-workspace')
+
+    def test_generation_uses_original_inventoried_tools_and_rejects_changed_bytes(self):
+        from tools.dev_workflow import common
+        from tools.java_http_composition import packaged
+
+        files, tools = [], []
+        for name in ('wasm-tools', 'wit-bindgen'):
+            raw = ('original ' + name).encode()
+            path = 'sdk/bin/' + name
+            selected = self.root / path
+            selected.parent.mkdir(parents=True, exist_ok=True)
+            selected.write_bytes(raw)
+            files.append({'path': path, 'size': len(raw), 'sha256': common.digest(raw)})
+            tools.append({'name': name, 'path': path, 'sha256': common.digest(raw), 'version': '1'})
+        inventory = {'schemaVersion': 'latent.dev.guest-tools.v1', 'language': 'java', 'ownerIssue': 548,
+            'sourceCommit': 'a' * 40, 'hostAbi': common.HOST_ABI, 'host': 'linux-x86_64', 'files': files}
+        inventory['identity'] = common.digest(common.encode(inventory))
+        raw = common.encode(inventory)
+        (self.root / 'guest-tools.json').write_bytes(raw)
+        descriptor = {'language': 'java', 'template': {'ownerIssue': 548, 'revision': 'a' * 40},
+            'build': {'inventory': {'path': 'guest-tools.json', 'sha256': common.digest(raw)}, 'tools': tools}}
+        actual, observation = packaged._generation_tools(self.root, descriptor)
+        self.assertEqual(actual, {name: self.root / 'sdk/bin' / name for name in ('wasm-tools', 'wit-bindgen')})
+        self.assertEqual(observation['inventory'], inventory['identity'])
+        (self.root / 'sdk/bin/wasm-tools').write_bytes(b'changed executable')
+        with self.assertRaisesRegex(common.DevError, 'guest-tool-companion-modified'):
+            packaged._generation_tools(self.root, descriptor)
+
+    def test_composition_frontend_hashes_the_actual_operator_string_path(self):
+        from types import SimpleNamespace
+        import time
+        from tools.composition_probe.frontend import Frontend
+        from tools.phase2_operator_process import Client
+
+        frontend = self.root / 'frontend'
+        frontend.write_bytes(b'original frontend executable')
+        operator = self.root / 'operator'
+        operator.write_bytes(b'original operator executable')
+        cancellation = SimpleNamespace(check=lambda: None)
+        client = Client(operator, self.root, cancellation, time.monotonic() + 10)
+        self.assertIsInstance(client.executable, str)
+        observed = Frontend(frontend, 'sha256:' + hashlib.sha256(frontend.read_bytes()).hexdigest(), self.root, client)
+        self.assertEqual(observed.operator_digest, 'sha256:' + hashlib.sha256(operator.read_bytes()).hexdigest())
+        client.executable = str(self.root / 'missing-operator')
+        with self.assertRaisesRegex(RuntimeError, '^identity-file$'):
+            Frontend(frontend, observed.expected, self.root, client)
+
+    def test_original_compiler_log_retention_keeps_finite_owner_and_count_bounds(self):
+        from tools.dev_workflow.common import DevError
+        from tools.java_http_composition import packaged
+
+        workspace = self.root / 'test-original-workspace'
+        logs = workspace / 'builds/actual-attempt/source/output/compiler-logs'
+        logs.mkdir(parents=True)
+        for index in range(128):
+            (logs / f'{index:03d}.log').write_bytes(b'original bounded log')
+        retained = packaged._compiler_logs({'test-original-workspace': workspace}, self.root / 'original-observation')
+        self.assertEqual(len(retained), 128)
+        (logs / '129.log').write_bytes(b'original log beyond the configured count')
+        with self.assertRaisesRegex(DevError, '^packaged-java-original-compiler-log-bound$'):
+            packaged._compiler_logs({'test-original-workspace': workspace}, self.root / 'failed-observation')
+        self.assertEqual(len(list(logs.iterdir())), 129)
+
+    def test_four_compiler_log_streams_keep_original_command_metadata_in_the_build_receipts(self):
+        from tools.java_http_composition import packaged
+
+        workspace = self.root / 'test-original-workspace'
+        original = {}
+        for attempt in range(4):
+            source = workspace / 'builds' / f'actual-attempt-{attempt}' / 'source'
+            cache = source / 'build-cache'
+            logs = source / 'output/compiler-logs'
+            cache.mkdir(parents=True)
+            logs.mkdir(parents=True)
+            for name in ('compiler-stdout.log', 'compiler-stderr.log'):
+                (cache / name).write_bytes(b'original captured build stream')
+            commands = []
+            for index in range(22):
+                (logs / f'{index:03d}.log').write_bytes(b'original raw compiler stream')
+                path = logs / f'{index:03d}.command.json'
+                row = {'stage': index, 'exitCode': 0}
+                path.write_bytes(json.dumps(row).encode())
+                commands.append(row)
+                original[path] = path.read_bytes()
+            complete = source / 'output/BUILD-COMPLETE.json'
+            complete.write_bytes(json.dumps({'formatVersion': 1, 'commands': commands}).encode())
+            original[complete] = complete.read_bytes()
+        retained = packaged._compiler_logs({'test-original-workspace': workspace}, self.root / 'observation')
+        self.assertEqual(len(retained), 96)
+        self.assertTrue(all(row['path'].endswith('.log') for row in retained))
+        self.assertEqual(len(original), 92)
+        self.assertTrue(all(path.read_bytes() == raw for path, raw in original.items()))
+
     @unittest.skipUnless(os.name == 'nt', 'actual Windows DACL required')
     def test_conductor_protects_only_its_new_windows_directory(self):
         from tools.dev_packaged_windows import make_private

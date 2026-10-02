@@ -9,6 +9,7 @@ pub(crate) mod phase2;
 pub(crate) mod policies;
 mod prepare;
 mod response;
+mod target_inspection;
 #[cfg(test)]
 mod tests;
 pub(crate) mod triggers;

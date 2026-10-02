@@ -22,6 +22,12 @@
             "required": true,
             "type": "string"
           },
+          "java_diagnostics": {
+            "default": false,
+            "description": "Build fresh provider-capable Java fixtures for the finite diagnostic campaign",
+            "required": false,
+            "type": "boolean"
+          },
           "platform": {
             "default": "all",
             "description": "Fresh platform schedule to execute with the approved candidates",
@@ -29,7 +35,8 @@
               "all",
               "windows",
               "windows-recovery",
-              "linux"
+              "linux",
+              "java-composition"
             ],
             "required": true,
             "type": "choice"
@@ -60,11 +67,12 @@
   },
   "requiredJobs": [
     "conductor-contracts",
+    "java-composition",
     "linux",
     "support",
     "windows"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add explicit optional fresh Java diagnostic campaign without changing historical platform schedules",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-packaged-qualification.yml"
 }

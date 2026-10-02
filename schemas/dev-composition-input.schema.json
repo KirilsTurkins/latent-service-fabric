@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/dev-composition-input.schema.json",
+  "title": "Finite developer composition input v1",
+  "description": "Declarations select exact identities; no preparation, execution, signing or permission is established. validate_semantics also enforces full u64, UTF-8/path/document bounds, identity-key uniqueness and references. Native WIT and Rust validators remain authoritative.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "tenant", "nodeProfile", "components", "triggers", "serviceEdges", "providers", "policies"],
+  "properties": {
+    "schemaVersion": {"const": "latent.composition.v1"},
+    "tenant": {"$ref": "#/$defs/identity"},
+    "nodeProfile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "javaGuest", "maximumWirePayloadBytes", "maximumRequestBodyBytes", "maximumResponseBodyBytes"],
+      "properties": {
+        "id": {"enum": ["standalone-java-v1", "http-java-v1", "former-http-global-values-v1", "static-site-v1"]},
+        "javaGuest": {"type": "boolean"},
+        "maximumWirePayloadBytes": {"$ref": "#/$defs/u64"},
+        "maximumRequestBodyBytes": {"$ref": "#/$defs/u64"},
+        "maximumResponseBodyBytes": {"$ref": "#/$defs/u64"}
+      }
+    },
+    "components": {"type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": {"$ref": "#/$defs/component"}},
+    "triggers": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/trigger"}},
+    "serviceEdges": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/edge"}},
+    "providers": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/provider"}},
+    "policies": {
+      "type": "array", "maxItems": 32, "uniqueItems": true,
+      "items": {"type": "object", "additionalProperties": false, "required": ["id", "digest"],
+        "properties": {"id": {"$ref": "#/$defs/identity"}, "digest": {"$ref": "#/$defs/digest"}}}
+    }
+  },
+  "$defs": {
+    "identity": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$"},
+    "shortIdentity": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$"},
+    "providerProfile": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$"},
+    "contract": {"type": "string", "maxLength": 256, "pattern": "^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*/[a-z][a-z0-9-]*@[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "engineDigest": {"type": "string", "pattern": "^blake3:[0-9a-f]{64}$"},
+    "u64": {"type": "string", "maxLength": 20, "pattern": "^(0|[1-9][0-9]{0,19})$", "description": "Canonical decimal unsigned 64-bit value; semantic validation checks the numeric ceiling."},
+    "positiveU64": {"type": "string", "maxLength": 20, "pattern": "^[1-9][0-9]{0,19}$", "description": "Positive canonical u64 static web generation; semantic validation checks the numeric ceiling."},
+    "u32Counter": {"type": "string", "maxLength": 10, "pattern": "^(0|[1-9][0-9]{0,9})$", "description": "Canonical decimal childCalls, outboundRequests or effectCount; semantic validation checks the u32 ceiling."},
+    "optionalWallLimit": {"anyOf": [{"$ref": "#/$defs/u64"}, {"type": "null"}], "description": "Null means invocation-dependent, never a fabricated deadline."},
+    "publicationId": {"type": "string", "pattern": "^publication:sha256:[0-9a-f]{64}$"},
+    "revisionId": {"type": "string", "pattern": "^revision-v1:sha256:[0-9a-f]{64}$"},
+    "relativePath": {"type": "string", "minLength": 1, "maxLength": 1024, "description": "paths.relative applies 1024 UTF-8 bytes, 32 segments, 240 bytes per segment and portable traversal/alias/control/reserved-name restrictions."},
+    "budget": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cpuFuel", "memoryBytes", "wallTimeLimitMillis", "childCalls", "outboundRequests", "stateReadBytes", "stateWriteBytes", "blobReadBytes", "blobWriteBytes", "logBytes", "effectCount"],
+      "properties": {
+        "cpuFuel": {"$ref": "#/$defs/u64"}, "memoryBytes": {"$ref": "#/$defs/u64"}, "wallTimeLimitMillis": {"$ref": "#/$defs/optionalWallLimit"}, "childCalls": {"$ref": "#/$defs/u32Counter"},
+        "outboundRequests": {"$ref": "#/$defs/u32Counter"}, "stateReadBytes": {"$ref": "#/$defs/u64"}, "stateWriteBytes": {"$ref": "#/$defs/u64"}, "blobReadBytes": {"$ref": "#/$defs/u64"},
+        "blobWriteBytes": {"$ref": "#/$defs/u64"}, "logBytes": {"$ref": "#/$defs/u64"}, "effectCount": {"$ref": "#/$defs/u32Counter"}
+      }
+    },
+    "partialBudget": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "cpuFuel": {"$ref": "#/$defs/u64"}, "memoryBytes": {"$ref": "#/$defs/u64"}, "wallTimeLimitMillis": {"$ref": "#/$defs/optionalWallLimit"}, "childCalls": {"$ref": "#/$defs/u32Counter"},
+        "outboundRequests": {"$ref": "#/$defs/u32Counter"}, "stateReadBytes": {"$ref": "#/$defs/u64"}, "stateWriteBytes": {"$ref": "#/$defs/u64"}, "blobReadBytes": {"$ref": "#/$defs/u64"},
+        "blobWriteBytes": {"$ref": "#/$defs/u64"}, "logBytes": {"$ref": "#/$defs/u64"}, "effectCount": {"$ref": "#/$defs/u32Counter"}
+      }
+    },
+    "target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["service", "route", "revision", "publicationId", "deploymentId", "deploymentGeneration", "contract", "function"],
+      "properties": {
+        "service": {"$ref": "#/$defs/identity"}, "route": {"$ref": "#/$defs/identity"}, "revision": {"$ref": "#/$defs/revisionId"},
+        "publicationId": {"$ref": "#/$defs/publicationId"}, "deploymentId": {"$ref": "#/$defs/identity"},
+        "deploymentGeneration": {"$ref": "#/$defs/positiveU64"},
+        "contract": {"$ref": "#/$defs/contract"}, "function": {"$ref": "#/$defs/identity"}
+      }
+    },
+    "staticTarget": {
+      "type": "object", "additionalProperties": false,
+      "required": ["publicationId", "webGeneration"],
+      "properties": {"publicationId": {"$ref": "#/$defs/publicationId"}, "webGeneration": {"$ref": "#/$defs/positiveU64"}}
+    },
+    "export": {
+      "type": "object", "additionalProperties": false, "required": ["contract", "functions"],
+      "properties": {"contract": {"$ref": "#/$defs/contract"}, "functions": {"type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true, "items": {"$ref": "#/$defs/shortIdentity"}}}
+    },
+    "component": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "packageDigest", "language", "witShape", "publicationKind", "target", "imports", "exports"],
+      "properties": {
+        "id": {"$ref": "#/$defs/shortIdentity"}, "packageDigest": {"$ref": "#/$defs/digest"}, "componentDigest": {"$ref": "#/$defs/digest"},
+        "releaseDigest": {"$ref": "#/$defs/digest"}, "contractMetadataDigest": {"$ref": "#/$defs/digest"}, "assetsDigest": {"$ref": "#/$defs/digest"}, "webManifestDigest": {"$ref": "#/$defs/digest"},
+        "language": {"enum": ["rust", "c", "java", "dotnet", "go", "typescript", "static"]},
+        "witShape": {"enum": ["nested-values-v1", "static-assets-v1", "resources", "futures", "streams", "unknown"]},
+        "publicationKind": {"enum": ["capsule", "static-site"]},
+        "target": {}, "imports": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"$ref": "#/$defs/contract"}},
+        "exports": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/export"}},
+        "budget": {"$ref": "#/$defs/budget"}, "componentPath": {"$ref": "#/$defs/relativePath"},
+        "manifestPath": {"$ref": "#/$defs/relativePath"}, "manifestDigest": {"$ref": "#/$defs/digest"}, "metadataPath": {"$ref": "#/$defs/relativePath"},
+        "engineConfigurationDigest": {"$ref": "#/$defs/engineDigest"}, "dynamicHeaders": {"type": "boolean"},
+        "headerNames": {"type": "array", "maxItems": 64, "items": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[!#$%&'*+.^_`|~0-9A-Za-z-]+$"}},
+        "captureBudget": {"$ref": "https://latent.dev/schemas/static-site-budget.schema.json"}
+      },
+      "dependentRequired": {"manifestPath": ["manifestDigest"], "manifestDigest": ["manifestPath"]},
+      "allOf": [{"if": {"properties": {"publicationKind": {"const": "static-site"}}},
+        "then": {
+          "required": ["assetsDigest", "webManifestDigest"],
+          "properties": {"language": {"const": "static"}, "witShape": {"const": "static-assets-v1"}, "imports": {"maxItems": 0}, "exports": {"maxItems": 0}, "target": {"$ref": "#/$defs/staticTarget"}},
+          "not": {"anyOf": [{"required": ["releaseDigest"]}, {"required": ["componentDigest"]}, {"required": ["contractMetadataDigest"]}, {"required": ["engineConfigurationDigest"]}, {"required": ["budget"]}, {"required": ["componentPath"]}, {"required": ["metadataPath"]}]}
+        },
+        "else": {"required": ["releaseDigest", "componentDigest", "contractMetadataDigest", "budget"], "properties": {"target": {"$ref": "#/$defs/target"}}, "not": {"anyOf": [{"required": ["assetsDigest"]}, {"required": ["webManifestDigest"]}]}}}]
+    },
+    "trigger": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "component"],
+      "properties": {"kind": {"enum": ["http", "typed", "static"]}, "component": {"$ref": "#/$defs/shortIdentity"}, "contract": {"$ref": "#/$defs/contract"}, "function": {"$ref": "#/$defs/shortIdentity"}},
+      "allOf": [{"if": {"properties": {"kind": {"const": "static"}}}, "then": {"not": {"anyOf": [{"required": ["contract"]}, {"required": ["function"]}]}}, "else": {"required": ["contract", "function"]}}]
+    },
+    "edge": {
+      "type": "object", "additionalProperties": false, "required": ["from", "to", "contract", "function", "declaredGrantDigest", "requestBudget"],
+      "properties": {"from": {"$ref": "#/$defs/shortIdentity"}, "to": {"anyOf": [{"$ref": "#/$defs/shortIdentity"}, {"type": "null"}]}, "contract": {"$ref": "#/$defs/contract"}, "function": {"$ref": "#/$defs/shortIdentity"}, "declaredGrantDigest": {"$ref": "#/$defs/digest"}, "requestBudget": {"$ref": "#/$defs/partialBudget"}}
+    },
+    "provider": {
+      "type": "object", "additionalProperties": false, "required": ["contract", "providerProfile", "configurationDigest", "bindingId", "bindingDigest", "policyIds"],
+      "properties": {
+        "contract": {"$ref": "#/$defs/contract"}, "providerProfile": {"$ref": "#/$defs/providerProfile"},
+        "configurationDigest": {"$ref": "#/$defs/digest"}, "configurationEpoch": {"$ref": "#/$defs/u64"},
+        "bindingId": {"$ref": "#/$defs/identity"}, "bindingDigest": {"$ref": "#/$defs/digest"},
+        "policyIds": {"type": "array", "maxItems": 8, "uniqueItems": true, "items": {"$ref": "#/$defs/identity"}}
+      }
+    }
+  }
+}

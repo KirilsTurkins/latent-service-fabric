@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import re
 import socket
 import time
 
@@ -14,6 +15,47 @@ from tools.dev_workflow import helper, node_scenarios, node_test_profile, paths,
 from tools.dev_workflow.common import DevError, HOST_ABI, decode, digest, encode, require
 from tools.native_runtime import configuration
 from tools.native_runtime.layout import Layout
+
+
+def failed_diagnostics(root: Path, scenarios: dict, deadline: float) -> list[dict]:
+    """Read bounded privileged history for original failed activations once."""
+    selected = []
+    for row in scenarios.get("results", []):
+        activation = row.get("activationId")
+        if (row.get("status") == "failed" and isinstance(activation, str)
+                and re.fullmatch(r"dev-[a-f0-9]{32}", activation)
+                and activation not in selected and len(selected) < 8):
+            selected.append(activation)
+    if not selected:
+        return []
+    observed = []
+    until = min(deadline, time.monotonic() + 16)
+    try:
+        client, _journal = helper.client(root, deadline=until)
+    except Exception:
+        return [{"activationId": activation, "state": "unavailable", "reason": "client-unavailable"}
+                for activation in selected]
+    for activation in selected:
+        if time.monotonic() >= until:
+            observed.append({"activationId": activation, "state": "unavailable", "reason": "observation-deadline"})
+            continue
+        try:
+            response = client.call("--rpc-timeout-ms", "1500", "activation", "tree", activation,
+                                   "--page-size", "16", timeout=2)
+            require(response.get("category") == "success" and response.get("outcomeKnown") is True,
+                    "diagnostic-observation-unavailable")
+            tree = response["data"]
+            require(tree.get("schemaVersion") == 1 and tree.get("historyAvailable") is True
+                    and isinstance(tree.get("nodes"), list) and len(tree["nodes"]) <= 16
+                    and len(encode(tree)) <= 65536
+                    and any(node.get("activationId") == activation for node in tree["nodes"]),
+                    "diagnostic-observation-invalid")
+            observed.append({"activationId": activation, "state": "observed", "tree": tree})
+        except Exception:
+            # The original scenario remains failed. No invocation or mutation
+            # is retried, and raw exception messages are not retained.
+            observed.append({"activationId": activation, "state": "unavailable", "reason": "history-unavailable"})
+    return observed
 
 
 def stage_runtime(root: Path, supplied: Path) -> dict:
@@ -70,6 +112,7 @@ def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path,
         report["phase"] = "common-scenarios"
         report["tests"] = node_scenarios.run(root, {"environment": "node", "selection": selection or []}, deadline=deadline)
         state.atomic(output, "node-tests.json", report["tests"])
+        report["scenarioDiagnostics"] = failed_diagnostics(root, report["tests"], deadline)
         require(report["tests"]["passed"], "source-node-application-scenarios-failed")
         selected = state.load(root, "last-deployment.json")
         report["phase"] = "retained-restart"
@@ -81,6 +124,7 @@ def run(root: Path, supplied: Path, tools: Path, descriptor: dict, output: Path,
         report["retained"] = node_scenarios.run(root, {"environment": "node", "selection":
                                                 retained_selection or [report["tests"]["selection"][0]]},
                                                 deadline=deadline)
+        report["retainedDiagnostics"] = failed_diagnostics(root, report["retained"], deadline)
         require(report["retained"]["passed"] and state.load(root, "last-deployment.json") == selected,
                 "source-node-retained-invocation-must-not-redeploy")
         report["retainedDeployment"] = selected

@@ -12,6 +12,11 @@ This reference is for compiler integration, custom package signing and direct
 node admission. The complete source recipe is retained here for developers who
 need to work below the packaged workflow.
 
+To expose selected typed operations through shared HTTP ingress, use the
+[maintained Java adapter generator](java-http-composition.md). It keeps the
+typed domain contract, includes explicit private-operation exclusions and
+checks stale source-bound generation before building.
+
 
 Create an independent Java project, edit its typed contract, and run its signed
 package on a local node. Your application lives outside the LSF checkout and
@@ -90,6 +95,17 @@ and replace `greeting` in the creation command with either template name.
 `http-status` adds a typed, asynchronous HTTP call; its import still needs an
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
+
+When authoring an inbound buffered web application, validate the actual response
+before returning the generated record with the development SDK's
+[`BufferedWebResponseValidator`](../../sdk/java-guest/runtime/dev/latent/guest/BufferedWebResponseValidator.java).
+Its fixed local reasons explain reserved host headers and bounded body/header,
+redirect, media and cookie rules before live traffic. The
+[SDK example](../../sdk/java-guest/README.md#inbound-buffered-web-responses-development)
+and [complete ownership table](../security/browser-boundary.md#response-headers)
+show the supported contract. Dynamically calculated responses still require
+execution and current host validation; a declared safe header list does not
+qualify an application or change the shipped `same-origin` referrer policy.
 
 ## 2. Build and package the project
 

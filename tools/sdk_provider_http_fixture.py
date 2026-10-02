@@ -136,6 +136,14 @@ def hold(connection, directory, selected, owner_deadline):
     raise ValueError("held provider socket did not physically close")
 
 
+def observe_held_get(method, directory, selected):
+    """One fixed fixture mode proves the method actually received by this peer."""
+    if selected == "hold-java-provider-timeout":
+        if method != b"GET":
+            raise ValueError("provider timeout fixture requires GET")
+        marker(directory, "get-" + selected)
+
+
 def run(directory, *, deadline=None):
     counts = {"requests": 0, "authorized": 0, "unexpected": 0, "holds": 0, "closedHolds": 0}
     # An explicit absolute owner deadline cannot be extended by process startup.
@@ -159,6 +167,7 @@ def run(directory, *, deadline=None):
                 selected = mode(directory)
                 if authorized and expected and selected.startswith("hold-"):
                     counts["holds"] += 1
+                    observe_held_get(method, directory, selected)
                     hold(connection, directory, selected, deadline)
                     counts["closedHolds"] += 1
                 else:
