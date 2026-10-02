@@ -9,6 +9,12 @@ from . import state
 from .common import DevError, digest, encode, members, require
 
 MAX_HISTORY = 32
+RPC_FAILURE_CODES = frozenset({
+    "cancelled", "unknown", "deadline-exceeded", "unimplemented", "internal",
+    "unavailable", "data-loss", "out-of-range", "resource-exhausted",
+    "invalid-argument", "not-found", "already-exists", "permission-denied",
+    "unauthenticated", "failed-precondition", "aborted",
+})
 
 
 class Journal:
@@ -46,11 +52,16 @@ class Journal:
             error = result.get("error")
             code = error.get("code") if isinstance(error, dict) else None
             category = result.get("category")
+            rpc_code = error.get("grpcCode") if isinstance(error, dict) else None
+            rpc_observation = ({"grpcCode": rpc_code}
+                if code == "rpc-failed" and category == "transport-failure"
+                and type(rpc_code) is str and rpc_code in RPC_FAILURE_CODES else {})
             state.atomic(self.root, "last-operation-observation.json", {
                 "id": operation["id"], "kind": operation["kind"], "resultSha256": digest(encode(result)),
                 "outcomeKnown": False, "requestDispatched": result.get("requestDispatched") is True,
                 "category": category if category in {"transport-failure", "platform-failure", "not-found"} else "unknown",
                 "code": code if isinstance(code, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code) else None,
+                **rpc_observation,
             })
             raise DevError("operation-outcome-uncertain-use-recover", uncertain=True)
         if operation["kind"] == "policy" and result.get("category") == "success":
