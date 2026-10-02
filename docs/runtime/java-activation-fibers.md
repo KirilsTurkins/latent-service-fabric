@@ -265,7 +265,7 @@ factory qualification, dependency safe-point coverage and measured active/parked
 owner plateaus are also required for #741. Issues #741, #736 and the SDK
 Library milestone remain open.
 
-The isolated CompletableFuture candidate supplies pending `CompletableFuture`,
+The frozen e58 CompletableFuture component supplies pending `CompletableFuture`,
 `CompletionStage` and `CompletionException` through their unchanged standard
 class identities. It implements the synchronous and asynchronous stage families,
 composition, recovery, aggregation, pending `get`/`join`, cancellation and default
@@ -337,7 +337,7 @@ The [source-bound receipt](../testing/evidence/java-completable-component-2026-1
 records the exact component producer, controls, original finite ceilings and
 remaining qualification.
 
-The five normal host tools selected for the next signed run are separately
+The five normal host tools previously selected for the signed run are separately
 attributed to `acb79889ff1ec6448fc33f9911203fafa21529d8`. Their hashes and all
 7,402 source Git blobs were independently verified. That input preflight executed
 no Java component. The twelve signed calls and physical node/owner retirement
@@ -366,8 +366,44 @@ reconciled against actual new models before this prototype can prepare a guest.
 No component has been compiled or executed from this continuation, and the e58
 component receipt does not apply to its changed SDK bytes.
 
-An actual JDK delayed-executor probe separately records that the delay starts at
-`execute`, a null command is passed to the base executor after the delay, and a
-later base-executor rejection leaves the supplied future pending. The port's
-`delayedExecutor` remains unimplemented while its dispatch and physical
-cancellation lifetimes are resolved. These source results leave #741 open.
+The separate delayed-executor source prototype
+`ef6e14fb4668c1d57516cfe83cbc67535076ace0` adds both standard `delayedExecutor`
+overloads. The delay starts at `execute`; a null command reaches an arbitrary
+base executor after that delay. Cancellation or early completion still dispatches
+the base executor, and the supplier observes the already-completed future and
+does no work. A later submission failure leaves the future pending, matching
+the reference JDK.
+
+An arbitrary executor can enqueue a command and then throw, including
+`RejectedExecutionException`. That exception alone does not prove rejection.
+The SDK retains the accepted task and physical owners until the command runs
+or the whole owning store retires. Logical interruption cannot refund that
+work. Immediate rollback requires a witness from the SDK-owned queue that
+the command was never installed or was successfully removed before execution.
+The original admission and guest ceilings remain unchanged.
+
+The [delayed source receipt](../testing/evidence/java-completable-delayed-source-2026-10-02.json)
+records 46 matching actual JDK observables, 82 natural physical-retirement
+observables, 28 controls for the actual owned admission witness, and 12 controls
+that retain arbitrary rejected work. The original and timed source controls also
+pass unchanged. The comparison and uncertain-rejection programs terminate their
+whole owned JVM with the uncertain work still accounted for; those exits do not
+establish normal guest quiescence. The natural-retirement controls separately
+wait for tasks and owners to reach zero.
+
+The first bounded actual model inspection of ef6e14 used Windows Temurin
+25.0.3+9 and the ten independently verified SDK-locked TeaVM 0.15.0 JARs. Its
+nineteen Java sources compiled successfully. The unchanged maintained guard
+then failed at `unsupported-method-no-fallback`: it requires `orTimeout` to be
+absent, while this continuation implements that method. The attempt exited 1 in
+24.712 seconds and is retained as a failed qualification. Both owned Windows
+Jobs reported zero active processes after physical retirement; the SDK, source,
+JAR and JDK inputs remained unchanged. The old guard and expected body counts
+were preserved. New helper and coroutine qualification remains pending.
+
+The earlier pinned Linux Java image and input volumes were absent after the
+authorized cleanup. This Windows model inspection used the surviving locked
+JARs directly; it acquired nothing and invoked no Docker, Gradle, Cargo, native
+compiler, component compiler, signer or node. Its tool tuple differs from the
+earlier Linux component producer. No component or normal signed execution has
+been produced from the timed or delayed continuation. Issue #741 remains open.
