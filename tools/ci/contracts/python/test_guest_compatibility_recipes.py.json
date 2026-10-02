@@ -19,7 +19,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f15ffd77977c99cfa45ba3b03b8e68a18dfce50242c3d474a23232c845d6a743",
-        "class:setup-sha256:2683bbfde9e4b9297c50643788924c0114546f1303d3a307427f92f0bc61c0f0"
+        "class:setup-sha256:c7bbbd02e1f2a6f869e7be31aba1b5bb0e2977147b5b6bb12c120f43986df46f"
       ],
       "skipSites": []
     },
@@ -31,7 +31,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f15ffd77977c99cfa45ba3b03b8e68a18dfce50242c3d474a23232c845d6a743",
-        "class:setup-sha256:2683bbfde9e4b9297c50643788924c0114546f1303d3a307427f92f0bc61c0f0"
+        "class:setup-sha256:c7bbbd02e1f2a6f869e7be31aba1b5bb0e2977147b5b6bb12c120f43986df46f"
       ],
       "skipSites": []
     },
@@ -122,6 +122,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_compatibility_recipes.py",
-  "reviewReason": "Nine additive actual recipe capture/distribution controls preserve V4-only sources without V5 material, bind explicitly selected V5 bytes before first use, reject missing/changed/incorrect manifests and changed original recipes; all39 historical compatibility/profile cases and guards stay unchanged.",
+  "reviewReason": "Retain all original ABI test bodies and execution/skip guards; the two advertised-distribution fixtures now capture the exact newer shared dependency/frontend source closure required by production staging.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

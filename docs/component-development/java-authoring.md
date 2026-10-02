@@ -116,6 +116,23 @@ The output includes `component.wasm`, `capsule.json`, `contracts.json`,
 Full-width WIT integers retain their original types; application errors remain
 `result` values. Unsupported WIT types fail explicitly during contract derivation.
 
+For the explicit SDK activation runtime profile, use
+`--runtime-profile teavm-activation-fibers-v1` on the build command. The selected
+world must declare `latent:runtime/activation@0.1.0` and
+`latent:clock/monotonic@0.1.0`. The compiler preserves the application's original
+Java classes and stages the SDK's runtime substitutions, continuation handling
+and owned dispatch. It records source origins and the selected checkpoint class
+index in `source-origins.json` and `runtime-profile.json`; both become signed
+build materials after the entire build succeeds. The compatibility check captures
+the frozen V5 ABI from the declared WIT surface. Operator provider installation
+and grants remain separate requirements.
+
+`--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
+dependency cache. Gradle writes locks and updates to the build's private home.
+Choose one cache mode per build. Profile selection does not change invocation
+limits or establish complete Java concurrency qualification; the measured
+boundaries are described in [Java activation fibers](../runtime/java-activation-fibers.md).
+
 ## 3. Sign for this local experiment
 
 The following signer creates short-lived publisher and builder keys in memory,

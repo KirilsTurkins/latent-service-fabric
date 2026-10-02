@@ -219,6 +219,12 @@ class Compiler:
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
         for package in dependencies(wit, self.platform): copy_wit_tree(package, staged / "deps" / package.name)
+        if activation_profile:
+            declared = wit_surface(json.loads(self.run("activation-profile-wit", "wasm-tools",
+                "component", "wit", staged, "--json")), world)
+            required_imports = {"latent:runtime/activation@0.1.0", "latent:clock/monotonic@0.1.0"}
+            if not required_imports <= set(declared["imports"]):
+                raise ValueError("Java activation profile requires explicit runtime and monotonic clock WIT imports")
         bindings = generate(self.run, staged, world, destination / "bindings", activation_profile=activation_profile)
         second = generate(self.run, staged, world, destination / "bindings-check", activation_profile=activation_profile)
         if second != bindings: raise ValueError("nondeterministic Java WIT bindings")
