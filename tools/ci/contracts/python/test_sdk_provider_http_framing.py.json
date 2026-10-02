@@ -1,0 +1,218 @@
+{
+  "cases": [
+    "ProviderHttpFramingTests.test_chunk_size_extensions_nonhex_signs_and_overlong_lines_reject",
+    "ProviderHttpFramingTests.test_chunked_post_accepts_binary_and_exact4096_bytes_in16_chunks",
+    "ProviderHttpFramingTests.test_content_length_and_absent_body_preserve_existing_results_and4096_boundary",
+    "ProviderHttpFramingTests.test_content_length_numeric_ambiguity_overflow_and_truncation_reject",
+    "ProviderHttpFramingTests.test_credentials_and_route_decisions_remain_independent_of_framing",
+    "ProviderHttpFramingTests.test_duplicate_and_ambiguous_framing_reject_case_insensitive_and_both_orders",
+    "ProviderHttpFramingTests.test_fragmented_chunk_reads_keep_original_absolute_deadline_and_two_second_cap",
+    "ProviderHttpFramingTests.test_framing_header_whitespace_folding_and_control_bytes_reject",
+    "ProviderHttpFramingTests.test_get_head_and_undeclared_payload_reject_for_both_framings",
+    "ProviderHttpFramingTests.test_malformed_data_terminators_and_bare_linefeeds_reject",
+    "ProviderHttpFramingTests.test_original8192_header_bytes_and16_fields_remain_hard_bounds",
+    "ProviderHttpFramingTests.test_seventeenth_data_chunk_and_decoded4097_bytes_reject_at_original_body_cap",
+    "ProviderHttpFramingTests.test_trailers_and_queued_bytes_after_final_chunk_reject_even_across_one_byte_reads",
+    "ProviderHttpFramingTests.test_truncated_chunk_size_payload_terminator_and_zero_chunk_reject",
+    "ProviderHttpFramingTests.test_unknown_stacked_repeated_and_empty_transfer_codings_reject",
+    "ProviderHttpFramingTests.test_valid_empty_chunked_get_and_head_accept_fragmented_canonical_framing"
+  ],
+  "guards": {
+    "ProviderHttpFramingTests.test_chunk_size_extensions_nonhex_signs_and_overlong_lines_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_chunked_post_accepts_binary_and_exact4096_bytes_in16_chunks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_content_length_and_absent_body_preserve_existing_results_and4096_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_content_length_numeric_ambiguity_overflow_and_truncation_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_credentials_and_route_decisions_remain_independent_of_framing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_duplicate_and_ambiguous_framing_reject_case_insensitive_and_both_orders": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_fragmented_chunk_reads_keep_original_absolute_deadline_and_two_second_cap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_framing_header_whitespace_folding_and_control_bytes_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_get_head_and_undeclared_payload_reject_for_both_framings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_malformed_data_terminators_and_bare_linefeeds_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_original8192_header_bytes_and16_fields_remain_hard_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_seventeenth_data_chunk_and_decoded4097_bytes_reject_at_original_body_cap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_trailers_and_queued_bytes_after_final_chunk_reject_even_across_one_byte_reads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_truncated_chunk_size_payload_terminator_and_zero_chunk_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_unknown_stacked_repeated_and_empty_transfer_codings_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_valid_empty_chunked_get_and_head_accept_fragmented_canonical_framing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sdk_provider_http_framing.py",
+  "reviewReason": "Add real-socket framing controls for bounded chunked requests; preserve all historical lifetime, authority and cleanup cases.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
