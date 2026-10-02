@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Fix type-use selector punctuation in imported package versions while retaining exact prerelease/build identity and real WIT parser authority.",
+  "reviewReason": "Preserve exact versioned WIT dependency closure, type-use selector parsing, and all source/platform overlap refusals across the reviewed development reconciliation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "6e3289de7838781f404756c6eadd10e5fc04b57237349b2f8db70ee21429a642"
 }
