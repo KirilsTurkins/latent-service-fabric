@@ -13,6 +13,9 @@ final import checks, missing runtime support and observations that still need
 actual execution evidence.
 The [packaged resource profile](packaged-resources.md) defines immutable declared
 bytes, bounded logical paths and source/dependency/package identity checks.
+The [server source contract](server-source.md) defines finite listener-free
+endpoint declarations and authenticated trigger selection; language lowering
+and real ingress qualification remain explicit per-profile requirements.
 
 [Packaged application development](../start/application-development.md)
 is the starting point for installing their compilers and creating a project.
