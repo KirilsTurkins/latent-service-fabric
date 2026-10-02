@@ -37,6 +37,21 @@ public final class CompletableFutureAdvancedModelControl {
             || name.startsWith(SDK + "CompletableFuture$")
                 && HELPERS.contains(name.substring((SDK + "CompletableFuture$").length()));
     }
+    private static FieldReader resolvedField(ClassReaderSource source, FieldReference reference) {
+        return resolvedField(source, reference.getClassName(), reference.getFieldName(), new HashSet<>());
+    }
+    private static FieldReader resolvedField(ClassReaderSource source, String owner, String name, Set<String> visited) {
+        if (!visited.add(owner)) return null;
+        ClassReader model = source.get(owner);
+        if (model == null) return null;
+        FieldReader direct = model.getField(name);
+        if (direct != null) return direct;
+        for (String identity : model.getInterfaces()) {
+            FieldReader inherited = resolvedField(source, identity, name, visited);
+            if (inherited != null) return inherited;
+        }
+        return model.getParent() == null ? null : resolvedField(source, model.getParent(), name, visited);
+    }
     private static void references(ClassHolder model, ClasspathClassHolderSource source) {
         var hierarchy = new ClassHierarchy(source);
         for (FieldHolder field : model.getFields()) canonical(field.getType());
@@ -56,14 +71,14 @@ public final class CompletableFutureAdvancedModelControl {
                 } else if (instruction instanceof ConstructInstruction construct && owned(construct.getType())) {
                     require(source.get(construct.getType()) != null, "advanced-resolved-owned-construction");
                 } else if (instruction instanceof GetFieldInstruction field && owned(field.getField().getClassName())) {
-                    FieldReader resolved = hierarchy.resolve(field.getField());
+                    FieldReader resolved = resolvedField(source, field.getField());
                     require(resolved != null && resolved.getType().equals(field.getFieldType()),
                         "advanced-resolved-owned-read:" + field.getField()
                             + ";declared=" + (resolved == null ? null : resolved.getType())
                             + ";instruction=" + field.getFieldType() + ";in=" + method.getReference());
                     canonical(field.getFieldType());
                 } else if (instruction instanceof PutFieldInstruction field && owned(field.getField().getClassName())) {
-                    FieldReader resolved = hierarchy.resolve(field.getField());
+                    FieldReader resolved = resolvedField(source, field.getField());
                     require(resolved != null && resolved.getType().equals(field.getFieldType()),
                         "advanced-resolved-owned-write:" + field.getField()
                             + ";declared=" + (resolved == null ? null : resolved.getType())
@@ -122,12 +137,14 @@ public final class CompletableFutureAdvancedModelControl {
             require(model.getName().equals(identity), "advanced-model-identity-preserved");
         }
         for (ClassHolder model : models) references(model, source);
-        var hierarchy = new ClassHierarchy(source);
-        FieldReader inherited = hierarchy.resolve(SDK + "CompletableFuture$Aggregate", "both");
+        FieldReader inherited = resolvedField(source, new FieldReference(SDK + "CompletableFuture$Aggregate", "both"));
         require(inherited != null && inherited.getType().equals(ValueType.BOOLEAN)
             && inherited.getReference().getClassName().equals(SDK + "CompletableFuture$Action"),
             "advanced-real-inherited-owned-field");
-        require(hierarchy.resolve(SDK + "CompletableFuture$Aggregate", "absentControlField") == null,
+        FieldReader declared = resolvedField(source, new FieldReference(STANDARD + "CompletableFuture", "dependents"));
+        require(declared != null && declared.getType().equals(ValueType.object("java.util.ArrayList")),
+            "advanced-real-declared-owned-field");
+        require(resolvedField(source, new FieldReference(SDK + "CompletableFuture$Aggregate", "absentControlField")) == null,
             "advanced-unresolved-owned-field-rejected");
         method(future, new MethodDescriptor("orTimeout", ValueType.LONG, UNIT, FUTURE));
         method(future, new MethodDescriptor("completeOnTimeout", ValueType.object("java.lang.Object"), ValueType.LONG, UNIT, FUTURE));
