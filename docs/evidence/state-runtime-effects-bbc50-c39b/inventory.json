@@ -98,8 +98,8 @@
     },
     {
       "path": "r1/source.json",
-      "bytes": 531,
-      "sha256": "5be1c69ba3816edcc9a57c1c4cf73bb18560883971a274a2161a73f2aa024577"
+      "bytes": 528,
+      "sha256": "73e5c9017a7f72aff8bf73da897f9b06f9606a9e5e85d10ff18a595b3b284822"
     },
     {
       "path": "r2/app-check.exit.txt",
@@ -168,8 +168,8 @@
     },
     {
       "path": "r2/source.json",
-      "bytes": 531,
-      "sha256": "5be1c69ba3816edcc9a57c1c4cf73bb18560883971a274a2161a73f2aa024577"
+      "bytes": 528,
+      "sha256": "73e5c9017a7f72aff8bf73da897f9b06f9606a9e5e85d10ff18a595b3b284822"
     },
     {
       "path": "r3/app-check.exit.txt",

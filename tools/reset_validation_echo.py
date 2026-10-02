@@ -25,9 +25,20 @@ PACKAGE_REQUIRED = frozenset({"observation.json", "package-source.json", "echo-c
     "capsule.json", "contracts.json", "wit-lock.json", "wit/context.wit", "wit/echo.wit", "wit/log.wit"})
 PACKAGE_OPTIONAL = frozenset({"sbom-inputs.json"})
 
+# Pinned wasm-tools 1.254.0 output from the maintained legacy Echo component.
+# rust-cache 6323deb misidentifies interface/deps as a Cargo profile, removes
+# component.wit, then stops at its absent build directory. Only these exact
+# generated dependency bytes may authenticate that otherwise incomplete owner.
+LEGACY_CACHE_WIT = {
+    "interface/deps/context.wit": "sha256:e905b8170d726917e488987b8eff711ba94f30bd52fa53c9ea86c40e1795e99a",
+    "interface/deps/echo.wit": "sha256:4139d4e54438a9c3eabbb5fb7a3cf7f93b4df7badcb75cd1d7c562992d179c68",
+    "interface/deps/log.wit": "sha256:b54ae8bf25c912a2c12be5321b7e32b395cf5e56a449620682eeaf169bcdf341",
+}
+
 
 def _inventory(directory: Path, required: frozenset[str], optional: frozenset[str],
-               allowed_directories: set[str]) -> None:
+               allowed_directories: set[str], retained_profile: dict[str, str] | None = None,
+               *, allow_empty: bool = False) -> bool:
     pending = [directory]
     files = set()
     entries = 0
@@ -54,8 +65,22 @@ def _inventory(directory: Path, required: frozenset[str], optional: frozenset[st
                     files.add(name)
                 else:
                     raise SnapshotError("validator fixture contains an unknown file or directory")
+    # An empty owner cannot authenticate itself. The pinned cleaner's empty
+    # package skeleton is accepted only with its exact retained legacy WIT
+    # sibling, after both owners' paths, links and entry bounds are checked.
+    if not files:
+        if allow_empty:
+            return False
+        raise SnapshotError("validator fixture is incomplete")
+    if retained_profile is not None and files == set(retained_profile):
+        for name, expected in retained_profile.items():
+            actual = file_identity(directory / name, "cached-generated-wit", 256 * 1024)
+            if actual["digest"] != expected:
+                raise SnapshotError("validator cached fixture dependency bytes have changed")
+        return False
     if not required <= files:
         raise SnapshotError("validator fixture is incomplete")
+    return True
 
 
 def _pairs(items):
@@ -78,9 +103,11 @@ def _metadata(directory: Path, name: str) -> dict:
     return result
 
 
-def _recognized(directory: Path, package: bool) -> None:
+def _recognized(directory: Path, package: bool, *, allow_empty: bool = False) -> bool:
     if package:
-        _inventory(directory, PACKAGE_REQUIRED, PACKAGE_OPTIONAL, {"wit"})
+        if not _inventory(directory, PACKAGE_REQUIRED, PACKAGE_OPTIONAL, {"wit"},
+                          allow_empty=allow_empty):
+            return False
         marker = _metadata(directory, "observation.json")
         recipe = _metadata(directory, "package-source.json")
         if (type(marker.get("formatVersion")) is not int or marker["formatVersion"] != 1
@@ -102,7 +129,9 @@ def _recognized(directory: Path, package: bool) -> None:
                         and row.get("name") == "dependency-inventory"] != [identity]):
                 raise SnapshotError("validator fixture dependency inventory association has changed")
     else:
-        _inventory(directory, LEGACY_REQUIRED, LEGACY_OPTIONAL, {"interface", "interface/deps"})
+        if not _inventory(directory, LEGACY_REQUIRED, LEGACY_OPTIONAL, {"interface", "interface/deps"},
+                          LEGACY_CACHE_WIT):
+            return True
         marker = _metadata(directory, "build.json")
         if (type(marker.get("schemaVersion")) is not int or marker["schemaVersion"] != 1
                 or marker.get("artifact") != "echo-capsule.wasm"
@@ -116,6 +145,7 @@ def _recognized(directory: Path, package: bool) -> None:
             or expected_digest != actual["digest"] or not isinstance(capsule.get("component"), dict)
             or capsule["component"].get("digest") != actual["digest"]):
         raise SnapshotError("validator fixture component association has changed")
+    return False
 
 
 def reset_validation_echo(target_root: Path) -> int:
@@ -125,6 +155,7 @@ def reset_validation_echo(target_root: Path) -> int:
         return 0
     target_root = target_root.resolve(strict=True)
     retained = []
+    cached_legacy = False
     with owned_cancellation() as cancellation:
         for name, package in (("echo", False), ("echo-provenance", True)):
             directory = target_root / "capsules" / name
@@ -132,7 +163,9 @@ def reset_validation_echo(target_root: Path) -> int:
             if os.path.lexists(directory):
                 if not directory.is_dir():
                     raise SnapshotError("validator fixture path is not a directory")
-                _recognized(directory, package)
+                recognized_cache = _recognized(directory, package, allow_empty=package and cached_legacy)
+                if not package:
+                    cached_legacy = recognized_cache
                 retained.append(directory)
             cancellation.check()
         with cancellation.defer():
