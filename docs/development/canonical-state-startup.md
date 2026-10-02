@@ -58,6 +58,14 @@ caller flags or a restored old image cannot replace that evidence. The actual
 supply-chain covered-clock source admits the effect clock; its provider
 projection binds once to that exact returned clock.
 
+Before the checkpoint consumes that witness, the same Recovery writer verifies
+the fixed `STATE_OWNER_MODE` leaf inside the actual anchored business root.
+Only retained Fresh metadata from the successful identity initialization, with
+one coherent view still containing only that identity row, can create a missing
+leaf. Existing bytes must match the closed format and store identity exactly;
+malformed, interrupted or missing reopened markers are never
+overwritten. Its actual file and native buffers retire on that same worker.
+
 Exactly one dispatcher returns paused, with the same protected store, native
 owner and early effect authority. The production caller retains the existing
 `TransactionAdmissionOwners` factory. It checks the original deadline and current
@@ -76,13 +84,17 @@ retirement report.
 
 ## Qualification still required
 
-The source registers 43 additional `latentd` cases, retaining all 246 previous
+The source registers 44 additional `latentd` cases, retaining all 246 previous
 cases and their ignore states. They include real protected-engine/checkpoint
 startup, missing and malformed checkpoint recovery, same-owner factory admission,
 one-time readiness, pre-I/O installation refusal, original-deadline refusal and
 a paused native worker retaining capacity after failed drain. Registration and
 formatting are not native test execution. Compilation, exact native discovery,
 these schedules and strict Clippy remain pending under the shared compiler hold.
+Eight additional native storage schedules cover marker initialization,
+byte-exact reopen, premature business writes, missing/malformed refusal,
+foreign capacity, expiry and a detached waiter retaining the original charge
+until actual file retirement.
 
 The focused schema checks cover closed owner declarations, finite counters,
 immutable target pins, rejected authority flags and Phase 4 report identity.
@@ -92,6 +104,6 @@ The remaining production work includes the sealed signed-operation and
 protected-credential installation producers, their current policy publication
 fence, original request/response integration with the Phase 4 wire runtime, and
 bootstrap-pause release that preserves durable operator pause and restore review.
-The persisted mode marker and the stateless rejection probe must also prevent an
-omitted state configuration from downgrading an existing protected installation.
+The stateless rejection probe must also prevent an omitted state configuration
+from downgrading an existing protected installation.
 Those omissions are tracked explicitly; this milestone closes no Phase 4 issue.

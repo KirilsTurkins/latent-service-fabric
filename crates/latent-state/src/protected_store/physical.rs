@@ -180,6 +180,62 @@ impl PhysicalStore {
         self.engine.as_ref().expect("worker-owned live engine")
     }
 
+    #[cfg_attr(
+        not(all(target_os = "linux", target_arch = "x86_64")),
+        allow(clippy::unused_self)
+    )]
+    pub(super) fn ensure_state_mode_marker(
+        &self,
+        identity: &crate::store_identity::StoreIdentity,
+        original: &latent_core::native_capacity::NativeReservation,
+        before_native_retirement: impl FnOnce(),
+    ) -> Result<super::mode::StateModeObservation, StoreError> {
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            let view = self.engine().snapshot()?;
+            let stored_identity = view
+                .get_bounded(
+                    &crate::store_identity::StoreIdentity::row_key(),
+                    crate::store_identity::MAXIMUM_ENCODED_BYTES,
+                )?
+                .as_deref()
+                .map(crate::store_identity::StoreIdentity::decode)
+                .transpose()?;
+            if stored_identity.as_ref() != Some(identity) {
+                return Err(StoreError::Conflict);
+            }
+            // This metadata is set only after the actual exclusive initializer
+            // applied its identity batch and checked the retained root fences.
+            // Reopen equality never sets it. The checkpoint consumes it later.
+            let actual_fresh_identity = self
+                .fresh_identity
+                .lock()
+                .map_err(|_| StoreError::Unavailable)?
+                .as_ref()
+                == Some(identity);
+            if actual_fresh_identity {
+                // Fresh initialization is not permission to create a marker
+                // after trusted startup code has already written business or
+                // dispatcher rows. Use this same coherent view and bounded
+                // indexed existence checks before any mode file I/O.
+                super::mode::require_initializer_only(&view, identity)?;
+            }
+            drop(view);
+            super::mode::ensure_native(
+                &self.root,
+                identity,
+                actual_fresh_identity,
+                original,
+                before_native_retirement,
+            )
+        }
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _unused = (identity, original, before_native_retirement);
+            Err(StoreError::UnsupportedFormat)
+        }
+    }
+
     #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
     pub(super) fn install_drop_probe(&self, probe: impl FnOnce() + Send + 'static) {
         let mut selected = self.drop_probe.lock().unwrap();
