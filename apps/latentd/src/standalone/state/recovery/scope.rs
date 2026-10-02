@@ -3,7 +3,7 @@
 use latent_core::TenantId;
 use latent_state::{
     embedded::{ReadView, RowKey, StoreError},
-    namespace::{NamespaceCatalog, NamespaceError},
+    namespace::{catalog::NamespaceCatalog, NamespaceError},
 };
 
 pub(super) struct Scope<'a> {
@@ -55,7 +55,9 @@ mod tests {
     use latent_state::{
         embedded::{EmbeddedStore, Family, RowMutation, StoreLimits},
         namespace::{
-            history::NamespaceHistory, NamespaceMutation, NamespaceOperationContext, NamespaceQuota,
+            catalog::{NamespaceMutation, NamespaceOperationContext},
+            history::NamespaceHistory,
+            NamespaceQuota,
         },
     };
 
