@@ -1,4 +1,4 @@
-use super::{invalid, HttpOrigin, ResourceTarget};
+use super::{invalid, HttpOrigin, ResourceTarget, StreamEndpoint};
 use latent_core::PlatformError;
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +23,9 @@ pub enum ResourceRequest {
         origin: HttpOrigin,
         method: String,
         path: String,
+    },
+    Stream {
+        endpoint: StreamEndpoint,
     },
     Blob {
         namespace: String,
@@ -69,6 +72,7 @@ impl ResourceRequest {
                 method,
                 path,
             },
+            Self::Stream { endpoint } => ResourceTarget::Stream { endpoint },
             Self::Blob { namespace } => ResourceTarget::Blob { namespace },
             Self::Secrets { reference } => ResourceTarget::Secrets { reference },
             Self::Events { subject } => ResourceTarget::Events { subject },

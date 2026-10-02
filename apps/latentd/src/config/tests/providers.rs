@@ -1,5 +1,8 @@
 use serde_json::{json, Value};
 
+mod activation_runtime;
+mod http_streaming;
+
 fn document() -> Value {
     let mut value: Value = serde_json::from_str(&super::document()).unwrap();
     value["budgetProfile"] = json!({"mode":"phase3","maximumOutboundRequests":8,"maximumBlobReadBytes":65536,"maximumBlobWriteBytes":65536});

@@ -1,0 +1,400 @@
+{
+  "cases": [
+    "ControlledPeer.test_commit_then_close_does_not_return_a_successful_response",
+    "ControlledPeer.test_committed_mutation_and_lost_response_are_once_observable_without_peer_replay",
+    "ControlledPeer.test_connection_bound_preserves_existing_owners_and_rejects_only_extra_contact",
+    "ControlledPeer.test_deadline_closes_owned_waits_without_fake_guest_completion",
+    "ControlledPeer.test_external_selector_is_owned_by_supervisor_and_foreign_events_are_rejected",
+    "ControlledPeer.test_failed_authentication_does_not_mutate_and_a_fresh_request_still_succeeds",
+    "ControlledPeer.test_foreign_stale_and_repeated_gate_cannot_release_another_owner",
+    "ControlledPeer.test_held_headers_coexist_with_an_independently_ready_response",
+    "ControlledPeer.test_incomplete_chunked_upload_keeps_original_owner_and_does_not_block_ready_response",
+    "ControlledPeer.test_observations_reject_malformed_nested_members_and_invented_owner_counts",
+    "ControlledPeer.test_origin_changes_and_reopened_closed_owners_cannot_support_a_delta",
+    "ControlledPeer.test_oversized_and_compressed_bodies_are_real_wire_bytes",
+    "ControlledPeer.test_partial_response_stays_owned_until_explicit_release_and_real_eof",
+    "ControlledPeer.test_redirect_credential_forwarding_is_rejected_without_exposing_secret",
+    "ControlledPeer.test_redirect_target_has_separate_origin_and_observes_credentials_stripped",
+    "ControlledPeer.test_seven_methods_byte_bodies_empty_header_and_utf8_header",
+    "ControlledPeer.test_snapshots_detect_generation_changes_erased_commit_and_history_mutation",
+    "ControlledPeer.test_stop_closes_held_upload_response_and_listener_with_no_late_gate",
+    "ControlledPeer.test_success_json_and_error_statuses_are_actual_finite_http_responses",
+    "ControlledPeer.test_total_contact_ceiling_closes_listeners_without_erasing_completed_contacts",
+    "ControlledPeer.test_truncation_malformed_framing_and_malformed_json_are_distinct_fixture_outcomes",
+    "ControlledPeer.test_zero_contact_requires_live_current_listeners_and_detects_even_empty_connection",
+    "RequestFraming.test_absent_length_and_present_zero_length_remain_distinguishable",
+    "RequestFraming.test_ambiguous_framing_and_pipelining_are_rejected",
+    "RequestFraming.test_bad_chunks_and_trailers_cannot_manufacture_eof",
+    "RequestFraming.test_byte_fragmented_chunked_body_preserves_binary_and_utf8",
+    "RequestFraming.test_headers_can_pause_before_body_and_resume_the_same_original_parser",
+    "RequestFraming.test_incomplete_content_never_reports_a_complete_request",
+    "RequestFraming.test_request_body_header_window_and_chunk_count_are_finite",
+    "RequestFraming.test_unsupported_features_and_control_bytes_fail_explicitly"
+  ],
+  "guards": {
+    "ControlledPeer.test_commit_then_close_does_not_return_a_successful_response": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_committed_mutation_and_lost_response_are_once_observable_without_peer_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_connection_bound_preserves_existing_owners_and_rejects_only_extra_contact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_deadline_closes_owned_waits_without_fake_guest_completion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_external_selector_is_owned_by_supervisor_and_foreign_events_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_failed_authentication_does_not_mutate_and_a_fresh_request_still_succeeds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_foreign_stale_and_repeated_gate_cannot_release_another_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_held_headers_coexist_with_an_independently_ready_response": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_incomplete_chunked_upload_keeps_original_owner_and_does_not_block_ready_response": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_observations_reject_malformed_nested_members_and_invented_owner_counts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_origin_changes_and_reopened_closed_owners_cannot_support_a_delta": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_oversized_and_compressed_bodies_are_real_wire_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_partial_response_stays_owned_until_explicit_release_and_real_eof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_redirect_credential_forwarding_is_rejected_without_exposing_secret": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_redirect_target_has_separate_origin_and_observes_credentials_stripped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_seven_methods_byte_bodies_empty_header_and_utf8_header": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_snapshots_detect_generation_changes_erased_commit_and_history_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_stop_closes_held_upload_response_and_listener_with_no_late_gate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_success_json_and_error_statuses_are_actual_finite_http_responses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_total_contact_ceiling_closes_listeners_without_erasing_completed_contacts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_truncation_malformed_framing_and_malformed_json_are_distinct_fixture_outcomes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "ControlledPeer.test_zero_contact_requires_live_current_listeners_and_detects_even_empty_connection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:0740003ec035aa988d13edc2d45eb0c517efbacead292b38f7d8264a0787a7c5"
+      ],
+      "skipSites": []
+    },
+    "RequestFraming.test_absent_length_and_present_zero_length_remain_distinguishable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:d8f7cd775d372131467a5bb0274c62e14b3c025c31f8eb49762938015a279433"
+      ],
+      "skipSites": []
+    },
+    "RequestFraming.test_ambiguous_framing_and_pipelining_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:d8f7cd775d372131467a5bb0274c62e14b3c025c31f8eb49762938015a279433"
+      ],
+      "skipSites": []
+    },
+    "RequestFraming.test_bad_chunks_and_trailers_cannot_manufacture_eof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:d8f7cd775d372131467a5bb0274c62e14b3c025c31f8eb49762938015a279433"
+      ],
+      "skipSites": []
+    },
+    "RequestFraming.test_byte_fragmented_chunked_body_preserves_binary_and_utf8": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:d8f7cd775d372131467a5bb0274c62e14b3c025c31f8eb49762938015a279433"
+      ],
+      "skipSites": []
+    },
+    "RequestFraming.test_headers_can_pause_before_body_and_resume_the_same_original_parser": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:d8f7cd775d372131467a5bb0274c62e14b3c025c31f8eb49762938015a279433"
+      ],
+      "skipSites": []
+    },
+    "RequestFraming.test_incomplete_content_never_reports_a_complete_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:d8f7cd775d372131467a5bb0274c62e14b3c025c31f8eb49762938015a279433"
+      ],
+      "skipSites": []
+    },
+    "RequestFraming.test_request_body_header_window_and_chunk_count_are_finite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:d8f7cd775d372131467a5bb0274c62e14b3c025c31f8eb49762938015a279433"
+      ],
+      "skipSites": []
+    },
+    "RequestFraming.test_unsupported_features_and_control_bytes_fail_explicitly": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9adc574297688b5ffd17ca5e9221f144a68f7a9dd468c672628793703e4f461",
+        "class:setup-sha256:d8f7cd775d372131467a5bb0274c62e14b3c025c31f8eb49762938015a279433"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_standard_http.py",
+  "reviewReason": "Register thirty real bounded peer protocol, ownership-gate and observation controls; retain all existing modules and execution guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

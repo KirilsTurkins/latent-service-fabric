@@ -43,7 +43,7 @@ def fixture(version: str = "0.1.0-test.1") -> tuple[dict, bytes]:
     executable = hashlib.sha256(payloads["bin/latent-aot-compiler"]).hexdigest()
     metadata = {"schemaVersion": "latent.native-release.v1", "version": version, "sourceCommit": "a" * 40,
                 "target": verify.TARGET, "toolchain": {"rust": "1.97.1", "lockSha256": "b" * 64},
-                "engine": {"wasmtimeVersion": "48.0.3", "hostAbiProfile": "lsf-host-abi-phase3-v4",
+                "engine": {"wasmtimeVersion": "48.0.3", "hostAbiProfile": "lsf-host-abi-phase3-v5",
                            "compilerSha256": executable, "dynamicDependencies": ["libc.so.6"]},
                 "platform": dict(verify.PLATFORM),
                 "compatibility": {"installerFormat": 1, "nodeConfigFormat": 1, "migration": "none", "upgradeFrom": []},

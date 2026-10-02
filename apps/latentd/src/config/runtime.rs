@@ -43,6 +43,11 @@ pub(super) fn wasmtime(
         maximum_preparation_document_bytes: preparation_documents(config)?,
         // Capture remains positive even if the effective grant denies logging.
         invocation_log_maximum_bytes: 16 * 1024,
+        activation_runtime: config
+            .providers
+            .as_ref()
+            .and_then(|providers| providers.activation_runtime.as_ref())
+            .map(super::providers::ActivationRuntimeInstallation::runtime_limits),
         ..WasmtimeConfig::default()
     };
     #[cfg(feature = "development-test-node")]
