@@ -112,7 +112,7 @@ def codec(graph: Graph, index: int) -> list[str]:
             f"private static {jtype} read{suffix}(Wire.Reader input) {{", *read, "}"]
 
 
-def generate(graph: Graph) -> str:
+def generate(graph: Graph, *, activation_profile: bool = False) -> str:
     output = ["// Generated from authoritative WIT and maintained wit-bindgen C. DO NOT EDIT.",
               "package dev.latent.generated;", "import dev.latent.guest.*;", "import org.teavm.interop.Address;",
               "import org.teavm.interop.Export;", "import org.teavm.interop.Function;",
@@ -136,8 +136,14 @@ def generate(graph: Graph) -> str:
                            "input.finish(); return result;", "} } }"])
         output.append("}")
     output.extend(["public abstract static class Dispatch extends Function { public abstract Address apply(int operation, Address data, int length); }",
-                   'public static void main(String[] args) { Function.get(Dispatch.class, Bindings.class, "dispatch"); }',
-                   '@Export(name = "lsf_java_dispatch") public static Address dispatch(int operation, Address data, int length) {',
+                   'public static void main(String[] args) { Function.get(Dispatch.class, Bindings.class, "dispatch"); }'])
+    if activation_profile:
+        output.extend(['@Export(name = "lsf_java_dispatch") public static Address dispatch(int operation, Address data, int length) {',
+                       'return dev.latent.guest.runtime.Activation.invoke(operation, data, length); }',
+                       'public static Address dispatchBody(int operation, Address data, int length) {'])
+    else:
+        output.append('@Export(name = "lsf_java_dispatch") public static Address dispatch(int operation, Address data, int length) {')
+    output.extend([
                    "try (Wire.Reader input = Wire.Reader.copy(data, length); Wire.Writer output = new Wire.Writer()) {",
                    "switch (operation) {"])
     for function in graph.exports:

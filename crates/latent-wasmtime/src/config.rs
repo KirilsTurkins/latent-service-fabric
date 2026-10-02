@@ -159,6 +159,9 @@ pub struct WasmtimeConfig {
     pub hostcall_fuel: usize,
     pub value_codec_limits: ValueCodecLimits,
     pub context_policy: ContextExposurePolicy,
+    /// Opt-in logical-runtime limits; recognition and clock-read permission
+    /// alone do not install or grant language scheduling/timer operations.
+    pub activation_runtime: Option<latent_core::activation_runtime::RuntimeLimits>,
 }
 
 /// Compatibility name retaining every old field and its default value.
@@ -172,6 +175,7 @@ impl Default for WasmtimeConfig {
             development_clock_readings: None,
             angular_renderer: false,
             java_guest: false,
+            activation_runtime: None,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
@@ -267,6 +271,9 @@ impl WasmtimeConfig {
         self.cache_limits().validate()?;
         self.validate_compiler()?;
         self.context_policy.validate()?;
+        if let Some(limits) = self.activation_runtime {
+            limits.validate()?;
+        }
         self.value_codec_limits.validate()
     }
 

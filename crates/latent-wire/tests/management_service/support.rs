@@ -35,6 +35,7 @@ pub(super) struct Harness {
     pub inventory: Arc<Inventory>,
     pub channel: Channel,
     pub policy_control: Option<latent_policy::capability::PolicyControlHandle>,
+    pub capability_broker: Option<Arc<latent_capabilities::broker::ActivationCapabilityBroker>>,
     server: transport::Server,
     rollout_worker: Option<latent_rollout::RolloutWorker>,
     _root: TempRoot,
@@ -134,12 +135,12 @@ impl Harness {
             .unwrap()
             .with_http_control(deployments.clone())
             .unwrap();
-        let (adapter, policy_control) = if capabilities {
-            let (adapter, policies) =
+        let (adapter, policy_control, capability_broker) = if capabilities {
+            let (adapter, policies, broker) =
                 capabilities::configure(adapter, &root.0, &artifacts, &deployments);
-            (adapter, Some(policies))
+            (adapter, Some(policies), Some(broker))
         } else {
-            (adapter, None)
+            (adapter, None, None)
         };
         let (channel, server) = transport::Server::start(adapter).await;
         Self {
@@ -148,6 +149,7 @@ impl Harness {
             inventory,
             channel,
             policy_control,
+            capability_broker,
             server,
             rollout_worker,
             _root: root,

@@ -13,6 +13,7 @@ use crate::containment::platform_error;
 use crate::values::validate_signature;
 
 pub(crate) mod blob;
+pub(crate) mod networking;
 pub(crate) mod streaming;
 
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
@@ -56,9 +57,11 @@ fn lookup_function<'a, T>(
 
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Providers {
+    pub activation_runtime: bool,
     pub local_services: bool,
     pub http: bool,
     pub streaming_http: bool,
+    pub outbound_streams: bool,
     pub blobs: bool,
     pub secrets: bool,
     pub events: bool,
@@ -67,7 +70,8 @@ pub(crate) struct Providers {
 }
 impl Providers {
     fn supports(self, name: &str) -> bool {
-        (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+        (self.activation_runtime && name == crate::host::runtime::CAPABILITY)
+            || (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
             || (self.random && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
             || (self.metrics && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
             || (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
@@ -77,6 +81,8 @@ impl Providers {
             || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
             || (self.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
+            || (self.outbound_streams
+                && name == latent_capabilities::broker::network::STREAM_CAPABILITY)
     }
 }
 pub(crate) fn validate_with_providers(
@@ -99,6 +105,9 @@ pub(crate) fn validate_with_providers(
         &mut retained_bytes,
         providers,
     )?;
+    if imports.contains(latent_capabilities::broker::network::STREAM_CAPABILITY) {
+        networking::validate_encoding(&artifact.component_bytes)?;
+    }
 
     let declared_exports = artifact
         .manifest
@@ -241,7 +250,7 @@ fn validate_imports(
                 ComponentItem::ComponentFunc(function) => {
                     signature_with_resources(
                         &function,
-                        specification.asynchronous,
+                        specification.operation_is_asynchronous(name),
                         config,
                         remaining,
                         &resources,
@@ -250,6 +259,7 @@ fn validate_imports(
                         match specification.interface {
                             latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            latent_capabilities::broker::network::STREAM_CAPABILITY => networking::validate(name, &function, &interface, engine)?,
                             _ => return Err(incompatible("unsupported host resource interface")),
                         }
                     }

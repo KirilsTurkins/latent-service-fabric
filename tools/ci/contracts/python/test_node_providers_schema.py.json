@@ -1,6 +1,7 @@
 {
   "cases": [
     "NodeProvidersSchema.test_documented_blob_and_shared_real_workflow_http_configuration",
+    "NodeProvidersSchema.test_documented_development_streams_have_closed_bounded_configuration_without_secrets",
     "NodeProvidersSchema.test_guest_secrets_only_accept_bounded_file_references_and_no_plaintext",
     "NodeProvidersSchema.test_local_service_configuration_has_no_remote_or_publication_grant_override",
     "NodeProvidersSchema.test_metrics_preserve_the_closed_bounded_descriptor_contract",
@@ -13,47 +14,11 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
+        "module:setup-sha256:2607b9ba0749340f03bf7a215e5e1dd758f03c2ba33ef1982d6e2e342bc09d42",
         "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
-      ],
-      "skipSites": []
-    },
-    "NodeProvidersSchema.test_guest_secrets_only_accept_bounded_file_references_and_no_plaintext": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
-        "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
-      ],
-      "skipSites": []
-    },
-    "NodeProvidersSchema.test_local_service_configuration_has_no_remote_or_publication_grant_override": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
-        "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
-      ],
-      "skipSites": []
-    },
-    "NodeProvidersSchema.test_metrics_preserve_the_closed_bounded_descriptor_contract": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
-        "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
-      ],
-      "skipSites": []
+      ]
     },
     "NodeProvidersSchema.test_null_unknown_future_profiles_and_path_escape_are_rejected": {
       "bases": [
@@ -61,15 +26,63 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
+        "module:setup-sha256:2607b9ba0749340f03bf7a215e5e1dd758f03c2ba33ef1982d6e2e342bc09d42",
         "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
+      ]
+    },
+    "NodeProvidersSchema.test_guest_secrets_only_accept_bounded_file_references_and_no_plaintext": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2607b9ba0749340f03bf7a215e5e1dd758f03c2ba33ef1982d6e2e342bc09d42",
+        "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
+      ]
+    },
+    "NodeProvidersSchema.test_metrics_preserve_the_closed_bounded_descriptor_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2607b9ba0749340f03bf7a215e5e1dd758f03c2ba33ef1982d6e2e342bc09d42",
+        "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
+      ]
+    },
+    "NodeProvidersSchema.test_local_service_configuration_has_no_remote_or_publication_grant_override": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2607b9ba0749340f03bf7a215e5e1dd758f03c2ba33ef1982d6e2e342bc09d42",
+        "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
+      ]
+    },
+    "NodeProvidersSchema.test_documented_development_streams_have_closed_bounded_configuration_without_secrets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2607b9ba0749340f03bf7a215e5e1dd758f03c2ba33ef1982d6e2e342bc09d42",
+        "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_node_providers_schema.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Explicit review of local immutable stream-schema Registry/Resource setup: preserve all five original cases, decorators, class setup, assertions and zero skip sites; add one closed bounded TCP configuration case. No source discovery waives an obligation.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -76,6 +76,13 @@ transfer or refund proof. #736 owns logical-thread suspension and final drain;
 a waiting thread must not hold a Store borrow across external I/O. There are no
 idle per-application connections, guest executors or authenticated sessions.
 
+The proposed node maintenance owner is one prepaid future on the existing
+bounded control runtime, with finite weak scans of current and retired stream
+generations. It retains no Store or activation across suspension and performs
+no contact. It retires inactive sockets at idle/DNS/absolute expiry and original
+authority revocation. Stop acknowledgement cannot release its metadata; normal
+node shutdown must join the actual owner or retain failure/quarantine status.
+
 Possible writes remain uncertain on timeout, cancellation, failed reads and
 close. A local successful write is transport acceptance, not remote protocol
 commit. The provider never retries/reconnects. A library's additional attempts
