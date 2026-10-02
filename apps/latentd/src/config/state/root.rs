@@ -106,6 +106,7 @@ mod tests {
             .await
             .unwrap();
             assert!(retired.clean && retired.snapshot.physically_retired());
+            owner.reap_retired_threads().unwrap();
         }
 
         async fn refusal(config: ProtectedStoreConfig) -> ProtectedStoreError {
@@ -124,6 +125,7 @@ mod tests {
             .await
             .unwrap();
             assert!(retired.snapshot.physically_retired());
+            startup.reap_retired_threads().unwrap();
             error
         }
 
