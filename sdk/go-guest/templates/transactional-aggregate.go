@@ -19,23 +19,29 @@ func count(value wit.Option[state.VersionedValue]) (uint64, bool) {
 }
 func Update(request api.UpdateRequest) wit.Result[api.Aggregate, api.BusinessError] {
     command := state.AcquireCommand().Ok(); defer command.Close()
-    old, valid := count(command.Get(key).Ok())
+    stored := command.Get(key).Ok()
+    old, valid := count(stored)
     if !valid { return wit.Err[api.Aggregate, api.BusinessError](api.BusinessErrorMalformedState) }
     next := old + uint64(request.Delta)
     if next < old { return wit.Err[api.Aggregate, api.BusinessError](api.BusinessErrorOverflow) }
+    viewVersion := command.Info().Ok().View.Version
+    keyVersion := wit.None[[]byte]()
+    if stored.IsSome() { keyVersion = wit.Some(stored.Some().Version) }
     bytes := make([]byte, 8); binary.LittleEndian.PutUint64(bytes, next)
     payload := state.Value{Bytes: bytes, MediaType: media, Metadata: nil}
     command.Put(key, payload).Ok()
     intents.New("approved-event", "event", payload).Stage(command).Ok()
     if request.Reject { return wit.Err[api.Aggregate, api.BusinessError](api.BusinessErrorRejected) }
-    staged := command.Get(key).Ok().Some()
-    return wit.Ok[api.Aggregate, api.BusinessError](api.Aggregate{Count: next, Version: staged.Version})
+    return wit.Ok[api.Aggregate, api.BusinessError](api.Aggregate{Count: next, ViewVersion: viewVersion, KeyVersion: keyVersion})
 }
 func Query() wit.Result[api.Aggregate, api.BusinessError] {
     query := state.AcquireQuery().Ok(); defer query.Close()
-    count, valid := count(query.Get(key).Ok())
+    stored := query.Get(key).Ok()
+    count, valid := count(stored)
     if !valid { return wit.Err[api.Aggregate, api.BusinessError](api.BusinessErrorMalformedState) }
-    return wit.Ok[api.Aggregate, api.BusinessError](api.Aggregate{Count: count, Version: query.Info().Ok().Version})
+    keyVersion := wit.None[[]byte]()
+    if stored.IsSome() { keyVersion = wit.Some(stored.Some().Version) }
+    return wit.Ok[api.Aggregate, api.BusinessError](api.Aggregate{Count: count, ViewVersion: query.Info().Ok().Version, KeyVersion: keyVersion})
 }
 func Scan(prefix []byte, limit uint32, cursor wit.Option[[]byte]) wit.Result[api.ScanResult, api.BusinessError] {
     query := state.AcquireQuery().Ok(); defer query.Close()
