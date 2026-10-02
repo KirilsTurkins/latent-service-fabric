@@ -277,11 +277,14 @@ interface; all other duplicate exports remain rejected.
 The closed primary adapters still deny wall-clock calls, and the historical
 direct SDK HTTP path retains its independent selection. Compiler capture,
 managed distribution and private staging retain the fifth adapter and its
-source. At frozen source `dbd1038d57f3514c2df3e6304d42efdac72f2d43`, all five
+source. At frozen source `1e9e7c8aead68fa478912e372a590ac79bbfcae9`, all five
 adapters were actually compiled and encoded, including the 21,215-byte wall
 facet. The five normal node/CLI/signing/packaging tools passed their managed
-native build with all 7,397 source inputs unchanged. A fresh normally signed
-invocation and a missing-wall zero-work denial remain required. This clock mapping
+native build with all 7,400 source inputs unchanged. A fresh normally signed
+component passed independent missing-all, entropy, HTTP and wall authority
+controls with zero guest fuel, memory, effects and outbound requests. Its
+fully granted default-client invocation still traps before HTTP dispatch;
+the cause requires a bounded unchanged-component diagnosis. This clock mapping
 does not qualify genuine
 CLR Task, timer callback or ThreadPool progress under #746, or the remaining
 default-client and common HTTP criteria under #693 and #680.
@@ -299,3 +302,14 @@ pinned MSBuild controls reproduce the original overflow, accept the same full
 unknown and excess HTTP inputs. The [reference-receipt evidence](../testing/evidence/dotnet-http-reference-receipt-2026-10-02.json)
 retains these distinct failed-build and target-control boundaries. It does not
 qualify the repaired full build or default-client execution.
+
+The subsequent repaired full build, composition, packaging and demo signing
+passed and produced a 6,321,069-byte component. Its normal-node invocation used
+the unchanged 748-byte application and the original one-billion-fuel,
+128 MiB, 120-second and one-outbound-request limits. The original success
+assertion remained enforced and failed on a guest trap after 51,286,884 fuel
+and 57,016,320 peak bytes, with zero effects and outbound requests. The
+[normal-node receipt](../testing/evidence/dotnet-default-http-client-wall-node-2026-10-02.json)
+retains the successful build/admission boundaries, four authority denials and
+the unresolved execution failure. Successful default GET, pending CLR work
+and the remaining #693/#680/#746 acceptance criteria remain open.

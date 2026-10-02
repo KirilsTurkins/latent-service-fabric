@@ -1,0 +1,212 @@
+{
+  "schemaVersion": "latent.dotnet.default-http-client-node-evidence.v1",
+  "sourceRevision": "1e9e7c8aead68fa478912e372a590ac79bbfcae9",
+  "sourceTree": "6913a2f3993d49d01463895274ac1a6c156f242d",
+  "status": "maintained build/sign/admission/zero-work denials pass; default GET remains guest trap",
+  "originalApplication": {
+    "bytes": 748,
+    "sha256": "77a90ce137454808a119bb89e50a855dc007b17560432d290c34d900f1eda6af",
+    "construction": "new System.Net.Http.HttpClient()",
+    "injectedTransportSchedulerOrPump": false
+  },
+  "normalNative": {
+    "status": "passed",
+    "sourceRevision": "1e9e7c8aead68fa478912e372a590ac79bbfcae9",
+    "sourceTree": "6913a2f3993d49d01463895274ac1a6c156f242d",
+    "trackedInputsBefore": 7400,
+    "trackedInputsAfter": 7400,
+    "maximumCommandSeconds": 600,
+    "commandElapsedSeconds": 80.97044462200029,
+    "normalNative": true,
+    "features": "ordinary defaults; stream and development-test-node features disabled",
+    "nativeBinaries": {
+      "latent": {
+        "size": 58820936,
+        "sha256": "63cd297acfc9a9b5293a9edacac064917042eae1cbfef798a52e184a5577ad3f"
+      },
+      "latentd": {
+        "size": 145998512,
+        "sha256": "f2452bf1a5cfa39a605220cf9ca05b8cc2b7c8d23eb52e211d3312f3d660aac6"
+      },
+      "package": {
+        "size": 14133096,
+        "sha256": "dc6e5aa36baecbc7a9107dd1924ae91da60d6493ed078406eb08e85de1f85eb9"
+      },
+      "capsule_contracts": {
+        "size": 7092872,
+        "sha256": "3e0b7a9871910cbbf856cda5e1bba14a11c6ec1eeec9df1de291c35ef8928d8e"
+      },
+      "capsule_authoring": {
+        "size": 19342776,
+        "sha256": "69b3c0a3be4b92c2bd2776fbaf9833182ad11427a0b37223966b687a1f1c2b56"
+      }
+    }
+  },
+  "actualFiveAdapterCompilation": {
+    "sourceRevision": "1e9e7c8aead68fa478912e372a590ac79bbfcae9",
+    "adapters": {
+      "closed": {
+        "name": "dotnet-closed-runtime",
+        "digest": "sha256:96ce45f9a684c1423b936972ede4f70a49fd2acaac90954eb8993314e39a065f",
+        "size": 93836
+      },
+      "runtime": {
+        "name": "dotnet-activation-runtime",
+        "digest": "sha256:abda427e6fe4bcd5f5f6242377b7796ab33342e054e48062ceab32fd8e97a269",
+        "size": 147449
+      },
+      "http": {
+        "name": "dotnet-http-runtime",
+        "digest": "sha256:6471f3fc9984c4fe978ff32580ceb661d25dda36825deb6739b36f32df07a1fa",
+        "size": 226019
+      },
+      "entropy": {
+        "name": "dotnet-noncrypto-entropy",
+        "digest": "sha256:8002f631a535d835cc4e82f1838712bee8834ba19c701f3df0e2f6828d6d8a32",
+        "size": 28716
+      },
+      "wall": {
+        "name": "dotnet-wall-clock-runtime",
+        "digest": "sha256:a2ad52b600d3b69918450e43c6b796b6cb2f5d3523a341aca7152022adba7ad9",
+        "size": 21215
+      }
+    }
+  },
+  "component": {
+    "name": "actual-default-http-client",
+    "digest": "sha256:fdf790ee8bd41bfef26d0cda57874edf5b1f60aa9bd1278273e4d4a1739c2d6e",
+    "size": 6321069
+  },
+  "originalLimits": {
+    "fuel": 1000000000,
+    "memoryBytes": 134217728,
+    "wallTimeMillis": 120000,
+    "outboundRequests": 1,
+    "maximumReceiptBytes": 65536
+  },
+  "missingAuthorityControls": [
+    {
+      "activation": "http-client-no-grants",
+      "code": "permission-denied",
+      "terminal": "rejected",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "14314371"
+      }
+    },
+    {
+      "activation": "http-client-no-entropy-grant",
+      "code": "permission-denied",
+      "terminal": "rejected",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "1457"
+      }
+    },
+    {
+      "activation": "http-client-no-http-grant",
+      "code": "permission-denied",
+      "terminal": "rejected",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "1681"
+      }
+    },
+    {
+      "activation": "http-client-no-wall-grant",
+      "code": "permission-denied",
+      "terminal": "rejected",
+      "processReaped": true,
+      "outcomeKnown": true,
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "1276"
+      }
+    }
+  ],
+  "fullyGrantedInvocation": {
+    "activation": "http-client-default-get",
+    "code": "guest-trap",
+    "terminal": "guest_trap",
+    "processReaped": true,
+    "outcomeKnown": true,
+    "consumption": {
+      "blobReadBytes": "0",
+      "blobWriteBytes": "0",
+      "childCalls": 0,
+      "cpuFuel": "51286884",
+      "effectCount": 0,
+      "logBytes": "0",
+      "outboundRequests": 0,
+      "peakMemoryBytes": "57016320",
+      "stateReadBytes": "0",
+      "stateWriteBytes": "0",
+      "wallTimeMicros": "53436"
+    }
+  },
+  "cleanup": {
+    "node": {
+      "closed": true,
+      "reaped": true
+    },
+    "peer": {
+      "schemaVersion": "latent.provider-peer.failure.v1",
+      "exitedBeforeCleanup": false,
+      "closed": true,
+      "reaped": true,
+      "observationAvailable": true,
+      "observationError": "none",
+      "cleanupError": "none",
+      "exitCode": -9,
+      "diagnostic": "none"
+    }
+  },
+  "defaultHttpClientSuccessQualified": false,
+  "genuinelyPendingTasksQualified": false,
+  "fullIssue693Qualified": false,
+  "fullIssue680Qualified": false,
+  "fullIssue746Qualified": false,
+  "nextStep": "bounded unchanged-component stack diagnosis; no cause inferred from this trap"
+}
