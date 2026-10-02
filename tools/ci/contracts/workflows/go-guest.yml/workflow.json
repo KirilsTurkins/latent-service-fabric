@@ -1,20 +1,12 @@
 {
   "kind": "workflow",
+  "requiredJobs": [
+    "upstream-probe"
+  ],
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Add source-bound transaction shape compiler evidence while preserving every existing language execution gate; retain the accepted CI performance dependency caches, correctness guards and independent execution obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-guest.yml",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "go-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": "Go guest qualification",
     "on": {
       "pull_request": {
@@ -100,12 +92,20 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "go-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
-  },
-  "requiredJobs": [
-    "upstream-probe"
-  ],
-  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/go-guest.yml"
+  }
 }

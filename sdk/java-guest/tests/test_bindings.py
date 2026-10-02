@@ -41,6 +41,7 @@ class Bindings(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "C bridge traversal"):
             c.generate(graph)
 
+
     def test_shared_imported_resource_alias_uses_one_owner_class(self):
         data = document()
         data["interfaces"].extend([

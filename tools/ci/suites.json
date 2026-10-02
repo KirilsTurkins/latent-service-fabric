@@ -40,6 +40,151 @@
     "latent-scheduler",
     "latent-telemetry"
   ],
+  "fixtureRecipes": {
+    "echo-capsule": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "python3",
+            "tools/build_echo_capsule.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1800
+        }
+      ],
+      "outputs": {
+        "echo-component": {
+          "path": "{target}/capsules/echo/echo-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ECHO_COMPONENT"
+        },
+        "echo-capsule": {
+          "path": "{target}/capsules/echo/capsule.json",
+          "kind": "json",
+          "maximumBytes": 1048576,
+          "environment": "LSF_ECHO_CAPSULE"
+        },
+        "echo-build": {
+          "path": "{target}/capsules/echo/build.json",
+          "kind": "json",
+          "maximumBytes": 1048576
+        }
+      }
+    },
+    "oversized-log": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "build",
+            "-p",
+            "latent-toolchain-smoke",
+            "--example",
+            "oversized-log-capsule",
+            "--target",
+            "wasm32-unknown-unknown",
+            "--release",
+            "--locked"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 900
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "component",
+            "new",
+            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
+            "-o",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "validate",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        }
+      ],
+      "outputs": {
+        "oversized-log-component": {
+          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_OVERSIZED_LOG_COMPONENT"
+        }
+      }
+    },
+    "angular-renderer": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "node",
+        "npm",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "npm",
+            "ci",
+            "--ignore-scripts",
+            "--no-audit",
+            "--no-fund"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "python3",
+            "tools/build_angular_renderer.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1200
+        }
+      ],
+      "outputs": {
+        "component": {
+          "path": "examples/renderer-profile/dist/runtime/application.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_COMPONENT"
+        },
+        "private-renderer": {
+          "path": "examples/renderer-profile/dist/runtime/renderer.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT"
+        }
+      }
+    }
+  },
   "forbiddenFastDependencies": [
     "latent-testkit",
     "latent-wasmtime",
@@ -51,6 +196,125 @@
   "narrowPackages": [
     "latent-effects"
   ],
+  "processContracts": {
+    "angular-renderer": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component",
+          "private-renderer"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [],
+        "tools": [
+          "git",
+          "rustc"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-wasmtime.test.angular-renderer",
+        "latentd.lib.latentd"
+      ],
+      "timeoutSeconds": 840,
+      "caseFilters": {
+        "latentd.lib.latentd": "actual_angular_http_"
+      },
+      "fixtures": [
+        "angular-renderer"
+      ]
+    },
+    "oci-registry": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-oci.test.registry"
+      ],
+      "timeoutSeconds": 240
+    },
+    "oci-web": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-policy.lib.latent-policy"
+      ],
+      "timeoutSeconds": 240
+    }
+  },
   "recipes": {
     "explicit-doctests": {
       "expectedResultCounts": [
@@ -928,6 +1192,7 @@
         "durable::tests::all_transaction_cutpoints_recover_without_sequence_reuse",
         "durable::tests::capability::closed_capability_records_require_exact_identity_and_terminal_association",
         "durable::tests::capability::preflight_denies_oversize_before_admission_and_unknown_survives_restart",
+        "durable::tests::capability::transaction_resource_selection_cannot_claim_generic_provider_or_commit_completion",
         "durable::tests::close_retains_live_attempt_and_accepts_its_prepaid_known_outcome",
         "durable::tests::deadlines_include_empty_end_cursor_and_final_read_boundary",
         "durable::tests::durable_attempt_outcome_reopen_and_page_lease",
@@ -956,8 +1221,7 @@
         "phase2::tests::omitted_identity_strings_are_bounded",
         "phase2::tests::retained_events_do_not_keep_caller_spare_capacity",
         "phase2::tests::sensitive_and_cross_tenant_actor_metadata_fail_closed",
-        "phase2::tests::tenant_queries_are_isolated_and_paginated",
-        "durable::tests::capability::transaction_resource_selection_cannot_claim_generic_provider_or_commit_completion"
+        "phase2::tests::tenant_queries_are_isolated_and_paginated"
       ],
       "expectedIgnored": [],
       "id": "latent-audit.lib.latent-audit",
@@ -1142,6 +1406,7 @@
         "broker::tests::clocks::pending_clock_rows_already_consume_the_original_per_session_handle_limit",
         "broker::tests::clocks::pending_clock_slot_collision_denies_without_clearing_the_foreign_live_row",
         "broker::tests::detached_actual_work_keeps_capacity_after_its_waiter_and_session_drop",
+        "broker::tests::diagnostics::bounded_binding_projection_reserves_no_call_and_rejects_before_copying",
         "broker::tests::diagnostics::explanations_use_current_compiled_policy_and_cannot_admit_a_call",
         "broker::tests::diagnostics::scoped_usage_tracks_cancelled_calls_and_retained_output_until_actual_drop",
         "broker::tests::exact_session_handles_cannot_cross_reused_ids_cells_or_slots",
@@ -1160,7 +1425,6 @@
         "broker::tests::unused_multi_dimension_reservations_refund_together_without_refunding_other_work",
         "broker::tests::web_imports::ordinary_capsule_context_still_requires_its_provider_binding",
         "broker::tests::web_imports::web_context_is_distinct_from_exact_provider_imports",
-        "broker::tests::diagnostics::bounded_binding_projection_reserves_no_call_and_rejects_before_copying",
         "namespace::tests::authority::approved_shared_scope_allows_current_members_and_withdrawal_denies_historical_replay",
         "namespace::tests::authority::delegated_scope_withdrawal_invalidates_execution_result_and_cancel_controls",
         "namespace::tests::authority::final_effect_guard_is_held_through_cancellation_cas_and_failure_does_not_consume_acceptance",
@@ -1414,6 +1678,7 @@
         "deployments::tests::bindings::slow_preparation::slow_control_package_preparation_renews_before_plan_and_releases_cancelled_owners",
         "deployments::tests::bindings::slow_preparation::slow_startup_package_preparation_never_renews_control_authority",
         "deployments::tests::bindings::startup::configured_provider_restart_preserves_exact_versions_and_durable_bytes",
+        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations",
         "deployments::tests::bindings::startup::startup_cannot_silently_replace_durable_bindings_or_install_foreign_provider_owners",
         "deployments::tests::compiler_publisher_and_coalescing_source_enforce_complete_generations",
         "deployments::tests::concurrent_snapshot_replacement_never_exposes_half_a_batch",
@@ -1431,6 +1696,7 @@
         "deployments::tests::http::selection::http_publications_sharing_bytes_and_tenants_keep_independent_routes_and_revocation",
         "deployments::tests::http::selection::static_web_prepare_and_selected_work_fail_closed_on_publication_revocation",
         "deployments::tests::http::selection::static_web_routes_mount_exact_publication_without_application_identity_and_survive_restart",
+        "deployments::tests::http::target_inspection::inspection_reads_actual_http_object_generations_without_replaying_original_operations",
         "deployments::tests::http::writers::http_cancelled_preparation_releases_every_owned_charge_and_work_permit",
         "deployments::tests::http::writers::http_history_survives_managed_deployments_rollouts_and_snapshot_writers",
         "deployments::tests::invalid_batches_leave_generation_and_state_unchanged",
@@ -1558,6 +1824,9 @@
         "deployments::tests::supply_chain::expiry_during_sync_preserves_committed_generation_but_never_eligibility",
         "deployments::tests::supply_chain::revoked_unchanged_metadata_cannot_be_reapplied_or_reopened_as_current",
         "deployments::tests::supply_chain::whole_generation_checks_distinct_grants_under_one_non_reentrant_authority",
+        "deployments::tests::target_inspection::changed_target_snapshot_is_stale_and_exact_filters_never_pick_another_revision",
+        "deployments::tests::target_inspection::inspection_candidate_and_physical_read_owner_limits_fail_closed",
+        "deployments::tests::target_inspection::target_candidates_use_existing_tenant_indexes_and_never_fetch_or_change_state",
         "deployments::tests::tenants_and_named_routes_never_cross_boundaries",
         "deployments::tests::verified_metadata::checked_metadata_still_requires_deployment_compatibility_validation",
         "deployments::tests::verified_metadata::compilation_uses_verified_metadata_once_per_release_and_preserves_routes",
@@ -1580,12 +1849,7 @@
         "deployments::tests::versioned::versioned_apply_compares_caller_preconditions_and_returns_normalized_committed_state",
         "deployments::tests::weighting_is_deterministic_order_independent_and_restart_stable",
         "http_routes::tests::exact_publication_selector_survives_manifest_codec_and_canonical_matching",
-        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny",
-        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations",
-        "deployments::tests::target_inspection::target_candidates_use_existing_tenant_indexes_and_never_fetch_or_change_state",
-        "deployments::tests::target_inspection::changed_target_snapshot_is_stale_and_exact_filters_never_pick_another_revision",
-        "deployments::tests::target_inspection::inspection_candidate_and_physical_read_owner_limits_fail_closed",
-        "deployments::tests::http::target_inspection::inspection_reads_actual_http_object_generations_without_replaying_original_operations"
+        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny"
       ],
       "expectedIgnored": [
         "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set"
@@ -1668,6 +1932,10 @@
         "budget::profile::tests::phase3_is_explicit_and_intersects_each_enabled_counter_without_enabling_state",
         "budget::profile::tests::phase3_preserves_incoming_monotonic_time_despite_wall_clock_regression",
         "budget::profile::tests::phase3_reports_cannot_invent_host_owned_io_or_future_state_usage",
+        "budget::profile::tests::phase4_group_failure_is_atomic_and_live_reservations_survive_terminal_reports",
+        "budget::profile::tests::phase4_host_buffers_and_guest_growth_share_one_ceiling_through_real_cleanup",
+        "budget::profile::tests::phase4_retains_original_incoming_deadline_and_real_memory_reservation",
+        "budget::profile::tests::phase4_state_counters_are_explicit_intersected_and_not_invented_by_reports",
         "budget::runtime_usage::tests::failed_memory_or_fuel_observation_changes_neither_counter",
         "budget::runtime_usage::tests::finalization_racing_an_observation_never_freezes_half_a_transaction",
         "budget::runtime_usage::tests::overflow_and_finalized_state_leave_the_transaction_unchanged",
@@ -1736,11 +2004,7 @@
         "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up",
         "transaction_contract::tests::byte_and_presence_boundaries_are_exact",
         "transaction_contract::tests::caller_and_incarnation_prevent_foreign_replay",
-        "transaction_contract::tests::fingerprint_sorts_but_never_erases_presence_or_stale_edit_inputs",
-        "budget::profile::tests::phase4_group_failure_is_atomic_and_live_reservations_survive_terminal_reports",
-        "budget::profile::tests::phase4_host_buffers_and_guest_growth_share_one_ceiling_through_real_cleanup",
-        "budget::profile::tests::phase4_retains_original_incoming_deadline_and_real_memory_reservation",
-        "budget::profile::tests::phase4_state_counters_are_explicit_intersected_and_not_invented_by_reports"
+        "transaction_contract::tests::fingerprint_sorts_but_never_erases_presence_or_stale_edit_inputs"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
@@ -1857,6 +2121,7 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "preparation_read_wait::tests::default_materialization_wait_delegates_once_without_timer_or_replaying_failure",
         "preparation_read_wait::tests::default_wait_api_delegates_once_without_consulting_timer_or_replaying_failure",
         "preparation_read_wait::tests::default_wait_api_preserves_unpolled_and_pending_future_ownership",
         "prepared_readiness::tests::failed_downcast_preserves_readiness_and_drops_exactly_once",
@@ -1864,8 +2129,7 @@
         "prepared_readiness::tests::legacy_fallback_moves_original_owner_and_import_allocation",
         "prepared_use::tests::an_unpolled_future_and_unwind_drop_the_original_owner",
         "prepared_use::tests::ownership_survives_failed_downcast_and_is_released_exactly_once",
-        "tests::budget_dimensions_have_deterministic_interruption_mappings",
-        "preparation_read_wait::tests::default_materialization_wait_delegates_once_without_timer_or_replaying_failure"
+        "tests::budget_dimensions_have_deterministic_interruption_mappings"
       ],
       "expectedIgnored": [],
       "id": "latent-executor.lib.latent-executor",
@@ -2011,6 +2275,7 @@
         "http::browser::tests::guest_cannot_override_security_headers_enable_cors_or_supply_encoded_bodies",
         "http::browser::tests::html_requires_explicit_utf8_and_does_not_claim_to_sanitize_application_html",
         "http::browser::tests::only_canonical_origin_relative_redirects_survive_and_never_split_headers",
+        "http::browser::tests::public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method",
         "http::cache::tests::isolation::absent_empty_duplicate_and_unapproved_vary_values_are_distinct",
         "http::cache::tests::isolation::alternate_tenants_public_principals_and_languages_never_cross_bytes",
         "http::cache::tests::isolation::credentials_cookies_unknown_headers_queries_and_user_principals_bypass",
@@ -2025,8 +2290,7 @@
         "http::cache::tests::response::browser_policy_rejection_discards_a_pending_fill_before_any_local_delivery",
         "http::cache::tests::response::no_store_private_cookies_unknown_vary_and_ttl_extensions_never_publish",
         "http::cache::tests::response::only_application_200_can_publish_and_failures_are_no_store",
-        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted",
-        "http::browser::tests::public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method"
+        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted"
       ],
       "expectedIgnored": [],
       "id": "latent-ingress.lib.latent-ingress",
@@ -2560,6 +2824,7 @@
         "budgeted_execution::tests::owned::owned_invocation_forwards_identity_guard_accounting_and_cleanup",
         "budgeted_execution::tests::owned::rejected_or_unpolled_owned_invocations_release_without_calling_backend",
         "budgeted_execution::tests::preparation_wait::dropping_wait_aware_readiness_reclaims_unpolled_and_pending_owners_once",
+        "budgeted_execution::tests::preparation_wait::wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay",
         "budgeted_execution::tests::preparation_wait::wait_aware_readiness_forwards_exact_inputs_without_eager_poll_or_replay",
         "cancellation::tests::bounded_reason_preserves_utf8_boundaries",
         "cancellation::tests::cancellation_and_terminal_publication_have_one_linearization_winner",
@@ -2593,15 +2858,14 @@
         "journal::tests::registration_failure_leaves_no_journal_reservation_or_received_event",
         "journal::tests::tenant_queries_and_cancellation_never_expose_another_tenants_record",
         "journal::tests::terminal_eviction_and_monotonic_ttl_never_remove_active_records",
-        "journal::tests::unowned_append_is_rejected_without_changing_a_live_history",
-        "budgeted_execution::tests::preparation_wait::wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay",
-        "journal::tests::tree::failed_preparation_child_is_visible_before_any_guest_or_capability_event",
         "journal::tests::tree::caught_provider_observation_is_bounded_scoped_and_never_certifies_terminal_cause",
-        "journal::tests::tree::cursor_freezes_membership_and_is_bound_to_tenant_anchor_and_journal",
-        "journal::tests::tree::retention_removes_index_entries_and_explains_expired_anchor_without_certifying_absence",
-        "journal::tests::tree::forged_lineage_and_cross_tenant_parent_reject_before_registration",
         "journal::tests::tree::concurrent_children_keep_one_bounded_index_entry_per_owned_record",
-        "journal::tests::tree::root_discovery_is_scoped_bounded_filtered_and_keeps_one_serial_horizon"
+        "journal::tests::tree::cursor_freezes_membership_and_is_bound_to_tenant_anchor_and_journal",
+        "journal::tests::tree::failed_preparation_child_is_visible_before_any_guest_or_capability_event",
+        "journal::tests::tree::forged_lineage_and_cross_tenant_parent_reject_before_registration",
+        "journal::tests::tree::retention_removes_index_entries_and_explains_expired_anchor_without_certifying_absence",
+        "journal::tests::tree::root_discovery_is_scoped_bounded_filtered_and_keeps_one_serial_horizon",
+        "journal::tests::unowned_append_is_rejected_without_changing_a_live_history"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
@@ -2651,6 +2915,7 @@
         "identity::effective_ids_drive_deterministic_selection_and_catalog_state_stays_pinned",
         "identity::malformed_identity_and_foreign_principal_fail_without_lifecycle_or_backend_work",
         "identity::spare_input_and_context_capacity_is_rejected_before_accepting_an_owner",
+        "identity::untrusted_ancestry_is_rejected_without_lifecycle_or_backend_work",
         "inbound::an_expired_pull_cannot_receive_a_fresh_activation_deadline",
         "inbound::full_admission_refuses_another_pull_and_drop_returns_actual_capacity",
         "inbound::reserve_before_receiving_pins_route_budget_and_input_without_preparing_a_guest",
@@ -2672,6 +2937,8 @@
         "precise_deadline::terminal_decision_enforces_exact_expiry_without_a_timer_wakeup",
         "preparation::budget_bridge_delegates_repository_acquisition_without_materializing_again",
         "preparation::code_wait_uses_original_deadline_and_releases_unassigned_quota",
+        "preparation::materialization_wait_obeys_original_cancellation_deadline_and_transport_stops",
+        "preparation::materialization_wait_retains_one_ready_owner_and_cell_without_repreparing",
         "preparation::mismatched_preparation_releases_affine_owner_before_invocation",
         "preparation::pending_code_retains_admission_without_occupying_a_cell",
         "preparation::repository_preparation_keeps_optional_imports_and_binds_each_activation",
@@ -2679,6 +2946,8 @@
         "races::bounded_start_capacity_rejects_before_retaining_more_work_and_refunds_on_drop",
         "races::cancellation_completion_and_status_race_publish_exactly_one_terminal_event",
         "races::concurrent_starts_cannot_replace_the_same_identity_owner",
+        "transaction::namespace_admission_runs_on_the_original_ledger_before_any_preparation_or_cell",
+        "transaction::ordinary_admission_cannot_install_state_by_selecting_a_transaction_entry_point",
         "transport_cleanup::acknowledged_disconnects_reuse_the_same_capacity_without_explicit_cancel_events",
         "transport_cleanup::exact_expiry_and_explicit_cancel_keep_priority_over_transport_and_success",
         "transport_cleanup::marking_an_already_completed_handle_cannot_stop_its_reused_id",
@@ -2686,12 +2955,7 @@
         "transport_cleanup::unpolled_and_preparation_stops_do_not_start_or_reconstruct_work",
         "transport_cleanup_failures::backend_refusal_or_panic_keeps_quarantine_even_after_a_driven_disconnect",
         "transport_cleanup_failures::unacknowledged_disconnect_quarantines_after_the_original_grace",
-        "transport_cleanup_pool::transport_handoff_during_pool_disposition_keeps_its_original_owner_and_timer",
-        "preparation::materialization_wait_obeys_original_cancellation_deadline_and_transport_stops",
-        "preparation::materialization_wait_retains_one_ready_owner_and_cell_without_repreparing",
-        "identity::untrusted_ancestry_is_rejected_without_lifecycle_or_backend_work",
-        "transaction::namespace_admission_runs_on_the_original_ledger_before_any_preparation_or_cell",
-        "transaction::ordinary_admission_cannot_install_state_by_selecting_a_transaction_entry_point"
+        "transport_cleanup_pool::transport_handoff_during_pool_disposition_keeps_its_original_owner_and_timer"
       ],
       "expectedIgnored": [],
       "id": "latent-node.test.activation-lifecycle",
@@ -3699,6 +3963,9 @@
         "capability::tests::matching_allow_rules_intersect_every_ceiling_instead_of_building_a_union",
         "capability::tests::normalized_http_scope_has_exact_origins_and_segment_prefixes",
         "capability::tests::required_audit_is_monotonic_and_old_canonical_documents_are_unchanged",
+        "capability::tests::state::same_tenant_subjects_require_current_entity_and_result_policy_grants",
+        "capability::tests::state::state_and_intent_opt_ins_preserve_stateless_linking_and_closed_bounded_decoding",
+        "capability::tests::state::state_policy_matches_exact_tuples_without_cross_product_or_incarnation_revival",
         "supply_chain::tests::authority::corruption_and_exclusive_ledger_ownership_fail_closed",
         "supply_chain::tests::authority::every_policy_durability_cut_halts_current_authority_and_preserves_restart_floors",
         "supply_chain::tests::authority::existing_builder_identifier_profile_round_trips_historical_receipt",
@@ -3775,10 +4042,7 @@
         "supply_chain::tests::web_catalog::web_catalog_current_grants_do_not_hide_missing_or_changed_original_content_on_restart",
         "supply_chain::tests::web_catalog::web_catalog_preflight_rejection_and_bad_evidence_leave_no_publication_or_mode_upgrade",
         "supply_chain::tests::web_catalog::web_catalog_reclaims_only_unselected_evidence_and_keeps_the_current_revision_after_restart",
-        "supply_chain::tests::web_catalog::web_catalog_renewal_replaces_only_evidence_and_invalidates_old_use_tokens_after_restart",
-        "capability::tests::state::same_tenant_subjects_require_current_entity_and_result_policy_grants",
-        "capability::tests::state::state_and_intent_opt_ins_preserve_stateless_linking_and_closed_bounded_decoding",
-        "capability::tests::state::state_policy_matches_exact_tuples_without_cross_product_or_incarnation_revival"
+        "supply_chain::tests::web_catalog::web_catalog_renewal_replaces_only_evidence_and_invalidates_old_use_tokens_after_restart"
       ],
       "expectedIgnored": [
         "supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture",
@@ -4429,10 +4693,10 @@
         "one_deadline_starts_at_facade_call_and_preserves_pre_dispatch_identity",
         "optional_capability_pages_and_policy_page_bounds_are_distinct",
         "protobuf_receipts_unknown_enums_and_assigned_identity_remain_lossless",
+        "target_inspection_uses_generated_rpc_and_preserves_original_bounded_selectors",
         "typed_rpc_errors_cursor_rejection_and_not_found_remain_separate",
         "uncertain_mutation_recovers_original_receipt_without_automatic_replay",
-        "unsupported_wire_text_fails_explicitly_without_losing_recovery_identity",
-        "target_inspection_uses_generated_rpc_and_preserves_original_bounded_selectors"
+        "unsupported_wire_text_fails_explicitly_without_losing_recovery_identity"
       ],
       "expectedIgnored": [],
       "id": "latent-sdk.test.profile-transport",
@@ -4838,6 +5102,7 @@
         "custom::registry::tests::retirement::validated_custom_path_does_not_relax_the_original_runtime_dimension_allowlist",
         "custom::registry::tests::series_caps_separate_tenants_and_fixed_rate_windows_refund_rejections",
         "custom::registry::tests::validation::descriptors_reject_incompatible_reuse_reserved_names_and_unbounded_configuration",
+        "custom::registry::tests::validation::real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names",
         "custom::registry::tests::validation::selections_cannot_move_between_registries_or_trusted_sources_or_survive_retirement",
         "custom::registry::tests::validation::sum_overflow_rejects_without_mutating_the_aggregate_or_queue",
         "local::tests::bounded_records_preserve_structured_fields_without_implicit_payloads",
@@ -4885,8 +5150,7 @@
         "pipeline::tests::redacted_short_strings_with_large_retained_allocations_are_rejected",
         "pipeline::tests::shutdown_deadline_aborts_export_and_closes_retained_handles",
         "pipeline::tests::sink_errors_and_constructor_poll_and_drop_panics_are_isolated",
-        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting",
-        "custom::registry::tests::validation::real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names"
+        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting"
       ],
       "expectedIgnored": [],
       "id": "latent-telemetry.lib.latent-telemetry",
@@ -4979,34 +5243,14 @@
         "harness::tests::contracts::work_limit_cannot_masquerade_as_an_expected_resource_exhaustion",
         "harness::tests::probes::idle_scaling_requires_explicit_measurement_and_exact_release_count",
         "harness::tests::probes::inventory_is_delegated_without_reconstructing_or_hiding_source_failures",
-        "harness::tests::probes::telemetry_returns_actual_metrics_and_rejects_large_source_maxima_even_when_empty",
-        "process::owned::tests::aborting_a_reader_drops_the_pipe_without_waiting_for_inherited_writers",
-        "process::owned::tests::child_records_and_both_pipes_are_complete_after_wait",
-        "process::owned::tests::dropping_a_pending_wait_keeps_the_child_under_tokio_cleanup",
-        "process::owned::tests::invalid_limits_fail_before_attempting_to_spawn_a_program",
-        "process::owned::tests::lifetime_timeout_reaps_the_child_and_explicit_termination_retains_status",
-        "process::owned::tests::overflowing_either_pipe_is_an_error_and_the_live_child_is_reaped",
-        "process::tests::builds_a_repeatable_command",
-        "resources::child::tests::captures_the_live_child_listener_and_rejects_foreign_or_exited_owners",
-        "resources::child::tests::observed_u64_values_and_unavailable_fields_roundtrip_losslessly",
-        "resources::child::tests::resource_child_fixture",
-        "resources::current::tests::own_sampling_has_stable_identity_and_does_not_count_its_directory_handle",
-        "resources::linux::tests::descendants_created_by_other_tasks_are_included_and_bounded",
-        "resources::linux::tests::disappearing_fd_and_missing_or_oversized_proc_files_are_unavailable",
-        "resources::linux::tests::reused_foreign_pid_is_not_reported_as_an_owned_descendant",
-        "resources::parse::tests::descendant_lists_have_an_independent_count_bound",
-        "resources::parse::tests::process_name_parentheses_and_spaces_cannot_shift_start_time",
-        "resources::parse::tests::rss_units_absence_and_overflow_are_not_zero_measurements",
-        "resources::parse::tests::tcp_listener_counts_intersect_owned_inodes_instead_of_namespace_totals",
-        "resources::tests::captures_the_current_process_identity",
-        "resources::tests::parses_linux_status_values"
+        "harness::tests::probes::telemetry_returns_actual_metrics_and_rejects_large_source_maxima_even_when_empty"
       ],
       "expectedIgnored": [],
       "id": "latent-testkit.lib.latent-testkit",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-testkit/Cargo.toml",
-      "minimumCases": 40,
+      "minimumCases": 20,
       "mode": "libtest",
       "package": "latent-testkit",
       "platforms": [
@@ -5803,6 +6047,8 @@
         "bindings::compatibility_tests::generated_builtin_linker_matches_every_exact_pinned_shape",
         "bindings::compatibility_tests::streaming_preparation_accepts_only_exact_resource_types_ownership_and_async_shapes",
         "bindings::tests::declared_linker_registrations_match_active_profile_exactly",
+        "bindings::tests::transaction_preparation_requires_exact_mixed_async_and_affine_resource_shapes",
+        "bindings::tests::transaction_support_changes_prepared_and_native_identity_without_mutating_stateless_abi",
         "cache::accounting::tests::failures::image_and_metadata_gate_errors_preserve_residents_and_refund_pending_state",
         "cache::accounting::tests::failures::registration_overflow_does_not_partially_change_any_population",
         "cache::accounting::tests::failures::substituted_runtime_missing_attachment_and_wrong_cost_fail_before_eviction",
@@ -6010,12 +6256,10 @@
         "values::tests::scalars::floating_point_round_trips_preserve_finite_bits_and_signed_zero",
         "values::tests::scalars::floats_accept_explicit_special_values_and_reject_accidental_overflow",
         "values::tests::scalars::scalar_widths_unicode_and_lossless_decimal64",
-        "values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan",
-        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults",
         "values::tests::transactions::transaction_owned_signatures_fit_the_existing_http_preparation_profile",
         "values::tests::transactions::transaction_resources_need_an_explicit_allowlist_and_nested_pages_reject",
-        "bindings::tests::transaction_preparation_requires_exact_mixed_async_and_affine_resource_shapes",
-        "bindings::tests::transaction_support_changes_prepared_and_native_identity_without_mutating_stateless_abi"
+        "values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan",
+        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7094,6 +7338,7 @@
         "asynchronous_error_and_child_failure_forward_original_results_and_owners",
         "closed_constructor_shapes_have_distinct_safe_reasons",
         "dropping_unpolled_or_pending_invocations_preserves_inner_ownership",
+        "failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness",
         "full_contended_or_poisoned_observation_storage_never_changes_invocation_results",
         "successful_and_declared_outcomes_keep_payloads_and_owners_without_records",
         "synchronous_start_failure_is_forwarded_once_without_cloning",
@@ -7104,7 +7349,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 8,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -7488,6 +7733,7 @@
         "invocation::conversion::tests::bounds::currentness_details_only_publish_closed_reasons_and_no_private_fields",
         "invocation::conversion::tests::bounds::generated_catalog_identity_is_independent_of_short_caller_name_limit",
         "invocation::conversion::tests::bounds::omitted_response_fields_and_spare_capacity_are_bounded_before_conversion",
+        "invocation::conversion::tests::bounds::operator_diagnostics_remain_outside_public_and_browser_errors",
         "invocation::conversion::tests::bounds::owned_public_conversion_moves_payload_effect_and_metadata_allocations",
         "invocation::conversion::tests::bounds::public_admission_details_use_the_current_owner_schema",
         "invocation::conversion::tests::bounds::public_errors_redact_only_platform_diagnostics_and_keep_safe_detail_values",
@@ -7587,7 +7833,6 @@
         "management::triggers::tests::static_web_wire_has_no_application_target_fields_and_rejects_hybrids",
         "management::triggers::tests::trigger_native_wire_sparse_maps_and_reserved_strings_deny_before_conversion",
         "management::triggers::tests::trigger_wire_derives_actor_and_preserves_explicit_cas_and_publication",
-        "invocation::conversion::tests::bounds::operator_diagnostics_remain_outside_public_and_browser_errors",
         "phase4::lease::tests::actual_frame_holds_response_owner_after_body_disconnect",
         "phase4::lease::tests::revocation_before_deferred_encoding_denies_original_retained_body",
         "phase4::lease::tests::unpolled_response_body_drop_retires_exact_owner_once",
@@ -7678,6 +7923,7 @@
         "deployment::versions::competing_rpc_versions_have_one_winner_and_return_its_exact_record",
         "deployment::versions::deployment_watch_is_explicitly_unimplemented",
         "deployment::versions::versioned_rpc_round_trip_preserves_fields_and_delete_recreate_stamps",
+        "inspection::activations::tree_requires_trusted_tenant_authority_and_reports_missing_history_honestly",
         "inspection::capabilities::capability_inspection_is_tenant_scoped_operator_gated_and_lease_bounded",
         "inspection::cluster_only_node_operations_and_route_watch_are_unimplemented",
         "inspection::nodes::inventory_requires_trusted_operator_before_snapshot_and_round_trips",
@@ -7685,6 +7931,8 @@
         "inspection::nodes::oversized_requests_skip_source_and_oversized_inventory_fails_boundedly",
         "inspection::routes::route_projection_is_complete_tenant_scoped_and_digest_bound",
         "inspection::routes::route_read_exceeding_scope_limit_fails_without_a_partial_snapshot",
+        "inspection::targets::target_rpc_returns_coherent_candidate_identity_without_invocation_or_receipts",
+        "inspection::targets::targets_require_authenticated_management_scope_and_bounded_exact_selectors",
         "release::authorization::oversized_upload_is_rejected_before_publication",
         "release::authorization::rejected_publications_leave_no_visible_release",
         "release::lifecycle::authenticated_release_lifecycle_has_cas_receipts_and_tenant_private_queries",
@@ -7708,10 +7956,7 @@
         "triggers::audit_recovery::trigger_audit_expiry_caller_loss_and_identity_mismatch_never_claim_false_success",
         "triggers::audit_recovery::trigger_audit_recovery_requires_an_exact_committed_receipt",
         "triggers::trigger_rpc_authentication_atomic_crud_receipts_and_audit",
-        "triggers::trigger_rpc_requires_audit_and_preflights_response_capacity_before_commit",
-        "inspection::activations::tree_requires_trusted_tenant_authority_and_reports_missing_history_honestly",
-        "inspection::targets::targets_require_authenticated_management_scope_and_bounded_exact_selectors",
-        "inspection::targets::target_rpc_returns_coherent_candidate_identity_without_invocation_or_receipts"
+        "triggers::trigger_rpc_requires_audit_and_preflights_response_capacity_before_commit"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.test.management-service",
@@ -7810,6 +8055,8 @@
       "boundary": "runtime",
       "expectedCases": [
         "args::package::tests::package_output_directory_and_global_output_format_have_distinct_ids",
+        "args::tests::activation_roots_preserves_exact_time_without_minting_an_activation_identity",
+        "args::tests::activation_tree_has_one_bounded_page_without_cancellation_authority",
         "args::tests::ambiguous_output_and_multiple_stdin_are_rejected",
         "args::tests::cancellation_and_paging_limits_are_enforced_locally",
         "args::tests::generation_and_invocation_identity_preserve_absence_and_explicit_zero",
@@ -7878,7 +8125,19 @@
         "management::phase2::tests::projection_preserves_large_counters_and_rejects_spare_capacity_before_json",
         "management::phase2::tests::rollout_start_requires_matching_candidate_weight_without_rewriting_the_manifest",
         "management::phase2::tests::typed_audit_ack_requires_the_same_positive_sequence_as_metadata",
+        "management::phase4::tests::command_lookup_keeps_explicit_attempt_and_current_publication_separate",
+        "management::phase4::tests::command_name_and_offline_preflight_do_not_contact_a_node",
+        "management::phase4::tests::configuration_is_closed_bounded_lossless_and_not_arbitrary_state_editing",
+        "management::phase4::tests::grammar_requires_current_target_and_original_operation_precondition",
+        "management::phase4::tests::human_and_json_projection_keep_exact_retention_source_and_cleanup_facts",
+        "management::phase4::tests::paging_uses_exact_opaque_continuation_without_hidden_polling",
+        "management::phase4::tests::prepared_mutation_and_lost_response_context_keep_original_identity_and_generation",
+        "management::phase4::tests::rejection_and_ambiguous_outcomes_remain_distinct_from_success_or_abort",
         "management::policies::execute::validation::tests::response_scope_document_digest_and_revision_are_checked_before_output",
+        "management::target_inspection::tests::target_command_has_finite_wait_and_exact_publication_grammar",
+        "management::target_inspection::tests::target_json_preserves_exact_u64_absence_and_future_reason_values",
+        "management::target_inspection::tests::target_reply_rejects_foreign_scope_selector_drift_and_unmeasured_ready_claims",
+        "management::tests::activation_tree_preserves_future_enums_numeric_presence_and_history_gaps",
         "management::tests::association::absent_optional_get_results_remain_not_found_without_invented_identities",
         "management::tests::association::deployment_replies_cannot_substitute_a_different_valid_object_or_scope",
         "management::tests::association::explicit_page_sizes_bound_all_lists_and_zero_preserves_the_server_default",
@@ -7938,21 +8197,7 @@
         "package::registry::tests::cancellation::denied_pull_does_not_export_and_diagnostics_exclude_credentials",
         "package::registry::tests::copy_budget_and_complete_push_association_are_checked_before_transfer",
         "package::registry::tests::partial_push_retains_confirmed_package_and_uncertain_evidence_without_retry",
-        "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners",
-        "args::tests::activation_tree_has_one_bounded_page_without_cancellation_authority",
-        "args::tests::activation_roots_preserves_exact_time_without_minting_an_activation_identity",
-        "management::tests::activation_tree_preserves_future_enums_numeric_presence_and_history_gaps",
-        "management::target_inspection::tests::target_json_preserves_exact_u64_absence_and_future_reason_values",
-        "management::target_inspection::tests::target_reply_rejects_foreign_scope_selector_drift_and_unmeasured_ready_claims",
-        "management::target_inspection::tests::target_command_has_finite_wait_and_exact_publication_grammar",
-        "management::phase4::tests::command_lookup_keeps_explicit_attempt_and_current_publication_separate",
-        "management::phase4::tests::command_name_and_offline_preflight_do_not_contact_a_node",
-        "management::phase4::tests::configuration_is_closed_bounded_lossless_and_not_arbitrary_state_editing",
-        "management::phase4::tests::grammar_requires_current_target_and_original_operation_precondition",
-        "management::phase4::tests::human_and_json_projection_keep_exact_retention_source_and_cleanup_facts",
-        "management::phase4::tests::paging_uses_exact_opaque_continuation_without_hidden_polling",
-        "management::phase4::tests::prepared_mutation_and_lost_response_context_keep_original_identity_and_generation",
-        "management::phase4::tests::rejection_and_ambiguous_outcomes_remain_distinct_from_success_or_abort"
+        "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
@@ -8869,269 +9114,5 @@
       "target": "latent_test_process",
       "timeoutSeconds": 300
     }
-  ],
-  "processContracts": {
-    "angular-renderer": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest",
-          "component",
-          "private-renderer"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [],
-        "tools": [
-          "git",
-          "rustc"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-wasmtime.test.angular-renderer",
-        "latentd.lib.latentd"
-      ],
-      "timeoutSeconds": 840,
-      "caseFilters": {
-        "latentd.lib.latentd": "actual_angular_http_"
-      },
-      "fixtures": [
-        "angular-renderer"
-      ]
-    },
-    "oci-registry": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [
-          {
-            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-            "type": "docker-image"
-          }
-        ],
-        "tools": [
-          "git",
-          "rustc",
-          "docker",
-          "openssl"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-oci.test.registry"
-      ],
-      "timeoutSeconds": 240
-    },
-    "oci-web": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest",
-          "component"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [
-          {
-            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-            "type": "docker-image"
-          }
-        ],
-        "tools": [
-          "git",
-          "rustc",
-          "docker",
-          "openssl"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-policy.lib.latent-policy"
-      ],
-      "timeoutSeconds": 240
-    }
-  },
-  "fixtureRecipes": {
-    "echo-capsule": {
-      "tools": [
-        "cargo",
-        "rustc",
-        "wasm-tools"
-      ],
-      "commands": [
-        {
-          "argv": [
-            "python3",
-            "tools/build_echo_capsule.py"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 1800
-        }
-      ],
-      "outputs": {
-        "echo-component": {
-          "path": "{target}/capsules/echo/echo-capsule.wasm",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "environment": "LSF_ECHO_COMPONENT"
-        },
-        "echo-capsule": {
-          "path": "{target}/capsules/echo/capsule.json",
-          "kind": "json",
-          "maximumBytes": 1048576,
-          "environment": "LSF_ECHO_CAPSULE"
-        },
-        "echo-build": {
-          "path": "{target}/capsules/echo/build.json",
-          "kind": "json",
-          "maximumBytes": 1048576
-        }
-      }
-    },
-    "oversized-log": {
-      "tools": [
-        "cargo",
-        "rustc",
-        "wasm-tools"
-      ],
-      "commands": [
-        {
-          "argv": [
-            "cargo",
-            "build",
-            "-p",
-            "latent-toolchain-smoke",
-            "--example",
-            "oversized-log-capsule",
-            "--target",
-            "wasm32-unknown-unknown",
-            "--release",
-            "--locked"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 900
-        },
-        {
-          "argv": [
-            "wasm-tools",
-            "component",
-            "new",
-            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
-            "-o",
-            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 60
-        },
-        {
-          "argv": [
-            "wasm-tools",
-            "validate",
-            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 60
-        }
-      ],
-      "outputs": {
-        "oversized-log-component": {
-          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "environment": "LSF_OVERSIZED_LOG_COMPONENT"
-        }
-      }
-    },
-    "angular-renderer": {
-      "tools": [
-        "cargo",
-        "rustc",
-        "node",
-        "npm",
-        "wasm-tools"
-      ],
-      "commands": [
-        {
-          "argv": [
-            "npm",
-            "ci",
-            "--ignore-scripts",
-            "--no-audit",
-            "--no-fund"
-          ],
-          "cwd": "examples/renderer-profile",
-          "timeoutSeconds": 600
-        },
-        {
-          "argv": [
-            "npm",
-            "run",
-            "build"
-          ],
-          "cwd": "examples/renderer-profile",
-          "timeoutSeconds": 600
-        },
-        {
-          "argv": [
-            "python3",
-            "tools/build_angular_renderer.py"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 1200
-        }
-      ],
-      "outputs": {
-        "component": {
-          "path": "examples/renderer-profile/dist/runtime/application.wasm",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "environment": "LSF_ANGULAR_COMPONENT"
-        },
-        "private-renderer": {
-          "path": "examples/renderer-profile/dist/runtime/renderer.wasm",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT"
-        }
-      }
-    }
-  }
+  ]
 }

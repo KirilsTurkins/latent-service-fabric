@@ -91,6 +91,8 @@ def install(sdk: Path, module: Path) -> None:
     (output / "ownership/owner.go").write_bytes((sdk / "ownership/owner.go").read_bytes())
     sources = [(p, p.read_text()) for p in sorted(module.glob("*/wit_bindings.go"))]
     installed = {}
+    # The canonical capability loop below also removes generated GC drops
+    # from State owners; the same explicit Drop remains the lifetime owner.
     for name, (identity, excluded) in CAPABILITIES.items():
         matches = [(path, text) for path, text in sources
                    if re.search(r"(?m)^//go:wasmimport " + re.escape(identity) + r" ", text)]

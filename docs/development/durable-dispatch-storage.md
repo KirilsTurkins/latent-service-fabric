@@ -221,3 +221,15 @@ publication remains a known receipt and reports `published: false`.
 The common authenticated RPC/CLI composition and #397 reserved recovery lane
 consume these ports. This domain implementation does not by itself qualify the
 public management workflow, ordinary-queue saturation or backup/restore review.
+
+The following retained first-storage milestone records its original scope.
+
+The focused initial tests prove canonical identity/tamper rejection, bounded
+malformed decoding, due ordering, and actual atomic snapshot/reopen behavior.
+This first dispatcher storage milestone provides the envelope integration port;
+fixed workers, durable claim/retry/history handling and standalone node lifecycle
+remain the ongoing #391 implementation.
+
+Measured on 2026-10-01: all 28 effect tests passed on Windows and the pinned
+Linux Rust 1.97.1 image, with strict all-target/all-feature Clippy on both hosts.
+The exact Linux test discovery is registered in the existing workspace suite.
