@@ -24,6 +24,9 @@ pub(super) struct Record {
     pub caller_service: Option<latent_core::ServiceId>,
     pub target_service: latent_core::ServiceId,
     pub granted_budget: Option<latent_core::ResourceBudget>,
+    // Identity only: shared with the actual live manager/broker ledger. Cleared
+    // atomically on terminal publication, never retained by terminal history.
+    pub active_budget: Option<latent_core::ActivationBudget>,
     pub effective_deadline_unix_millis: Option<u64>,
     pub observed_diagnostic: Option<latent_core::diagnostic::ActivationDiagnostic>,
     pub staging: Option<super::staging::BoundStaging>,
@@ -53,6 +56,7 @@ impl Record {
             caller_service: None,
             target_service: latent_core::ServiceId(String::new()),
             granted_budget: None,
+            active_budget: None,
             effective_deadline_unix_millis: None,
             observed_diagnostic: None,
             staging: None,

@@ -1,6 +1,7 @@
 //! One bounded record per activation, with writes held by its lifecycle owner.
 
 mod bytes;
+mod lineage;
 mod owner;
 mod staging;
 mod state;
@@ -118,11 +119,31 @@ impl LocalActivationJournal {
 
     /// Capacity/identity checks and cancellation registration share the journal
     /// lock. The callback must be synchronous, bounded, and never reenter it.
-    // Registration and lineage validation publish one atomic owned transition.
-    #[allow(clippy::too_many_lines)]
     pub(crate) fn begin_with<T>(
         &self,
         envelope: &ActivationEnvelope,
+        register: impl FnOnce() -> Result<T, PlatformError>,
+    ) -> Result<(JournalOwner, T), PlatformError> {
+        self.begin_registered(envelope, lineage::RegistrationScope::SameTenant, register)
+    }
+
+    /// Only the trusted local-service adapter may register foreign-tenant
+    /// lineage, using the original live broker call and parent budget owner.
+    pub(crate) fn begin_broker_child<T>(
+        &self,
+        envelope: &ActivationEnvelope,
+        call: &latent_capabilities::broker::ProviderCall,
+        register: impl FnOnce() -> Result<T, PlatformError>,
+    ) -> Result<(JournalOwner, T), PlatformError> {
+        self.begin_registered(envelope, lineage::RegistrationScope::Broker(call), register)
+    }
+
+    // Registration and lineage validation publish one atomic owned transition.
+    #[allow(clippy::too_many_lines)]
+    fn begin_registered<T>(
+        &self,
+        envelope: &ActivationEnvelope,
+        scope: lineage::RegistrationScope<'_>,
         register: impl FnOnce() -> Result<T, PlatformError>,
     ) -> Result<(JournalOwner, T), PlatformError> {
         let tenant = envelope
@@ -177,38 +198,7 @@ impl LocalActivationJournal {
         state.reserve(&envelope.activation_id, self.inner.config)?;
         let serial = state.next_serial;
         let next_serial = serial.checked_add(1).ok_or_else(capacity)?;
-        let root_serial = match &envelope.parent_activation_id {
-            Some(parent) => {
-                let parent = state
-                    .records
-                    .get(parent)
-                    .filter(|parent| {
-                        &parent.tenant == tenant
-                            && parent.root == envelope.root_activation_id
-                            && parent.terminal_at.is_none()
-                    })
-                    .ok_or_else(|| {
-                        error(
-                            PlatformErrorCode::PermissionDenied,
-                            "activation-lineage-not-authorized",
-                        )
-                    })?;
-                if envelope.activation_id == envelope.root_activation_id {
-                    return Err(error(
-                        PlatformErrorCode::PermissionDenied,
-                        "activation-lineage-not-authorized",
-                    ));
-                }
-                parent.root_serial
-            }
-            None if envelope.root_activation_id == envelope.activation_id => serial,
-            None => {
-                return Err(error(
-                    PlatformErrorCode::PermissionDenied,
-                    "activation-lineage-not-authorized",
-                ))
-            }
-        };
+        let root_serial = scope.root_serial(&state, envelope, tenant, serial)?;
         let registration = register()?;
         state.next_serial = next_serial;
         let mut record = Record::new(
