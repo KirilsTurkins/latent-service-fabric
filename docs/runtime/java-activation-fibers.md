@@ -345,3 +345,29 @@ remain pending; neither this component build nor the earlier `local_service`
 thread proof closes #741 or establishes equivalence to the installed runtime's
 100-fuel operation requirements. Later guide updates do not relabel the frozen
 component as having been compiled from a new commit.
+
+The separate timed-completion source prototype
+`f9b6b8e40b2b3cb05e4e0f47da2bf258e0e666dd` adds `orTimeout` and
+`completeOnTimeout`. It preserves the null-unit check even on a completed future,
+returns the original future, and preserves timeout cause identity. An accepted
+deadline uses a real owned logical thread and the existing interruptible sleep.
+Completion, failure or cancellation detaches the cancellation listener and
+interrupts a waiting deadline. A callback already executing retains its physical
+owners through its finally scope. New root work is rejected after close; accepted
+continuations can still dispatch. No guest or runtime ceiling is increased.
+
+The [timed source receipt](../testing/evidence/java-completable-timed-source-2026-10-02.json)
+records 120 matching reference-JDK/port observables and 52 source ownership
+controls, with the original 82 standard observables, 419 ownership observables
+and 32 race rounds preserved. Those checks used Windows Temurin 25.0.3+9 and a
+private strict ledger, with actual host threads. The locked TeaVM model guard
+still requires the earlier method surface and exact body counts; it must be
+reconciled against actual new models before this prototype can prepare a guest.
+No component has been compiled or executed from this continuation, and the e58
+component receipt does not apply to its changed SDK bytes.
+
+An actual JDK delayed-executor probe separately records that the delay starts at
+`execute`, a null command is passed to the base executor after the delay, and a
+later base-executor rejection leaves the supplied future pending. The port's
+`delayedExecutor` remains unimplemented while its dispatch and physical
+cancellation lifetimes are resolved. These source results leave #741 open.
