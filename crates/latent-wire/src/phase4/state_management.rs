@@ -3,6 +3,7 @@ mod audit;
 mod authorization;
 mod dispatcher;
 mod effects;
+mod entities;
 mod inspection;
 mod mutation;
 mod recovery;
@@ -214,6 +215,17 @@ impl StateManagementBackend {
             }
             let pending = audit::begin(&self.0, &access, &context, &request).await?;
             match request {
+                contract::Request::SelectEntity(value) => {
+                    entities::select(
+                        Arc::clone(&self.0),
+                        value,
+                        access,
+                        permit,
+                        deadline,
+                        pending,
+                    )
+                    .await
+                }
                 contract::Request::InspectNamespace(value) => {
                     inspection::inspect(
                         Arc::clone(&self.0),
@@ -402,6 +414,7 @@ fn target(request: &contract::Request) -> Result<RequestedTarget<'_>, PlatformEr
             value.namespace.as_ref().ok_or_else(invalid)?
         }
         contract::Request::MutateState(value) => value.namespace.as_ref().ok_or_else(invalid)?,
+        contract::Request::SelectEntity(value) => value.namespace.as_ref().ok_or_else(invalid)?,
         contract::Request::GetStateOperationReceipt(value) => {
             value.namespace.as_ref().ok_or_else(invalid)?
         }

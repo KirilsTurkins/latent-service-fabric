@@ -1,6 +1,12 @@
 use latent_core::PlatformError;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod metadata;
+mod source;
+
+pub(super) use metadata::Metadata;
+pub use source::CoveredClockSource;
+
 /// Trusted host clock. Request timestamps never implement this interface.
 pub trait SupplyChainClock: Send + Sync {
     fn now(&self) -> Result<u64, PlatformError>;
@@ -26,6 +32,13 @@ pub struct CoveredClock {
 }
 
 impl super::SupplyChainAuthority {
+    /// Projects only accepted clock metadata from this exact original owner.
+    /// The source can be sampled while an original admission grant owns its
+    /// currentness fence. It does not reacquire that fence or the ledger.
+    pub fn covered_clock_source(&self) -> CoveredClockSource {
+        CoveredClockSource::new(&self.inner)
+    }
+
     /// Reads the original covered clock under the same bounded currentness
     /// owner. No filesystem operation, lease renewal or new owner is performed.
     pub fn covered_clock(&self) -> Result<CoveredClock, PlatformError> {

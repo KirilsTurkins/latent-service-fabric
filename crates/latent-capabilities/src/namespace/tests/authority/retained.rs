@@ -1,5 +1,6 @@
 //! Retained acquisition uses actual policy/catalog/engine rows, not a copied allow.
 use super::*;
+mod listing;
 mod management;
 
 fn retained(fixture: &Fixture) -> OwnedPolicyDecision {

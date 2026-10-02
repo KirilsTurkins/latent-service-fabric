@@ -19,6 +19,7 @@ mod native_capacity;
 mod recovery;
 mod reserved;
 mod resource;
+mod snapshot;
 mod startup_memory;
 mod validation;
 

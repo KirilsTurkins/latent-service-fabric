@@ -11,8 +11,10 @@ use latent_state::{
     embedded::{EmbeddedStore, Family, ReadView, StoreError},
     namespace::{
         catalog::{NamespaceOperationContext, NamespaceRead},
+        history::NamespaceHistory,
         NamespaceRecord,
     },
+    session::{version::ViewIdentity, StateMode, StateScope},
     store_io::StoreIoKind,
 };
 
@@ -85,14 +87,29 @@ fn inspect_in(
     if let Err(error) = inspection_gate(inner, access, &read, None) {
         return Ok(Err(error));
     }
+    // Inspection describes the captured history, including paused restoration.
+    // It does not acquire command/query execution readiness or repair epochs.
+    let namespace = read.record();
+    let (history, _) = NamespaceHistory::capture(&view, namespace)?;
+    let scope = StateScope {
+        tenant: namespace.tenant.clone(),
+        namespace: namespace.id.clone(),
+        incarnation: namespace.version.incarnation,
+        state_schema: namespace.state_schema.clone(),
+        entity: None,
+        mode: StateMode::Query,
+    };
+    let version = ViewIdentity {
+        namespace: namespace.version,
+        epochs: history.epochs,
+    }
+    .token(&scope)
+    .map_err(|_| StoreError::Corrupt)?;
     let usage = latent_state::session::inspect_usage(&view, read.record())
         .map_err(|error| error.storage_error().unwrap_or(StoreError::Corrupt))?;
     let (commands, pending_effects, retention) =
         inventory(inner, &view, access, read.record(), deadline)?;
     let (profile, digest) = inner.services.store.inspection_profile();
-    let mut version = b"NSV\x01".to_vec();
-    version.extend_from_slice(&read.record().version.incarnation.to_le_bytes());
-    version.extend_from_slice(&read.record().version.generation.to_le_bytes());
     let value = c::NamespaceInspection {
         view: Some(t::ViewIdentity {
             namespace: Some(response::selector(read.record())),
@@ -243,7 +260,7 @@ pub(super) fn native_namespace(error: NamespaceError) -> StoreError {
         _ => StoreError::Corrupt,
     }
 }
-async fn read_ack(finish: audit::Finish) -> Result<(), PlatformError> {
+pub(super) async fn read_ack(finish: audit::Finish) -> Result<(), PlatformError> {
     let ack = audit::ack(finish).await;
     if ack.status == c::AuditAckStatus::OutcomeUnknown as i32 {
         return Err(error(

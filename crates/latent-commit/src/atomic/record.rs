@@ -136,6 +136,8 @@ impl InboxIdentity {
 /// History uses one bounded row per attempt; bodies are separate result records.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommandRecord {
+    pub(super) accounted: bool,
+    pub(super) retention_review: Vec<u8>,
     pub(super) key: CommandKey,
     pub(super) id: Identity,
     pub(super) fingerprint: Identity,
@@ -158,6 +160,12 @@ pub struct CommandRecord {
     pub(super) abort_proof: Option<Identity>,
 }
 impl CommandRecord {
+    /// Actual supported decoded command format. This metadata supplies no
+    /// replay, recovery, mutation or result-read authority.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        ("latent.command.v1", if self.accounted { 4 } else { 3 })
+    }
     #[must_use]
     pub fn key(&self) -> &CommandKey {
         &self.key
@@ -257,7 +265,11 @@ impl CommandRecord {
     }
     pub fn encode(&self) -> Result<Vec<u8>, AtomicError> {
         self.validate()?;
-        let mut out = Encoder::new(b"LCM\0\x03");
+        let mut out = Encoder::new(if self.accounted {
+            b"LCM\0\x04"
+        } else {
+            b"LCM\0\x03"
+        });
         for text in [
             &self.key.tenant,
             &self.key.namespace,
@@ -306,10 +318,27 @@ impl CommandRecord {
             out.number(version.generation);
         }
         encode_token(&mut out, &self.committed_view_token)?;
+        if self.accounted {
+            out.0.extend_from_slice(
+                &u16::try_from(self.retention_review.len())
+                    .map_err(|_| AtomicError::Limit)?
+                    .to_le_bytes(),
+            );
+            out.0.extend_from_slice(&self.retention_review);
+        }
         out.finish(METADATA_BYTES)
     }
     pub fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
-        let mut input = Decoder::new(bytes, b"LCM\0\x03", METADATA_BYTES)?;
+        let accounted = bytes.starts_with(b"LCM\0\x04");
+        let mut input = Decoder::new(
+            bytes,
+            if accounted {
+                b"LCM\0\x04"
+            } else {
+                b"LCM\0\x03"
+            },
+            METADATA_BYTES,
+        )?;
         let key = CommandKey {
             tenant: input.text(256)?,
             namespace: input.text(256)?,
@@ -357,8 +386,24 @@ impl CommandRecord {
             _ => return Err(AtomicError::Corrupt),
         };
         let committed_view_token = decode_token(&mut input)?;
+        let retention_review = if accounted {
+            let length = usize::from(u16::from_le_bytes(
+                input
+                    .take(2)?
+                    .try_into()
+                    .map_err(|_| AtomicError::Corrupt)?,
+            ));
+            if length > 2048 {
+                return Err(AtomicError::Corrupt);
+            }
+            input.take(length)?.to_vec()
+        } else {
+            vec![]
+        };
         input.finish()?;
         let record = Self {
+            accounted,
+            retention_review,
             key,
             id,
             fingerprint,
@@ -384,6 +429,12 @@ impl CommandRecord {
         Ok(record)
     }
     fn validate(&self) -> Result<(), AtomicError> {
+        if !self.retention_review.is_empty() {
+            if !self.accounted {
+                return Err(AtomicError::Invalid);
+            }
+            super::retention::RetentionAudit::decode(&self.retention_review)?.verify(self)?;
+        }
         self.source.validate()?;
         id(&self.result_read_policy)?;
         self.result_policy.validate()?;
@@ -462,6 +513,11 @@ pub struct DurableResult {
     pub(super) value: Option<Value>,
 }
 impl DurableResult {
+    /// Independently versioned durable result bytes, not a command-row version.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        ("latent.result.v1", 3)
+    }
     pub(super) fn new(
         record: &CommandRecord,
         outcome: Outcome,
@@ -731,9 +787,11 @@ pub(super) fn row_key(
     }
     RowKey { family, key }
 }
+#[must_use]
 pub fn command_row_key(identity: Identity) -> RowKey {
     row_key(Family::Command, b"command-v1\0", identity, None)
 }
+#[must_use]
 pub fn attempt_row_key(identity: Identity, attempt: u64) -> RowKey {
     row_key(
         Family::Attempt,
@@ -742,6 +800,7 @@ pub fn attempt_row_key(identity: Identity, attempt: u64) -> RowKey {
         Some(attempt),
     )
 }
+#[must_use]
 pub fn result_row_key(identity: Identity, attempt: u64) -> RowKey {
     row_key(
         Family::Result,

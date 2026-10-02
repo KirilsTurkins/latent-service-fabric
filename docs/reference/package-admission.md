@@ -199,6 +199,11 @@ may therefore be unavailable for up to the configured lease duration.
 Missing floor data in an initialized authority is corruption, not permission to
 reset the policy generation or clock history.
 
+The [original covered clock carrier](../development/covered-clock-source.md)
+provides descriptive current coverage inside an already-held admission fence.
+It samples the same actual clock and accepted durable floor without reacquiring
+that fence, renewing a lease or creating a grant.
+
 The node may also supply its existing executor timer for a finite readiness-read
 wait inside the original activation owner. Only the exact closed
 `Unavailable`/retryable `admission.currentness` reason
