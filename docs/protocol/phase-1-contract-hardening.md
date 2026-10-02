@@ -544,3 +544,32 @@ Engine configuration digests and internal sealed metadata fingerprints retain
 their separate meanings. Live grant checks are explicitly absent; an inspection
 does not grant execution or mutation authority. Public invocation and browser
 error projections retain their existing disclosure rules.
+
+## Additive Phase 4 transaction and recovery descriptors
+
+The descriptor golden includes `latent/transaction/v1/transaction.proto` and
+the control `state.proto` and `dispatcher.proto` files. Their seven application
+transaction methods, five namespace/state methods and three dispatcher methods
+use separate typed services. All thirteen earlier files preserve their message
+shapes, field numbers, optional presence, enum values and RPC signatures.
+
+The audit contract adds `AuditIdentities.state` at field 25 and `dispatcher` at
+field 26 with their bounded target messages. `AuditControlAction` adds namespace
+actions 13 through 18, dispatcher actions 19 through 22 and command-floor release
+23. `AuditCapabilityResourceClass` adds state at value 11. Earlier audit values
+retain their numbers and meanings.
+
+These descriptors preserve complete transaction profiles, original operation
+identities, namespace incarnations, opaque view bytes, current authorization
+targets and explicit recovery preconditions. Command, commit, retained response,
+effect and cleanup outcomes remain distinct. Namespace/state mutation receipts
+and audit acknowledgement remain separate; dispatcher admission and physical
+retirement remain separate. The state mutation discriminator includes bounded
+expired command-floor release at value 5 without renumbering the earlier values.
+
+Schema generation and descriptor validation do not install a transaction engine,
+grant application or management authority, enable restored effect dispatch or
+qualify a release. Installed owners must enforce their current profile, scope,
+policy, quotas and recovery fences. See the
+[Phase 4 transaction contract](transactions.md) and
+[state management reference](state-management.md).
