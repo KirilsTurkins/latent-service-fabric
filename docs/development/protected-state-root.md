@@ -55,6 +55,17 @@ or drain waiter cannot release that memory or prove physical retirement. The
 configured Recovery partition must cover this retained original reservation
 and still leave usable capacity for recovery requests.
 
+`NamespaceCatalog::with_retained_capacity` constructs the protected namespace
+metadata owner on that same original Recovery reservation. Lifecycle metadata
+is prepaid before allocating its fixed entry
+vector; the checked maximum footprint is below 16 MiB. The charge follows the
+actual lifecycle owner through every retained handle and unresolved completion.
+Registry entries and handle/completion stamps are destroyed before that owner,
+so closing a catalog or losing a waiter cannot release capacity ahead of the
+last metadata destructor. This resident charge supplies no namespace permission
+and does not renew the original startup deadline. Later operations still require
+their own current policy, request and lifecycle authority.
+
 ## Validation
 
 The previous `latent-protected-files` library suite contained 18 tests. On
@@ -82,3 +93,9 @@ and Linux native open, cancellation, original-deadline, late-readiness and
 paused-destructor schedules. Their native execution and strict Clippy remain
 pending under the shared compiler hold; source registration is not execution
 evidence.
+
+Six resident namespace-metadata cases are registered for exact original owner
+and Recovery class, real buffer pressure, retained handles and unresolved
+completions, a paused last-stamp destructor, maximum record/owner bounds, and
+startup expiry without a new authority grant. Native execution and strict
+Clippy of these additions remain pending under the shared compiler hold.
