@@ -7,6 +7,9 @@ on:
       - tools/go_guest/**
       - tools/go_capsule*.py
       - tools/go_application_dependencies.py
+      - tools/go_dependency_authoring.py
+      - tools/tests/test_go_dependency_authoring.py
+      - tools/guest_authoring_frontend.py
       - tools/go_dependency_fixture.py
       - tools/application_dependenc*.py
       - tools/captured_compiler_isolation.py
@@ -41,6 +44,9 @@ on:
       - tools/go_guest/**
       - tools/go_capsule*.py
       - tools/go_application_dependencies.py
+      - tools/go_dependency_authoring.py
+      - tools/tests/test_go_dependency_authoring.py
+      - tools/guest_authoring_frontend.py
       - tools/go_dependency_fixture.py
       - tools/application_dependenc*.py
       - tools/captured_compiler_isolation.py
@@ -181,6 +187,9 @@ jobs:
       - name: Qualify editable projects, all SDK owners, enforced node and printed guide
         run: |
           python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
+      - name: Test reviewed module lifecycle and selected frontend
+        run: |
+          python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend
       - name: Qualify captured Go libraries in signed components
         run: |
           python3 tools/qualify_go_capsules.py --application-dependencies --output "$RUNNER_TEMP/go-capsule-dependencies"

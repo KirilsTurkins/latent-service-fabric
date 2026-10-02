@@ -1,0 +1,286 @@
+{
+  "cases": [
+    "GoDependencyAuthoring.test_actual_staged_recipe_resolves_reviews_and_requires_selected_frontend",
+    "GoDependencyAuthoring.test_candidate_cannot_overwrite_sources_prior_receipts_or_local_modules",
+    "GoDependencyAuthoring.test_candidate_expected_digest_and_native_input_tampering_preserve_accepted_lock",
+    "GoDependencyAuthoring.test_changed_cached_original_bytes_fail_read_only_review",
+    "GoDependencyAuthoring.test_changed_resolution_cannot_be_rebound_as_successful_public_receipt",
+    "GoDependencyAuthoring.test_cli_capture_requires_exact_review_and_emits_separate_receipts",
+    "GoDependencyAuthoring.test_concurrent_candidate_change_never_replaces_an_accepted_lock",
+    "GoDependencyAuthoring.test_consistently_recaptured_invalid_native_graph_never_claims_review_success",
+    "GoDependencyAuthoring.test_exact_local_graph_and_resource_review_work_after_originals_are_removed",
+    "GoDependencyAuthoring.test_go_source_sdk_proxy_and_resolver_drift_stop_before_candidate_acceptance",
+    "GoDependencyAuthoring.test_inner_descriptor_or_capture_cannot_redirect_test_watch_before_dispatch",
+    "GoDependencyAuthoring.test_maintained_test_watch_parser_preserves_unknown_and_interrupted_results",
+    "GoDependencyAuthoring.test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths",
+    "GoDependencyAuthoring.test_private_proxy_tokens_are_opaque_and_do_not_replace_go_control_environment",
+    "GoDependencyAuthoring.test_proxy_config_must_stay_outside_project_and_never_embed_url_credentials",
+    "GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials",
+    "GoDependencyAuthoring.test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review",
+    "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command",
+    "GoDependencyAuthoring.test_symbolic_local_replace_is_denied_before_module_fetch",
+    "GoDependencyAuthoring.test_tags_remain_exact_without_installing_new_runtime_authority",
+    "GoDependencyAuthoring.test_tool_declarations_and_wrong_runtime_profile_require_separate_qualified_stage"
+  ],
+  "guards": {
+    "GoDependencyAuthoring.test_actual_staged_recipe_resolves_reviews_and_requires_selected_frontend": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_candidate_cannot_overwrite_sources_prior_receipts_or_local_modules": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_candidate_expected_digest_and_native_input_tampering_preserve_accepted_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_changed_cached_original_bytes_fail_read_only_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_changed_resolution_cannot_be_rebound_as_successful_public_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_cli_capture_requires_exact_review_and_emits_separate_receipts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_concurrent_candidate_change_never_replaces_an_accepted_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_consistently_recaptured_invalid_native_graph_never_claims_review_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_exact_local_graph_and_resource_review_work_after_originals_are_removed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_go_source_sdk_proxy_and_resolver_drift_stop_before_candidate_acceptance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_inner_descriptor_or_capture_cannot_redirect_test_watch_before_dispatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_maintained_test_watch_parser_preserves_unknown_and_interrupted_results": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_private_proxy_tokens_are_opaque_and_do_not_replace_go_control_environment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_proxy_config_must_stay_outside_project_and_never_embed_url_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_symbolic_local_replace_is_denied_before_module_fetch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": [
+        "self.skipTest('POSIX symbolic-link fixture; Windows reparse controls are separate')",
+        "skip-control-sha256:58717edb8c2c78e37afacda75f46cfaccec7d83e2041f9ea6870770dbb894df2"
+      ]
+    },
+    "GoDependencyAuthoring.test_tags_remain_exact_without_installing_new_runtime_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_tool_declarations_and_wrong_runtime_profile_require_separate_qualified_stage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:592cea69e95de47e9df51a633c855fbd7abc7342f1ef377f97ead1261e31676a"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_dependency_authoring.py",
+  "reviewReason": "Add real exact local module capture/review/offline resource and staged frontend controls with private proxy, drift and tool-declaration negatives; native processes stay explicitly modelled",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

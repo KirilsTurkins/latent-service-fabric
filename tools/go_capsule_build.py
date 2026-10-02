@@ -8,7 +8,7 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_dependency_inputs
+from tools import guest_authoring_frontend, guest_compatibility_build, guest_dependency_inputs
 from tools.go_guest.compiler import Compiler
 from tools.go_capsule_project import validate
 from tools.application_dependencies import prepare
@@ -24,9 +24,11 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
           "examples/echo-contract/deployment.json")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
-           "tools/application_dependency_approval.py", "tools/go_application_dependencies.py", "tools/captured_compiler_isolation.py")
+           "tools/application_dependency_approval.py", "tools/go_application_dependencies.py",
+           "tools/go_dependency_authoring.py", "tools/captured_compiler_isolation.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
+RECIPE += guest_authoring_frontend.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,

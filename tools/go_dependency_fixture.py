@@ -7,7 +7,6 @@ from pathlib import Path
 import shutil
 import tempfile
 
-from tools.application_dependencies import LOCK
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
@@ -107,7 +106,8 @@ func applicationPrefix() string {
     candidate = project / 'target/qualification.candidate.json'
     candidate.parent.mkdir()
     captured = resolve(project, candidate, go=go, selected={'tags': ['sdk_dependency_qualification']})
-    (project / LOCK).write_bytes(canonical(captured) + b'\n')
+    from tools.go_dependency_authoring import review
+    review(project, candidate, digest(candidate.read_bytes()))
     selected = {row['metadata'].get('module') for row in captured['artifacts']}
     if not {'github.com/mattn/go-runewidth', 'github.com/rivo/uniseg', identity} <= selected:
         raise ValueError('native Go qualification graph did not capture required transitive/local modules')

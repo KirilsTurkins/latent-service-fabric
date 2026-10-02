@@ -99,6 +99,10 @@
         "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\"\n"
       },
       {
+        "name": "Test reviewed module lifecycle and selected frontend",
+        "run": "python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend\n"
+      },
+      {
         "name": "Qualify captured Go libraries in signed components",
         "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
@@ -118,7 +122,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Preserve every historical source-only run block and captured library, approval and namespace check; share pruned dependencies, retain correctness guards and both evidence directories, and overlap independent checks.",
+  "reviewReason": "Preserve every existing actual compiler, diagnostic, signed node and captured module step while adding reviewed authoring and selected frontend controls",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
