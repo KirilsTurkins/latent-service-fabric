@@ -34,7 +34,7 @@ impl Authority {
         principal: &InvocationPrincipal,
         action: &Action,
         clock: Arc<clock::ProtectedCommandClock>,
-        host: NativeProfile<'_>,
+        host: &NativeProfile<'_>,
     ) -> Result<Self, PlatformError> {
         let op = &evidence.operation;
         if principal.kind != PrincipalKind::Administrator

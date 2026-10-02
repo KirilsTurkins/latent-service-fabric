@@ -28,7 +28,7 @@ impl StandaloneNode {
             return Err(denied());
         }
         let catalogs = Catalogs::open_with_control(settings, runtime).await?;
-        let result = catalogs.recover(settings, &principal, request).await;
+        let result = catalogs.recover(settings, principal, request).await;
         let shutdown = catalogs.close_inspection(settings).await;
         result.map(|mut observation| {
             observation.catalogs_retired(shutdown.is_ok());

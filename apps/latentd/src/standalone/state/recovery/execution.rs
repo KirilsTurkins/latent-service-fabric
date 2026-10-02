@@ -280,30 +280,23 @@ async fn migrate(
     codecs: &Codecs,
     observed: &NamespaceRecoveryView,
 ) -> Result<serde_json::Value, OfflineRecoveryError> {
-    let (operation_id, file, expected_view, checkpoint_digest, checkpoint_manifest_digest) =
-        match &codecs.action {
-            Action::StageMigration {
-                operation_id,
-                file,
-                expected_view,
-                checkpoint_digest,
-                checkpoint_manifest_digest,
-            }
-            | Action::CompleteMigration {
-                operation_id,
-                file,
-                expected_view,
-                checkpoint_digest,
-                checkpoint_manifest_digest,
-            } => (
-                operation_id,
-                file,
-                expected_view,
-                checkpoint_digest,
-                checkpoint_manifest_digest,
-            ),
-            _ => return Err(invalid()),
-        };
+    let (Action::StageMigration {
+        operation_id,
+        file,
+        expected_view,
+        checkpoint_digest,
+        checkpoint_manifest_digest,
+    }
+    | Action::CompleteMigration {
+        operation_id,
+        file,
+        expected_view,
+        checkpoint_digest,
+        checkpoint_manifest_digest,
+    }) = &codecs.action
+    else {
+        return Err(invalid());
+    };
     let mut scope = observed.scope();
     // The original operation always names the fixed recipe's V1 source. A
     // completed replay must not adopt the later V2 namespace/view identity.
@@ -346,7 +339,7 @@ fn namespace(observed: &NamespaceRecoveryView) -> Result<serde_json::Value, Offl
     Ok(serde_json::json!({"action":"inspect-namespace",
         "namespace":observed.namespace.encode().map_err(|_| invalid())?,
         "history":observed.history.encode().map_err(|_| invalid())?,
-        "guard":observed.guard.as_ref().map(|guard| guard.encode()).transpose().map_err(OfflineRecoveryError::Input)?,
+        "guard":observed.guard.as_ref().map(latent_state::recovery::RecoveryGuard::encode).transpose().map_err(OfflineRecoveryError::Input)?,
         "view":observed.view_token().map_err(OfflineRecoveryError::Input)?}))
 }
 fn migration_result(
