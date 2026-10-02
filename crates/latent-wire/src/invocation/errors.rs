@@ -41,6 +41,6 @@ pub(super) fn boundary_error(code: PlatformErrorCode, message: &str) -> Platform
 }
 // Consume the private diagnostics at the public boundary; callers use this as map_err.
 #[allow(clippy::needless_pass_by_value)]
-pub(super) fn platform_status(error: PlatformError) -> Status {
+pub(crate) fn platform_status(error: PlatformError) -> Status {
     Status::new(tonic_code(error.code), public_platform_message(error.code))
 }

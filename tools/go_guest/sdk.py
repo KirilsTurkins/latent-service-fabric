@@ -55,6 +55,12 @@ def install(sdk: Path, module: Path) -> None:
     (output / "ownership").mkdir()
     (output / "ownership/owner.go").write_bytes((sdk / "ownership/owner.go").read_bytes())
     sources = [(p, p.read_text()) for p in sorted(module.glob("*/wit_bindings.go"))]
+    # The definition probe uses raw imported state owners before #389 supplies
+    # ergonomic facades. Preserve explicit Drop without generated GC host calls.
+    # Other unsupported imports never receive a synthesized wrapper or grant.
+    for path, text in sources:
+        if re.search(r"(?m)^//go:wasmimport latent:state/key-value@0\.2\.0 ", text):
+            path.write_text(explicit_resource_owners(text), encoding="utf-8")
     for name, (identity, excluded) in CAPABILITIES.items():
         matches = [(path, text) for path, text in sources
                    if re.search(r"(?m)^//go:wasmimport " + re.escape(identity) + r" ", text)]

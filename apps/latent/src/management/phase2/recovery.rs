@@ -10,6 +10,7 @@ impl RecoveryContext {
             Operation::Web(value) => value.recovery(),
             Operation::Trigger(value) => value.recovery(),
             Operation::Policy(value) => value.recovery(),
+            Operation::Phase4(value) => super::super::phase4::recovery(value),
             Operation::PublishRelease(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),
             Operation::ChangeReleaseLifecycle(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"publication":value.publication.as_ref().map(|p|json!({"id":p.id,"tenant":p.tenant})),"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),
             Operation::RenewReleaseEvidence(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"publication":value.publication.as_ref().map(|p|json!({"id":p.id,"tenant":p.tenant})),"packageDigest":value.package_digest,"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),

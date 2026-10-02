@@ -4,8 +4,13 @@
 
 pub mod embedded;
 pub mod entity_lanes;
+/// Versioned namespace records and lifecycle guards; descriptors grant no access.
+pub mod namespace;
 pub mod protected_store;
+/// Logical disposition capacity charged in the same physical atomic store.
 pub mod reservation;
+/// Host-owned read/staging sessions; the complete envelope coordinator commits.
+pub mod session;
 pub mod store_io;
 
 use latent_core::{
@@ -102,6 +107,9 @@ pub trait StateBackend: Send + Sync {
         mutation: StateMutation,
     ) -> BoxFuture<'a, Result<(), PlatformError>>;
 
+    #[deprecated(
+        note = "Independent state commit cannot atomically publish Phase 4 commands, results, intents and inbox; use the complete host envelope coordinator"
+    )]
     fn commit(
         &self,
         transaction: StateTransaction,
