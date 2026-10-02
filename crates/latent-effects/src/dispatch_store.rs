@@ -153,6 +153,9 @@ pub fn durable_row_format(key: &RowKey, bytes: &[u8]) -> Result<(&'static str, u
             Ok(("latent.effect-attempt-pending.v1", 1))
         }
         Family::Attempt => Ok(HistoryRecord::decode(key, bytes)?.durable_format()),
+        Family::Maintenance if effect_management::EffectManagementCatalog::owns_row(key) => {
+            effect_management::EffectManagementCatalog::durable_row_format(key, bytes)
+        }
         _ => Err(StoreError::UnsupportedFormat),
     }
 }

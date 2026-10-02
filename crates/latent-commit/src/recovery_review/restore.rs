@@ -58,6 +58,7 @@ pub struct ReviewedRestoreInput {
     current: RecoveryReview,
     window: RestoreWindow,
     operation_digest: [u8; 32],
+    runtime_digest: [u8; 32],
 }
 impl ReviewedRestoreInput {
     #[must_use]
@@ -71,6 +72,10 @@ impl ReviewedRestoreInput {
     #[must_use]
     pub const fn operation_digest(&self) -> [u8; 32] {
         self.operation_digest
+    }
+    #[must_use]
+    pub const fn runtime_digest(&self) -> [u8; 32] {
+        self.runtime_digest
     }
 }
 
@@ -133,6 +138,7 @@ pub fn review_restore_input(
         current: reviewed,
         window,
         operation_digest: digest.finalize().into(),
+        runtime_digest: request.runtime_digest,
     })
 }
 

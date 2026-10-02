@@ -4,7 +4,12 @@
 
 mod artifacts;
 mod inventory;
+mod reconciliation;
 mod restore;
+pub use reconciliation::{
+    ReconciliationCursor, RestoreEffectFact, RestoreEffectPage, RestoreEffectReview,
+    RestoreReconciliationCounts, RestoreReconciliationPlan,
+};
 pub use restore::{review_restore_input, RestoreInputRequest, ReviewedRestoreInput};
 #[cfg(test)]
 mod tests;

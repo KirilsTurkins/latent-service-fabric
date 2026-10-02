@@ -253,3 +253,47 @@ present access checks, without a new attempt or rewritten result. Six source
 schedules cover those paths, including exact absent/present history and guard
 races before acceptance and retained original results after reopen. They are
 registered but have not been compiled or executed under the native hold.
+
+`RestoreReconciliationPlan::capture` reviews the actual staged unit on the same
+borrowed view. It binds the original restore operation, snapshot and acknowledged
+window to the exact paused recovery guard and every proposed namespace history.
+It reuses complete command, effect, payload and tenant validation with the
+installed original runtime/artifact/decoder owners. Root must still establish
+the fresh destination, validate the archived bytes during import and install its
+own identity, mode marker, checkpoint, clock, role and audit controls. This plan
+does not supply those approvals or a restore writer.
+
+All nonterminal effects remain unknown since the snapshot, including Pending
+without an attempt and an old KnownFailed receipt. Neither row authorizes another
+send. Counts also preserve pending commands, inbox identities, historical aborts,
+expired command floors and unfinished migration/management operations. An expired
+management plan still requires its real receipt; expiry proves no retirement.
+Its original plan, receipt, counter, slot and reservation codecs now contribute
+their own format descriptors to the required recovery inventory. Missing support
+refuses the review without dropping the protective rows.
+
+Effect pages retain the actual original effect association, supported record
+version and completed attempt where history exists. They disclose no payload
+body or credential and distinguish original provider acknowledgement, positive
+provider confirmation and administrator termination. A Pending effect receives
+no invented attempt. Finite pages preserve native continuation even when short;
+the affine cursor belongs to that exact retained native view and cannot move to
+another request/view. The original current read/audit/capacity owner and deadline
+remain required through the physically encoded reply.
+
+`require_terminal_review` is a conservative prerequisite on that same view and
+current request. Pending commands, any nonterminal effect or unfinished original
+operation refuse. A successful prerequisite does not modify the recovery guard,
+activate namespace history, grant a provider operation or resume a dispatcher.
+Fresh current policy, physical retirement, external continuity and explicit
+operator resume remain independently required. A stale plan is never refreshed.
+
+Seven registered selected-engine source schedules cover Pending/KnownFailed/
+uncertain facts, exact original attempts, bounded native continuation and foreign
+cursors, changed guard/window/history/runtime, expired protective plans, pending
+commands, declared versus provider facts, current-access/deadline refusal and
+missing/corrupt linked rows. The staged fixture charges every history update
+through the original tenant owner. Its archive receipt and access callbacks are
+controlled metadata fixtures; it does not prove Fresh restore, authenticated
+management or the essential real remote-success/older-Pending campaign. Native
+compilation, execution and strict Clippy remain pending the resource hold.

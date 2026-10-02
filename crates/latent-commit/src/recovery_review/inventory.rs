@@ -90,12 +90,45 @@ impl Inventory {
             {
                 self.migration_row(bytes, charge)?;
             }
+            Family::Maintenance
+                if dispatch_store::effect_management::EffectManagementCatalog::owns_row(key) =>
+            {
+                self.management_row(view, key, bytes, charge)?;
+            }
             // All other host rows have already passed their original closed
             // codec/link/tenant owner, including guards, quotas and management
             // reservations. Unsupported new producer formats refuse upstream.
             _ => {}
         }
         Ok(())
+    }
+
+    fn management_row(
+        &mut self,
+        view: &ReadView,
+        key: &RowKey,
+        bytes: &[u8],
+        charge: u64,
+    ) -> Result<(), RecoveryReviewError> {
+        use dispatch_store::effect_management::{
+            EffectManagementCatalog, EffectManagementPlan, PLAN_PREFIX,
+        };
+        let (identity, version) = dispatch_store::durable_row_format(key, bytes).map_err(source)?;
+        let unfinished = if key.key.starts_with(PLAN_PREFIX) {
+            let plan = EffectManagementPlan::decode(bytes)
+                .map_err(|_| RecoveryReviewError::Source(StoreError::Corrupt))?;
+            EffectManagementCatalog::lookup(view, &plan)
+                .map_err(|_| RecoveryReviewError::Source(StoreError::Corrupt))?
+                .is_none()
+        } else {
+            false
+        };
+        self.format(
+            RetainedKind::EffectEnvelope,
+            &format!("{identity}/{version}"),
+            charge,
+            unfinished,
+        )
     }
 
     fn migration_row(&mut self, bytes: &[u8], charge: u64) -> Result<(), RecoveryReviewError> {

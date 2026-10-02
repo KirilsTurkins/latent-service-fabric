@@ -13,7 +13,7 @@ use latent_state::{
 };
 use sha2::{Digest, Sha256};
 
-fn deadline() -> Instant {
+pub(super) fn deadline() -> Instant {
     Instant::now() + Duration::from_secs(20)
 }
 fn workload() -> Fixture {
@@ -24,7 +24,7 @@ fn workload() -> Fixture {
     fixture.quiesce();
     fixture
 }
-fn receipt(fixture: &Fixture, metadata: &SnapshotMetadata) -> SnapshotReceipt {
+pub(super) fn receipt(fixture: &Fixture, metadata: &SnapshotMetadata) -> SnapshotReceipt {
     let view = fixture.store.snapshot().unwrap();
     let reviewed = review_snapshot(
         &view,
@@ -81,7 +81,10 @@ fn receipt(fixture: &Fixture, metadata: &SnapshotMetadata) -> SnapshotReceipt {
         manifest,
     }
 }
-fn request<'a>(fixture: &'a Fixture, metadata: &'a SnapshotMetadata) -> RecoveryReviewRequest<'a> {
+pub(super) fn request<'a>(
+    fixture: &'a Fixture,
+    metadata: &'a SnapshotMetadata,
+) -> RecoveryReviewRequest<'a> {
     RecoveryReviewRequest {
         quotas: &fixture.quotas,
         global_allowance: INSTALLED_GLOBAL_ALLOWANCE,
@@ -89,7 +92,7 @@ fn request<'a>(fixture: &'a Fixture, metadata: &'a SnapshotMetadata) -> Recovery
         deadline: deadline(),
     }
 }
-fn operation(fixture: &Fixture, snapshot: &SnapshotReceipt) -> RestoreInputRequest {
+pub(super) fn operation(fixture: &Fixture, snapshot: &SnapshotReceipt) -> RestoreInputRequest {
     let window = RestoreWindow::capture(
         &fixture.store.snapshot().unwrap(),
         snapshot,

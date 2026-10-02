@@ -35,6 +35,30 @@ pub(super) fn decode_counter(bytes: &[u8]) -> Result<u32, StoreError> {
 }
 
 impl EffectManagementCatalog {
+    /// Closed producer-owned format metadata after exact key and record
+    /// validation. This never decodes an unsupported version by header alone,
+    /// authorizes an operation or treats an expired plan as retired work.
+    pub fn durable_row_format(
+        key: &RowKey,
+        bytes: &[u8],
+    ) -> Result<(&'static str, u32), StoreError> {
+        Self::validate_row(key, bytes)?;
+        let format = if key.key.starts_with(PLAN_PREFIX) {
+            "latent.effect-management-plan.v1"
+        } else if key.key.starts_with(RECEIPT_PREFIX) {
+            "latent.effect-management-receipt.v1"
+        } else if key.key.starts_with(COUNTER_PREFIX) {
+            "latent.effect-management-counter.v1"
+        } else if key.key.starts_with(SLOT_PREFIX) {
+            "latent.effect-management-slot.v1"
+        } else if key.key.starts_with(&reservation_prefix()) {
+            "latent.effect-management-reservation.v1"
+        } else {
+            return Err(StoreError::UnsupportedFormat);
+        };
+        Ok((format, 1))
+    }
+
     /// Actual original row ownership after the same closed plan/receipt/link
     /// validators. The shared LCU2 ledger covers these optional metadata bytes.
     pub fn tenant_census_contribution(
