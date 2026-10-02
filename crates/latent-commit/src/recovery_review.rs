@@ -4,6 +4,8 @@
 
 mod artifacts;
 mod inventory;
+mod restore;
+pub use restore::{review_restore_input, RestoreInputRequest, ReviewedRestoreInput};
 #[cfg(test)]
 mod tests;
 

@@ -10,6 +10,7 @@ use latent_state::{
 };
 use std::time::Duration;
 mod fixture;
+mod restore;
 use fixture::{Fixture, Owners};
 
 fn workload() -> Fixture {

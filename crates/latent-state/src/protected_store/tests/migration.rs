@@ -14,6 +14,135 @@ use std::sync::atomic::Ordering;
 
 mod fixture;
 
+fn restore_input(
+    request: &crate::recovery::migration::AggregateMigrationRequest,
+) -> RestoreInputPrecondition {
+    RestoreInputPrecondition {
+        snapshot_digest: request.checkpoint_digest,
+        manifest_digest: request.checkpoint_manifest_digest,
+    }
+}
+
+#[test]
+fn protected_restore_input_rereads_same_file_without_mutation_or_original_capacity_refund() {
+    let setup = Setup::new();
+    let (snapshot, owners, request) = setup.checkpoint();
+    let before = fs::read(setup.checkpoint_path()).unwrap();
+    let (snapshot, reviewed) = wait(
+        setup
+            .owner
+            .review_restore_window(snapshot, restore_input(&request), owners.clone())
+            .unwrap(),
+    )
+    .unwrap();
+    let reviewed = reviewed.unwrap().unwrap();
+    assert_eq!(
+        reviewed.snapshot().snapshot_digest,
+        request.checkpoint_digest
+    );
+    assert_eq!(reviewed.window().namespaces().len(), 1);
+    assert_eq!(
+        reviewed.window().namespaces()[0]
+            .proposed_history()
+            .unwrap()
+            .status,
+        HistoryStatus::ReconciliationRequired
+    );
+    assert_eq!(fs::read(setup.checkpoint_path()).unwrap(), before);
+    assert!(setup.owner.snapshot().unwrap().custody_active);
+    assert_eq!(setup.native.snapshot().unwrap().recovery.slots, 1);
+    drop(reviewed);
+    setup.retire(snapshot);
+    assert!(setup.observe().progress.is_none());
+    assert_eq!(setup.observe().value.len(), 8);
+    setup.require_census();
+    assert!(finish(&setup.owner).clean);
+}
+
+#[test]
+fn restore_input_ignored_native_gate_and_stale_digest_refuse_with_healthy_reusable_owner() {
+    let setup = Setup::new();
+    let (snapshot, owners, request) = setup.checkpoint();
+    owners.accept_mode.store(2, Ordering::SeqCst);
+    let (snapshot, refused) = wait(
+        setup
+            .owner
+            .review_restore_window(snapshot, restore_input(&request), owners.clone())
+            .unwrap(),
+    )
+    .unwrap();
+    assert!(matches!(
+        refused.unwrap(),
+        Err(SnapshotError::Review(StoreError::Invalid))
+    ));
+    assert_eq!(setup.owner.failure(), None);
+    owners.accept_mode.store(0, Ordering::SeqCst);
+    let mut stale = restore_input(&request);
+    stale.snapshot_digest = [99; 32];
+    let (snapshot, refused) = wait(
+        setup
+            .owner
+            .review_restore_window(snapshot, stale, owners.clone())
+            .unwrap(),
+    )
+    .unwrap();
+    assert!(matches!(
+        refused.unwrap(),
+        Err(SnapshotError::Review(StoreError::Conflict))
+    ));
+    let (snapshot, reviewed) = wait(
+        setup
+            .owner
+            .review_restore_window(snapshot, restore_input(&request), owners.clone())
+            .unwrap(),
+    )
+    .unwrap();
+    drop(reviewed.unwrap().unwrap());
+    setup.retire(snapshot);
+    assert!(setup.observe().progress.is_none());
+    assert!(finish(&setup.owner).clean);
+}
+
+#[test]
+fn detached_restore_input_retains_real_file_view_and_original_native_until_physical_cleanup() {
+    let mut setup = Setup::new();
+    let (snapshot, owners, request) = setup.checkpoint();
+    let (gates, receiver) = owners.pause_review();
+    let weak_original = Arc::downgrade(setup.original());
+    let weak_owners = Arc::downgrade(&owners);
+    let job = setup
+        .owner
+        .review_restore_window(snapshot, restore_input(&request), owners.clone())
+        .unwrap();
+    let ticket = receiver.recv_timeout(WATCHDOG).unwrap();
+    drop(job);
+    drop(owners);
+    setup.release_original();
+    setup.owner.close();
+    let mut drain = Box::pin(
+        setup
+            .owner
+            .drain_async(Instant::now() + WATCHDOG, std::future::pending())
+            .unwrap(),
+    );
+    PollProbe::default().pending(drain.as_mut());
+    assert!(weak_original.upgrade().is_some());
+    assert!(weak_owners.upgrade().is_some());
+    assert!(setup.owner.snapshot().unwrap().custody_active);
+    assert_eq!(setup.native.snapshot().unwrap().recovery.slots, 1);
+    gates.release(ticket).unwrap();
+    let outcome = wait(drain);
+    assert!(outcome.clean);
+    assert!(outcome.snapshot.physically_retired());
+    assert!(weak_original.upgrade().is_none());
+    assert!(weak_owners.upgrade().is_none());
+    assert_eq!(setup.native.snapshot().unwrap().recovery.slots, 0);
+    let reopened = setup.restart_retired();
+    assert!(reopened.observe().progress.is_none());
+    assert_eq!(reopened.observe().value.len(), 8);
+    assert!(finish(&reopened.owner).clean);
+}
+
 #[test]
 fn original_protected_file_stages_completes_and_replays_without_releasing_custody() {
     let setup = Setup::new();

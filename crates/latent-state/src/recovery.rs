@@ -3,6 +3,7 @@
 //! publication/provider/result authority. Restored work stays paused for review.
 
 pub mod migration;
+pub mod restore;
 pub mod snapshot;
 
 use crate::{

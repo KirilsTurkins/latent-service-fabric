@@ -148,6 +148,45 @@ impl AggregateMigrationOwners for Owners {
     }
 }
 
+impl RestoreInputOwners for Owners {
+    fn archive_row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        self.row(key, bytes)
+    }
+    fn current_closure(&self, view: &ReadView) -> Result<SnapshotClosure, SnapshotError> {
+        self.linked(view).map_err(|error| match error {
+            MigrationError::Source(error) => SnapshotError::Source(error),
+            MigrationError::Review(error) => SnapshotError::Review(error),
+            MigrationError::Deadline => SnapshotError::Deadline,
+            MigrationError::Capacity => SnapshotError::Capacity,
+        })
+    }
+    fn required_artifact(&self, artifact: &RequiredArtifact) -> Result<(), StoreError> {
+        self.artifact(artifact)
+    }
+    fn review_window(
+        &self,
+        _: &ReadView,
+        window: &crate::recovery::restore::RestoreWindow,
+    ) -> Result<(), StoreError> {
+        if window.namespaces().len() != 1 {
+            return Err(StoreError::Conflict);
+        }
+        let pause = self.pause.lock().unwrap().take();
+        if let Some((gates, notice)) = pause {
+            pause_review(&gates, notice);
+        }
+        Ok(())
+    }
+    fn accept_read(&self, original: RestoreReadFence<'_>) -> Result<(), StoreError> {
+        match self.accept_mode.load(Ordering::SeqCst) {
+            0 => original.accept(),
+            1 => Err(StoreError::Unavailable),
+            2 => Ok(()),
+            _ => Err(StoreError::Invalid),
+        }
+    }
+}
+
 impl Setup {
     pub fn new() -> Self {
         Self::with_clock(Arc::new(SystemActivationClock))

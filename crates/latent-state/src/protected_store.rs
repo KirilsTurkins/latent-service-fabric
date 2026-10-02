@@ -10,6 +10,7 @@ mod native_capacity;
 mod operation;
 mod physical;
 mod resource;
+mod restore_input;
 mod snapshot;
 mod startup;
 mod view;
@@ -25,6 +26,10 @@ pub use migration::{
 };
 pub use operation::ProtectedStoreOperation;
 pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
+pub use restore_input::{
+    ProtectedRestoreInput, ProtectedRestoreInputJob, RestoreInputOwners, RestoreInputPrecondition,
+    RestoreReadFence,
+};
 pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};

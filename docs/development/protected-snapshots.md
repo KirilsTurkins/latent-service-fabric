@@ -199,3 +199,41 @@ high waters. Archived control rows are observations, never permission to
 overwrite those owners or renew historical execution. The older peer v1
 snapshot lacked this Root identity association and is explicitly unsupported
 by this v2 producer/reader; no missing-format inference is permitted.
+
+`recovery_review::review_restore_input` composes the same original command,
+dispatcher and tenant review on one borrowed current view. It checks the
+archived runtime, each declared retained decoder and each exact required
+artifact through installed owners. `RestoreWindow` binds the verified v2
+receipt to the complete current row digest and every original namespace/history
+association; the snapshot metadata tenant never filters the physical unit.
+The first profile refuses changed namespace rosters, incarnations, retirement
+states, future generations and a foreign source identity. Proposed histories
+remain paused and advance recovery epochs beyond both old and current history.
+
+`ProtectedStoreOwner::review_restore_window` rereads the actual same private
+file on a fixed Recovery reader, reviews the same borrowed current view and
+retains the original input/audit owner once on that file. Its final short
+policy/namespace/native acceptance must consume the actual affine read fence;
+ignoring it refuses. Input corruption and stale digests leave the source healthy.
+Detached readers retain file/view/request custody and original global capacity
+through actual native cleanup. It opens no destination or additional engine.
+
+The operation requires the operator's exact window acknowledgement, immutable
+IDs and target runtime. Failed current access, stale acknowledgement, missing
+evidence, deadline expiry and capacity refusal remain healthy review failures;
+actual malformed source history retains its corruption disposition. Eleven
+registered source schedules cover these boundaries with selected-engine rows,
+full tenant accounting and original rejection/inbox/uncertain work. They have
+not been compiled or executed under the native hold. Three use the actual
+rooted engine/file/fixed-worker keeper with controlled reviewers. The upper receipt builder
+is controlled metadata; it does not certify protected archive readback.
+
+This review emits bounded descriptions, not an import batch, fresh witness,
+checkpoint, current policy grant or resume approval. The production caller must
+reread the original protected snapshot under the same Recovery custody and
+retain original authorization, audit, memory and deadline through its reply.
+Fresh destination admission and external checkpoint/clock/role installation
+remain Root-owned. Staged imported rows still require complete original linked
+validation. A restored Pending/no-attempt effect may have succeeded after the
+backup, so neither this review nor an old due index authorizes automatic send,
+redrive, garbage collection or restoration of source control authority.

@@ -22,7 +22,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub(super) struct Fixture {
+pub(crate) struct Fixture {
     pub store: EmbeddedStore,
     pub root: tempfile::TempDir,
     pub archive: Vec<u8>,
@@ -50,7 +50,7 @@ impl std::ops::DerefMut for Fixture {
     }
 }
 
-pub(super) struct Receipt {
+pub(crate) struct Receipt {
     action: MigrationAction,
     progress: AggregateMigrationProgress,
 }
