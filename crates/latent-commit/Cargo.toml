@@ -14,6 +14,8 @@ workspace = true
 latent-core = { path = "../latent-core" }
 latent-state = { path = "../latent-state" }
 latent-effects = { path = "../latent-effects" }
+serde.workspace = true
+serde_json.workspace = true
 sha2.workspace = true
 
 [dev-dependencies]
