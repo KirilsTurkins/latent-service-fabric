@@ -146,6 +146,36 @@ impl AggregateMigrationOwners for Owners {
             _ => Err(StoreError::Invalid),
         }
     }
+
+    fn review_resume(
+        &self,
+        _: &ReadView,
+        request: &crate::recovery::resume::MigrationResumeRequest,
+        observation: crate::recovery::resume::MigrationResumeObservation<'_>,
+        _: &SnapshotClosure,
+    ) -> Result<(), StoreError> {
+        if request.migration.package_digest != self.seed.inputs.request.package_digest
+            || observation.schema.declaration_digest()
+                != self.seed.inputs.schema.declaration_digest()
+            || !observation.progress.completed()
+        {
+            return Err(StoreError::UnsupportedFormat);
+        }
+        let pause = self.pause.lock().unwrap().take();
+        if let Some((gates, notice)) = pause {
+            pause_review(&gates, notice);
+        }
+        Ok(())
+    }
+
+    fn accept_resume(&self, native: MigrationResumeCommitFence<'_>) -> Result<(), StoreError> {
+        match self.accept_mode.load(Ordering::SeqCst) {
+            0 => native.accept(),
+            1 => Err(StoreError::Unavailable),
+            2 => Ok(()),
+            _ => Err(StoreError::UnsupportedFormat),
+        }
+    }
 }
 
 impl RestoreInputOwners for Owners {
@@ -337,6 +367,22 @@ impl Setup {
         Result<Result<MigrationReceipt, MigrationError>, ProtectedStoreError>,
     ) {
         wait(self.job(snapshot, owners, request, phase)).unwrap()
+    }
+
+    pub fn resume_job(
+        &self,
+        snapshot: ProtectedSnapshot,
+        owners: &Arc<Owners>,
+        request: crate::recovery::resume::MigrationResumeRequest,
+    ) -> ProtectedMigrationResumeJob {
+        self.owner
+            .resume_migration(
+                snapshot,
+                request,
+                self.seed.inputs.schema.clone(),
+                Arc::clone(owners) as Arc<dyn AggregateMigrationOwners>,
+            )
+            .unwrap()
     }
 
     pub fn retire(&self, mut snapshot: ProtectedSnapshot) {

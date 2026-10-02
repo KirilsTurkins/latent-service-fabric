@@ -139,6 +139,10 @@ impl SnapshotFile {
         &self.original
     }
 
+    pub(in crate::protected_store) fn retain_original(&self) -> Arc<NativeReservation> {
+        Arc::clone(&self.original)
+    }
+
     pub(in crate::protected_store) fn retain_migration_owner(
         &self,
         owner: &Arc<dyn crate::protected_store::AggregateMigrationOwners>,

@@ -306,19 +306,31 @@ impl AggregateMigrationProgress {
         self.validate()
     }
 
-    pub(super) fn require_request(
+    pub(crate) fn require_request(
         &self,
         request: &AggregateMigrationRequest,
         schema: &ReviewedSchema,
         recipe: AggregateMigrationRecipe,
     ) -> Result<(), StoreError> {
-        self.validate()?;
+        self.require_input(request)?;
         if self.recipe()? != recipe
-            || self.fingerprint != request.fingerprint(recipe)?
             || self.package_digest != schema.declaration().package_digest
             || self.declaration_digest != schema.declaration_digest()
             || self.schema_proof_digest != schema.proof_digest()
         {
+            return Err(StoreError::Conflict);
+        }
+        Ok(())
+    }
+
+    /// Original descriptive input equality for linked recovery receipt codecs.
+    /// This supplies no schema review, current permission or execution grant.
+    pub(crate) fn require_input(
+        &self,
+        request: &AggregateMigrationRequest,
+    ) -> Result<(), StoreError> {
+        self.validate()?;
+        if self.fingerprint != request.fingerprint(self.recipe()?)? {
             return Err(StoreError::Conflict);
         }
         Ok(())

@@ -11,6 +11,7 @@ mod operation;
 mod physical;
 mod resource;
 mod restore_input;
+mod resume;
 mod snapshot;
 mod startup;
 mod view;
@@ -29,6 +30,9 @@ pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStore
 pub use restore_input::{
     ProtectedRestoreInput, ProtectedRestoreInputJob, RestoreInputOwners, RestoreInputPrecondition,
     RestoreReadFence,
+};
+pub use resume::{
+    MigrationResumeCommitFence, ProtectedMigrationResumeJob, ProtectedMigrationResumeReceipt,
 };
 pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};

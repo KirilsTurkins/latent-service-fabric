@@ -13,6 +13,7 @@ use fixture::{Owners, Setup};
 use std::sync::atomic::Ordering;
 
 mod fixture;
+mod resume;
 
 fn restore_input(
     request: &crate::recovery::migration::AggregateMigrationRequest,

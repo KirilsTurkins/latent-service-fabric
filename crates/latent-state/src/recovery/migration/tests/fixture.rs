@@ -478,6 +478,18 @@ pub(crate) fn closure(
                 )
                 .map_err(|_| StoreError::Corrupt)?;
         }
+        if key.key.starts_with(crate::recovery::resume::RECEIPT_PREFIX) {
+            inventory
+                .observe(
+                    crate::recovery::resume::retained_format(),
+                    RetainedCount {
+                        rows: 1,
+                        bytes: crate::tenant::row_charge(key, bytes)?,
+                        unresolved: 0,
+                    },
+                )
+                .map_err(|_| StoreError::Corrupt)?;
+        }
         Ok(())
     })?;
     Ok(SnapshotClosure {

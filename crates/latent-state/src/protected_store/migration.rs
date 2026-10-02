@@ -42,6 +42,29 @@ pub trait AggregateMigrationOwners: Send + Sync + 'static {
         observation: AggregateMigrationObservation<'_>,
     ) -> Result<(), StoreError>;
     fn accept(&self, native: MigrationCommitFence<'_>) -> Result<(), StoreError>;
+
+    /// Activation is a separate current-authorized action. Existing migration
+    /// owners refuse it until a concrete host supplies the original clock,
+    /// schema/publication, retained-work, current policy and critical audit
+    /// review. Historical receipt recovery needs its own current read decision.
+    fn review_resume(
+        &self,
+        _view: &ReadView,
+        _request: &crate::recovery::resume::MigrationResumeRequest,
+        _observation: crate::recovery::resume::MigrationResumeObservation<'_>,
+        _linked: &SnapshotClosure,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
+    /// Hold current short fences before consuming the original native gate.
+    /// No disk/guest/network I/O, clock renewal, audit flush or await is allowed.
+    fn accept_resume(
+        &self,
+        _native: super::MigrationResumeCommitFence<'_>,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
 }
 
 /// Affine final original-native check, not an authorization grant. Only this

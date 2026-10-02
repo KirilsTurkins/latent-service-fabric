@@ -91,6 +91,29 @@ impl Inventory {
                 self.migration_row(bytes, charge)?;
             }
             Family::Maintenance
+                if key
+                    .key
+                    .starts_with(latent_state::recovery::resume::RECEIPT_PREFIX) =>
+            {
+                let receipt = latent_state::recovery::resume::MigrationResumeReceipt::decode(bytes)
+                    .map_err(source)?;
+                let format = latent_state::recovery::resume::retained_format();
+                self.format(format.kind, &format.identity, charge, false)?;
+                let migration = &receipt.request().migration;
+                let progress = latent_state::recovery::migration::inspect_progress(
+                    view,
+                    &migration.scope,
+                    &migration.operator_id,
+                    &migration.operation_id,
+                )
+                .map_err(source)?
+                .ok_or(RecoveryReviewError::Source(StoreError::Corrupt))?;
+                for required in progress.required_artifacts().map_err(source)? {
+                    self.artifacts
+                        .observe(&required.identity, required.digest)?;
+                }
+            }
+            Family::Maintenance
                 if dispatch_store::effect_management::EffectManagementCatalog::owns_row(key) =>
             {
                 self.management_row(view, key, bytes, charge)?;

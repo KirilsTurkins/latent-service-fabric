@@ -8,6 +8,11 @@ accepted review. Unknown phases, missing proof, zero identities, truncation and
 foreign row keys fail closed. These records are historical descriptions, not
 permissions or renewable grants.
 
+Completed fixed migrations have a separate [explicit activation
+operation](protected-migration-resume.md). It preserves the original checkpoint,
+progress and NV2 preconditions under the same protected Recovery custody and
+requires current review; it cannot approve older-history restore.
+
 Command and query acquisition call `require_ready` on their actual protected
 worker-owned view. `StateSession` also captures and charges the bounded guard,
 and its final plan compares that exact row, including initial absence.

@@ -4,6 +4,7 @@
 
 pub mod migration;
 pub mod restore;
+pub mod resume;
 pub mod snapshot;
 
 use crate::{
