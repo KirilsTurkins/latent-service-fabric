@@ -169,7 +169,7 @@ def helper(output: Path, resource_snapshot=None) -> str:
             entries[path.relative_to(ROOT).as_posix()] = path.read_bytes()
     for name in ("build_process", "build_process_linux", "build_process_signals", "guest_runtime_profiles",
                  "browser_response_ownership", "application_dependencies", "application_dependency_store",
-                 "application_dependency_tools", "build_snapshot", "rust_capsule_project"):
+                 "application_dependency_tools", "build_snapshot", "rust_capsule_project", "guest_resources"):
         entries[f"tools/{name}.py"] = (ROOT / f"tools/{name}.py").read_bytes()
     for name, raw in resource_snapshot if resource_snapshot is not None else preflight_resources():
         entries["tools/dev_workflow/data/" + name] = raw

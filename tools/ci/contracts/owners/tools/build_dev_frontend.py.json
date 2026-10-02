@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all native frontend smoke obligations and package both browser ownership and captured dependency verifier import closures.",
+  "reviewReason": "Preserve all native frontend smoke and preflight resource obligations while packaging browser ownership, captured dependency verification and source-bound guest resource imports from both parents.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1315cd581836b8bf967eb8c25a73326e2b9824999d4b4f4b138370a02c1624a5"
+  "sha256": "61260d5e701523da566c33d897505a63df7ebbfc01930550ab37b10f75a0b854"
 }
