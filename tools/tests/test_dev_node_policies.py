@@ -783,5 +783,81 @@ class InvocationRecovery(unittest.TestCase):
             self.assertEqual((root / "lifecycle.json").read_bytes(), original)
 
 
+class ScenarioCurrentnessObservations(unittest.TestCase):
+    @staticmethod
+    def result(details, *, category="platform-failure"):
+        return {"category": category, "outcomeKnown": True,
+                "error": {"code": "unavailable", "details": details, "message": "private-remote-message"},
+                "data": {"activationId": "original-operation"}}
+
+    @staticmethod
+    def report(result):
+        case = {"id": "retained", "service": "examples", "contract": "examples:caller/service@1.0.0",
+                "function": "greet", "mediaType": "application/json", "timeoutMillis": 1000,
+                "required": True, "fixtures": [], "expect": {"category": "success"}}
+        adapter = Mock(return_value=result)
+        report = scenarios.run_prepared([(case, b"[]", None)], {}, "node", adapter, {})
+        adapter.assert_called_once()
+        return report
+
+    def test_failed_scenario_retains_each_closed_reason_without_replaying_or_passing(self):
+        for reason in sorted(scenarios.ADMISSION_CURRENTNESS_REASONS):
+            with self.subTest(reason=reason):
+                report = self.report(self.result([{"kind": "admission.currentness",
+                    "fields": {"reason": reason, "credential": "private-fixture-secret"},
+                    "message": "private-provider-body"}]))
+                self.assertFalse(report["passed"])
+                observed = report["results"][0]
+                self.assertEqual(observed["status"], "failed")
+                self.assertEqual(observed["category"], "platform-failure")
+                self.assertEqual(observed["platformCode"], "unavailable")
+                self.assertTrue(observed["outcomeKnown"])
+                self.assertEqual(observed["activationId"], "original-operation")
+                self.assertEqual(observed["timeoutMillis"], 1000)
+                self.assertEqual(observed["admissionReason"], reason)
+                self.assertNotIn("private-", common.encode(report).decode())
+
+    def test_unknown_private_and_non_string_reasons_never_enter_reports(self):
+        class Private:
+            def __str__(self):
+                raise AssertionError("remote object must not be coerced")
+        for reason in ("private-" + "x" * 65536, "unknown", None, 1, True, ["admission-authority-busy"],
+                       {"reason": "admission-authority-busy"}, Private()):
+            with self.subTest(kind=type(reason).__name__):
+                report = self.report(self.result([{"kind": "admission.currentness", "fields": {"reason": reason}}]))
+                self.assertNotIn("admissionReason", report["results"][0])
+                self.assertNotIn("private-", common.encode(report).decode())
+
+    def test_wrong_categories_kinds_and_shapes_do_not_add_currentness_diagnostics(self):
+        valid = {"kind": "admission.currentness", "fields": {"reason": "admission-authority-busy"}}
+        for category in ("success", "declared-error", "transport-failure"):
+            self.assertNotIn("admissionReason", self.report(self.result([valid], category=category))["results"][0])
+        for details in (None, {}, "private-remote-message", [None, 1, "private-body"],
+                        [{"kind": "private-kind", "fields": valid["fields"]}],
+                        [{"kind": "admission.currentness", "fields": "private-fields"}]):
+            self.assertNotIn("admissionReason", self.report(self.result(details))["results"][0])
+
+    def test_examined_detail_count_is_bounded(self):
+        valid = {"kind": "admission.currentness", "fields": {"reason": "admission-authority-busy"}}
+        unknown = {"kind": "private-kind", "fields": {"reason": "private-body"}}
+        beyond = self.report(self.result([unknown] * 16 + [valid]))
+        self.assertNotIn("admissionReason", beyond["results"][0])
+        last = self.report(self.result([unknown] * 15 + [valid]))
+        self.assertEqual(last["results"][0]["admissionReason"], "admission-authority-busy")
+
+    def test_conflicting_public_reasons_are_not_reported_as_one_cause(self):
+        details = [{"kind": "admission.currentness", "fields": {"reason": reason}}
+                   for reason in ("admission-authority-busy", "admission-owner-retired")]
+        self.assertNotIn("admissionReason", self.report(self.result(details))["results"][0])
+        repeated = self.report(self.result([details[0], details[0]]))
+        self.assertEqual(repeated["results"][0]["admissionReason"], "admission-authority-busy")
+
+    def test_diagnostic_vocabulary_matches_authoritative_closed_public_reasons(self):
+        import re
+        source = (Path(__file__).resolve().parents[2] / "crates/latent-core/src/error.rs").read_text()
+        declaration = source.split("pub const ADMISSION_CURRENTNESS_REASONS: &[&str] = &[", 1)[1].split("];", 1)[0]
+        self.assertEqual(scenarios.ADMISSION_CURRENTNESS_REASONS, set(re.findall(r'"([a-z-]+)"', declaration)))
+
+
 if __name__ == "__main__":
     unittest.main()
