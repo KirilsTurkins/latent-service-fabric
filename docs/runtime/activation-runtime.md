@@ -121,9 +121,10 @@ These checks are implementation evidence for #736. Remaining requirements
 include the complete signed cross-tenant, late-wake and node-stop matrix,
 measured cold/active/parked physical owner plateaus, tenant/node fairness,
 standard-language scheduler ports and API-specific error aggregation. ADR-0060
-remains Proposed. Language profiles and the larger #695/#677 qualification gates
-remain open until those requirements are exercised under their exact source,
-compiler, runtime, policy and artifact identities.
+remains Proposed. The #695 research qualification is closed after its separate
+acceptance audit and actual-component evidence. Language delivery and the larger
+#677 qualification gate remain open until their requirements are exercised under
+their exact source, compiler, runtime, policy and artifact identities.
 
 The initial [Java fiber integration](java-activation-fibers.md) exercises ordinary
 threads in signed components through this bridge. Its broader standard-runtime
