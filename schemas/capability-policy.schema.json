@@ -423,6 +423,9 @@
         },
         {
           "$ref": "#/$defs/service"
+        },
+        {
+          "$ref": "#/$defs/stream"
         }
       ]
     },
@@ -533,7 +536,9 @@
             "latent:http/client@0.2.0",
             "latent:http/streaming@0.3.0",
             "latent:telemetry/custom@0.1.0",
-            "latent:service/invoke@0.1.0"
+            "latent:service/invoke@0.1.0",
+            "latent:runtime/activation@0.1.0",
+            "latent:network/streams@0.1.0"
           ]
         },
         "operations": {
@@ -923,8 +928,126 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:runtime/activation@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "register",
+                    "park",
+                    "wake",
+                    "settle",
+                    "close",
+                    "observe",
+                    "wait-for",
+                    "wait-until",
+                    "timer-start",
+                    "timer-next",
+                    "timer-stop"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/clock"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:network/streams@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "connect",
+                    "read",
+                    "write",
+                    "ready",
+                    "chunk-bytes",
+                    "inspect",
+                    "shutdown",
+                    "close"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/stream"
+              }
+            }
+          }
         }
       ]
+    },
+    "streamEndpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "port",
+        "transport"
+      ],
+      "properties": {
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 253,
+          "pattern": "^[a-z0-9.:-]+$(?![\\s\\S])"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "host-tls"
+          ]
+        }
+      }
+    },
+    "stream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "endpoints"
+      ],
+      "properties": {
+        "kind": {
+          "const": "stream"
+        },
+        "endpoints": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/streamEndpoint"
+          }
+        }
+      }
     }
   },
   "$comment": "Rust additionally enforces 64 KiB bytes, duplicate JSON keys and rule IDs, parser limits, and canonical IP/DNS/path forms. The schema is descriptive, never authorization."

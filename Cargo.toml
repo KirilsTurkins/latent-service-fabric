@@ -26,6 +26,7 @@ members = [
     "crates/latent-secrets",
     "crates/latent-vault",
     "crates/latent-http",
+    "crates/latent-streams",
     "crates/latent-nats",
     "crates/latent-blobs",
     "crates/latent-commit",

@@ -18,9 +18,18 @@ PREIMAGES = {
 }
 
 FIBER = '''#include "fiber.h"
+#ifdef LSF_JAVA_ACTIVATION_PROFILE
+extern void lsf_java_runtime_wait(int64_t timeout);
+void teavm_initFiber(void) { }
+void teavm_waitFor(int64_t timeout) { lsf_java_runtime_wait(timeout); }
+/* All Java queue producers run in this Store. No host thread or signal owns
+ * the event queue, and the pump observes an offered event before a host await. */
+void teavm_interrupt(void) { }
+#else
 void teavm_initFiber(void) { }
 void teavm_waitFor(int64_t timeout) { (void)timeout; __builtin_trap(); }
 void teavm_interrupt(void) { __builtin_trap(); }
+#endif
 '''
 
 CLOCK = '''#include "time.h"

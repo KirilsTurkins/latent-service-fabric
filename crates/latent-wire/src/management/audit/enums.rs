@@ -20,7 +20,7 @@ mapping!(policy, AuditPolicyRole, AuditPolicyRole; Publisher, PublisherRevocatio
 mapping!(action, AuditControlAction, AuditControlAction; Publish, Revoke, Retire,
     RenewEvidence, DeploymentApply, DeploymentDelete, TriggerApply, TriggerDelete, Rollout, Promotion, Rollback, CapabilityCall);
 mapping!(capability_resource, AuditCapabilityResourceClass, AuditCapabilityResourceClass;
-    Context, Clock, Random, Log, Http, Blob, Secrets, Events, Telemetry, Service);
+    Context, Clock, Random, Log, Http, Blob, Secrets, Events, Telemetry, Service, Stream);
 mapping!(provider_outcome, AuditProviderOutcome, AuditProviderOutcome;
     NotStarted, LocalDispatchAccepted, HttpResponseReceived, BrokerAcknowledged, BlobSealed,
     SecretResolved, HostCompleted, Rejected, Unknown);

@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "ClosedOperationObservation.test_all_current_public_reasons_retain_retryability_without_settling_the_original",
+    "ClosedOperationObservation.test_known_terminal_result_does_not_create_an_uncertainty_observation",
+    "ClosedOperationObservation.test_unknown_ambiguous_or_private_detail_shapes_are_not_retained"
+  ],
+  "guards": {
+    "ClosedOperationObservation.test_all_current_public_reasons_retain_retryability_without_settling_the_original": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03c93c66729afe421e5d892e112f3776b968bade82ecf1b5d120ab51a0d0d939",
+        "class:setup-sha256:0747364cf4c8f6bfb929766de48894e6942ca19ed3acfc422e28c72603b39892"
+      ],
+      "skipSites": []
+    },
+    "ClosedOperationObservation.test_known_terminal_result_does_not_create_an_uncertainty_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03c93c66729afe421e5d892e112f3776b968bade82ecf1b5d120ab51a0d0d939",
+        "class:setup-sha256:0747364cf4c8f6bfb929766de48894e6942ca19ed3acfc422e28c72603b39892"
+      ],
+      "skipSites": []
+    },
+    "ClosedOperationObservation.test_unknown_ambiguous_or_private_detail_shapes_are_not_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03c93c66729afe421e5d892e112f3776b968bade82ecf1b5d120ab51a0d0d939",
+        "class:setup-sha256:0747364cf4c8f6bfb929766de48894e6942ca19ed3acfc422e28c72603b39892"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_operation_observation.py",
+  "reviewReason": "Retain exactly closed admission currentness diagnostics for one unresolved operation; preserve every existing recovery test, pending ownership and mutation count.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -45,6 +45,8 @@ mod authority;
 mod diagnostics;
 #[path = "../guest_sdk/runtime.rs"]
 mod guest_runtime;
+#[path = "outbound/owners.rs"]
+pub mod streams;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
@@ -92,6 +94,36 @@ impl ActivationIdSource for Ids {
         )))
     }
 }
+
+/// Observe the real executor-owned timing registration; no artificial sleep or
+/// synthetic provider blocks the guest. Dropping a pending wait removes it.
+pub struct ObservedReadWait {
+    pub active: AtomicU64,
+    pub entered: tokio::sync::Notify,
+}
+impl latent_executor::PreparationReadWait for ObservedReadWait {
+    fn now(&self) -> Instant {
+        latent_executor::PreparationReadWait::now(&latent_node::CurrentnessReadTimer)
+    }
+    fn wait_until(&self, deadline: Instant) -> latent_core::BoxFuture<'_, ()> {
+        struct Active<'a>(&'a AtomicU64);
+        impl Drop for Active<'_> {
+            fn drop(&mut self) {
+                self.0.fetch_sub(1, Ordering::AcqRel);
+            }
+        }
+        Box::pin(async move {
+            self.active.fetch_add(1, Ordering::AcqRel);
+            let _active = Active(&self.active);
+            self.entered.notify_one();
+            latent_executor::PreparationReadWait::wait_until(
+                &latent_node::CurrentnessReadTimer,
+                deadline,
+            )
+            .await;
+        })
+    }
+}
 pub struct Fixture {
     _guest_runtime: guest_runtime::Runtime,
     pub manager: LocalActivationManager,
@@ -101,10 +133,13 @@ pub struct Fixture {
     pub catalog: Arc<DirectoryArtifactRepository>,
     pub quotas: LocalQuotaProvider,
     pub broker: Arc<ActivationCapabilityBroker>,
-    _policies: Arc<PolicyStore>,
+    pub maximum_calls_per_session: usize,
+    pub policies: Arc<PolicyStore>,
     _provider: ProviderRegistration,
     pub target: DeploymentManifest,
     pub observations: Arc<Observations>,
+    pub read_wait: Arc<ObservedReadWait>,
+    pub streams: Option<Box<streams::Owners>>,
     _root: tempfile::TempDir,
 }
 impl Fixture {
@@ -137,14 +172,60 @@ impl Fixture {
             audit,
             provided,
             Arc::new(SyntheticFixtureLoad),
+            None,
+            None,
         )
         .await
     }
     pub async fn with_load_source(load: Arc<dyn NodeLoadSource>) -> Self {
-        Self::with_packages_and_load(2, false, true, None, None, load).await
+        Self::with_packages_and_load(2, false, true, None, None, load, None, None).await
+    }
+    pub async fn with_activation_runtime(
+        cells: u32,
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+    ) -> Self {
+        Self::with_packages_and_load(
+            cells,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some((limits, call_wall_millis)),
+            None,
+        )
+        .await
+    }
+    pub async fn with_outbound_streams(
+        cells: u32,
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        configuration: latent_streams::StreamProviderConfig,
+    ) -> Self {
+        Self::with_packages_and_load(
+            cells,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            None,
+            Some(Box::new(configuration)),
+        )
+        .await
     }
     #[expect(
         clippy::too_many_lines,
+        clippy::too_many_arguments,
         reason = "one explicit real catalog, broker and node ownership composition for integration tests"
     )]
     async fn with_packages_and_load(
@@ -158,7 +239,10 @@ impl Fixture {
             latent_packaging::PackageBundle,
         )>,
         load: Arc<dyn NodeLoadSource>,
+        activation_runtime: Option<(latent_core::activation_runtime::RuntimeLimits, u64)>,
+        outbound_streams: Option<Box<latent_streams::StreamProviderConfig>>,
     ) -> Self {
+        let stream_enabled = outbound_streams.is_some();
         let root = tempfile::tempdir().unwrap();
         let target_tenant = if foreign { "tenant-b" } else { "tenant-a" };
         let (catalog, caller, callee) = if let Some(provided) = provided {
@@ -203,6 +287,7 @@ impl Fixture {
             (catalog, caller, callee)
         };
         let config = WasmtimeConfig {
+            activation_runtime: activation_runtime.map(|(limits, _)| limits),
             java_guest: guest_runtime::java(),
             fuel_async_yield_interval: guest_runtime::java().then_some(10_000),
             maximum_memory_bytes: packages::budget().memory_bytes,
@@ -211,6 +296,13 @@ impl Fixture {
             epoch_tick_interval_millis: 1,
             ..Default::default()
         };
+        let runtime_clocks = activation_runtime.is_some()
+            && caller
+                .surface()
+                .unwrap()
+                .imports()
+                .iter()
+                .any(|import| import.as_ref() == "latent:clock/monotonic@0.1.0");
         let store = Arc::new(
             DirectoryDeploymentRepository::open_with_catalog(
                 root.path().join("routes"),
@@ -242,13 +334,40 @@ impl Fixture {
             .manifest
             .execution
             .resource_budget_ceiling;
-        consumer.grants = vec![CapabilityGrantSpec::new(
-            latent_core::CapabilityId(SERVICE_INVOCATION_CAPABILITY.into()),
-            PolicyId("local-calls".into()),
-        )];
-        consumer.grants.extend(guest_runtime::grants());
+        consumer.grants = if stream_enabled {
+            streams::grants()
+        } else if activation_runtime.is_some() {
+            let mut grants = vec![CapabilityGrantSpec::new(
+                latent_core::CapabilityId(guest_runtime::ACTIVATION.into()),
+                PolicyId("sdk-runtime-policy-0".into()),
+            )];
+            if runtime_clocks {
+                for (index, capability) in
+                    ["latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0"]
+                        .iter()
+                        .enumerate()
+                {
+                    grants.push(CapabilityGrantSpec::new(
+                        latent_core::CapabilityId((*capability).into()),
+                        PolicyId(format!("sdk-runtime-policy-{}", index + 1)),
+                    ));
+                }
+            }
+            grants
+        } else {
+            let mut grants = vec![CapabilityGrantSpec::new(
+                latent_core::CapabilityId(SERVICE_INVOCATION_CAPABILITY.into()),
+                PolicyId("local-calls".into()),
+            )];
+            grants.extend(guest_runtime::grants());
+            grants
+        };
         let mut target = deployment("callee", target_tenant, &callee, &callee_publication);
-        target.grants = guest_runtime::grants();
+        target.grants = if activation_runtime.is_some() || stream_enabled {
+            vec![]
+        } else {
+            guest_runtime::grants()
+        };
         target.resources = catalog
             .fetch(&packages::release(&callee))
             .await
@@ -307,11 +426,12 @@ impl Fixture {
                 .unwrap();
         }
         let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
+        let broker_limits = CapabilityBrokerLimits::default();
         let broker = ActivationCapabilityBroker::new(
             catalog.lifecycle_authority(),
             policies.clone(),
             clock.clone(),
-            CapabilityBrokerLimits::default(),
+            broker_limits,
         )
         .unwrap();
         let broker = Arc::new(match audit {
@@ -328,32 +448,48 @@ impl Fixture {
                 minimum_call_charges: &[],
             })
             .unwrap();
-        let guest_runtime = guest_runtime::Runtime::scoped(
-            &broker,
-            &policies,
-            "tenant-a",
-            &[
-                guest_runtime::Scope {
-                    services: &["caller"],
-                    publications: std::slice::from_ref(&caller_publication),
-                    principal: ("user", "alice"),
-                },
-                // Local invocation deliberately derives a service principal;
-                // the child does not inherit Alice's user authority.
-                guest_runtime::Scope {
-                    services: &["callee"],
-                    publications: std::slice::from_ref(&callee_publication),
-                    principal: ("service", "service:8:tenant-a:6:caller"),
-                },
-            ],
-            false,
-        );
+        let scopes = [
+            guest_runtime::Scope {
+                services: &["caller"],
+                publications: std::slice::from_ref(&caller_publication),
+                principal: ("user", "alice"),
+            },
+            // Local invocation derives its own service principal.
+            guest_runtime::Scope {
+                services: &["callee"],
+                publications: std::slice::from_ref(&callee_publication),
+                principal: ("service", "service:8:tenant-a:6:caller"),
+            },
+        ];
+        let streams = outbound_streams.map(|configuration| {
+            Box::new(streams::Owners::install(
+                &broker,
+                &policies,
+                &caller_publication,
+                &configuration,
+            ))
+        });
+        let guest_runtime = if let Some((_, call_wall_millis)) = activation_runtime {
+            guest_runtime::Runtime::activation_scoped_with_clocks(
+                &broker,
+                &policies,
+                "tenant-a",
+                &scopes,
+                call_wall_millis,
+                runtime_clocks,
+            )
+        } else {
+            guest_runtime::Runtime::scoped(&broker, &policies, "tenant-a", &scopes, false)
+        };
         let definition = BindingDefinition { manifest: JsonManifestCodec::default().decode_binding(&serde_json::to_vec(&json!({
             "apiVersion":"latent.dev/v1alpha1","kind":"Binding","metadata":{"name":"local-call","tenant":"tenant-a"},
             "spec":{"consumer":{"service":"caller","contract":SERVICE_INVOCATION_CAPABILITY},"provider":{"service":"callee","contract":component::CALLEE,"route":"callee"},"mode":"isolated-local"}})).unwrap()).unwrap(),
             provider_binding_id: "installed".into(), allowed_modes: vec![BindingMode::IsolatedLocal], restriction_json: br#"{"operations":[]}"#.to_vec() };
         let mut definitions = vec![definition];
         definitions.extend(guest_runtime.definitions("tenant-a", &["caller", "callee"]));
+        if streams.is_some() {
+            definitions.push(streams::Owners::definition());
+        }
         let mut providers = vec![ConfiguredBindingProvider {
             tenant: TenantId("tenant-a".into()),
             service: ServiceId("callee".into()),
@@ -361,6 +497,9 @@ impl Fixture {
             local_deployment: Some(DeploymentId("callee".into())),
         }];
         providers.extend(guest_runtime.providers("tenant-a"));
+        if let Some(streams) = &streams {
+            providers.push(streams.provider());
+        }
         let (generation, transaction) = store.binding_version().unwrap();
         let update = store
             .prepare_binding_update(
@@ -379,12 +518,21 @@ impl Fixture {
             store.clone(),
         ));
         guest_runtime.install(&capabilities);
+        if let Some(streams) = &streams {
+            capabilities
+                .install_outbound_streams(streams.lifecycle.clone())
+                .unwrap();
+        }
+        let read_wait = Arc::new(ObservedReadWait {
+            active: AtomicU64::new(0),
+            entered: tokio::sync::Notify::new(),
+        });
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             config,
             WasmtimeHostServices {
                 clock: clock.clone(),
                 capabilities: Some(capabilities.clone()),
-                currentness_read_wait: Some(Arc::new(latent_node::CurrentnessReadTimer)),
+                currentness_read_wait: Some(read_wait.clone()),
                 log_sink: None,
             },
             catalog.lifecycle_authority(),
@@ -392,7 +540,7 @@ impl Fixture {
         .unwrap();
         let backend = Arc::new(factory.create_backend_instance());
         let quotas = LocalQuotaProvider::with_profile(
-            node_policy(cells),
+            node_policy(cells, stream_enabled),
             BudgetProfile::Phase3,
             latent_core::DelegationLimits::default(),
         )
@@ -448,10 +596,13 @@ impl Fixture {
             catalog,
             quotas,
             broker,
-            _policies: policies,
+            maximum_calls_per_session: broker_limits.maximum_calls_per_session,
+            policies,
             _provider: provider,
             target,
             observations,
+            read_wait,
+            streams,
             _root: root,
         }
     }
@@ -461,6 +612,9 @@ impl Fixture {
         request.target.contract = ContractId(component::CALLER.into());
         request.target.function = FunctionId("run".into());
         request.budget = packages::budget();
+        if self.streams.is_some() {
+            request.budget.outbound_requests = 8;
+        }
         request.input = format!("[{which}]").into_bytes();
         request.input_media_type = "application/vnd.latent.wit-values.v1+json".into();
         request
@@ -472,6 +626,7 @@ impl Fixture {
                 if self.quotas.usage().unwrap().active_activations == 0
                     && self.manager.cancellation_snapshot().active_registrations == 0
                     && self.backend.active_instance_reservations() == 0
+                    && self.backend.resource_snapshot().live_stores == 0
                     && broker.calls == 0
                     && broker.sessions == 0
                     && broker.handles == 0
@@ -551,9 +706,12 @@ fn deployment(
         .decode_deployment(&serde_json::to_vec(&document).unwrap())
         .unwrap()
 }
-fn node_policy(cells: u32) -> latent_admission::NodeAdmissionPolicy {
+fn node_policy(cells: u32, stream_enabled: bool) -> latent_admission::NodeAdmissionPolicy {
     let mut policy = admission_fixture::node_policy(cells);
     policy.budget_ceiling = packages::budget();
+    if stream_enabled {
+        policy.budget_ceiling.outbound_requests = 8;
+    }
     policy.architecture = std::env::consts::ARCH.into();
     policy.limits.maximum_reserved_cpu_fuel = packages::budget().cpu_fuel * 8;
     policy.limits.maximum_reserved_memory_bytes = packages::budget().memory_bytes * 8;

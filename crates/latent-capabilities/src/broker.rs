@@ -14,6 +14,8 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 mod audit;
 mod clock;
 pub use clock::HostClock;
+mod currentness;
+pub use currentness::is_authority_bookkeeping_busy;
 pub mod blob;
 pub mod diagnostics;
 pub mod events;
@@ -24,6 +26,7 @@ mod invocation;
 pub mod io;
 mod limits;
 mod local_service;
+pub mod network;
 mod ownership;
 mod plan;
 pub mod pools;
@@ -73,6 +76,7 @@ struct Inner {
     counters: Arc<Counters>,
     sessions: Mutex<Vec<session::RegistryEntry>>,
     pool_diagnostics: std::sync::OnceLock<Weak<pools::Inner>>,
+    stream_diagnostics: std::sync::OnceLock<Weak<dyn network::OutboundStreamInvoker>>,
     pool_registered: std::sync::atomic::AtomicBool,
 }
 impl ActivationCapabilityBroker {
@@ -102,6 +106,7 @@ impl ActivationCapabilityBroker {
                         .collect(),
                 ),
                 pool_diagnostics: std::sync::OnceLock::new(),
+                stream_diagnostics: std::sync::OnceLock::new(),
             }),
         })
     }

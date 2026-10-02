@@ -17,7 +17,8 @@ development-test-host = ["latent-artifacts/development-test-host", "latent-polic
 java-guest-diagnostic = []
 
 [lints.rust]
-# Only the private authenticated copying loader may locally allow unsafe.
+# Private authenticated native loading and exact canonical result delegation
+# may locally allow unsafe; other runtime code retains this deny boundary.
 unsafe_code = "deny"
 
 [lints.clippy]
@@ -55,6 +56,7 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 wasmtime = { workspace = true, features = ["gc", "gc-drc"] }
+wasmparser.workspace = true
 zeroize = { version = "=1.9.0", features = ["alloc"] }
 
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
@@ -75,6 +77,8 @@ latent-vault = { path = "../latent-vault" }
 latent-secrets = { path = "../latent-secrets" }
 latent-blobs = { path = "../latent-blobs" }
 latent-http = { path = "../latent-http" }
+latent-streams = { path = "../latent-streams", features = ["development-outbound"] }
+latent-network = { path = "../latent-network" }
 latent-admission = { path = "../latent-admission" }
 latent-control-store = { path = "../latent-control-store" }
 tempfile.workspace = true

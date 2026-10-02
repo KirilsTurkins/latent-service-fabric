@@ -156,12 +156,14 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--language", default="rust", choices=("rust", "c", "go", "typescript", "dotnet", "java"))
     parser.add_argument("--cli", type=Path, required=True)
     parser.add_argument("--node", type=Path, required=True)
     parser.add_argument("--releases", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    result = run(args.cli.resolve(strict=True), args.node.resolve(strict=True), args.releases.resolve(strict=True), args.output)
+    result = run(args.cli.resolve(strict=True), args.node.resolve(strict=True), args.releases.resolve(strict=True), args.output,
+                 language=args.language)
     print(json.dumps({"status": result["status"], "invocations": len(result["invocations"]), "cliCalls": result["cliCalls"]}))
 
 
