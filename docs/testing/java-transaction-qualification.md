@@ -195,3 +195,46 @@ only cases actually completed, requires positive final native shutdown counters,
 and explicitly lists missing schema/restore, trap/fuel, precommit cancellation,
 memory exhaustion and full retention-window scenarios. A pass of this focused
 campaign does not complete the full Java or Phase 4 acceptance checklist.
+
+## Installed native offline actions
+
+On Linux x86-64, `transaction_recovery --request-file <protected-json>` selects
+one bounded offline action through the normal native catalog owners. It is
+mutually exclusive with startup diagnosis. The request is at most 16 KiB and
+contains an exact installed publication plus a closed action: snapshot,
+inspect-namespace, inspect-restore, restore, stage-migration,
+complete-migration, review, or resume. Original operation IDs, checkpoint
+digests, restore-window acknowledgement and 67-byte view tokens remain data;
+the request has no approval, grant, plugin or deadline fields.
+
+The helper authenticates the configured transport administrator and selected
+tenant, loads the actual signed companion and retained package assets, and
+retains current purpose-specific policy decisions under the real native state
+profile. Native recovery purposes use a separate explicit administrator rule;
+every policy/binding operation array retains its original 16-operation bound.
+The installed Java codec reviewer executes finite reader, writer and fixed
+migration-recipe conformance against the original schema/source associations.
+That native conformance does not establish Java runtime qualification.
+
+Opening the existing protected owner is exclusive and never creates a missing
+store, initializes a dispatcher epoch or executes a guest/provider. The full
+linked registry checks every retained family in one native view; unknown formats
+and foreign scopes refuse. Snapshot files can only narrow the original native
+size ceiling to the retained operator grant. Original retained command, result,
+effect, payload and schema identities remain recognizable, and unresolved local
+work blocks recovery review. A retained pending effect does not establish whether
+an external request was sent or completed.
+
+Restore, migration, reconciliation and resume recheck their actual retained
+purpose and current publication at the existing final writer/publication fences.
+The protected clock checkpoint must already cover the actual retained owner
+epoch and floor. Descriptive row numbers cannot update that checkpoint or mint
+clock continuity. A staged restore, missing current authority, incompatible
+codec or stale checkpoint stays refused. Migration remains quiesced and requires
+separate reviewed resume; neither action replays historical effects.
+
+The closed report separates `operationSucceeded` and its original result from
+physical worker retirement and `catalogsRetired`. Cleanup failure preserves the
+original operation disposition. The example bounds serialized output to 4 MiB.
+These source interfaces and native codec/request cases still require compiled
+native and actual signed-Java schema/restore campaign evidence before acceptance.

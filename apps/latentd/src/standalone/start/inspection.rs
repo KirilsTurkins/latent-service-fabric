@@ -38,7 +38,10 @@ impl Catalogs {
         .await
     }
 
-    async fn close_inspection(mut self, settings: &NodeSettings) -> Result<(), PlatformError> {
+    pub(super) async fn close_inspection(
+        mut self,
+        settings: &NodeSettings,
+    ) -> Result<(), PlatformError> {
         let deadline = Instant::now() + settings.shutdown_grace;
         let mut failure = None;
         self.capabilities.take();
