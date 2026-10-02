@@ -43,6 +43,151 @@
     "latent-telemetry",
     "latent-workflows"
   ],
+  "fixtureRecipes": {
+    "angular-renderer": {
+      "commands": [
+        {
+          "argv": [
+            "npm",
+            "ci",
+            "--ignore-scripts",
+            "--no-audit",
+            "--no-fund"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "python3",
+            "tools/build_angular_renderer.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1200
+        }
+      ],
+      "outputs": {
+        "component": {
+          "environment": "LSF_ANGULAR_COMPONENT",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "path": "examples/renderer-profile/dist/runtime/application.wasm"
+        },
+        "private-renderer": {
+          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "path": "examples/renderer-profile/dist/runtime/renderer.wasm"
+        }
+      },
+      "tools": [
+        "cargo",
+        "rustc",
+        "node",
+        "npm",
+        "wasm-tools"
+      ]
+    },
+    "echo-capsule": {
+      "commands": [
+        {
+          "argv": [
+            "python3",
+            "tools/build_echo_capsule.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1800
+        }
+      ],
+      "outputs": {
+        "echo-build": {
+          "kind": "json",
+          "maximumBytes": 1048576,
+          "path": "{target}/capsules/echo/build.json"
+        },
+        "echo-capsule": {
+          "environment": "LSF_ECHO_CAPSULE",
+          "kind": "json",
+          "maximumBytes": 1048576,
+          "path": "{target}/capsules/echo/capsule.json"
+        },
+        "echo-component": {
+          "environment": "LSF_ECHO_COMPONENT",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "path": "{target}/capsules/echo/echo-capsule.wasm"
+        }
+      },
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ]
+    },
+    "oversized-log": {
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "build",
+            "-p",
+            "latent-toolchain-smoke",
+            "--example",
+            "oversized-log-capsule",
+            "--target",
+            "wasm32-unknown-unknown",
+            "--release",
+            "--locked"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 900
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "component",
+            "new",
+            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
+            "-o",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "validate",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        }
+      ],
+      "outputs": {
+        "oversized-log-component": {
+          "environment": "LSF_OVERSIZED_LOG_COMPONENT",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+        }
+      },
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ]
+    }
+  },
   "forbiddenFastDependencies": [
     "latent-testkit",
     "latent-wasmtime",
@@ -57,7 +202,159 @@
     "latent-state",
     "latent-workflows"
   ],
+  "processContracts": {
+    "angular-renderer": {
+      "caseFilters": {
+        "latentd.lib.latentd": "actual_angular_http_"
+      },
+      "fixtures": [
+        "angular-renderer"
+      ],
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component",
+          "private-renderer"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [],
+        "tools": [
+          "git",
+          "rustc"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-wasmtime.test.angular-renderer",
+        "latentd.lib.latentd"
+      ],
+      "timeoutSeconds": 840
+    },
+    "oci-registry": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-oci.test.registry"
+      ],
+      "timeoutSeconds": 240
+    },
+    "oci-web": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-policy.lib.latent-policy"
+      ],
+      "timeoutSeconds": 240
+    }
+  },
   "recipes": {
+    "core-host": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-core",
+        "--lib",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
+    },
+    "echo-runtime": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-wasmtime",
+        "--test",
+        "echo_backend",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
+    },
     "explicit-doctests": {
       "expectedResultCounts": [
         1,
@@ -126,39 +423,6 @@
       "features": "all (including default)",
       "profile": "debug",
       "target": "host"
-    },
-    "echo-runtime": {
-      "build": [
-        "cargo",
-        "test",
-        "-p",
-        "latent-wasmtime",
-        "--test",
-        "echo_backend",
-        "--all-features",
-        "--locked",
-        "--no-run",
-        "--message-format=json,json-render-diagnostics"
-      ],
-      "features": "all (including default)",
-      "profile": "debug",
-      "target": "host"
-    },
-    "core-host": {
-      "build": [
-        "cargo",
-        "test",
-        "-p",
-        "latent-core",
-        "--lib",
-        "--all-features",
-        "--locked",
-        "--no-run",
-        "--message-format=json,json-render-diagnostics"
-      ],
-      "features": "all (including default)",
-      "profile": "debug",
-      "target": "host"
     }
   },
   "rendererPackages": [
@@ -214,6 +478,23 @@
       "suite": "latentd.lib.latentd",
       "testThreads": 1,
       "timeoutSeconds": 300
+    },
+    "echo-runtime": {
+      "exact": false,
+      "filter": "",
+      "ignored": true,
+      "names": [
+        "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
+        "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
+        "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latent-wasmtime.test.echo-backend",
+      "testThreads": 1,
+      "timeoutSeconds": 900,
+      "executionOnly": true
     },
     "metadata-working-set": {
       "exact": true,
@@ -400,23 +681,6 @@
       "suite": "latent-wasmtime.test.vault-secrets",
       "testThreads": 1,
       "timeoutSeconds": 300
-    },
-    "echo-runtime": {
-      "exact": false,
-      "filter": "",
-      "ignored": true,
-      "names": [
-        "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
-        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
-        "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
-        "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
-      ],
-      "resourceClass": "runtime-bounded",
-      "runner": "ci_rust_artifacts",
-      "suite": "latent-wasmtime.test.echo-backend",
-      "testThreads": 1,
-      "timeoutSeconds": 900,
-      "executionOnly": true
     }
   },
   "sourceRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3322,6 +3586,30 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
+      "id": "latent-packaging.example.component-work",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/component_work.rs",
+      "target": "component_work",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
       "id": "latent-packaging.example.package",
       "ignoredLeaves": [],
       "kind": "example",
@@ -4047,14 +4335,29 @@
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
+      "expectedCases": [
+        "phase4::tests::business_rejection_remains_durable_without_application_commit",
+        "phase4::tests::compatible_current_publication_preserves_original_retained_source",
+        "phase4::tests::create_preserves_present_zero_and_requires_finite_configuration",
+        "phase4::tests::cross_tenant_current_publication_fails_before_lookup",
+        "phase4::tests::current_read_publication_is_required_without_changing_command_selector",
+        "phase4::tests::exact_negotiated_profile_has_no_unknown_fallback",
+        "phase4::tests::incarnation_is_positive_canonical_lossless_unsigned64",
+        "phase4::tests::namespaces_reject_unknown_mutation_and_unbounded_page_requests",
+        "phase4::tests::operation_receipt_recovery_requires_one_associated_receipt",
+        "phase4::tests::response_cannot_substitute_command_body_or_requested_attempt",
+        "phase4::tests::retained_allocation_capacity_is_charged_before_encoded_length",
+        "phase4::tests::short_and_filtered_empty_pages_retain_explicit_continuation",
+        "phase4::tests::technical_abort_requires_exact_attempt_fence",
+        "phase4::tests::unknown_expired_and_in_progress_never_supply_abort_fence"
+      ],
       "expectedIgnored": [],
       "id": "latent-rpc.lib.latent-rpc",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-rpc/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
+      "minimumCases": 14,
+      "mode": "libtest",
       "package": "latent-rpc",
       "platforms": [
         "linux-x86_64"
@@ -5064,34 +5367,14 @@
         "harness::tests::contracts::work_limit_cannot_masquerade_as_an_expected_resource_exhaustion",
         "harness::tests::probes::idle_scaling_requires_explicit_measurement_and_exact_release_count",
         "harness::tests::probes::inventory_is_delegated_without_reconstructing_or_hiding_source_failures",
-        "harness::tests::probes::telemetry_returns_actual_metrics_and_rejects_large_source_maxima_even_when_empty",
-        "process::owned::tests::aborting_a_reader_drops_the_pipe_without_waiting_for_inherited_writers",
-        "process::owned::tests::child_records_and_both_pipes_are_complete_after_wait",
-        "process::owned::tests::dropping_a_pending_wait_keeps_the_child_under_tokio_cleanup",
-        "process::owned::tests::invalid_limits_fail_before_attempting_to_spawn_a_program",
-        "process::owned::tests::lifetime_timeout_reaps_the_child_and_explicit_termination_retains_status",
-        "process::owned::tests::overflowing_either_pipe_is_an_error_and_the_live_child_is_reaped",
-        "process::tests::builds_a_repeatable_command",
-        "resources::child::tests::captures_the_live_child_listener_and_rejects_foreign_or_exited_owners",
-        "resources::child::tests::observed_u64_values_and_unavailable_fields_roundtrip_losslessly",
-        "resources::child::tests::resource_child_fixture",
-        "resources::current::tests::own_sampling_has_stable_identity_and_does_not_count_its_directory_handle",
-        "resources::linux::tests::descendants_created_by_other_tasks_are_included_and_bounded",
-        "resources::linux::tests::disappearing_fd_and_missing_or_oversized_proc_files_are_unavailable",
-        "resources::linux::tests::reused_foreign_pid_is_not_reported_as_an_owned_descendant",
-        "resources::parse::tests::descendant_lists_have_an_independent_count_bound",
-        "resources::parse::tests::process_name_parentheses_and_spaces_cannot_shift_start_time",
-        "resources::parse::tests::rss_units_absence_and_overflow_are_not_zero_measurements",
-        "resources::parse::tests::tcp_listener_counts_intersect_owned_inodes_instead_of_namespace_totals",
-        "resources::tests::captures_the_current_process_identity",
-        "resources::tests::parses_linux_status_values"
+        "harness::tests::probes::telemetry_returns_actual_metrics_and_rejects_large_source_maxima_even_when_empty"
       ],
       "expectedIgnored": [],
       "id": "latent-testkit.lib.latent-testkit",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-testkit/Cargo.toml",
-      "minimumCases": 40,
+      "minimumCases": 20,
       "mode": "libtest",
       "package": "latent-testkit",
       "platforms": [
@@ -5181,6 +5464,30 @@
       "resourceClass": "runtime-bounded",
       "source": "examples/containment_capsule/component.rs",
       "target": "containment-capsule",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.dotnet-closed-runtime",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/dotnet_closed_runtime.rs",
+      "target": "dotnet-closed-runtime",
       "timeoutSeconds": 900
     },
     {
@@ -5497,6 +5804,30 @@
     },
     {
       "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.transaction-contract",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "../../sdk/transaction-contract/rust/component.rs",
+      "target": "transaction-contract",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
       "expectedCases": [
         "tests::greets_trimmed_names_and_explains_invalid_input"
       ],
@@ -5708,6 +6039,30 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
+      "id": "latent-wasmtime.bin.latent-aot-compiler",
+      "ignoredLeaves": [],
+      "kind": "bin",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/bin/latent-aot-compiler.rs",
+      "target": "latent-aot-compiler",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
       "id": "latent-wasmtime.example.go-runtime-probe",
       "ignoredLeaves": [],
       "kind": "example",
@@ -5732,9 +6087,9 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
-      "id": "latent-wasmtime.bin.latent-aot-compiler",
+      "id": "latent-wasmtime.example.java-runtime-probe",
       "ignoredLeaves": [],
-      "kind": "bin",
+      "kind": "example",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
       "minimumCases": 0,
       "mode": "compile-only",
@@ -5748,8 +6103,32 @@
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
-      "source": "src/bin/latent-aot-compiler.rs",
-      "target": "latent-aot-compiler",
+      "source": "examples/java_runtime_probe.rs",
+      "target": "java_runtime_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.example.typescript-runtime-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/typescript_runtime_probe.rs",
+      "target": "typescript_runtime_probe",
       "timeoutSeconds": 900
     },
     {
@@ -6321,7 +6700,7 @@
       "kind": "test",
       "listContract": "unsupported",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 1,
+      "minimumCases": 0,
       "mode": "custom",
       "package": "latent-wasmtime",
       "platforms": [
@@ -6346,6 +6725,31 @@
     },
     {
       "boundary": "runtime",
+      "expectedCustomCases": [
+        "active-shutdown",
+        "cancel-running-prefix",
+        "diagnostic-overflow",
+        "fragmented-success",
+        "healthy-after-failures",
+        "inherited-descriptor",
+        "last-owner-drop",
+        "launch-mismatch",
+        "malformed-readiness",
+        "nonzero-exit",
+        "oversized",
+        "probe-launch-mismatch",
+        "probe-stalled-launch",
+        "readiness-malformed",
+        "readiness-relative-path",
+        "readiness-success",
+        "readiness-wrong-digest",
+        "running-deadline",
+        "stalled-launch",
+        "trailing",
+        "truncated-body",
+        "truncated-header",
+        "zero"
+      ],
       "id": "latent-wasmtime.test.aot-supervisor",
       "ignoredLeaves": [
         "actual_built_angular_application_renders_fresh_hydration_and_rejects_excess_data",
@@ -6466,31 +6870,6 @@
       "successMarker": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
       "target": "aot_supervisor",
       "timeoutSeconds": 900,
-      "expectedCustomCases": [
-        "active-shutdown",
-        "cancel-running-prefix",
-        "diagnostic-overflow",
-        "fragmented-success",
-        "healthy-after-failures",
-        "inherited-descriptor",
-        "last-owner-drop",
-        "launch-mismatch",
-        "malformed-readiness",
-        "nonzero-exit",
-        "oversized",
-        "probe-launch-mismatch",
-        "probe-stalled-launch",
-        "readiness-malformed",
-        "readiness-relative-path",
-        "readiness-success",
-        "readiness-wrong-digest",
-        "running-deadline",
-        "stalled-launch",
-        "trailing",
-        "truncated-body",
-        "truncated-header",
-        "zero"
-      ],
       "expectedCases": [],
       "expectedIgnored": []
     },
@@ -6630,14 +7009,18 @@
         "clock_wait_does_not_renew_an_expired_original_admission_lease",
         "clock_wait_never_replaces_a_revoked_original_policy",
         "dropping_actual_clock_wait_drops_store_and_all_pending_owners",
-        "legacy_clock_without_explicit_timer_still_fails_closed_on_real_fence"
+        "dropping_real_session_currentness_wait_retires_prepared_owner_without_guest",
+        "legacy_clock_without_explicit_timer_still_fails_closed_on_real_fence",
+        "legacy_session_without_timer_fails_closed_before_store_or_guest",
+        "real_session_currentness_wait_precedes_store_registration_and_calls_guest_once",
+        "real_session_wait_keeps_original_cancellation_and_lease_expiry"
       ],
       "expectedIgnored": [],
       "id": "latent-wasmtime.test.clock-admission",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 5,
+      "minimumCases": 9,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -6698,6 +7081,45 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "expectedIgnored": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "id": "latent-wasmtime.test.dotnet-guest",
+      "ignoredLeaves": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 2,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/dotnet_guest.rs",
+      "target": "dotnet_guest",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "caseFixtures": {
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel": [
+          "oversized-log"
+        ]
+      },
+      "expectedCases": [
         "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
         "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
         "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
@@ -6708,6 +7130,9 @@
         "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
         "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
         "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
+      ],
+      "fixtures": [
+        "echo-capsule"
       ],
       "id": "latent-wasmtime.test.echo-backend",
       "ignoredLeaves": [
@@ -6732,15 +7157,7 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/echo_backend.rs",
       "target": "echo_backend",
-      "timeoutSeconds": 900,
-      "fixtures": [
-        "echo-capsule"
-      ],
-      "caseFixtures": {
-        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel": [
-          "oversized-log"
-        ]
-      }
+      "timeoutSeconds": 900
     },
     {
       "boundary": "runtime",
@@ -7174,6 +7591,7 @@
         "asynchronous_error_and_child_failure_forward_original_results_and_owners",
         "closed_constructor_shapes_have_distinct_safe_reasons",
         "dropping_unpolled_or_pending_invocations_preserves_inner_ownership",
+        "failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness",
         "full_contended_or_poisoned_observation_storage_never_changes_invocation_results",
         "successful_and_declared_outcomes_keep_payloads_and_owners_without_records",
         "synchronous_start_failure_is_forwarded_once_without_cloning",
@@ -7184,7 +7602,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 8,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -7665,14 +8083,23 @@
         "management::rollouts::tests::unknown_state_and_absent_command_are_invalid",
         "management::triggers::tests::static_web_wire_has_no_application_target_fields_and_rejects_hybrids",
         "management::triggers::tests::trigger_native_wire_sparse_maps_and_reserved_strings_deny_before_conversion",
-        "management::triggers::tests::trigger_wire_derives_actor_and_preserves_explicit_cas_and_publication"
+        "management::triggers::tests::trigger_wire_derives_actor_and_preserves_explicit_cas_and_publication",
+        "phase4::lease::tests::actual_frame_holds_response_owner_after_body_disconnect",
+        "phase4::lease::tests::revocation_before_deferred_encoding_denies_original_retained_body",
+        "phase4::lease::tests::unpolled_response_body_drop_retires_exact_owner_once",
+        "phase4::public_error::tests::business_rejection_and_success_payloads_remain_original_application_values",
+        "phase4::public_error::tests::technical_cleanup_diagnostics_are_redacted_without_changing_durable_outcome",
+        "phase4::tests::malformed_profile_and_stale_transport_deadline_never_admit_work",
+        "phase4::tests::missing_identity_and_wrong_tenant_cannot_touch_recovery_runtime",
+        "phase4::tests::namespace_operations_require_management_role_before_domain_owner",
+        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.lib.latent-wire",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 119,
+      "minimumCases": 128,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -7944,6 +8371,14 @@
         "management::phase2::tests::projection_preserves_large_counters_and_rejects_spare_capacity_before_json",
         "management::phase2::tests::rollout_start_requires_matching_candidate_weight_without_rewriting_the_manifest",
         "management::phase2::tests::typed_audit_ack_requires_the_same_positive_sequence_as_metadata",
+        "management::phase4::tests::command_lookup_keeps_explicit_attempt_and_current_publication_separate",
+        "management::phase4::tests::command_name_and_offline_preflight_do_not_contact_a_node",
+        "management::phase4::tests::configuration_is_closed_bounded_lossless_and_not_arbitrary_state_editing",
+        "management::phase4::tests::grammar_requires_current_target_and_original_operation_precondition",
+        "management::phase4::tests::human_and_json_projection_keep_exact_retention_source_and_cleanup_facts",
+        "management::phase4::tests::paging_uses_exact_opaque_continuation_without_hidden_polling",
+        "management::phase4::tests::prepared_mutation_and_lost_response_context_keep_original_identity_and_generation",
+        "management::phase4::tests::rejection_and_ambiguous_outcomes_remain_distinct_from_success_or_abort",
         "management::policies::execute::validation::tests::response_scope_document_digest_and_revision_are_checked_before_output",
         "management::tests::association::absent_optional_get_results_remain_not_found_without_invented_identities",
         "management::tests::association::deployment_replies_cannot_substitute_a_different_valid_object_or_scope",
@@ -8011,7 +8446,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 130,
+      "minimumCases": 138,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
@@ -8719,424 +9154,6 @@
       "source": "tests/standalone_shutdown.rs",
       "target": "standalone_shutdown",
       "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-toolchain-smoke.example.dotnet-closed-runtime",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-toolchain-smoke",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/dotnet_closed_runtime.rs",
-      "target": "dotnet-closed-runtime",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "expectedIgnored": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "id": "latent-wasmtime.test.dotnet-guest",
-      "ignoredLeaves": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "kind": "test",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 2,
-      "mode": "libtest",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "tests/dotnet_guest.rs",
-      "target": "dotnet_guest",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-wasmtime.example.typescript-runtime-probe",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/typescript_runtime_probe.rs",
-      "target": "typescript_runtime_probe",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-packaging.example.component-work",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-packaging",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/component_work.rs",
-      "target": "component_work",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-wasmtime.example.java-runtime-probe",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/java_runtime_probe.rs",
-      "target": "java_runtime_probe",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-toolchain-smoke.example.transaction-contract",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-toolchain-smoke",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "../../sdk/transaction-contract/rust/component.rs",
-      "target": "transaction-contract",
-      "timeoutSeconds": 900
     }
-  ],
-  "processContracts": {
-    "angular-renderer": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest",
-          "component",
-          "private-renderer"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [],
-        "tools": [
-          "git",
-          "rustc"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-wasmtime.test.angular-renderer",
-        "latentd.lib.latentd"
-      ],
-      "timeoutSeconds": 840,
-      "caseFilters": {
-        "latentd.lib.latentd": "actual_angular_http_"
-      },
-      "fixtures": [
-        "angular-renderer"
-      ]
-    },
-    "oci-registry": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [
-          {
-            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-            "type": "docker-image"
-          }
-        ],
-        "tools": [
-          "git",
-          "rustc",
-          "docker",
-          "openssl"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-oci.test.registry"
-      ],
-      "timeoutSeconds": 240
-    },
-    "oci-web": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest",
-          "component"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [
-          {
-            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-            "type": "docker-image"
-          }
-        ],
-        "tools": [
-          "git",
-          "rustc",
-          "docker",
-          "openssl"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-policy.lib.latent-policy"
-      ],
-      "timeoutSeconds": 240
-    }
-  },
-  "fixtureRecipes": {
-    "echo-capsule": {
-      "tools": [
-        "cargo",
-        "rustc",
-        "wasm-tools"
-      ],
-      "commands": [
-        {
-          "argv": [
-            "python3",
-            "tools/build_echo_capsule.py"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 1800
-        }
-      ],
-      "outputs": {
-        "echo-component": {
-          "path": "{target}/capsules/echo/echo-capsule.wasm",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "environment": "LSF_ECHO_COMPONENT"
-        },
-        "echo-capsule": {
-          "path": "{target}/capsules/echo/capsule.json",
-          "kind": "json",
-          "maximumBytes": 1048576,
-          "environment": "LSF_ECHO_CAPSULE"
-        },
-        "echo-build": {
-          "path": "{target}/capsules/echo/build.json",
-          "kind": "json",
-          "maximumBytes": 1048576
-        }
-      }
-    },
-    "oversized-log": {
-      "tools": [
-        "cargo",
-        "rustc",
-        "wasm-tools"
-      ],
-      "commands": [
-        {
-          "argv": [
-            "cargo",
-            "build",
-            "-p",
-            "latent-toolchain-smoke",
-            "--example",
-            "oversized-log-capsule",
-            "--target",
-            "wasm32-unknown-unknown",
-            "--release",
-            "--locked"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 900
-        },
-        {
-          "argv": [
-            "wasm-tools",
-            "component",
-            "new",
-            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
-            "-o",
-            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 60
-        },
-        {
-          "argv": [
-            "wasm-tools",
-            "validate",
-            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 60
-        }
-      ],
-      "outputs": {
-        "oversized-log-component": {
-          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "environment": "LSF_OVERSIZED_LOG_COMPONENT"
-        }
-      }
-    },
-    "angular-renderer": {
-      "tools": [
-        "cargo",
-        "rustc",
-        "node",
-        "npm",
-        "wasm-tools"
-      ],
-      "commands": [
-        {
-          "argv": [
-            "npm",
-            "ci",
-            "--ignore-scripts",
-            "--no-audit",
-            "--no-fund"
-          ],
-          "cwd": "examples/renderer-profile",
-          "timeoutSeconds": 600
-        },
-        {
-          "argv": [
-            "npm",
-            "run",
-            "build"
-          ],
-          "cwd": "examples/renderer-profile",
-          "timeoutSeconds": 600
-        },
-        {
-          "argv": [
-            "python3",
-            "tools/build_angular_renderer.py"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 1200
-        }
-      ],
-      "outputs": {
-        "component": {
-          "path": "examples/renderer-profile/dist/runtime/application.wasm",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "environment": "LSF_ANGULAR_COMPONENT"
-        },
-        "private-renderer": {
-          "path": "examples/renderer-profile/dist/runtime/renderer.wasm",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT"
-        }
-      }
-    }
-  }
+  ]
 }
