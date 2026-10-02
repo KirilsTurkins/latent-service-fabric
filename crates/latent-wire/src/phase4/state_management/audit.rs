@@ -81,6 +81,7 @@ pub(super) async fn begin(
     match request {
         contract::Request::MutateNamespace(value) => hash.update(value.encode_to_vec()),
         contract::Request::InspectNamespace(value) => hash.update(value.encode_to_vec()),
+        contract::Request::SelectEntity(value) => hash.update(value.encode_to_vec()),
         contract::Request::GetStateOperationReceipt(value) => hash.update(value.encode_to_vec()),
         _ => return Err(unsupported()),
     }
@@ -182,6 +183,13 @@ fn operation(
             value.operation_id.clone(),
             action(value.mutation)?,
             value.expected_generation,
+        ));
+    }
+    if matches!(request, contract::Request::SelectEntity(_)) {
+        return Ok((
+            read_operation_id("entities")?,
+            AuditControlAction::StateOperationRead,
+            None,
         ));
     }
     Ok((

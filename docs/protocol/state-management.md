@@ -170,9 +170,29 @@ charge held by its byte frame. Detached queued writes retain their global
 capacity until native retirement; an expired original request creates no receipt,
 and an accepted lost response is recovered after a clean engine reopen.
 These tests qualify finite admission and worker progress, not recovery from an
-unreadable device or a complete standalone CLI workflow. Entity pages,
-maintenance jobs and command/effect operations
+unreadable device or a complete standalone CLI workflow. Maintenance jobs and command/effect operations
 must be supplied by the corresponding owning runtime ports.
+
+`SelectEntity` uses a coherent native snapshot on that same reserved Recovery
+worker and requires both current `namespace-list` and `namespace-inspect`
+decisions. It parses the canonical stored state scope and validates cells even
+when their entity does not match the requested prefix. Retained tombstones keep
+an entity discoverable; a command identity alone does not create entity state.
+The bounded scan refuses incomplete results at 65,536 physical rows, 128 MiB
+scanned bytes or 2,048 matching entity identities. Each response has at most 128
+entities and 1 MiB of complete protobuf page bytes. Exceeding a scan bound fails
+explicitly rather than reporting a false exhausted page.
+
+Entity continuations are descriptive RPC data bound to the original caller,
+prefix, current publication and policy constraints, namespace generation, durable
+schema epoch and recovery epoch. They do not reuse a guest session's affine
+cursor or grant data access. Each subsequent RPC acquires fresh current authority
+and a fresh physical view; a changed bound refuses the old continuation.
+The response retains the exact native view, original global Recovery reservation
+and real namespace lifecycle handle through encoding and retained byte-frame
+destruction. Read authority is checked again before publication. Destructive
+lifecycle drain cannot treat a detached response or body Drop as physical view
+retirement.
 
 The separate structural boundary tests establish preflight, authenticated
 association, original receipt identity and lossless projection. Full issue #400

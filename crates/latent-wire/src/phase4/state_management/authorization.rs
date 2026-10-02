@@ -13,6 +13,7 @@ pub(super) struct Access {
     pub binding: Arc<StateManagementBinding>,
     pub caller: CallerScope,
     pub inspect: OwnedPolicyDecision,
+    pub listing: Option<OwnedPolicyDecision>,
     pub mutation: Option<OwnedPolicyDecision>,
 }
 /// A descriptive SHA-256 precondition over original sealed configuration, not a
@@ -124,6 +125,11 @@ pub(super) async fn authorize(
         }
         _ => None,
     };
+    let listing = if matches!(request, contract::Request::SelectEntity(_)) {
+        Some(original.seal("namespace-list", binding.incarnation)?)
+    } else {
+        None
+    };
     let response_incarnation = if matches!(request, contract::Request::MutateNamespace(value) if value.mutation == c::NamespaceMutationKind::Recreate as i32)
     {
         binding.incarnation.checked_add(1).ok_or_else(capacity)?
@@ -132,6 +138,9 @@ pub(super) async fn authorize(
     };
     let inspect = original.seal("namespace-inspect", response_incarnation)?;
     if (inspect.requires_audit()
+        || listing
+            .as_ref()
+            .is_some_and(OwnedPolicyDecision::requires_audit)
         || mutation
             .as_ref()
             .is_some_and(OwnedPolicyDecision::requires_audit))
@@ -146,6 +155,7 @@ pub(super) async fn authorize(
         binding: Arc::clone(binding),
         caller,
         inspect,
+        listing,
         mutation,
     })
 }

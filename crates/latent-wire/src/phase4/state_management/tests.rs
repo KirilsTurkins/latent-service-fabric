@@ -2,6 +2,7 @@ use super::*;
 mod bindings;
 mod dispatcher;
 mod effects;
+mod entities;
 mod fixture;
 mod physical;
 mod recovery;

@@ -224,6 +224,13 @@ impl NamespaceLifecycleRegistry {
         self.owner.pins.load(Ordering::Acquire)
     }
 
+    /// Descriptive owner identity only. A matching handle still needs current
+    /// policy and its own lifecycle fence before any resource is exposed.
+    #[must_use]
+    pub fn owns_handle(&self, handle: &NamespaceLifecycleHandle) -> bool {
+        Arc::ptr_eq(&self.owner, &handle.owner)
+    }
+
     /// Current metadata inspection also checks pending lifecycle acceptance.
     pub fn with_current_record<T>(
         &self,
