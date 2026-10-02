@@ -71,7 +71,8 @@ pub(in crate::standalone) async fn inspect_host_configuration(
     let configuration = settings.state.as_ref().ok_or_else(super::denied)?;
     let installed = load_operations(artifacts, configuration.operations.clone()).await?;
     let time: Arc<dyn EffectTimeSource> = ProtectedCommandClock::load(settings, clock)?;
-    let mut store = ProtectedStoreConfig::bounded_linux(settings.data_directory.join("state"));
+    let mut store =
+        ProtectedStoreConfig::bounded_linux(configuration.protected_root(&settings.data_directory));
     store.create_if_missing = configuration.create_if_missing;
     let (profile, digest) = store.inspection_profile().map_err(|_| super::denied())?;
     Ok(NativeTransactionHostInspection {

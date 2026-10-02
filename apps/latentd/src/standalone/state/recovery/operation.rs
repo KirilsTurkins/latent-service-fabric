@@ -47,7 +47,8 @@ pub(in crate::standalone) async fn recover(
         Catalog::capture(owners.artifacts, &installed, effects, &request.publication).await?;
     // Derive exactly the ordinary configured profile before narrowing this
     // opening to an existing offline owner. Creation flags grant no authority.
-    let mut store = ProtectedStoreConfig::bounded_linux(settings.data_directory.join("state"));
+    let mut store =
+        ProtectedStoreConfig::bounded_linux(configuration.protected_root(&settings.data_directory));
     store.create_if_missing = configuration.create_if_missing;
     let (profile, digest) = store
         .inspection_profile()

@@ -80,11 +80,10 @@ impl StandaloneNode {
         let validation = Arc::new(Mutex::new((false, None)));
         let notice = Arc::clone(&validation);
         let deadline = Instant::now() + settings.shutdown_grace();
-        let validator = super::super::validation::startup(
-            settings.state.as_ref().ok_or_else(super::super::denied)?,
-            deadline,
-        )?;
-        let mut config = ProtectedStoreConfig::bounded_linux(settings.data_directory.join("state"));
+        let state = settings.state.as_ref().ok_or_else(super::super::denied)?;
+        let validator = super::super::validation::startup(state, deadline)?;
+        let mut config =
+            ProtectedStoreConfig::bounded_linux(state.protected_root(&settings.data_directory));
         config.create_if_missing = false;
         let startup = ProtectedStoreOwner::start_validated_view_with_clock(
             config,
