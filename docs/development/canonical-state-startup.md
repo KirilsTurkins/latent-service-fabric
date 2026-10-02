@@ -66,6 +66,27 @@ leaf. Existing bytes must match the closed format and store identity exactly;
 malformed, interrupted or missing reopened markers are never
 overwritten. Its actual file and native buffers retire on that same worker.
 
+An omitted `state` declaration uses one temporary rejection-only owner after
+acquiring the original artifact catalog's exclusive root. It checks the fixed
+`dataDirectory/state` entry through retained directory handles and refuses any
+existing file, directory or link there, or ambiguous ancestor ownership. This
+read-only lookup never creates the business root, opens an engine, reads a mode
+marker as authority or grants execution. Its Unix path does not impose the
+protected engine's filesystem requirements on previously supported stateless
+startup. The Windows path uses retained directory handles without a nightly
+file-identity API; native platform qualification remains pending.
+
+Before allocating its fixed worker or native path metadata, this probe reserves
+2 MiB of actual Work capacity and one Recovery slot under the original clock
+and a single thirty-second deadline. This temporary owner serves only the
+rejection probe, not Phase 4 admission. The charge includes its 1 MiB worker
+stack, bounded directory metadata and at most 640 KiB of retained path work.
+The caller must close, finalize and join that one worker and retire its native
+reservation before reporting stateless readiness. Cancellation keeps both the
+original catalog's exclusive root ownership and the same prepaid capacity on
+the live worker until its actual anchored descriptors are destroyed; it cannot
+admit a replacement through an early catalog-lock release.
+
 Exactly one dispatcher returns paused, with the same protected store, native
 owner and early effect authority. The production caller retains the existing
 `TransactionAdmissionOwners` factory. It checks the original deadline and current
@@ -84,7 +105,7 @@ retirement report.
 
 ## Qualification still required
 
-The source registers 44 additional `latentd` cases, retaining all 246 previous
+The source registers 53 additional `latentd` cases, retaining all 246 previous
 cases and their ignore states. They include real protected-engine/checkpoint
 startup, missing and malformed checkpoint recovery, same-owner factory admission,
 one-time readiness, pre-I/O installation refusal, original-deadline refusal and
@@ -95,6 +116,12 @@ Eight additional native storage schedules cover marker initialization,
 byte-exact reopen, premature business writes, missing/malformed refusal,
 foreign capacity, expiry and a detached waiter retaining the original charge
 until actual file retirement.
+Nine additional stateless-startup schedules cover genuine absence, missing
+parents without creation, existing entries, linked or replaced ancestors,
+original expiry, and a detached waiter retaining actual catalog exclusivity
+and native capacity. The actual local and observed catalog callers also refuse
+omitted state settings before deployment or policy exposure. These schedules
+are registered source; they have not been compiled or executed.
 
 The focused schema checks cover closed owner declarations, finite counters,
 immutable target pins, rejected authority flags and Phase 4 report identity.
@@ -103,7 +130,6 @@ They do not qualify the native runtime.
 The remaining production work includes the sealed signed-operation and
 protected-credential installation producers, their current policy publication
 fence, original request/response integration with the Phase 4 wire runtime, and
-bootstrap-pause release that preserves durable operator pause and restore review.
-The stateless rejection probe must also prevent an omitted state configuration
-from downgrading an existing protected installation.
+bootstrap-pause release that preserves durable operator pause and restore review,
+and native qualification of the stateless rejection probe on supported targets.
 Those omissions are tracked explicitly; this milestone closes no Phase 4 issue.
