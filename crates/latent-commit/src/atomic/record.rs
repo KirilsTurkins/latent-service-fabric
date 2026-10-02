@@ -182,6 +182,12 @@ impl CommandRecord {
     pub fn source(&self) -> &SourceIdentity {
         &self.source
     }
+    /// Original immutable subscription/message identity. Describing this field
+    /// never authorizes consumer delivery, replay or a replacement binding.
+    #[must_use]
+    pub fn inbox_identity(&self) -> Option<&InboxIdentity> {
+        self.inbox.as_ref()
+    }
     #[must_use]
     pub fn result_read_policy(&self) -> &str {
         &self.result_read_policy

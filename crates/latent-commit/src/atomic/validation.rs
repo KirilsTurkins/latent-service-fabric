@@ -38,6 +38,7 @@ pub fn durable_row_format(key: &RowKey, bytes: &[u8]) -> Result<(&'static str, u
         Family::Result if bytes.starts_with(b"LCP\0") => Ok(("latent.result-pending.v1", 1)),
         Family::Result if bytes.starts_with(b"LCE\0") => Ok(("latent.result-expired.v1", 1)),
         Family::Result => Ok(DurableResult::decode(bytes)?.durable_format()),
+        Family::Inbox => Ok(("latent.inbox.v1", 1)),
         Family::Maintenance if key.key.starts_with(USAGE) => {
             Ok(latent_state::reservation::NamespaceLedger::decode(bytes)?.durable_format())
         }

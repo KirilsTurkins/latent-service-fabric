@@ -118,6 +118,16 @@ pub struct EffectRecord {
 }
 
 impl EffectRecord {
+    /// Actual supported decoded envelope format, independent from its payload,
+    /// adapter profile and application schema. This metadata is never a grant.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        (
+            "latent.effect-record.v1",
+            if self.management.is_some() { 2 } else { 1 },
+        )
+    }
+
     /// Prepay every currently supported record shape, including the original
     /// bounded management stamp. Optional management rows are charged when
     /// their exact original batches are prepared, not invented at commit.
