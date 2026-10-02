@@ -7,6 +7,7 @@ mod configuration;
 mod kernel;
 mod preparation;
 mod runtime;
+mod stateless;
 mod store;
 mod validation;
 
@@ -15,6 +16,7 @@ use clock::AdapterClock;
 use kernel::{StateKernel, StateShutdownReport};
 pub(super) use runtime::StandaloneStateRuntime;
 pub use runtime::StateRetirementReport;
+pub(in crate::standalone) use stateless::require_stateless_mode;
 
 fn unavailable() -> latent_core::PlatformError {
     super::error(

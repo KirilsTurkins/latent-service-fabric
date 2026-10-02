@@ -177,6 +177,13 @@ impl Catalogs {
             settings.data_directory.join("releases"),
             settings.artifacts,
         )?);
+        let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
+        super::state::require_stateless_mode(
+            &settings.data_directory,
+            Arc::clone(&clock),
+            Arc::clone(&artifacts),
+        )
+        .await?;
         let deployments = Arc::new(
             DirectoryDeploymentRepository::open_observed_with_catalog(
                 settings.data_directory.join("deployments"),
@@ -201,7 +208,7 @@ impl Catalogs {
             providers: None,
             telemetry: None,
             state: None,
-            clock: Arc::new(SystemActivationClock),
+            clock,
         })
     }
 
@@ -304,6 +311,13 @@ impl Catalogs {
                 artifacts
                     .lifecycle_authority()
                     .install_rejection_observer(state.authority.rejection_observer())?;
+            } else {
+                super::state::require_stateless_mode(
+                    &settings.data_directory,
+                    Arc::clone(&clock),
+                    Arc::clone(&artifacts),
+                )
+                .await?;
             }
             policies = super::policies::PolicyRuntime::open_with_rejection(
                 &settings.data_directory.join("capability-policies"),
