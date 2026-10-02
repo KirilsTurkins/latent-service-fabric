@@ -186,7 +186,9 @@ async fn expired_post_epoch_tenant_installation_retires_original_dispatcher_and_
         &native,
         &[],
         &mut effects,
-        Instant::now() - std::time::Duration::from_millis(1),
+        Instant::now()
+            .checked_sub(std::time::Duration::from_millis(1))
+            .unwrap(),
     )
     .await
     .is_err());
