@@ -2,6 +2,7 @@
 //! Historical identities and snapshot bytes are descriptions, never renewed
 //! publication/provider/result authority. Restored work stays paused for review.
 
+pub mod migration;
 pub mod snapshot;
 
 use crate::{

@@ -5,6 +5,7 @@ mod checkpoint;
 mod config;
 mod custody;
 mod dispatcher;
+mod migration;
 mod native_capacity;
 mod operation;
 mod physical;
@@ -19,6 +20,9 @@ pub use checkpoint::{
 };
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
+pub use migration::{
+    AggregateMigrationOwners, MigrationCommitFence, MigrationReceipt, ProtectedMigrationJob,
+};
 pub use operation::ProtectedStoreOperation;
 pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
 pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};

@@ -542,6 +542,8 @@ impl NamespaceCatalog {
                     &context.tenant,
                     id,
                 )?;
+                crate::recovery::migration::require_no_incomplete(&view, &record)
+                    .map_err(storage)?;
                 record.transition(*expected, action, active_commits)?
             }
         };

@@ -34,6 +34,13 @@ pub fn census_contribution(
         })?;
         return metadata(tenant, key, bytes);
     }
+    if key.family == Family::Maintenance
+        && key
+            .key
+            .starts_with(crate::recovery::migration::PROGRESS_PREFIX)
+    {
+        return crate::recovery::migration::census_contribution(view, key, bytes);
+    }
     // Unsupported recovery producers remain outside this closed profile. A
     // prefix or historical label cannot supply a tenant or fabricate counters.
     let tenant = crate::session::tenant_for_row(view, key, bytes)?;

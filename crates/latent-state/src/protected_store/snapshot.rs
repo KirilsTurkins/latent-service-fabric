@@ -18,7 +18,7 @@ use crate::recovery::snapshot::{
 use crate::store_io::{StoreIoError, StoreIoKind, StoreIoRetirement, StoreIoRetirementWitness};
 
 mod native;
-use native::SnapshotFile;
+pub(super) use native::SnapshotFile;
 
 const RESOURCE_BYTES: u64 = 64 * 1024;
 const WORK_BYTES: u64 = 8 * 1024 * 1024;
@@ -58,7 +58,7 @@ impl ProtectedSnapshotConfig {
 /// the service must retire this resource before reopening business admission.
 #[must_use = "retain exclusive custody through actual snapshot resource retirement"]
 pub struct ProtectedSnapshot {
-    custody: ProtectedStoreCustody<Option<SnapshotFile>>,
+    pub(super) custody: ProtectedStoreCustody<Option<SnapshotFile>>,
 }
 
 impl ProtectedSnapshot {
@@ -97,6 +97,32 @@ impl Future for ProtectedSnapshotJob {
 }
 
 impl ProtectedStoreOwner {
+    /// Reopen an explicitly configured existing checkpoint after actual prior
+    /// resource retirement/restart. The fresh Recovery request authorizes only
+    /// present input access; immutable command/effect/migration identities and
+    /// old execution grants are not renewed. Missing/partial files refuse.
+    pub fn open_snapshot(
+        &self,
+        config: ProtectedSnapshotConfig,
+        original: Arc<NativeReservation>,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        let bytes = config.validate()?;
+        let custody = self.reserve_custody(bytes, WORK_BYTES, Arc::clone(&original))?;
+        let inner = self.initialize_custody_with(custody, WORK_BYTES, move |store| {
+            let file = match SnapshotFile::open_existing(store, config, original, current) {
+                Ok(file) => file,
+                Err(SnapshotError::Source(error)) => return Err(error),
+                Err(error) => return Ok((None, Err(error))),
+            };
+            let receipt = inspect_snapshot(&mut file.cursor(), file.deadline(), validate_row)
+                .map_err(SnapshotError::Review);
+            Ok((Some(file), receipt))
+        })?;
+        Ok(ProtectedSnapshotJob { inner })
+    }
+
     /// Export one physically quiesced source to an exclusively created private
     /// operator file. All ten row families and exact immutable associations are
     /// captured from the same native snapshot; the complete bounded stream is

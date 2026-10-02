@@ -83,10 +83,29 @@ impl Inventory {
                     false,
                 )?;
             }
+            Family::Maintenance
+                if key
+                    .key
+                    .starts_with(latent_state::recovery::migration::PROGRESS_PREFIX) =>
+            {
+                self.migration_row(bytes, charge)?;
+            }
             // All other host rows have already passed their original closed
             // codec/link/tenant owner, including guards, quotas and management
             // reservations. Unsupported new producer formats refuse upstream.
             _ => {}
+        }
+        Ok(())
+    }
+
+    fn migration_row(&mut self, bytes: &[u8], charge: u64) -> Result<(), RecoveryReviewError> {
+        let progress = latent_state::recovery::migration::AggregateMigrationProgress::decode(bytes)
+            .map_err(source)?;
+        let format = latent_state::recovery::migration::retained_format();
+        self.format(format.kind, &format.identity, charge, !progress.completed())?;
+        for required in progress.required_artifacts().map_err(source)? {
+            self.artifacts
+                .observe(&required.identity, required.digest)?;
         }
         Ok(())
     }

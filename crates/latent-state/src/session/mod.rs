@@ -6,6 +6,7 @@
 mod accounting;
 mod codec;
 pub mod entities;
+pub(crate) mod migration;
 mod validation;
 pub mod version;
 use crate::{

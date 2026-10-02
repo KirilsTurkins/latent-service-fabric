@@ -117,12 +117,72 @@ command, attempt, inbox, ordering, effect, payload, profile and migration
 checkpoint decoders remain independently required. These descriptions never
 grant publication, result-read, migration, restore or provider permission.
 
+The fixed migration producer consumes the same affine `ProtectedSnapshot` and
+uses the existing Recovery writer. Its two installed recipes are
+[count](../../contracts/state/aggregate-v1-to-v2-protected-migration.json) and
+[Java aggregate](../../contracts/state/java-aggregate-v1-to-v2-protected-migration.json).
+They accept exactly one original 8-byte aggregate cell in a durably quiesced
+namespace, add the fixed `AG` version prefix, and retain the original count in
+a 12-byte v2 value. Entity-selected or additional cells, other media types,
+metadata, scripts, keys or transformations refuse. The recipes bind snapshot
+v2 explicitly; the historical v1 recipe artifacts remain unchanged.
+
+`ProtectedStoreOwner::migrate_aggregate` stages a checksummed LMG2 progress row
+and a paused namespace history before changing the value. That marker captures
+the exact operation/operator, original 67-byte view association, full-unit
+checkpoint and manifest digests, immutable schema/package/review/recipe hashes,
+and original namespace/history/guard and tenant quota bytes. Normal namespace
+transitions cannot bypass an incomplete marker. Completion changes the fixed
+cell, namespace generation/schema, schema epoch, progress and exact tenant
+categories in one actual fenced engine transaction. The namespace and history
+remain paused for explicit reconciliation; completion cannot resume execution.
+
+The original tenant owner computes every category delta from exact row
+preimages. The fixed-size quota codec lets staging record the canonical final
+quota without inferring counters or adding an alternative accounting owner.
+Recovery verifies that staged quota through a temporary inverse delta using
+the same arithmetic, then normalizes only the exact progress/history/quota
+changes against the original full-unit checkpoint. Unrelated row or counter
+drift refuses. The inverse plan is never submitted. Existing unsupported
+migration formats never become absent work or receive inferred quotas.
+
+The concrete host must retain its original authenticated whole-unit recovery,
+critical audit, exact package/schema evidence and namespace/effect owners.
+Its final `AggregateMigrationOwners::accept` executes inside the real writer's
+short no-I/O fence and consumes that invocation's affine `MigrationCommitFence`.
+Ignoring the original native gate refuses the transaction. Lock order remains
+Policy, Namespace, Effects where needed, then original Native currentness and
+cancellation. The host must invalidate affected live namespace/effect metadata
+at accepted mutation; descriptive progress, hashes and plans supply no grant.
+Audit reservation precedes preparation, and audit completion remains outside
+these locks. No guest, provider, audit flush, disk I/O or decision renewal may
+run inside a currentness fence.
+
+Exact completed operation replay preserves its original receipt and token;
+it cannot refresh preconditions, downgrade the schema or renew publication
+authority. `inspect_progress` reads bounded original status on a borrowed
+native view and supplies no read permission or resume approval. After positive
+resource retirement, `open_snapshot` can reopen an explicitly configured
+existing private checkpoint for a fresh authorized Recovery request. It never
+creates or overwrites a missing/partial file. Fresh input access does not
+renew historical command/effect/migration execution. The old migration owner
+cannot be replaced while its same file resource remains physically live.
+
+Twenty-one registered source schedules cover the actual Count/Java codecs,
+tenant census, original checkpoint drift, forged staged quotas, schema/recipe
+and decoder refusal, incomplete-operation reopen, exact completed status,
+fenced writer refusal, native/file custody, final current refusal after held
+review, original deadline expiry and detached physical cleanup. The rooted
+schedules use real protected files/engine workers with controlled reviewers;
+they do not establish authenticated Wire/deployment or external checkpoint
+restore approval. None has been compiled or executed under the native hold.
+
 This source milestone adds executable schedules for native custody, physical
 retirement, actual redb/archive integrity, bounded input and protected operator
 files. Native compilation, tests and strict Clippy are pending the current
 resource hold. It does not establish the authenticated management/CLI surface,
-the two-version guest campaign, full production retained-row closure, schema
-migration, restore staging, approved reconciliation/resume or complete CI.
+the two-version guest campaign, the concrete authenticated migration adapter,
+restore staging, approved reconciliation/resume or complete CI.
 
 Fourteen additional registered source schedules cover durable rejection/inbox
 and uncertain effect history after reopen, substituted evidence, decoder removal,
