@@ -39,7 +39,10 @@
       {
         "uses": "actions/checkout",
         "with": {
-          "persist-credentials": false
+          "filter": "blob:none",
+          "persist-credentials": false,
+          "sparse-checkout": "/tools/ci_result.py\n/tools/ci_suite_inventory.py\n/tools/ci/suites.json\n/tools/ci/suites.d/\n",
+          "sparse-checkout-cone-mode": false
         }
       },
       {
@@ -54,7 +57,7 @@
   },
   "jobId": "result",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain the exact selection/result command and complete offline ancestry while materializing only the reviewed source/catalogue inputs needed by this job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
