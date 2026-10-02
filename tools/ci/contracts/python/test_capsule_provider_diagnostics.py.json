@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "ProviderDiagnosticsTests.test_closed_marker_wait_has_no_invocation_collector",
+    "ProviderDiagnosticsTests.test_exhausted_original_retention_and_interrupted_diagnostics_never_replace_failure",
+    "ProviderDiagnosticsTests.test_missing_marker_live_process_remains_unknown_without_waiting_or_reaping",
+    "ProviderDiagnosticsTests.test_original_deadline_failure_captures_before_cleanup_and_reads_only_same_activation",
+    "ProviderDiagnosticsTests.test_original_exhausted_control_budget_never_starts_a_management_process",
+    "ProviderDiagnosticsTests.test_original_peer_exit_is_retained_without_closing_or_reaping_either_owner",
+    "ProviderDiagnosticsTests.test_oversized_management_output_is_rejected_without_overwriting_original_snapshot",
+    "ProviderDiagnosticsTests.test_process_output_bound_and_foreign_marker_cannot_start_diagnostic_controls",
+    "ProviderDiagnosticsTests.test_read_failure_preserves_first_failure_and_redacts_exception_text",
+    "ProviderDiagnosticsTests.test_success_retains_original_marker_oracle_and_performs_no_diagnostic_io",
+    "ProviderDiagnosticsTests.test_wrong_marker_preserves_original_failure_and_original_observed_bytes"
+  ],
+  "guards": {
+    "ProviderDiagnosticsTests.test_closed_marker_wait_has_no_invocation_collector": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_exhausted_original_retention_and_interrupted_diagnostics_never_replace_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_missing_marker_live_process_remains_unknown_without_waiting_or_reaping": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_original_deadline_failure_captures_before_cleanup_and_reads_only_same_activation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_original_exhausted_control_budget_never_starts_a_management_process": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_original_peer_exit_is_retained_without_closing_or_reaping_either_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_oversized_management_output_is_rejected_without_overwriting_original_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_process_output_bound_and_foreign_marker_cannot_start_diagnostic_controls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_read_failure_preserves_first_failure_and_redacts_exception_text": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_success_retains_original_marker_oracle_and_performs_no_diagnostic_io": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    },
+    "ProviderDiagnosticsTests.test_wrong_marker_preserves_original_failure_and_original_observed_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d473adc7a2f15ed726b234803560b1b7105d06086ce7021d2f62aee33b933545",
+        "class:setup-sha256:cd2a2ae4ae57f974d16945bfaa7d34102ce7601dbd47d9467b0dabadb7425a93"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_capsule_provider_diagnostics.py",
+  "reviewReason": "Add eleven source regressions for original process and peer observations before failure cleanup; retain all historic oracles and authority/deadline/output/control guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
