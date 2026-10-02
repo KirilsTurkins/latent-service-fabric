@@ -19,6 +19,7 @@ pub mod control;
 pub mod effect_management;
 pub use catalog::{
     ClaimedEffect, DispatchCatalog, DispatchCounts, DispatchEpoch, DuePage, HistoryPage,
+    RetainedEffectRows,
 };
 pub use codec::{DispatchStoreError, HistoryRecord};
 
