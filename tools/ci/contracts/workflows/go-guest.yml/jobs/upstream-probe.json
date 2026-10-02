@@ -110,7 +110,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate; retain the accepted CI performance dependency caches, correctness guards and independent execution obligations.",
+  "reviewReason": "Reconcile development812 source while retaining all sixteen typed RPCs, both parent cases/decorators/skips, raw workflow commands, matrices/deadlines and verified neutral process delegation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

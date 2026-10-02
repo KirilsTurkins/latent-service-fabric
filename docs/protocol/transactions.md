@@ -120,6 +120,21 @@ operation receipts. Writes require current management credentials, expected
 version and policy digest. Guests and browser routes never acquire this authority.
 Retry of uncertain dispatched effects is not a generic approved write.
 
+`PlanEffectMutation` captures the complete original effect selector, operation,
+action, 32-byte supported row version, policy precondition, reason and finite
+redrive delay. `MutateState` requires that exact typed plan for redrive,
+reconciliation or administrative termination. A plan is descriptive data: the
+host still checks current operator and namespace authority, original effect
+rules, provider proof and actual physical retirement at acceptance. Provider
+confirmation and an administrator's terminal declaration have distinct facts.
+
+`GetStateOperationReceipt` preserves the complete original plan even after its
+expiry. Its namespace publication selects current read authority and may differ
+from the immutable original access publication. Historical outcome and current
+audit acknowledgement remain independent. Missing historical effect-row version
+remains readable and cannot authorize a plan. These additive descriptors define
+16 operations across the transaction, state and dispatcher client boundary.
+
 [HTTP envelopes](../../schemas/transaction-api.schema.json) distinguish
 `command`, `query`, `recovery` and `response`. Route bindings select the declared
 operation/mode, namespace and admitted exact source; requests cannot override

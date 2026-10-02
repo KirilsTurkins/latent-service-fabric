@@ -78,7 +78,11 @@ def prepare():
     generated = BUILD / "generated/java"
     generated.mkdir(parents=True, exist_ok=True)
     profile = json.loads((ROOT / "sdk/profile/client-profile.json").read_text(encoding="utf-8"))
-    sources = sorted(ROOT / path for path in profile["sources"])
+    transactions = json.loads((ROOT / "sdk/profile/transaction-requirements-v1.json").read_text(encoding="utf-8"))
+    source_paths = set(profile["sources"])
+    source_paths.update(source["source"] for source in transactions["externalClient"]["supportingSources"])
+    source_paths.update(service["source"] for service in transactions["externalClient"]["requiredServices"])
+    sources = sorted(ROOT / path for path in source_paths)
     run([executables["protoc"], f"-I{ROOT / 'api/proto'}", f"--java_out={generated}",
          f"--plugin=protoc-gen-grpc-java={executables['grpc']}", f"--grpc-java_out={generated}", *sources])
     selected = []
@@ -92,6 +96,7 @@ def prepare():
         selected.extend(str(generated / package / (name + ".java")) for name in names)
     (BUILD / "generated-sources.json").write_text(json.dumps(selected), encoding="utf-8")
     run([sys.executable, SDK / "tools/generate_bridge.py", "--check"])
+    run([sys.executable, SDK / "tools/generate_transaction_bridge.py", "--check"])
 
 
 def compile_java(tests, java_home):
@@ -134,6 +139,7 @@ def main():
     if args.action == "test":
         run([executable(java_home, "java"), "-ea", "-cp", classpath, "dev.latent.sdk.InvocationIdentityTest"], 45)
         run([executable(java_home, "java"), "-ea", "-cp", classpath, "dev.latent.sdk.transport.TransportTest"], 60)
+        run([executable(java_home, "java"), "-ea", "-cp", classpath, "dev.latent.sdk.transport.TransactionTransportTest"], 60)
     else:
         manifest = BUILD / "manifest.mf"
         class_path = "Class-Path: " + " ".join("deps/" + path.name for path in jars())

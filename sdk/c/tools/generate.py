@@ -24,7 +24,13 @@ def snake(value):
 def generate(build, output):
     output.mkdir(parents=True, exist_ok=True)
     profile = json.loads((ROOT / "sdk/profile/client-profile.json").read_text())
+    transaction = json.loads((ROOT / "sdk/profile/transaction-client-contract.json").read_text())
     sources = [name.removeprefix("api/proto/") for name in profile["sources"]]
+    for name, identity in transaction["sources"].items():
+        if "sha256:" + hashlib.sha256((ROOT / "api/proto" / name).read_bytes()).hexdigest() != identity["sha256"]:
+            raise ValueError("transaction descriptor source drift")
+        if name not in sources:
+            sources.append(name)
     protoc = build / "deps/protoc/bin/protoc"
     subprocess.run([str(protoc), "-I", str(ROOT / "api/proto"), "--include_imports",
                     "--descriptor_set_out=" + str(output / "rpc.pb"),
@@ -47,6 +53,11 @@ def generate(build, output):
         names = profile["sources"].get("api/proto/" + source.name, [])
         selected.update(source.package + "." + name for name in names
                         if source.package + "." + name in all_messages)
+    transaction_names = {transaction["wireNames"].get(name, ".latent.transaction.v1." + name)[1:]: name
+                         for name in transaction["messages"]}
+    if not transaction_names.keys() <= all_messages.keys():
+        raise ValueError("transaction message owner drift")
+    selected.update(transaction_names)
     pending = list(selected)
     while pending:
         for field in all_messages[pending.pop()].field:
@@ -62,6 +73,8 @@ def generate(build, output):
         message = all_messages[name]
         if message.options.map_entry:
             return "latent_key_value" if message.field[1].type == FIELD.TYPE_STRING else "latent_profile_counter"
+        if name in transaction_names:
+            return "latent_transaction_" + snake(transaction_names[name])
         return "latent_profile_" + snake(message.name)
 
     def symbol(name):
@@ -110,13 +123,14 @@ def generate(build, output):
             submessage = "&" + symbol(field.type_name[1:]) if nested else "NULL"
             group = field.oneof_index + 1 if field.HasField("oneof_index") and not field.proto3_optional else 0
             body.append(f"    {{{field.number}, {kinds[field.type]}, offsetof({native}, {field.name}), {presence}, {count}, {stride}, {group}, "
-                        + ("true" if nested and nested.options.map_entry else "false") + f", {submessage}}},")
+                        + ("true" if nested and nested.options.map_entry else "false") + f', {submessage}, "{field.name}"}},')
         body.extend(["};", f"const lsf_message {symbol(name)} = {{",
                      f"    &{name.replace('.', '_')}_msg, {symbol(name)}_fields,",
-                     f"    {len(message.field)}, sizeof({native}), sizeof({name.replace('.', '_')})", "};",
+                     f'    {len(message.field)}, sizeof({native}), sizeof({name.replace(".", "_")}), "{name}"', "};",
                      f'_Static_assert(sizeof({name.replace(".", "_")}) <= LSF_WIRE_STORAGE, "wire scratch bound");'])
-    body.append("const lsf_rpc lsf_rpcs[8] = {")
-    for operation in profile["operations"]:
+    operations = [*profile["operations"], *transaction["operations"]]
+    body.append(f"const lsf_rpc lsf_rpcs[{len(operations)}] = {{")
+    for operation in operations:
         service_name = operation["service"]
         candidates = [(source, service) for source in descriptor.file for service in source.service
                       if source.package + "." + service.name == service_name]
@@ -127,10 +141,11 @@ def generate(build, output):
             raise ValueError("only unary RPCs are supported")
         body.append(f'    {{"/{service_name}/{method.name}", &{symbol(method.input_type[1:])}, &{symbol(method.output_type[1:])}}},')
     body.append("};")
-    header.extend(["extern const lsf_rpc lsf_rpcs[8];", "#endif"])
+    header.extend([f"extern const lsf_rpc lsf_rpcs[{len(operations)}];", "#endif"])
     (output / "wire_generated.h").write_text("\n".join(header) + "\n")
     (output / "wire_generated.c").write_text("\n".join(body) + "\n")
-    identities = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in profile["sources"]}
+    identities = {"api/proto/" + name: hashlib.sha256((ROOT / "api/proto" / name).read_bytes()).hexdigest()
+                  for name in sources}
     (output / "source-sha256.json").write_text(json.dumps(identities, indent=2, sort_keys=True) + "\n")
     subprocess.run([sys.executable, str(SDK / "tools/wire_vectors.py"), str(output)], check=True, timeout=30)
 

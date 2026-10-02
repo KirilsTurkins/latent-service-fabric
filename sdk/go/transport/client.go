@@ -14,32 +14,37 @@ import (
 
 	"latent.dev/sdk/go/internal/rpc/controlv1"
 	"latent.dev/sdk/go/internal/rpc/invocationv1"
+	"latent.dev/sdk/go/internal/rpc/statev1"
+	"latent.dev/sdk/go/internal/rpc/transactionv1"
 	"latent.dev/sdk/go/profile"
 )
 
 type Client struct {
-	config     Config
-	endpoint   *url.URL
-	channel    *http.ClientConn
-	owner      *http.Transport
-	socket     *ownedSocket
-	invocation invocationv1.InvocationServiceClient
-	policy     controlv1.PolicyServiceClient
-	capability controlv1.CapabilityServiceClient
-	lifetime   context.Context
-	stop       context.CancelFunc
-	mutex      sync.Mutex
-	closed     bool
-	active     int
-	normal     int
-	queued     int
-	wake       chan struct{}
-	fault      chan struct{}
-	done       chan struct{}
-	watchDone  chan struct{}
-	closeOnce  sync.Once
-	wait       sync.WaitGroup
-	closeError error
+	config             Config
+	endpoint           *url.URL
+	channel            *http.ClientConn
+	owner              *http.Transport
+	socket             *ownedSocket
+	invocation         invocationv1.InvocationServiceClient
+	policy             controlv1.PolicyServiceClient
+	capability         controlv1.CapabilityServiceClient
+	stateService       statev1.StateServiceClient
+	dispatcherService  statev1.DispatcherServiceClient
+	transactionService transactionv1.TransactionServiceClient
+	lifetime           context.Context
+	stop               context.CancelFunc
+	mutex              sync.Mutex
+	closed             bool
+	active             int
+	normal             int
+	queued             int
+	wake               chan struct{}
+	fault              chan struct{}
+	done               chan struct{}
+	watchDone          chan struct{}
+	closeOnce          sync.Once
+	wait               sync.WaitGroup
+	closeError         error
 }
 
 var _ profile.ClientProfile = (*Client)(nil)
@@ -177,6 +182,9 @@ func newClient(ctx context.Context, config Config, supplied *net.TCPConn, adopt 
 	client.invocation = invocationv1.NewInvocationServiceClient(wire)
 	client.policy = controlv1.NewPolicyServiceClient(wire)
 	client.capability = controlv1.NewCapabilityServiceClient(wire)
+	client.stateService = statev1.NewStateServiceClient(wire)
+	client.dispatcherService = statev1.NewDispatcherServiceClient(wire)
+	client.transactionService = transactionv1.NewTransactionServiceClient(wire)
 	success = true
 	go func() {
 		defer close(client.watchDone)

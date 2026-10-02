@@ -1,12 +1,54 @@
 //! Closed state-cell/accounting codecs for coherent startup validation. Reading
 //! these descriptive records does not mint a session or namespace authority.
 
-use super::{codec, StateError};
+use super::{codec, usage_key, StateError, StateMode, StateScope};
 use crate::{
     embedded::{Family, ReadView, RowKey, StoreError},
     namespace::{namespace_record_key, NamespaceRecord, NamespaceStatus},
 };
 use latent_core::{transaction_contract as contract, StateNamespaceId, TenantId};
+
+/// Coherent persisted namespace usage. This descriptor allocates no session,
+/// refreshes no grant and cannot edit state. Tombstones remain charged.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StateUsage {
+    pub keys: u64,
+    pub encoded_bytes: u64,
+    pub tombstones: u64,
+}
+pub fn inspect_usage(
+    view: &ReadView,
+    namespace: &NamespaceRecord,
+) -> Result<StateUsage, StateError> {
+    let scope = StateScope {
+        tenant: namespace.tenant.clone(),
+        namespace: namespace.id.clone(),
+        incarnation: namespace.version.incarnation,
+        state_schema: namespace.state_schema.clone(),
+        entity: None,
+        mode: StateMode::Query,
+    };
+    let usage = view
+        .get(&usage_key(&scope)?)?
+        .map_or(Ok(codec::Usage::default()), |bytes| {
+            codec::Usage::decode(&bytes)
+        })?;
+    if usage.keys > namespace.quota.state_keys
+        || usage.bytes > namespace.quota.state_bytes
+        || usage.tombstones > namespace.quota.state_keys
+        || usage.tombstone_bytes > namespace.quota.state_bytes
+    {
+        return Err(StateError::Corrupt);
+    }
+    Ok(StateUsage {
+        keys: usage.keys,
+        encoded_bytes: usage
+            .bytes
+            .checked_add(usage.tombstone_bytes)
+            .ok_or(StateError::Corrupt)?,
+        tombstones: usage.tombstones,
+    })
+}
 
 pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     match key.family {

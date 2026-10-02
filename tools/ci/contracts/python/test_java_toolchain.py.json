@@ -174,6 +174,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_toolchain.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain both stateless Java main suites and the maintained transaction transport main in Gradle test/check; bytecode verification and failure propagation remain required.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

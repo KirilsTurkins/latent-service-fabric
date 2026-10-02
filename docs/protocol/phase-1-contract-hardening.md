@@ -512,16 +512,31 @@ explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
 
-## Additive Phase 4 transaction definitions
+## Phase 4 transaction and management descriptor additions
 
-The descriptor baseline includes `latent/transaction/v1/transaction.proto` and
-`latent/control/v1/state.proto`, plus `AuditCapabilityResourceClass` value 11
-for state resources. The Buf-generated descriptor was reviewed against every
-existing file: all previous field numbers, types, enum values, messages and RPC
-signatures remain unchanged. The exhaustive descriptor oracle includes both
-new files and still rejects unreviewed semantic changes.
+The Buf 1.72.0 descriptor baseline adds `latent/transaction/v1/transaction.proto`,
+`latent/control/v1/state.proto` and `latent/control/v1/dispatcher.proto`. The seven
+transaction, six state and three dispatcher methods use independent bounded
+messages. Every prior file, field, enum value and service signature is preserved.
+The audit descriptor adds state and dispatcher targets at fields 25 and 26,
+state resource class 11 and control actions 13 through 29; all prior audit rows
+remain exact.
+
+`PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
+reconciliation and termination require that complete original plan when calling
+`MutateState`. Receipt recovery preserves the original action, record version,
+policy digest and operation ID while requesting a separately current read
+publication. An expired historical plan can describe an already completed
+operation. It supplies neither a grant nor provider proof. Provider confirmation,
+administrator declaration and scheduled redrive remain separate typed facts.
+Historical effect records without the new record version remain readable and
+cannot authorize a new mutation.
+
+The checked-in golden was generated from the actual current Buf descriptor and
+reviewed against every prior named row, rather than inferred from the source
+messages. The [transaction client reference](../development/transaction-clients.md)
+describes transport ownership and the outstanding real-node qualification gates.
 
 These definitions describe [transaction and recovery contracts](transactions.md).
-They do not establish that a host implements the profile or grant access from
-a namespace, command, effect or receipt identifier. WIT guest ABI versions and
-durable storage formats retain their separate compatibility boundaries.
+They confer no authority from namespace, command, effect or receipt identifiers;
+WIT ABI and durable-format compatibility remain independent.

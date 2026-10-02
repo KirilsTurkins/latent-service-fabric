@@ -129,6 +129,12 @@ pub struct DescendantBudgetSnapshot {
     pub closed: bool,
 }
 impl ActivationBudget {
+    pub(in crate::budget) fn has_budget_parent(&self) -> bool {
+        self.inner
+            .lineage
+            .get()
+            .is_some_and(|lineage| lineage.parent.is_some())
+    }
     /// Wait on at most seventeen original owner signals (root plus depth limit).
     /// The caller owns this future; no task or waiter is retained by the tree.
     pub async fn descendant_cancelled(&self) {
@@ -166,7 +172,7 @@ impl ActivationBudget {
         cancellation: Arc<dyn BudgetCancellationProbe>,
     ) -> Result<(), PlatformError> {
         limits.validate()?;
-        if self.profile() != BudgetProfile::Phase3
+        if !self.profile().supports_descendants()
             || self.inner.closed.load(Ordering::Acquire)
             || self.deadline().monotonic().is_none()
         {

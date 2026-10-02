@@ -96,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_wit_contracts.py",
-  "reviewReason": "Preserve the exact union of both source case inventories and unchanged reviewed guards; retain original deadlines, atomic compiler readiness, all reaping assertions, and exact WIT package closure.",
+  "reviewReason": "Reconcile development812 source while retaining all sixteen typed RPCs, both parent cases/decorators/skips, raw workflow commands, matrices/deadlines and verified neutral process delegation.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

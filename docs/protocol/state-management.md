@@ -106,10 +106,109 @@ facts; missing diagnostics do not prove an abort.
 
 ## Remaining full-workflow qualification
 
-The boundary tests establish preflight, authenticated association, original
-receipt identity, lossless projection and transport owner retention. They are
-not storage, saturation or real CLI/node workflow evidence. Full issue #400
+The concrete `latent_wire::phase4::StateManagementBackend` now composes namespace
+inspection, lifecycle mutations and actor-scoped operation recovery from the
+installed `ArtifactRepository`, original authenticated context, `PolicyStore`,
+metadata-only `NamespaceCatalog`, and the same `ProtectedStoreOwner` used for
+commands. Its finite trusted bindings name the exact installed publication,
+tenant-qualified service, component, namespace, incarnation, schema and policy
+constraints. Requests cannot install these bindings or derive authority from
+their IDs. The constructor also requires the node's actual retained admission
+port; it supplies no default capacity pool.
+
+`StateManagementRecoveryAdmission` wraps the installed node's existing
+`NativeCapacityOwner`. It reserves the separate recovery partition before
+returning the operation future, charging the original decoded request, an
+8 MiB native work allowance, the exact bounded response allowance and the
+owner's fixed metadata. It preserves the original monotonic deadline and close
+fence. Namespace inspection and receipt recovery use `RecoveryRead`; namespace
+mutation and dispatcher controls use `RecoveryWrite` on the same engine and
+its reserved fixed worker. These classes cannot borrow ordinary admission.
+The real single writer still serializes all writes; a stalled device can cause
+an explicit bounded failure rather than successful recovery.
+
+Before native lookup, the backend checks the actual selected artifact and seals
+current namespace permissions through the existing policy owner. It retains
+those original decisions through the fixed worker and response frame. Native
+mutation preparation does not hold a policy lock over I/O. Its actual writer
+fence checks the original policy and namespace lifecycle in that order, then
+accepts the affine transition before physical commit. A dropped RPC waiter leaves
+the accepted worker and its reservation owned until actual completion. Unclaimed
+native completions retain that same global reservation until their output values
+drop. Published response bodies and byte frames retain it through their actual
+destruction. Replays
+preserve the original actor, operation, request and generations; a separate
+authorized read recovers a durable receipt after response revocation.
+
+Inspection reads namespace metadata, native usage, command/effect counts and
+caller-visible retention from one coherent engine snapshot. Native inventory
+work has finite row, byte and deadline limits. At most 128 caller retention
+descriptors are returned; exceeding that unpaged response bound fails explicitly.
+`payloadAvailable` describes verified retained result bytes. It grants no replay
+permission and does not prove unexpired retention. The engine profile digest
+describes the actual configured owner and selected format; it is not a
+qualification receipt.
+
+If auditing is configured, the backend reserves and durably begins a typed
+namespace audit attempt before mutation preparation. The exact original
+operation ID and generation remain in the audit. Publication/component,
+namespace/incarnation and schema are descriptive audit identities; business
+keys and payloads are omitted. Audit enqueue and acknowledgement happen outside
+the policy/lifecycle locks. Mutation disposition and audit acknowledgement remain
+independent, including uncertain audit completion after a known native commit.
+
+The native Linux tests use real catalog, policy, protected engine and audit
+owners. They cover concurrent generation CAS, lifecycle/tombstone access,
+detached waiter retention and clean reopen, exact selected service rejection,
+stable actor recovery, namespace accounting, original revocation and actual
+response memory charges. Additional tests install the actual shared native
+capacity owner and reserve the actual protected recovery worker. Authenticated
+RPC inspection and encoded response frames progress with the ordinary global
+slot full, all three ordinary storage workers occupied, and ordinary queue,
+accepted-job or retained-byte capacity full. Dropping the body preserves the
+charge held by its byte frame. Detached queued writes retain their global
+capacity until native retirement; an expired original request creates no receipt,
+and an accepted lost response is recovered after a clean engine reopen.
+These tests qualify finite admission and worker progress, not recovery from an
+unreadable device or a complete standalone CLI workflow. Entity pages,
+maintenance jobs and command/effect operations
+must be supplied by the corresponding owning runtime ports.
+
+The separate structural boundary tests establish preflight, authenticated
+association, original receipt identity and lossless projection. Full issue #400
 closure additionally requires actual node composition, command invocation,
 dispatcher pause/resume and authorized reconciliation, migration/backup/restore
 jobs, typed audit/metrics, and the prescribed real CLI/node recovery and reserved
 lane tests against those owning domain implementations.
+
+## Explicit effect-management CLI calls
+
+`latent state plan-effect` requires the original command/effect selectors,
+management operation ID, one closed action (`redrive`, `reconcile` or
+`terminate`), exact base64 effect record version, namespace policy digest and
+bounded review reason. Redrive additionally requires an unsigned delay from
+1 through 60000 milliseconds. Reconciliation and termination reject a supplied
+retry delay. Planning itself contacts no provider and grants no permission to
+execute the action.
+
+The response includes the full human/JSON plan plus `encodedPlan`, a bounded
+canonical base64 Protobuf value. `latent state apply-effect --plan ...` preserves
+that original action, actor-scoped operation ID, CAS, policy digest and current
+publication selector. It makes one explicit RPC. Changed selectors and naked
+effect mutations fail preflight; the CLI never refreshes a precondition or
+automatically resends a mutation.
+
+`latent state effect-operation --plan ...` recovers the original receipt with
+current read authorization. Its explicit current authorization publication may
+be newer than the historical plan's selector, while the entire original plan
+and its expired deadline remain intact. Provider confirmation, administrator
+declaration, durable disposition and the new read's audit acknowledgement are
+projected separately. A missing historical receipt remains unknown rather than
+an abort or permission to retry.
+
+All 143 CLI library cases passed on the pinned Linux Rust 1.97.1 image,
+including full original plan/current-selector association, bounded canonical
+plan decoding, malformed CAS/unknown fields and expired historical recovery.
+CLI library Clippy completed without CLI warnings; dependencies retain their
+existing warnings. This does not qualify an end-to-end standalone manual
+provider action before that domain adapter is installed.

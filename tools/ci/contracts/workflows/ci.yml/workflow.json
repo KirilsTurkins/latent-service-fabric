@@ -73,7 +73,7 @@
     "sdks",
     "website"
   ],
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Add pinned reproducible transaction model and bounded Rust conversion checks to maintained SDK owner. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

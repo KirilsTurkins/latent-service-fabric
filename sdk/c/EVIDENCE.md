@@ -120,3 +120,45 @@ Parent integration entry point: `python3 sdk/c/tools/validate.py --build-dir PAT
 plus `--sanitize` with a separate build directory. The shared real-node runner
 takes `--language c -- /absolute/provider-workflow`. No shared runner, other SDK,
 security inventory, Docker volume or parent container was edited in this work.
+
+## Phase 4 transaction source qualification, 2026-10-01
+
+The additive transaction facade implements all fifteen current StateService,
+TransactionService and DispatcherService methods on the maintained native owner.
+Its [source-bound receipt](../../docs/evidence/phase4-client-c-source-2026-10-01/receipt.json)
+records the tested working-tree file hashes over base `52d73eb7`, descriptor and
+sanitized executable/library hashes. It preserves the earlier Phase 3 evidence.
+
+The complete command `python3 sdk/c/tools/validate.py --build-dir /build --sanitize`
+exited zero in a Linux x86-64 container with image
+`sha256:7cc3f5d034635d35c328591dbd993fb355816fc8124f6a6a9948f83cca74cbf0`,
+GCC 12.2.0, glibc 2.36 and Python 3.13.5. Source was mounted read-only; the
+owned build volume used verified cached dependency archives, with network
+disabled, memory capped at 1 GiB, two CPUs and 128 PIDs. Both SDK/nanopb and
+nghttp2 were instrumented with ASan+UBSan, including leak detection. No sanitizer
+diagnostic was emitted.
+
+The run retained all three tooling cases, 51 common wire vectors, the common
+semantics/lifetime checks, 38 injected allocation failures across 160 positions
+and the eight-RPC peer suite. The new independent protobuf/HTTP2 peer observed
+all fifteen transaction methods over 36 requests, with each of seven distinct
+commands submitted once and all four accepted connections physically closed.
+The old peer observed 225 requests and 188 connections, all closed.
+
+Transaction checks cover UINT64_MAX CAS, request payload/precondition mutation
+after admission, two retained copies of a 750 KiB result, durable rejection,
+proven abort versus gRPC ABORTED, lost-response lookup, payload expiry, 256 versus
+257 linked IDs, independent body/header audit failure, activation substitution,
+malformed UTF-8, duplicate protobuf fields, a response beyond 2 MiB and a
+129-entry page. Reentrant completion submits another call then physically stops
+the owner: the currently borrowed receipt remains valid, dispatched work stays
+unknown, unsent work stays not dispatched, and polling/destruction/current-handle
+release guards hold until callback return. Final shutdown retires all handles,
+arenas, callbacks, streams and sockets. The transaction peak was 12,673,451 tracked
+bytes under the configured 32 MiB aggregate bound; fixed layouts were owner 1032
+bytes and call 18872 bytes.
+
+This qualifies the source codec and controlled transport boundary. It supplies
+no production-node transaction, signed guest, browser, installed artifact or
+complete issue #401 qualification. The separate six-client node matrix and the
+complete management surface remain required.

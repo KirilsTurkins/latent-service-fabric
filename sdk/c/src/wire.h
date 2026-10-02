@@ -2,6 +2,7 @@
 #define LSF_C_WIRE_H
 
 #include <latent/transport.h>
+#include <latent/transaction_client.h>
 #include <pb.h>
 #include <pb_common.h>
 #include <pb_decode.h>
@@ -35,6 +36,7 @@ typedef struct lsf_field {
     uint32_t oneof;
     bool map;
     const lsf_message *message;
+    const char *name;
 } lsf_field;
 
 struct lsf_message {
@@ -43,6 +45,7 @@ struct lsf_message {
     size_t field_count;
     size_t native_size;
     size_t wire_size;
+    const char *name;
 };
 
 typedef struct lsf_codec {
