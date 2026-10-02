@@ -365,3 +365,29 @@ SDK binding drift means the SDK and generator pins disagree; do not edit the loc
 to bypass it. A denied publication commonly means the policy expired, the exact
 source approval differs, or an evidence file is missing. A denied HTTP call
 requires checking the deployment grant, provider binding and allowed destination.
+<!-- Immutable resource compiler implementation; emitted-component qualification is separate. -->
+
+Captured JAR lookup bytes and declared `capsule-resources.json` bytes select the
+SDK's `java-immutable-classloader-v1` compiler port. It changes the maintained
+`ClassLoader.getResourceAsStream(String)` method and preserves the standard
+class identity, fields and other methods. `Class.getResourceAsStream` keeps the
+class library's package-relative, leading-slash and array-class rules. The
+generated lookup index contains exactly the reviewed bytes, with no directory,
+repository or host-filesystem fallback. Names are case sensitive. A missing name
+returns `null`; a null name follows the standard null-argument failure.
+
+Each successful open owns a fresh byte array and `ByteArrayInputStream`.
+Resources use the existing guest heap and fuel budgets. Capture bounds do not
+guarantee that opening a large resource fits a particular invocation's heap.
+The original class-library JAR, SDK transformation source, generated literal
+sources and resource digests are bound to compiler evidence. Existing projects
+keep their immutable SDK locks; selecting a new SDK port requires a reviewed
+SDK snapshot rather than modifying an old vendored lock.
+
+The original actual two-library build failed at TeaVM's unsupported JavaScript
+resource methods. The [pinned class-library model control](../testing/evidence/java-immutable-resource-model-2026-10-02.json)
+preserved all nine standard ClassLoader method owners and passed fresh-stream,
+exact-byte, missing-name and changed-preimage controls. Source/model controls
+for this port and actual emitted,
+signed resource calls are separate qualification stages; issue #682 and issue
+#681 remain open until their full acceptance evidence passes.

@@ -62,6 +62,7 @@
           "tools/java_application_dependencies.py",
           "tools/java_resource_artifacts.py",
           "tools/tests/test_java_dependency_authoring.py",
+          "tools/tests/test_java_resource_runtime.py",
           "tools/java_guest/**",
           "tools/dotnet_capsule.py",
           "tools/dotnet_guest/**",
@@ -137,7 +138,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Preserve all current workflow policy and jobs; include Java resolver, capture/resource helper and authoring-test changes in the existing qualification trigger.",
+  "reviewReason": "Add immutable Java resource test trigger without altering required jobs",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

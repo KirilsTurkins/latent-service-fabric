@@ -10,6 +10,7 @@ from tools.build_process import BuildProcessError
 from tools import guest_compatibility_build, guest_resources, guest_dependency_inputs, guest_authoring_frontend
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
+from tools.java_guest import resources as java_resources
 from tools.application_dependencies import prepare
 from tools.java_application_dependencies import classpath
 from tools.java_resource_artifacts import packaged_resources
@@ -22,7 +23,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "tools/application_dependencies.py", "tools/application_dependency_store.py",
           "tools/application_dependency_tools.py", "tools/java_application_dependencies.py", "tools/java_dependency_resolution.py",
           "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
-          "tools/java_guest/compiler.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
+          "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
@@ -84,6 +85,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 application_jars, application_inventory = classpath(closure, temporary / "selected-application-jars")
                 write_json(output / "java-classpath.json", application_inventory)
                 additional_resources, resource_sources = packaged_resources(closure, application_inventory, files)
+                application_resources = java_resources.materialize({**files, **resource_sources}, source_inputs,
+                    additional_resources, temporary / "selected-application-resources")
                 stage = "compiler-inputs"
                 compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
                     sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
@@ -99,7 +102,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
-                                                             application_classpath=application_jars)
+                    application_classpath=application_jars, application_resources=application_resources)
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
                 write_json(output / "bindings.json", generated)
