@@ -16,8 +16,14 @@ use latent_state::{
 };
 use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
+mod accounted;
 mod captured;
+mod census;
+mod managed_accounting;
+mod supported_formats;
 mod view_tokens;
+
+mod retention_cases;
 
 fn time(now: u64) -> CommandTime {
     CommandTime {
@@ -151,6 +157,9 @@ fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
             }],
         })
         .unwrap();
+    (dir, store, effect_owner())
+}
+fn effect_owner() -> EffectAuthorityOwner {
     let effects = EffectAuthorityOwner::new(4, 4, 0).unwrap();
     effects
         .publish(EffectRule {
@@ -183,7 +192,7 @@ fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
             enabled: true,
         })
         .unwrap();
-    (dir, store, effects)
+    effects
 }
 fn claim(store: &EmbeddedStore, input: AdmissionInput) -> AdmittedCommand {
     let view = store.snapshot().unwrap();
@@ -431,7 +440,9 @@ fn pre_fence_revocation_and_occ_failure_leave_all_business_families_untouched() 
     };
     assert_eq!(reason, AtomicError::PermissionDenied);
     assert!(watch.proven_noncommit().is_err());
+    assert!(!watch.physically_retired());
     drop(command);
+    assert!(watch.physically_retired());
     let retired = watch.proven_noncommit().unwrap();
     drop(view);
     let view = store.snapshot().unwrap();
