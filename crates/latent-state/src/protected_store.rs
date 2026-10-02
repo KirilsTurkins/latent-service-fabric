@@ -6,12 +6,14 @@ mod dispatcher;
 mod native_capacity;
 mod operation;
 mod physical;
+mod resource;
 mod startup;
 mod view;
 
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
 pub use operation::ProtectedStoreOperation;
+pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
 

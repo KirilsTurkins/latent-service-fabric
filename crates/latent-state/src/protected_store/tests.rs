@@ -17,6 +17,7 @@ mod lifecycle;
 mod native_capacity;
 mod recovery;
 mod reserved;
+mod resource;
 mod validation;
 
 fn wait<T>(future: impl Future<Output = T>) -> T {
