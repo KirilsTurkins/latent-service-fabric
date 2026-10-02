@@ -391,6 +391,8 @@ class CompletionRegressionTests(unittest.TestCase):
                 patch.dict(local.os.environ, {"CARGO_TARGET_DIR": str(Path(directory) / "target")}):
             plan = local.plan_suite(ROOT, ECHO,
                 "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary")
+            # This schedule owns a missing fixture. A verified warm fixture may
+            # be reused without its compiler tools in ordinary preparation.
             with patch.object(local.shutil, "which", side_effect=lambda tool: None if tool == "wasm-tools" else tool), \
                     patch.object(local, "_fixture_presence", return_value=False), \
                     patch.object(local, "run_bounded", side_effect=AssertionError("partial preparation")):
