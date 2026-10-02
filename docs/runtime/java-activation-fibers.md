@@ -262,5 +262,37 @@ cross-tenant reuse, late wakes and node stop remain open. General generated host
 I/O still uses the existing synchronous lowering and does not establish sibling
 progress while an accepted socket operation waits. Published library/default
 factory qualification, dependency safe-point coverage and measured active/parked
-owner plateaus are also required for #741. Issues #741, #736, #695 and the SDK
+owner plateaus are also required for #741. Issues #741, #736 and the SDK
 Library milestone remain open.
+
+The isolated CompletableFuture candidate supplies pending `CompletableFuture`,
+`CompletionStage` and `CompletionException` through their unchanged standard
+class identities. It implements the synchronous and asynchronous stage families,
+composition, recovery, aggregation, pending `get`/`join`, cancellation and default
+factories. Default asynchronous work uses one managed cached pool per activation;
+applications supply no executor adapter or shutdown hook. Cancellation removes
+waiting listeners, while a queued or running callback retains its original
+queued-work and result owners until physical callback completion. Timed completion,
+delayed executors, obtrusion and minimal-stage conveniences remain unsupported.
+
+The maintained compiler preparation first compares 55 standard observables against
+the pinned JDK and the SDK port source. A separate strict host ledger checks 401
+ownership observables and 32 completion/cancellation races. The ledger and host
+executor exist only in those source controls and are excluded from the component.
+Ten verified, locked TeaVM model JARs also check 178 actual method bodies,
+canonical standard and private helper identities, resolved reference closure,
+unsupported-method rejection, and 24 coroutine bodies containing 23 monitor
+scopes. Neither application nor port classes are initialized during that model
+inspection. These source and model results still require actual default-pool,
+dynamic callback and guest-binding behavior in signed execution. Prepare and select the independent,
+ordinary CompletableFuture fixture with the original guest ceilings:
+
+```sh
+python3 tools/qualify_java_fibers.py --fixture completable \
+  --output /tmp/java-completable-fibers --wasi-sdk /path/to/wasi-sdk-29.0-x86_64-linux
+LSF_GUEST_SDK_LANGUAGE=java LSF_JAVA_COMPLETABLE_FIXTURE=/tmp/java-completable-fibers \
+  cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime \
+  --test local_service \
+  runtime::signed_java_completable_futures_use_default_activation_executor \
+  -- --ignored --exact --nocapture
+```

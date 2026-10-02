@@ -94,7 +94,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
     private static boolean privateConcurrentHelper(String suffix) {
         return suffix.equals("ManagedExecutor") || suffix.startsWith("ManagedExecutor$")
             || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$")
-            || suffix.startsWith("TimeUnit$");
+            || suffix.startsWith("TimeUnit$") || suffix.startsWith("CompletableFuture$");
     }
 
     private static String concurrentReference(String name) {

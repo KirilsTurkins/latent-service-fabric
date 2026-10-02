@@ -118,6 +118,82 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
             "coroutineWrappers": 6, "coroutineMonitors": 2, "coroutineNativePairs": 2, "jarDigests": identities}
 
 
+def completable_source_control(compiler: Compiler, output: Path) -> dict:
+    """Compare standard observables and execute port ownership with a private host ledger.
+
+    The test ledger is never compiled into the component. These receipts establish
+    host source behavior; the actual managed pool, continuations and guest bindings
+    still require normal signed component execution.
+    """
+    fixture = compiler.sdk / "fibers/conformance/compiler"
+    native = fixture / "CompletableFutureNativeControl.java"
+    owners = fixture / "CompletableFutureOwnerControl.java"
+    stubs = [fixture / "source-control" / name for name in (
+        "PrivateSourceRunner.java", "dev/latent/generated/Bindings.java",
+        "dev/latent/guest/runtime/Activation.java", "dev/latent/guest/runtime/concurrent/Executors.java")]
+    ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/concurrent/" + name + ".java")
+             for name in ("CompletableFuture", "CompletionStage", "CompletionException")]
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
+              for path in (native, owners, *stubs, *ports)}
+    output.mkdir()
+    reference, private = output / "reference", output / "private"
+    reference.mkdir(); private.mkdir()
+    compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference, native)
+    expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=55"
+    observed = compiler.run("completable-reference-run", "java", "-Xmx256m", "-cp", reference,
+                            "CompletableFutureNativeControl").strip()
+    if observed != expected: raise ValueError("Java CompletableFuture reference control did not complete")
+    text = read_file(native).decode("utf-8")
+    for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
+        original = "import java.util.concurrent." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java CompletableFuture source control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.concurrent." + name + ";")
+    private_native = private / native.name
+    private_native.write_text(text, encoding="utf-8")
+    compiler.run("completable-source-compile", "javac", "-proc:none", "--release", "25", "-d", private,
+                 private_native, owners, *stubs, *ports)
+    owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=401;raceRounds=32"
+    observed = compiler.run("completable-source-run", "java", "-Xmx256m", "-cp", private,
+                            "PrivateSourceRunner").strip()
+    if observed.splitlines() != [expected, owner_result]:
+        raise ValueError("Java CompletableFuture source ownership controls did not complete")
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError("Java CompletableFuture control inputs changed during execution")
+    return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 55,
+            "sourceOwnershipObservables": 401, "raceRounds": 32, "sourceInputs": inputs,
+            "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
+
+
+def completable_model_control(compiler: Compiler, output: Path) -> dict:
+    """Check canonical class identities and continuations in the actual locked IR.
+
+    Private host ledger declarations make this model readable; its code and the
+    application classes are never initialized. The actual guest bindings and
+    dynamic application callback graph require separate component qualification.
+    """
+    classpath, identities = locked_model_classpath(compiler, include_platform=True)
+    output.mkdir()
+    sources = [*sorted((compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler").glob("*.java")),
+               compiler.sdk / "fibers/conformance/compiler/CompletableFutureModelControl.java"]
+    sources += [compiler.sdk / ("fibers/dev/latent/guest/runtime/concurrent/" + name + ".java")
+                for name in ("CompletableFuture", "CompletionStage", "CompletionException", "Future", "TimeUnit")]
+    sources += [compiler.sdk / ("fibers/conformance/compiler/source-control/" + name) for name in (
+        "dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/Activation.java",
+        "dev/latent/guest/runtime/concurrent/Executors.java")]
+    compiler.run("completable-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
+                 "-d", output, *sources)
+    expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
+        "resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=23;owned-callback-bodies=24;"
+        "bodies=178;application-identity")
+    observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
+                            str(output) + os.pathsep + classpath,
+                            "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
+    if observed != expected: raise ValueError("Java CompletableFuture model control did not complete")
+    return {"status": "actual-locked-classlib-model-passed", "modelMethodBodies": 178,
+            "coroutineMonitorBodies": 23, "ownedCallbackBodies": 24, "jarDigests": identities,
+            "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
+
+
 def recipe_inputs() -> dict[str, str]:
     paths = [Path(__file__), *sorted((ROOT / "tools/java_guest").glob("*.py")),
              ROOT / "tools/stage_runtime_wit.py", ROOT / "tools/rust_capsule_project.py",
@@ -126,27 +202,30 @@ def recipe_inputs() -> dict[str, str]:
     return {path.relative_to(ROOT).as_posix(): digest(read_file(path)) for path in paths}
 
 
-def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None):
+def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None, fixture="threads"):
+    if fixture not in {"threads", "completable"}: raise ValueError("unknown Java fiber fixture")
     output = fresh(output)
-    fixture = ROOT / "sdk/java-guest/fibers/conformance"
+    common = ROOT / "sdk/java-guest/fibers/conformance"
+    selected = common if fixture == "threads" else common / "completable"
     # Exercise real source attribution independently of package-directory layout.
     source = output / "src/Capsule.java"
     source.parent.mkdir(parents=True)
-    source.write_bytes(read_file(fixture / "Capsule.java"))
+    source.write_bytes(read_file(selected / "Capsule.java"))
     wit = output / "wit/service.wit"
     wit.parent.mkdir()
-    wit.write_bytes(read_file(fixture / "service.wit"))
+    wit.write_bytes(read_file(common / "service.wit"))
     started = time.monotonic()
     before = recipe_inputs()
     report = {"formatVersion": 1, "profile": "teavm-activation-fibers-v1", "qualification": "pending",
-              "status": "running", "nodeExecution": "not-run", "sourceDigest": digest(source.read_bytes())}
+              "status": "running", "nodeExecution": "not-run", "sourceDigest": digest(source.read_bytes()),
+              "fixture": fixture}
     report["recipeInputs"] = before
     try:
         compiler = Compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache, timeout=1200)
         control = output / "reference-jdk"
         control.mkdir()
         main = control / "Main.java"
-        main.write_bytes(read_file(fixture / "Main.java"))
+        main.write_bytes(read_file(selected / "Main.java"))
         compiler.paths["javac"] = compiler.paths["java"].parent / "javac"
         compiler.run("reference-jdk-compile", "javac", "-proc:none", "-d", control, source, main)
         report["reference"] = []
@@ -154,11 +233,13 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             result = compiler.run(f"reference-jdk-{iteration}", "java", "-cp", control, "Main")
             if result.strip() != "42 42 42 42": raise ValueError("reference-JDK fiber observable mismatch")
             report["reference"].append({"iteration": iteration, "modes": [0, 1, 2, 3], "results": [42, 42, 42, 42]})
+        report["completableSource"] = completable_source_control(compiler, output / "completable-source")
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True)
         report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
         report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
         report["waitFrameModel"] = wait_frame_model_control(compiler, output / "wait-frame-model")
+        report["completableModel"] = completable_model_control(compiler, output / "completable-model")
         compiler.check_unchanged()
         report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
         report["componentDigest"] = digest(read_file(component, 64 * 1024 * 1024))
@@ -182,8 +263,9 @@ def main():
     parser.add_argument("--wasi-sdk", type=Path, required=True)
     parser.add_argument("--gradle", default="gradle")
     parser.add_argument("--offline-cache", type=Path)
+    parser.add_argument("--fixture", choices=("threads", "completable"), default="threads")
     args = parser.parse_args()
-    prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache)
+    prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache, fixture=args.fixture)
 
 
 if __name__ == "__main__": main()

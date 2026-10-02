@@ -22,6 +22,7 @@ public final class Activation {
     private static Address result;
     private static Throwable failure;
     private static Work root;
+    private static java.util.concurrent.Executor defaultAsyncExecutor;
 
     private Activation() { }
 
@@ -84,6 +85,15 @@ public final class Activation {
     }
 
     public static boolean closing() { return closing; }
+
+    /** One activation-local default pool; accepted callbacks share no host worker. */
+    public static synchronized java.util.concurrent.Executor defaultAsyncExecutor(
+            java.util.function.Supplier<java.util.concurrent.Executor> factory) {
+        if (!entered || retiringPools || closing && !acceptedContinuation())
+            throw new IllegalStateException("activation-runtime-default-executor-closed");
+        if (defaultAsyncExecutor == null) defaultAsyncExecutor = factory.get();
+        return defaultAsyncExecutor;
+    }
 
     /** Linear logical ownership; payloads remain in the accounted Java heap. */
     public static final class Lease implements AutoCloseable {
@@ -234,6 +244,7 @@ public final class Activation {
             // Store and keeps the original reservations until physical drop.
             threads.clear();
             pools.clear();
+            defaultAsyncExecutor = null;
             root = null;
             failure = null;
             entered = false;
