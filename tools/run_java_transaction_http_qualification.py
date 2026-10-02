@@ -20,6 +20,7 @@ if __package__ in (None, ""):
 from tools.build_observation import file_identity
 from tools.build_process_signals import owned_cancellation
 from tools.java_transaction_qualification import configuration as cfg, inputs, lifecycle, packaging, policies, staging
+from tools.java_transaction_qualification import diagnostic_inputs
 from tools.java_transaction_qualification.campaign import Campaign
 from tools.java_transaction_qualification.evidence import Evidence, RecordingClient, native
 from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
@@ -34,7 +35,8 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/lifecycle.py", "tools/java_transaction_qualification/http.py",
     "tools/java_transaction_qualification/campaign.py", "tools/java_transaction_qualification/provider.py",
     "tools/java_transaction_qualification/recovery.py", "tools/java_transaction_qualification/offline_campaign.py",
-    "tools/java_transaction_qualification/staging.py")
+    "tools/java_transaction_qualification/staging.py", "tools/java_transaction_qualification/diagnostic_inputs.py",
+    "tools/java_transaction_qualification/diagnostic_campaign.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
@@ -52,6 +54,10 @@ def parse():
     parser.add_argument("--prepare-authority-only", action="store_true", help="Stop before candidate policy mutations")
     parser.add_argument("--resume-candidate", type=Path, help="Consume the exact stopped original candidate once")
     parser.add_argument("--candidate-digest", help="Exact retained candidate digest supplied after review")
+    for name in diagnostic_inputs.ARGUMENTS:
+        parser.add_argument("--" + name.replace("_", "-"), type=Path if name in
+                            {"diagnostic_capture", "diagnostic_receipt"} else str,
+                            help="Optional separate compiler capture; all six diagnostic inputs must be pinned")
     parser.add_argument("--timeout", type=int, default=1200)
     args = parser.parse_args()
     inputs.require(sys.platform == "linux" and sys.version_info >= (3, 13), "linux-python313-required")
@@ -65,6 +71,7 @@ def parse():
     inputs.require(args.portable.is_absolute() and args.portable.is_dir() and not args.portable.is_symlink()
                    and args.output.is_absolute(), "original-qualification-roots")
     recovery_input(args)
+    diagnostic_inputs.selection(args)
     staging.mode(args)
     return args
 
@@ -131,9 +138,10 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     node.stop()
     lifecycle.admission_lease_interval(client)
     operations = cfg.installed(items, publications, peer.incarnation)
-    full_path = configuration.selected(configuration.path.parent / "installed-node.json", operations)
+    diagnostic = any(item.name == diagnostic_inputs.NAME for item in items)
+    full_path = configuration.selected(configuration.path.parent / "installed-node.json", operations, diagnostic=diagnostic)
     hosts = lifecycle.inspect(client, args.node, full_path, operations)
-    proposals = policies.documents(hosts, publications)
+    proposals = policies.documents(hosts, publications, diagnostic=diagnostic)
     client.evidence.record("actual-native-hosts", hosts.value)
     client.evidence.record("reviewed-policy-proposals", proposals)
     mutations = policies.prepare_mutations(client, proposals) if retained else None
@@ -180,9 +188,12 @@ def resume_authority(client, args, configuration, node, full_path, prepared):
 
 
 def execute_campaign(client, args, work, record, configuration, node, peer,
-                     signed, items, full_path, publications, proposals, receipts):
+                     signed, items, full_path, publications, proposals, receipts, diagnostic=None):
     campaign = Campaign(client, configuration, full_path, signed, items, publications, proposals, receipts, peer, node)
+    campaign.diagnostic = diagnostic
     record["campaign"] = campaign.execute()
+    for name in record["campaign"].get("qualifiedDiagnosticScenarios", []):
+        record["remainingScenarios"].remove(name)
     if args.recovery_helper is not None:
         record["offlineCampaign"] = OfflineCampaign(campaign, args.recovery_helper, work / "offline-recovery").execute()
         record["remainingScenarios"].remove("reviewed-schema-and-restore-original-results")
@@ -197,6 +208,33 @@ def failure(record, stage, error):
     reason = str(error)
     if re.fullmatch(r"[a-z0-9][a-z0-9:-]{0,191}", reason):
         record["fixedFailureReason"] = reason
+
+
+def loaded_inputs(args, work):
+    original = inputs.load(args.portable)
+    diagnostic = diagnostic_inputs.load(args, work / "diagnostic-input")
+    if diagnostic is not None:
+        legacy = next(item for item in original if item.name == "put-once-legacy-v1")
+        inputs.require(diagnostic.item.companion_digest == legacy.companion_digest
+                       and diagnostic.item.requirements_digest == legacy.requirements_digest
+                       and diagnostic.item.host_abi_digest == legacy.host_abi_digest,
+                       "same-original-diagnostic-companion-requirements-and-abi")
+    return original + ((diagnostic.item,) if diagnostic is not None else ()), diagnostic
+
+
+def input_identity(record, items, diagnostic):
+    record["originalInputs"] = [item.observation() for item in items if item.name != diagnostic_inputs.NAME]
+    if diagnostic is not None:
+        record["diagnosticInput"] = diagnostic.observation()
+
+
+def recheck_inputs(args, work, record):
+    items, diagnostic = loaded_inputs(args, work)
+    observed = {}
+    input_identity(observed, items, diagnostic)
+    inputs.require(observed["originalInputs"] == record["originalInputs"]
+                   and observed.get("diagnosticInput") == record.get("diagnosticInput"),
+                   "qualification-input-changed")
 
 
 def run(args):
@@ -221,14 +259,15 @@ def run(args):
             original_clock = staging.clock(args.timeout)
             deadline = staging.deadline(original_clock, args.timeout)
             tools, collectors = tool_identity(args), collector_identity()
-            items = inputs.load(args.portable)
-            record.update(nativeTools=tools, collectorDigests=collectors,
-                          originalInputs=[item.observation() for item in items])
+            items, diagnostic = loaded_inputs(args, work)
+            record.update(nativeTools=tools, collectorDigests=collectors)
+            input_identity(record, items, diagnostic)
             client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence)
             try:
                 stage = "package"
                 signed = packaging.package(args.portable, work / "packages", args.contracts_tool, args.signer,
-                    timeout=max(1, int(min(600, deadline - time.monotonic()))))
+                    timeout=max(1, int(min(600, deadline - time.monotonic()))),
+                    diagnostic=None if diagnostic is None else diagnostic.item)
                 evidence.record("actual-package-fixture", read_json(work / "packages/package-fixture-receipt.json"))
                 stage = "bootstrap"
                 peer, configuration, node = prepare_environment(client, args, work, signed)
@@ -246,11 +285,11 @@ def run(args):
                         client, args, signed, items, peer, configuration, node)
                     stage = "actual-http"
                     execute_campaign(client, args, work, record, configuration, node, peer,
-                                     signed, items, full_path, publications, proposals, receipts)
+                                     signed, items, full_path, publications, proposals, receipts, diagnostic)
                 stage = "identity-recheck"
-                inputs.require(tool_identity(args) == tools and collector_identity() == collectors
-                               and [item.observation() for item in inputs.load(args.portable)] == record["originalInputs"],
+                inputs.require(tool_identity(args) == tools and collector_identity() == collectors,
                                "qualification-input-changed")
+                recheck_inputs(args, work, record)
                 if prepared is None:
                     record.update(passed=True, signedGuestExecutionQualified=True)
             finally:
@@ -295,8 +334,8 @@ def resume(args):
     try:
         tools, collectors = tool_identity(args), collector_identity()
         retained, deadline = staging.retain(args, tools, collectors)
-        items = inputs.load(args.portable)
-        inputs.require([item.observation() for item in items] == retained["originalInputs"], "original-candidate-input-drift")
+        items, diagnostic = loaded_inputs(args, work)
+        recheck_inputs(args, work, retained)
         evidence = Evidence.retain(work / "evidence", retained["evidence"])
         with owned_cancellation() as cancellation:
             staging.claim(work, args.candidate_digest)
@@ -313,6 +352,8 @@ def resume(args):
             node.ordinal, node.shutdown = retained["node"]["ordinal"], retained["node"]["shutdown"]
             record.update(nativeTools=tools, collectorDigests=collectors, originalInputs=retained["originalInputs"],
                           originalCampaignClock=retained["clock"])
+            if diagnostic is not None:
+                record["diagnosticInput"] = diagnostic.observation()
             if args.recovery_helper is not None:
                 record["recoverySourceCommit"] = args.recovery_source_commit
             try:
@@ -325,11 +366,11 @@ def resume(args):
                 lifecycle.create_namespace(client, legacy, publications[legacy.name])
                 stage = "actual-http"
                 execute_campaign(client, args, work, record, configuration, node, peer,
-                                 signed, items, full_path, publications, proposals, receipts)
+                                 signed, items, full_path, publications, proposals, receipts, diagnostic)
                 stage = "identity-recheck"
-                inputs.require(tool_identity(args) == tools and collector_identity() == collectors
-                    and [item.observation() for item in inputs.load(args.portable)] == retained["originalInputs"],
+                inputs.require(tool_identity(args) == tools and collector_identity() == collectors,
                     "qualification-input-changed")
+                recheck_inputs(args, work, retained)
                 record.update(passed=True, signedGuestExecutionQualified=True)
             finally:
                 with cancellation.defer():

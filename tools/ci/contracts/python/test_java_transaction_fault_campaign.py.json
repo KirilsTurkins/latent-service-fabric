@@ -1,0 +1,270 @@
+{
+  "cases": [
+    "DiagnosticInputOracle.test_archive_links_escaping_duplicate_members_and_foreign_prefixes_refuse",
+    "DiagnosticInputOracle.test_diagnostic_program_cannot_silently_add_offline_node_sessions",
+    "DiagnosticInputOracle.test_exact_separate_compiler_materials_keep_runtime_qualification_false",
+    "DiagnosticInputOracle.test_mixed_source_component_closure_failed_compiler_and_inferred_grants_refuse",
+    "DiagnosticInputOracle.test_no_input_keeps_original_five_program_and_partial_pins_refuse",
+    "DiagnosticInputOracle.test_retained_capture_rechecks_original_bytes_and_refuses_changed_pin",
+    "DiagnosticInputOracle.test_source_only_memory_flag_does_not_create_a_compiled_selector",
+    "DiagnosticProgramOracle.test_candidate_source_identity_pins_separate_diagnostic_selection",
+    "DiagnosticProgramOracle.test_extra_publication_requires_explicit_fourth_native_effect_and_current_purpose_rules",
+    "DiagnosticProgramOracle.test_fifteen_operations_need_explicit_selection_and_original_bootstrap_remains_unchanged",
+    "RollbackOracle.test_each_fault_requires_original_terminal_accounting_and_fixed_producer_reason",
+    "RollbackOracle.test_missing_uncertain_committed_foreign_or_changed_abort_proof_cannot_qualify",
+    "RollbackOracle.test_original_attempt_lookup_can_wait_for_claim_without_retrying_mutation_or_renewing_time",
+    "RollbackOracle.test_original_durable_abort_proof_matches_current_authorized_http_receipt",
+    "RollbackOracle.test_parallel_transport_and_lookup_evidence_share_one_finite_byte_reservation",
+    "RollbackOracle.test_pending_transport_closes_and_joins_actual_socket_owner_without_claiming_abort",
+    "RollbackOracle.test_reduced_or_inflated_grant_and_generic_resource_reason_do_not_qualify_memory",
+    "RollbackOracle.test_running_timeout_and_zero_stage_accounting_cannot_qualify_rollback",
+    "RollbackOracle.test_unchanged_query_and_absent_recipient_put_are_both_required",
+    "RollbackOracle.test_unknown_lookup_and_exhausted_original_claim_read_bound_refuse_without_cancel"
+  ],
+  "guards": {
+    "DiagnosticInputOracle.test_archive_links_escaping_duplicate_members_and_foreign_prefixes_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DiagnosticInputOracle.test_diagnostic_program_cannot_silently_add_offline_node_sessions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DiagnosticInputOracle.test_exact_separate_compiler_materials_keep_runtime_qualification_false": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DiagnosticInputOracle.test_mixed_source_component_closure_failed_compiler_and_inferred_grants_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DiagnosticInputOracle.test_no_input_keeps_original_five_program_and_partial_pins_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DiagnosticInputOracle.test_retained_capture_rechecks_original_bytes_and_refuses_changed_pin": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DiagnosticInputOracle.test_source_only_memory_flag_does_not_create_a_compiled_selector": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DiagnosticProgramOracle.test_candidate_source_identity_pins_separate_diagnostic_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DiagnosticProgramOracle.test_extra_publication_requires_explicit_fourth_native_effect_and_current_purpose_rules": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DiagnosticProgramOracle.test_fifteen_operations_need_explicit_selection_and_original_bootstrap_remains_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_each_fault_requires_original_terminal_accounting_and_fixed_producer_reason": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_missing_uncertain_committed_foreign_or_changed_abort_proof_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_original_attempt_lookup_can_wait_for_claim_without_retrying_mutation_or_renewing_time": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_original_durable_abort_proof_matches_current_authorized_http_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_parallel_transport_and_lookup_evidence_share_one_finite_byte_reservation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_pending_transport_closes_and_joins_actual_socket_owner_without_claiming_abort": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_reduced_or_inflated_grant_and_generic_resource_reason_do_not_qualify_memory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_running_timeout_and_zero_stage_accounting_cannot_qualify_rollback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_unchanged_query_and_absent_recipient_put_are_both_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RollbackOracle.test_unknown_lookup_and_exhausted_original_claim_read_bound_refuse_without_cancel": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0248ffca5d4f66a677121d9c21015561310447d6fecc1bdc580f84b99d9ac58d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_fault_campaign.py",
+  "reviewReason": "Add20 source-only diagnostic capture, original abort and bounded transport/evidence oracles; preserve original75 campaign cases and all historical execution/skip guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

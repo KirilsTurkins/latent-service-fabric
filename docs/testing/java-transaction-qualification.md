@@ -124,6 +124,57 @@ A signed Java campaign must use new native binaries containing both changes.
 The older binaries cannot supply signed Java or positive schema/restore
 result-recovery evidence.
 
+## Separately captured post-stage faults
+
+An optional diagnostic program preserves the five original inputs and adds one
+separately measured `put-once-diagnostics` component. Supply all six original
+input pins together when preparing and resuming its candidate:
+
+```bash
+--diagnostic-capture /inputs/complete-compiler-capture.tar.gz \
+--diagnostic-receipt /inputs/compiler-process-receipt.json \
+--diagnostic-source-commit <exact-original-diagnostic-compiler-source> \
+--diagnostic-component-digest sha256:<exact-component-sha256> \
+--diagnostic-capture-digest sha256:<exact-capture-sha256> \
+--diagnostic-receipt-digest sha256:<exact-original-receipt-sha256>
+```
+
+The bounded decoder checks the original compiler report, successful compiler
+stages, component, source inventory, source archive, recipe, compiler closure,
+WIT imports, diagnostic source declaration and signed companion associations.
+It copies the original archive and process receipt byte for byte. Source-only
+memory declarations do not supply a compiled memory case. Failed, mixed,
+modified or unexported compiler observations are refused.
+
+This selected program has five signed publications and fifteen immutable
+operations, with a fourth actual native deferred HTTP observation. It keeps
+the same ten explicit policy mutations, per-caller operation bounds, captured
+resource ceilings, provider identities and nonrenewable lifetime. Its exact
+candidate must be reviewed separately. It cannot be combined with the offline
+schema/restore program because their combined node restarts exceed the original
+six-session limit.
+
+Trap, fuel and cancellation cases must retain the original terminal activation
+and producer reason, positive accounting for the actual state put and captured
+intent, and the original durable server-issued abort fence. A fresh query must
+retain the same business value and key version; every original recipient
+business counter must remain zero. Passing additionally requires clean physical
+node retirement and a fresh query after reopening the same store. The memory
+case is selected only from a separately compiled capture and requires the
+native memory-exhaustion reason; a generic guest trap does not qualify it.
+
+Cancellation discovers the actual HTTP root through the bounded privileged
+activation journal and reads the same original command key before making one
+cancellation request. A running row selects the original attempt but does not
+prove staging. Only terminal accounting and the durable abort fence can qualify
+that case. Request loss, a timeout, `InProgress`, process exit and transport
+cleanup never supply durable disposition. Crash before commitment remains
+unqualified until a common positive live staging witness is available.
+
+The focused tests use synthetic compiler frames and socket owners. They verify
+decoder, accounting, concurrency and refusal boundaries; they do not establish
+signed guest execution or fault qualification.
+
 The disposable external recipient implements the existing native
 `latent.http-effect.put-once.v1` HTTPS contract. Its bounded private records
 preserve original effect, payload digest, provider incarnation and retention

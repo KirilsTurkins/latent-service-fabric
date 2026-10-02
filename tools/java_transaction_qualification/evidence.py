@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import re
+import threading
 import time
 
 from tools.phase2_operator_process import Client, Process, diagnostic_code, diagnostic_grpc
@@ -21,6 +22,7 @@ class Evidence:
         directory.mkdir(mode=0o700)
         self.directory = directory
         self.files, self.cases, self.total = [], [], 0
+        self.lock = threading.RLock()
 
     @classmethod
     def retain(cls, directory: Path, original: dict):
@@ -49,9 +51,17 @@ class Evidence:
                 "original-evidence-counts-or-files-drift")
         value = cls.__new__(cls)
         value.directory, value.files, value.cases, value.total = directory, list(original["files"]), list(original["cases"]), total
+        value.lock = threading.RLock()
         return value
 
     def write(self, name: str, raw: bytes) -> dict:
+        # The one cancellation request may finish while a privileged read is
+        # being recorded. Reserve bytes/files and publish together; concurrent
+        # observations cannot each spend the same remaining evidence capacity.
+        with self.lock:
+            return self._write(name, raw)
+
+    def _write(self, name: str, raw: bytes) -> dict:
         require(isinstance(name, str) and re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,95}", name),
                 "closed-evidence-file-name")
         require(isinstance(raw, bytes) and len(raw) <= 1048576 and len(self.files) < 1024
@@ -69,14 +79,16 @@ class Evidence:
         return self.write(name + ".json", encoded(value))
 
     def passed(self, name: str, observed: dict):
-        require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", name)
-                and name not in self.cases and len(self.cases) < 64,
-                "bounded-distinct-measured-case")
-        self.record("case-" + name, {"passed": True, "observed": observed})
-        self.cases.append(name)
+        with self.lock:
+            require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", name)
+                    and name not in self.cases and len(self.cases) < 64,
+                    "bounded-distinct-measured-case")
+            self.record("case-" + name, {"passed": True, "observed": observed})
+            self.cases.append(name)
 
     def summary(self):
-        return {"files": list(self.files), "bytes": self.total, "cases": list(self.cases)}
+        with self.lock:
+            return {"files": list(self.files), "bytes": self.total, "cases": list(self.cases)}
 
 
 class RecordingClient(Client):

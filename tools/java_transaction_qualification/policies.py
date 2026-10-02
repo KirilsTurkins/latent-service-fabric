@@ -56,7 +56,7 @@ class ObservedHosts:
     effects: tuple[dict, ...]
 
     @classmethod
-    def read(cls, value: dict, operations: list[dict]):
+    def read(cls, value: dict, operations: list[dict], *, diagnostic=False):
         require(isinstance(value, dict) and set(value) == INSPECTION_FIELDS
                 and value["schemaVersion"] == "latent.transaction-host-inspection.v1", "actual-native-host-inspection")
         identifier(value["stateProviderProfile"])
@@ -93,7 +93,8 @@ class ObservedHosts:
             require(row["capability"] == expected, "actual-installed-provider-contract")
             providers[row["id"]] = row
         effects = value["deferredHttp"]
-        require(isinstance(effects, list) and len(effects) == 3, "exact-three-signed-effect-installations")
+        require(type(diagnostic) is bool and isinstance(effects, list) and len(effects) == (4 if diagnostic else 3),
+                "exact-selected-signed-effect-installations")
         require(all(isinstance(row, dict) and set(row) == EFFECT_FIELDS for row in effects),
                 "closed-native-effect-observation")
         selected = {row["publication"]: row for row in operations if "deferredHttp" in row}
@@ -148,12 +149,15 @@ def rule(name, kind, subject, publications, capability, operations, resources, *
                         "outputBytes": output_bytes, "wallTimeMillis": wall}}
 
 
-def documents(hosts: ObservedHosts, publications: dict[str, str]) -> dict:
+def documents(hosts: ObservedHosts, publications: dict[str, str], *, diagnostic=False) -> dict:
     """Reviewed test policy proposals only; they become authority solely via apply."""
     pubs = sorted(publications.values())
-    require(len(pubs) == 4 and len(set(pubs)) == 4
+    from .diagnostic_inputs import NAME
+    expected = 5 if diagnostic else 4
+    require(type(diagnostic) is bool and (NAME in publications) is diagnostic
+            and len(pubs) == expected and len(set(pubs)) == expected and len(hosts.effects) == expected - 1
             and all(re.fullmatch(r"publication:sha256:[0-9a-f]{64}", pub) for pub in pubs),
-            "actual-four-distinct-admitted-publications")
+            "actual-distinct-selected-admitted-publications")
     result = {"bindings": {}, "policies": {}, "deploymentGrants": []}
     result["bindings"]["transaction-java-aggregate"] = binding(STATE_CONTRACT,
         hosts.value["stateProviderProfile"], hosts.value["stateConfigurationDigest"],

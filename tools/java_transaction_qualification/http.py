@@ -157,7 +157,7 @@ class Http:
         self.authority, self.deadline = authority, deadline
         self.maximum_requests, self.requests = maximum_requests, 0
 
-    def request(self, method: str, path: str, *, body: bytes | None = None, headers=(), lose_body=False):
+    def request(self, method: str, path: str, *, body: bytes | None = None, headers=(), lose_body=False, owner=None):
         require(self.requests < self.maximum_requests, "http-campaign-request-bound")
         remaining = self.deadline - time.monotonic()
         require(remaining > 0 and method in {"GET", "HEAD", "POST"}
@@ -182,6 +182,8 @@ class Http:
             if body is not None:
                 connection.putheader("Content-Length", str(len(body)))
             connection.endheaders(body)
+            if owner is not None:
+                owner.attach(connection.sock)
             result = connection.getresponse()
             observed_headers = result.getheaders()
             if lose_body:
@@ -193,3 +195,5 @@ class Http:
             return {"status": result.status, "headers": observed_headers, "body": data}
         finally:
             connection.close()
+            if owner is not None:
+                owner.detach()
