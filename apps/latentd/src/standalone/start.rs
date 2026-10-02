@@ -350,7 +350,7 @@ impl Catalogs {
                     )
                     .await
                     .inspect_err(|error| {
-                        record_platform(Stage::CatalogAuditReconciliation, error)
+                        record_platform(Stage::CatalogAuditReconciliation, error);
                     })?;
                 }
                 latent_rollout::deployment_audit::reconcile_deployment_audit(

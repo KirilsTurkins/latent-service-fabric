@@ -130,7 +130,7 @@ impl StandaloneNode {
         {
             return Err(denied());
         }
-        let (outcome, trace) = capture(async {
+        let startup = async {
             match platform(
                 Stage::NodeStart,
                 Box::pin(Self::start(settings, control_runtime, threads)).await,
@@ -141,8 +141,9 @@ impl StandaloneNode {
                     Err(error) => (true, Some(Failure::from(&error)), None),
                 },
             }
-        })
-        .await;
+        };
+        let startup = std::pin::pin!(startup);
+        let (outcome, trace) = capture(startup).await;
         Ok(StartupFailureReport {
             schema_version: "latent.startup-failure-observation.v1",
             startup_succeeded: outcome.0,

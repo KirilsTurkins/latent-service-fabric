@@ -58,7 +58,7 @@ async fn scoped_startup_traces_remain_isolated_across_concurrent_tasks_and_neste
             capture(async {
                 record(Stage::ProtectedStoreStartup, error);
                 barrier.wait().await;
-                let (_, nested) = capture(async {
+                let ((), nested) = capture(async {
                     record(Stage::EffectDispatcher, DispatcherError::CheckpointRequired);
                 })
                 .await;
@@ -90,7 +90,7 @@ async fn trace_capacity_preserves_first_failures_and_marks_overflow_without_succ
     assert_eq!(result, Ok(7));
     assert_eq!(empty.retained, 0);
     assert!(!empty.truncated);
-    let (_, bounded) = capture(async {
+    let ((), bounded) = capture(async {
         record(Stage::EffectDispatcher, DispatcherError::CheckpointRequired);
         for _ in 0..MAXIMUM_FAILURES + 2 {
             record(Stage::NodeStart, StoreError::Unavailable);
