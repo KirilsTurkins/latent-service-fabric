@@ -9,6 +9,9 @@ pub const KEY: &[u8] = b"transaction-store-identity-v1\0";
 const FORMAT: &[u8] = b"LSI\0\x01";
 const MAXIMUM_IDENTITY_BYTES: usize = 128;
 
+mod checkpoint;
+pub use checkpoint::ExternalCheckpoint;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StoreIdentity(String);
 
@@ -16,6 +19,7 @@ impl StoreIdentity {
     pub fn new(identity: String) -> Result<Self, StoreError> {
         if identity.is_empty()
             || identity.len() > MAXIMUM_IDENTITY_BYTES
+            || identity.capacity() > MAXIMUM_IDENTITY_BYTES
             || !identity
                 .bytes()
                 .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
@@ -226,6 +230,12 @@ mod tests {
         assert_eq!(
             StoreIdentity::validate_row(&key, &bytes),
             Err(StoreError::UnsupportedFormat)
+        );
+        let mut oversized_capacity = String::with_capacity(MAXIMUM_IDENTITY_BYTES + 1);
+        oversized_capacity.push_str("production-A");
+        assert_eq!(
+            StoreIdentity::new(oversized_capacity),
+            Err(StoreError::Invalid)
         );
     }
 }

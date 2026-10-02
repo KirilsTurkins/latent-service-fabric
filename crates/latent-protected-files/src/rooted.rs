@@ -82,6 +82,29 @@ impl ProtectedRoot {
         self.chain.last().expect("root anchor").identity
     }
 
+    /// Compare actual retained ancestor identities on a bounded control worker.
+    /// Siblings may share ancestors; neither final root may be the other root
+    /// or appear anywhere in its anchored ancestry. Revalidate both chains
+    /// before and after comparison, including owner/mode and named-inode fences.
+    /// No file or descriptor escapes through this metadata-only operation.
+    pub fn is_separate_from(&self, other: &Self) -> Result<bool, PlatformError> {
+        self.check()?;
+        other.check()?;
+        let this_root = self.identity();
+        let other_root = other.identity();
+        let separate = !self
+            .chain
+            .iter()
+            .any(|anchor| anchor.identity == other_root)
+            && !other
+                .chain
+                .iter()
+                .any(|anchor| anchor.identity == this_root);
+        self.check()?;
+        other.check()?;
+        Ok(separate)
+    }
+
     /// Query the filesystem of the retained descriptor, not a replacement path.
     pub fn filesystem_type(&self) -> Result<u64, PlatformError> {
         self.check()?;

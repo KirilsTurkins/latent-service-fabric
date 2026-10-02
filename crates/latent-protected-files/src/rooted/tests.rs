@@ -300,3 +300,52 @@ fn exclusive_mutable_creation_rejects_unsafe_bounds_and_changed_ancestors_before
     assert!(!dir.path().join("moved/private/checkpoint").exists());
     assert!(!parent.join("private").exists());
 }
+
+#[test]
+fn anchored_root_separation_allows_siblings_and_rejects_equal_ancestor_and_descendant_roots() {
+    let top = root();
+    let left_path = top.path().join("left");
+    let right_path = top.path().join("right");
+    let nested_path = left_path.join("nested");
+    for path in [&left_path, &right_path, &nested_path] {
+        fs::create_dir(path).unwrap();
+        fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    let ancestor = ProtectedRoot::open(top.path()).unwrap();
+    let left = ProtectedRoot::open(&left_path).unwrap();
+    let same = ProtectedRoot::open(&left_path).unwrap();
+    let right = ProtectedRoot::open(&right_path).unwrap();
+    let nested = ProtectedRoot::open(&nested_path).unwrap();
+    assert!(left.is_separate_from(&right).unwrap());
+    assert!(right.is_separate_from(&left).unwrap());
+    assert!(!left.is_separate_from(&same).unwrap());
+    assert!(!left.is_separate_from(&nested).unwrap());
+    assert!(!nested.is_separate_from(&left).unwrap());
+    assert!(!left.is_separate_from(&ancestor).unwrap());
+    assert!(!ancestor.is_separate_from(&left).unwrap());
+    symlink(&right_path, top.path().join("alias")).unwrap();
+    assert!(ProtectedRoot::open(&top.path().join("alias")).is_err());
+}
+
+#[test]
+fn anchored_root_separation_refuses_changed_ancestry_and_grown_permissions() {
+    let top = root();
+    let parent = top.path().join("parent");
+    let left_path = parent.join("left");
+    let right_path = top.path().join("right");
+    for path in [&parent, &left_path, &right_path] {
+        fs::create_dir(path).unwrap();
+        fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    let left = ProtectedRoot::open(&left_path).unwrap();
+    let right = ProtectedRoot::open(&right_path).unwrap();
+    assert!(left.is_separate_from(&right).unwrap());
+    fs::set_permissions(&right_path, fs::Permissions::from_mode(0o755)).unwrap();
+    assert!(left.is_separate_from(&right).is_err());
+    assert!(right.is_separate_from(&left).is_err());
+    fs::set_permissions(&right_path, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::rename(&parent, top.path().join("moved")).unwrap();
+    fs::create_dir(&parent).unwrap();
+    assert!(left.is_separate_from(&right).is_err());
+    assert!(right.is_separate_from(&left).is_err());
+}
