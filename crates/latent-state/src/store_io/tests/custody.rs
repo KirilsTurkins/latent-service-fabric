@@ -252,7 +252,7 @@ fn foreign_owner_and_expired_deadline_cannot_reuse_original_custody() {
         Arc::new(original_clock.clone()),
     )
     .unwrap();
-    let (store, _, _) = store();
+    let (store, _, _) = super::store();
     let foreign = StoreIoOwner::new(store, exclusive_limits(), |_| Ok(())).unwrap();
     let custody = owner
         .reserve_custody::<()>(
