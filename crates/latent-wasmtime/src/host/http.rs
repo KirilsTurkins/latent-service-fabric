@@ -24,12 +24,19 @@ pub(crate) fn install(
                 let invocation = access.with(|mut access| {
                     let mut store = access.as_context_mut();
                     checkpoint(&mut store)?;
-                    let invocation = convert_request(request).and_then(|request| {
-                        store
-                            .data()
-                            .capabilities
-                            .http_start(invoker.as_ref(), request)
-                    });
+                    // The admitted owner scopes this entire Store, including calls
+                    // before acquiring or after dropping a guest state resource.
+                    // Deny immediate effects before provider start or its budgets.
+                    let invocation = if store.data().transaction.is_attached() {
+                        Err(HttpError::PermissionDenied)
+                    } else {
+                        convert_request(request).and_then(|request| {
+                            store
+                                .data()
+                                .capabilities
+                                .http_start(invoker.as_ref(), request)
+                        })
+                    };
                     synchronize(&mut store)?;
                     Ok::<_, wasmtime::Error>(invocation)
                 })?;
