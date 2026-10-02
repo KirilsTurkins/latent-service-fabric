@@ -12,6 +12,62 @@ from unittest.mock import Mock, patch
 from tools.dev_workflow import common, effects, journal, node_cancellation, node_fixtures, node_test_profile, policy_operations, scenarios, state
 
 
+class JournalRpcObservations(unittest.TestCase):
+    def test_closed_rpc_failure_codes_preserve_uncertain_original_operation_without_replay(self):
+        for code in ("cancelled", "unknown", "deadline-exceeded", "unimplemented", "internal",
+                     "unavailable", "data-loss", "out-of-range", "resource-exhausted",
+                     "invalid-argument", "not-found", "already-exists", "permission-denied",
+                     "unauthenticated", "failed-precondition", "aborted"):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                controller = journal.Journal(root, "node", "tenant")
+                response = {"category": "transport-failure", "outcomeKnown": False, "requestDispatched": True,
+                    "error": {"code": "rpc-failed", "grpcCode": code, "message": "private-fixture-value"},
+                    "data": {"secret": "private-fixture-value"}}
+                execute = Mock(return_value=response)
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    controller.execute("release", {"source": "source"}, execute)
+                original = controller.read()["pending"]
+                observed = state.load(root, "last-operation-observation.json")
+                self.assertEqual(observed["grpcCode"], code)
+                self.assertEqual((observed["id"], observed["kind"]), (original["id"], "release"))
+                self.assertFalse(observed["outcomeKnown"])
+                self.assertEqual(set(observed), {"id", "kind", "resultSha256", "outcomeKnown",
+                    "requestDispatched", "category", "code", "grpcCode"})
+                self.assertNotIn(b"private-fixture-value", (root / "last-operation-observation.json").read_bytes())
+                with self.assertRaisesRegex(common.DevError, "recover-original-operation-before-new-mutation"):
+                    controller.execute("release", {"source": "source"}, execute)
+                execute.assert_called_once()
+                self.assertEqual(controller.read()["pending"], original)
+
+    def test_unknown_malformed_and_non_string_rpc_codes_are_not_retained_or_coerced(self):
+        for code in (None, True, 3, {}, [], "ok", "UNAVAILABLE", "deadline_exceeded",
+                     " unavailable", "unavailable\nprivate-fixture-value", "x" * 101):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                controller = journal.Journal(root, "node", "tenant")
+                operation = controller.begin("release", {"source": "source"})
+                response = {"category": "transport-failure", "outcomeKnown": False,
+                    "error": {"code": "rpc-failed", "grpcCode": code}}
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    controller.finish(operation, response)
+                self.assertNotIn("grpcCode", state.load(root, "last-operation-observation.json"))
+                self.assertEqual(controller.read()["pending"], operation)
+
+    def test_rpc_token_requires_transport_failure_and_the_generic_rpc_public_code(self):
+        for category, code in (("platform-failure", "rpc-failed"), ("not-found", "rpc-failed"),
+                               ("success", "rpc-failed"), ("transport-failure", "rpc-timeout")):
+            with self.subTest(category=category, code=code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                controller = journal.Journal(root, "node", "tenant")
+                operation = controller.begin("release", {"source": "source"})
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    controller.finish(operation, {"category": category, "outcomeKnown": False,
+                        "error": {"code": code, "grpcCode": "deadline-exceeded"}})
+                self.assertNotIn("grpcCode", state.load(root, "last-operation-observation.json"))
+                self.assertEqual(controller.read()["pending"], operation)
+
+
 class RunningCancellation(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
