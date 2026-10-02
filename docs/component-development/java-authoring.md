@@ -401,16 +401,17 @@ grant controls. Every invocation was reaped; normal deletion, dormant owner
 observations and clean node shutdown passed. These finite checks used the
 recorded source and independently qualified native tools, with explicit
 provenance for both. They are contributor qualification; installed frontend,
-private credentials, isolated processors and the full hostile-input and runtime
-matrix still need their own actual checks. Issue #682 and issue #681 remain
+isolated processors and the full hostile-input and runtime matrix still need
+their own actual checks. Issue #682 and issue #681 remain
 open until their full acceptance evidence passes.
 
 A private Maven feed uses the environment pair
 `LSF_REGISTRY_<REPOSITORY_ID>_USERNAME` and
 `LSF_REGISTRY_<REPOSITORY_ID>_PASSWORD` only during explicit resolution. Uppercase
 the declared repository ID and replace hyphens with underscores. Both values
-must be present together; embedded URL credentials are rejected. Values do not
-enter declarations, captured artifacts, failure receipts or compiler input.
+must be present together; embedded URL credentials are rejected. The resolver
+passes credentials only to its acquisition task and keeps them out of its
+declarations, receipts and compiler input.
 
 For a feed with a private certificate issuer, add the repository using
 `--repository-ca registry/public-ca.pem`. This names a project-owned public PEM
@@ -420,3 +421,13 @@ certificate and trust derivation identities. It leaves the JDK and machine
 trust settings unchanged. A changed certificate invalidates the reviewed native
 inputs; resolve and review again. Private keys and uncaptured or transient paths
 are rejected, and the private truststore is destroyed with the resolution stage.
+
+[The measured private Maven fixture](../testing/evidence/java-private-maven-capture-2026-10-02.json)
+used the maintained CLI with a real authenticated HTTPS repository, the pinned
+JDK and Gradle, and a newly selected private JAR. All seven controls passed:
+wrong or missing credentials, an incomplete pair and an untrusted CA fail;
+offline verification succeeds after the peer stops; changed certificate or JAR
+bytes fail and restoring the original bytes restores the captured identity.
+The fixture preserved SDK and JDK inputs and found no credential or private TLS
+key in the captured project. This capture proof does not qualify installed
+frontend test/watch or annotation-processor execution.
