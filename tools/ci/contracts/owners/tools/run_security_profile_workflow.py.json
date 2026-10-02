@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_security_profile_workflow.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "reviewReason": "Reviewed V5 opt-in runtime and outbound stream source identity, generator parity, unchanged skip controls, and active native/node profile selection; preserve every existing case.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0f8787c5b61f9a27e943cafcc3ec32f1fd27633d9f4012e8b2f227f3ee2a8f8d"
+  "sha256": "514024ca5b8d50e1e5fbe9e4e9d3fc067bab346ae6f4059564e94a9bcb4beb82"
 }
