@@ -169,7 +169,8 @@ python3.13 tools/run_java_transaction_http_qualification.py \
   --contracts-tool /native/capsule_contracts --signer /native/capsule_authoring \
   --portable /inputs/portable-r3 --output /owned/java-transaction-r1 \
   --native-source-commit <exact-binary-build-commit> \
-  --conductor-source-commit <exact-collector-commit>
+  --conductor-source-commit <exact-collector-commit> \
+  --timeout 1200 --prepare-authority-only
 ```
 
 Both source identities are supplied explicitly and remain separate from the
@@ -178,6 +179,61 @@ the collector files before and after execution. It creates fresh ephemeral
 package trust, uses the actual native clock sample, and obtains real provider
 and authenticated-caller observations from the stopped node. Policy mutation
 receipts establish authority; the observation and configuration do not.
+
+The preparation mode stops before policy mutation or namespace creation. It
+publishes the preserved signed test packages, obtains the actual stopped-node
+host observations and current catalog receipts, then positively stops the
+original node and recipient owners. Its private `authority-candidate.json`
+contains the exact proposal documents, signed/publication identities, native
+and collector hashes, source observations, original clock and stopped-owner
+reports. Each proposed policy apply retains its exact compact JSON file, digest,
+byte count, fixed operation ID and original expected generation zero.
+Successful preparation reports `authorityPrepared: true`, zero candidate policy
+mutations, and false campaign and signed-guest qualification status.
+
+After review of these current candidate bytes, rerun the same command with the
+same tools, source identities, portable inputs, output root and timeout. Replace
+`--prepare-authority-only` with both:
+
+```bash
+--resume-candidate /owned/java-transaction-r1/authority-candidate.json \
+--candidate-digest sha256:<exact-reviewed-candidate-sha256>
+```
+
+The supplied digest pins the reviewed bytes. Native authenticated policy
+mutation and current-purpose checks still determine permission. Earlier approval
+for another conductor, native build, package or policy document cannot approve
+this changed candidate. Preparation and resumption use the same original Linux
+boot and monotonic deadline; the pause consumes the original 1,200-second
+lifetime. Expiry, a boot change, or observed wall/monotonic drift refuses
+continuation. This observer never certifies native clock continuity.
+
+Resume verifies the original private root identity and retained-file census before
+consuming a one-shot `authority-candidate-used.json` marker. The census excludes
+only the candidate itself and the descriptive preparation footer written after
+capture; both remain outside native authority. It preserves the
+original signed package expiry, listener port, TLS and credential bytes,
+recipient incarnation, policy files, mutation IDs and preconditions. The actual
+native host tuple and selected publication and empty-policy catalog receipts
+must still match before the first policy apply. It does not regenerate a
+profile, re-sign a package, republish a component or refresh a grant. An expired
+or changed candidate requires a separate fresh attempt and fresh review; a
+failed or uncertain consumed attempt is preserved and cannot automatically retry.
+
+All original counts are cumulative: at most six node sessions, three recipient
+sessions, 256 CLI calls, 64 recipient requests, 96 recipient connections and 32
+retained external records. The recipient resumes its original stopped counters
+and retains the 69-entry directory limit. Evidence retains its original 1,024
+files, 32 MiB total and 64 measured-case bounds. The stopped-file observation
+refuses links, more than 4,096 entries, more than 16 directory levels, a file
+above 256 MiB or a total above 1 GiB; the candidate document is at most 1 MiB.
+These observer bounds change no production profile or grant.
+
+The original preparation receipt and evidence bytes remain intact. The final
+`campaign-resume-receipt.json` adds only actual resumed observations. The use
+marker prevents a conductor retry; it establishes no durable command outcome,
+physical retirement, delivery, native grant or packaged qualification. Synthetic
+source tests of this protocol remain separate from actual signed-node execution.
 
 The campaign checks real command/query/scan sockets, lost response recovery,
 canonical duplicate input, changed input under the original command ID,

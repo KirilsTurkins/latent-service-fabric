@@ -1,0 +1,283 @@
+{
+  "cases": [
+    "CandidateOracle.test_candidate_use_is_one_shot_and_preserves_original_review_bytes_on_failure",
+    "CandidateOracle.test_capture_requires_positive_teardown_and_no_application_provider_requests",
+    "CandidateOracle.test_census_refuses_hardlinks_excessive_entries_and_directory_depth",
+    "CandidateOracle.test_changed_unknown_or_removed_retained_files_refuse_without_consumption",
+    "CandidateOracle.test_exact_stopped_candidate_keeps_original_inputs_sessions_paths_and_clock",
+    "CandidateOracle.test_source_tools_collector_and_exact_review_digest_drift_refuse",
+    "CandidateOracle.test_unknown_envelope_fields_boolean_counts_and_escaping_paths_refuse",
+    "CatalogAndOrderingOracle.test_candidate_modes_require_explicit_paired_resume_and_exclude_combined_preparation",
+    "CatalogAndOrderingOracle.test_original_catalog_observation_uses_only_bounded_release_and_policy_reads",
+    "CatalogAndOrderingOracle.test_populated_paged_overflowing_and_foreign_catalogs_refuse",
+    "CatalogAndOrderingOracle.test_preparation_stops_before_policy_apply_and_namespace_creation",
+    "CatalogAndOrderingOracle.test_resume_applies_same_proposal_object_only_after_original_read_fences",
+    "CatalogAndOrderingOracle.test_resume_refuses_profile_or_catalog_drift_before_any_policy_mutation",
+    "ClockOracle.test_boolean_overflow_unknown_clock_fields_and_changed_timeout_refuse",
+    "ClockOracle.test_expiry_boot_change_wall_drift_and_deadline_extension_refuse",
+    "ClockOracle.test_pause_consumes_original_deadline_without_renewing_or_certifying_continuity",
+    "EvidenceResumeOracle.test_retention_preserves_exclusive_bytes_cases_and_remaining_capacity",
+    "EvidenceResumeOracle.test_unknown_file_changed_bytes_boolean_size_and_duplicate_or_unknown_cases_refuse",
+    "RetainedPolicyProgramOracle.test_any_later_document_or_mutation_drift_refuses_before_first_apply",
+    "RetainedPolicyProgramOracle.test_frozen_policy_bytes_ids_and_preconditions_survive_extra_read_calls",
+    "RetainedPolicyProgramOracle.test_uncertain_native_apply_is_not_retried_and_no_later_mutation_runs"
+  ],
+  "guards": {
+    "CandidateOracle.test_candidate_use_is_one_shot_and_preserves_original_review_bytes_on_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:842ad020b10acd4079e15d34eb3f04ac1b6a210db8b8572dc8cf6407f03718de"
+      ],
+      "skipSites": []
+    },
+    "CandidateOracle.test_capture_requires_positive_teardown_and_no_application_provider_requests": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:842ad020b10acd4079e15d34eb3f04ac1b6a210db8b8572dc8cf6407f03718de"
+      ],
+      "skipSites": []
+    },
+    "CandidateOracle.test_census_refuses_hardlinks_excessive_entries_and_directory_depth": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:842ad020b10acd4079e15d34eb3f04ac1b6a210db8b8572dc8cf6407f03718de"
+      ],
+      "skipSites": []
+    },
+    "CandidateOracle.test_changed_unknown_or_removed_retained_files_refuse_without_consumption": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:842ad020b10acd4079e15d34eb3f04ac1b6a210db8b8572dc8cf6407f03718de"
+      ],
+      "skipSites": []
+    },
+    "CandidateOracle.test_exact_stopped_candidate_keeps_original_inputs_sessions_paths_and_clock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:842ad020b10acd4079e15d34eb3f04ac1b6a210db8b8572dc8cf6407f03718de"
+      ],
+      "skipSites": []
+    },
+    "CandidateOracle.test_source_tools_collector_and_exact_review_digest_drift_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:842ad020b10acd4079e15d34eb3f04ac1b6a210db8b8572dc8cf6407f03718de"
+      ],
+      "skipSites": []
+    },
+    "CandidateOracle.test_unknown_envelope_fields_boolean_counts_and_escaping_paths_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:842ad020b10acd4079e15d34eb3f04ac1b6a210db8b8572dc8cf6407f03718de"
+      ],
+      "skipSites": []
+    },
+    "CatalogAndOrderingOracle.test_candidate_modes_require_explicit_paired_resume_and_exclude_combined_preparation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogAndOrderingOracle.test_original_catalog_observation_uses_only_bounded_release_and_policy_reads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogAndOrderingOracle.test_populated_paged_overflowing_and_foreign_catalogs_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogAndOrderingOracle.test_preparation_stops_before_policy_apply_and_namespace_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogAndOrderingOracle.test_resume_applies_same_proposal_object_only_after_original_read_fences": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogAndOrderingOracle.test_resume_refuses_profile_or_catalog_drift_before_any_policy_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClockOracle.test_boolean_overflow_unknown_clock_fields_and_changed_timeout_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClockOracle.test_expiry_boot_change_wall_drift_and_deadline_extension_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClockOracle.test_pause_consumes_original_deadline_without_renewing_or_certifying_continuity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EvidenceResumeOracle.test_retention_preserves_exclusive_bytes_cases_and_remaining_capacity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EvidenceResumeOracle.test_unknown_file_changed_bytes_boolean_size_and_duplicate_or_unknown_cases_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RetainedPolicyProgramOracle.test_any_later_document_or_mutation_drift_refuses_before_first_apply": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RetainedPolicyProgramOracle.test_frozen_policy_bytes_ids_and_preconditions_survive_extra_read_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RetainedPolicyProgramOracle.test_uncertain_native_apply_is_not_retried_and_no_later_mutation_runs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_staging.py",
+  "reviewReason": "Add source-only stopped-candidate, nonrenewable clock, exact policy program, physical teardown, cumulative capacity and no-retry ordering cases; these do not qualify native authority or execution.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

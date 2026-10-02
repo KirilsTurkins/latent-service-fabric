@@ -111,21 +111,27 @@ class Node:
 
 
 class Peer:
-    def __init__(self, client, directory: Path, tls: Path, credential: Path, incarnation: str):
+    def __init__(self, client, directory: Path, tls: Path, credential: Path, incarnation: str, *, session=1, port=0):
+        require(type(session) is int and 1 <= session <= 3 and type(port) is int and 0 <= port <= 65535,
+                "original-counted-recipient-session")
         self.client, self.directory, self.incarnation = client, directory, incarnation
+        self.session = session
+        self.prefix = "recipient" if session == 1 else f"recipient-{session}"
         environment = dict(client.environment, PYTHONPATH=str(Path(__file__).resolve().parents[2]))
         self.process = Process([sys.executable, "-m", "tools.java_transaction_qualification.provider",
             "--root", str(directory), "--tls", str(tls), "--token-file", str(credential),
-            "--incarnation", incarnation, "--deadline", str(client.deadline)], client.directory,
+            "--incarnation", incarnation, "--deadline", str(client.deadline),
+            "--session", str(session), "--port", str(port)], client.directory,
             environment, client.cancellation, maximum=262144)
         self.shutdown = None
         try:
             started = self.process.line(min(client.deadline, time.monotonic() + 10))
             require(set(started) == {"port", "providerIncarnation"}
                     and type(started["port"]) is int and 1 <= started["port"] <= 65535
-                    and started["providerIncarnation"] == incarnation, "actual-owned-recipient-listener")
+                    and started["providerIncarnation"] == incarnation and (port == 0 or started["port"] == port),
+                    "actual-owned-recipient-listener")
             self.port = started["port"]
-            client.evidence.record("recipient-started", started)
+            client.evidence.record(self.prefix + "-started", started)
         except BaseException:
             self.process.close()
             raise
@@ -137,15 +143,14 @@ class Peer:
             lines = bytes(self.process.buffers[0]).splitlines()
             require(len(lines) == 1, "original-recipient-stopped-record")
             observed = decode(lines[0], 8192)
-            require(observed["schemaVersion"] == "latent.synthetic.put-once-recipient.v1"
-                    and observed["providerIncarnation"] == self.incarnation
-                    and observed["recipientDeliveryQualified"] is False
-                    and self.process.closed and self.process.owner.finished
+            from .provider import stopped_observation
+            stopped_observation(observed, self.incarnation)
+            require(self.process.closed and self.process.owner.finished
                     and self.process.owner.process.returncode == 0, "actual-recipient-retirement")
             self.shutdown = {"reaped": True, "processId": self.process.owner.process.pid, "record": observed}
-            self.client.evidence.write("recipient.stdout", bytes(self.process.buffers[0]))
-            self.client.evidence.write("recipient.stderr", bytes(self.process.buffers[1]))
-            self.client.evidence.record("recipient-stopped", self.shutdown)
+            self.client.evidence.write(self.prefix + ".stdout", bytes(self.process.buffers[0]))
+            self.client.evidence.write(self.prefix + ".stderr", bytes(self.process.buffers[1]))
+            self.client.evidence.record(self.prefix + "-stopped", self.shutdown)
 
     def close(self):
         if self.shutdown is None:
@@ -192,9 +197,9 @@ def publish(client, signed: Path, items) -> dict[str, str]:
     return result
 
 
-def inspect(client, node: Path, configuration: Path, operations):
+def inspect(client, node: Path, configuration: Path, operations, *, stage="transaction-host-inspection"):
     from .policies import ObservedHosts
-    value = decode(native(client, node, "transaction-host-inspection", "inspect-transaction-hosts",
+    value = decode(native(client, node, stage, "inspect-transaction-hosts",
                           "--config", configuration, timeout=120), 262144)
     return ObservedHosts.read(value, operations)
 

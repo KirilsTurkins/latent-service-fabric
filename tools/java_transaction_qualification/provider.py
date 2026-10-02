@@ -111,6 +111,11 @@ def retained_record(path: Path, incarnation: str, effect: str):
 def observed_recipient(path: Path, incarnation: str):
     require(path.is_file() and not path.is_symlink(), "recipient-original-observation-file")
     value = decode(read_file(path, 8192), 8192)
+    bounded_observation(value, incarnation)
+    return value
+
+
+def bounded_observation(value, incarnation):
     require(isinstance(value, dict) and set(value) == COUNTERS | {
         "schemaVersion", "providerIncarnation", "recipientDeliveryQualified"}
         and value["schemaVersion"] == "latent.synthetic.put-once-recipient.v1"
@@ -121,6 +126,18 @@ def observed_recipient(path: Path, incarnation: str):
         and all(value[name] <= value["puts"] for name in (
             "acceptedRecords", "appliedRecords", "duplicatePuts", "disconnectedAfterAcceptance")),
         "recipient-original-bounded-observation")
+    return value
+
+
+def stopped_observation(value, incarnation):
+    require(isinstance(value, dict) and set(value) == COUNTERS | {
+        "schemaVersion", "providerIncarnation", "recipientDeliveryQualified", "connections", "refusedConnections"},
+        "original-recipient-stop-counter-fields")
+    bounded_observation({name: data for name, data in value.items()
+                         if name not in {"connections", "refusedConnections"}}, incarnation)
+    require(type(value["connections"]) is int and value["requests"] <= value["connections"] <= 96
+            and type(value["refusedConnections"]) is int and 0 <= value["refusedConnections"] <= value["connections"],
+            "original-recipient-cumulative-connection-bound")
     return value
 
 
@@ -245,19 +262,34 @@ class Recipient:
         private_write(temporary, json.dumps(self.observation(), separators=(",", ":")).encode())
         os.replace(temporary, path)
 
+    def retain_counters(self, session):
+        require(type(session) is int and session in {2, 3}, "recipient-original-resume-session")
+        previous = self.root / f"recipient-stopped-{session - 1}.json"
+        value = stopped_observation(decode(read_file(previous, 8192), 8192), self.incarnation)
+        base = {name: data for name, data in value.items() if name not in {"connections", "refusedConnections"}}
+        require(value["retainedRecords"] == self.retained
+                and observed_recipient(self.root / OBSERVATION, self.incarnation) == base,
+                "original-recipient-cumulative-counters")
+        self.requests, self.puts, self.gets = value["requests"], value["puts"], value["gets"]
+        self.accepted, self.applied = value["acceptedRecords"], value["appliedRecords"]
+        self.replays, self.disconnected = value["duplicatePuts"], value["disconnectedAfterAcceptance"]
+        return value["connections"], value["refusedConnections"]
+
 
 def _stop(_signum, _frame):
     global STOPPING
     STOPPING = True
 
 
-def run(root: Path, tls: Path, token_file: Path, incarnation: str, deadline: float, session: int):
+def run(root: Path, tls: Path, token_file: Path, incarnation: str, deadline: float, session: int, port=0):
     require(0 < deadline - time.monotonic() <= 1200, "recipient-original-lifetime")
-    require(session in {1, 2, 3}, "recipient-bounded-session")
+    require(type(session) is int and session in {1, 2, 3}, "recipient-bounded-session")
+    require(type(port) is int and 0 <= port <= 65535, "recipient-fixed-loopback-port")
     stopped = root / f"recipient-stopped-{session}.json"
     require(not stopped.exists(), "recipient-original-session")
     require(token_file.is_file() and not token_file.is_symlink(), "recipient-credential-file")
     peer = Recipient(root, incarnation, read_file(token_file, 256))
+    connections, refused = peer.retain_counters(session) if session > 1 else (0, 0)
     peer.publish_observation()
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -265,10 +297,9 @@ def run(root: Path, tls: Path, token_file: Path, incarnation: str, deadline: flo
     signal.signal(signal.SIGTERM, _stop)
     signal.signal(signal.SIGINT, _stop)
     with socket.socket() as listener:
-        listener.bind(("127.0.0.1", 0))
+        listener.bind(("127.0.0.1", port))
         listener.listen(4)
         print(json.dumps({"port": listener.getsockname()[1], "providerIncarnation": incarnation}), flush=True)
-        connections = refused = 0
         while not STOPPING and time.monotonic() < deadline and peer.requests < 64 and connections < 96:
             listener.settimeout(min(0.2, deadline - time.monotonic()))
             try:
@@ -314,8 +345,9 @@ def main():
     parser.add_argument("--incarnation", required=True)
     parser.add_argument("--deadline", type=float, required=True)
     parser.add_argument("--session", type=int, default=1)
+    parser.add_argument("--port", type=int, default=0)
     args = parser.parse_args()
-    run(args.root, args.tls, args.token_file, args.incarnation, args.deadline, args.session)
+    run(args.root, args.tls, args.token_file, args.incarnation, args.deadline, args.session, args.port)
 
 
 if __name__ == "__main__":

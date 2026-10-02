@@ -202,3 +202,62 @@ def apply(client, proposals: dict) -> dict:
         for name, document in proposals[family].items():
             receipts[name] = policy(client, kind, name, document)
     return receipts
+
+
+def prepare_mutations(client, proposals: dict) -> list[dict]:
+    """Freeze the ordinary CLI documents and original absent-row preconditions.
+
+    This writes private review inputs only. It calls no policy mutation and
+    derives no permission from an installed provider or signed declaration.
+    """
+    from tools.phase2_operator_process import write_json
+    from tools.rust_capsule_project import read_file
+    from .inputs import digest
+    result = []
+    for family, kind in (("bindings", "provider-binding"), ("policies", "policy")):
+        for name, document in proposals[family].items():
+            require(isinstance(name, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,63}", name)
+                    and len(result) < 16, "bounded-original-policy-mutation-set")
+            source = client.directory / f"authority-{kind}-{name}.json"
+            write_json(source, document)
+            raw = read_file(source, 262144)
+            result.append({"kind": kind, "id": name, "file": source.name,
+                "operationId": f"java-reviewed-{kind}-{name}", "expectedGeneration": 0,
+                "digest": digest(raw), "bytes": len(raw)})
+    require(result, "nonempty-original-policy-mutation-set")
+    return result
+
+
+def apply_retained(client, proposals: dict, mutations: list[dict]) -> dict:
+    """Apply each exact reviewed file once through the existing native CLI.
+
+    Validate the complete retained program before its first mutation. No read
+    refreshes an operation ID, precondition, provider profile or document.
+    """
+    from tools.rust_capsule_project import read_file
+    from .inputs import decode, digest
+    expected = [(kind, name, document) for family, kind in (("bindings", "provider-binding"), ("policies", "policy"))
+                for name, document in proposals[family].items()]
+    require(isinstance(mutations, list) and len(expected) == len(mutations) and 0 < len(mutations) <= 16,
+            "original-policy-mutation-count")
+    for row, (kind, name, document) in zip(mutations, expected):
+        require(isinstance(row, dict) and set(row) == {"kind", "id", "file", "operationId", "expectedGeneration", "digest", "bytes"}
+                and isinstance(name, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,63}", name)
+                and row["kind"] == kind and row["id"] == name
+                and row["file"] == f"authority-{kind}-{name}.json"
+                and row["operationId"] == f"java-reviewed-{kind}-{name}"
+                and type(row["expectedGeneration"]) is int and row["expectedGeneration"] == 0
+                and type(row["bytes"]) is int and 0 < row["bytes"] <= 262144,
+                "closed-original-policy-mutation")
+        raw = read_file(client.directory / row["file"], 262144)
+        require(len(raw) == row["bytes"] and digest(raw) == row["digest"] and decode(raw) == document,
+                "original-policy-document-byte-drift")
+    receipts = {}
+    for row in mutations:
+        result = client.call("policy", "--kind", row["kind"], "apply", "--id", row["id"],
+            "--file", client.directory / row["file"], "--operation-id", row["operationId"],
+            "--expected-generation", row["expectedGeneration"])
+        require(result["outcomeKnown"] is True and result["data"]["receipt"]["operationId"] == row["operationId"],
+                "original-policy-mutation-receipt")
+        receipts[row["id"]] = result["data"]["receipt"]
+    return receipts

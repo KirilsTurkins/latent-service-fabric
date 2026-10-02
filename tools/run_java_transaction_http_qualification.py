@@ -19,7 +19,7 @@ if __package__ in (None, ""):
 
 from tools.build_observation import file_identity
 from tools.build_process_signals import owned_cancellation
-from tools.java_transaction_qualification import configuration as cfg, inputs, lifecycle, packaging, policies
+from tools.java_transaction_qualification import configuration as cfg, inputs, lifecycle, packaging, policies, staging
 from tools.java_transaction_qualification.campaign import Campaign
 from tools.java_transaction_qualification.evidence import Evidence, RecordingClient, native
 from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
@@ -33,7 +33,8 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/configuration.py", "tools/java_transaction_qualification/policies.py",
     "tools/java_transaction_qualification/lifecycle.py", "tools/java_transaction_qualification/http.py",
     "tools/java_transaction_qualification/campaign.py", "tools/java_transaction_qualification/provider.py",
-    "tools/java_transaction_qualification/recovery.py", "tools/java_transaction_qualification/offline_campaign.py")
+    "tools/java_transaction_qualification/recovery.py", "tools/java_transaction_qualification/offline_campaign.py",
+    "tools/java_transaction_qualification/staging.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
@@ -48,6 +49,9 @@ def parse():
     parser.add_argument("--conductor-source-commit", required=True, help="Separate frozen collector source identity")
     parser.add_argument("--recovery-helper", type=Path, help="Optional actual installed native recovery executable")
     parser.add_argument("--recovery-source-commit", help="Must match the original coherent native build source")
+    parser.add_argument("--prepare-authority-only", action="store_true", help="Stop before candidate policy mutations")
+    parser.add_argument("--resume-candidate", type=Path, help="Consume the exact stopped original candidate once")
+    parser.add_argument("--candidate-digest", help="Exact retained candidate digest supplied after review")
     parser.add_argument("--timeout", type=int, default=1200)
     args = parser.parse_args()
     inputs.require(sys.platform == "linux" and sys.version_info >= (3, 13), "linux-python313-required")
@@ -61,6 +65,7 @@ def parse():
     inputs.require(args.portable.is_absolute() and args.portable.is_dir() and not args.portable.is_symlink()
                    and args.output.is_absolute(), "original-qualification-roots")
     recovery_input(args)
+    staging.mode(args)
     return args
 
 
@@ -119,9 +124,10 @@ def prepare_environment(client, args, work, signed):
         raise
 
 
-def provision(client, args, signed, items, peer, configuration, node):
+def prepare_authority(client, args, signed, items, peer, configuration, node, *, retained=False):
     node.start(configuration.path)
     publications = lifecycle.publish(client, signed, items)
+    catalog = staging.catalog(client, publications) if retained else None
     node.stop()
     lifecycle.admission_lease_interval(client)
     operations = cfg.installed(items, publications, peer.incarnation)
@@ -130,6 +136,13 @@ def provision(client, args, signed, items, peer, configuration, node):
     proposals = policies.documents(hosts, publications)
     client.evidence.record("actual-native-hosts", hosts.value)
     client.evidence.record("reviewed-policy-proposals", proposals)
+    mutations = policies.prepare_mutations(client, proposals) if retained else None
+    if retained:
+        client.evidence.record("reviewed-policy-mutations", mutations)
+    return full_path, publications, proposals, catalog, hosts.value, mutations
+
+
+def admit_authority(client, signed, items, configuration, node, full_path, publications, proposals):
     # Explicit normal authenticated mutations turn these proposals into actual
     # current decisions. The inspection and configuration alone grant nothing.
     node.start(configuration.path)
@@ -143,7 +156,52 @@ def provision(client, args, signed, items, peer, configuration, node):
     return full_path, publications, proposals, actual_receipts
 
 
+def provision(client, args, signed, items, peer, configuration, node):
+    full_path, publications, proposals, _, _, _ = prepare_authority(
+        client, args, signed, items, peer, configuration, node)
+    return admit_authority(client, signed, items, configuration, node, full_path, publications, proposals)
+
+
+def resume_authority(client, args, configuration, node, full_path, prepared):
+    hosts = lifecycle.inspect(client, args.node, full_path, read_json(full_path)["state"]["operations"],
+                              stage="transaction-host-recheck")
+    inputs.require(hosts.value == prepared["hosts"], "original-native-profile-drift")
+    node.start(configuration.path)
+    inputs.require(staging.catalog(client, prepared["publications"]) == prepared["catalog"],
+                   "original-current-catalog-drift")
+    # Apply the original documents with absent-row generation zero. Neither
+    # currentness observation can refresh a precondition or widen a grant.
+    receipts = policies.apply_retained(client, prepared["proposals"], prepared["mutations"])
+    client.evidence.record("authenticated-policy-receipts", receipts)
+    node.stop()
+    lifecycle.admission_lease_interval(client)
+    node.start(full_path)
+    return receipts
+
+
+def execute_campaign(client, args, work, record, configuration, node, peer,
+                     signed, items, full_path, publications, proposals, receipts):
+    campaign = Campaign(client, configuration, full_path, signed, items, publications, proposals, receipts, peer, node)
+    record["campaign"] = campaign.execute()
+    if args.recovery_helper is not None:
+        record["offlineCampaign"] = OfflineCampaign(campaign, args.recovery_helper, work / "offline-recovery").execute()
+        record["remainingScenarios"].remove("reviewed-schema-and-restore-original-results")
+    node.stop()
+    peer.stop()
+    client.evidence.passed("actual-physical-retirement", {
+        "cleanNodeSessions": len(node.shutdown), "originalNodeReports": node.shutdown, "recipient": peer.shutdown})
+
+
+def failure(record, stage, error):
+    record.update(passed=False, signedGuestExecutionQualified=False, failedStage=stage, failureType=type(error).__name__)
+    reason = str(error)
+    if re.fullmatch(r"[a-z0-9][a-z0-9:-]{0,191}", reason):
+        record["fixedFailureReason"] = reason
+
+
 def run(args):
+    if args.resume_candidate is not None:
+        return resume(args)
     work = fresh(args.output)
     work.chmod(0o700)
     evidence = Evidence(work / "evidence")
@@ -156,11 +214,12 @@ def run(args):
         "packagedDistributionQualified": False, "remainingScenarios": list(REMAINING)}
     if args.recovery_helper is not None:
         record["recoverySourceCommit"] = args.recovery_source_commit
-    stage, node, peer, client = "identity", None, None, None
+    stage, node, peer, client, prepared = "identity", None, None, None, None
     started = time.monotonic()
     try:
         with owned_cancellation() as cancellation:
-            deadline = time.monotonic() + args.timeout
+            original_clock = staging.clock(args.timeout)
+            deadline = staging.deadline(original_clock, args.timeout)
             tools, collectors = tool_identity(args), collector_identity()
             items = inputs.load(args.portable)
             record.update(nativeTools=tools, collectorDigests=collectors,
@@ -174,28 +233,26 @@ def run(args):
                 stage = "bootstrap"
                 peer, configuration, node = prepare_environment(client, args, work, signed)
                 stage = "current-authority"
-                full_path, publications, proposals, receipts = provision(
-                    client, args, signed, items, peer, configuration, node)
-                stage = "actual-http"
-                campaign = Campaign(client, configuration, full_path, signed, items,
-                    publications, proposals, receipts, peer, node)
-                record["campaign"] = campaign.execute()
-                if args.recovery_helper is not None:
-                    stage = "native-schema-and-restore"
-                    record["offlineCampaign"] = OfflineCampaign(campaign, args.recovery_helper,
-                        work / "offline-recovery").execute()
-                    record["remainingScenarios"].remove("reviewed-schema-and-restore-original-results")
-                stage = "physical-retirement"
-                node.stop()
-                peer.stop()
-                evidence.passed("actual-physical-retirement", {
-                    "cleanNodeSessions": len(node.shutdown), "originalNodeReports": node.shutdown,
-                    "recipient": peer.shutdown})
+                if args.prepare_authority_only:
+                    full_path, publications, proposals, catalog, hosts, mutations = prepare_authority(
+                        client, args, signed, items, peer, configuration, node, retained=True)
+                    peer.stop()
+                    prepared = {"bootstrap": configuration.path.relative_to(work).as_posix(),
+                        "full": full_path.relative_to(work).as_posix(), "signed": signed.relative_to(work).as_posix(),
+                        "authority": configuration.authority, "origin": configuration.recipient_origin,
+                        "publications": publications, "proposals": proposals, "mutations": mutations, "catalog": catalog, "hosts": hosts}
+                else:
+                    full_path, publications, proposals, receipts = provision(
+                        client, args, signed, items, peer, configuration, node)
+                    stage = "actual-http"
+                    execute_campaign(client, args, work, record, configuration, node, peer,
+                                     signed, items, full_path, publications, proposals, receipts)
                 stage = "identity-recheck"
                 inputs.require(tool_identity(args) == tools and collector_identity() == collectors
                                and [item.observation() for item in inputs.load(args.portable)] == record["originalInputs"],
                                "qualification-input-changed")
-                record.update(passed=True, signedGuestExecutionQualified=True)
+                if prepared is None:
+                    record.update(passed=True, signedGuestExecutionQualified=True)
             finally:
                 # Cleanup is finite and owned even when a mutation, observation
                 # or signal fails. A missing native report is never synthesized.
@@ -206,18 +263,89 @@ def run(args):
                         peer.close()
                 cancellation.check()
     except BaseException as error:
-        record.update(passed=False, signedGuestExecutionQualified=False,
-                      failedStage=stage, failureType=type(error).__name__)
-        reason = str(error)
-        if re.fullmatch(r"[a-z0-9][a-z0-9:-]{0,191}", reason):
-            record["fixedFailureReason"] = reason
+        failure(record, stage, error)
         # The exact original bounded subprocess/socket observations remain in
         # the private evidence directory; no error message is public authority.
     finally:
         record.update(seconds=round(time.monotonic() - started, 6),
                       cliProcesses=client.calls if client else 0, measuredCases=list(evidence.cases))
-        record["evidenceInventory"] = evidence.record("inventory", evidence.summary())
+        record["evidenceInventory"] = evidence.record("inventory-staged" if prepared is not None else "inventory", evidence.summary())
+        if prepared is not None and "failedStage" not in record:
+            try:
+                record["candidate"] = staging.capture(work, original_clock, args, record, prepared, client, node, peer)
+                record.update(authorityPrepared=True, candidatePolicyMutations=0, signedGuestExecutionQualified=False)
+            except BaseException as error:
+                failure(record, "candidate-capture", error)
         write_json(work / "campaign-receipt.json", record)
+    print(bounded_receipt(record))
+    return 0 if record["passed"] or record.get("authorityPrepared") else 1
+
+
+def resume(args):
+    work = args.output
+    record = {"schemaVersion": "latent.java-transaction.focused-native.v1", "passed": False,
+        "trust": "ephemeral-native-package-test-only", "nativeSourceCommit": args.native_source_commit,
+        "conductorSourceCommit": args.conductor_source_commit, "sourceIdentityKind": "supplied-build-identity",
+        "compilerSourceCommit": inputs.COMPILER_SOURCE, "guestCompiledAgain": False,
+        "packagedDistributionQualified": False, "remainingScenarios": list(REMAINING),
+        "retainedCandidateDigest": args.candidate_digest}
+    stage, node, peer, client, evidence = "retained-candidate", None, None, None, None
+    claimed = False
+    started = time.monotonic()
+    try:
+        tools, collectors = tool_identity(args), collector_identity()
+        retained, deadline = staging.retain(args, tools, collectors)
+        items = inputs.load(args.portable)
+        inputs.require([item.observation() for item in items] == retained["originalInputs"], "original-candidate-input-drift")
+        evidence = Evidence.retain(work / "evidence", retained["evidence"])
+        with owned_cancellation() as cancellation:
+            staging.claim(work, args.candidate_digest)
+            claimed = True
+            client = RecordingClient(args.cli, work / "client", cancellation, deadline, evidence)
+            client.calls = retained["cliCalls"]
+            prepared = retained["prepared"]
+            configuration = staging.configuration(work, prepared)
+            full_path, signed = staging.path(work, prepared["full"]), staging.path(work, prepared["signed"])
+            publications, proposals = prepared["publications"], prepared["proposals"]
+            release_set = read_json(signed / "release-set.json")
+            inputs.require(int(release_set["expiresAtUnixSeconds"]) > time.time() + 300, "original-candidate-package-expired")
+            node = lifecycle.Node(client, args.node, staging.path(work, retained["node"]["directory"]))
+            node.ordinal, node.shutdown = retained["node"]["ordinal"], retained["node"]["shutdown"]
+            record.update(nativeTools=tools, collectorDigests=collectors, originalInputs=retained["originalInputs"],
+                          originalCampaignClock=retained["clock"])
+            if args.recovery_helper is not None:
+                record["recoverySourceCommit"] = args.recovery_source_commit
+            try:
+                prior = retained["recipient"]
+                peer = lifecycle.Peer(client, staging.path(work, prior["directory"]), staging.path(work, prior["tls"]),
+                    staging.path(work, prior["credential"]), prior["incarnation"], session=prior["session"] + 1, port=prior["port"])
+                stage = "current-authority-recheck"
+                receipts = resume_authority(client, args, configuration, node, full_path, prepared)
+                legacy = next(item for item in items if item.name == "put-once-legacy-v1")
+                lifecycle.create_namespace(client, legacy, publications[legacy.name])
+                stage = "actual-http"
+                execute_campaign(client, args, work, record, configuration, node, peer,
+                                 signed, items, full_path, publications, proposals, receipts)
+                stage = "identity-recheck"
+                inputs.require(tool_identity(args) == tools and collector_identity() == collectors
+                    and [item.observation() for item in inputs.load(args.portable)] == retained["originalInputs"],
+                    "qualification-input-changed")
+                record.update(passed=True, signedGuestExecutionQualified=True)
+            finally:
+                with cancellation.defer():
+                    if node is not None:
+                        node.close()
+                    if peer is not None:
+                        peer.close()
+                cancellation.check()
+    except BaseException as error:
+        failure(record, stage, error)
+    finally:
+        record.update(seconds=round(time.monotonic() - started, 6), cliProcesses=client.calls if client else 0,
+                      measuredCases=list(evidence.cases) if evidence else [])
+        if evidence is not None and claimed:
+            record["evidenceInventory"] = evidence.record("inventory", evidence.summary())
+            write_json(work / "campaign-resume-receipt.json", record)
     print(bounded_receipt(record))
     return 0 if record["passed"] else 1
 
