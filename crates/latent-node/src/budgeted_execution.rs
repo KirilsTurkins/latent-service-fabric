@@ -80,6 +80,9 @@ impl ExecutionCancellation for CapturedCancellation<'_> {
     fn budget_accounting(&self) -> Option<&ActivationBudget> {
         self.budget.as_ref()
     }
+    fn transaction_host(&self) -> Option<Arc<dyn latent_executor::transaction::TransactionHost>> {
+        self.inner.transaction_host()
+    }
     fn effective_deadline(&self) -> Option<&latent_core::EffectiveDeadline> {
         let owned = self.budget.as_ref().map(ActivationBudget::deadline);
         match (owned, self.inner.effective_deadline()) {

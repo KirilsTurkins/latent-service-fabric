@@ -23,6 +23,7 @@
         ],
         "paths": [
           "sdk/c-guest/**",
+          "sdk/transaction-contract/**",
           "tools/**",
           "crates/**",
           "wit/**",
@@ -38,6 +39,7 @@
         ],
         "paths": [
           "sdk/c-guest/**",
+          "sdk/transaction-contract/**",
           "tools/**",
           "crates/**",
           "wit/**",
@@ -55,7 +57,7 @@
   "requiredJobs": [
     "runtime"
   ],
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution; CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Integration preserves both required command sets.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

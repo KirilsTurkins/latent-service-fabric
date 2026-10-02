@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Select the captured transaction template explicitly without changing stateless cases",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5f91abb33e0e81a962c1dd3305adcefba477a2bbb51bbb2f42b901cead9a49af"
+  "sha256": "836b6abac0ecec069b086f4968c57dccf4d97bdf28430e17bf9da9cafc0e62c3"
 }

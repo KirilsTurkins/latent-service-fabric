@@ -7,9 +7,13 @@ mod activation_runner;
 mod budgeted_activation;
 mod budgeted_execution;
 mod cancellation;
+/// Finite delivery notifications; durable command outcomes remain in `latent-commit`.
+pub mod command_waiters;
 mod currentness_read_timer;
 mod inventory;
 mod journal;
+/// Actual scoped state hosts over the one protected physical store owner.
+pub mod transaction_runtime;
 
 use latent_core::{BoxFuture, Metadata, NodeId, PlatformError, RouteGeneration};
 use latent_routing::RouteSnapshot;
@@ -18,6 +22,8 @@ pub use activation_manager::{
     ActivationHandle, ActivationObservationSnapshot, ActivationReceipt,
     ActivationTransportInterruption, InboundActivationReservation, LocalActivationDependencies,
     LocalActivationManager, LocalActivationManagerConfig, LocalActivationServices,
+    TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
+    TransactionCompletion, TransactionCompletionHook, TransactionDisposition, TransactionExecution,
 };
 pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,

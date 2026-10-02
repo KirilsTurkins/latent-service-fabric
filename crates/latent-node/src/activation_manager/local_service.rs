@@ -211,7 +211,7 @@ impl Inner {
             Err(failure) => {
                 // Publish the actual admission/capacity failure, including a
                 // zero-use finalization if the child was admitted but never ran.
-                let _ = lifecycle.complete(failure_for_platform_error(
+                let _ = lifecycle.complete_admission_failure(failure_for_platform_error(
                     failure.clone(),
                     BudgetConsumption::default(),
                 ));
@@ -244,11 +244,14 @@ impl Inner {
             });
             let activation_id = lifecycle.activation_id().clone();
             let resolved_revision = lifecycle.resolved.clone();
-            let outcome = lifecycle.complete(outcome);
+            let (outcome, transaction, delivery_failure) =
+                lifecycle.complete(outcome).await.into_parts();
             ActivationReceipt {
                 activation_id,
                 resolved_revision,
                 outcome,
+                transaction,
+                delivery_failure,
             }
         });
         ActivationHandle {

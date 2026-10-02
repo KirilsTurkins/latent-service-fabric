@@ -2,6 +2,7 @@
 //!
 //! Use `default-features = false` for clocks and coordination without the node harness.
 //! Upstream crates use `latent-core/test-support` directly to keep the workspace acyclic.
+//! Process helpers likewise come from the neutral `latent-test-process` crate.
 
 #![forbid(unsafe_code)]
 
@@ -10,12 +11,11 @@ pub mod async_runtime;
 pub mod conformance;
 #[cfg(feature = "runtime")]
 pub mod harness;
-pub mod process;
-pub mod resources;
 #[cfg(feature = "runtime")]
 mod runtime_contract;
 
 pub use latent_core::test_support::{clocks, coordination, deterministic};
+pub use latent_test_process::{process, resources};
 
 pub use async_runtime::AsyncTestRuntime;
 pub use clocks::TestClock;
