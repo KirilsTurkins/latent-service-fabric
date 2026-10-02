@@ -6,7 +6,7 @@ import tempfile
 import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_dependency_inputs
+from tools import guest_authoring_frontend, guest_compatibility_build, guest_dependency_inputs
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
     read_file, read_json, snapshot, write_json)
@@ -25,9 +25,11 @@ RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "t
     "tools/phase3_resource_identity.py", "tools/phase3_resource_profile.py", "tools/phase2_operator_process.py",
     "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
-           "tools/application_dependency_approval.py", "tools/typescript_application_dependencies.py", "tools/captured_compiler_isolation.py")
+           "tools/application_dependency_approval.py", "tools/typescript_application_dependencies.py",
+           "tools/typescript_dependency_authoring.py", "tools/captured_compiler_isolation.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
+RECIPE += guest_authoring_frontend.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path):

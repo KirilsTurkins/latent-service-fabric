@@ -12,7 +12,7 @@ import sys
 import tempfile
 from urllib.parse import unquote, urlsplit
 
-from tools.application_dependencies import MANIFEST, capture, validate_manifest
+from tools.application_dependencies import LOCK, MANIFEST, capture, validate_manifest
 from tools.application_dependency_store import (DependencyError, Store, archive_files, directory_files,
                                                path_name, read_bytes, regular_path, tree_identity)
 from tools.build_observation import build_environment, file_identity
@@ -152,14 +152,28 @@ def local_path(source: str, project: Path) -> Path:
             value = value[1:]
     else:
         value = source.removeprefix('file:')
-    return (project / value).resolve(strict=True)
+    return regular_path(project / value).resolve(strict=True)
 
 
 def resolve(project: Path, candidate: Path, *, node: Path | None = None, npm: Path | None = None,
             selected: dict | None = None, registry_config: Path | None = None) -> dict:
-    project = regular_path(project).resolve(strict=True)
-    if candidate.exists():
+    from tools.typescript_dependency_authoring import transaction
+    with transaction(project) as (owner, app, private, sdk):
+        return _resolve(owner, app, private, sdk, candidate, node=node, npm=npm,
+                        selected=selected, registry_config=registry_config)
+
+
+def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
+             node: Path | None, npm: Path | None, selected: dict | None,
+             registry_config: Path | None) -> dict:
+    from tools.typescript_dependency_authoring import candidate_location, optional, replace, source_files, unchanged
+    from tools.dev_workflow import paths
+    candidate = candidate_location(owner, candidate)
+    if os.path.lexists(candidate):
         raise DependencyError('dependency-candidate-exists')
+    previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
+    previous_graph = optional(project, 'npm-resolved.lock.json')
+    before = source_files(project)
     selected = selection(selected)
     original = {name: read_bytes(project / name) for name in ('package.json', 'package-lock.json')}
     declaration = decode_json(original['package.json'])
@@ -170,7 +184,14 @@ def resolve(project: Path, candidate: Path, *, node: Path | None = None, npm: Pa
         located = Path(shutil.which('npm') or 'missing-npm')
         npm = (located.parent / 'node_modules/npm/bin/npm-cli.js' if os.name == 'nt' else located.resolve(strict=True))
     npm = regular_path(npm).resolve(strict=True)
-    registries = decode_json(read_bytes(registry_config)) if registry_config else {'registries': []}
+    node_before, npm_before = file_identity(node, 'npm-node'), file_identity(npm, 'npm-cli')
+    registry_bytes = None
+    if registry_config is not None:
+        registry_config = regular_path(registry_config).resolve(strict=True)
+        if registry_config.is_relative_to(owner):
+            raise DependencyError('npm-registry-configuration-must-stay-outside-project')
+        registry_bytes = read_bytes(registry_config)
+    registries = decode_json(registry_bytes) if registry_bytes is not None else {'registries': []}
     if set(registries) != {'registries'} or not isinstance(registries['registries'], list) or len(registries['registries']) > 16:
         raise DependencyError('npm-registry-configuration-invalid')
     with tempfile.TemporaryDirectory(prefix='lsf-npm-resolve-') as temporary:
@@ -181,10 +202,11 @@ def resolve(project: Path, candidate: Path, *, node: Path | None = None, npm: Pa
         environment.update(HOME=str(owned / 'home'), USERPROFILE=str(owned / 'home'),
             NPM_CONFIG_CACHE=str(cache), NPM_CONFIG_USERCONFIG=str(owned / 'registry.npmrc'),
             NPM_CONFIG_GLOBALCONFIG=str(owned / 'empty.npmrc'), NPM_CONFIG_UPDATE_NOTIFIER='false',
-            GIT_CONFIG_NOSYSTEM='1', GIT_TERMINAL_PROMPT='0')
+            GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
         (owned / 'empty.npmrc').write_bytes(b'')
+        (owned / 'git-empty.config').write_bytes(b'')
         configuration = []
-        for row in registries['registries']:
+        for ordinal, row in enumerate(registries['registries']):
             if not isinstance(row, dict) or set(row) - {'scope', 'url', 'authorizationEnv'} or 'url' not in row:
                 raise DependencyError('npm-registry-configuration-invalid')
             parsed = urlsplit(row['url'])
@@ -197,8 +219,11 @@ def resolve(project: Path, candidate: Path, *, node: Path | None = None, npm: Pa
             if variable := row.get('authorizationEnv'):
                 if not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable):
                     raise DependencyError('npm-registry-authorization-unavailable')
-                environment[variable] = os.environ[variable]
-                configuration.append('//' + parsed.netloc + parsed.path.rstrip('/') + '/:_authToken=${' + variable + '}')
+                # Authorization selects an opaque token value. It cannot restore
+                # NODE_OPTIONS, loader flags, HOME or executable lookup overrides.
+                selected_variable = 'LSF_NPM_REGISTRY_TOKEN_' + str(ordinal)
+                environment[selected_variable] = os.environ[variable]
+                configuration.append('//' + parsed.netloc + parsed.path.rstrip('/') + '/:_authToken=${' + selected_variable + '}')
         (owned / 'registry.npmrc').write_text('\n'.join(configuration) + '\n', encoding='utf-8')
         # Preserve native relative path semantics in an owned mirror. No project
         # npmrc, global cache, or package lifecycle hook reaches this stage.
@@ -206,9 +231,12 @@ def resolve(project: Path, candidate: Path, *, node: Path | None = None, npm: Pa
         for location, row in locked['packages'].items():
             source = row.get('resolved', '')
             if row.get('link'):
-                local_paths.add((project / source).resolve(strict=True))
+                local_paths.add(regular_path(project / source).resolve(strict=True))
             elif source.startswith('file:'):
                 local_paths.add(local_path(source, project))
+        for source in local_paths:
+            if source != project and (candidate == source or source.is_dir() and candidate.is_relative_to(source)):
+                raise DependencyError('npm-candidate-inside-captured-source')
         staged_declaration = json.loads(original['package.json'])
         staged_lock = json.loads(original['package-lock.json'])
         local_originals = []
@@ -271,7 +299,7 @@ def resolve(project: Path, candidate: Path, *, node: Path | None = None, npm: Pa
         native = graph(locked, installed, {'os': sys.platform, 'cpu': run_bounded(
             [str(node), '-p', 'process.arch'], owned, environment, 10, 16384).stdout.decode().strip()})
         files = directory_files(modules) if modules.is_dir() else {}
-        store = Store(project / 'dependency-inputs/objects')
+        store = Store(owner / 'dependency-inputs/objects')
         artifacts, archive_ids = [], []
         for source, captured_source, kind in local_originals:
             identity = 'npm-local-original/' + digest(str(source).encode())[7:31]
@@ -301,29 +329,42 @@ def resolve(project: Path, candidate: Path, *, node: Path | None = None, npm: Pa
         if not modules.is_dir():
             modules.mkdir()
         files = directory_files(modules)
-        native.update(selection=selected, node=file_identity(node, 'npm-node'), npm=file_identity(npm, 'npm-cli'),
+        native.update(selection=selected, node=node_before, npm=npm_before,
             npmVersion=npm_version, recipe=recipe_before,
             nativeLockDigest=digest(original['package-lock.json']), originalManifestDigest=digest(original['package.json']),
             fetchManifestDigest=digest(read_bytes(work / 'package.json')),
             fetchLockDigest=digest(read_bytes(work / 'package-lock.json')),
             configurationDigest=digest(canonical(registries)), filesDigest=digest(canonical([
                 {'path': name, 'digest': digest(data), 'size': len(data)} for name, data in sorted(files.items())])))
-        (project / 'npm-resolved.lock.json').write_bytes(canonical(native) + b'\n')
+        native_bytes = canonical(native) + b'\n'
         artifacts.append({'id': 'npm-selected/' + digest(original['package-lock.json'])[7:31], 'role': 'application',
             'format': 'directory', 'mount': 'dependencies/npm/node_modules', 'source': {'path': str(modules)},
             'dependencies': archive_ids, 'metadata': {'ecosystem': 'npm', 'assetType': 'selected-node-modules',
                 'nodeResolution': 'native-lock-physical-tree', 'installScripts': 'never-executed'}})
+        prefix = project.relative_to(owner).as_posix() + '/' if owner != project else ''
         manifest = {'formatVersion': 1, 'language': 'typescript', 'selection': selected,
-                    'nativeLocks': ['package.json', 'package-lock.json', 'npm-resolved.lock.json'],
+                    'nativeLocks': [prefix + name for name in ('package.json', 'package-lock.json', 'npm-resolved.lock.json')],
                     'artifacts': artifacts, 'transformations': []}
         validate_manifest(manifest, 'typescript')
-        (project / MANIFEST).write_bytes(canonical(manifest) + b'\n')
-        result = capture(project)
-        if original != {name: read_bytes(project / name) for name in original} or file_identity(Path(__file__), 'npm-capture-recipe') != recipe_before:
-            raise DependencyError('npm-declaration-lock-or-capture-recipe-mutated')
+        manifest_bytes = canonical(manifest) + b'\n'
+        check = owned / 'capture-inputs'
+        check.mkdir(mode=0o700)
+        (check / MANIFEST).write_bytes(manifest_bytes)
+        for name, raw in {**original, 'npm-resolved.lock.json': native_bytes}.items():
+            target = check / (prefix + name)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(raw)
+        result = capture(check, cache=owner / 'dependency-inputs/objects')
+        if (source_files(project) != before or file_identity(Path(__file__), 'npm-capture-recipe') != recipe_before
+                or file_identity(node, 'npm-node') != node_before or file_identity(npm, 'npm-cli') != npm_before
+                or (registry_config is not None and read_bytes(registry_config) != registry_bytes)
+                or optional(owner, MANIFEST) != previous_manifest or optional(owner, LOCK) != previous_lock):
+            raise DependencyError('npm-declaration-lock-tool-or-capture-input-mutated')
+        unchanged(owner, sdk)
+        replace(owner, private, prefix + 'npm-resolved.lock.json', native_bytes, previous_graph, sdk)
+        replace(owner, private, MANIFEST, manifest_bytes, previous_manifest, sdk)
         candidate.parent.mkdir(parents=True, exist_ok=True)
-        with candidate.open('xb') as output:
-            output.write(canonical(result) + b'\n')
+        paths.write_new(candidate, canonical(result) + b'\n')
         return result
 
 

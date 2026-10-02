@@ -281,6 +281,9 @@ printf 'Saved project and results: %s\n' "$LSF_TYPESCRIPT_PROJECTS"
 
 Your source and results remain at that path. Edit the greeting, create a new
 build directory, and repeat signing and delivery to try a change. The
+[application library guide](typescript-library-authoring.md) adds reviewed npm
+capture, private inputs and maintained frontend test/watch commands.
+The
 [delivery and recovery](../learn/deliver-and-recover-a-capsule.md) guide explains
 update and recovery principles using a separate Rust tutorial project and node.
 Follow that tutorial's prerequisites and variables when using its commands;

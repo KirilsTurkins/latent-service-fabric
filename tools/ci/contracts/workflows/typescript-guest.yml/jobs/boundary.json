@@ -102,6 +102,10 @@
         "run": "python3 tools/qualify_typescript_capsules.py --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
+        "name": "Test reviewed npm lifecycle and selected frontend",
+        "run": "python3 -m unittest tools.tests.test_typescript_dependency_authoring tools.tests.test_guest_authoring_frontend\n"
+      },
+      {
         "name": "Qualify captured npm libraries and resource lookups",
         "run": "python3 tools/qualify_typescript_capsules.py --application-dependencies --output \"$RUNNER_TEMP/typescript-capsule-dependencies\" --tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
@@ -121,7 +125,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Preserve every historical source-only command and mandatory captured npm namespace control and independent signed library/resource qualification, retaining both evidence directories; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Retain every TypeScript component, native model and signed-node step and add reviewed npm lifecycle plus authenticated selected-frontend source controls",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

@@ -25,6 +25,9 @@
           "tools/typescript_guest/**",
           "tools/typescript_capsule.py",
           "tools/typescript*dependencies.py",
+          "tools/typescript_dependency_authoring.py",
+          "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/guest_authoring_frontend.py",
           "tools/typescript_dependency_fixture.py",
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
@@ -55,6 +58,9 @@
           "tools/typescript_guest/**",
           "tools/typescript_capsule.py",
           "tools/typescript*dependencies.py",
+          "tools/typescript_dependency_authoring.py",
+          "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/guest_authoring_frontend.py",
           "tools/typescript_dependency_fixture.py",
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
@@ -83,7 +89,7 @@
   "requiredJobs": [
     "boundary"
   ],
-  "reviewReason": "Trigger TypeScript component qualification for common and native application dependency inputs while sharing pruned dependencies, retaining correctness guards and overlapping independent checks.",
+  "reviewReason": "Route new npm review and shared frontend helper inputs through the existing guest qualification lane without changing events, permissions or historical paths",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

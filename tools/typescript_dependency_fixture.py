@@ -7,11 +7,11 @@ from pathlib import Path
 import shutil
 import tempfile
 
-from tools.application_dependencies import LOCK
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
 from tools.typescript_application_dependencies import resolve
+from tools.typescript_dependency_authoring import review
 
 
 def install(project: Path, outside: Path) -> dict:
@@ -66,7 +66,7 @@ export function prefix() {
     candidate = project / 'target/qualification.candidate.json'
     candidate.parent.mkdir()
     lock = resolve(project, candidate, node=node, npm=npm)
-    (project / LOCK).write_bytes(canonical(lock) + b'\n')
+    review(project, candidate, digest(candidate.read_bytes()))
     graph = json.loads((project / 'npm-resolved.lock.json').read_bytes())
     selected = {row['location'] for row in graph['nodes'] if row['selected']}
     if not {'node_modules/@jridgewell/trace-mapping', 'node_modules/@jridgewell/resolve-uri',

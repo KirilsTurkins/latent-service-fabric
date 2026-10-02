@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add explicit native npm capture without changing pinned compiler installation commands.",
+  "reviewReason": "Preserve install-tools/new/build behavior while adding exact reviewed npm lock status and bounded authenticated maintained test/watch delegates with static redacted failures",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "cebbeb280cd316945fbc08d3b19bcd056fca9610380943361773e3fe0ece5c88"
+  "sha256": "055ddb7db5865a2587965e9b0e8492bbaa02c613118c0a6833142310d56654f8"
 }
