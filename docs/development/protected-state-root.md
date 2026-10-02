@@ -38,6 +38,23 @@ while allowing siblings with a shared protected parent. Both chains are checked
 before and after comparison. The [transaction checkpoint](transaction-checkpoint.md)
 uses this metadata operation without exposing native descriptors.
 
+The retained startup constructor
+`ProtectedStoreOwner::start_bound_retained_validated_view_with_clock` receives
+an affine `ProtectedStoreStartupMemory` from the node's original global Recovery
+reservation. `ProtectedStoreConfig::startup_memory_bytes` checks the finite
+configuration and footprint before that reservation or native allocation. The
+initializer and resident permits are prepaid before worker creation; readiness
+already contains the same sealed global owner. Short original admission checks
+precede native open, identity acceptance and readiness, and never hold the
+global capacity mutex across file I/O.
+
+The initializer permit remains on its fixed worker through validator and
+configuration destruction. The resident keeper is the last physical-store
+field, after the engine, protected descriptors and root lock. Dropping a startup
+or drain waiter cannot release that memory or prove physical retirement. The
+configured Recovery partition must cover this retained original reservation
+and still leave usable capacity for recovery requests.
+
 ## Validation
 
 The previous `latent-protected-files` library suite contained 18 tests. On
@@ -58,3 +75,10 @@ Three additional exclusive-create cases are registered for existing empty and
 malformed leaves, simultaneous creation with one winning inode, and unsafe
 bounds or changed ancestors before creation. Native execution and strict lint
 of these additions remain pending; compilation is paused for local disk space.
+
+Ten startup-memory cases are registered: checked limits, original owner/class
+affinity, independent real buffer permits and rollback, expired-owner retention,
+and Linux native open, cancellation, original-deadline, late-readiness and
+paused-destructor schedules. Their native execution and strict Clippy remain
+pending under the shared compiler hold; source registration is not execution
+evidence.

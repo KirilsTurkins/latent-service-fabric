@@ -20,6 +20,7 @@ mod recovery;
 mod reserved;
 mod resource;
 mod snapshot;
+mod startup_memory;
 mod validation;
 
 fn wait<T>(future: impl Future<Output = T>) -> T {

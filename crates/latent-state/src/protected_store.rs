@@ -11,6 +11,7 @@ mod physical;
 mod resource;
 mod snapshot;
 mod startup;
+mod startup_memory;
 mod view;
 
 pub use checkpoint::{
@@ -23,6 +24,7 @@ pub use operation::ProtectedStoreOperation;
 pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
 pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
+pub use startup_memory::ProtectedStoreStartupMemory;
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
 
 use std::future::Future;
