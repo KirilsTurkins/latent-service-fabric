@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -307,12 +308,24 @@ def run(args):
             # Both configurations use ordinary signed publications. Switching
             # and rollback never mutate HTML or reinstate retired authority.
             error_lifecycle = []
+            unconfigured_wire = []
             for method in ('GET', 'HEAD'):
                 receipts.append(apply(client, 'generator-' + method.lower(), publications['generator-docs'], hosts['generator'], method=method))
                 body, fields = http_response(client, node, hosts['generator'], '/guide/missing', method=method,
                     headers={'Accept': 'text/html'}, expected=404)
+                observed = {'schemaVersion': 'latent.static.unconfigured-error-observation.v1',
+                    'method': method, 'status': 404, 'bodyBytes': len(body),
+                    'bodySha256': hashlib.sha256(body).hexdigest(),
+                    'headers': {key: fields[key] for key in
+                        ('content-length', 'cache-control', 'content-type', 'etag') if key in fields}}
+                # Preserve the actual bounded wire observations even if the
+                # later assertion fails before the successful receipt exists.
+                print(json.dumps(observed, sort_keys=True), file=sys.stderr)
+                unconfigured_wire.append(observed)
                 require(not body and fields['content-length'] == '0'
-                        and fields['cache-control'] == 'private, no-store', 'static-unconfigured-error-wire-body')
+                        and fields['cache-control'] == 'no-store'
+                        and 'content-type' not in fields and 'etag' not in fields,
+                        'static-unconfigured-error-wire-body')
             error_lifecycle.append(browser(client, args, hosts, 'B', mode='error-unconfigured'))
             for method in ('GET', 'HEAD'):
                 receipts.append(apply(client, 'generator-' + method.lower(), publications['generator'], hosts['generator'], method=method))
@@ -352,6 +365,7 @@ def run(args):
                 'foreignPublicationDenied': True, 'before': before, 'dormant': dormant, 'after': after,
                 'audit': audit_receipt, 'routeReconciliation': reconciliation,
                 'errorDocumentLifecycle': error_lifecycle,
+                'unconfiguredErrorResponses': unconfigured_wire,
                 'catalogCapacity': {'finitePublicationSequence': capacity_observations,
                                     'afterRetirementAndRevocation': retained_capacity,
                                     'stoppedRestoreAndExpansion': maintenance},
