@@ -276,13 +276,17 @@ fn empty_bootstrap_and_fresh_setup_refuse_legacy_business_and_expired_startup() 
 #[test]
 fn settings_bound_startup_refuses_ambiguous_declarations_and_nonfinite_cutoffs() {
     let root = tempfile::tempdir().unwrap();
-    let mut settings = StateSettings {
+    let config = crate::config::state::StateConfig {
+        format_version: 1,
         create_if_missing: true,
         configuration_epoch: 1,
         clock_checkpoint: root.path().join("clock.json"),
+        state_root: None,
         operations: vec![],
-        tenant_quotas: vec![quota("alpha")],
+        tenant_quotas: vec![],
     };
+    let mut settings = crate::config::state::derive(&config).unwrap();
+    settings.tenant_quotas = vec![quota("alpha")];
     assert!(startup(&settings, Instant::now() + Duration::from_secs(30)).is_ok());
     for cutoff in [
         Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),

@@ -83,7 +83,7 @@ pub(super) async fn install(
             // their charge. Accepted physical work retains the request/lease.
             drop(work);
             match result {
-                Ok(()) => {}
+                Ok(_configuration_digest) => {}
                 Err(FencedStoreError::Store(error)) => return Err(error),
                 // Authorization expiry is a bounded operation refusal. It is
                 // not evidence of a physical store failure and must not latch
