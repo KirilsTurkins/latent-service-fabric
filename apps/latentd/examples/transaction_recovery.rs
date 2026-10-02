@@ -42,7 +42,7 @@ fn run(args: Arguments) -> Result<(), &'static str> {
     .map_err(|_| "protected-credential-refused")?;
     let credential = std::str::from_utf8(&bytes).map_err(|_| "credential-encoding-refused")?;
     let runtime = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(settings.control_workers)
+        .worker_threads(settings.control_workers())
         .max_blocking_threads(settings.control_blocking_threads())
         .enable_all()
         .build()
