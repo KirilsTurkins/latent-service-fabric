@@ -24,6 +24,9 @@ PREFIX = "/latent-effects/v1/"
 PAYLOAD = b"java-aggregate-put-once-v1\0"
 MODES = {"reply", "accept-disconnect", "accept-ambiguous", "reserve-once", "hold-status"}
 FIELDS = {"contract", "effect", "bodySha256", "providerIncarnation", "retainUntilUnixMillis", "state", "receipt"}
+COUNTERS = {"requests", "puts", "gets", "acceptedRecords", "appliedRecords", "retainedRecords",
+            "duplicatePuts", "disconnectedAfterAcceptance"}
+OBSERVATION = "recipient-observation.json"
 HEX = re.compile(r"[0-9a-f]{64}")
 STOPPING = False
 
@@ -105,6 +108,22 @@ def retained_record(path: Path, incarnation: str, effect: str):
     return row
 
 
+def observed_recipient(path: Path, incarnation: str):
+    require(path.is_file() and not path.is_symlink(), "recipient-original-observation-file")
+    value = decode(read_file(path, 8192), 8192)
+    require(isinstance(value, dict) and set(value) == COUNTERS | {
+        "schemaVersion", "providerIncarnation", "recipientDeliveryQualified"}
+        and value["schemaVersion"] == "latent.synthetic.put-once-recipient.v1"
+        and value["providerIncarnation"] == incarnation and value["recipientDeliveryQualified"] is False
+        and all(type(value[name]) is int and 0 <= value[name] <= 64 for name in COUNTERS)
+        and value["retainedRecords"] <= 32
+        and value["puts"] + value["gets"] <= value["requests"]
+        and all(value[name] <= value["puts"] for name in (
+            "acceptedRecords", "appliedRecords", "duplicatePuts", "disconnectedAfterAcceptance")),
+        "recipient-original-bounded-observation")
+    return value
+
+
 class Recipient:
     def __init__(self, root: Path, incarnation: str, token: bytes):
         require(root.is_absolute() and root.is_dir() and not root.is_symlink(), "recipient-private-root")
@@ -121,6 +140,9 @@ class Recipient:
         for count, path in enumerate(self.root.iterdir(), 1):
             require(count <= 69 and path.is_file() and not path.is_symlink(), "recipient-retained-directory-bound")
             name = path.name
+            if name == OBSERVATION:
+                observed_recipient(path, self.incarnation)
+                continue
             if name == "mode" or re.fullmatch(r"recipient-stopped-[1-3]\.json", name):
                 require(path.stat().st_size <= 8192, "recipient-control-byte-bound")
                 continue
@@ -214,6 +236,15 @@ class Recipient:
                 "duplicatePuts": self.replays, "disconnectedAfterAcceptance": self.disconnected,
                 "providerIncarnation": self.incarnation, "recipientDeliveryQualified": False}
 
+    def publish_observation(self):
+        # One private bounded observer record, separate from durable recipient
+        # acceptance. It authorizes no platform action and exposes no secret.
+        path, temporary = self.root / OBSERVATION, self.root / "recipient-observation.next"
+        if path.exists() or path.is_symlink():
+            observed_recipient(path, self.incarnation)
+        private_write(temporary, json.dumps(self.observation(), separators=(",", ":")).encode())
+        os.replace(temporary, path)
+
 
 def _stop(_signum, _frame):
     global STOPPING
@@ -227,6 +258,7 @@ def run(root: Path, tls: Path, token_file: Path, incarnation: str, deadline: flo
     require(not stopped.exists(), "recipient-original-session")
     require(token_file.is_file() and not token_file.is_symlink(), "recipient-credential-file")
     peer = Recipient(root, incarnation, read_file(token_file, 256))
+    peer.publish_observation()
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(tls / "server.pem", tls / "key.pem")
@@ -251,7 +283,10 @@ def run(root: Path, tls: Path, token_file: Path, incarnation: str, deadline: flo
                 accepted.settimeout(min(2, remaining))
                 try:
                     with context.wrap_socket(accepted, server_side=True) as connection:
-                        status, record, disconnected = peer.handle(*request(connection, deadline))
+                        try:
+                            status, record, disconnected = peer.handle(*request(connection, deadline))
+                        finally:
+                            peer.publish_observation()
                         if disconnected:
                             # Original recipient acceptance is already durable;
                             # the platform must use its actual uncertainty path.

@@ -99,6 +99,82 @@ class NativeRecoveryOracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 recovery.original_digest(invalid)
 
+    def test_original_cli_generation_refuses_numeric_zero_unicode_and_overflow(self):
+        from tools.java_transaction_qualification import offline_campaign
+        self.assertEqual(offline_campaign.generation(str(2**64 - 1)), str(2**64 - 1))
+        for value in (True, 1, "0", "01", "١", str(2**64), "1" * 100):
+            with self.assertRaises(ValueError):
+                offline_campaign.generation(value)
+
+    def test_snapshot_keeps_original_native_manifest_and_refuses_changed_actor_scope_and_approval(self):
+        from tools.java_transaction_qualification import configuration as cfg, offline_campaign
+        value = {"snapshotDigest": "sha256:" + "a" * 64, "manifestDigest": "sha256:" + "b" * 64,
+                 "manifest": {"metadata": {"tenant": cfg.TENANT, "operator_id": cfg.OPERATOR,
+                     "operation_id": "original-operation", "runtime_digest": [1] * 32,
+                     "decoder_formats": [], "required_artifacts": []}}}
+        self.assertIs(offline_campaign.original_snapshot(value, "original-operation"), value)
+        for field, changed in (("operator_id", "another-operator"), ("tenant", "foreign"),
+                               ("operation_id", "later-operation"), ("approved", True)):
+            invalid = copy.deepcopy(value)
+            invalid["manifest"]["metadata"][field] = changed
+            with self.assertRaises(ValueError):
+                offline_campaign.original_snapshot(invalid, "original-operation")
+
+    def test_native_epoch_advance_keeps_original_scope_incarnation_and_other_history(self):
+        from tools.java_transaction_qualification import offline_campaign
+        original = list(b"NV\x02" + bytes([19]) * 32
+                        + b"".join(value.to_bytes(8, "little") for value in (1, 2, 3, 4)))
+        changed = original[:51] + list((4).to_bytes(8, "little")) + original[59:]
+        offline_campaign.epoch_advanced(original, changed, "schema")
+        for invalid in (original, [0] + changed[1:],
+                        changed[:35] + list((2).to_bytes(8, "little")) + changed[43:],
+                        changed[:59] + list((5).to_bytes(8, "little"))):
+            with self.assertRaises(ValueError):
+                offline_campaign.epoch_advanced(original, invalid, "schema")
+        with self.assertRaises(ValueError):
+            offline_campaign.epoch_advanced(original, changed, "grant")
+
+    def test_restored_selection_retains_catalogs_credentials_clock_and_quotas_without_mutating_original(self):
+        from pathlib import Path
+        import tempfile
+        from tools.java_transaction_qualification import offline_campaign
+        original = {"dataDirectory": "data", "providers": {"original": "selected"},
+                    "credentials": [{"subject": "operator", "token": "synthetic-test"}],
+                    "state": {"formatVersion": 1, "clockCheckpoint": "original-clock",
+                              "configurationEpoch": 7, "createIfMissing": True,
+                              "tenantQuotas": [{"tenant": "original"}], "operations": ["original"]}}
+        retained = copy.deepcopy(original)
+        with tempfile.TemporaryDirectory() as root:
+            selected = offline_campaign.restored_configuration(original, Path(root))
+            self.assertEqual(selected["dataDirectory"], "data")
+            self.assertEqual(selected["providers"], original["providers"])
+            self.assertEqual(selected["credentials"], original["credentials"])
+            self.assertFalse(selected["state"].pop("createIfMissing"))
+            self.assertEqual(selected["state"].pop("stateRoot"), root)
+            expected = dict(original["state"])
+            expected.pop("createIfMissing")
+            self.assertEqual(selected["state"], expected)
+            for invalid in (Path("relative"), Path(root) / "missing", Path(root) / "../other"):
+                with self.assertRaises(ValueError):
+                    offline_campaign.restored_configuration(original, invalid)
+        self.assertEqual(original, retained)
+
+    def test_optional_recovery_tool_requires_paired_exact_original_native_source(self):
+        from pathlib import Path
+        import tempfile
+        from types import SimpleNamespace
+        from tools import run_java_transaction_http_qualification as conductor
+        source = "a" * 40
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic-executable-not-invoked"
+            path.write_bytes(b"not-runtime-evidence")
+            args = SimpleNamespace(recovery_helper=path, recovery_source_commit=source, native_source_commit=source)
+            conductor.recovery_input(args)
+            for helper, identity in ((None, source), (path, None), (path, "b" * 40)):
+                args.recovery_helper, args.recovery_source_commit = helper, identity
+                with self.assertRaises(ValueError):
+                    conductor.recovery_input(args)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -129,6 +129,34 @@ class RecipientTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         provider.request(right, time.monotonic() + 2)
 
+    def test_private_live_observation_preserves_acceptance_bytes_and_original_count_bounds(self):
+        self.peer.publish_observation()
+        initial = provider.observed_recipient(self.root / provider.OBSERVATION, "a" * 64)
+        self.assertEqual(initial["puts"], 0)
+        self.call()
+        acceptance = (self.root / ("b" * 64 + ".json")).read_bytes()
+        self.peer.publish_observation()
+        observed = provider.observed_recipient(self.root / provider.OBSERVATION, "a" * 64)
+        self.assertEqual((observed["requests"], observed["puts"], observed["acceptedRecords"]), (1, 1, 1))
+        self.assertFalse(observed["recipientDeliveryQualified"])
+        self.assertEqual((self.root / ("b" * 64 + ".json")).read_bytes(), acceptance)
+        reopened = provider.Recipient(self.root, "a" * 64, b"fixture-token")
+        self.assertEqual(reopened.retained, 1)
+        self.assertEqual(provider.observed_recipient(self.root / provider.OBSERVATION, "a" * 64), observed)
+
+    def test_observation_rejects_injected_approval_boolean_counts_foreign_identity_and_impossible_totals(self):
+        self.peer.publish_observation()
+        path = self.root / provider.OBSERVATION
+        original = json.loads(path.read_bytes())
+        for field, value in (("approved", True), ("puts", True), ("requests", 65),
+                             ("puts", 1), ("providerIncarnation", "c" * 64)):
+            changed = dict(original, **{field: value})
+            path.write_text(json.dumps(changed), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                provider.observed_recipient(path, "a" * 64)
+            with self.assertRaises(ValueError):
+                provider.Recipient(self.root, "a" * 64, b"fixture-token")
+
 
 if __name__ == "__main__":
     unittest.main()

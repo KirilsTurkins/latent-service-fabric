@@ -22,6 +22,7 @@ from tools.build_process_signals import owned_cancellation
 from tools.java_transaction_qualification import configuration as cfg, inputs, lifecycle, packaging, policies
 from tools.java_transaction_qualification.campaign import Campaign
 from tools.java_transaction_qualification.evidence import Evidence, RecordingClient, native
+from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
 from tools.phase2_operator_process import bounded_receipt, read_json, write_json
 from tools.rust_capsule_project import fresh
 
@@ -31,10 +32,12 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/packaging.py", "tools/java_transaction_qualification/evidence.py",
     "tools/java_transaction_qualification/configuration.py", "tools/java_transaction_qualification/policies.py",
     "tools/java_transaction_qualification/lifecycle.py", "tools/java_transaction_qualification/http.py",
-    "tools/java_transaction_qualification/campaign.py", "tools/java_transaction_qualification/provider.py")
+    "tools/java_transaction_qualification/campaign.py", "tools/java_transaction_qualification/provider.py",
+    "tools/java_transaction_qualification/recovery.py", "tools/java_transaction_qualification/offline_campaign.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
-             "full-retention-horizon-expiry", "authenticated-clean-host-packaged-distribution"]
+             "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
+             "authenticated-clean-host-packaged-distribution"]
 
 
 def parse():
@@ -43,6 +46,8 @@ def parse():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--native-source-commit", required=True, help="Exact source supplied by the binary build owner")
     parser.add_argument("--conductor-source-commit", required=True, help="Separate frozen collector source identity")
+    parser.add_argument("--recovery-helper", type=Path, help="Optional actual installed native recovery executable")
+    parser.add_argument("--recovery-source-commit", help="Must match the original coherent native build source")
     parser.add_argument("--timeout", type=int, default=1200)
     args = parser.parse_args()
     inputs.require(sys.platform == "linux" and sys.version_info >= (3, 13), "linux-python313-required")
@@ -55,12 +60,25 @@ def parse():
         inputs.require(path.is_absolute() and path.is_file() and not path.is_symlink(), "actual-native-executable-required")
     inputs.require(args.portable.is_absolute() and args.portable.is_dir() and not args.portable.is_symlink()
                    and args.output.is_absolute(), "original-qualification-roots")
+    recovery_input(args)
     return args
 
 
+def recovery_input(args):
+    inputs.require((args.recovery_helper is None) == (args.recovery_source_commit is None),
+                   "paired-native-recovery-inputs-required")
+    if args.recovery_helper is not None:
+        path = args.recovery_helper
+        inputs.require(path.is_absolute() and path.is_file() and not path.is_symlink()
+                       and args.recovery_source_commit == args.native_source_commit,
+                       "coherent-original-native-recovery-source-required")
+
+
 def tool_identity(args):
-    return {name: file_identity(getattr(args, name), name, 1073741824)
-            for name in ("cli", "node", "aot_compiler", "contracts_tool", "signer")}
+    names = ("cli", "node", "aot_compiler", "contracts_tool", "signer")
+    if args.recovery_helper is not None:
+        names += ("recovery_helper",)
+    return {name: file_identity(getattr(args, name), name, 1073741824) for name in names}
 
 
 def collector_identity():
@@ -135,7 +153,9 @@ def run(args):
         "trust": "ephemeral-native-package-test-only", "nativeSourceCommit": args.native_source_commit,
         "conductorSourceCommit": args.conductor_source_commit, "sourceIdentityKind": "supplied-build-identity",
         "compilerSourceCommit": inputs.COMPILER_SOURCE, "guestCompiledAgain": False,
-        "packagedDistributionQualified": False, "remainingScenarios": REMAINING}
+        "packagedDistributionQualified": False, "remainingScenarios": list(REMAINING)}
+    if args.recovery_helper is not None:
+        record["recoverySourceCommit"] = args.recovery_source_commit
     stage, node, peer, client = "identity", None, None, None
     started = time.monotonic()
     try:
@@ -157,8 +177,14 @@ def run(args):
                 full_path, publications, proposals, receipts = provision(
                     client, args, signed, items, peer, configuration, node)
                 stage = "actual-http"
-                record["campaign"] = Campaign(client, configuration, full_path, signed, items,
-                    publications, proposals, receipts, peer, node).execute()
+                campaign = Campaign(client, configuration, full_path, signed, items,
+                    publications, proposals, receipts, peer, node)
+                record["campaign"] = campaign.execute()
+                if args.recovery_helper is not None:
+                    stage = "native-schema-and-restore"
+                    record["offlineCampaign"] = OfflineCampaign(campaign, args.recovery_helper,
+                        work / "offline-recovery").execute()
+                    record["remainingScenarios"].remove("reviewed-schema-and-restore-original-results")
                 stage = "physical-retirement"
                 node.stop()
                 peer.stop()
