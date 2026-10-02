@@ -17,7 +17,7 @@ def validator(name):
 def report():
     return {"schemaVersion": "latent.standalone.config-check.v1", "profile": "external-capsule-v1",
             "threatClass": "T1", "guestBoundary": "in-process-wasmtime", "admission": "enforced",
-            "protectedCredentialFile": True, "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "protectedCredentialFile": True, "hostAbiProfile": "lsf-host-abi-phase3-v5",
             "wasmtimeVersion": "48.0.3", "target": "x86_64-unknown-linux-gnu",
             "compiler": "isolated-aot-compiler-v1", "compilerSandbox": "lsf-linux-x86_64-landlock3-seccomp-v1",
             "authenticatedNativeLoading": True}

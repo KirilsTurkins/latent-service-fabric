@@ -240,6 +240,22 @@
           "const": "state"
         }
       }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "endpoint"
+      ],
+      "properties": {
+        "kind": {
+          "const": "stream"
+        },
+        "endpoint": {
+          "$ref": "capability-policy.schema.json#/$defs/streamEndpoint"
+        }
+      }
     }
   ]
 }
