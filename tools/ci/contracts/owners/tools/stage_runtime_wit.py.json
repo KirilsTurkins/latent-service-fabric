@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Stage the opt-in Phase 4 resource world without loading unrelated aggregate worlds",
+  "reviewReason": "Fix type-use selector punctuation in imported package versions while retaining exact prerelease/build identity and real WIT parser authority.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b3d46f2d4fa331a319915c3696f1db5db797bcdeb54c6dc146a54b4d8df571dc"
+  "sha256": "6e3289de7838781f404756c6eadd10e5fc04b57237349b2f8db70ee21429a642"
 }
