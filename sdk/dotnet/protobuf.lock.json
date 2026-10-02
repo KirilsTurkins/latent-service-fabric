@@ -14,8 +14,8 @@
     "latent/control/v1/capability.proto": "edec0c1c0bd3413d8466024ed895f61fbc7c3efa08c756ec56d1e28669339109",
     "latent/invocation/v1/invocation.proto": "6f803e8aa8d126b98b2e9b2ae285f97a6387c4d3b677230f0383f6854bf927aa",
     "latent/control/v1/release.proto": "320f945a9711ca5a55cf64c80ba87ad9c6d4c622a0d51cb8eefaa2d133801518",
-    "latent/control/v1/state.proto": "ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
-    "latent/transaction/v1/transaction.proto": "bd84dd30f70d9281d3ef067b61eece0a56d65f6494d3e6fcb599b79cf0011db3",
+    "latent/control/v1/state.proto": "f2f98d9974ef0afe014b30978eacee03310bb86f25d70cefb7e8591130e19901",
+    "latent/transaction/v1/transaction.proto": "d6ec8c0bc77c032933a0d2bf01807f3bc91bed360197e371a739ecc90b8b4620",
     "latent/control/v1/dispatcher.proto": "ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6"
   },
   "outputs": {
@@ -27,11 +27,11 @@
     "latent/control/v1/Policy.cs": "afdbede1cf73ab98f40f15d5405248794fce162ce0bcfdfa10ad47d4c63f8a3e",
     "latent/control/v1/PolicyGrpc.cs": "96a0983965db1176c453b87e3d6caded46a8d59feb6ca373ccbae124788fcf0d",
     "latent/control/v1/Release.cs": "8c6ba41485fede76287919db6584f16fbe901f8c86e9f7db02be859dcdd99d17",
-    "latent/control/v1/State.cs": "b90ddc6d276527736b7e3d1dd87afb0a28a0312b188f2d3b73dfd325f9f8b589",
-    "latent/control/v1/StateGrpc.cs": "8d19d20682e77d7eab2aefb9497992b82b7623fef79aeff1930c6d8fed9a9eee",
+    "latent/control/v1/State.cs": "bf05dc65d03dd0265bd01ca131a8a4d52a3ff291e1a020e3372549bcc89b3284",
+    "latent/control/v1/StateGrpc.cs": "afcf7c68d269abb2b94edcfbbfee0e847e29b66f016f2acc4da9d3822dc08224",
     "latent/invocation/v1/Invocation.cs": "6e03900f7e253812e0c5b86c5f7fd1064b2eeed3ac241535dcb6a990b382a581",
     "latent/invocation/v1/InvocationGrpc.cs": "a118a7ea78a30e86b1632af4857a94dd8c7beaf6f93a0a4cf4f483d4d6f4639d",
-    "latent/transaction/v1/Transaction.cs": "1644dcf1fd28f189b94dc90318d5af97ca4eba0bf230f28bb3ef1d07e1f01c54",
+    "latent/transaction/v1/Transaction.cs": "0bb28c1e5785b93fadae69d85cb291e63b2ba3be9d761ea51b4a4dd091bfd59f",
     "latent/transaction/v1/TransactionGrpc.cs": "f2be3d312bb6c4e213accea93f91d2ce3377bfb09aacd24f8a9def1d4aacf25c"
   }
 }
