@@ -427,7 +427,7 @@ fn rule(subject: &str, publication: &PublicationRef, audited: bool) -> Value {
     .unwrap();
     json!({"id":subject,"effect":"allow","principals":[{"kind":"administrator","subject":subject}],"services":["a/echo"],"publications":[publication.id.as_str()],"capability":latent_capabilities::namespace::STATE_CONTRACT,"operations":operations(),"resources":{"kind":"state","scopes":[{"namespace":"orders","incarnation":1,"entity":null,"recoveryKind":"original-caller","recoveryScope":caller.scope,"resultPolicy":"visibility-v1"}]},"requireAudit":audited,"ceiling":{"operations":8,"inputBytes":contract::MAX_REQUEST_BYTES,"outputBytes":contract::MAX_RESPONSE_BYTES,"wallTimeMillis":30000}})
 }
-async fn publish(
+pub(super) async fn publish(
     catalog: &DirectoryArtifactRepository,
     label: &str,
 ) -> (PublicationRef, ReleaseDigest) {

@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod authority_rejection;
 pub mod budget;
 pub mod clock;
 pub mod deadline_diagnostic_observer;

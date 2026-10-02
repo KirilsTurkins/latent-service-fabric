@@ -84,11 +84,19 @@ impl EffectAuthorityOwner {
                 return Err(AuthorityError::ClockDiscontinuity);
             }
             result = Some(live_with(&gate, || {
+                // A fresh, actually authorized read may inspect an old disabled
+                // execution installation. Its own token is never send authority.
+                let rejection = self
+                    .0
+                    .rejections
+                    .install(&authority.scope.tenant, &authority.scope.publication, None)
+                    .map_err(|error| super::rejection::error(error.code))?;
                 state.physical += 1;
                 state.lookup_physical += 1;
                 Ok(DispatchContext {
                     owner: Arc::clone(&self.0),
                     live: Arc::new(AtomicBool::new(true)),
+                    rejection,
                     scope: authority.scope.clone(),
                     profile: authority.profile.clone(),
                     effect: authority.link.effect.clone(),
@@ -183,7 +191,7 @@ pub(super) fn check_current(grant: &DispatchGrant, time: EffectTime) -> Result<(
             .state
             .lock()
             .map_err(|_| AuthorityError::Unavailable)?;
-        if !grant.live.load(Ordering::Acquire) {
+        if !grant.live.load(Ordering::Acquire) || !grant.rejection.is_current() {
             return Err(AuthorityError::Stale);
         }
         check_time(&mut state, time)?;
@@ -211,7 +219,13 @@ pub(super) fn check_current(grant: &DispatchGrant, time: EffectTime) -> Result<(
         if Instant::now() >= grant.deadline {
             return Err(AuthorityError::Expired);
         }
-        live_with(authorization, || Ok(()))
+        live_with(authorization, || {
+            if grant.rejection.is_current() {
+                Ok(())
+            } else {
+                Err(AuthorityError::Stale)
+            }
+        })
     })?;
     if calls != 1 {
         return Err(AuthorityError::Invalid);
@@ -247,6 +261,9 @@ pub(super) fn accept_with<T>(
             .state
             .lock()
             .map_err(|_| AuthorityError::Unavailable)?;
+        if !context.live.load(Ordering::Acquire) || !context.rejection.is_current() {
+            return Err(AuthorityError::Stale);
+        }
         check_time(&mut state, time)?;
         let rule = current_lookup_rule(&state, authority)?;
         let ceiling = context
@@ -269,6 +286,7 @@ pub(super) fn accept_with<T>(
         let grant = DispatchGrant {
             owner: Arc::clone(&context.owner),
             live: Arc::clone(&context.live),
+            rejection: context.rejection.clone(),
             scope: context.scope.clone(),
             profile: context.profile.clone(),
             effect: context.effect.clone(),
@@ -285,6 +303,9 @@ pub(super) fn accept_with<T>(
             _retained_owner: context.retained_owner.as_ref().map(Arc::clone),
         };
         result = Some(live_with(&authorization, || {
+            if !context.rejection.is_current() {
+                return Err(AuthorityError::Stale);
+            }
             Ok(accept.take().ok_or(AuthorityError::Invalid)?(grant))
         })?);
         Ok(())
