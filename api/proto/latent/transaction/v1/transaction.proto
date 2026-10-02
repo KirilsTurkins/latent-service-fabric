@@ -3,6 +3,7 @@ syntax = "proto3";
 package latent.transaction.v1;
 
 import "latent/invocation/v1/invocation.proto";
+import "latent/control/v1/release.proto";
 
 // The complete profile is mandatory. Unknown names/versions reject before
 // execution; decoding these messages does not install an engine or authority.
@@ -76,6 +77,8 @@ message SourceIdentity {
   string state_schema = 6;
   string input_format = 7;
   string result_format = 8;
+  // The exact component bytes and signed release bundle are separate sources.
+  string component_digest = 9;
 }
 
 message CommitReceipt {
@@ -119,6 +122,7 @@ message CommandInspection {
   // Result metadata durability is distinct from application state commitment.
   bool metadata_durable = 6;
   bool application_state_committed = 7;
+  // false on an unknown/recovery-required outcome is not proof of abort.
   SourceIdentity source = 8;
   oneof retained_result {
     latent.invocation.v1.Success success = 9;
@@ -142,12 +146,17 @@ message LookupCommandRequest {
   TransactionProfile profile = 1;
   CommandSelector command = 2;
   optional string attempt_id = 3;
+  // Current read-authority target only. The host resolves this installed exact
+  // publication and seals current namespace/result permission before lookup.
+  // It never changes command identity, fingerprint or original SourceIdentity.
+  latent.control.v1.PublicationRef authorization_publication = 4;
 }
 
 message LookupCommitRequest {
   TransactionProfile profile = 1;
   CommandSelector command = 2;
   string receipt_id = 3;
+  latent.control.v1.PublicationRef authorization_publication = 4;
 }
 
 message QueryRequest {
@@ -215,6 +224,7 @@ message GetEffectRequest {
   TransactionProfile profile = 1;
   CommandSelector command = 2;
   string effect_id = 3;
+  latent.control.v1.PublicationRef authorization_publication = 4;
 }
 
 message ListEffectHistoryRequest {

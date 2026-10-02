@@ -82,6 +82,16 @@ impl ProtectedRoot {
         self.chain.last().expect("root anchor").identity
     }
 
+    /// Query the filesystem of the retained descriptor, not a replacement path.
+    pub fn filesystem_type(&self) -> Result<u64, PlatformError> {
+        self.check()?;
+        let info =
+            fs::fstatfs(&self.chain.last().expect("root anchor").file).map_err(|_| failure())?;
+        let kind = u64::try_from(info.f_type).map_err(|_| failure())?;
+        self.check()?;
+        Ok(kind)
+    }
+
     /// Open an explicitly configured engine file without truncation, following
     /// links or creating parent directories. Initialization is create-new only;
     /// an existing failed database is never replaced by an empty descriptor.

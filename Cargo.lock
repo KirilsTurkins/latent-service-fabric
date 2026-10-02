@@ -1617,6 +1617,8 @@ dependencies = [
  "latent-core",
  "latent-effects",
  "latent-state",
+ "sha2 0.11.0",
+ "tempfile",
 ]
 
 [[package]]
@@ -1679,8 +1681,11 @@ name = "latent-effects"
 version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
+ "latent-state",
  "serde",
  "serde_json",
+ "sha2 0.11.0",
+ "tempfile",
 ]
 
 [[package]]
@@ -2074,9 +2079,11 @@ name = "latent-state"
 version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
+ "latent-protected-files",
  "latent-test-process",
  "redb",
  "serde_json",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
 ]
