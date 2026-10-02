@@ -2798,6 +2798,8 @@
         "inventory::tests::limits::topology_selection_is_bounded_without_allocating_nominal_dormant_catalog_rows",
         "inventory::tests::load_health_uses_monotonic_age_and_explicit_unavailability",
         "inventory::tests::zero_queue_capacity_and_shutdown_are_unready_without_hiding_fixed_cells",
+        "journal::tests::broker_lineage::broker_parent_requires_original_live_budget_and_selected_source",
+        "journal::tests::broker_lineage::reused_parent_id_cannot_adopt_an_old_broker_budget",
         "journal::tests::concurrent_duplicate_start_registers_exactly_one_owner",
         "journal::tests::dropped_and_panicking_pre_admission_owners_publish_one_terminal_fallback",
         "journal::tests::duplicate_and_active_capacity_reject_before_registration_callback",
@@ -2823,7 +2825,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 84,
+      "minimumCases": 86,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
