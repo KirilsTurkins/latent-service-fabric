@@ -44,6 +44,9 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--workspace", required=True)
         command.add_argument("--state-root", type=Path)
         command.add_argument("--select", action="append", default=[])
+        command.add_argument("--frontend", type=Path, help="Absolute executable from the authenticated standalone frontend installation")
+        command.add_argument("--frontend-sha256", help="Exact reviewed sha256:<64 hex> of the selected frontend executable")
+        command.add_argument("--frontend-timeout", type=int, default=600, help="Standalone wrapper lifetime, 1..3600 seconds; remote operations keep their original budgets")
         if operation == "test":
             command.add_argument("--environment", choices=("node", "portable"), default="node")
         else:
@@ -75,15 +78,17 @@ def main(argv: list[str] | None = None) -> int:
             from tools.build_snapshot import canonical
             from tools.dev_workflow import paths
             if args.command in {"test", "watch"}:
-                from tools.dev_workflow.cli import main as dev_main
+                from tools import guest_authoring_frontend
                 delegated = dependencies.frontend(args.project, args.command, workspace=args.workspace,
                     state_root=args.state_root, tool_root=getattr(args, "tool_root", None),
                     selections=tuple(args.select), environment=getattr(args, "environment", "node"))
-                code = dev_main(delegated)
+                outcome = guest_authoring_frontend.execute(args.project.absolute(), args.command, delegated,
+                    frontend=args.frontend, expected=args.frontend_sha256, timeout_seconds=args.frontend_timeout)
+                guest_authoring_frontend.emit(outcome)
+                code = outcome.exit_code
                 try:
-                    dependencies.record(args.project, {'formatVersion': 1, 'stage': 'c-dependency-' + args.command,
-                        'status': 'frontend-completed' if code == 0 else 'frontend-failed', 'exitCode': code,
-                        'compilerExecution': 'maintained-frontend', 'automaticReplay': False})
+                    dependencies.record(args.project, {**outcome.evidence, 'stage': 'c-dependency-' + args.command,
+                        'compilerExecution': 'maintained-frontend'})
                 except (ValueError, OSError):
                     print('C dependency frontend receipt unavailable; inspect workspace status.', file=sys.stderr)
                 return code
