@@ -40,6 +40,15 @@ pub enum ResourceRequest {
         service: String,
         publication: String,
     },
+    State {
+        namespace: String,
+        incarnation: u64,
+        #[serde(deserialize_with = "super::resources::explicit_entity")]
+        entity: Option<String>,
+        recovery_kind: super::RecoveryScopeKind,
+        recovery_scope: String,
+        result_policy: String,
+    },
 }
 impl ResourceRequest {
     pub fn parse(bytes: &[u8]) -> Result<Self, PlatformError> {
@@ -79,6 +88,21 @@ impl ResourceRequest {
             } => ResourceTarget::Service {
                 service,
                 publication,
+            },
+            Self::State {
+                namespace,
+                incarnation,
+                entity,
+                recovery_kind,
+                recovery_scope,
+                result_policy,
+            } => ResourceTarget::State {
+                namespace,
+                incarnation: *incarnation,
+                entity: entity.as_deref(),
+                recovery_kind: *recovery_kind,
+                recovery_scope,
+                result_policy,
             },
         }
     }

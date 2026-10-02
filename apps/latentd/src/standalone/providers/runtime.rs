@@ -24,6 +24,8 @@ use latent_policy::capability::PolicyStore;
 
 use crate::config::{NodeSettings, ProviderIdentity};
 
+#[path = "http/runtime.rs"]
+mod deferred_http;
 #[path = "events.rs"]
 mod events;
 #[path = "http.rs"]
@@ -44,6 +46,8 @@ pub(in crate::standalone) struct ProviderRuntime {
     secrets: Option<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
+    http: Option<latent_http::HttpProvider>,
+    events: Option<latent_nats::NatsPublisher>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
     blobs: Option<Arc<LocalBlobStore>>,
     registrations: Vec<ProviderRegistration>,
@@ -90,6 +94,8 @@ impl ProviderRuntime {
             secrets: None,
             guest_secrets: None,
             event_secrets: None,
+            http: None,
+            events: None,
             metrics: None,
             blobs: None,
             registrations: Vec::with_capacity(3),
@@ -121,6 +127,7 @@ impl ProviderRuntime {
                 let (provider, secrets) = http::install(&owner.pools, http, deadline).await?;
                 owner.secrets = secrets;
                 providers.push(owner.record(&http.identity, provider.reference()));
+                owner.http = Some(provider.clone());
                 owner.runtime.install_http(Arc::new(provider))?;
             }
             if let Some(blob) = &config.blob {
@@ -155,6 +162,7 @@ impl ProviderRuntime {
                 let (provider, store) = events::install(&owner.pools, config, deadline).await?;
                 owner.event_secrets = Some(store);
                 providers.push(owner.record(&config.identity, provider.reference()));
+                owner.events = Some(provider.clone());
                 owner.runtime.install_events(Arc::new(provider))?;
             }
             if let Some(config) = &config.secrets {
@@ -227,6 +235,39 @@ impl ProviderRuntime {
             reference,
             local_deployment: None,
         }
+    }
+
+    /// Reuses the exact installed immediate publisher, TLS and protected secret
+    /// owner. The transaction runtime supplies one positively qualified clock.
+    pub fn deferred_event_adapters(
+        &self,
+        installation: &crate::config::providers::EventInstallation,
+        time: Arc<dyn latent_effects::runtime::EffectTimeSource>,
+    ) -> Result<Vec<Arc<dyn latent_effects::runtime::DeferredEffectAdapter>>, PlatformError> {
+        if installation.deferred.is_empty() {
+            return Ok(Vec::new());
+        }
+        if installation.deferred.capacity() > 16 {
+            return Err(unavailable());
+        }
+        let publisher = self.events.as_ref().ok_or_else(unavailable)?;
+        installation
+            .deferred
+            .iter()
+            .map(move |deferred| {
+                publisher
+                    .deferred_adapter(
+                        &installation.identity.tenant,
+                        &deferred.topic,
+                        deferred.qualification.clone(),
+                        Arc::clone(&time),
+                    )
+                    .map(|adapter| {
+                        Arc::new(adapter) as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>
+                    })
+                    .map_err(|_| unavailable())
+            })
+            .collect()
     }
 
     pub fn descriptors(&self) -> &[ProviderDescriptor] {

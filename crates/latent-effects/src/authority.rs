@@ -6,10 +6,20 @@
 //! one short acceptance/revocation fence. This owner contains no activation,
 //! execution cell, guest store, reusable credential, or application timer.
 
+mod grant;
+mod lookup;
+mod namespace;
+pub use grant::DispatchGrant;
+pub use lookup::{DispatchPurpose, ProviderLookupAuthorization};
+pub use namespace::NamespaceEffectCloseFence;
+
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::BTreeMap,
-    sync::{Arc, Mutex},
+    collections::{BTreeMap, BTreeSet},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex, MutexGuard,
+    },
     time::{Duration, Instant},
 };
 
@@ -204,9 +214,29 @@ pub struct DurableEffectAuthority {
 }
 
 impl DurableEffectAuthority {
+    fn validate(&self) -> Result<(), AuthorityError> {
+        let expected_expiry = self
+            .committed_at_millis
+            .checked_add(self.ceiling.maximum_age_millis)
+            .ok_or(AuthorityError::Invalid)?;
+        if !self.scope.valid()
+            || !self.profile.valid()
+            || !self.link.valid()
+            || self.policy_revision == 0
+            || !self.ceiling.valid()
+            || self.expires_at_millis != expected_expiry
+            || self.payload_bytes > self.ceiling.maximum_payload_bytes
+            || !digest(&self.payload_digest)
+        {
+            return Err(AuthorityError::Invalid);
+        }
+        Ok(())
+    }
+
     /// Independent bounded authority-record format; application schema changes
     /// do not reinterpret it. Decoding never restores a permission or credential.
     pub fn encode(&self) -> Result<Vec<u8>, AuthorityError> {
+        self.validate()?;
         let body = serde_json::to_vec(self).map_err(|_| AuthorityError::Invalid)?;
         if body.len() > 8192 {
             return Err(AuthorityError::Capacity);
@@ -226,21 +256,7 @@ impl DurableEffectAuthority {
         }
         let authority: Self =
             serde_json::from_slice(&bytes[5..]).map_err(|_| AuthorityError::Invalid)?;
-        let expected_expiry = authority
-            .committed_at_millis
-            .checked_add(authority.ceiling.maximum_age_millis)
-            .ok_or(AuthorityError::Invalid)?;
-        if !authority.scope.valid()
-            || !authority.profile.valid()
-            || !authority.link.valid()
-            || authority.policy_revision == 0
-            || !authority.ceiling.valid()
-            || authority.expires_at_millis != expected_expiry
-            || authority.payload_bytes > authority.ceiling.maximum_payload_bytes
-            || !digest(&authority.payload_digest)
-        {
-            return Err(AuthorityError::Invalid);
-        }
+        authority.validate()?;
         Ok(authority)
     }
 
@@ -267,6 +283,11 @@ impl DurableEffectAuthority {
     #[must_use]
     pub fn payload_digest(&self) -> &str {
         &self.payload_digest
+    }
+
+    #[must_use]
+    pub const fn payload_bytes(&self) -> u64 {
+        self.payload_bytes
     }
 
     #[must_use]
@@ -297,6 +318,7 @@ pub struct DispatchOwners {
 
 struct State {
     rules: BTreeMap<EffectScope, EffectRule>,
+    closed_namespaces: BTreeSet<namespace::NamespaceScope>,
     physical: usize,
     quarantined: usize,
     clock_floor: u64,
@@ -314,7 +336,19 @@ struct Owner {
 #[derive(Clone)]
 pub struct EffectAuthorityOwner(Arc<Owner>);
 
+/// Affine, metadata-only final writer fence. Hold this through the host's
+/// cancellation acceptance CAS under Policy -> `NamespaceLifecycle` -> Effects
+/// lock order, then drop it before engine flush. It owns no dispatch permit,
+/// provider credential, guest reference or I/O work.
+pub struct EffectCommitFence<'a> {
+    _state: MutexGuard<'a, State>,
+}
+
 impl EffectAuthorityOwner {
+    pub(crate) fn same_owner(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+
     pub fn new(
         maximum_rules: usize,
         maximum_physical: usize,
@@ -326,6 +360,7 @@ impl EffectAuthorityOwner {
         Ok(Self(Arc::new(Owner {
             state: Mutex::new(State {
                 rules: BTreeMap::new(),
+                closed_namespaces: BTreeSet::new(),
                 physical: 0,
                 quarantined: 0,
                 clock_floor,
@@ -348,6 +383,13 @@ impl EffectAuthorityOwner {
             .state
             .lock()
             .map_err(|_| AuthorityError::Unavailable)?;
+        if rule.enabled
+            && state
+                .closed_namespaces
+                .contains(&namespace::NamespaceScope::from_effect(&rule.scope))
+        {
+            return Err(AuthorityError::PolicyBlocked);
+        }
         if let Some(previous) = state.rules.get(&rule.scope) {
             if rule.policy_revision < previous.policy_revision
                 || (rule.policy_revision == previous.policy_revision && rule != *previous)
@@ -380,6 +422,20 @@ impl EffectAuthorityOwner {
         payload_digest: String,
         time: EffectTime,
     ) -> Result<DurableEffectAuthority, AuthorityError> {
+        self.capture_until(scope, link, payload_bytes, payload_digest, time, None)
+    }
+
+    /// A guest may shorten the approved intent lifetime. A requested expiry
+    /// never widens the host rule and is frozen in the durable envelope.
+    pub fn capture_until(
+        &self,
+        scope: &EffectScope,
+        link: CommitLink,
+        payload_bytes: u64,
+        payload_digest: String,
+        time: EffectTime,
+        requested_expiry_millis: Option<u64>,
+    ) -> Result<DurableEffectAuthority, AuthorityError> {
         if !scope.valid() || !link.valid() || !digest(&payload_digest) {
             return Err(AuthorityError::Invalid);
         }
@@ -397,21 +453,99 @@ impl EffectAuthorityOwner {
         if payload_bytes > rule.ceiling.maximum_payload_bytes {
             return Err(AuthorityError::Capacity);
         }
+        let mut ceiling = rule.ceiling;
+        if let Some(expiry) = requested_expiry_millis {
+            let age = expiry
+                .checked_sub(time.unix_millis)
+                .filter(|age| *age != 0)
+                .ok_or(AuthorityError::Invalid)?;
+            ceiling.maximum_age_millis = ceiling.maximum_age_millis.min(age);
+        }
         let expires_at_millis = time
             .unix_millis
-            .checked_add(rule.ceiling.maximum_age_millis)
+            .checked_add(ceiling.maximum_age_millis)
             .ok_or(AuthorityError::Invalid)?;
         Ok(DurableEffectAuthority {
             scope: scope.clone(),
             profile: rule.profile.clone(),
             link,
             policy_revision: rule.policy_revision,
-            ceiling: rule.ceiling,
+            ceiling,
             committed_at_millis: time.unix_millis,
             expires_at_millis,
             payload_bytes,
             payload_digest,
         })
+    }
+
+    /// Freeze the current intersection of a staged intent for commitment.
+    /// The original payload, profile and provenance remain unchanged. Moving
+    /// the lifetime origin to final preparation cannot extend staged expiry.
+    /// This allocates no physical provider owner or protected credential.
+    pub fn refresh_for_commit(
+        &self,
+        captured: &DurableEffectAuthority,
+        time: EffectTime,
+    ) -> Result<DurableEffectAuthority, AuthorityError> {
+        let mut state = self
+            .0
+            .state
+            .lock()
+            .map_err(|_| AuthorityError::Unavailable)?;
+        check_time(&mut state, time)?;
+        let rule = current_rule(&state, captured)?;
+        if time.unix_millis < captured.committed_at_millis {
+            return Err(AuthorityError::ClockDiscontinuity);
+        }
+        let remaining = captured
+            .expires_at_millis
+            .checked_sub(time.unix_millis)
+            .filter(|remaining| *remaining != 0)
+            .ok_or(AuthorityError::Expired)?;
+        let mut ceiling = captured.ceiling.intersection(rule.ceiling);
+        if captured.payload_bytes > ceiling.maximum_payload_bytes {
+            return Err(AuthorityError::Capacity);
+        }
+        ceiling.maximum_age_millis = ceiling.maximum_age_millis.min(remaining);
+        ceiling.attempt_timeout_millis = ceiling
+            .attempt_timeout_millis
+            .min(ceiling.maximum_age_millis);
+        let mut refreshed = captured.clone();
+        refreshed.policy_revision = rule.policy_revision;
+        refreshed.ceiling = ceiling;
+        refreshed.committed_at_millis = time.unix_millis;
+        refreshed.expires_at_millis = time
+            .unix_millis
+            .checked_add(ceiling.maximum_age_millis)
+            .ok_or(AuthorityError::Invalid)?;
+        refreshed.validate()?;
+        Ok(refreshed)
+    }
+
+    /// Revalidate the complete finite set immediately before the physical
+    /// transaction is accepted. Rule publication cannot race the cancellation
+    /// CAS while the returned guard lives; no locks remain held during flush.
+    pub fn commit_fence<'a>(
+        &'a self,
+        authorities: &[DurableEffectAuthority],
+        time: EffectTime,
+    ) -> Result<EffectCommitFence<'a>, AuthorityError> {
+        if authorities.len() > 128 {
+            return Err(AuthorityError::Capacity);
+        }
+        let mut state = self
+            .0
+            .state
+            .lock()
+            .map_err(|_| AuthorityError::Unavailable)?;
+        check_time(&mut state, time)?;
+        for authority in authorities {
+            let (ceiling, expiry) = current_ceiling(&state, authority, time)?;
+            if ceiling != authority.ceiling || expiry != authority.expires_at_millis {
+                return Err(AuthorityError::PolicyBlocked);
+            }
+        }
+        Ok(EffectCommitFence { _state: state })
     }
 
     /// Accept one physical attempt. Local expiry of this owner never permits a
@@ -429,29 +563,13 @@ impl EffectAuthorityOwner {
             .lock()
             .map_err(|_| AuthorityError::Unavailable)?;
         check_time(&mut state, time)?;
+        let (ceiling, expiry) = current_ceiling(&state, authority, time)?;
         let rule = state
             .rules
             .get(&authority.scope)
             .filter(|rule| rule.enabled)
             .ok_or(AuthorityError::PolicyBlocked)?;
-        if rule.profile != authority.profile {
-            return Err(AuthorityError::UnsupportedFormat);
-        }
-        if rule.policy_revision < authority.policy_revision {
-            return Err(AuthorityError::Stale);
-        }
-        let ceiling = authority.ceiling.intersection(rule.ceiling);
-        let current_expiry = authority
-            .committed_at_millis
-            .checked_add(ceiling.maximum_age_millis)
-            .ok_or(AuthorityError::Invalid)?;
-        if time.unix_millis >= authority.expires_at_millis.min(current_expiry) {
-            return Err(AuthorityError::Expired);
-        }
-        if attempt == 0
-            || attempt > ceiling.maximum_attempts
-            || authority.payload_bytes > ceiling.maximum_payload_bytes
-        {
+        if attempt == 0 || attempt > ceiling.maximum_attempts {
             return Err(AuthorityError::Capacity);
         }
         if state.physical >= self.0.maximum_physical {
@@ -459,7 +577,7 @@ impl EffectAuthorityOwner {
         }
         let credential_epoch = rule.credential_epoch;
         let reference = rule.protected_credential_reference.clone();
-        let expiry_remaining = authority.expires_at_millis.min(current_expiry) - time.unix_millis;
+        let expiry_remaining = expiry - time.unix_millis;
         let timeout = Duration::from_millis(ceiling.attempt_timeout_millis.min(expiry_remaining));
         let deadline = Instant::now()
             .checked_add(timeout)
@@ -467,14 +585,19 @@ impl EffectAuthorityOwner {
         state.physical += 1;
         Ok(DispatchContext {
             owner: Arc::clone(&self.0),
+            live: Arc::new(AtomicBool::new(true)),
             profile: authority.profile.clone(),
             scope: authority.scope.clone(),
             effect: authority.link.effect.clone(),
+            attempt,
             ceiling,
             credential_epoch,
             reference,
             deadline,
             retired: false,
+            grant_issued: false,
+            lookup: None,
+            retained_owner: None,
         })
     }
 
@@ -491,22 +614,83 @@ impl EffectAuthorityOwner {
     }
 }
 
+fn current_rule<'a>(
+    state: &'a State,
+    authority: &DurableEffectAuthority,
+) -> Result<&'a EffectRule, AuthorityError> {
+    authority.validate()?;
+    let rule = state
+        .rules
+        .get(&authority.scope)
+        .filter(|rule| rule.enabled)
+        .ok_or(AuthorityError::PolicyBlocked)?;
+    if rule.profile != authority.profile {
+        return Err(AuthorityError::UnsupportedFormat);
+    }
+    if rule.policy_revision < authority.policy_revision {
+        return Err(AuthorityError::Stale);
+    }
+    Ok(rule)
+}
+
+fn current_ceiling(
+    state: &State,
+    authority: &DurableEffectAuthority,
+    time: EffectTime,
+) -> Result<(DispatchCeiling, u64), AuthorityError> {
+    let rule = current_rule(state, authority)?;
+    let ceiling = authority.ceiling.intersection(rule.ceiling);
+    let expiry = authority
+        .committed_at_millis
+        .checked_add(ceiling.maximum_age_millis)
+        .ok_or(AuthorityError::Invalid)?
+        .min(authority.expires_at_millis);
+    if time.unix_millis < authority.committed_at_millis {
+        return Err(AuthorityError::ClockDiscontinuity);
+    }
+    if time.unix_millis >= expiry {
+        return Err(AuthorityError::Expired);
+    }
+    if authority.payload_bytes > ceiling.maximum_payload_bytes {
+        return Err(AuthorityError::Capacity);
+    }
+    Ok((ceiling, expiry))
+}
+
 /// Owned transport work, moved into the actual fixed worker. Dropping a waiter
 /// cannot release this owner; an unretired context conservatively quarantines its
 /// capacity. `retire` belongs to physical completion/cleanup, not RPC completion.
 pub struct DispatchContext {
     owner: Arc<Owner>,
+    live: Arc<AtomicBool>,
     scope: EffectScope,
     profile: DispatchProfile,
     effect: String,
+    attempt: u32,
     ceiling: DispatchCeiling,
     credential_epoch: u64,
     reference: String,
     deadline: Instant,
     retired: bool,
+    grant_issued: bool,
+    lookup: Option<Arc<dyn ProviderLookupAuthorization>>,
+    retained_owner: Option<Arc<dyn std::any::Any + Send + Sync>>,
 }
 
 impl DispatchContext {
+    /// Retain the already reserved original request/global owner before issuing
+    /// any provider grant. The refused owner is returned unchanged; replacement
+    /// or late installation cannot refund an accepted owner's capacity.
+    pub fn retain_owner(
+        &mut self,
+        owner: Arc<dyn std::any::Any + Send + Sync>,
+    ) -> Result<(), Arc<dyn std::any::Any + Send + Sync>> {
+        if self.grant_issued || self.retained_owner.is_some() {
+            return Err(owner);
+        }
+        self.retained_owner = Some(owner);
+        Ok(())
+    }
     #[must_use]
     pub fn scope(&self) -> &EffectScope {
         &self.scope
@@ -553,6 +737,7 @@ impl DispatchContext {
             .physical
             .checked_sub(1)
             .ok_or(AuthorityError::Unavailable)?;
+        self.live.store(false, Ordering::Release);
         self.retired = true;
         Ok(())
     }
@@ -561,6 +746,13 @@ impl DispatchContext {
 impl Drop for DispatchContext {
     fn drop(&mut self) {
         if !self.retired {
+            self.live.store(false, Ordering::Release);
+            if let Some(owner) = self.retained_owner.take() {
+                // Preserve the exact original capacity while physical ownership
+                // is unresolved. The existing finite physical/global caps bound
+                // this quarantine; only actual retirement or process loss ends it.
+                std::mem::forget(owner);
+            }
             if let Ok(mut state) = self.owner.state.lock() {
                 // Keep the physical permit occupied. No timeout/lease path may
                 // turn this diagnostic owner into an automatic retry.

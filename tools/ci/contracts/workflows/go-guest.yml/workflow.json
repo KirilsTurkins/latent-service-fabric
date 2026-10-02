@@ -20,6 +20,8 @@
       "pull_request": {
         "paths": [
           "sdk/go-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
           "tools/go_guest/**",
           "tools/go_capsule*.py",
           "tools/probe_go_authoring.py",
@@ -53,6 +55,8 @@
         ],
         "paths": [
           "sdk/go-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
           "tools/go_guest/**",
           "tools/go_capsule*.py",
           "tools/probe_go_authoring.py",
@@ -89,7 +93,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

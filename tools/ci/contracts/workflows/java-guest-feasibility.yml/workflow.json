@@ -23,6 +23,7 @@
         ],
         "paths": [
           "sdk/java-guest/**",
+          "sdk/transaction-contract/**",
           "tools/**",
           "apps/**",
           "crates/**",
@@ -42,7 +43,7 @@
   "requiredJobs": [
     "compiler-component"
   ],
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

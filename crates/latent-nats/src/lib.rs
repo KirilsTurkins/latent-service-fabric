@@ -1,6 +1,7 @@
 //! Shared TLS `JetStream` publication; no detached driver or automatic replay.
 #![forbid(unsafe_code)]
 mod config;
+pub mod deferred;
 mod network;
 mod protocol;
 mod provider;
