@@ -22,7 +22,7 @@ pub(super) enum Action {
         operation_id: String,
         file: File,
     },
-    InspectNamespace,
+    InspectNamespace {},
     InspectRestore {
         file: File,
         destination_root: PathBuf,
@@ -50,7 +50,7 @@ pub(super) enum Action {
         checkpoint_digest: String,
         checkpoint_manifest_digest: String,
     },
-    Review,
+    Review {},
     Resume {
         operation_id: String,
         expected_view: Vec<u8>,
@@ -81,13 +81,13 @@ impl Action {
     pub const fn purposes(&self) -> &'static [&'static str] {
         match self {
             Self::Snapshot { .. } => &["namespace-snapshot"],
-            Self::InspectNamespace => &["namespace-inspect"],
+            Self::InspectNamespace {} => &["namespace-inspect"],
             Self::InspectRestore { .. } => &["namespace-inspect-restore"],
             Self::Restore { .. } => &["namespace-inspect-restore", "namespace-restore"],
             Self::StageMigration { .. } | Self::CompleteMigration { .. } => {
                 &["namespace-schema-migrate"]
             }
-            Self::Review => &["namespace-review-recovery"],
+            Self::Review {} => &["namespace-review-recovery"],
             Self::Resume { .. } => &["namespace-resume"],
         }
     }
@@ -118,7 +118,7 @@ impl Action {
             Ok(())
         };
         match self {
-            Self::InspectNamespace | Self::Review => Ok(()),
+            Self::InspectNamespace {} | Self::Review {} => Ok(()),
             Self::Snapshot {
                 operation_id,
                 file: input,
@@ -205,6 +205,7 @@ mod tests {
         assert!(NativeRecoveryRequest::decode(&serde_json::to_vec(&valid).unwrap()).is_ok());
         for request in [
             serde_json::json!({"action":"execute-guest"}),
+            serde_json::json!({"action":"inspect-namespace","approved":true}),
             serde_json::json!({"action":"review","approved":true}),
             serde_json::json!({"action":"resume","operationId":"restore","expectedView":[78,86,2]}),
         ] {

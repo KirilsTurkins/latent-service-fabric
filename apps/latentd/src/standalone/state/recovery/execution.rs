@@ -234,11 +234,11 @@ async fn metadata_action(
         )?
         .await?;
     match &codecs.action {
-        Action::InspectNamespace => namespace(&observed),
+        Action::InspectNamespace {} => namespace(&observed),
         Action::StageMigration { .. } | Action::CompleteMigration { .. } => {
             migrate(source, codecs, &observed).await
         }
-        Action::Review => {
+        Action::Review {} => {
             let request = RecoveryReviewRequest {
                 operator_id: codecs.authority.actor.clone(),
                 expected_guard: observed.guard.ok_or_else(invalid)?,
