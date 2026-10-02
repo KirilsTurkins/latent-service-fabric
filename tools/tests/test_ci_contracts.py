@@ -667,6 +667,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(len(legacy["pythonTestModules"]), 260)
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
+        reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -698,8 +699,7 @@ class RepositoryMigrationTests(unittest.TestCase):
                         '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
-            host_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
-            if key == host_fixture:
+            if key == reviewed_narrow_fixture:
                 # State keeps its independent full-CI precheck. The fixed
                 # Identity source proves the real nonempty proper subset under
                 # the unchanged optimizer-owned eligibility policy.
