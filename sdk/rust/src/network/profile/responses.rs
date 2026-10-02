@@ -254,6 +254,7 @@ impl ResponseProfile for control::InspectActivationTreeResponse {
             return Err(invalid());
         }
         for node in &self.nodes {
+            staging(node)?;
             if node.target_service.len() > 512
                 || context.inspection_service.as_ref().is_some_and(|service| {
                     &node.target_service != service
@@ -298,6 +299,42 @@ impl ResponseProfile for control::InspectActivationTreeResponse {
         Ok(true)
     }
 }
+
+fn staging(node: &control::ActivationTreeNode) -> Result<(), RpcFailure> {
+    let Some(value) = &node.transaction_staging else {
+        return Ok(());
+    };
+    let hex = |atom: &str| {
+        atom.len() == 64
+            && atom
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    };
+    let grant = node.granted_budget.as_ref().ok_or_else(invalid)?;
+    if value.schema_version != 1
+        || value.activation_serial == 0
+        || !hex(&value.command_id)
+        || !hex(&value.attempt_id)
+        || !hex(&value.transaction_id)
+        || !value
+            .publication_id
+            .strip_prefix("publication:sha256:")
+            .is_some_and(hex)
+        || value.staged_mutations > 128
+        || value.captured_intents == 0
+        || value.captured_intents > grant.effect_count.min(128)
+        || value.state_write_bytes == 0
+        || value.state_write_bytes > grant.state_write_bytes
+        || value.observed_at_unix_millis < node.received_at_unix_millis
+    {
+        return Err(invalid());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+#[path = "staging_tests.rs"]
+mod staging_tests;
 
 impl ResponseProfile for control::ListPoliciesResponse {
     fn validate(&self, context: &Context, tenant: &str) -> Result<bool, RpcFailure> {

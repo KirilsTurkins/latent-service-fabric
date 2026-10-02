@@ -573,3 +573,21 @@ qualify a release. Installed owners must enforce their current profile, scope,
 policy, quotas and recovery fences. See the
 [Phase 4 transaction contract](transactions.md) and
 [state management reference](state-management.md).
+
+## Additive privileged transaction staging witness
+
+The privileged activation tree adds optional `transaction_staging` at field 15
+and the bounded `TransactionStagingWitness` message. All sixteen existing files,
+message declarations, field numbers, enum values and RPC signatures remain
+unchanged. The shared clients preserve optional absence and full-width unsigned
+values while rejecting malformed identities and progress outside the original
+reported grant. Existing diagnostic unknown enum values remain descriptive.
+
+Only the original native command host can bind the original journal owner before
+guest access. The witness advances after successful captured-intent insertion,
+and pins the activation serial, original command, attempt, transaction and
+publication. Tree and root inspection retain their existing tenant administrator,
+paging, byte and retention limits. Public invocation status and browser responses
+expose no witness. A witness does not establish commitment, abort, physical
+retirement, retry authority or external completion. See
+[activation inspection](../reference/activation-inspection.md).

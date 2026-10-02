@@ -5,6 +5,8 @@ use latent_core::{ActivationPhase, ActivationTerminalState, BudgetConsumption, M
 
 use super::*;
 
+#[path = "tests/staging.rs"]
+mod staging;
 mod support;
 #[path = "tests/tree.rs"]
 mod tree;

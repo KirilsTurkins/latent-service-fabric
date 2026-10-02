@@ -11,7 +11,7 @@ class ProfileTests(unittest.TestCase):
         cls.profile, cls.messages, cls.enums = read_contract()
 
     def test_shared_contract_is_current(self):
-        self.assertEqual(validate(), (77, 16))
+        self.assertEqual(validate(), (78, 16))
 
     def test_exact_operation_profile(self):
         self.assertEqual([operation["name"] for operation in self.profile["operations"]], [

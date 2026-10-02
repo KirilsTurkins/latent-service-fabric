@@ -2,8 +2,10 @@
 
 mod bytes;
 mod owner;
+mod staging;
 mod state;
 mod tree;
+pub use staging::TransactionStagingWitness;
 pub use tree::{ActivationTreeNode, ActivationTreePage};
 #[cfg(test)]
 mod tests;

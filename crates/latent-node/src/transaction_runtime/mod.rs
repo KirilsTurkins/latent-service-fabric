@@ -5,6 +5,7 @@ mod host;
 mod initialization;
 mod io;
 pub mod query;
+mod staging;
 pub use authorization::{IntentPolicyBinding, PolicyCallBinding, StateAuthorization};
 
 use latent_commit::atomic::{
@@ -69,6 +70,7 @@ pub struct CommandHostSelection {
     work: PhysicalAttemptWork,
     key: latent_core::transaction_contract::CommandKey,
     publication: String,
+    staging_identity: latent_executor::transaction::TransactionStagingIdentity,
 }
 impl CommandHostSelection {
     pub fn from_claim(
@@ -86,6 +88,12 @@ impl CommandHostSelection {
             context: claim.intent_capture_context(),
             key: record.key().clone(),
             publication: record.source().publication.clone(),
+            staging_identity: latent_executor::transaction::TransactionStagingIdentity {
+                command_id: record.id().hex(),
+                attempt_id: record.attempt_id().hex(),
+                transaction_id: record.transaction_id().hex(),
+                publication_id: record.source().publication.clone(),
+            },
             info: CommandInfo {
                 view,
                 command_id: record.id().hex(),
@@ -126,6 +134,9 @@ pub struct StateTransactionHost {
     technical_fault: AtomicBool,
     context: Option<IntentCaptureContext>,
     command: Option<CommandInfo>,
+    staging_identity: Option<latent_executor::transaction::TransactionStagingIdentity>,
+    staging_observer:
+        Mutex<Option<Arc<dyn latent_executor::transaction::TransactionStagingObserver>>>,
     effects: Option<EffectAuthorityOwner>,
     time: Arc<dyn CommandTimeSource>,
     retained_bytes: u64,

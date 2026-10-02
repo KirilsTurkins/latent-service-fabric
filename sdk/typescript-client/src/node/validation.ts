@@ -91,6 +91,18 @@ export function validateResponse(operation: Operation, request: unknown, raw: Re
         if (diagnostic.schemaVersion !== 1 || (diagnostic.profileDigest !== undefined &&
           (typeof diagnostic.profileDigest !== "string" || !/^[0-9a-f]{64}$/.test(diagnostic.profileDigest)))) throw new ShapeError();
       }
+      if (node.transactionStaging !== undefined) {
+        const witness = object(node.transactionStaging);
+        const grant = object(node.grantedBudget);
+        if (witness.schemaVersion !== 1 || BigInt(witness.activationSerial as string) === 0n
+          || ["commandId", "attemptId", "transactionId"].some(key => typeof witness[key] !== "string" || !/^[0-9a-f]{64}$/.test(witness[key] as string))
+          || typeof witness.publicationId !== "string" || !/^publication:sha256:[0-9a-f]{64}$/.test(witness.publicationId)
+          || typeof witness.stagedMutations !== "number" || !Number.isInteger(witness.stagedMutations) || witness.stagedMutations < 0 || witness.stagedMutations > 128
+          || typeof witness.capturedIntents !== "number" || !Number.isInteger(witness.capturedIntents) || witness.capturedIntents <= 0 || witness.capturedIntents > 128
+          || witness.capturedIntents > (grant.effectCount as number) || BigInt(witness.stateWriteBytes as string) === 0n
+          || BigInt(witness.stateWriteBytes as string) > BigInt(grant.stateWriteBytes as string)
+          || BigInt(witness.observedAtUnixMillis as string) < BigInt(node.receivedAtUnixMillis as string)) throw new ShapeError();
+      }
     }
   }
   if (operation === "invoke" || operation === "getActivation") {
