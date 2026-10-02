@@ -8,12 +8,13 @@ manifest, process supervisor, or result gate.
 
 ## Current production layout
 
-The required `rust` job uses a fixed seven-variant matrix:
+The required `rust` job uses a fixed eight-variant matrix:
 
 | Variant | Retained obligations |
 | --- | --- |
 | checks | Formatting, deterministic dependency checks, workspace and independent production checks, bindings and both Clippy policies |
-| tests | Complete discovery, authenticated AOT preparation, ordinary workspace tests, doctests, signing compatibility, metadata, security and bounded resource units |
+| tests | Complete discovery, authenticated AOT preparation, ordinary workspace tests, doctests, signing compatibility and bounded resource units |
+| qualification | The unchanged metadata working-set and deterministic Phase 3 security qualifications with fresh local Cargo inventories |
 | provider | Fresh pinned S3 fixture, positive/negative S3 runs, Vault, NATS events/triggers and capability-policy CLI |
 | renderer-public | Browser component, SSR/hydration, browser boundary, exact HTTP response-policy/operator proof, generic Angular/node cases and discovery fault control |
 | renderer-angular | Build contracts, fresh actual Angular package, admission/runtime and hydration |

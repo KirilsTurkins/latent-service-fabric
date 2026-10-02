@@ -667,6 +667,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(len(legacy["pythonTestModules"]), 260)
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
+        reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -676,6 +677,7 @@ class RepositoryMigrationTests(unittest.TestCase):
             ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": ["python3 tools/run_optimization_benchmarks.py --profile smoke"],
             ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": [
                 "npm run test:build", "npm run test:theme", "npm run test:examples", "npm run test:versions", "npm run test:discovery", 'wait "$versions_pid"', 'exit "$status"'],
+            ".github/workflows/docs-site.yml:website:Install the pinned test browser and its OS prerequisites": ["npm run browser:install"],
             ".github/workflows/typescript-guest.yml:boundary:Install pinned component validator": ['test "$(wasm-tools --version | cut -d \' \' -f 1,2)" = \'wasm-tools 1.254.0\''],
             ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": [
                 "cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go",
@@ -697,7 +699,15 @@ class RepositoryMigrationTests(unittest.TestCase):
                         '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
-            if key != reviewed_extension and key not in performance_extensions:
+            if key == reviewed_narrow_fixture:
+                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
+                                 {k: v for k, v in value.items() if k != "run"})
+                # Only the fixture path changes: real state dependencies now
+                # select the full profile. Keep every command and assertion.
+                self.assertEqual(data["after"][key]["run"].rstrip("\n"),
+                                 value["run"].replace("crates/latent-state/src/lib.rs",
+                                                      "crates/latent-workflows/src/lib.rs"))
+            elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:
                 self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
