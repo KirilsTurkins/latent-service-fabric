@@ -499,6 +499,13 @@ defines the trust fence, finite ownership and uncertainty boundary.
 
 ## Alpha removal of component-only release selectors
 
+The SDK stream substrate adds `AUDIT_CAPABILITY_RESOURCE_CLASS_STREAM = 11`
+to the capability audit enum. Values 0 through 10 and all message fields keep
+their existing wire numbers. Stream evidence remains distinct from an HTTP
+response or protocol acknowledgement; `HOST_COMPLETED` records only the
+local host operation. The descriptor baseline deliberately includes this
+additive enum value.
+
 Release get, lifecycle inspection, revoke/retire and evidence renewal now require
 an exact authenticated-tenant `PublicationRef`. Their obsolete request `digest`
 field 1 is removed and reserved by number and name. The CLI requires

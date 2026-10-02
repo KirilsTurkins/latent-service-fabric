@@ -96,6 +96,15 @@ impl PreparationContext {
                 false,
             )
         })?;
+        if self.config.activation_runtime.is_some() {
+            crate::host::runtime::install(&mut linker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind activation runtime support",
+                    false,
+                )
+            })?;
+        }
         if let Some(invoker) = self.local_services() {
             crate::host::service::install(&mut linker, invoker).map_err(|error| {
                 platform_error(
