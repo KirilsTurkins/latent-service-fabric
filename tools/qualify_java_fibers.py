@@ -165,11 +165,12 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
 
 
 def completable_model_control(compiler: Compiler, output: Path) -> dict:
-    """Check canonical class identities and continuations in the actual locked IR.
+    """Check canonical class identities, emitted callbacks and owned continuations.
 
     Private host ledger declarations make this model readable; its code and the
-    application classes are never initialized. The actual guest bindings and
-    dynamic application callback graph require separate component qualification.
+    application classes are never initialized. The locked lambda emitter checks
+    every callback declared by the port; guest bindings and the application
+    callback graph still require separate component qualification.
     """
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
     output.mkdir()
@@ -179,18 +180,19 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
                 for name in ("CompletableFuture", "CompletionStage", "CompletionException", "Future", "TimeUnit")]
     sources += [compiler.sdk / ("fibers/conformance/compiler/source-control/" + name) for name in (
         "dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/Activation.java",
-        "dev/latent/guest/runtime/concurrent/Executors.java")]
+        "dev/latent/guest/runtime/concurrent/Executors.java", "org/teavm/dependency/LambdaEmitterControlContext.java")]
     compiler.run("completable-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", output, *sources)
     expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
         "resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=24;owned-callback-bodies=25;"
-        "bodies=180;application-identity")
+        "bodies=180;actual-generated-callbacks=23;application-identity")
     observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
     if observed != expected: raise ValueError("Java CompletableFuture model control did not complete")
     return {"status": "actual-locked-classlib-model-passed", "modelMethodBodies": 180,
-            "coroutineMonitorBodies": 24, "ownedCallbackBodies": 25, "jarDigests": identities,
+            "coroutineMonitorBodies": 24, "ownedCallbackBodies": 25, "actualGeneratedCallbacks": 23,
+            "jarDigests": identities,
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
 
 

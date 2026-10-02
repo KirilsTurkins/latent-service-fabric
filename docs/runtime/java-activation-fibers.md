@@ -291,8 +291,11 @@ executor exist only in those source controls and are excluded from the component
 Ten verified, locked TeaVM model JARs also check 180 actual method bodies,
 canonical standard and private helper identities, resolved reference closure,
 unsupported-method rejection, and 25 coroutine bodies containing 24 monitor
-scopes. Neither application nor port classes are initialized during that model
-inspection. These source and model results still require actual default-pool,
+scopes. The locked lambda emitter generates all 23 port callbacks and checks that
+their construction references resolve after runtime normalization. Only the
+three declared port helpers retain an SDK identity; emitted callbacks retain
+their canonical caller identity. Neither application nor port classes are
+initialized during that model inspection. These source and model results still require actual default-pool,
 dynamic callback and guest-binding behavior in signed execution. Prepare and select the independent,
 ordinary CompletableFuture fixture with the original guest ceilings:
 
@@ -312,3 +315,10 @@ dependency input in place, runs offline, retains strict dependency verification,
 and keeps locks and transformed artifacts in a fresh compiler directory. The
 captured cache joins the compiler's before/after identity checks. It cannot be
 combined with `--offline-cache`, which retains the existing private-copy behavior.
+
+The first guest-only candidate preparation at `d1d7b2a7` completed real Java
+compilation but failed TeaVM C generation: a broad helper rewrite redirected ten
+generated callback references into absent SDK classes. The original failure and
+all generated source, class and command records are preserved. The emitted-callback
+control reproduces that identity failure and passes after the narrower helper
+mapping. A new component preparation and signed execution are still required.

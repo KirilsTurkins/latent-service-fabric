@@ -350,6 +350,18 @@ class CompletableModelIntegrity(unittest.TestCase):
                 fibers.completable_model_control(compiler, root / "model")
             self.assertEqual(compiler.run.call_count, 2)
 
+    def test_static_model_receipt_cannot_substitute_for_actual_generated_callbacks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            static_receipt = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
+                "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
+                "actual-coroutine-monitors=24;owned-callback-bodies=25;bodies=180;application-identity")
+            compiler.run.side_effect = ["", static_receipt]
+            with self.assertRaisesRegex(ValueError, "model control did not complete"):
+                fibers.completable_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
 
 class PackagingTools(unittest.TestCase):
     def test_prebuilt_tools_are_reused_without_a_narrower_cargo_rebuild(self):

@@ -92,9 +92,12 @@ public final class RuntimePlugin implements TeaVMPlugin {
     }
 
     private static boolean privateConcurrentHelper(String suffix) {
+        // Generated callback classes belong to the actual TeaVM caller. Only
+        // these declared CompletableFuture helpers retain the SDK identity.
         return suffix.equals("ManagedExecutor") || suffix.startsWith("ManagedExecutor$")
             || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$")
-            || suffix.startsWith("TimeUnit$") || suffix.startsWith("CompletableFuture$");
+            || suffix.startsWith("TimeUnit$") || suffix.equals("CompletableFuture$Action")
+            || suffix.equals("CompletableFuture$Aggregate") || suffix.equals("CompletableFuture$DefaultExecutor");
     }
 
     private static String concurrentReference(String name) {

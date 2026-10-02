@@ -6,7 +6,11 @@ import java.util.List;
 import java.util.Set;
 import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
 import org.teavm.classlib.impl.ClasslibSubstitutionPolicy;
+import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
+import org.teavm.dependency.LambdaEmitterControlContext;
 import org.teavm.model.*;
+import org.teavm.model.emit.ProgramEmitter;
+import org.teavm.model.emit.ValueEmitter;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.ClasspathClassHolderSource;
@@ -23,6 +27,55 @@ public final class CompletableFutureModelControl {
     }
     private static boolean port(String name) {
         return name.equals("CompletableFuture") || name.equals("CompletionStage") || name.equals("CompletionException");
+    }
+    private static int generatedCallbacks(ClassHolder future, ClassReaderSource source) throws Exception {
+        var collector = new LambdaEmitterControlContext(source);
+        var factory = new LambdaMetafactorySubstitutor();
+        var normalize = RuntimePlugin.class.getDeclaredMethod("normalizeOwnedConcurrentReferences", ClassHolder.class);
+        normalize.setAccessible(true);
+        int callbacks = 0;
+        for (MethodHolder method : future.getMethods()) {
+            if (method.getProgram() == null) continue;
+            for (BasicBlock block : method.getProgram().getBasicBlocks()) for (Instruction instruction : block) {
+                if (!(instruction instanceof InvokeDynamicInstruction dynamic)
+                        || !dynamic.getBootstrapMethod().getClassName().equals("java.lang.invoke.LambdaMetafactory")) continue;
+                var emitter = ProgramEmitter.create(new MethodDescriptor("probe", ValueType.VOID), collector.getClassHierarchy());
+                List<ValueEmitter> captures = new ArrayList<>();
+                for (int index = 0; index < dynamic.getMethod().parameterCount(); index++)
+                    captures.add(emitter.newVar(dynamic.getMethod().parameterType(index)));
+                factory.substitute(collector.site(method.getReference(), dynamic, captures), emitter);
+                ClassHolder replay = new ClassHolder(future.getName());
+                MethodHolder body = new MethodHolder(method.getDescriptor());
+                body.setProgram(emitter.getProgram()); replay.addMethod(body);
+                normalize.invoke(null, replay);
+                boolean construction = false;
+                for (BasicBlock emittedBlock : body.getProgram().getBasicBlocks()) for (Instruction emitted : emittedBlock) {
+                    if (emitted instanceof ConstructInstruction construct) {
+                        require(collector.generated.containsKey(construct.getType()), "actual-emitted-callback-reference-resolves:" + construct.getType());
+                        construction = true;
+                    }
+                    if (emitted instanceof InvokeInstruction invoke && invoke.getMethod().getName().equals("<init>"))
+                        require(collector.generated.containsKey(invoke.getMethod().getClassName()), "actual-emitted-callback-constructor-resolves");
+                }
+                require(construction, "actual-locked-emitter-constructed-callback");
+                callbacks++;
+            }
+        }
+        require(callbacks >= 10 && collector.generated.size() == callbacks, "complete-generated-callback-closure");
+        for (ClassHolder callback : collector.generated.values()) {
+            require(callback.getName().startsWith(STANDARD + "CompletableFuture$"), "canonical-generated-callback-owner");
+            for (FieldHolder field : callback.getFields()) canonical(field.getType());
+            for (MethodHolder method : callback.getMethods()) {
+                for (ValueType type : method.getDescriptor().getSignature()) canonical(type);
+                if (method.getProgram() == null) continue;
+                for (BasicBlock block : method.getProgram().getBasicBlocks()) for (Instruction instruction : block) {
+                    if (instruction instanceof InvokeInstruction invoke && invoke.getMethod().getClassName().equals(future.getName()))
+                        require(new ClassHierarchy(source).resolve(future.getName(), invoke.getMethod().getDescriptor()) != null,
+                                "actual-generated-callback-body-target-resolves");
+                }
+            }
+        }
+        return callbacks;
     }
     private static void canonical(ValueType type) {
         if (type instanceof ValueType.Array array) canonical(array.getItemType());
@@ -96,6 +149,7 @@ public final class CompletableFutureModelControl {
             models.add(helper);
         }
         for (ClassHolder cls : models) transform.invoke(plugin, cls, context);
+        int callbacks = generatedCallbacks(future, source);
         for (ClassHolder cls : models) for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() == null) continue;
             for (BasicBlock block : method.getProgram().getBasicBlocks()) for (Instruction instruction : block) {
@@ -139,6 +193,6 @@ public final class CompletableFutureModelControl {
         identity.setProgram(program); unrelated.addMethod(identity);
         transform.invoke(plugin, unrelated, context);
         require(identity.getProgram() == program && program.basicBlockCount() == 1, "application-model-identity-preserved");
-        System.out.println("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=" + monitorBodies + ";owned-callback-bodies=" + lowered + ";bodies=" + methods + ";application-identity");
+        System.out.println("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=" + monitorBodies + ";owned-callback-bodies=" + lowered + ";bodies=" + methods + ";actual-generated-callbacks=" + callbacks + ";application-identity");
     }
 }
