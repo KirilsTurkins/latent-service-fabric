@@ -223,14 +223,31 @@ def validate_cargo_workflow(workflow: str) -> None:
         document = yaml.load(workflow, Loader=yaml.BaseLoader)
         if "pull_request" not in document["on"]:
             fail("CI workflow does not select pull requests")
-        steps = document["jobs"]["rust"]["steps"]
+        job = document["jobs"]["rust"]
+        steps = job["steps"]
+        required_lanes = {
+            **dict.fromkeys(("format", "workspace-check", "bindings", "clippy"), "checks"),
+            **dict.fromkeys(("workspace-tests", "doctests", "signing-compatibility"), "tests"),
+        }
+        # BaseLoader intentionally keeps YAML booleans as strings. Count a
+        # conditional recipe only in this complete, failure-propagating matrix.
+        required_matrix = (
+            job.get("strategy") == {"fail-fast": "false", "matrix": {"lane": [
+                "checks", "tests", "qualification", "provider", "renderer-public", "renderer-angular", "publications", "angular-t1"]}}
+            and job.get("continue-on-error", "false") == "false"
+            and job.get("if") == "needs.profile.outputs.profile == 'full'"
+        )
         selected = set()
         for step in steps:
-            if "if" in step:
+            if step.get("continue-on-error", "false") != "false":
                 continue
             for line in step.get("run", "").splitlines():
                 words = shlex.split(line, comments=True)
                 if len(words) >= 4 and words[:3] == ["python3", "tools/ci_cargo.py", "run"]:
+                    if "if" in step:
+                        lane = required_lanes.get(words[3])
+                        if not required_matrix or step["if"] != f"matrix.lane == '{lane}'":
+                            continue
                     selected.add(words[3])
         required = {"format", "workspace-check", "bindings", "clippy",
                     "workspace-tests", "doctests", "signing-compatibility"}
