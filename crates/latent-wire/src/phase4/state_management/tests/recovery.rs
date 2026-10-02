@@ -90,6 +90,14 @@ impl HttpBody for OneFrame {
     }
 }
 async fn response_body(fixture: &Fixture) -> Body {
+    response_body_for(
+        fixture,
+        "/latent.control.v1.StateService/InspectNamespace",
+        fixture.target().encode_to_vec(),
+    )
+    .await
+}
+pub(super) async fn response_body_for(fixture: &Fixture, path: &str, encoded: Vec<u8>) -> Body {
     let adapter = super::super::super::Phase4ServiceAdapter::with_services(
         Arc::new(fixture.backend.clone()),
         crate::management::ManagementLimits::default(),
@@ -100,13 +108,12 @@ async fn response_body(fixture: &Fixture) -> Body {
         },
     )
     .unwrap();
-    let encoded = fixture.target().encode_to_vec();
     let mut bytes = vec![0];
     bytes.extend_from_slice(&u32::try_from(encoded.len()).unwrap().to_be_bytes());
     bytes.extend_from_slice(&encoded);
     let mut request = http::Request::builder()
         .method("POST")
-        .uri("/latent.control.v1.StateService/InspectNamespace")
+        .uri(path)
         .header("content-type", "application/grpc")
         .body(Body::new(OneFrame(Some(Bytes::from(bytes)))))
         .unwrap();

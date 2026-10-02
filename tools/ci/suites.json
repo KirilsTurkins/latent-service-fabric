@@ -1457,6 +1457,9 @@
         "namespace::tests::authority::result_replay_and_effect_inspection_require_current_subject_entity_and_policy",
         "namespace::tests::authority::retained::exact_publication_revocation_rejects_retained_admission_despite_shared_component",
         "namespace::tests::authority::retained::expired_original_deadline_does_not_gain_a_new_policy_wall_time",
+        "namespace::tests::authority::retained::listing::replacement_listing_permission_cannot_revive_the_original_retained_page_grant",
+        "namespace::tests::authority::retained::listing::retained_listing_handle_blocks_drain_and_cannot_cross_accepted_lifecycle_changes",
+        "namespace::tests::authority::retained::listing::retained_listing_requires_both_exact_caller_decisions_and_the_actual_catalog_handle",
         "namespace::tests::authority::retained::management::configured_precondition_is_shared_by_inspection_and_action_without_reissuing_grant",
         "namespace::tests::authority::retained::management::original_action_and_actual_namespace_lifecycle_are_checked_before_writer_acceptance",
         "namespace::tests::authority::retained::management::revoked_original_management_decision_cannot_be_revived_by_replacement_configuration",
@@ -1475,7 +1478,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 155,
+      "minimumCases": 158,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -3721,25 +3724,6 @@
     },
     {
       "boundary": "runtime",
-      "expectedIgnored": [],
-      "id": "latent-packaging.lib.latent-packaging",
-      "ignoredLeaves": [],
-      "kind": "lib",
-      "manifest": "crates/latent-packaging/Cargo.toml",
-      "mode": "libtest",
-      "package": "latent-packaging",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "src/lib.rs",
-      "target": "latent_packaging",
-      "timeoutSeconds": 900,
       "expectedCases": [
         "sbom::tests::browser_inventory_matches_the_offline_schema_conformance_fixture",
         "sbom::tests::component_profile_rejects_wrong_types_hashes_statuses_and_references",
@@ -3819,7 +3803,26 @@
         "semantics::web::tests::public_contract_is_async_and_a_profile_name_never_substitutes_for_a_component",
         "semantics::web::tests::sync_or_modified_public_interface_is_rejected_before_guest_execution"
       ],
-      "minimumCases": 77
+      "expectedIgnored": [],
+      "id": "latent-packaging.lib.latent-packaging",
+      "ignoredLeaves": [],
+      "kind": "lib",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 77,
+      "mode": "libtest",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/lib.rs",
+      "target": "latent_packaging",
+      "timeoutSeconds": 900
     },
     {
       "boundary": "product",
@@ -5227,6 +5230,8 @@
         "protected_store::tests::recovery::physical_file_ceiling_refuses_growth_and_never_claims_aborted_commit",
         "protected_store::tests::recovery::protected_root_permissions_and_substituted_paths_gate_initialization_and_live_jobs",
         "protected_store::tests::recovery::unsupported_filesystem_and_unsafe_configuration_never_create_a_store",
+        "protected_store::tests::reserved::detached_recovery_view_keeps_original_global_reservation_until_native_retirement",
+        "protected_store::tests::reserved::recovery_snapshot_reads_and_retires_on_reserved_worker_under_ordinary_pressure",
         "protected_store::tests::reserved::reserved_native_status_progresses_while_all_ordinary_workers_and_queue_are_full",
         "protected_store::tests::resource::detached_native_resource_initializer_keeps_file_and_global_permit_until_actual_destruction",
         "protected_store::tests::resource::native_resource_initialization_errors_and_foreign_or_ordinary_use_never_run_callbacks",
@@ -5246,6 +5251,12 @@
         "session::tests::current_authorization_and_namespace_schema_incarnation_fences_fail_closed",
         "session::tests::cursor_scope_query_overlay_generation_and_once_only_use_are_enforced",
         "session::tests::empty_and_truncated_prefix_scans_conflict_on_phantom_insert_delete",
+        "session::tests::entities::entity_continuations_refuse_changed_generation_schema_and_recovery_epochs",
+        "session::tests::entities::entity_discovery_deduplicates_live_cells_keeps_tombstones_and_changes_no_records",
+        "session::tests::entities::entity_discovery_refuses_partial_capacity_results_and_rechecks_current_access",
+        "session::tests::entities::entity_discovery_uses_canonical_scope_prefix_and_accepts_full_bounded_identity",
+        "session::tests::entities::entity_pages_resume_lexically_in_one_exact_view_without_a_false_last_page",
+        "session::tests::entities::filtered_entity_rows_cannot_hide_unsupported_or_corrupt_cells",
         "session::tests::exact_maximum_key_value_and_generation_exhaustion_do_not_wrap",
         "session::tests::history::changed_history_invalidates_old_record_preconditions_without_changing_business_cells",
         "session::tests::history::history_decoder_refuses_corruption_unknown_fields_wrong_scope_and_zero_epochs",
@@ -5303,7 +5314,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 148,
+      "minimumCases": 156,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
@@ -8257,6 +8268,13 @@
         "phase4::state_management::tests::effects::fresh_lookup_after_execution_expiry_uses_reserved_capacity_and_preserves_provider_fact",
         "phase4::state_management::tests::effects::frozen_rpc_adapter_preserves_effect_plan_receipt_and_original_recovery_association",
         "phase4::state_management::tests::effects::unknown_actual_dispatch_attempt_cannot_be_redriven_from_an_operator_declaration",
+        "phase4::state_management::tests::entities::actual_entity_rpc_frame_and_snapshot_progress_through_reserved_recovery_capacity",
+        "phase4::state_management::tests::entities::authenticated_entity_discovery_observes_real_cells_tombstones_and_critical_audit",
+        "phase4::state_management::tests::entities::entity_reply_revocation_before_encoding_keeps_snapshot_until_native_cleanup",
+        "phase4::state_management::tests::entities::namespace_inspection_permission_cannot_supply_entity_listing_or_revive_old_reply",
+        "phase4::state_management::tests::entities::retained_entity_data_frame_blocks_namespace_drain_until_physical_view_retirement",
+        "phase4::state_management::tests::entities::rpc_entity_cursor_binds_caller_prefix_and_fresh_exact_namespace_generation",
+        "phase4::state_management::tests::entities::rpc_entity_cursor_refuses_schema_and_restored_history_without_quarantining_store",
         "phase4::state_management::tests::exact_selected_service_mismatch_denies_before_native_lookup_even_when_store_closed",
         "phase4::state_management::tests::lifecycle_transition_invalidates_old_metadata_and_tombstone_is_inspectable",
         "phase4::state_management::tests::original_actor_operation_and_generation_survive_replay_without_refresh",
@@ -8279,7 +8297,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 162,
+      "minimumCases": 169,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

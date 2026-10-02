@@ -408,6 +408,7 @@ fn operations() -> Vec<String> {
         "namespace-destroy",
         "namespace-recreate",
         "namespace-inspect",
+        "namespace-list",
         "inspect-effect",
         "effect-plan",
         "effect-redrive",
