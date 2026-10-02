@@ -227,6 +227,11 @@ mod native {
                 .await
                 .clean
         );
+        assert_eq!(
+            store.failure(),
+            None,
+            "expired authorization is not storage failure"
+        );
         assert!(store
             .with_store(StoreIoKind::RecoveryRead, 4096, |engine| {
                 engine.snapshot()?.get(&tenant::guard_key())

@@ -67,13 +67,12 @@ pub(super) async fn install(
     let job = store
         .with_store(StoreIoKind::RecoveryWrite, RETAINED_BYTES, move |engine| {
             let input = request.get();
-            reservation
-                .with_live(|| ())
-                .map_err(|_| StoreError::Unavailable)?;
+            if reservation.with_live(|| ()).is_err() {
+                return Ok(Err(super::unavailable()));
+            }
             let prepared = prepare(engine, input)?;
             let Some(prepared) = prepared else {
-                accept(&reservation, &input.installed).map_err(|_| StoreError::Unavailable)?;
-                return Ok(reservation);
+                return Ok(accept(&reservation, &input.installed).map(|()| reservation));
             };
             if prepared.retained_bytes() as u64 > WORK_BYTES {
                 return Err(StoreError::Capacity);
@@ -83,19 +82,23 @@ pub(super) async fn install(
             // Destroy the original prepared business bytes before refunding
             // their charge. Accepted physical work retains the request/lease.
             drop(work);
-            result.map_err(|error| match error {
-                FencedStoreError::Store(error) => error,
-                FencedStoreError::Fence(_) => StoreError::Unavailable,
-            })?;
+            match result {
+                Ok(()) => {}
+                Err(FencedStoreError::Store(error)) => return Err(error),
+                // Authorization expiry is a bounded operation refusal. It is
+                // not evidence of a physical store failure and must not latch
+                // quarantine on this unchanged engine.
+                Err(FencedStoreError::Fence(error)) => return Ok(Err(error)),
+            }
             // The original affine owner also survives physical completion
             // until startup checks current delivery. No new lease or deadline.
-            Ok(reservation)
+            Ok(Ok(reservation))
         })
         .map_err(|_| super::unavailable())?;
     let completed = job
         .await
         .map_err(|_| super::unavailable())?
-        .map_err(|_| super::unavailable())?;
+        .map_err(|_| super::unavailable())??;
     accept(&completed, installed)
 }
 
