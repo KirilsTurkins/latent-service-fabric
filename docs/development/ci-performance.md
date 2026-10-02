@@ -45,8 +45,29 @@ The site does not display last-update metadata, so eager Git history scans stay
 disabled. Windows retains the existing HTML minifier because its native SWC
 cache can reject host ACLs; Linux CI uses the accelerated native HTML minifier.
 
-The complete Python contract suite overlaps the independent native contract
-build, and its failure propagates through the final join even if a build fails.
+The full Rust job has eight required matrix lanes: checks, workspace tests,
+metadata/security qualification,
+providers, public renderer, actual Angular, publication workflows and Angular T1.
+Each runtime lane runs the unchanged all-target/all-feature Cargo producer on its
+own checkout and verifies its fresh inventory. Complete workspace discovery,
+ordinary tests, doctests and signing compatibility remain in the tests lane.
+Physical qualification owns a separate runner from renderer/provider execution.
+Metadata and security qualification also run independently from the ordinary
+workspace tests, retaining their complete command vectors and fresh inventory.
+
+The website runs in the official Playwright Noble image, pinned by digest and
+matched to its locked browser version. The image supplies system libraries and
+fonts, avoiding a repeated network-dependent apt installation. The project still
+installs its exact headless browser and executes every build and browser suite.
+
+Repository contracts use seven required variants: the complete Python suite,
+bindings, runtime components, standalone workflows, six-language SDK providers,
+Phase 1 measurement smoke and optimization smoke. Python owns a checkout without
+concurrent native fixture writers. Native variants rebuild their fixtures and
+retain the same exact cases; collectors retain their frozen override rejection.
+The local `tools/validate_contracts.sh` command still runs all validation by
+default, and an unknown lane fails. Both matrices disable fail-fast, so every
+selected obligation is attempted and every failure reaches `CI result`.
 The profile selector fetches complete Git ancestry and trees with only its
 catalogue, Cargo manifests and Rust source blobs. Offline change classification,
 mode checks and reverse-dependent selection keep their existing behavior. The
@@ -54,8 +75,16 @@ result aggregator checks the same complete job contract from a catalogue-only
 checkout, avoiding a second download of irrelevant frozen binary fixtures.
 Rust workspace checks, independent production features, Clippy, doctests,
 compatibility negatives, provider integrations and physical resource probes
-retain their commands and conditions. The two protected result aggregators and
+retain their command vectors and profile selection. The two protected result aggregators and
 the existing manual scale/resource options retain their required behavior.
+
+The first optimization's warm PR run
+[36912666227](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36912666227)
+completed the Rust job in 29m 58s and the website job in 7m 39s: reductions of
+19.4% and 71.7% against the job baseline above. Its contracts job failed, so it
+does not establish a successful total-pipeline speedup. The required matrices
+address the remaining serial critical path; their complete warm duration still
+needs a successful remote measurement.
 
 After merging, measure a development cache seed and a subsequent full PR run.
 Use Actions job/step timestamps and renderer receipts to compare the same
