@@ -268,6 +268,16 @@ impl DurableEffectAuthority {
     pub fn payload_digest(&self) -> &str {
         &self.payload_digest
     }
+
+    #[must_use]
+    pub const fn ceiling(&self) -> DispatchCeiling {
+        self.ceiling
+    }
+
+    #[must_use]
+    pub const fn committed_at_millis(&self) -> u64 {
+        self.committed_at_millis
+    }
 }
 
 /// A trusted wall-clock observation carries persisted continuity. An ordinary
