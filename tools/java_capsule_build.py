@@ -7,7 +7,7 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_resources, guest_dependency_inputs
+from tools import guest_compatibility_build, guest_resources, guest_dependency_inputs, guest_authoring_frontend
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.application_dependencies import prepare
@@ -21,7 +21,7 @@ BUILD_TYPE = "https://latent.dev/build/java-capsule/v1"
 RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py",
           "tools/application_dependency_tools.py", "tools/java_application_dependencies.py", "tools/java_dependency_resolution.py",
-          "tools/java_resource_artifacts.py",
+          "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
           "tools/java_guest/compiler.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
@@ -31,6 +31,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
+RECIPE += guest_authoring_frontend.RECIPE
 
 
 def retain_logs(source: Path, output: Path) -> None:
