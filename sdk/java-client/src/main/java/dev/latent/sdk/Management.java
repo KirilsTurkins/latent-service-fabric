@@ -30,6 +30,44 @@ public final class Management {
         public static final CapabilityPolicyRecordKind PROVIDER_BINDING = new CapabilityPolicyRecordKind(2);
     }
 
+    public record DiagnosticStage(int value) {
+        public static final DiagnosticStage UNSPECIFIED = new DiagnosticStage(0);
+        public static final DiagnosticStage ADMISSION = new DiagnosticStage(1);
+        public static final DiagnosticStage QUEUE = new DiagnosticStage(2);
+        public static final DiagnosticStage PREPARATION = new DiagnosticStage(3);
+        public static final DiagnosticStage BINDING = new DiagnosticStage(4);
+        public static final DiagnosticStage EXECUTION = new DiagnosticStage(5);
+        public static final DiagnosticStage PROVIDER = new DiagnosticStage(6);
+        public static final DiagnosticStage CLEANUP = new DiagnosticStage(7);
+        public static final DiagnosticStage OUTPUT_VALIDATION = new DiagnosticStage(8);
+    }
+
+    public record DiagnosticReason(int value) {
+        public static final DiagnosticReason UNSPECIFIED = new DiagnosticReason(0);
+        public static final DiagnosticReason SIGNATURE_ALLOCATION_LIMIT = new DiagnosticReason(1);
+        public static final DiagnosticReason VALUE_ALLOCATION_LIMIT = new DiagnosticReason(2);
+        public static final DiagnosticReason UNSUPPORTED_COMPONENT_SURFACE = new DiagnosticReason(3);
+        public static final DiagnosticReason UNSUPPORTED_ENGINE_PROFILE = new DiagnosticReason(4);
+        public static final DiagnosticReason PROVIDER_ABSENT = new DiagnosticReason(5);
+        public static final DiagnosticReason BINDING_ABSENT = new DiagnosticReason(6);
+        public static final DiagnosticReason ADMISSION_DENIED = new DiagnosticReason(7);
+        public static final DiagnosticReason GRANT_DENIED = new DiagnosticReason(8);
+        public static final DiagnosticReason QUEUE_PRESSURE = new DiagnosticReason(9);
+        public static final DiagnosticReason GUEST_MEMORY_EXHAUSTED = new DiagnosticReason(10);
+        public static final DiagnosticReason GUEST_FUEL_EXHAUSTED = new DiagnosticReason(11);
+        public static final DiagnosticReason GUEST_RESOURCE_EXHAUSTED = new DiagnosticReason(12);
+        public static final DiagnosticReason PROVIDER_TIMEOUT = new DiagnosticReason(13);
+        public static final DiagnosticReason DEADLINE_EXCEEDED = new DiagnosticReason(14);
+        public static final DiagnosticReason CANCELLED = new DiagnosticReason(15);
+        public static final DiagnosticReason HTTP_RESPONSE_REJECTED = new DiagnosticReason(16);
+    }
+
+    public record DiagnosticProfile(int value) {
+        public static final DiagnosticProfile UNSPECIFIED = new DiagnosticProfile(0);
+        public static final DiagnosticProfile WASMTIME_SERVICE_VALUES_V1 = new DiagnosticProfile(1);
+        public static final DiagnosticProfile WASMTIME_BUFFERED_WEB_VALUES_V1 = new DiagnosticProfile(2);
+    }
+
     public record FailureCategory(int value) {
         public static final FailureCategory UNSPECIFIED = new FailureCategory(0);
         public static final FailureCategory LOCAL_CANCELLED = new FailureCategory(1);
@@ -285,6 +323,44 @@ public final class Management {
             String id,
             String tenant) { }
 
+    public record ActivationDiagnostic(
+            int schemaVersion,
+            DiagnosticStage stage,
+            DiagnosticReason reason,
+            Optional<DiagnosticProfile> profile,
+            Optional<String> profileDigest,
+            Optional<Long> configuredBound,
+            Optional<Long> calculatedRequirement,
+            Optional<Long> fixedBytes,
+            Optional<Long> liftingFuel,
+            Optional<Long> liftMultiplier) { }
+
+    public record ActivationTreeNode(
+            String activationId,
+            Optional<String> parentActivationId,
+            String rootActivationId,
+            String phase,
+            Optional<String> terminalState,
+            long lastUpdatedUnixMillis,
+            Optional<ActivationDiagnostic> diagnostic,
+            String principalKind,
+            Optional<String> callerService,
+            Optional<ResourceBudget> grantedBudget,
+            Optional<Long> effectiveDeadlineUnixMillis,
+            boolean diagnosticIsTerminal) { }
+
+    public record InspectActivationTreeRequest(
+            String activationId,
+            Optional<PageRequest> page) { }
+
+    public record InspectActivationTreeResponse(
+            int schemaVersion,
+            List<ActivationTreeNode> nodes,
+            Optional<PageResponse> page,
+            boolean historyAvailable,
+            boolean cursorExpired,
+            boolean retainedHistoryOnly) { }
+
     public record PublicationIdentity(
             PublicationRef publication,
             String componentDigest,
@@ -332,6 +408,9 @@ public final class Management {
 
         CompletableFuture<ClientResponse<ActivationStatus>> getActivation(
                 GetActivationRequest request, CallOptions options);
+
+        CompletableFuture<ClientResponse<InspectActivationTreeResponse>> inspectActivationTree(
+                InspectActivationTreeRequest request, CallOptions options);
 
         CompletableFuture<ClientResponse<GetPolicyResponse>> getPolicy(
                 GetPolicyRequest request, CallOptions options);

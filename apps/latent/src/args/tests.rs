@@ -7,6 +7,36 @@ fn parse(arguments: &[&str]) -> Cli {
 }
 
 #[test]
+fn activation_tree_has_one_bounded_page_without_cancellation_authority() {
+    let cli = parse(&[
+        "latent",
+        "activation",
+        "tree",
+        "child-a",
+        "--page-size",
+        "128",
+        "--page-token",
+        "opaque-scoped",
+    ]);
+    assert!(cli.validate().is_ok());
+    let Command::Activation(ActivationCommand::Tree(args)) = cli.command else {
+        panic!("tree command")
+    };
+    assert_eq!(args.id, "child-a");
+    assert_eq!(args.page_size, 128);
+    assert_eq!(args.page_token.as_deref(), Some("opaque-scoped"));
+    assert!(Cli::try_parse_from([
+        "latent",
+        "activation",
+        "tree",
+        "child-a",
+        "--page-size",
+        "129"
+    ])
+    .is_err());
+}
+
+#[test]
 fn grammar_has_consistent_leaf_help_and_local_validation_needs_no_profile() {
     Cli::command().debug_assert();
     for command in [

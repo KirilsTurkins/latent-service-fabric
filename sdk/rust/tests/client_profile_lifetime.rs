@@ -88,6 +88,19 @@ impl ClientProfile for FixtureClient {
         })
     }
 
+    fn inspect_activation_tree(
+        &self,
+        _request: InspectActivationTreeRequest,
+        _options: CallOptions,
+    ) -> ClientFuture<'_, InspectActivationTreeResponse> {
+        ready(InspectActivationTreeResponse {
+            schema_version: 1,
+            retained_history_only: true,
+            page: Some(PageResponse::default()),
+            ..Default::default()
+        })
+    }
+
     fn list_policies(
         &self,
         _request: ListPoliciesRequest,

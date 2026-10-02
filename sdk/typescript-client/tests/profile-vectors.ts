@@ -13,6 +13,93 @@ function rejects(action: () => unknown): void {
 }
 
 {
+    const value: Profile.ActivationDiagnostic = {schemaVersion: 1, stage: 3, reason: 1};
+    check(value.schemaVersion == 1, "diagnostic-absent-profile-and-bound.schema_version");
+    check(value.stage == 3, "diagnostic-absent-profile-and-bound.stage");
+    check(value.reason == 1, "diagnostic-absent-profile-and-bound.reason");
+    check(!(value.profile !== undefined), "diagnostic-absent-profile-and-bound.profile.presence");
+    check(!(value.profileDigest !== undefined), "diagnostic-absent-profile-and-bound.profile_digest.presence");
+    check(!(value.configuredBound !== undefined), "diagnostic-absent-profile-and-bound.configured_bound.presence");
+    check(!(value.calculatedRequirement !== undefined), "diagnostic-absent-profile-and-bound.calculated_requirement.presence");
+    check(!(value.fixedBytes !== undefined), "diagnostic-absent-profile-and-bound.fixed_bytes.presence");
+    check(!(value.liftingFuel !== undefined), "diagnostic-absent-profile-and-bound.lifting_fuel.presence");
+    check(!(value.liftMultiplier !== undefined), "diagnostic-absent-profile-and-bound.lift_multiplier.presence");
+}
+{
+    const value: Profile.ActivationDiagnostic = {schemaVersion: 1, stage: 2147483647, reason: -1, profile: 999, profileDigest: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", configuredBound: 0n, calculatedRequirement: 18446744073709551615n, fixedBytes: 9223372036854775808n, liftingFuel: 0n, liftMultiplier: 18446744073709551615n};
+    check(value.schemaVersion == 1, "diagnostic-unknown-enums-and-present-zero.schema_version");
+    check(value.stage == 2147483647, "diagnostic-unknown-enums-and-present-zero.stage");
+    check(value.reason == -1, "diagnostic-unknown-enums-and-present-zero.reason");
+    check(value.profile !== undefined, "diagnostic-unknown-enums-and-present-zero.profile.presence");
+    check(value.profile! == 999, "diagnostic-unknown-enums-and-present-zero.profile");
+    check(value.profileDigest !== undefined, "diagnostic-unknown-enums-and-present-zero.profile_digest.presence");
+    check(value.profileDigest! == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "diagnostic-unknown-enums-and-present-zero.profile_digest");
+    check(value.configuredBound !== undefined, "diagnostic-unknown-enums-and-present-zero.configured_bound.presence");
+    check(value.configuredBound! == 0n, "diagnostic-unknown-enums-and-present-zero.configured_bound");
+    check(value.calculatedRequirement !== undefined, "diagnostic-unknown-enums-and-present-zero.calculated_requirement.presence");
+    check(value.calculatedRequirement! == 18446744073709551615n, "diagnostic-unknown-enums-and-present-zero.calculated_requirement");
+    check(value.fixedBytes !== undefined, "diagnostic-unknown-enums-and-present-zero.fixed_bytes.presence");
+    check(value.fixedBytes! == 9223372036854775808n, "diagnostic-unknown-enums-and-present-zero.fixed_bytes");
+    check(value.liftingFuel !== undefined, "diagnostic-unknown-enums-and-present-zero.lifting_fuel.presence");
+    check(value.liftingFuel! == 0n, "diagnostic-unknown-enums-and-present-zero.lifting_fuel");
+    check(value.liftMultiplier !== undefined, "diagnostic-unknown-enums-and-present-zero.lift_multiplier.presence");
+    check(value.liftMultiplier! == 18446744073709551615n, "diagnostic-unknown-enums-and-present-zero.lift_multiplier");
+}
+{
+    const value: Profile.InspectActivationTreeRequest = {activationId: "activation-a"};
+    check(value.activationId == "activation-a", "activation-tree-default-page.activation_id");
+    check(!(value.page !== undefined), "activation-tree-default-page.page.presence");
+}
+{
+    const value: Profile.InspectActivationTreeResponse = {schemaVersion: 1, nodes: [], page: {}, historyAvailable: false, cursorExpired: true, retainedHistoryOnly: true};
+    check(value.schemaVersion == 1, "activation-tree-expired-is-not-absence-proof.schema_version");
+    check(value.nodes.length == 0, "activation-tree-expired-is-not-absence-proof.nodes.count");
+    check(value.page !== undefined, "activation-tree-expired-is-not-absence-proof.page.presence");
+    check(!(value.page!.nextPageToken !== undefined), "activation-tree-expired-is-not-absence-proof.page.next_page_token.presence");
+    check(value.historyAvailable == false, "activation-tree-expired-is-not-absence-proof.history_available");
+    check(value.cursorExpired == true, "activation-tree-expired-is-not-absence-proof.cursor_expired");
+    check(value.retainedHistoryOnly == true, "activation-tree-expired-is-not-absence-proof.retained_history_only");
+}
+{
+    const value: Profile.InspectActivationTreeResponse = {schemaVersion: 1, nodes: [{activationId: "child-a", parentActivationId: "root-a", rootActivationId: "root-a", phase: "received", terminalState: "resource_exhausted", lastUpdatedUnixMillis: 18446744073709551615n, diagnostic: {schemaVersion: 1, stage: 3, reason: 1, profile: 1, configuredBound: 16777216n, calculatedRequirement: 67108864n}, principalKind: "service", callerService: "adapter", diagnosticIsTerminal: true}], page: {nextPageToken: "opaque-scoped-cursor"}, historyAvailable: true, cursorExpired: false, retainedHistoryOnly: true};
+    check(value.schemaVersion == 1, "activation-tree-failed-preparation-before-guest.schema_version");
+    check(value.nodes.length == 1, "activation-tree-failed-preparation-before-guest.nodes.count");
+    check(value.nodes[0]!.activationId == "child-a", "activation-tree-failed-preparation-before-guest.nodes.0.activation_id");
+    check(value.nodes[0]!.parentActivationId !== undefined, "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id.presence");
+    check(value.nodes[0]!.parentActivationId! == "root-a", "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id");
+    check(value.nodes[0]!.rootActivationId == "root-a", "activation-tree-failed-preparation-before-guest.nodes.0.root_activation_id");
+    check(value.nodes[0]!.phase == "received", "activation-tree-failed-preparation-before-guest.nodes.0.phase");
+    check(value.nodes[0]!.terminalState !== undefined, "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state.presence");
+    check(value.nodes[0]!.terminalState! == "resource_exhausted", "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state");
+    check(value.nodes[0]!.lastUpdatedUnixMillis == 18446744073709551615n, "activation-tree-failed-preparation-before-guest.nodes.0.last_updated_unix_millis");
+    check(value.nodes[0]!.diagnostic !== undefined, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.presence");
+    check(value.nodes[0]!.diagnostic!.schemaVersion == 1, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.schema_version");
+    check(value.nodes[0]!.diagnostic!.stage == 3, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.stage");
+    check(value.nodes[0]!.diagnostic!.reason == 1, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.reason");
+    check(value.nodes[0]!.diagnostic!.profile !== undefined, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile.presence");
+    check(value.nodes[0]!.diagnostic!.profile! == 1, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile");
+    check(!(value.nodes[0]!.diagnostic!.profileDigest !== undefined), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile_digest.presence");
+    check(value.nodes[0]!.diagnostic!.configuredBound !== undefined, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound.presence");
+    check(value.nodes[0]!.diagnostic!.configuredBound! == 16777216n, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound");
+    check(value.nodes[0]!.diagnostic!.calculatedRequirement !== undefined, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement.presence");
+    check(value.nodes[0]!.diagnostic!.calculatedRequirement! == 67108864n, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement");
+    check(!(value.nodes[0]!.diagnostic!.fixedBytes !== undefined), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.fixed_bytes.presence");
+    check(!(value.nodes[0]!.diagnostic!.liftingFuel !== undefined), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lifting_fuel.presence");
+    check(!(value.nodes[0]!.diagnostic!.liftMultiplier !== undefined), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lift_multiplier.presence");
+    check(value.nodes[0]!.principalKind == "service", "activation-tree-failed-preparation-before-guest.nodes.0.principal_kind");
+    check(value.nodes[0]!.callerService !== undefined, "activation-tree-failed-preparation-before-guest.nodes.0.caller_service.presence");
+    check(value.nodes[0]!.callerService! == "adapter", "activation-tree-failed-preparation-before-guest.nodes.0.caller_service");
+    check(!(value.nodes[0]!.grantedBudget !== undefined), "activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence");
+    check(!(value.nodes[0]!.effectiveDeadlineUnixMillis !== undefined), "activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence");
+    check(value.nodes[0]!.diagnosticIsTerminal == true, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
+    check(value.page !== undefined, "activation-tree-failed-preparation-before-guest.page.presence");
+    check(value.page!.nextPageToken !== undefined, "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
+    check(value.page!.nextPageToken! == "opaque-scoped-cursor", "activation-tree-failed-preparation-before-guest.page.next_page_token");
+    check(value.historyAvailable == true, "activation-tree-failed-preparation-before-guest.history_available");
+    check(value.cursorExpired == false, "activation-tree-failed-preparation-before-guest.cursor_expired");
+    check(value.retainedHistoryOnly == true, "activation-tree-failed-preparation-before-guest.retained_history_only");
+}
+{
     const value: Profile.InvokeRequest = {target: {tenant: "tenant-a", service: "echo", contract: "example:echo/api@1.0.0", function: "echo"}, payload: new Uint8Array([0, 1, 2, 255]), mediaType: "application/octet-stream", priority: 0, budget: {cpuFuel: 18446744073709551615n, memoryBytes: 9223372036854775808n, childCalls: 0, outboundRequests: 0, stateReadBytes: 0n, stateWriteBytes: 0n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n, effectCount: 0}, metadata: {"trace": "redacted"}};
     check(!(value.activationId !== undefined), "invoke-absent-identity-and-deadlines.activation_id.presence");
     check(!(value.parentActivationId !== undefined), "invoke-absent-identity-and-deadlines.parent_activation_id.presence");
@@ -927,4 +1014,4 @@ rejects(() => Profile.formatU64Decimal(9007199254740992 as unknown as bigint));
 rejects(() => Profile.parseU64Decimal(1 as unknown as string));
 rejects(() => Profile.formatU64Decimal(-1n));
 rejects(() => Profile.formatU64Decimal(18446744073709551616n));
-console.log("shared profile vectors: 67");
+console.log("shared profile vectors: 72");

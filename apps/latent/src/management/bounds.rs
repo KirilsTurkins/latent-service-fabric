@@ -349,3 +349,41 @@ impl Check for proto::ListNodesResponse {
         b.page(self.page.as_ref())
     }
 }
+
+impl Check for proto::InspectActivationTreeResponse {
+    fn check(&self, b: &mut Bounds) -> Result<(), Failure> {
+        if self.schema_version != 1 || self.nodes.len() > 128 || !self.retained_history_only {
+            return Err(invalid_response());
+        }
+        b.count(self.nodes.len())?;
+        for node in &self.nodes {
+            b.id(&node.activation_id)?;
+            b.id(&node.root_activation_id)?;
+            if let Some(parent) = &node.parent_activation_id {
+                b.id(parent)?;
+            }
+            b.text(&node.phase)?;
+            b.text(&node.principal_kind)?;
+            if let Some(service) = &node.caller_service {
+                b.id(service)?;
+            }
+            b.optional(node.terminal_state.as_deref())?;
+            if let Some(value) = &node.diagnostic {
+                if value.schema_version != 1 {
+                    return Err(invalid_response());
+                }
+                if let Some(digest) = &value.profile_digest {
+                    if digest.len() != 64
+                        || !digest
+                            .bytes()
+                            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+                    {
+                        return Err(invalid_response());
+                    }
+                    b.text(digest)?;
+                }
+            }
+        }
+        b.page(self.page.as_ref())
+    }
+}

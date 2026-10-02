@@ -115,11 +115,12 @@
         "with": {
           "cache-all-crates": false,
           "cache-bin": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
           "cache-on-failure": false,
-          "cache-targets": true,
+          "cache-targets": false,
           "cache-workspace-crates": false,
           "key": "ubuntu-24.04",
-          "prefix-key": "${{ (matrix.lane == 'bindings' || matrix.lane == 'optimization') && 'lsf-ci-dependencies-v2' || 'lsf-ci-dependencies-v3' }}",
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
           "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements' || matrix.lane == 'optimization') }}",
           "shared-key": "${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}"
         }
@@ -291,7 +292,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Preserve every required lane and artifact; validate and remove the two generated echo owners after successful tests/evidence before dependency-cache pruning, retiring immutable caches containing incomplete empty fixture trees.",
+  "reviewReason": "Retain all optimizer lanes, complete native cache seeding, validated fixture cleanup and original evidence order; restrict caching to compiled Cargo profiles in the reviewed dedicated namespace.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

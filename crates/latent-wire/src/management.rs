@@ -1,5 +1,6 @@
 //! Bounded standalone management adapters over the local catalogs and inventory.
 
+mod activations;
 mod audit;
 mod authentication;
 mod bounds;
@@ -72,6 +73,7 @@ pub struct ManagementServiceAdapter {
     http: Option<Arc<latent_control_store::DirectoryDeploymentRepository>>,
     web: Option<Arc<latent_artifacts::DirectoryArtifactRepository>>,
     web_backend: Option<Arc<dyn latent_executor::ExecutionBackend>>,
+    activations: Option<latent_node::LocalActivationJournal>,
 }
 
 impl ManagementServiceAdapter {
@@ -101,7 +103,15 @@ impl ManagementServiceAdapter {
             http: None,
             web: None,
             web_backend: None,
+            activations: None,
         })
+    }
+
+    /// Attach the manager's existing bounded journal. This opens no observer,
+    /// worker, durable payload log, or per-deployment resource.
+    pub fn with_activation_journal(mut self, journal: latent_node::LocalActivationJournal) -> Self {
+        self.activations = Some(journal);
+        self
     }
 
     /// Attach the single policy owner checked by node/catalog composition.

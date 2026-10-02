@@ -8,6 +8,115 @@ use std::collections::BTreeMap;
 #[test]
 fn shared_vectors_roundtrip_through_actual_protobuf() {
     {
+        let value = ActivationDiagnostic {
+            schema_version: 1_u32,
+            stage: DiagnosticStage(3),
+            reason: DiagnosticReason(1),
+            ..Default::default()
+        };
+        let encoded = control::ActivationDiagnostic::from(value.clone()).encode_to_vec();
+        let decoded = control::ActivationDiagnostic::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            ActivationDiagnostic::from(decoded),
+            value,
+            "diagnostic-absent-profile-and-bound"
+        );
+    }
+    {
+        let value = ActivationDiagnostic {
+            schema_version: 1_u32,
+            stage: DiagnosticStage(2_147_483_647),
+            reason: DiagnosticReason(-1),
+            profile: Some(DiagnosticProfile(999)),
+            profile_digest: Some(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            ),
+            configured_bound: Some(0_u64),
+            calculated_requirement: Some(18_446_744_073_709_551_615_u64),
+            fixed_bytes: Some(9_223_372_036_854_775_808_u64),
+            lifting_fuel: Some(0_u64),
+            lift_multiplier: Some(18_446_744_073_709_551_615_u64),
+        };
+        let encoded = control::ActivationDiagnostic::from(value.clone()).encode_to_vec();
+        let decoded = control::ActivationDiagnostic::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            ActivationDiagnostic::from(decoded),
+            value,
+            "diagnostic-unknown-enums-and-present-zero"
+        );
+    }
+    {
+        let value = InspectActivationTreeRequest {
+            activation_id: "activation-a".into(),
+            ..Default::default()
+        };
+        let encoded = control::InspectActivationTreeRequest::from(value.clone()).encode_to_vec();
+        let decoded = control::InspectActivationTreeRequest::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            InspectActivationTreeRequest::from(decoded),
+            value,
+            "activation-tree-default-page"
+        );
+    }
+    {
+        let value = InspectActivationTreeResponse {
+            schema_version: 1_u32,
+            nodes: vec![],
+            page: Some(PageResponse {
+                ..Default::default()
+            }),
+            history_available: false,
+            cursor_expired: true,
+            retained_history_only: true,
+        };
+        let encoded = control::InspectActivationTreeResponse::from(value.clone()).encode_to_vec();
+        let decoded = control::InspectActivationTreeResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            InspectActivationTreeResponse::from(decoded),
+            value,
+            "activation-tree-expired-is-not-absence-proof"
+        );
+    }
+    {
+        let value = InspectActivationTreeResponse {
+            schema_version: 1_u32,
+            nodes: vec![ActivationTreeNode {
+                activation_id: "child-a".into(),
+                parent_activation_id: Some("root-a".into()),
+                root_activation_id: "root-a".into(),
+                phase: "received".into(),
+                terminal_state: Some("resource_exhausted".into()),
+                last_updated_unix_millis: 18_446_744_073_709_551_615_u64,
+                diagnostic: Some(ActivationDiagnostic {
+                    schema_version: 1_u32,
+                    stage: DiagnosticStage(3),
+                    reason: DiagnosticReason(1),
+                    profile: Some(DiagnosticProfile(1)),
+                    configured_bound: Some(16_777_216_u64),
+                    calculated_requirement: Some(67_108_864_u64),
+                    ..Default::default()
+                }),
+                principal_kind: "service".into(),
+                caller_service: Some("adapter".into()),
+                diagnostic_is_terminal: true,
+                ..Default::default()
+            }],
+            page: Some(PageResponse {
+                next_page_token: Some("opaque-scoped-cursor".into()),
+            }),
+            history_available: true,
+            cursor_expired: false,
+            retained_history_only: true,
+        };
+        let encoded = control::InspectActivationTreeResponse::from(value.clone()).encode_to_vec();
+        let decoded = control::InspectActivationTreeResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            InspectActivationTreeResponse::from(decoded),
+            value,
+            "activation-tree-failed-preparation-before-guest"
+        );
+    }
+    {
         let value = InvokeRequest {
             target: Some(InvocationTarget {
                 tenant: "tenant-a".into(),
@@ -914,5 +1023,5 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
             "publication-reference-tenant-scope"
         );
     }
-    println!("shared protobuf model vectors: 51");
+    println!("shared protobuf model vectors: 56");
 }

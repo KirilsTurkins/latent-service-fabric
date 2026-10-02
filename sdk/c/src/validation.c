@@ -39,6 +39,12 @@ bool lsf_request_valid(latent_profile_call *call, const void *request) {
         }
         case LSF_CANCEL: return bounded(((const latent_profile_cancel_request *)request)->reason, 1024);
         case LSF_GET_ACTIVATION: return true;
+        case LSF_INSPECT_ACTIVATION_TREE: {
+            const latent_profile_inspect_activation_tree_request *value = request;
+            call->page_size = !value->has_page || value->page.page_size == 0 ? 32 : value->page.page_size;
+            return value->activation_id.length != 0 && bounded(value->activation_id, 512)
+                && (!value->has_page || page_request(&value->page, 128, 160));
+        }
         case LSF_GET_POLICY: {
             const latent_profile_get_policy_request *value = request;
             if (!identifier(value->id) || !record_kind(value->record_kind)) return false;
@@ -212,6 +218,22 @@ bool lsf_response_valid(latent_profile_call *call) {
             return !value->has_policy || (value->policy.record_kind == call->record_kind
                 && lsf_text_equal(value->policy.id, (latent_string){call->policy_id, call->policy_id_length}));
         }
+        case LSF_INSPECT_ACTIVATION_TREE: {
+            const latent_profile_inspect_activation_tree_response *value = &call->result.inspect_activation_tree.value;
+            if (value->schema_version != 1 || !value->retained_history_only || value->nodes_count > call->page_size
+                || !value->has_page || !page_response(&value->page, 160)
+                || (!value->history_available && (value->nodes_count != 0 || value->page.has_next_page_token))) return false;
+            for (size_t index = 0; index < value->nodes_count; ++index) {
+                const latent_profile_activation_tree_node *node = &value->nodes[index];
+                if (node->activation_id.length == 0 || node->root_activation_id.length == 0 || !bounded(node->activation_id, 512)
+                    || !bounded(node->root_activation_id, 512) || (node->has_parent_activation_id && !bounded(node->parent_activation_id, 512))
+                    || (node->has_caller_service && !bounded(node->caller_service, 512)) || !bounded(node->phase, 64)
+                    || !bounded(node->principal_kind, 64) || (node->has_terminal_state && !bounded(node->terminal_state, 64))) return false;
+                if (node->has_diagnostic && (node->diagnostic.schema_version != 1
+                    || (node->diagnostic.has_profile_digest && !digest(node->diagnostic.profile_digest, "")))) return false;
+            }
+            return true;
+        }
         case LSF_LIST_POLICIES: {
             const latent_profile_list_policies_response *value = &call->result.list_policies.value;
             if (value->policies_count > call->page_size || !value->has_page || !page_response(&value->page, 117)) return false;
@@ -286,6 +308,7 @@ static void metadata_result(latent_profile_call *call) {
         case LSF_INVOKE: call->result.invoke.metadata = call->metadata; break;
         case LSF_CANCEL: call->result.cancel.metadata = call->metadata; break;
         case LSF_GET_ACTIVATION: call->result.get_activation.metadata = call->metadata; break;
+        case LSF_INSPECT_ACTIVATION_TREE: call->result.inspect_activation_tree.metadata = call->metadata; break;
         case LSF_GET_POLICY: call->result.get_policy.metadata = call->metadata; break;
         case LSF_LIST_POLICIES: call->result.list_policies.metadata = call->metadata; break;
         case LSF_LIST_CAPABILITIES: call->result.list_capabilities.metadata = call->metadata; break;
