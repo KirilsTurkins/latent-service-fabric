@@ -20,6 +20,7 @@ RECIPE = ('tools/guest_dependency_inputs.py', 'tools/application_dependencies.py
           'tools/rust_capsule_project.py', 'tools/dev_workflow/__init__.py',
           'tools/dev_workflow/common.py', 'tools/dev_workflow/project.py',
           'tools/dev_workflow/dependencies.py', 'tools/dev_workflow/snapshot.py',
+          'tools/dev_workflow/resource_inputs.py', 'tools/guest_resources.py',
           'tools/dev_workflow/paths.py', 'tools/dev_workflow/state.py',
           'tools/dev_workflow/windows.py')
 
