@@ -81,7 +81,8 @@ class _Job:
             count = 0
             while more:
                 count += 1
-                _require(count <= 262144 and time.monotonic() < deadline, "thread-snapshot-limit")
+                _require(time.monotonic() < deadline, "command-deadline")
+                _require(count <= 262144, "thread-snapshot-limit")
                 if row.owner == process.pid:
                     _require(found is None, "suspended-initial-thread")
                     found = row.id
@@ -94,6 +95,7 @@ class _Job:
             _require(thread, "initial-thread-open")
             try:
                 _require(self.api.GetProcessIdOfThread(thread) == process.pid, "initial-thread-owner")
+                _require(time.monotonic() < deadline, "command-deadline")
                 _require(self.api.ResumeThread(thread) == 1, "initial-thread-resume")
             finally:
                 self.api.CloseHandle(thread)
