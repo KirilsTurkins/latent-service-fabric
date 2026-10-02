@@ -152,13 +152,7 @@ impl RecoveryCodecs for Codecs {
             .ok_or(StoreError::Unavailable)?;
         let now = latent_effects::runtime::EffectTimeSource::observe(self.authority.clock.as_ref());
         let checkpoint = self.authority.clock.minimum_checkpoint();
-        if !now.continuity_proven
-            || now.unix_millis < owner.1
-            || checkpoint.0 < owner.0
-            || checkpoint.1 < owner.1
-        {
-            return Err(StoreError::Unavailable);
-        }
+        validate_clock_floor(owner, checkpoint, now)?;
         self.catalog.closure(view, self.authority.deadline)
     }
     fn verify_artifact(&self, artifact: &RequiredArtifact) -> Result<(), StoreError> {
@@ -309,5 +303,68 @@ impl RecoveryCodecs for Codecs {
     ) -> Result<(), StoreError> {
         self.require_migration(request)?;
         self.catalog.current()
+    }
+}
+
+fn validate_clock_floor(
+    owner: (u64, u64),
+    minimum: (u64, u64),
+    now: latent_effects::authority::EffectTime,
+) -> Result<(), StoreError> {
+    // Exactly the existing DispatchCatalog minimum rule, without starting an
+    // epoch. A later retained owner does not promote the protected checkpoint.
+    if !now.continuity_proven
+        || now.unix_millis < owner.1
+        || owner.0 < minimum.0
+        || owner.1 < minimum.1
+    {
+        return Err(StoreError::Unavailable);
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use latent_effects::authority::EffectTime;
+
+    #[test]
+    fn native_offline_clock_uses_original_minimum_and_retained_floor_without_advancing_checkpoint()
+    {
+        let now = EffectTime {
+            unix_millis: 3000,
+            continuity_proven: true,
+        };
+        assert!(validate_clock_floor((2, 2000), (1, 1000), now).is_ok());
+        for minimum in [(3, 1000), (1, 2500)] {
+            assert_eq!(
+                validate_clock_floor((2, 2000), minimum, now),
+                Err(StoreError::Unavailable)
+            );
+        }
+        for invalid in [
+            EffectTime {
+                unix_millis: 1999,
+                continuity_proven: true,
+            },
+            EffectTime {
+                unix_millis: 3000,
+                continuity_proven: false,
+            },
+        ] {
+            assert_eq!(
+                validate_clock_floor((2, 2000), (1, 1000), invalid),
+                Err(StoreError::Unavailable)
+            );
+        }
+        assert!(validate_clock_floor(
+            (u64::MAX, u64::MAX),
+            (u64::MAX, u64::MAX),
+            EffectTime {
+                unix_millis: u64::MAX,
+                continuity_proven: true
+            },
+        )
+        .is_ok());
     }
 }
