@@ -1,5 +1,11 @@
 use latent_state::embedded::{ReadView, RowKey, StoreError};
 use latent_state::namespace::{catalog::NamespaceCatalog, NamespaceError};
+mod startup;
+#[cfg(test)]
+pub(super) use startup::tests::quota as test_quota;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(super) use startup::tests::selected as test_validation;
+pub(super) use startup::{startup, StartupValidation, STARTUP_VALIDATION_BYTES};
 
 /// Every family and linked command/result/effect is checked in the SAME view.
 pub(crate) fn validate_view(view: &ReadView) -> Result<(), StoreError> {
@@ -8,6 +14,10 @@ pub(crate) fn validate_view(view: &ReadView) -> Result<(), StoreError> {
 }
 
 pub(super) fn foreign(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+    let row = latent_state::tenant::validate_row(view, key, bytes);
+    if row != Err(StoreError::UnsupportedFormat) {
+        return row;
+    }
     let row = latent_state::session::validate_row(view, key, bytes);
     if row != Err(StoreError::UnsupportedFormat) {
         return row;

@@ -45,7 +45,8 @@ struct Retirement {
 
 impl StandaloneNode {
     /// Private native operator diagnosis of an existing protected owner. Uses
-    /// exactly the ordinary linked registry; it never creates/reset rows,
+    /// exactly the ordinary settings-bound linked registry and tenant census;
+    /// it never creates/reset rows,
     /// initializes an epoch, starts dispatch, invokes a guest or grants recovery.
     /// Configuration and token must come from protected native operator files.
     pub async fn diagnose_transaction_store(
@@ -78,20 +79,24 @@ impl StandaloneNode {
         };
         let validation = Arc::new(Mutex::new((false, None)));
         let notice = Arc::clone(&validation);
+        let deadline = Instant::now() + settings.shutdown_grace();
+        let validator = super::super::validation::startup(
+            settings.state.as_ref().ok_or_else(super::super::denied)?,
+            deadline,
+        )?;
         let mut config = ProtectedStoreConfig::bounded_linux(settings.data_directory.join("state"));
         config.create_if_missing = false;
         let startup = ProtectedStoreOwner::start_validated_view_with_clock(
             config,
-            4 * 1024 * 1024,
+            super::super::validation::STARTUP_VALIDATION_BYTES,
             move |view| {
                 *notice.lock().map_err(|_| StoreError::Unavailable)? = (true, None);
-                let result = super::super::validate_view(view);
+                let result = validator.validate(view);
                 *notice.lock().map_err(|_| StoreError::Unavailable)? = (true, Some(result));
                 result
             },
             clock,
         );
-        let deadline = Instant::now() + settings.shutdown_grace();
         match startup {
             Err(error) => observed.failure = Some(error.into()),
             Ok(mut startup) => match (&mut startup).await {

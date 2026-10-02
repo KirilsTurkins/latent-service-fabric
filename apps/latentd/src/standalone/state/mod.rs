@@ -12,6 +12,7 @@ mod result;
 mod role;
 mod runtime;
 mod selection;
+mod tenant_setup;
 mod validation;
 pub use inspection::{
     NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,

@@ -96,9 +96,9 @@ pub(super) mod tests {
 
     pub(in crate::config::state) fn quota(tenant: &str) -> serde_json::Value {
         serde_json::json!({"tenant":tenant,"limits":{
-            "stateKeys":256,"stateBytes":4194304,"tombstoneKeys":256,"tombstoneBytes":4194304,
-            "resultRows":128,"resultBytes":16777216,"effectRows":128,"effectBytes":8388608,
-            "payloadBytes":4194304,"recoveryBytes":16777216,"metadataRows":1024,"metadataBytes":1048576}})
+            "stateKeys":256,"stateBytes":4_194_304,"tombstoneKeys":256,"tombstoneBytes":4_194_304,
+            "resultRows":128,"resultBytes":16_777_216,"effectRows":128,"effectBytes":8_388_608,
+            "payloadBytes":4_194_304,"recoveryBytes":16_777_216,"metadataRows":1024,"metadataBytes":1_048_576}})
     }
     #[test]
     fn installed_targets_require_explicit_tenant_limits_while_empty_bootstrap_is_separate() {
@@ -106,7 +106,7 @@ pub(super) mod tests {
         let config: super::super::StateConfig = serde_json::from_value(input.clone()).unwrap();
         let selected = super::super::derive(&config).unwrap();
         assert_eq!(selected.tenant_quotas[0].tenant, TenantId("a".into()));
-        assert_eq!(selected.tenant_quotas[0].limits.state_bytes, 4194304);
+        assert_eq!(selected.tenant_quotas[0].limits.state_bytes, 4_194_304);
         input.as_object_mut().unwrap().remove("tenantQuotas");
         let config = serde_json::from_value(input.clone()).unwrap();
         assert!(super::super::derive(&config).is_err());
@@ -134,9 +134,9 @@ pub(super) mod tests {
         assert!(super::super::derive(&serde_json::from_value(input).unwrap()).is_err());
         for (name, value) in [
             ("stateKeys", 65537_u64),
-            ("stateBytes", 1073741825),
+            ("stateBytes", 1_073_741_825),
             ("metadataBytes", tenant::RECORD_BYTES as u64),
-            ("recoveryBytes", 16777217),
+            ("recoveryBytes", 16_777_217),
         ] {
             let mut input = super::super::tests::input();
             input["tenantQuotas"][0]["limits"][name] = value.into();
