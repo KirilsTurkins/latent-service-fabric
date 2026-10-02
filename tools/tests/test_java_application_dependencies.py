@@ -149,6 +149,47 @@ class JavaResourceArtifacts(unittest.TestCase):
         rows, sources = packaged_resources(closure, receipt, files)
         return root, closure, {**files, **sources}, jars, receipt, rows
 
+    def test_nested_and_anonymous_class_names_survive_capture_and_offline_selection(self):
+        entries = {"outside/Container.class": class_bytes(), "outside/Container$Nested.class": class_bytes(),
+                   "outside/Container$1.class": class_bytes(), "outside/badge.txt": b"unchanged resource"}
+        root, closure, files, jars, receipt, rows = self.selected([("developer:unlisted-nested:1.0", entries, [])])
+        self.assertFalse(list(root.glob("*-outside-original.jar")))
+        self.assertEqual(selected_entries(jars[0].read_bytes(), 25), entries)
+        self.assertEqual({item['path'] for item in receipt['artifacts'][0]['entries']}, set(entries))
+        self.assertEqual(receipt['artifacts'][0]['originalDigest'], digest(deterministic_jar(entries)))
+        self.assertEqual(receipt['artifacts'][0]['selectedDigest'], digest(jars[0].read_bytes()))
+        self.assertEqual(files[rows[0]['source']], b"unchanged resource")
+        self.assertEqual(len(rows), 1)
+        closure.check_unchanged()
+
+    def test_dollar_class_paths_retain_traversal_collision_and_link_denial(self):
+        import io
+        import stat
+        import zipfile
+        from tools.application_dependency_store import archive_files
+        for name in ('../Container$Nested.class', '/Container$Nested.class', 'C:/Container$Nested.class',
+                     'outside/../Container$Nested.class',
+                     'outside/Container$Nested.class.', 'outside/NUL$Nested/../../bad.class'):
+            with self.subTest(name=name), self.assertRaisesRegex(DependencyError, 'path-invalid'):
+                selected_entries(deterministic_jar({name: class_bytes()}), 25)
+        # ZipInfo construction normalizes host separators on Windows; replace
+        # both wire spellings to exercise the actual original ZIP name.
+        wire = deterministic_jar({'outside/Container$Nested.class': class_bytes()})
+        wire = wire.replace(b'outside/Container$Nested.class', b'outside\\Container$Nested.class')
+        with self.assertRaisesRegex(DependencyError, 'path-invalid'):
+            selected_entries(wire, 25)
+        with self.assertRaisesRegex(DependencyError, 'path-collision'):
+            selected_entries(deterministic_jar({'outside/Container$Nested.class': class_bytes(),
+                                               'outside/container$nested.class': class_bytes()}), 25)
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, 'w') as zipped:
+            link = zipfile.ZipInfo('outside/Container$Nested.class')
+            link.create_system = 3
+            link.external_attr = (stat.S_IFLNK | 0o777) << 16
+            zipped.writestr(link, b'../../outside.class')
+        with self.assertRaisesRegex(DependencyError, 'archive-entry-denied'):
+            archive_files(archive.getvalue(), 'zip')
+
     def test_unknown_transitive_resource_children_survive_original_input_removal(self):
         from tools import guest_resources
         root, closure, files, jars, receipt, rows = self.selected([

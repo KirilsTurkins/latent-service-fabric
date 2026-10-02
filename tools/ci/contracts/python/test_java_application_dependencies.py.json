@@ -10,8 +10,10 @@
     "JavaDependencies.test_shaded_names_preserved_and_platform_override_denied",
     "JavaDependencies.test_teavm_host_extension_services_cannot_execute_as_guest_inputs",
     "JavaResourceArtifacts.test_changing_unknown_coordinates_changes_child_attribution_without_catalogue_gate",
+    "JavaResourceArtifacts.test_dollar_class_paths_retain_traversal_collision_and_link_denial",
     "JavaResourceArtifacts.test_legacy_whole_jar_resource_lock_requires_explicit_recapture",
     "JavaResourceArtifacts.test_multi_release_resource_binds_original_zip_entry_and_selected_version",
+    "JavaResourceArtifacts.test_nested_and_anonymous_class_names_survive_capture_and_offline_selection",
     "JavaResourceArtifacts.test_package_owner_cannot_be_forged_from_whole_jar_identity",
     "JavaResourceArtifacts.test_resource_child_requires_selected_edge_role_and_exact_origin",
     "JavaResourceArtifacts.test_resource_name_duplicates_and_finite_resource_graph_limits_fail",
@@ -142,6 +144,18 @@
       ],
       "skipSites": []
     },
+    "JavaResourceArtifacts.test_dollar_class_paths_retain_traversal_collision_and_link_denial": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
     "JavaResourceArtifacts.test_legacy_whole_jar_resource_lock_requires_explicit_recapture": {
       "bases": [
         "unittest.TestCase"
@@ -155,6 +169,18 @@
       "skipSites": []
     },
     "JavaResourceArtifacts.test_multi_release_resource_binds_original_zip_entry_and_selected_version": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:42378f2f540e65dcc8edd075a6a72da2109fade72fc4b74867d2f6e250e570ff"
+      ],
+      "skipSites": []
+    },
+    "JavaResourceArtifacts.test_nested_and_anonymous_class_names_survive_capture_and_offline_selection": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -265,6 +291,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_application_dependencies.py",
-  "reviewReason": "Capture and verify selected JAR resource children, original multirelease origins, bounds and actual package layers",
+  "reviewReason": "Preserve literal nested and anonymous JVM class names through verified offline capture while retaining traversal collision and link rejection",
   "schemaVersion": "latent.ci.contracts.v1"
 }
