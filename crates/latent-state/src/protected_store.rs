@@ -9,6 +9,7 @@ mod operation;
 mod physical;
 mod resource;
 mod startup;
+mod startup_memory;
 mod view;
 
 pub use checkpoint::{
@@ -20,6 +21,7 @@ pub use dispatcher::ProtectedStoreDispatcher;
 pub use operation::ProtectedStoreOperation;
 pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
+pub use startup_memory::ProtectedStoreStartupMemory;
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
 
 use std::future::Future;
