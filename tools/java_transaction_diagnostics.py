@@ -16,10 +16,15 @@ from tools.transaction_guest_project import HTTP_REQUIREMENTS
 from tools.transaction_guest_variants import replace_once
 
 HELPER = "src/dev/latent/app/TransactionDiagnostics.java"
-SELECTORS = {"trapAfterStage": "4294967293", "loopAfterStage": "4294967294"}
+SELECTORS = {"trapAfterStage": "4294967293", "loopAfterStage": "4294967294",
+             "memoryAfterStage": "4294967292"}
 
 
 def source_variant(original: str) -> str:
+    put = "            command.put(KEY, payload).value();\n"
+    stage = '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();\n'
+    if original.count(put) != 1 or original.count(stage) != 1 or original.index(put) > original.index(stage):
+        raise ValueError("controlled diagnostic staging source drift")
     selected = replace_once(original,
         "    update(Bindings.ExamplesTransactionalAggregateApiUpdateRequest request) {\n",
         "    update(Bindings.ExamplesTransactionalAggregateApiUpdateRequest request) {\n"
@@ -34,9 +39,7 @@ def source_variant(original: str) -> str:
     selected = replace_once(selected, "            long next = old + request.delta();",
         "            long next = old + TransactionDiagnostics.businessDelta(request.delta());")
     return replace_once(selected,
-        '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();\n',
-        '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();\n'
-        "            TransactionDiagnostics.afterStage(request.delta());\n")
+        stage, stage + "            TransactionDiagnostics.afterStage(request.delta());\n")
 
 
 def create(directory: Path, name: str = "transaction-java-aggregate") -> Path:
@@ -63,7 +66,8 @@ def create(directory: Path, name: str = "transaction-java-aggregate") -> Path:
         "companionDigest": digest(read_file(project / "transaction-binding.json")),
         "requirementsDigest": digest(read_file(project / HTTP_REQUIREMENTS)),
         "componentCompiled": False, "stateExecutionQualified": False,
-        "cancellationQualified": False, "fuelExhaustionQualified": False, "freshInstanceQualified": False}
+        "cancellationQualified": False, "fuelExhaustionQualified": False, "freshInstanceQualified": False,
+        "memoryExhaustionQualified": False, "crashBeforeCommitQualified": False}
     (project / "transaction-diagnostic-inputs.json").write_bytes(json.dumps(record, indent=2).encode() + b"\n")
     return project
 
