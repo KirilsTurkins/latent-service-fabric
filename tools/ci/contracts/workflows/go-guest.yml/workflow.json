@@ -20,6 +20,14 @@
       "pull_request": {
         "paths": [
           "sdk/go-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
+          "tools/compile_transaction_guests.py",
+          "tools/transaction_guest_project.py",
+          "tools/transaction_guest_variants.py",
+          "tools/tests/test_transaction_guest_authoring.py",
+          "tools/tests/test_transaction_guest_compilers.py",
+          "examples/rust-capsules/transactional-aggregate/**",
           "tools/go_guest/**",
           "tools/go_capsule*.py",
           "tools/probe_go_authoring.py",
@@ -53,6 +61,14 @@
         ],
         "paths": [
           "sdk/go-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/qualify_transaction_contracts.py",
+          "tools/compile_transaction_guests.py",
+          "tools/transaction_guest_project.py",
+          "tools/transaction_guest_variants.py",
+          "tools/tests/test_transaction_guest_authoring.py",
+          "tools/tests/test_transaction_guest_compilers.py",
+          "examples/rust-capsules/transactional-aggregate/**",
           "tools/go_guest/**",
           "tools/go_capsule*.py",
           "tools/probe_go_authoring.py",
@@ -89,7 +105,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

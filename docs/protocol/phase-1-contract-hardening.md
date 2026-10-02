@@ -511,3 +511,23 @@ mutation preconditions, tenant isolation and current authority checks remain
 explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
+
+## Phase 4 management descriptor additions
+
+The descriptor golden now includes `latent/control/v1/state.proto`,
+`latent/control/v1/dispatcher.proto` and
+`latent/transaction/v1/transaction.proto`. These add the six state management,
+three dispatcher management and seven transaction methods frozen by the
+external transaction profile. They remain distinct from guest WIT operations.
+
+The existing audit descriptor gains `AuditStateTarget`,
+`AuditDispatcherTarget`, two `AuditIdentities` target fields, the state
+capability resource class and seventeen attributed management action values.
+All 1,039 historical fields, 282 enum values and 57 RPC method descriptors keep
+their exact numbers, types and signatures; the other twelve historical file
+descriptors remain unchanged. No existing reservation is removed.
+
+This golden was generated from the exact current Protobuf sources using pinned
+Buf 1.72.0 with source information excluded. Descriptor validation and the
+compatibility tests compare the complete normalized result. This records the
+wire contract; installed runtime and provider qualification have separate gates.
