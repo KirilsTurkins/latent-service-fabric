@@ -127,7 +127,7 @@ impl LifecycleStore {
         limits.validate()?;
         let root = io::root(root)?;
         let state = persistence::open(&root, limits, authority.is_some(), baseline)?;
-        let store = Self {
+        let mut store = Self {
             root,
             limits,
             owner: Owner::new(authority),

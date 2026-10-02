@@ -832,6 +832,7 @@
         "lifecycle::store::tests::rejection::accepted_lifecycle_change_rejects_only_exact_scoped_publication_and_not_receipt_replay",
         "lifecycle::store::tests::rejection::lifecycle_observer_registration_refuses_duplicate_late_or_retired_actual_owner",
         "lifecycle::store::tests::rejection::uncertain_lifecycle_persistence_never_reopens_rejected_original_stamp_after_roll_forward",
+        "lifecycle::store::tests::rejection::unpublished_evidence_recovery_preserves_registration_but_live_reclamation_seals_it",
         "local_repository::component_reader::tests::growth_is_observed_and_limit_plus_one_is_read_without_retention",
         "local_repository::component_reader::tests::metadata_verification_has_fixed_scratch_and_no_retained_component_allocation",
         "local_repository::component_reader::tests::oversized_initial_length_is_rejected_before_any_read",
@@ -1087,7 +1088,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 265,
+      "minimumCases": 266,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
