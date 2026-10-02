@@ -23,7 +23,7 @@ use latent_state::{
     store_io::StoreIoKind,
 };
 
-use super::{clock::ProtectedEffectClock, error, EffectRuntime, PlatformError, PlatformErrorCode};
+use super::{error, EffectRuntime, PlatformError, PlatformErrorCode, ProtectedEffectClock};
 
 const CHECKPOINT_WORK_BYTES: u64 = 64 * 1024;
 const MAXIMUM_PREPARATION_BYTES: u64 = 1024 * 1024;
@@ -74,7 +74,7 @@ pub struct ProtectedEffectStartup {
     pub clock: Arc<dyn ActivationClock>,
     pub checkpoint: ProtectedCheckpointConfig,
     pub identity: StoreIdentity,
-    pub preparation: Option<ProtectedStatePreparation>,
+    pub preparation: Option<super::ProtectedStatePreparation>,
     pub original_deadline: Instant,
     pub control_runtime: tokio::runtime::Handle,
 }
@@ -100,7 +100,7 @@ impl EffectRuntime {
     /// Dispatch remains paused for the caller's normal readiness sequence;
     /// restore review still requires its independent authenticated operation.
     pub async fn start_protected(
-        mut startup: ProtectedEffectStartup,
+        mut startup: super::ProtectedEffectStartup,
     ) -> Result<(Self, Arc<ProtectedEffectClock>), PlatformError> {
         let mut guard = StartupGuard {
             store: Arc::clone(&startup.store),
