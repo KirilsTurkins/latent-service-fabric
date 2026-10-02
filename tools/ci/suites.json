@@ -8304,6 +8304,9 @@
         "phase4::state_management::tests::recovery_response_capacity_is_reserved_before_poll_and_retained_until_body_drops",
         "phase4::state_management::tests::rejection::actual_policy_withdraw_then_reapprove_reseals_fresh_work_and_keeps_held_original_native_owner",
         "phase4::state_management::tests::rejection::actual_publication_withdrawal_denies_held_original_and_stale_install_while_new_current_work_reseals",
+        "phase4::state_management::tests::view_identity::authenticated_namespace_inspection_uses_canonical_scope_bound_legacy_history_token",
+        "phase4::state_management::tests::view_identity::malformed_or_wrong_scope_history_cannot_fall_back_to_an_inspection_token_on_restart",
+        "phase4::state_management::tests::view_identity::paused_namespace_history_remains_inspectable_with_actual_schema_and_recovery_epochs",
         "phase4::state_management::tests::wrong_tenant_target_and_expired_arrival_cannot_reserve_or_lookup",
         "phase4::tests::malformed_profile_and_stale_transport_deadline_never_admit_work",
         "phase4::tests::missing_identity_and_wrong_tenant_cannot_touch_recovery_runtime",
@@ -8315,7 +8318,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 171,
+      "minimumCases": 174,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
