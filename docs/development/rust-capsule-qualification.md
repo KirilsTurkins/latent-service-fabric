@@ -70,6 +70,15 @@ python3 tools/qualify_rust_capsules.py --output /tmp/my-fresh-rust-qualification
 partial work to success. Earlier runs retained the incorrect fault-classification
 assertion and an undersized explicit HTTP policy allowance before their fixes.
 
+If a held request does not reach its original three-second provider rendezvous,
+the runner attempts to retain `provider-rendezvous-failure.json` before closing
+the invocation or peer. It records bounded original process output, peer marker
+state and authorized activation, tree, node and provider observations. These
+reads retain the original overall deadline, cancellation and control limits;
+they never replay the invocation or infer its outcome from a missing marker or
+process exit. The deadline request still uses its original 100-millisecond
+budget. Missing or failed diagnostics remain an explicit evidence boundary.
+
 The profile is finite, single-node and experimental. It is not a 100k deployment,
 throughput, transactional-state or cluster-placement qualification. Build
 observations are operator assertions, not authenticated source, hermetic builds
