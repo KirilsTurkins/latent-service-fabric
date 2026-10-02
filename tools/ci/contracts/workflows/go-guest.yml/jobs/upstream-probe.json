@@ -5,6 +5,7 @@
   "definition": {
     "name": "Go runtime and complete capsule qualification",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 45,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -14,16 +15,16 @@
       },
       {
         "name": "Capture immutable qualification source inputs",
-        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\"\n"
       },
       {
         "name": "Retain the exact reviewed command contract input",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "go-guest-command-contract-${{ github.sha }}",
           "path": "tools/ci/contracts/\n${{ runner.temp }}/go-guest-source.tar.gz\n${{ runner.temp }}/go-guest-source.sha\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
@@ -40,15 +41,15 @@
         "name": "Restore compiled Rust dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -68,15 +69,19 @@
       {
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "go-guest-tools-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-guest-tools/go.tbz\n${{ runner.temp }}/go-guest-tools/componentize-go\n${{ runner.temp }}/go-guest-tools/wasm-tools\n${{ runner.temp }}/go-guest-tools/tools.sha256\n",
+          "if-no-files-found": "error",
           "retention-days": 1
         }
       },
       {
         "name": "Generate and compile upstream and constrained LSF components",
         "run": "python3 tools/go_guest/probe.py --output \"$RUNNER_TEMP/go-guest-probe\" --go \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go\""
+      },
+      {
+        "name": "Qualify proposed transaction shapes and explicit owners with the maintained Go compiler",
+        "run": "python3 tools/qualify_transaction_contracts.py --language go --output \"$RUNNER_TEMP/transaction-contract-go\""
       },
       {
         "name": "Execute the compiled runtime diagnostic without claiming admission",
@@ -91,22 +96,21 @@
         "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\""
       },
       {
-        "if": "always()",
         "name": "Retain successful and failed upstream observations",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "go-guest-upstream-${{ github.sha }}",
-          "path": "${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-authoring/\n",
+          "path": "${{ runner.temp }}/transaction-contract-go/report.json\n${{ runner.temp }}/transaction-contract-go/source.tar.gz\n${{ runner.temp }}/transaction-contract-go/component.wit\n${{ runner.temp }}/transaction-contract-go/preparation.json\n${{ runner.temp }}/transaction-contract-go/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-go/logs/**\n${{ runner.temp }}/transaction-contract-go/compiler/*.log\n${{ runner.temp }}/transaction-contract-go/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-go/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-go/compiled/component.wit\n${{ runner.temp }}/transaction-contract-go/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-go/compiled/generated/**\n${{ runner.temp }}/transaction-contract-go/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/bindings/**\n${{ runner.temp }}/transaction-contract-go/component.wasm\n${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-authoring/\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 45
+    ]
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Preserve the historical narrow dependency fixture and every Phase4 compiler/guest qualification while retaining incoming dependency-cache, native website, and interrupt correctness checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

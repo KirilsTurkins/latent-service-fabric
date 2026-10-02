@@ -41,7 +41,13 @@ class InventoryTests(unittest.TestCase):
         with patch('subprocess.Popen', side_effect=AssertionError('selection spawned a command')):
             for fixture in fixtures['cases']:
                 with self.subTest(case=fixture['name']):
-                    decision = ci_profile.classify_paths(fixture['paths'])
+                    graph = registry.workspace(registry.ROOT)
+                    for owner, dependencies in fixture.get('reverseDependencies', {}).items():
+                        package = graph[owner]
+                        graph[owner] = registry.Package(package.name, package.directory,
+                                                        package.dependencies | set(dependencies))
+                    with patch.object(registry, 'workspace', return_value=graph):
+                        decision = ci_profile.classify_paths(fixture['paths'])
                     self.assertEqual(decision.profile, fixture['profile'])
                     self.assertEqual(decision.renderer, fixture['renderer'])
                     if 'packages' in fixture: self.assertEqual(list(decision.fast_packages), fixture['packages'])
@@ -55,10 +61,11 @@ class InventoryTests(unittest.TestCase):
 
     def test_a_new_reverse_dependency_prevents_filename_allowlist_bypass(self):
         graph = registry.workspace(registry.ROOT)
+        self.assertEqual(ci_profile.classify_paths(['crates/latent-workflows/src/lib.rs']).profile, 'fast')
         node = graph['latent-node']
-        graph['latent-node'] = registry.Package(node.name, node.directory, node.dependencies | {'latent-state'})
+        graph['latent-node'] = registry.Package(node.name, node.directory, node.dependencies | {'latent-workflows'})
         with patch.object(registry, 'workspace', return_value=graph):
-            decision = ci_profile.classify_paths(['crates/latent-state/src/lib.rs'])
+            decision = ci_profile.classify_paths(['crates/latent-workflows/src/lib.rs'])
         self.assertEqual(decision.profile, 'full')
         self.assertTrue(decision.renderer)
 

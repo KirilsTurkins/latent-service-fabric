@@ -57,7 +57,7 @@
   },
   "jobId": "fast",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Qualify the unchanged narrow-runner contract with latent-workflows after state gains real runtime consumers; preserve automatic full state reverse-dependency selection.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
