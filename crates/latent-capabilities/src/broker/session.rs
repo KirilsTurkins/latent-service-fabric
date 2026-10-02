@@ -721,5 +721,20 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
             service: service.to_owned(),
             publication: publication.to_owned(),
         },
+        ResourceTarget::State {
+            namespace,
+            incarnation,
+            entity,
+            recovery_kind,
+            recovery_scope,
+            result_policy,
+        } => ResourceRequest::State {
+            namespace: namespace.into(),
+            incarnation,
+            entity: entity.map(str::to_owned),
+            recovery_kind,
+            recovery_scope: recovery_scope.into(),
+            result_policy: result_policy.into(),
+        },
     }
 }

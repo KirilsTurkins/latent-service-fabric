@@ -374,3 +374,27 @@ fn dropping_unpolled_or_pending_invocations_preserves_inner_ownership() {
         assert!(!recorder.snapshot().incomplete);
     }
 }
+
+#[test]
+fn failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness() {
+    let recorder = Arc::new(Recorder::default());
+    let mut original = error(support::PRIVATE);
+    original.code = PlatformErrorCode::PermissionDenied;
+    let message = original.message.as_ptr();
+    let mut invoker = FakeInvoker::rejected(original);
+    let returned = invoker.observed(recorder.clone()).err().unwrap();
+    assert_eq!(returned.message.as_ptr(), message);
+    assert_eq!(invoker.starts, 1);
+    assert_eq!(
+        format!("local-service-child-failures {:?}", recorder.snapshot()),
+        "local-service-child-failures Snapshot { records: [FailureRecord { stage: Start, code: PermissionDenied, reason: Unclassified }], incomplete: false }"
+    );
+    let guard = recorder.storage.lock().unwrap();
+    assert_eq!(
+        format!("local-service-child-failures {:?}", recorder.snapshot()),
+        "local-service-child-failures Snapshot { records: [], incomplete: true }"
+    );
+    drop(guard);
+    assert!(recorder.snapshot().incomplete);
+    assert_eq!(recorder.snapshot().records.len(), 1);
+}

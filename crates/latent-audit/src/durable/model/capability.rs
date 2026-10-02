@@ -17,6 +17,8 @@ pub enum AuditCapabilityResourceClass {
     Events,
     Telemetry,
     Service,
+    /// Resource selection evidence only; no durable transaction/effect outcome.
+    State,
 }
 
 /// Evidence of a particular provider boundary, never universal delivery or
@@ -163,9 +165,17 @@ impl AuditCapabilityContext {
                 return Err(invalid());
             }
         }
-        latent_core::PHASE3_HOST_ABI_CURRENT
+        if latent_core::PHASE3_HOST_ABI_CURRENT
             .interface(&self.capability)
-            .ok_or_else(invalid)?;
+            .is_none()
+            && !(self.resource_class == AuditCapabilityResourceClass::State
+                && matches!(
+                    self.capability.as_str(),
+                    "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
+                ))
+        {
+            return Err(invalid());
+        }
         codec::token(&self.operation, 64)?;
         let expected = match self.resource_class {
             AuditCapabilityResourceClass::Context => "latent:context/",
@@ -178,6 +188,15 @@ impl AuditCapabilityContext {
             AuditCapabilityResourceClass::Events => "latent:events/",
             AuditCapabilityResourceClass::Telemetry => "latent:telemetry/",
             AuditCapabilityResourceClass::Service => "latent:service/",
+            AuditCapabilityResourceClass::State => {
+                if !matches!(
+                    self.capability.as_str(),
+                    "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
+                ) {
+                    return Err(invalid());
+                }
+                "latent:"
+            }
         };
         if !self.capability.starts_with(expected)
             || self
