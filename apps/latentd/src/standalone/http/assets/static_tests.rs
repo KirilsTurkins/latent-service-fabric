@@ -452,10 +452,7 @@ async fn signed_error_documents(h: &Harness, root_generations: [u64; 2]) {
     }
     assert_eq!(get(h, "/docs/nested/exact", NAVIGATION).await.0, 200);
     assert_eq!(get(h, "/docs/nested/guide", NAVIGATION).await.0, 308);
-    let plain = publish_error_site(h, "unconfigured-error", None);
-    apply(h, "plain", &plain, "/plain", "prefix", "GET", 0);
-    let empty = get(h, "/plain/unknown", NAVIGATION).await;
-    assert_eq!((empty.0, empty.2.len()), (404, 0));
+    unconfigured_error_document(h).await;
     for (path, headers, status) in [
         ("/docs/nested/missing.js", NAVIGATION, 404),
         ("/docs/nested/missing.css", NAVIGATION, 404),
@@ -505,6 +502,23 @@ async fn signed_error_documents(h: &Harness, root_generations: [u64; 2]) {
         (old.0, old.2.as_slice()),
         (404, b"signed not found".as_slice())
     );
+}
+
+async fn unconfigured_error_document(h: &Harness) {
+    let plain = publish_error_site(h, "unconfigured-error", None);
+    for (method, trigger) in [("GET", "plain"), ("HEAD", "plain-head")] {
+        apply(h, trigger, &plain, "/plain", "prefix", method, 0);
+        let (status, headers, body) = h
+            .call(method, "/plain/unknown", NAVIGATION, node::TOKEN)
+            .await;
+        assert_eq!((status, body.len()), (404, 0));
+        // No signed error document exists: this uses the bounded rejection
+        // writer, not the prepared signed-page cache/ETag/media policy.
+        assert!(headers.contains("Content-Length: 0\r\n"));
+        assert!(headers.contains("Cache-Control: no-store\r\n"));
+        assert!(!headers.to_ascii_lowercase().contains("content-type:"));
+        assert!(!headers.to_ascii_lowercase().contains("etag:"));
+    }
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
