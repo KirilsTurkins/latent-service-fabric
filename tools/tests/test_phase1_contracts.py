@@ -81,6 +81,8 @@ class DescriptorContractTests(unittest.TestCase):
                 "latent/control/v1/rollout.proto",
                 "latent/control/v1/route.proto",
                 "latent/control/v1/trigger.proto",
+                "latent/control/v1/state.proto",
+                "latent/transaction/v1/transaction.proto",
                 "latent/invocation/v1/invocation.proto",
             },
         )

@@ -32,6 +32,7 @@ impl HostInterfaceSpec {
         match self.interface {
             "latent:http/streaming@0.3.0" => &["upload", "body", "chunk"],
             "latent:blob/blob@0.2.0" => &["chunk"],
+            "latent:state/key-value@0.2.0" => &["transaction", "query-view", "page"],
             _ => &[],
         }
     }
@@ -245,6 +246,33 @@ pub const PHASE3_HOST_ABI_V4: HostAbiProfile = HostAbiProfile {
 };
 /// The single selected profile for current inspection, policy and execution.
 pub const PHASE3_HOST_ABI_CURRENT: HostAbiProfile = PHASE3_HOST_ABI_V4;
+
+/// Explicit transaction definition profile. Selection requires a separately
+/// installed engine and current authority; stateless default selection is V4.
+pub const PHASE4_HOST_ABI_V1: HostAbiProfile = HostAbiProfile {
+    id: "lsf-host-abi-phase4-v1",
+    interfaces: &[
+        PHASE3_V2_INTERFACES[0],
+        PHASE3_V2_INTERFACES[1],
+        PHASE3_V2_INTERFACES[2],
+        PHASE3_V2_INTERFACES[3],
+        PHASE3_V2_INTERFACES[4],
+        HostInterfaceSpec {
+            interface: "latent:state/key-value@0.2.0",
+            package: "latent:state",
+            binding: HostInterfaceBinding::Provider,
+            wit: include_str!("../../../wit/platform/state/package.wit"),
+            asynchronous: true,
+        },
+        HostInterfaceSpec {
+            interface: "latent:intents/staging@0.1.0",
+            package: "latent:intents",
+            binding: HostInterfaceBinding::Provider,
+            wit: include_str!("../../../wit/platform/intents/package.wit"),
+            asynchronous: true,
+        },
+    ],
+};
 
 #[cfg(test)]
 mod tests {
