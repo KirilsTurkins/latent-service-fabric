@@ -14,6 +14,13 @@ original Phase 3 budget and cancellation tree, an exact capability broker bindin
 and grant, and an executor-neutral `PreparationReadWait` for timer suspension.
 Permission to read either clock does not authorize runtime waits or timers.
 
+The installed scalar profile requires 100 fuel for each of its eleven host
+operations. The bridge reserves that charge through `CapabilityCallCost` on the
+original activation ledger before dispatch. Logical registration and timer work
+keep their separate existing charges. The signed component fixture uses these
+same minimum requirements, so a policy grant without the required host-call
+charge fails before runtime execution.
+
 ## Ownership and closing
 
 Every Store has a host-derived generation and every logical owner has an
@@ -124,3 +131,12 @@ standard-language scheduler ports and API-specific error aggregation. ADR-0060
 remains Proposed. Language profiles and the larger #695/#677 qualification gates
 remain open until those requirements are exercised under their exact source,
 compiler, runtime, policy and artifact identities.
+
+The [retained default HttpClient diagnostic](../testing/evidence/activation-runtime-call-cost-diagnostic-2026-10-02.json)
+places an original-component trap in timer subscription after activation
+registration authority was allowed. Source inspection found that the bridge
+omitted the installed profile's required fuel charge. The narrow cost repair and
+the fixture's matching minimum requirements await native execution. This private
+trace used an explicitly older observer and proves neither corrected normal-node
+execution nor the ordinary CLR Task/ThreadPool profile. Original failed normal
+and private attempts remain retained.
