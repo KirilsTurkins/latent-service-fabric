@@ -71,6 +71,12 @@ MSBuild overrides remain outside this profile. The maintained
 binary/UTF-8 bytes, independent streams, closure and missing names using the
 pinned host CLR. Its receipt explicitly distinguishes that evidence from a
 signed NativeAOT capsule invocation and does not qualify other languages.
+The [Windows reference receipt](../development/dotnet-standard-resources-windows-reference-2026-10-02.json)
+records actual MSBuild/CLR execution on source `40339a34` using the existing
+.NET SDK `10.0.303`: 12 literal resource names, original binary/UTF-8/empty
+payloads, and eight independent-stream/closure repetitions passed. This is a
+reference run on that recorded SDK; the pinned Linux SDK `10.0.100` and signed
+NativeAOT component gates remain open.
 
 Scratch storage is separate and currently unsupported by this resource profile.
 It grants no writable filesystem, temporary directory, durable state, ambient
