@@ -12,7 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PLATFORM_WIT = ROOT / "wit" / "platform"
 DEFAULT_SOURCE = PLATFORM_WIT / "runtime"
 PACKAGE = re.compile(r"\bpackage\s+([^\s;]+)\s*;")
-REFERENCE = re.compile(r"\b([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/[a-z][a-z0-9-]*@([0-9][a-zA-Z0-9.+-]*)")
+# A type-use selector starts with `.{...}` after the version. Its dot is not
+# part of the package version; require the version token to end in an alnum.
+REFERENCE = re.compile(r"\b([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/[a-z][a-z0-9-]*@([0-9](?:[a-zA-Z0-9.+-]*[a-zA-Z0-9])?)")
 
 
 def source_text(source: Path) -> str:
@@ -28,7 +30,7 @@ def dependencies(source: Path, platform_wit: Path) -> list[Path]:
     """
     available = {}
     for package in sorted(path for path in platform_wit.iterdir() if path.is_dir()):
-        if package.name in {"runtime", "runtime-phase3", "runtime-phase3-streaming", "runtime-phase3-blobs", "runtime-phase3-activation"} or package.resolve() == source:
+        if package.name == "runtime" or package.name.startswith("runtime-") or package.resolve() == source:
             continue
         text = source_text(package)
         identity = PACKAGE.search(text)
