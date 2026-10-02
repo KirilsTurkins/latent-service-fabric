@@ -1,5 +1,6 @@
 """Captured authoring inputs for the explicit Phase 4 guest template."""
 from __future__ import annotations
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -8,6 +9,30 @@ ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = "transactional-aggregate"
 INPUT_FORMAT = "lsf-wit-values-v1"
 RESULT_FORMAT = "lsf-wit-values-v1"
+HTTP_REQUIREMENTS = "deferred-http-requirements.json"
+HTTP_BODY = b"java-aggregate-put-once-v1\0"
+
+
+def put_once_requirements(project: dict, companion: bytes) -> dict:
+    """Application requirements only; installed native owners supply authority."""
+    from tools.dev_workflow.transaction_binding import validate
+    binding = validate(companion, capsule=project["service"], deployment=project["name"], binding=project["name"])
+    return {
+        "schemaVersion": "latent.application.deferred-http-inputs.v1",
+        "scope": {"capsule": project["service"], "deployment": project["name"],
+                  "transactionBinding": project["name"], "namespace": binding["namespace"],
+                  "companionDigest": "sha256:" + hashlib.sha256(companion).hexdigest()},
+        "intent": {"binding": "qualified-http", "operation": "put-once", "count": 1,
+                   "requestedExpiryUnixMillis": None,
+                   "payload": {"bytes": base64.b64encode(HTTP_BODY).decode(),
+                               "mediaType": "application/octet-stream", "metadata": []}},
+        "adapter": {"name": "qualified-http-put-once-v1", "intentFormat": 1,
+                    "payloadFormat": "http-put-once-bytes-v1", "idempotencyProfile": "retained-put-once-v1"},
+        "contract": {"retentionHorizonMillis": "600000", "maximumBodyBytes": 27, "retryDelayMillis": "10"},
+        "ceiling": {"maximumPayloadBytes": "27", "maximumResponseBytes": "2048", "maximumAttempts": 3,
+                    "maximumAgeMillis": "600000", "attemptTimeoutMillis": "2000"},
+        "authority": {"installed": False, "ruleGranted": False, "executionQualified": False},
+    }
 
 
 def augment(files: dict[str, bytes], project: dict) -> None:
@@ -48,3 +73,18 @@ def package_companion(output: Path, project: dict, files: dict[str, bytes]) -> t
     with (output / "transaction-binding.json").open("xb") as stream:
         stream.write(raw)
     return ("transaction-binding.json", "asset", "application/vnd.latent.transaction-binding.v1+json")
+
+
+def package_effect_requirements(output: Path, project: dict, files: dict[str, bytes]) -> tuple[str, str, str] | None:
+    """Carry exact application requirements beside the unchanged signed binding."""
+    raw = files.get(HTTP_REQUIREMENTS)
+    if raw is None:
+        return None
+    from tools.dev_workflow.common import decode, encode, require
+    require("transaction-binding.json" in files, "deferred-http-companion-required")
+    value = decode(raw, 8192)
+    require(encode(value) == encode(put_once_requirements(project, files["transaction-binding.json"])),
+            "deferred-http-requirements-drift")
+    with (output / HTTP_REQUIREMENTS).open("xb") as stream:
+        stream.write(raw)
+    return (HTTP_REQUIREMENTS, "asset", "application/json")
