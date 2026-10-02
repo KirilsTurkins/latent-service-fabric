@@ -162,6 +162,8 @@ closure, independently of resolver credentials.
 Source controls exercise real capture, path transformations, offline review,
 tamper rejection, nested descriptors and staged recipe imports. Their Cargo
 metadata outputs and frontend dispatch boundaries are deliberately modelled.
+The [75-case source replay](../testing/evidence/rust-library-authoring-source-2026-10-02.json)
+records the exact committed inputs, pinned environment and retained outcomes.
 Those controls do not establish native Cargo execution, signed library
 invocation, private-feed interoperability, scheduler support or end-to-end
 watch qualification. Those acceptance checks retain their own actual compiler,
