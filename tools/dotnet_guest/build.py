@@ -6,7 +6,7 @@ import tempfile
 import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build
+from tools import guest_compatibility_build, guest_resources
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
     read_file, read_json, snapshot, write_json)
@@ -20,7 +20,7 @@ BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
     "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/runtime.py", "tools/dotnet_guest/composer.py",
     "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/entropy.py", "tools/dotnet_guest/outputs.py",
-    "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest/resources.py", "tools/dotnet_guest_bindings.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
@@ -29,6 +29,7 @@ RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_st
            'tools/application_dependency_approval.py', 'tools/captured_compiler_isolation.py', 'tools/dotnet_compiler_isolation.py',
            'tools/dotnet_application_dependencies.py')
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_resources.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
@@ -45,6 +46,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     try:
         files = snapshot(project_path)
         project, lock, pins = validate(files)
+        stage = "resource-inputs"
+        guest_resources.select(files)
         source_inputs = inventory(files)
         recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
         recipe = inventory(recipe_files)

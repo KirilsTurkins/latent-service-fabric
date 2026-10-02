@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_resources.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review final maintained standard CLR probe with punctuation, comma, space, Unicode, binary and empty-name-content cases; retain native and signed qualification boundaries.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "04c75d3aace68a702652457531584326b1a1eb6adc231a8188154100ee1be9c0"
+}

@@ -1,0 +1,231 @@
+{
+  "allObservedInputsUnchanged": true,
+  "commands": [
+    {
+      "exitCode": 0,
+      "seconds": 0.509743,
+      "stage": "dotnet-version"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 1.382924,
+      "stage": "locked-restore"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 3.407937,
+      "stage": "msbuild"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.253411,
+      "stage": "standard-lookup"
+    }
+  ],
+  "compiler": "MSBuild and Roslyn, host CLR",
+  "compilerInputFiles": 4331,
+  "compilerInputsDigest": "sha256:b637fc763ea23032b3209d30a08b7aa2d9bd21f1654d44d727a9e08f2160da83",
+  "controllerDigest": "sha256:6f89e4c3e5e571c8efca4bdc3fe0fd5e8fe75e7a3052d03cf5c0926695b2eb31",
+  "embeddedResourceInputs": {
+    "bytes": 60,
+    "count": 12,
+    "dependencyLockDigest": null,
+    "identity": "sha256:aba4fdc8fcd9d944735aa0200e204208bc2b024268a7c93d8cdb3a55d3805aa5",
+    "manifestDigest": "sha256:cbaca3342a9ea963fab3b022bba7c5e11de25abf17d3f9750f1a308b04db321c",
+    "packagingProfile": "lsf.packaged-resources.v1",
+    "projectDigest": "sha256:1a7523ef70b58a837f3a979c15325142414a8da659af20c2780a8412ee7eb878",
+    "resources": [
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "culture/data.fr.txt",
+        "size": 5
+      },
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "data/$(ResourceInjection).bin",
+        "size": 5
+      },
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "data/@(Injected).bin",
+        "size": 5
+      },
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "data/[a]=`b.bin",
+        "size": 5
+      },
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "data/a,b.bin",
+        "size": 5
+      },
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "data/a;b.bin",
+        "size": 5
+      },
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "data/copy.bin",
+        "size": 5
+      },
+      {
+        "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "origin": "application",
+        "path": "data/empty.bin",
+        "size": 0
+      },
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "data/plain.bin",
+        "size": 5
+      },
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "data/quote'&snowman☃.bin",
+        "size": 5
+      },
+      {
+        "digest": "sha256:b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/b0356fa295b31031abf9c7cf529aa5ed5ad67f155c579c581bf0af2052bcea00",
+        "origin": "application",
+        "path": "data/space inside.bin",
+        "size": 5
+      },
+      {
+        "digest": "sha256:d87ac818250c9bb22e167475aed32e371b5d972a8123f068c8bda8ecd8edfab6",
+        "mediaType": "application/octet-stream",
+        "object": "resources/objects/d87ac818250c9bb22e167475aed32e371b5d972a8123f068c8bda8ecd8edfab6",
+        "origin": "application",
+        "path": "data/utf8.txt",
+        "size": 10
+      }
+    ],
+    "schemaVersion": "lsf.dotnet.embedded-resources.v1",
+    "scratchStorage": "unsupported"
+  },
+  "maintainedCSharpProbeBodyUnchanged": true,
+  "nativeAotGuest": false,
+  "packageFoundationRevision": "c6aca02c5858e7b8d9fd83bfdac49eab9d76f4c7",
+  "pinnedSdkQualification": false,
+  "platform": "windows",
+  "qualificationComplete": false,
+  "rawReceiptDigest": "sha256:e56bb1b3056e305344bdad114be35f549522b72101035bc0e7a44a6515d6f384",
+  "recipeInputs": {
+    "tools/build_observation.py": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+    "tools/build_process.py": "sha256:2f38f9152dfa8eaeb374439bcedf9a96a065e1ac2f91d681c942bdb785ab045c",
+    "tools/build_process_linux.py": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+    "tools/build_process_signals.py": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+    "tools/build_process_windows.py": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+    "tools/build_snapshot.py": "sha256:71d7f6451037b14621d7f60e6581f44f2237425bcf368e36d4a7584e4b397c48",
+    "tools/dev_workflow/common.py": "sha256:10756114413bc2a9a002f75025963fec7ed5fcc050fa3b9527c745eac71e490d",
+    "tools/dotnet_guest/compiler.py": "sha256:ca8c5050826e8c160d2c4ebad85c6d92c46ca9938a9364441c368b7876f77676",
+    "tools/dotnet_guest/resources.py": "sha256:125c45834048a622121c6058f219042133cf643397d7790f3150b0de02db5950",
+    "tools/guest_resources.py": "sha256:37866d60d9eda8708c0dd3759e2acc4fe85b9c7d88bbe12baed4d630d214a114",
+    "tools/qualify_dotnet_resources.py": "sha256:04c75d3aace68a702652457531584326b1a1eb6adc231a8188154100ee1be9c0",
+    "tools/rust_capsule_build.py": "sha256:e137e664141d946d529d99c86f3b1bda1a6320ce2f3620eda228b43c2031b1f3",
+    "tools/rust_capsule_project.py": "sha256:2b68d66ac3752b2c449ba819cc9d4edf80004761615766072d71cbecb661d9d5"
+  },
+  "remainingGates": [
+    "pinned Linux SDK 10.0.100 execution",
+    "signed and admitted NativeAOT resource lookup",
+    "native transitive NuGet resources and reviewed private feeds",
+    "outside-checkout offline component and installed workflow replay",
+    "activation lifecycle, simultaneous streams and runtime ownership",
+    "other five language resource profiles and issue 681 acceptance"
+  ],
+  "result": {
+    "closedStreams": true,
+    "count": 12,
+    "independentStreams": true,
+    "iterations": 8,
+    "resourceNames": [
+      "culture/data.fr.txt",
+      "data/$(ResourceInjection).bin",
+      "data/@(Injected).bin",
+      "data/[a]=`b.bin",
+      "data/a,b.bin",
+      "data/a;b.bin",
+      "data/copy.bin",
+      "data/empty.bin",
+      "data/plain.bin",
+      "data/quote'&snowman☃.bin",
+      "data/space inside.bin",
+      "data/utf8.txt"
+    ],
+    "schemaVersion": "lsf.dotnet.standard-resource-result.v1"
+  },
+  "retainedLogs": {
+    "00-dotnet-version.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "00-dotnet-version.stdout.txt": {
+      "digest": "sha256:94736f29af38df9c42385cbda3e0854adaa638d67829700bc8907ecc4f876f87",
+      "size": 10
+    },
+    "01-locked-restore.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "01-locked-restore.stdout.txt": {
+      "digest": "sha256:6424cdaf254b53962b2ca389a930ea75f6ab5671f4c56a9a6263ce8a5ac3b41e",
+      "size": 160
+    },
+    "02-msbuild.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "02-msbuild.stdout.txt": {
+      "digest": "sha256:253eadf0bcff15510cd6b75123b1bb663016ce411b246af8cbae3884c7042265",
+      "size": 211
+    },
+    "03-standard-lookup.stderr.txt": {
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "03-standard-lookup.stdout.txt": {
+      "digest": "sha256:ac636e3eb9de8f3c506026601786ffdea8431ec2462fdd257d4db18522510e3d",
+      "size": 413
+    }
+  },
+  "schemaVersion": "latent.sdk.dotnet.embedded-resource-reference.v1",
+  "scratchStorage": "unsupported",
+  "sdkVersion": "10.0.303",
+  "seconds": 31.695732,
+  "signedInvocations": 0,
+  "sourceRevision": "40339a348399312233318b8629e230c73888d4c1",
+  "status": "passed",
+  "target": "net10.0"
+}

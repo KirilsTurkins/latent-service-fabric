@@ -6,3 +6,8 @@
 *.zip binary
 *.gz binary
 *.gz.part-* binary
+
+# Immutable wasm-tools output: the terminal blank line is part of its digest.
+tools/tests/fixtures/validation_echo_cache/context.wit whitespace=-blank-at-eof
+tools/tests/fixtures/validation_echo_cache/echo.wit whitespace=-blank-at-eof
+tools/tests/fixtures/validation_echo_cache/log.wit whitespace=-blank-at-eof

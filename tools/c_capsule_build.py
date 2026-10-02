@@ -16,7 +16,7 @@ from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
                                         read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
-from tools import guest_compatibility_build
+from tools import guest_compatibility_build, guest_resources
 
 BUILD_TYPE = "https://latent.dev/build/c-guest/v1"
 RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_build.py",
@@ -29,6 +29,7 @@ RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_b
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
           "examples/echo-contract/deployment.json")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_resources.RECIPE
 
 
 def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -> str:

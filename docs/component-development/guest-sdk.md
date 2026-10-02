@@ -11,6 +11,8 @@ reference explains the SDKs' capability types, ownership and runtime limits.
 The [dependency compatibility report](library-compatibility.md) distinguishes
 final import checks, missing runtime support and observations that still need
 actual execution evidence.
+The [packaged resource profile](packaged-resources.md) defines immutable declared
+bytes, bounded logical paths and source/dependency/package identity checks.
 
 [Packaged application development](../start/application-development.md)
 is the starting point for installing their compilers and creating a project.

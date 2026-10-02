@@ -88,7 +88,7 @@
       },
       {
         "name": "Check independent editable projects and closed provenance profiles",
-        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas\n"
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_dotnet_resources tools.tests.test_build_provenance_schemas\npython3 tools/qualify_dotnet_resources.py --dotnet \"$(command -v dotnet)\" --output \"$RUNNER_TEMP/dotnet-standard-resources\"\n"
       },
       {
         "name": "Preserve bounded errors in the actual captured WASI BCL",
@@ -149,7 +149,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Reconcile current development cache prerequisites with all captured-library, namespace and HTTP BCL obligations. Adopt its pinned wasm-tools 1.254 setup, exact version check and actual executable artifact path. Preserve the stricter required Rust compiler isolation, all other parent commands and historical replacements.",
+  "reviewReason": "SDK #681 forward integration: retain the complete native NuGet containment/approval, runtime/composition/entropy/error diagnostics and all historical obligations; add only bounded .NET resources, their original controls and pinned ordinary CLR probe.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
