@@ -69,8 +69,10 @@ on:
       - tools/java_dependency*.py
       - tools/java_application_dependencies.py
       - tools/java_resource_artifacts.py
+      - tools/java_registry_tls.py
       - tools/tests/test_java_dependency_authoring.py
       - tools/tests/test_java_resource_runtime.py
+      - tools/tests/test_java_private_resolution.py
       - tools/java_guest/**
       - tools/dotnet_capsule.py
       - tools/dotnet_guest/**
@@ -140,7 +142,7 @@ jobs:
         with:
           python-version: 3.13.5
       - name: Exercise controller boundaries and actual owned subprocesses
-        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process tools.tests.test_guest_authoring_frontend tools.tests.test_java_dependency_authoring tools.tests.test_java_resource_runtime
+        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process tools.tests.test_guest_authoring_frontend tools.tests.test_java_dependency_authoring tools.tests.test_java_resource_runtime tools.tests.test_java_private_resolution
 
   guest-tools:
     if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository

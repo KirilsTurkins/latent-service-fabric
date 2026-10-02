@@ -17,6 +17,7 @@ from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_snapshot import canonical, digest
 from tools.java_resource_artifacts import capture_resources, release_profile
+from tools import java_registry_tls
 from tools.rust_capsule_project import ROOT
 
 DECLARATIONS = "java-dependencies.json"
@@ -45,13 +46,14 @@ def declarations(value: dict) -> dict:
                     or not all(isinstance(excluded[key], str) and TOKEN.fullmatch(excluded[key]) for key in excluded)):
                 raise DependencyError("java-maven-exclusion-invalid")
     for row in value["repositories"]:
-        if (not isinstance(row, dict) or set(row) != {"id", "url"}
+        if (not isinstance(row, dict) or set(row) not in ({"id", "url"}, {"id", "url", "tlsTrust"})
                 or not isinstance(row["id"], str) or not TOKEN.fullmatch(row["id"])
                 or not isinstance(row["url"], str)):
             raise DependencyError("java-repository-policy-invalid")
         parsed = urlsplit(row["url"])
         if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise DependencyError("java-repository-credentials-denied")
+    java_registry_tls.certificates(value)
     for row in value["localJars"]:
         if (not isinstance(row, dict) or set(row) != {"id", "path", "dependencies"}
                 or not isinstance(row["dependencies"], list) or len(row["dependencies"]) > 1024
@@ -144,7 +146,7 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     before = snapshot(project)
     previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
     previous_graph = optional(project, RESOLUTION)
-    recipe_paths = [Path(__file__), ROOT / 'tools/java_dependency_authoring.py', ROOT / 'tools/java_resource_artifacts.py',
+    recipe_paths = [Path(__file__), ROOT / 'tools/java_registry_tls.py', ROOT / 'tools/java_dependency_authoring.py', ROOT / 'tools/java_resource_artifacts.py',
                     ROOT / 'tools/java_application_dependencies.py', ROOT / 'tools/toolchain.toml']
     recipe_before = {str(path): digest(read_bytes(path)) for path in recipe_paths}
     declaration_bytes = read_bytes(project / DECLARATIONS)
@@ -157,15 +159,14 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         environment.update(HOME=str(work / "home"), USERPROFILE=str(work / "home"), GRADLE_USER_HOME=str(work / "gradle"))
         if "JAVA_HOME" in os.environ:
             environment["JAVA_HOME"] = os.environ["JAVA_HOME"]
-        # Separately configured private-feed credentials exist only here.
-        for row in config["repositories"]:
-            prefix = "LSF_REGISTRY_" + row["id"].upper().replace("-", "_")
-            for suffix in ("_USERNAME", "_PASSWORD"):
-                if prefix + suffix in os.environ:
-                    environment[prefix + suffix] = os.environ[prefix + suffix]
+        trust_sources = {}
         tools_before = {}
         resolver = {'name': 'captured-local-jar', 'version': '1', 'recipeDigest': recipe_before[str(Path(__file__))]}
         if config['dependencies']:
+            # Validate selected credentials before acquisition, but pass them
+            # only to the real resolution task, not tool/version/TLS parsing.
+            registry_credentials = {}
+            java_registry_tls.credentials(config, registry_credentials)
             resolver_path = shutil.which(gradle, path=environment.get("PATH"))
             if not resolver_path:
                 raise DependencyError("java-pinned-resolver-unavailable")
@@ -184,12 +185,18 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             (work / "settings.gradle").write_text("rootProject.name = 'captured-application-resolution'\n", encoding="utf-8")
             (work / "gradle.properties").write_text("org.gradle.java.installations.auto-download=false\n", encoding="utf-8")
             (work / "build.gradle").write_text(script(config), encoding="utf-8")
-            result = run_bounded_result([resolver_path, "--no-daemon", "captureRuntime"], work, environment, 300, 4 * 1024 * 1024)
+            trust_arguments, trust_sources, trust_inputs, trust_identity = java_registry_tls.prepare(
+                project, config, work, Path(java), environment)
+            tools_before.update(trust_inputs)
+            environment.update(registry_credentials)
+            result = run_bounded_result([resolver_path, *trust_arguments, "--no-daemon", "captureRuntime"], work, environment, 300, 4 * 1024 * 1024)
             if result.returncode:
                 raise DependencyError("java-maven-resolution-failed-private-diagnostics-discarded")
             resolved = document(work / "resolved.json")
             resolver = {'name': 'gradle', 'version': pins['sdk']['gradle'], 'executableDigest': resolver_digest,
                         'jdkVersion': pins['sdk']['java'], 'jdkExecutableDigest': tools_before[java]}
+            if trust_identity is not None:
+                resolver['tlsTrustInputs'] = trust_identity
         else:
             resolved = {'graph': [], 'artifacts': []}
         if len(resolved["graph"]) > 1024 or len(resolved["artifacts"]) > 1024:
@@ -254,12 +261,13 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         native_bytes = canonical(native) + b'\n'
         prefix = project.relative_to(owner).as_posix() + '/' if owner != project else ''
         manifest = {"formatVersion": 1, "language": "java", "selection": config["selection"],
-                    "nativeLocks": [prefix + DECLARATIONS, prefix + RESOLUTION], "artifacts": artifacts, "transformations": []}
+                    "nativeLocks": [prefix + DECLARATIONS, prefix + RESOLUTION,
+                                    *(prefix + name for name in trust_sources)], "artifacts": artifacts, "transformations": []}
         validate_manifest(manifest, 'java')
         manifest_bytes = canonical(manifest) + b'\n'
         check = work / 'capture-inputs'; check.mkdir(mode=0o700)
         (check / MANIFEST).write_bytes(manifest_bytes)
-        for name, payload in ((DECLARATIONS, declaration_bytes), (RESOLUTION, native_bytes)):
+        for name, payload in ((DECLARATIONS, declaration_bytes), (RESOLUTION, native_bytes), *trust_sources.items()):
             target = check / (prefix + name); target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(payload)
         # Capture the exact final portable manifest. Its source objects are
