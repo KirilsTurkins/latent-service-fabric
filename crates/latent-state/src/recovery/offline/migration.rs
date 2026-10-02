@@ -55,8 +55,12 @@ pub(super) fn execute(
                     .map_err(OfflineRecoveryError::Review)?;
                 let root = ProtectedRoot::open(&source_root)
                     .map_err(|_| OfflineRecoveryError::UnsafeDestination)?;
-                let mut input =
-                    ProtectedSnapshotFile::open(&request.checkpoint, root.identity(), false)?;
+                let mut input = ProtectedSnapshotFile::open(
+                    &request.checkpoint,
+                    root.identity(),
+                    false,
+                    codecs.snapshot_file_bytes(),
+                )?;
                 let checkpoint = VerifiedMigrationCheckpoint::inspect(
                     &view,
                     &mut input,

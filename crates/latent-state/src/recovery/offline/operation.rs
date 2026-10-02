@@ -111,7 +111,12 @@ pub(super) fn backup(
                 .and_then(|()| {
                     let root = ProtectedRoot::open(&source_root)
                         .map_err(|_| OfflineRecoveryError::UnsafeDestination)?;
-                    let mut file = ProtectedSnapshotFile::open(&output, root.identity(), true)?;
+                    let mut file = ProtectedSnapshotFile::open(
+                        &output,
+                        root.identity(),
+                        true,
+                        codecs.snapshot_file_bytes(),
+                    )?;
                     let receipt = export_snapshot(
                         store,
                         metadata,
@@ -302,7 +307,12 @@ fn inspect_worker(
         .map_err(OfflineRecoveryError::Review)?;
     let root =
         ProtectedRoot::open(source_root).map_err(|_| OfflineRecoveryError::UnsafeDestination)?;
-    let mut input = ProtectedSnapshotFile::open(&request.input, root.identity(), false)?;
+    let mut input = ProtectedSnapshotFile::open(
+        &request.input,
+        root.identity(),
+        false,
+        codecs.snapshot_file_bytes(),
+    )?;
     let snapshot = inspect_snapshot(&mut input, deadline, |key, value| {
         if key.key.len() > request.destination.engine.maximum_key_bytes
             || value.len() > request.destination.engine.maximum_value_bytes

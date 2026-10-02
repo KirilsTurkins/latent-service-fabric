@@ -47,6 +47,12 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
     fn runtime_digest(&self) -> [u8; 32];
     fn retained_bytes(&self) -> u64;
     fn scratch_bytes(&self) -> u64;
+    /// Installed, stricter protected file limit. This can narrow the native
+    /// snapshot profile to an actual retained operator grant; it grants no
+    /// recovery access and cannot expand the original native ceiling.
+    fn snapshot_file_bytes(&self) -> u64 {
+        super::snapshot::SNAPSHOT_FILE_BYTES
+    }
     fn installed_formats(&self) -> &[RetainedFormat];
     fn validate_row(&self, source: &ReadView, key: &RowKey, value: &[u8])
         -> Result<(), StoreError>;

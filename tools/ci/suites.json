@@ -5004,6 +5004,8 @@
         "recovery::migration::tests::migration_row_dispatch_preserves_foreign_bytes_and_rejects_malformed_owned_progress",
         "recovery::migration::tests::tenant::installed_tenant_capacity_refuses_migration_before_paused_history_or_progress_publication",
         "recovery::migration::tests::tenant::installed_tenant_migration_and_resume_charge_actual_changed_rows_with_restart_and_read_only_replay",
+        "recovery::offline::tests::file_bound::stricter_installed_export_cap_refuses_before_oversize_write_and_preserves_source",
+        "recovery::offline::tests::file_bound::stricter_installed_input_cap_rejects_existing_snapshot_and_cannot_expand_native_profile",
         "recovery::offline::tests::lost_backup_waiter_keeps_actual_worker_bytes_and_exclusive_root_until_physical_retirement",
         "recovery::offline::tests::migration::protected_fixed_recipe_final_revocation_preserves_staged_progress_and_old_schema",
         "recovery::offline::tests::migration::protected_fixed_recipe_survives_staged_engine_retirement_and_requires_separate_reviewed_resume",
@@ -5110,7 +5112,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 194,
+      "minimumCases": 196,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

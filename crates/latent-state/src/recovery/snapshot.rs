@@ -317,7 +317,9 @@ pub fn export_snapshot(
     })
 }
 
-pub(super) struct RowSummary {
+/// Descriptive summary of one bounded coherent native row walk. It provides
+/// neither quiescence proof nor permission to read, restore, or resume work.
+pub struct RowSummary {
     pub rows: u64,
     pub logical_bytes: u64,
     pub digest: [u8; 32],
@@ -325,7 +327,7 @@ pub(super) struct RowSummary {
 
 /// The same bounded canonical row walk backs export and exact recovery-window
 /// capture, including attempt/inbox/clock changes without namespace increments.
-pub(super) fn visit_view(
+pub fn visit_view(
     view: &ReadView,
     deadline: Instant,
     mut visit: impl FnMut(&[u8; 8], &RowKey, &[u8]) -> Result<(), StoreError>,
