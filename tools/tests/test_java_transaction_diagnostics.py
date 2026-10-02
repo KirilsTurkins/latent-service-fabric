@@ -34,10 +34,29 @@ class JavaTransactionDiagnosticTests(unittest.TestCase):
             self.assertEqual(record["helperDigest"], digest(diagnostic[HELPER]))
             self.assertTrue(record["freshInstanceRequired"])
             for key in ("componentCompiled", "stateExecutionQualified", "cancellationQualified",
-                        "fuelExhaustionQualified", "freshInstanceQualified"):
+                        "fuelExhaustionQualified", "freshInstanceQualified", "memoryExhaustionQualified",
+                        "crashBeforeCommitQualified"):
                 self.assertIs(record[key], False)
             self.assertEqual(record["faultAfter"], ["state-put", "captured-put-once-intent"])
             self.assertNotIn(b"latent:http/client", diagnostic["wit/world.wit"])
+
+    def test_post_stage_faults_reject_a_missing_duplicate_or_reordered_original_state_put(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            ordinary = snapshot(create_schema(Path(temporary) / "ordinary", "legacy-v1", effect="put-once"))
+            source = ordinary[SOURCE].decode()
+            put = "            command.put(KEY, payload).value();\n"
+            stage = '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();\n'
+            changed = (source.replace(put, ""), source.replace(put, put + put),
+                       source.replace(put, "").replace(stage, stage + put))
+            for value in changed:
+                with self.subTest(source=value), self.assertRaisesRegex(ValueError, "staging source drift"):
+                    source_variant(value)
+            diagnostic = snapshot(create(Path(temporary) / "diagnostic"))
+            record = json.loads(diagnostic["transaction-diagnostic-inputs.json"])
+            self.assertEqual(record["selectors"], {"trapAfterStage": "4294967293",
+                "loopAfterStage": "4294967294", "memoryAfterStage": "4294967292"})
+            self.assertIs(record["memoryExhaustionQualified"], False)
+            self.assertIs(record["crashBeforeCommitQualified"], False)
 
     def test_original_staging_drift_is_rejected_and_an_existing_capture_is_never_replaced(self):
         with tempfile.TemporaryDirectory() as temporary:
