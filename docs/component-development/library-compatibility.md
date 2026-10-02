@@ -12,6 +12,13 @@ component, selected host ABI and SDK lock. The report does not install providers
 grant capabilities, approve a package or authorize a retry. Package signing and
 admission remain separate steps in the [guest workflow](guest-sdk.md).
 
+If a later build step fails, the packaged report remains byte-identical.
+Additional observations use `compatibility-failure-report.json`; raw compiler
+components use `compatibility-raw-report.json` when a shared report already
+exists. Each diagnostic keeps its own component identity. An unavailable or
+stale diagnostic input still produces `compatibility-report-failed.json` and
+preserves the original build failure.
+
 Reports distinguish dependency resolution, target/ABI problems, unsupported
 operations, missing runtime implementations, unqualified profiles, unknown
 behavior, optional application extensions, provider installation, grants,
