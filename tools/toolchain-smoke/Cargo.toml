@@ -219,3 +219,11 @@ path = "../../research/invocation-concurrency/host.rs"
 test = false
 bench = false
 doc = false
+
+[[example]]
+name = "transaction-contract"
+path = "../../sdk/transaction-contract/rust/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
