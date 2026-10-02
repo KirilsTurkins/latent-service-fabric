@@ -7,6 +7,7 @@ import re
 import time
 
 from tools.phase2_operator_process import Client, Process, diagnostic_code, diagnostic_grpc
+from tools.rust_capsule_project import read_file
 
 from .inputs import decode, digest, require
 
@@ -20,6 +21,35 @@ class Evidence:
         directory.mkdir(mode=0o700)
         self.directory = directory
         self.files, self.cases, self.total = [], [], 0
+
+    @classmethod
+    def retain(cls, directory: Path, original: dict):
+        require(directory.is_dir() and not directory.is_symlink()
+                and isinstance(original, dict) and set(original) == {"files", "bytes", "cases"}
+                and isinstance(original["files"], list) and len(original["files"]) <= 1024
+                and isinstance(original["cases"], list) and len(original["cases"]) <= 64,
+                "original-bounded-evidence-inventory")
+        names, total = set(), 0
+        for row in original["files"]:
+            require(isinstance(row, dict) and set(row) == {"path", "bytes", "digest"}
+                    and isinstance(row["path"], str) and re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,95}", row["path"])
+                    and row["path"] not in names and type(row["bytes"]) is int and 0 <= row["bytes"] <= 1048576,
+                    "original-distinct-evidence-file")
+            path = directory / row["path"]
+            require(path.is_file() and not path.is_symlink(), "original-evidence-regular-file")
+            raw = read_file(path, 1048576)
+            require(len(raw) == row["bytes"] and digest(raw) == row["digest"], "original-evidence-file-drift")
+            names.add(row["path"])
+            total += len(raw)
+        require({path.name for path in directory.iterdir()} == names and type(original["bytes"]) is int
+                and original["bytes"] == total <= 33554432
+                and all(isinstance(name, str) and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", name)
+                        and "case-" + name + ".json" in names for name in original["cases"])
+                and len(set(original["cases"])) == len(original["cases"]),
+                "original-evidence-counts-or-files-drift")
+        value = cls.__new__(cls)
+        value.directory, value.files, value.cases, value.total = directory, list(original["files"]), list(original["cases"]), total
+        return value
 
     def write(self, name: str, raw: bytes) -> dict:
         require(isinstance(name, str) and re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,95}", name),

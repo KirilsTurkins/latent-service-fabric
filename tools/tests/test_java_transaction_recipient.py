@@ -157,6 +157,39 @@ class RecipientTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 provider.Recipient(self.root, "a" * 64, b"fixture-token")
 
+    def test_resumed_session_keeps_cumulative_request_connection_and_retained_limits(self):
+        self.call()
+        original = (self.root / ("b" * 64 + ".json")).read_bytes()
+        self.peer.requests = 63
+        self.peer.publish_observation()
+        stopped = dict(self.peer.observation(), connections=95, refusedConnections=32)
+        path = self.root / "recipient-stopped-1.json"
+        path.write_bytes(json.dumps(stopped, separators=(",", ":")).encode())
+        stopped_raw = path.read_bytes()
+        reopened = provider.Recipient(self.root, "a" * 64, b"fixture-token")
+        self.assertEqual(reopened.retain_counters(2), (95, 32))
+        self.assertEqual((reopened.requests, reopened.puts, reopened.accepted, reopened.applied, reopened.retained), (63, 1, 1, 1, 1))
+        self.assertEqual(self.call(reopened, method="GET")[0], 200)
+        with self.assertRaises(ValueError):
+            self.call(reopened, method="GET")
+        self.assertEqual(path.read_bytes(), stopped_raw)
+        self.assertEqual((self.root / ("b" * 64 + ".json")).read_bytes(), original)
+
+    def test_resumed_counter_drift_unknown_fields_foreign_owner_and_invalid_connections_refuse(self):
+        self.peer.publish_observation()
+        original = dict(self.peer.observation(), connections=1, refusedConnections=1)
+        path = self.root / "recipient-stopped-1.json"
+        for field, value in (("approved", True), ("connections", True), ("connections", 97),
+                             ("refusedConnections", 2), ("requests", 1),
+                             ("retainedRecords", 1), ("providerIncarnation", "c" * 64)):
+            path.write_bytes(json.dumps(dict(original, **{field: value}), separators=(",", ":")).encode())
+            reopened = provider.Recipient(self.root, "a" * 64, b"fixture-token")
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                reopened.retain_counters(2)
+        for session in (True, 1, 4):
+            with self.subTest(session=session), self.assertRaises(ValueError):
+                self.peer.retain_counters(session)
+
 
 if __name__ == "__main__":
     unittest.main()
