@@ -1,0 +1,205 @@
+{
+  "cases": [
+    "ResourceCapture.test_case_unicode_and_file_directory_collisions_are_rejected",
+    "ResourceCapture.test_count_name_file_and_aggregate_limits_are_enforced",
+    "ResourceCapture.test_declared_utf8_and_binary_bytes_preserve_content_and_metadata",
+    "ResourceCapture.test_developer_resource_selection_changes_trust_and_bytes_change_watch",
+    "ResourceCapture.test_forged_dependency_mapping_without_lock_cannot_package_bytes",
+    "ResourceCapture.test_media_and_closed_manifest_schema_cannot_be_extended_implicitly",
+    "ResourceCapture.test_missing_file_and_unobserved_host_path_fail_without_reading_host",
+    "ResourceCapture.test_missing_or_excluded_resources_cannot_reuse_approved_snapshot",
+    "ResourceCapture.test_only_declared_files_are_captured_and_equal_bytes_share_an_object",
+    "ResourceCapture.test_resource_order_has_deterministic_selected_identity",
+    "ResourceCapture.test_six_language_package_inputs_include_index_and_original_bytes",
+    "ResourceCapture.test_source_component_and_dependency_changes_invalidate_resource_identity",
+    "ResourceCapture.test_source_only_and_declared_empty_resource_behavior",
+    "ResourceCapture.test_tamper_missing_object_or_unlisted_object_fails_exact_inventory",
+    "ResourceCapture.test_transitive_resource_owner_and_bytes_must_belong_to_reviewed_capture"
+  ],
+  "guards": {
+    "ResourceCapture.test_case_unicode_and_file_directory_collisions_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_count_name_file_and_aggregate_limits_are_enforced": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_declared_utf8_and_binary_bytes_preserve_content_and_metadata": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_developer_resource_selection_changes_trust_and_bytes_change_watch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_forged_dependency_mapping_without_lock_cannot_package_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_media_and_closed_manifest_schema_cannot_be_extended_implicitly": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_missing_file_and_unobserved_host_path_fail_without_reading_host": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_missing_or_excluded_resources_cannot_reuse_approved_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_only_declared_files_are_captured_and_equal_bytes_share_an_object": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_resource_order_has_deterministic_selected_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_six_language_package_inputs_include_index_and_original_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_source_component_and_dependency_changes_invalidate_resource_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_source_only_and_declared_empty_resource_behavior": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_tamper_missing_object_or_unlisted_object_fails_exact_inventory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceCapture.test_transitive_resource_owner_and_bytes_must_belong_to_reviewed_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3dedb664dfddfb7c5f39dedf7dbb8e45a89a2372c6f6a03a4ce1eb1c0262adb9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_guest_resources.py",
+  "reviewReason": "Review resource verification fixture requiring caller-supplied manifest identity and trust/watch tests; existing skip/discovery controls preserved",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
