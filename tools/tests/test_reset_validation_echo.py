@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import os
 import tempfile
+import tarfile
 import unittest
 
 from tools.build_snapshot import SnapshotError, canonical, digest
@@ -39,6 +40,31 @@ def fixture(root: Path, *, package: bool) -> Path:
 
 
 class ResetValidationEchoTests(unittest.TestCase):
+    def test_cache_archive_after_validated_reset_restores_dependencies_without_incomplete_echo_trees(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "target"
+            skeleton = root / "capsules/echo/interface/deps"
+            skeleton.mkdir(parents=True)
+            with self.assertRaises(SnapshotError):
+                reset_validation_echo(root)
+            self.assertTrue(skeleton.is_dir())
+            fixture(root, package=False)
+            fixture(root, package=True)
+            dependency = root / "debug/deps/libthird_party.rlib"
+            dependency.parent.mkdir(parents=True)
+            dependency.write_bytes(b"compiled dependency")
+            self.assertEqual(reset_validation_echo(root), 2)
+            archive = Path(temporary) / "dependency-cache.tar"
+            with tarfile.open(archive, "w") as saved:
+                saved.add(root, arcname="target")
+            restored = Path(temporary) / "restored"
+            with tarfile.open(archive) as saved:
+                saved.extractall(restored, filter="data")
+            self.assertEqual(reset_validation_echo(restored / "target"), 0)
+            self.assertEqual((restored / "target/debug/deps/libthird_party.rlib").read_bytes(), dependency.read_bytes())
+            for name in ("echo", "echo-provenance"):
+                self.assertFalse((restored / "target/capsules" / name).exists())
+
     def test_new_dependency_inventory_requires_exact_observation_association(self):
         for tamper in (False, True):
             with self.subTest(tamper=tamper), tempfile.TemporaryDirectory() as temporary:

@@ -133,7 +133,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Issue #732: preserve existing developer-tool qualification exclusions for the ownership-local contract directory.",
+  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

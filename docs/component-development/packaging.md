@@ -151,8 +151,9 @@ Semantic defaults are hard ceilings that callers may lower:
 | --- | --- |
 | Component bytes / component nesting | 64 MiB / 16 |
 | Binary sections / component items | 8,192 / 16,384 |
-| Core functions / declared locals / operators | 65,536 / 1,048,576 / 2,000,000 |
-| Examined type nodes / type depth / members per type | 65,536 / 64 / 1,024 |
+| Core functions / declared locals / operators | 65,536 / 1,048,576 / 8,000,000 |
+| Examined type nodes / type depth / members per type | 262,144 / 64 / 1,024 |
+| Conservative reference expansion | 2,097,152 |
 | Names / parameters per function | 512 bytes / 256 |
 | WIT packages / individual source / aggregate source | 256 / 256 KiB / 4 MiB |
 | Aggregate WIT tokens | 262,144 |
@@ -162,7 +163,11 @@ Semantic defaults are hard ceilings that callers may lower:
 Byte, lexical, nesting, vector and transitive type-graph checks precede the
 recursive validator and component decoder. Expanded-work accounting is
 conservative: shared types and aliases can consume the budget more than once,
-so a structurally valid large graph can exceed the supported profile. The
+so a structurally valid large graph can exceed the supported profile. A named
+instance alias spends the selected export's complete transitive summary. Export
+tables use borrowed names and shared indices; their scopes, entries and members
+remain bounded by the same type-node ceiling. Missing members and changed
+entity kinds are rejected before recursive validation. The
 limits bound input/work and retained summaries, not exact RSS. Packaging is a
 synchronous caller-owned operation with no hidden queue or worker pool. The
 output parent must remain operator-controlled during export. A failed export

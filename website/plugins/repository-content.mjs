@@ -4,8 +4,8 @@ import {requireValue, websiteRoot} from '../lib/repository.mjs';
 import {prepare} from '../lib/prepare.mjs';
 import {buildSearch} from '../lib/search-build.mjs';
 
-export default function repositoryContent(context) {
-  const {manifest} = prepare({baseUrl: context.siteConfig.baseUrl});
+export default function repositoryContent(context, _options, prepared = prepare({baseUrl: context.siteConfig.baseUrl})) {
+  const {manifest} = prepared;
   return {
     name: 'lsf-repository-content',
     async postBuild({outDir}) {
