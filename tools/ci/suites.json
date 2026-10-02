@@ -5091,14 +5091,16 @@
         "tenant::tests::same_atomic_envelope_merges_state_and_command_counter_once_and_rejects_overflow_without_partial_rows",
         "tenant::tests::typed_accounting_reads_and_setup_existence_checks_refuse_oversized_bytes_before_copying_values",
         "session::tests::inspection::native_cell_observation_preserves_real_scope_value_and_tombstone_without_session_access",
-        "session::tests::inspection::native_cell_observation_refuses_foreign_incarnations_future_versions_and_malformed_owned_rows"
+        "session::tests::inspection::native_cell_observation_refuses_foreign_incarnations_future_versions_and_malformed_owned_rows",
+        "recovery::offline::tests::file_bound::stricter_installed_export_cap_refuses_before_oversize_write_and_preserves_source",
+        "recovery::offline::tests::file_bound::stricter_installed_input_cap_rejects_existing_snapshot_and_cannot_expand_native_profile"
       ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 190,
+      "minimumCases": 192,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

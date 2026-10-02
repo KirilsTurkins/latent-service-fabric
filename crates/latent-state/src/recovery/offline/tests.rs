@@ -37,6 +37,7 @@ use std::{
 const DEFINITION: &[u8] =
     include_bytes!("../../../../../contracts/state/application-aggregate-v1.schema.json");
 
+mod file_bound;
 mod migration;
 mod restore_authority;
 
