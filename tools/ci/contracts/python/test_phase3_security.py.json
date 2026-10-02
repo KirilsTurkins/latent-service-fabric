@@ -1,5 +1,11 @@
 {
   "cases": [
+    "ChildFailureSnapshotTests.test_closed_recorder_vocabulary_is_complete_and_every_variant_is_extractable",
+    "ChildFailureSnapshotTests.test_failed_assertion_shape_keeps_child_stage_and_original_integer_values",
+    "ChildFailureSnapshotTests.test_incomplete_empty_observation_never_claims_a_recorded_cause",
+    "ChildFailureSnapshotTests.test_malformed_private_unknown_and_ambiguous_snapshot_lines_are_discarded",
+    "ChildFailureSnapshotTests.test_native_and_receipt_bounds_preserve_explicit_truncation",
+    "ChildFailureSnapshotTests.test_snapshot_schema_rejects_unknown_fields_mismatched_counts_and_false_flags",
     "ContainerTests.test_failed_inner_process_still_stops_only_the_preverified_container_id",
     "ContainerTests.test_false_failure_schema_cannot_be_coerced_into_a_success",
     "ContainerTests.test_negative_inner_receipt_stops_the_container_and_exits_nonzero",
@@ -47,6 +53,78 @@
     "WorkflowTests.test_workflow_receipts_need_the_exact_reaped_clean_node_lifetimes"
   ],
   "guards": {
+    "ChildFailureSnapshotTests.test_closed_recorder_vocabulary_is_complete_and_every_variant_is_extractable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88afccd8ac245aec167db8eac93df897eb1fee6a9ac30bf32fe183c88522724b",
+        "class:setup-sha256:a206889169da005e5553c59c48d2eb23e255d587a50488fdde7853272d0ab20b"
+      ],
+      "skipSites": []
+    },
+    "ChildFailureSnapshotTests.test_failed_assertion_shape_keeps_child_stage_and_original_integer_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88afccd8ac245aec167db8eac93df897eb1fee6a9ac30bf32fe183c88522724b",
+        "class:setup-sha256:a206889169da005e5553c59c48d2eb23e255d587a50488fdde7853272d0ab20b"
+      ],
+      "skipSites": []
+    },
+    "ChildFailureSnapshotTests.test_incomplete_empty_observation_never_claims_a_recorded_cause": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88afccd8ac245aec167db8eac93df897eb1fee6a9ac30bf32fe183c88522724b",
+        "class:setup-sha256:a206889169da005e5553c59c48d2eb23e255d587a50488fdde7853272d0ab20b"
+      ],
+      "skipSites": []
+    },
+    "ChildFailureSnapshotTests.test_malformed_private_unknown_and_ambiguous_snapshot_lines_are_discarded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88afccd8ac245aec167db8eac93df897eb1fee6a9ac30bf32fe183c88522724b",
+        "class:setup-sha256:a206889169da005e5553c59c48d2eb23e255d587a50488fdde7853272d0ab20b"
+      ],
+      "skipSites": []
+    },
+    "ChildFailureSnapshotTests.test_native_and_receipt_bounds_preserve_explicit_truncation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88afccd8ac245aec167db8eac93df897eb1fee6a9ac30bf32fe183c88522724b",
+        "class:setup-sha256:a206889169da005e5553c59c48d2eb23e255d587a50488fdde7853272d0ab20b"
+      ],
+      "skipSites": []
+    },
+    "ChildFailureSnapshotTests.test_snapshot_schema_rejects_unknown_fields_mismatched_counts_and_false_flags": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:88afccd8ac245aec167db8eac93df897eb1fee6a9ac30bf32fe183c88522724b",
+        "class:setup-sha256:a206889169da005e5553c59c48d2eb23e255d587a50488fdde7853272d0ab20b"
+      ],
+      "skipSites": []
+    },
     "ContainerTests.test_failed_inner_process_still_stops_only_the_preverified_container_id": {
       "bases": [
         "unittest.TestCase"
@@ -597,6 +675,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_phase3_security.py",
-  "reviewReason": "Extend existing browser receipt acceptance and rejection cases for required finite referrer/token/cache/recovery observations; preserve every existing case and guard.",
+  "reviewReason": "Preserve every existing security case and guard; retain finite browser referrer/token/cache/recovery observations and all six closed child snapshot controls without replay or relaxing acceptance.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
