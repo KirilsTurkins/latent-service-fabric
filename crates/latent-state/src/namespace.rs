@@ -14,6 +14,7 @@ pub const IDENTITY_BYTES: usize = 256;
 const RECORD_MAGIC: &[u8] = b"lsf-namespace-v1\0";
 
 pub mod catalog;
+pub mod compatibility;
 pub mod history;
 pub mod lifecycle;
 

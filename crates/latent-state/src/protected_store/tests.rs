@@ -19,6 +19,7 @@ mod native_capacity;
 mod recovery;
 mod reserved;
 mod resource;
+mod snapshot;
 mod validation;
 
 fn wait<T>(future: impl Future<Output = T>) -> T {
