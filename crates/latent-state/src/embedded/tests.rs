@@ -4,6 +4,203 @@ use std::fs::OpenOptions;
 mod measurement;
 mod writers;
 
+#[test]
+fn promised_disposition_capacity_cannot_be_consumed_by_unrelated_writers() {
+    use crate::reservation::{reservation_key, LogicalReservation};
+    let dir = tempfile::tempdir().unwrap();
+    let store = EmbeddedStore::open_file(
+        file(&dir.path().join("reserved.redb")),
+        StoreLimits {
+            maximum_logical_bytes: 4096,
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    let reserved_key = reservation_key(b"admitted-command").unwrap();
+    let reserved = LogicalReservation {
+        generation: 1,
+        bytes: 3000,
+    }
+    .encode()
+    .unwrap();
+    store
+        .apply(AtomicBatch {
+            expectations: vec![ExpectedRow {
+                key: reserved_key.clone(),
+                value: None,
+            }],
+            mutations: vec![RowMutation {
+                key: reserved_key.clone(),
+                value: Some(reserved.clone()),
+            }],
+        })
+        .unwrap();
+    let unrelated = AtomicBatch {
+        expectations: vec![],
+        mutations: vec![RowMutation {
+            key: key(Family::State, "unrelated"),
+            value: Some(vec![9; 2000]),
+        }],
+    };
+    assert_eq!(store.apply(unrelated), Err(StoreError::Capacity));
+    assert_eq!(
+        store
+            .snapshot()
+            .unwrap()
+            .get(&key(Family::State, "unrelated")),
+        Ok(None)
+    );
+    store
+        .apply(AtomicBatch {
+            expectations: vec![ExpectedRow {
+                key: reserved_key.clone(),
+                value: Some(reserved),
+            }],
+            mutations: vec![
+                RowMutation {
+                    key: reserved_key.clone(),
+                    value: None,
+                },
+                RowMutation {
+                    key: key(Family::Result, "terminal-rejection"),
+                    value: Some(vec![7; 2000]),
+                },
+            ],
+        })
+        .unwrap();
+    assert_eq!(store.snapshot().unwrap().get(&reserved_key), Ok(None));
+    assert_eq!(
+        store
+            .snapshot()
+            .unwrap()
+            .get(&key(Family::Result, "terminal-rejection"))
+            .unwrap()
+            .unwrap()
+            .len(),
+        2000
+    );
+}
+
+#[test]
+fn reservation_generations_fence_stale_release_and_capacity_survives_reopen() {
+    use crate::reservation::{reservation_key, LogicalReservation};
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("reserved.redb");
+    let reserved_key = reservation_key(b"command").unwrap();
+    let first = LogicalReservation {
+        generation: 1,
+        bytes: 2000,
+    }
+    .encode()
+    .unwrap();
+    let next = LogicalReservation {
+        generation: 2,
+        bytes: 3000,
+    }
+    .encode()
+    .unwrap();
+    let limits = StoreLimits {
+        maximum_logical_bytes: 4096,
+        ..StoreLimits::default()
+    };
+    let store = EmbeddedStore::open_file(file(&path), limits).unwrap();
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: reserved_key.clone(),
+                value: Some(first.clone()),
+            }],
+        })
+        .unwrap();
+    store
+        .apply(AtomicBatch {
+            expectations: vec![ExpectedRow {
+                key: reserved_key.clone(),
+                value: Some(first.clone()),
+            }],
+            mutations: vec![RowMutation {
+                key: reserved_key.clone(),
+                value: Some(next.clone()),
+            }],
+        })
+        .unwrap();
+    assert_eq!(
+        store.apply(AtomicBatch {
+            expectations: vec![ExpectedRow {
+                key: reserved_key.clone(),
+                value: Some(first)
+            }],
+            mutations: vec![RowMutation {
+                key: reserved_key.clone(),
+                value: None
+            }]
+        }),
+        Err(StoreError::Conflict)
+    );
+    drop(store);
+    let reopened = EmbeddedStore::open_file(file(&path), limits).unwrap();
+    assert_eq!(
+        reopened.snapshot().unwrap().get(&reserved_key),
+        Ok(Some(next))
+    );
+    assert_eq!(
+        reopened.apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: key(Family::Command, "other"),
+                value: Some(vec![1; 2000])
+            }]
+        }),
+        Err(StoreError::Capacity)
+    );
+}
+
+#[test]
+fn malformed_or_unsupported_reservations_never_publish_or_enable_readiness() {
+    use crate::reservation::{reservation_key, LogicalReservation};
+    let dir = tempfile::tempdir().unwrap();
+    let store = EmbeddedStore::open_file(
+        file(&dir.path().join("reserved.redb")),
+        StoreLimits::default(),
+    )
+    .unwrap();
+    let reserved_key = reservation_key(b"command").unwrap();
+    let mut unsupported = LogicalReservation {
+        generation: 1,
+        bytes: 10,
+    }
+    .encode()
+    .unwrap();
+    unsupported[3] = 2;
+    for (bytes, expected) in [
+        (vec![0; 19], StoreError::Corrupt),
+        (unsupported, StoreError::UnsupportedFormat),
+        (vec![0; 20], StoreError::UnsupportedFormat),
+    ] {
+        assert_eq!(
+            store.apply(AtomicBatch {
+                expectations: vec![],
+                mutations: vec![RowMutation {
+                    key: reserved_key.clone(),
+                    value: Some(bytes)
+                }]
+            }),
+            Err(expected)
+        );
+        assert_eq!(store.snapshot().unwrap().get(&reserved_key), Ok(None));
+    }
+    assert_eq!(
+        LogicalReservation {
+            generation: 0,
+            bytes: 10
+        }
+        .encode(),
+        Err(StoreError::Invalid)
+    );
+    assert_eq!(reservation_key(b""), Err(StoreError::Invalid));
+}
+
 fn file(path: &std::path::Path) -> File {
     OpenOptions::new()
         .read(true)

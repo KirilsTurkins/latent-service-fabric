@@ -112,6 +112,71 @@ class CompatibilityReport(unittest.TestCase):
 
 
 class FinalComponentInspection(unittest.TestCase):
+    def test_packaged_report_is_preserved_when_later_packaging_fails(self):
+        for language in c.LANGUAGES:
+            with self.subTest(language=language), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                component = b"final component"
+                (output / "source-inputs.json").write_bytes(b"captured source")
+                (output / "component.wasm").write_bytes(component)
+                build.package_report(output, {"sdk-lock.json": encode({"language": language})}, component)
+                packaged = (output / "compatibility-report.json").read_bytes()
+                build.failure_report(output, language, "package")
+                self.assertEqual((output / "compatibility-report.json").read_bytes(), packaged)
+                diagnostic = c.read((output / "compatibility-failure-report.json").read_bytes())
+                self.assertEqual(diagnostic["componentDigest"], digest(component))
+                self.assertEqual(diagnostic["sourceDigest"], digest(b"captured source"))
+                self.assertEqual(diagnostic["authority"], "none")
+                self.assertEqual(diagnostic["findings"][0]["phase"], "link")
+                self.assertFalse((output / "compatibility-report-failed.json").exists())
+
+    def test_failure_before_packaging_retains_original_report_path(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            (output / "source-inputs.json").write_bytes(b"captured source")
+            build.failure_report(output, "dotnet", "compile")
+            diagnostic = c.read((output / "compatibility-report.json").read_bytes())
+            self.assertIsNone(diagnostic["componentDigest"])
+            self.assertEqual(diagnostic["findings"][0]["phase"], "compile")
+            self.assertFalse((output / "compatibility-failure-report.json").exists())
+            self.assertFalse((output / "compatibility-report-failed.json").exists())
+
+    def test_raw_diagnostic_retains_shared_failure_and_raw_component_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            source = b"captured source"
+            (output / "source-inputs.json").write_bytes(source)
+            build.failure_report(output, "dotnet", "compile")
+            shared = (output / "compatibility-report.json").read_bytes()
+            raw = c.report("dotnet", digest(source), digest(b"raw component"), PROFILE, [],
+                           [c.finding("missing-runtime-port", "link", "compiler",
+                                      operation="wasi:filesystem/types@0.2.6")])
+            build.retain_report(output, raw, kind="raw")
+            self.assertEqual((output / "compatibility-report.json").read_bytes(), shared)
+            observed = c.read((output / "compatibility-raw-report.json").read_bytes())
+            self.assertEqual(observed, raw)
+            self.assertEqual(observed["findings"][0]["classification"], "missing-runtime-port")
+            self.assertFalse((output / "compatibility-report-failed.json").exists())
+
+    def test_stale_inspection_still_fails_closed_and_preserves_packaged_report(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            component = b"original component"
+            host = build.read_json(build.ROOT / "wit/host-abi-phase3-v4.json")
+            (output / "source-inputs.json").write_bytes(b"captured source")
+            (output / "component.wasm").write_bytes(component)
+            (output / "compatibility-inspection.json").write_bytes(encode({
+                "componentDigest": digest(component), "hostAbiDigest": digest(encode(host)), "findings": []}))
+            build.package_report(output, {"sdk-lock.json": encode({"language": "dotnet"})}, component)
+            packaged = (output / "compatibility-report.json").read_bytes()
+            (output / "component.wasm").write_bytes(b"changed component")
+            build.failure_report(output, "dotnet", "package")
+            self.assertEqual((output / "compatibility-report.json").read_bytes(), packaged)
+            marker = json.loads((output / "compatibility-report-failed.json").read_bytes())
+            self.assertEqual(marker["status"], "unavailable")
+            self.assertEqual(marker["authority"], "none")
+            self.assertFalse((output / "compatibility-failure-report.json").exists())
+
     def test_reporting_stale_input_preserves_original_build_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)

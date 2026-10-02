@@ -6,9 +6,9 @@ use std::time::Instant;
 
 use latent_core::{ActivationClock, SystemActivationClock};
 
-use super::physical::{FailureLatch, PhysicalStore};
+use super::physical::{validate_records, FailureLatch, PhysicalStore};
 use super::{ProtectedStoreConfig, ProtectedStoreError, ProtectedStoreOwner};
-use crate::embedded::{RowKey, StoreError, StoreLimits};
+use crate::embedded::{ReadView, RowKey, StoreError, StoreLimits};
 use crate::store_io::{
     StoreIoDrain, StoreIoError, StoreIoOwner, StoreIoShutdown, StoreIoSnapshot, StoreIoStartup,
 };
@@ -67,6 +67,38 @@ impl ProtectedStoreOwner {
         mut validator: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
+        Self::start_validated_view_with_clock(
+            config,
+            validator_retained_bytes,
+            move |view| validate_records(view, &mut validator),
+            clock,
+        )
+    }
+
+    /// Validate the complete logical registry against one coherent native view
+    /// on the accepted initialization worker before publishing readiness.
+    /// The trusted validator must bound its pages, point reads and retained
+    /// buffers and reject unsupported formats and inconsistent cross-row links.
+    /// It cannot transfer the borrowed native view to another owner.
+    pub fn start_validated_view(
+        config: ProtectedStoreConfig,
+        validator_retained_bytes: u64,
+        validator: impl FnOnce(&ReadView) -> Result<(), StoreError> + Send + 'static,
+    ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
+        Self::start_validated_view_with_clock(
+            config,
+            validator_retained_bytes,
+            validator,
+            Arc::new(SystemActivationClock),
+        )
+    }
+
+    pub fn start_validated_view_with_clock(
+        config: ProtectedStoreConfig,
+        validator_retained_bytes: u64,
+        validator: impl FnOnce(&ReadView) -> Result<(), StoreError> + Send + 'static,
+        clock: Arc<dyn ActivationClock>,
+    ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
         let initialization_bytes = config
             .validate()?
             .checked_add(8 * 1024 * 1024)
@@ -91,7 +123,7 @@ impl ProtectedStoreOwner {
         let io = config.io.clone();
         let started = StoreIoOwner::initialize_with_clock(
             move || {
-                PhysicalStore::initialize(&config, Arc::clone(&initializer_failure), &mut validator)
+                PhysicalStore::initialize(&config, Arc::clone(&initializer_failure), validator)
                     .map_err(|error| {
                         initializer_failure.record(error);
                         StoreIoError::InitializationFailed

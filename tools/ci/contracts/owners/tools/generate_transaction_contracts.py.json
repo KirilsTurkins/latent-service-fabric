@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/generate_transaction_contracts.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Generate native Phase 4 negotiation constants from exact WIT and preparation profiles",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "10d9cfc46eaa56477d798d86f7a2a2253daf38a2a7294d81f868402f96494ba4"
+}
