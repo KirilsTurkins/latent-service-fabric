@@ -10,6 +10,90 @@
     "WatchTransitions.test_untrusted_build_is_actionable_before_tools_or_backend_are_used"
   ],
   "guards": {
+    "WatchTransitions.test_failed_foreground_lock_does_not_stop_an_existing_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
+        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
+      ]
+    },
+    "WatchTransitions.test_uncertain_dispatched_start_still_requests_owned_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
+        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
+      ]
+    },
+    "WatchTransitions.test_untrusted_build_is_actionable_before_tools_or_backend_are_used": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
+        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
+      ]
+    },
+    "WatchTransitions.test_new_edit_cancels_only_the_original_build_identity_once": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
+        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
+      ]
+    },
+    "WatchTransitions.test_focused_post_deploy_failure_is_visible_and_never_rolls_back": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
+        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
+      ]
+    },
+    "WatchTransitions.test_superseded_build_cannot_publish_or_run_tests": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
+        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
+      ]
+    },
+    "WatchTransitions.test_uncertain_deployment_stops_watch_without_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
+        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
+      ]
+    },
     "BuildCancellation.test_exact_cancellation_and_workspace_stop_reap_real_compiler_descendants": {
       "bases": [
         "unittest.TestCase"
@@ -18,99 +102,19 @@
         "unittest.skipUnless(sys.platform == 'linux', 'actual Linux helper ownership')"
       ],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "WatchTransitions.test_failed_foreground_lock_does_not_stop_an_existing_build": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
-        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
-      ],
-      "skipSites": []
-    },
-    "WatchTransitions.test_focused_post_deploy_failure_is_visible_and_never_rolls_back": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
-        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
-      ],
-      "skipSites": []
-    },
-    "WatchTransitions.test_new_edit_cancels_only_the_original_build_identity_once": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
-        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
-      ],
-      "skipSites": []
-    },
-    "WatchTransitions.test_superseded_build_cannot_publish_or_run_tests": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
-        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
-      ],
-      "skipSites": []
-    },
-    "WatchTransitions.test_uncertain_deployment_stops_watch_without_retry": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
-        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
-      ],
-      "skipSites": []
-    },
-    "WatchTransitions.test_uncertain_dispatched_start_still_requests_owned_cleanup": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
-        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
-      ],
-      "skipSites": []
-    },
-    "WatchTransitions.test_untrusted_build_is_actionable_before_tools_or_backend_are_used": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26debdd0609652d3051a6ed1880a088fe9feead31d23be68bc69f897f214bc9",
-        "class:setup-sha256:3c0f86a6ae4583824a94db237d5c4457847eeb8c268ad38beb20abf4384f2af3"
-      ],
-      "skipSites": []
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dev_watch.py",
+<<<<<<< HEAD
   "reviewReason": "Retain every existing case and deadline; poll only the guarded state-replacement race and atomically publish complete compiler PID readiness for both cancellation reasons.",
+=======
+  "reviewReason": "Retain every existing case and deadline; make the missing-fixture precondition explicit and accept only the guarded concurrent-replacement race while polling actual compiler startup. Atomically publish complete compiler PID readiness while retaining both cancellation reasons, deadlines and physical reaping checks.",
+>>>>>>> refs/phase4/contract-target-b06
   "schemaVersion": "latent.ci.contracts.v1"
 }
