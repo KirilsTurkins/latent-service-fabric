@@ -24,7 +24,9 @@ class AuthoringFrontend(unittest.TestCase):
         self.root = Path(owned.name)
         self.project = self.root / 'application'
         self.project.mkdir()
-        self.executable = Path(sys.executable).absolute()
+        self.executable = Path(sys.executable).resolve(strict=True)
+        self.assertTrue(self.executable.is_file())
+        self.assertFalse(self.executable.is_symlink())
         self.identity = digest(self.executable.read_bytes())
 
     def standalone(self, source, action='test', timeout=30):
