@@ -23,5 +23,13 @@ pub mod invocation {
     }
 }
 
+/// Negotiated Phase 4 application command/query/recovery APIs. Definitions do
+/// not establish transport integration or an installed state engine.
+pub mod transaction {
+    pub mod v1 {
+        tonic::include_proto!("latent.transaction.v1");
+    }
+}
+
 /// Descriptor set generated from the same exhaustive input manifest as the Rust types.
 pub const FILE_DESCRIPTOR_SET: &[u8] = tonic::include_file_descriptor_set!("latent_descriptor");

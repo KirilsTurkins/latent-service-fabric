@@ -511,3 +511,19 @@ mutation preconditions, tenant isolation and current authority checks remain
 explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
+
+## Additive Phase 4 transaction and state descriptors
+
+The descriptor baseline deliberately includes the published
+`latent/transaction/v1/transaction.proto` and `latent/control/v1/state.proto`
+contracts. Their new messages, enums and services negotiate the complete
+transaction profile and keep command, query, recovery and management authority
+explicit. See [the transaction protocol](transactions.md). Descriptor availability
+does not install a storage engine, authorize an operation or prove runtime
+integration.
+
+`AuditCapabilityResourceClass` adds `STATE` at value 11 so host-produced state
+capability events retain their resource class through RPC and CLI projection.
+Every prior descriptor, field number, enum value and RPC signature remains
+unchanged. The additive descriptor comparison checks those prior members before
+updating the golden; existing audit clients may retain an unknown numeric value.

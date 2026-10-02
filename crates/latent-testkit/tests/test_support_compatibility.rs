@@ -36,3 +36,26 @@ fn deterministic_module_and_root_reexports_remain_compatible() {
         latent_testkit::TempWorkspace::create_under(parent.path(), "compatibility").unwrap();
     assert!(workspace.path().is_dir());
 }
+
+#[test]
+fn process_and_resource_reexports_preserve_the_neutral_owner_types() {
+    let limits: latent_test_process::ProcessLimits =
+        latent_testkit::process::ProcessLimits::default();
+    assert_eq!(limits.maximum_stdout_bytes, 64 * 1024);
+    let probe: latent_test_process::CurrentProcessProbe = latent_testkit::CurrentProcessProbe;
+    assert_eq!(
+        latent_test_process::ResourceProbe::capture(&probe)
+            .unwrap()
+            .process_id,
+        std::process::id()
+    );
+    let harness: latent_test_process::ProcessHarness =
+        latent_testkit::ProcessHarness::new("test-program");
+    assert_eq!(harness.program(), std::ffi::OsStr::new("test-program"));
+    let captured: fn(latent_test_process::CapturedProcess) -> latent_testkit::CapturedProcess =
+        std::convert::identity;
+    let _ = captured;
+    let owned: fn(latent_test_process::OwnedProcess) -> latent_testkit::process::OwnedProcess =
+        std::convert::identity;
+    let _ = owned;
+}
