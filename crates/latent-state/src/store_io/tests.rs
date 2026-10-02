@@ -10,8 +10,10 @@ use latent_core::ActivationClock;
 
 use super::*;
 
+mod custody;
 mod initialization;
 mod ownership;
+mod recovery;
 mod retirement;
 mod shutdown;
 
@@ -32,6 +34,7 @@ impl Drop for Store {
 
 fn limits() -> StoreIoLimits {
     StoreIoLimits {
+        recovery: None,
         workers: 2,
         queued_jobs: 8,
         accepted_jobs: 16,

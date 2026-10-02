@@ -106,6 +106,16 @@ impl Fixture {
         held
     }
 
+    pub fn hold_before_session(&self) -> Arc<Mutex<Option<Fence>>> {
+        let held = Arc::new(Mutex::new(None));
+        let keep = Arc::clone(&held);
+        let eligibility = self.eligibility.clone();
+        *self.guest.plan_hook.lock().unwrap() = Some(Box::new(move || {
+            *keep.lock().unwrap() = Some(Fence::hold(&eligibility));
+        }));
+        held
+    }
+
     pub fn expire_original_lease(&self) {
         self.clock.0.fetch_add(6, Ordering::AcqRel);
     }

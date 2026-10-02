@@ -55,13 +55,29 @@ impl Fixture {
         Self::with_inventory("builder-a", false)
     }
     fn with_inventory(builder_id: &str, with_inventory: bool) -> Self {
-        Self::configured(builder_id, with_inventory, None)
+        Self::configured(builder_id, with_inventory, None, false)
     }
     pub fn with_runtime_requirements(requirements: Value) -> Self {
-        Self::configured("builder-a", true, Some(requirements))
+        Self::configured("builder-a", true, Some(requirements), false)
     }
-    fn configured(builder_id: &str, with_inventory: bool, requirements: Option<Value>) -> Self {
-        let mut input = packaging::capsule(packaging::component::Options::default());
+    pub fn transactional() -> Self {
+        Self::configured("builder-a", true, None, true)
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
+    )]
+    fn configured(
+        builder_id: &str,
+        with_inventory: bool,
+        requirements: Option<Value>,
+        transactional: bool,
+    ) -> Self {
+        let mut input = if transactional {
+            packaging::transactional_capsule()
+        } else {
+            packaging::capsule(packaging::component::Options::default())
+        };
         if let Some(requirements) = requirements {
             packaging::mutate_json(&mut input, "capsule.json", |manifest| {
                 for (key, value) in requirements.as_object().unwrap() {
@@ -73,10 +89,18 @@ impl Fixture {
             });
         }
         let inventory = sbom::inventory(&input);
+        let limits = PackagingLimits {
+            manifest_profile: if transactional {
+                packaging::transaction_profile()
+            } else {
+                latent_manifest::ManifestValidationProfile::default()
+            },
+            ..Default::default()
+        };
         let bundle = if with_inventory {
-            build_package_with_sbom(input, inventory, PackagingLimits::default()).unwrap()
+            build_package_with_sbom(input, inventory, limits).unwrap()
         } else {
-            latent_packaging::build_package(input, PackagingLimits::default()).unwrap()
+            latent_packaging::build_package(input, limits).unwrap()
         };
         let subject = PackageSigningSubject::from_package(
             bundle.manifest_bytes(),

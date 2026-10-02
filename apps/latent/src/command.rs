@@ -223,6 +223,7 @@ fn name(command: &Command) -> &'static str {
         Command::Capability(command) => command.name(),
         Command::State(command) => command.name(),
         Command::Transaction(command) => command.name(),
+        Command::Dispatcher(command) => command.name(),
         Command::Policy(command) => command.name(),
         Command::Package(command) => command.name(),
         Command::Validate(V::Capsule(_)) => "validate capsule",

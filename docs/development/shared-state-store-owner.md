@@ -1,7 +1,7 @@
 # Shared state store ownership
 
 `latent_state::protected_store::ProtectedStoreOwner` owns one node database on
-the [selected redb profile](../../adr/0061-select-redb-for-transactional-host-state.md).
+the [selected redb profile](../../adr/0063-select-redb-for-transactional-host-state.md).
 It runs protected opening, engine verification, bounded logical-record validation,
 ordinary storage jobs, snapshot retirement, the final flush and engine destruction
 on the same fixed workers. A future poll does no engine or filesystem I/O.
@@ -51,9 +51,9 @@ does not implicitly enable creation.
 
 | Resource | Initial profile |
 | --- | --- |
-| Fixed workers | 3, each with an explicit 1 MiB stack |
+| Fixed workers | 4: 3 ordinary and 1 reserved recovery, each with an explicit 1 MiB stack |
 | Active native reads/writes | 2 reads, 1 writer |
-| Queued/accepted jobs and native resource reservations | 8 queued, 32 accepted |
+| Queued/accepted jobs and native resource reservations | 8 queued/32 accepted ordinary; 4 queued/8 accepted recovery |
 | Retained job/result/native-resource bytes | 128 MiB, at most 40 MiB per job |
 | Resident engine cache and baseline metadata reservation | 8 MiB + 64 KiB, until engine destruction |
 | Engine cache | 8 MiB |
@@ -105,6 +105,25 @@ view expiry does not release this physical pin. Foreign owners reject a view.
 An admission failure consumes the passed view and schedules its retirement;
 the operation never runs.
 
+Node checkpoint descriptors use `reserve_recovery_resource` before opening,
+with their full native byte charge and the original global request keeper.
+`initialize_resource` opens once on the same fixed recovery writer;
+`with_resource` borrows the confined native value on a declared recovery
+read/write worker and returns its affine identity with bounded metadata.
+Uninitialized resources, foreign owners and ordinary queue substitutions reject
+before the callback runs. The native value has no public accessor.
+
+Resource drop, including a detached initialization or operation response,
+queues its pre-reserved recovery destruction. Its one retirement witness and
+receipt become positive only after the native destructor, original keeper and
+physical reservation actually retire. Recovery resource reads and destruction
+remain usable with all ordinary workers and queue slots occupied. An operation
+panic preserves sticky quarantine while actual native destruction still runs.
+All 134 registered state cases and strict all-target Clippy passed on pinned
+Linux Rust 1.97.1, including four real protected-store/file ownership schedules.
+This focused qualification does not replace complete CI or standalone startup
+and recovery integration.
+
 `apply_fenced` runs the host's short no-I/O authority/attempt/OCC acceptance fence
 inside the real abortable writer. Engine conflict, validation and quota failures
 remain technical failures. A successful flush followed by loss of the protected
@@ -114,6 +133,23 @@ physical retirement/reopen. No failure grants permission to rerun a guest,
 change its command key or report a business abort.
 
 ## Cancellation and shutdown
+
+`reserve_operation` installs a bounded affine physical operation pin before
+claiming durable work or starting provider I/O. It retains exclusive root
+ownership through physical cleanup, without opening another native snapshot.
+`ProtectedStoreOperation::retire` and `ProtectedStoreView::retire` return a
+preallocated `StoreIoRetirement` receipt. The receipt becomes ready only after
+the fixed worker finishes the actual destructor and releases physical ownership.
+Command cleanup awaits native view/buffer retirement before retiring its own
+operation pin and accepting prior-owner proof. Dropping a receipt detaches
+observation without cancelling cleanup. Unexpected operation-pin drop
+quarantines and preserves its bounded reservation/root until process loss.
+
+The pin and receipt qualification passed all 73 state tests and strict Linux
+all-target/all-feature Clippy. Deterministic schedules prove receipt readiness
+waits through a paused destructor, detached waiters retain physical bytes, and
+operation pins preserve the real root lock through deadline quarantine while
+remaining able to retire after logical close.
 
 Dropping a job waiter detaches its response. An accepted queued or active write
 still runs once and keeps its buffers/reservation. Completed result memory stays
@@ -192,3 +228,146 @@ The shared owner is implemented here; standalone activation readiness, complete
 command envelopes, retention/restore and six-language runtime conformance remain
 their Phase 4 integration tickets. This document makes no packaged-node or
 power-loss qualification claim.
+
+The dispatcher obtains one `ProtectedStoreDispatcher` registration from this
+same physical store. Cloned readiness handles cannot advance a new dispatch
+epoch while that registration remains live. Its bounded physical slot and
+protected root pin retire on a fixed storage worker only after provider work
+and attempt pins have actually retired. An unexpected registration drop gates
+the store and preserves its pin for recovery. This protects against overlapping
+dispatcher startup without introducing another engine or process registry.
+The actual Linux registration lifecycle test and all 74 state cases passed,
+along with strict all-target/all-feature Clippy on the pinned image above.
+
+Before a host moves a view through a cancellable read call, it may capture
+`view.retirement_witness()`. One non-clone status witness is issued for the
+entire affine view lifetime. `has_retired()` becomes true only after the native
+destructor and physical reservation release, including a detached `with_view`
+response. It uses the pre-reserved retirement signal and no waiter, so the
+existing `retire()` receipt remains the single bounded future observer. The
+generic paused-destructor test verifies this distinction; the real Linux test
+drops an accepted paused read's response, closes admission, and proves the view
+and root remain owned until actual fixed-worker retirement. All 75 state cases
+and strict combined state/effects Clippy passed on the pinned Linux image.
+
+
+## Physically reserved recovery admission
+
+`StoreIoKind::RecoveryRead` and `RecoveryWrite` use a separate preallocated queue,
+accepted-owner cap and retained-byte partition on this same engine. The protected
+production profile has four fixed workers: the original three ordinary workers
+and one reserved recovery worker. Ordinary retirement callbacks also stay on
+ordinary workers, so a paused native destructor cannot occupy that reserve.
+Ordinary reads, writes, retained native views
+and completed response owners cannot consume the recovery partition. The
+provider-dispatch job owner explicitly disables this extra lane; it is not a
+second storage engine or an additional unbounded blocking pool.
+
+Recovery reads can progress while every ordinary worker and ordinary queue,
+accepted-owner quota or native-byte partition is full. Recovery writes share the
+same physical single-writer limit. They cannot steal a live write or declare it
+retired; a stalled device/physical writer may still prevent a recovery mutation.
+The original finite management deadline and explicit failure remain required.
+Unknown store readiness, logical close and quarantine reject fresh recovery
+admission. Already accepted buffers and workers remain accounted until actual
+physical destruction, including after waiter cancellation.
+
+Recovery capacity is finite: one worker, four queued jobs, eight accepted owners,
+16 MiB retained bytes and 8 MiB plus 8 KiB metadata per job in the protected profile. These bytes are
+a disjoint partition of the existing 128 MiB owner ceiling; engine cache/fixed
+metadata still remain resident until engine destruction. Snapshot fields report
+recovery queue, accepted owners, bytes, reads and writes separately. Queue and
+retirement metadata account both finite classes. No recovery job changes engine
+durability settings or evicts guaranteed records.
+
+Windows Rust 1.97.1: all 93 state library cases and strict all-target/all-feature
+state/effects Clippy passed, including four deterministic physical recovery
+schedules. A fifth focused portable schedule passed after adding isolation from
+an ordinary paused native destructor. They demonstrate ordinary saturation, retained detached buffers,
+finite recovery caps and unavailable/invalid configuration, and read progress
+past an actual live writer without a second write. The sixth registered case
+uses the real protected Linux engine and verifies the committed row while all
+three ordinary workers and their queue are paused. All 113 state cases, together
+with 102 core and 70 effect cases, passed on the pinned Linux image with no
+ignored or filtered cases. Combined strict all-target/all-feature Clippy passed
+for all three crates. This admission port does not by itself
+complete #397's durable quota, linked retention or compaction requirements.
+
+## Original capacity retained by a native view
+
+`open_view_retaining(Arc<dyn Any + Send + Sync>)` binds one original request or
+global capacity keeper into the already reserved affine native slot before
+worker submission and snapshot opening. `open_view` remains available for
+callers that have no additional keeper. The generic slot also exposes
+`retain_owner`; it rejects a second keeper or installation after native attach,
+returning the refused owner unchanged. The keeper must already own its finite
+metadata and capacity reservation; this port adds no task, queue or worker.
+
+Actual fixed-worker retirement destroys the native value first, drops its
+keeper next, releases the physical storage reservation, and only then completes
+the existing retirement witness and receipt. Dropping an opening/read response
+or a retirement receipt cannot release that keeper early. The original
+reservation lifetime is independent of a terminal ledger or waiter deadline.
+
+The portable schedule
+`original_capacity_keeper_survives_detached_native_retirement_until_actual_destruction`
+passed on Windows with Rust 1.97.1. It binds a real `NativeReservation` before
+allocation, drops the returned owner, pauses the actual native destructor on
+the existing storage worker, and proves the global slot, storage bytes, engine
+and witness remain owned until explicit physical release. The keeper observes
+native destruction while the physical storage slot is still charged, and only
+then can a new ordinary global reservation be admitted. The exact Linux state
+inventory includes this new case; its Linux execution still requires the
+qualified native environment.
+
+The same exact source also passed all 95 portable Windows state library cases
+with zero ignored or filtered cases, plus strict all-target/all-feature state
+Clippy. UTF8 CI coverage and all seven suite inventory cases passed.
+
+## Original capacity retained by accepted storage work
+
+`with_store_retaining` binds an original request or global reservation keeper
+before the same fixed worker accepts storage work. Its keeper survives callback
+completion, the protected-root checks, and destruction of an unclaimed response.
+Callback errors and detached waiters therefore cannot refund the original global
+reservation while physical storage work or its buffers remain live. The generic
+storage owner and its initialized handle expose the same `submit_retaining`
+contract. Keeper metadata is included in the existing native job accounting;
+the caller must pre-reserve the actual keeper and payload bytes.
+
+The completion destroys its result before dropping the keeper, then releases
+the existing storage bytes and accepted slot. Keeper destruction runs outside
+the storage bookkeeping lock. A caller that claims a response must retain the
+same original owner independently in that typed response and its physical
+transport frames; this submission port does not replace response ownership.
+
+The deterministic schedule
+`original_job_capacity_survives_callback_completion_and_detached_buffer_destruction`
+uses a real recovery `NativeReservation`, detaches the accepted job, and pauses
+both its callback and actual response destructor. The original global slot
+remains charged at both boundaries. The keeper observes buffer destruction
+before storage-slot refund, and fresh global admission becomes possible only
+after actual retirement.
+
+On the pinned Linux Rust 1.97.1 image, all 117 state library cases passed with
+zero ignored or filtered cases, including this schedule and the original native
+view keeper schedule. Strict all-target/all-feature state Clippy also passed.
+
+## Physical recovery operation retirement
+
+`reserve_recovery_operation_retaining` reserves an affine operation pin in the
+same protected engine's recovery partition and binds the original request
+keeper before provider work starts. Its destruction is queued to the existing
+reserved worker. Ordinary native destructors and accepted slots cannot occupy
+that worker or the recovery retirement slots. An unexpected operation drop still
+quarantines the protected root and retains the original owner; no timeout
+provides physical completion evidence.
+
+The underlying `reserve_recovery_retained` uses separate preallocated retirement
+slots within the existing recovery limits. The deterministic schedule
+`recovery_native_owner_retires_on_reserved_worker_when_ordinary_capacity_is_full`
+fills both ordinary workers and their accepted quota, then proves actual recovery
+native destruction and pin retirement on the reserved worker. All 118 state
+library cases and strict all-target/all-feature state Clippy passed on the pinned
+Linux Rust 1.97.1 image. This establishes finite native recovery ownership, not
+progress through a stalled device or proof for an unretired provider operation.

@@ -82,6 +82,29 @@ impl ProtectedRoot {
         self.chain.last().expect("root anchor").identity
     }
 
+    /// Compare actual retained ancestor identities on a bounded control worker.
+    /// Siblings may share ancestors; neither final root may be the other root
+    /// or appear anywhere in its anchored ancestry. Revalidate both chains
+    /// before and after comparison, including owner/mode and named-inode fences.
+    /// No file or descriptor escapes through this metadata-only operation.
+    pub fn is_separate_from(&self, other: &Self) -> Result<bool, PlatformError> {
+        self.check()?;
+        other.check()?;
+        let this_root = self.identity();
+        let other_root = other.identity();
+        let separate = !self
+            .chain
+            .iter()
+            .any(|anchor| anchor.identity == other_root)
+            && !other
+                .chain
+                .iter()
+                .any(|anchor| anchor.identity == this_root);
+        self.check()?;
+        other.check()?;
+        Ok(separate)
+    }
+
     /// Query the filesystem of the retained descriptor, not a replacement path.
     pub fn filesystem_type(&self) -> Result<u64, PlatformError> {
         self.check()?;
@@ -125,6 +148,50 @@ impl ProtectedRoot {
             }
             Err(_) => return Err(state_failure()),
         };
+        platform::require_mode_only_permissions(&file).map_err(|()| state_failure())?;
+        let metadata = file.metadata().map_err(|_| state_failure())?;
+        mutable_metadata(&metadata, self.uid, maximum_bytes)?;
+        let fence = ProtectedMutableFile {
+            name: name.into(),
+            root_identity: self.identity(),
+            file_identity: (metadata.dev(), metadata.ino()),
+            maximum_bytes,
+        };
+        self.check_mutable_file(&fence)?;
+        Ok((file, fence))
+    }
+
+    /// Create a new explicitly configured mutable leaf, refusing every existing
+    /// entry, including an empty or malformed file. Retain the returned fence
+    /// with the descriptor and check it before each bounded control operation.
+    /// This performs file and directory synchronization on the storage worker.
+    /// A failed initialization never removes or replaces the created leaf.
+    pub fn create_mutable_file(
+        &self,
+        name: &str,
+        maximum_bytes: u64,
+    ) -> Result<(File, ProtectedMutableFile), PlatformError> {
+        if !valid_leaf(name) || maximum_bytes == 0 || maximum_bytes > 1_073_741_824 {
+            return Err(state_failure());
+        }
+        self.check().map_err(|_| state_failure())?;
+        let directory = &self.chain.last().expect("root anchor").file;
+        let file = File::from(
+            fs::openat(
+                directory,
+                name,
+                OFlags::RDWR
+                    | OFlags::CREATE
+                    | OFlags::EXCL
+                    | OFlags::NOFOLLOW
+                    | OFlags::CLOEXEC
+                    | OFlags::NONBLOCK,
+                Mode::RUSR | Mode::WUSR,
+            )
+            .map_err(|_| state_failure())?,
+        );
+        file.sync_all().map_err(|_| state_failure())?;
+        directory.sync_all().map_err(|_| state_failure())?;
         platform::require_mode_only_permissions(&file).map_err(|()| state_failure())?;
         let metadata = file.metadata().map_err(|_| state_failure())?;
         mutable_metadata(&metadata, self.uid, maximum_bytes)?;

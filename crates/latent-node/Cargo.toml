@@ -15,13 +15,19 @@ latent-activation = { path = "../latent-activation" }
 latent-admission = { path = "../latent-admission" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-capabilities = { path = "../latent-capabilities" }
+latent-commit = { path = "../latent-commit" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
+latent-effects = { path = "../latent-effects" }
+latent-manifest = { path = "../latent-manifest" }
+latent-policy = { path = "../latent-policy" }
 latent-routing = { path = "../latent-routing" }
 latent-scheduler = { path = "../latent-scheduler" }
+latent-state = { path = "../latent-state" }
 latent-telemetry = { path = "../latent-telemetry" }
 tokio.workspace = true
 
 [dev-dependencies]
-latent-manifest = { path = "../latent-manifest" }
+serde_json.workspace = true
+tempfile.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }

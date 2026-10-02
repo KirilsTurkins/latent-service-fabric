@@ -19,6 +19,8 @@ pub use local_service::LocalServiceInstallation;
 #[path = "providers/events.rs"]
 mod events;
 pub use events::EventInstallation;
+#[path = "providers/http.rs"]
+mod http;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -71,6 +73,8 @@ pub struct HttpInstallation {
     pub credential_directory: Option<PathBuf>,
     #[serde(default)]
     pub credentials: Vec<ProviderSecretFile>,
+    #[serde(default)]
+    pub deferred: Vec<latent_http::deferred::QualifiedHttpEndpoint>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -135,30 +139,7 @@ pub(super) fn derive(
         return Err(invalid("providers"));
     }
     if let Some(http) = &providers.http {
-        http.identity.validate()?;
-        http.configuration
-            .validate()
-            .map_err(|_| invalid("providers.http"))?;
-        if http.credentials.capacity() > 8
-            || http.credential_directory.is_some() == http.credentials.is_empty()
-        {
-            return Err(invalid("providers.http.credentials"));
-        }
-        for (index, credential) in http.credentials.iter().enumerate() {
-            if !token(&credential.reference, 128)
-                || !token(&credential.file, 128)
-                || credential.file.contains(['/', '\\', ':'])
-                || matches!(credential.file.as_str(), "." | "..")
-                || !token(&credential.header, 64)
-                || credential.destination >= http.configuration.destinations.len()
-                || http.credentials[..index].iter().any(|previous| {
-                    previous.reference == credential.reference
-                        || previous.destination == credential.destination
-                })
-            {
-                return Err(invalid("providers.http.credentials"));
-            }
-        }
+        http.validate_installation()?;
     }
     if let Some(blob) = &providers.blob {
         blob.identity.validate()?;

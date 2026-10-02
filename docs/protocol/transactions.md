@@ -120,6 +120,21 @@ operation receipts. Writes require current management credentials, expected
 version and policy digest. Guests and browser routes never acquire this authority.
 Retry of uncertain dispatched effects is not a generic approved write.
 
+`PlanEffectMutation` captures the complete original effect selector, operation,
+action, 32-byte supported row version, policy precondition, reason and finite
+redrive delay. `MutateState` requires that exact typed plan for redrive,
+reconciliation or administrative termination. A plan is descriptive data: the
+host still checks current operator and namespace authority, original effect
+rules, provider proof and actual physical retirement at acceptance. Provider
+confirmation and an administrator's terminal declaration have distinct facts.
+
+`GetStateOperationReceipt` preserves the complete original plan even after its
+expiry. Its namespace publication selects current read authority and may differ
+from the immutable original access publication. Historical outcome and current
+audit acknowledgement remain independent. Missing historical effect-row version
+remains readable and cannot authorize a plan. These additive descriptors define
+16 operations across the transaction, state and dispatcher client boundary.
+
 [HTTP envelopes](../../schemas/transaction-api.schema.json) distinguish
 `command`, `query`, `recovery` and `response`. Route bindings select the declared
 operation/mode, namespace and admitted exact source; requests cannot override
@@ -169,6 +184,44 @@ payload/identity expiry and remaining recovery; purge cannot remove a dependency
 still needed by a result, deduplication tombstone, intent or checkpoint.
 Independent record formats do not add a workflow, timer or continuation engine.
 
+The native store keeps independently decoded command (`LCM3`/`LCM4`), result
+(`LCR3`, pending `LCP1`, expired `LCE1`), namespace accounting (`LCU1`/`LCU2`),
+reservation (`LSR1`/`LSR2`) and retry (`LCT1`/`LCT2`) formats. An inspection reports
+the format of the actual decoded row. Selecting a newer guest ABI does not
+rewrite old rows, reconstruct counters or authorize replay. Legacy command and
+retry readers remain explicit; installing tenant declarations over an existing
+business store requires a separately approved accounting migration. Accounted
+retention refuses legacy rows instead of guessing their ownership.
+
+Explicit tenant declarations bound twelve independent usage categories: live
+state keys/bytes, tombstone keys/bytes, result rows/bytes, effect rows/bytes,
+payload bytes, recovery bytes and metadata rows/bytes. Installation is bounded
+and immutable. State, namespace, command and management writers capture the
+original declaration and counter on the same native view and update one tenant
+generation in their existing atomic batch. The original namespace quota, schema
+and history checks remain required. An absent legacy installation is captured as
+an absence precondition; a concurrent installation fences the old prepared batch.
+Quota or CAS refusals leave a healthy store usable and never mint abort or
+physical retirement evidence.
+
+Optional effect-management metadata shares the existing namespace and tenant
+effect-byte ledgers. Planning charges the actual original plan, slot, counter and
+reservation rows plus its existing 40 KiB future disposition promise. Completing
+that original operation replaces only its own reservation with its receipt.
+Replay is read-only; hypothetical future management operations consume no quota.
+Both ledgers change in the same original batch and a stale plan cannot refresh
+its effect version, policy digest, owner or namespace generation.
+
+Maintenance uses one bounded owner and the original recovery worker. It captures
+each effect's exact payload, history, due index and management rows before
+destructive release. An unfinished management plan still protects those rows
+after its deadline. Purge requires a separate current destructive-policy check,
+the original retention horizon and actual native view retirement. A retained
+view remains an owner after its read deadline; expiry alone never permits
+compaction or deletion. Interrupted progress and protective command floors stay
+durable. Census validates original supported row ownership and compares the same
+accounting ledgers; it performs no repair, migration or renewal.
+
 [TransactionBinding](../../schemas/transaction-binding.schema.json) is a bounded
 companion declaration linking exact existing capsule/deployment/binding IDs,
 namespace, schema digest, operation modes and profile identity. It does not widen
@@ -182,7 +235,7 @@ state/query/intent operations for #389/#718, and all external transactional RPCs
 plus authenticated management inspection/writes for #401. Client generation
 cannot qualify guest lowering; guest compilation cannot qualify a client transport.
 [The generated requirements](../../sdk/profile/transaction-requirements-v1.json)
-enumerate all 13 guest operations and 11 external/management RPCs. Guest profile
+enumerate all 13 guest operations and 16 external/management RPCs. Guest profile
 `latent.guest.transaction.v1` and client profile `latent.client.transaction.v1`
 both consume the single `lsf-transaction-v1` wire contract and retain independent
 execution evidence; neither becomes qualified by generating the other.

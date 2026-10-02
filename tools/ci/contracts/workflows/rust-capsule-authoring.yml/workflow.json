@@ -61,7 +61,7 @@
   "requiredJobs": [
     "authoring"
   ],
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate; retain the accepted CI performance dependency caches, correctness guards and independent execution obligations.",
+  "reviewReason": "Reconcile the earlier squashed dependency stack with the retained kernel: preserve frozen16/native owner and all historical case/skip/command obligations, plus current target action pins and diagnostic coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

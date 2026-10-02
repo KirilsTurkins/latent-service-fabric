@@ -24,7 +24,9 @@ pub(super) fn verify(
     tenant: &TenantId,
     upload: PackageAdmissionUpload,
 ) -> Result<VerifiedAdmission, PlatformError> {
-    with_preparation(authority, tenant, upload, prepare)
+    with_preparation(authority, tenant, upload, |upload| {
+        prepare_with_profile(upload, authority.inner.manifest_profile)
+    })
 }
 
 pub(super) fn with_preparation(
@@ -61,8 +63,22 @@ fn check_tenant(tenant: &TenantId, state: &super::State) -> Result<(), PlatformE
     Ok(())
 }
 
+#[cfg(test)]
 pub(super) fn prepare(upload: PackageAdmissionUpload) -> Result<Prepared, PlatformError> {
-    let limits = PackagingLimits::default();
+    prepare_with_profile(
+        upload,
+        latent_manifest::ManifestValidationProfile::default(),
+    )
+}
+
+pub(super) fn prepare_with_profile(
+    upload: PackageAdmissionUpload,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
+) -> Result<Prepared, PlatformError> {
+    let limits = PackagingLimits {
+        manifest_profile,
+        ..Default::default()
+    };
     let component_limit = usize::try_from(limits.package.max_layer_bytes)
         .map_err(|_| invalid("admission-component-limit"))?;
     AdmissionStorageLimits::default().check_upload(&upload, component_limit)?;

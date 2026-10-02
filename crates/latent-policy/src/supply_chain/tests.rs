@@ -9,6 +9,8 @@ mod clock;
 #[cfg(target_os = "linux")]
 mod clock_renewal;
 #[cfg(target_os = "linux")]
+mod clock_source;
+#[cfg(target_os = "linux")]
 mod history;
 #[cfg(target_os = "linux")]
 mod lifecycle;
@@ -21,6 +23,8 @@ mod publications;
 #[cfg(target_os = "linux")]
 mod runtime;
 mod support;
+#[cfg(target_os = "linux")]
+mod transaction_profile;
 mod verification;
 #[cfg(target_os = "linux")]
 mod web;

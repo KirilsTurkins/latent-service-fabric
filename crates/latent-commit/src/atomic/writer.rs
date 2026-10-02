@@ -43,17 +43,39 @@ pub struct CompleteEnvelope {
     batch: AtomicBatch,
     authorities: Vec<DurableEffectAuthority>,
 }
+
+/// A bounded closed observation of the namespace expectation in an actually
+/// prepared complete envelope. This is not a grant or a durable disposition.
+pub struct EnvelopeNamespaceExpectation {
+    expected: ExpectedRow,
+    outcome: Outcome,
+}
+impl EnvelopeNamespaceExpectation {
+    #[must_use]
+    pub fn is_technical_abort(&self) -> bool {
+        self.outcome == Outcome::Aborted
+    }
+    #[must_use]
+    pub fn matches(&self, expected: &ExpectedRow) -> bool {
+        self.expected.key == expected.key && self.expected.value == expected.value
+    }
+
+    #[must_use]
+    pub fn retained_bytes(&self) -> usize {
+        self.expected.key.key.len() + self.expected.value.as_ref().map_or(0, Vec::len) + 256
+    }
+}
 pub enum PreparedDisposition {
     Confirmed {
-        command: CommandRecord,
-        result: DurableResult,
+        command: Box<CommandRecord>,
+        result: Box<DurableResult>,
     },
     KnownNotCommitted {
-        command: AdmittedCommand,
+        command: Box<AdmittedCommand>,
         reason: AtomicError,
     },
     RecoveryRequired {
-        identity: CommandRecord,
+        identity: Box<CommandRecord>,
     },
 }
 
@@ -69,6 +91,7 @@ impl PreparedAdmission {
         mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
     ) -> Result<AdmissionDecision, AtomicError> {
         authorize(CommandAccess::Admit, None)?;
+        latent_state::tenant::inspect(view, &TenantId(input.key.tenant.clone()))?;
         time.check(0)?;
         input.source.validate()?;
         id(&input.result_read_policy)?;
@@ -80,6 +103,12 @@ impl PreparedAdmission {
         let fingerprint = fingerprint(&input.fingerprint, input.inbox.as_ref())?;
         let key = command_row_key(command_id);
         if let Some(bytes) = view.get(&key)? {
+            if super::RetiredCommand::is_present(&bytes) {
+                let floor = super::RetiredCommand::decode(&bytes)?;
+                floor.verify_key(&input.key)?;
+                time.check(floor.retired_at())?;
+                return Err(AtomicError::Expired);
+            }
             let existing = CommandRecord::decode(&bytes)?;
             authorize(CommandAccess::Replay, Some(&existing))?;
             if existing.key != input.key || existing.fingerprint != fingerprint {
@@ -99,6 +128,8 @@ impl PreparedAdmission {
             .checked_add(input.result_policy.identity_millis)
             .ok_or(AtomicError::Limit)?;
         let record = CommandRecord {
+            accounted: true,
+            retention_review: vec![],
             key: input.key,
             id: command_id,
             fingerprint,
@@ -113,13 +144,21 @@ impl PreparedAdmission {
             attempt: 1,
             outcome: Outcome::Pending,
             completed_at: 0,
+            committed_version: None,
+            committed_view_token: vec![],
             result_digest: Identity([0; 32]),
             effects: vec![],
             inbox: input.inbox,
             abort_proof: None,
         };
-        let reserve = record.result_policy.reservation()?;
+        let reserve = record.result_policy.reservation_for(record.accounted)?;
         let (mut usage, usage_key, usage_bytes) = Usage::read(view, &record.key)?;
+        if !usage.accounted {
+            return Err(AtomicError::UnsupportedFormat);
+        }
+        if usage_bytes.is_none() {
+            usage.result_bytes = row_charge(&usage_key, &usage.encode()?)?;
+        }
         usage.results = usage.results.checked_add(1).ok_or(AtomicError::Limit)?;
         usage.result_bytes = usage
             .result_bytes
@@ -148,7 +187,7 @@ impl PreparedAdmission {
         let reservation = reservation_key(&record.id.0)?;
         let attempt_key = attempt_row_key(record.id, record.attempt);
         let result_key = result_row_key(record.id, record.attempt);
-        let batch = AtomicBatch {
+        let mut batch = AtomicBatch {
             expectations: vec![
                 ExpectedRow {
                     key: key.clone(),
@@ -194,7 +233,7 @@ impl PreparedAdmission {
                 },
                 RowMutation {
                     key: usage_key,
-                    value: Some(usage.encode()),
+                    value: Some(usage.encode()?),
                 },
                 RowMutation {
                     key: reservation,
@@ -203,11 +242,12 @@ impl PreparedAdmission {
                             generation: 1,
                             bytes: reserve,
                         }
-                        .encode()?,
+                        .encode_accounted()?,
                     ),
                 },
             ],
         };
+        super::accounting::apply(view, &TenantId(record.key.tenant.clone()), &mut batch)?;
         Ok(AdmissionDecision::New(Self { record, batch }))
     }
     #[must_use]
@@ -260,6 +300,8 @@ impl PreparedAdmission {
         mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
     ) -> Result<AdmissionDecision, AtomicError> {
         authorize(CommandAccess::Admit, None)?;
+        let installed_tenant =
+            latent_state::tenant::inspect(view, &TenantId(input.key.tenant.clone()))?.is_some();
         time.check(0)?;
         id(&request.request_id)?;
         let identity = command_identity(&input.key)?;
@@ -268,6 +310,12 @@ impl PreparedAdmission {
         let old_bytes = view
             .get(&command_key)?
             .ok_or(AtomicError::RecoveryRequired)?;
+        if super::RetiredCommand::is_present(&old_bytes) {
+            let floor = super::RetiredCommand::decode(&old_bytes)?;
+            floor.verify_key(&input.key)?;
+            time.check(floor.retired_at())?;
+            return Err(AtomicError::Expired);
+        }
         let old = CommandRecord::decode(&old_bytes)?;
         authorize(CommandAccess::Admit, Some(&old))?;
         if old.key != input.key || old.fingerprint != fingerprint || input.owner_epoch == 0 {
@@ -281,18 +329,36 @@ impl PreparedAdmission {
         let retry_key =
             super::record::row_key(Family::Maintenance, b"command-retry-v1\0", retry_id, None);
         if let Some(bytes) = view.get(&retry_key)? {
-            let mut input = Decoder::new(&bytes, b"LCT\0\x01", 77)?;
-            let generation = input.number()?;
-            let proof = input.identity()?;
-            let captured = input.identity()?;
-            input.finish()?;
-            if proof != request.expected_abort || captured != fingerprint {
+            let receipt = super::retry_receipt::RetryReceipt::decode(&bytes)?;
+            receipt.validate_key(&retry_key)?;
+            if receipt.abort_proof != request.expected_abort || receipt.fingerprint != fingerprint {
                 return Err(AtomicError::Conflict);
             }
             let bytes = view
-                .get(&attempt_row_key(identity, generation))?
+                .get(&attempt_row_key(identity, receipt.attempt))?
                 .ok_or(AtomicError::Corrupt)?;
-            return Ok(AdmissionDecision::Existing(CommandRecord::decode(&bytes)?));
+            let record = CommandRecord::decode(&bytes)?;
+            if record.key != input.key || record.fingerprint != fingerprint {
+                return Err(AtomicError::Corrupt);
+            }
+            if !record.accounted {
+                // Supported original LCM3/LCT1 retries have no retention index.
+                // They remain readable only in the explicit uninstalled tenant
+                // profile; a new configuration cannot reconstruct ownership.
+                if installed_tenant || receipt.is_accounted() || record.attempt != receipt.attempt {
+                    return Err(AtomicError::UnsupportedFormat);
+                }
+                return Ok(AdmissionDecision::Existing(record));
+            }
+            let index_key = super::retention::RetryIndex::row_key(identity, receipt.attempt);
+            let index = super::retention::RetryIndex::decode(
+                &view.get(&index_key)?.ok_or(AtomicError::Corrupt)?,
+            )?;
+            if index.key() != index_key || index.retry != retry_id {
+                return Err(AtomicError::Corrupt);
+            }
+            receipt.verify(&record, &index)?;
+            return Ok(AdmissionDecision::Existing(record));
         }
         if old.outcome != Outcome::Aborted || old.abort_proof != Some(request.expected_abort) {
             return Err(AtomicError::RecoveryRequired);
@@ -309,12 +375,40 @@ impl PreparedAdmission {
         record.owner_epoch = input.owner_epoch;
         record.outcome = Outcome::Pending;
         record.completed_at = 0;
+        record.committed_version = None;
+        record.committed_view_token.clear();
         record.clock_floor = time.unix_millis;
         record.result_digest = Identity([0; 32]);
         record.effects.clear();
         record.abort_proof = None;
-        let reserve = record.result_policy.reservation()?;
+        let reserve = record.result_policy.reservation_for(record.accounted)?;
         let (mut usage, usage_key, usage_bytes) = Usage::read(view, &record.key)?;
+        if usage.accounted != record.accounted {
+            return Err(AtomicError::Corrupt);
+        }
+        let retained_reservation = view.get(&reservation_key(&identity.0)?)?;
+        if retained_reservation.is_some() {
+            return Err(AtomicError::Corrupt);
+        }
+        if old.accounted {
+            let retained = super::retention::AUDIT_RESERVED_BYTES;
+            usage.result_bytes = usage
+                .result_bytes
+                .checked_sub(retained)
+                .ok_or(AtomicError::Corrupt)?;
+            usage.reserved = usage
+                .reserved
+                .checked_sub(retained)
+                .ok_or(AtomicError::Corrupt)?;
+            usage.recovery_reserved = usage
+                .recovery_reserved
+                .checked_sub(retained)
+                .ok_or(AtomicError::Corrupt)?;
+            usage.result_bytes = usage
+                .result_bytes
+                .checked_sub(row_charge(&command_key, &old_bytes)?)
+                .ok_or(AtomicError::Corrupt)?;
+        }
         usage.results = usage.results.checked_add(1).ok_or(AtomicError::Limit)?;
         usage.result_bytes = usage
             .result_bytes
@@ -343,11 +437,25 @@ impl PreparedAdmission {
         let attempt = attempt_row_key(identity, record.attempt);
         let reservation = reservation_key(&identity.0)?;
         let result_key = result_row_key(identity, record.attempt);
-        let mut retry = Encoder::new(b"LCT\0\x01");
-        retry.number(record.attempt);
-        retry.identity(request.expected_abort);
-        retry.identity(fingerprint);
-        let batch = AtomicBatch {
+        let retry_bytes = super::retry_receipt::RetryReceipt::create(
+            &record,
+            retry_id,
+            request.expected_abort,
+            installed_tenant,
+        )?;
+        let retry_index = super::retention::RetryIndex::new(identity, record.attempt, retry_id)?;
+        let index_bytes = retry_index.encode()?;
+        if record.accounted {
+            usage.result_bytes = usage
+                .result_bytes
+                .checked_add(row_charge(&retry_key, &retry_bytes)?)
+                .and_then(|bytes| {
+                    bytes.checked_add(row_charge(&retry_index.key(), &index_bytes).ok()?)
+                })
+                .ok_or(AtomicError::Limit)?;
+            usage.check(&namespace)?;
+        }
+        let mut batch = AtomicBatch {
             expectations: vec![
                 ExpectedRow {
                     key: command_key.clone(),
@@ -367,7 +475,7 @@ impl PreparedAdmission {
                 },
                 ExpectedRow {
                     key: reservation.clone(),
-                    value: None,
+                    value: retained_reservation,
                 },
                 ExpectedRow {
                     key: namespace_key.clone(),
@@ -393,7 +501,7 @@ impl PreparedAdmission {
                 },
                 RowMutation {
                     key: retry_key,
-                    value: Some(retry.finish(77)?),
+                    value: Some(retry_bytes),
                 },
                 RowMutation {
                     key: reservation,
@@ -402,7 +510,7 @@ impl PreparedAdmission {
                             generation: record.attempt,
                             bytes: reserve,
                         }
-                        .encode()?,
+                        .encode_for(record.accounted)?,
                     ),
                 },
                 RowMutation {
@@ -411,10 +519,21 @@ impl PreparedAdmission {
                 },
                 RowMutation {
                     key: usage_key,
-                    value: Some(usage.encode()),
+                    value: Some(usage.encode()?),
                 },
             ],
         };
+        if record.accounted {
+            batch.expectations.push(ExpectedRow {
+                key: retry_index.key(),
+                value: None,
+            });
+            batch.mutations.push(RowMutation {
+                key: retry_index.key(),
+                value: Some(index_bytes),
+            });
+        }
+        super::accounting::apply(view, &TenantId(record.key.tenant.clone()), &mut batch)?;
         Ok(AdmissionDecision::New(Self { record, batch }))
     }
 }
@@ -429,6 +548,53 @@ pub struct StagedIntent {
 }
 
 impl CompleteEnvelope {
+    /// The coordinator moves this affine guard into the one accepted native
+    /// writer. Decoding metadata cannot construct it or assert retirement.
+    pub fn physical_work(&self) -> Result<super::PhysicalAttemptWork, AtomicError> {
+        self.claim.physical_work()
+    }
+    /// State-only/no-intent commands need no effect authority owner. They still
+    /// use the same complete atomic namespace/state/result/command envelope.
+    pub fn success_without_intents(
+        view: &ReadView,
+        claim: AdmittedCommand,
+        state: Option<StatePlan>,
+        value: Value,
+        time: CommandTime,
+    ) -> Result<Self, AtomicError> {
+        let version = next_namespace_version(view, &claim.record)?;
+        let token = disposition_view_token(view, &claim.record, state.as_ref(), version)?;
+        let result = DurableResult::new(
+            &claim.record,
+            Outcome::Committed,
+            None,
+            value,
+            version,
+            token,
+        )?;
+        Self::prepare(view, claim, state, result, vec![], vec![], time, None)
+    }
+
+    pub fn namespace_expectation(&self) -> Result<EnvelopeNamespaceExpectation, AtomicError> {
+        let key = RowKey {
+            family: Family::Namespace,
+            key: namespace_record_key(
+                &TenantId(self.terminal.key.tenant.clone()),
+                &StateNamespaceId(self.terminal.key.namespace.clone()),
+            )
+            .map_err(|_| AtomicError::Invalid)?,
+        };
+        let mut matching = self.batch.expectations.iter().filter(|row| row.key == key);
+        let expected = matching.next().ok_or(AtomicError::Invalid)?.clone();
+        if matching.next().is_some() || expected.value.is_none() {
+            return Err(AtomicError::Invalid);
+        }
+        Ok(EnvelopeNamespaceExpectation {
+            expected,
+            outcome: self.terminal.outcome,
+        })
+    }
+
     pub fn success(
         view: &ReadView,
         claim: AdmittedCommand,
@@ -461,7 +627,16 @@ impl CompleteEnvelope {
         if minimum_bytes > latent_core::transaction_contract::STAGED_BYTES {
             return Err(AtomicError::Limit);
         }
-        let result = DurableResult::new(&claim.record, Outcome::Committed, None, value)?;
+        let version = next_namespace_version(view, &claim.record)?;
+        let token = disposition_view_token(view, &claim.record, state.as_ref(), version)?;
+        let result = DurableResult::new(
+            &claim.record,
+            Outcome::Committed,
+            None,
+            value,
+            version,
+            token,
+        )?;
         let mut authorities = Vec::with_capacity(intents.len());
         let mut effect_rows = Vec::with_capacity(intents.len() * 3);
         for (sequence, intent) in intents.into_iter().enumerate() {
@@ -533,7 +708,16 @@ impl CompleteEnvelope {
         value: Value,
         time: CommandTime,
     ) -> Result<Self, AtomicError> {
-        let result = DurableResult::new(&claim.record, Outcome::Rejected, Some(code), value)?;
+        let version = next_namespace_version(view, &claim.record)?;
+        let token = disposition_view_token(view, &claim.record, None, version)?;
+        let result = DurableResult::new(
+            &claim.record,
+            Outcome::Rejected,
+            Some(code),
+            value,
+            version,
+            token,
+        )?;
         Self::prepare(view, claim, None, result, vec![], vec![], time, None)
     }
     /// Private physical retirement evidence permits terminal technical metadata,
@@ -560,7 +744,16 @@ impl CompleteEnvelope {
             media_type: String::from("application/vnd.lsf.technical-abort-v1"),
             metadata: vec![],
         };
-        let result = DurableResult::new(&claim.record, Outcome::Aborted, Some(code), value)?;
+        let version = next_namespace_version(view, &claim.record)?;
+        let token = disposition_view_token(view, &claim.record, None, version)?;
+        let result = DurableResult::new(
+            &claim.record,
+            Outcome::Aborted,
+            Some(code),
+            value,
+            version,
+            token,
+        )?;
         Self::prepare(view, claim, None, result, vec![], vec![], time, Some(proof))
     }
     #[must_use]
@@ -590,8 +783,8 @@ impl CompleteEnvelope {
             Ok(()) => {
                 self.claim.physical.phase.store(TERMINAL, Ordering::Release);
                 PreparedDisposition::Confirmed {
-                    command: self.terminal,
-                    result: self.result,
+                    command: Box::new(self.terminal),
+                    result: Box::new(self.result),
                 }
             }
             Err(FencedStoreError::Store(
@@ -600,11 +793,11 @@ impl CompleteEnvelope {
             )) => {
                 self.claim.physical.phase.store(UNKNOWN, Ordering::Release);
                 PreparedDisposition::RecoveryRequired {
-                    identity: self.claim.record.clone(),
+                    identity: Box::new(self.claim.record.clone()),
                 }
             }
             Err(error) => PreparedDisposition::KnownNotCommitted {
-                command: self.claim,
+                command: Box::new(self.claim),
                 reason: fenced_error(error),
             },
         }
@@ -614,7 +807,7 @@ impl CompleteEnvelope {
         clippy::too_many_lines,
         reason = "The complete owned envelope is validated as one physical transaction, never piecemeal"
     )]
-    fn prepare(
+    pub(super) fn prepare(
         view: &ReadView,
         claim: AdmittedCommand,
         state: Option<StatePlan>,
@@ -631,7 +824,25 @@ impl CompleteEnvelope {
             return Err(AtomicError::Conflict);
         }
         let mut terminal = claim.record.clone();
+        let version = latent_state::namespace::NamespaceVersion {
+            incarnation: namespace.version.incarnation,
+            generation: namespace
+                .version
+                .generation
+                .checked_add(1)
+                .ok_or(AtomicError::Limit)?,
+        };
+        if result.committed_version != version
+            || result.committed_view_token
+                != disposition_view_token(view, &claim.record, state.as_ref(), version)?
+        {
+            return Err(AtomicError::Invalid);
+        }
         terminal.outcome = result.outcome;
+        terminal.committed_version = Some(version);
+        terminal
+            .committed_view_token
+            .clone_from(&result.committed_view_token);
         terminal.completed_at = time.unix_millis;
         terminal.clock_floor = time.unix_millis;
         terminal.result_digest = result.digest;
@@ -646,34 +857,67 @@ impl CompleteEnvelope {
         let terminal_bytes = terminal.encode()?;
         let result_bytes = result.encode()?;
         let (mut usage, usage_key, usage_bytes) = Usage::read(view, &terminal.key)?;
-        let reserve = terminal.result_policy.reservation()?;
+        let reserve = terminal.result_policy.reservation_for(terminal.accounted)?;
+        if usage.accounted != terminal.accounted {
+            return Err(AtomicError::Corrupt);
+        }
+        let audit_reserve = if terminal.accounted {
+            super::retention::AUDIT_RESERVED_BYTES
+        } else {
+            0
+        };
         usage.reserved = usage
             .reserved
             .checked_sub(reserve)
+            .and_then(|bytes| bytes.checked_add(audit_reserve))
             .ok_or(AtomicError::Corrupt)?;
         usage.recovery_reserved = usage
             .recovery_reserved
             .checked_sub(METADATA_BYTES as u64)
+            .and_then(|bytes| bytes.checked_add(audit_reserve))
             .ok_or(AtomicError::Corrupt)?;
         usage.result_bytes = usage
             .result_bytes
             .checked_sub(reserve)
-            .and_then(|bytes| bytes.checked_add(result_bytes.len() as u64))
+            .and_then(|bytes| {
+                bytes.checked_add(terminal_charge(&terminal, &terminal_bytes, &result_bytes).ok()?)
+            })
+            .and_then(|bytes| bytes.checked_add(audit_reserve))
             .ok_or(AtomicError::Corrupt)?;
         for row in &effect_rows {
             let bytes = row.key.key.len() as u64 + row.value.as_ref().map_or(0, |v| v.len() as u64);
             match row.key.family {
                 Family::Outbox => {
                     usage.effects = usage.effects.checked_add(1).ok_or(AtomicError::Limit)?;
+                    let authority = authorities
+                        .iter()
+                        .find(|authority| {
+                            latent_effects::dispatch_store::effect_row_key(&authority.link().effect)
+                                .ok()
+                                .as_ref()
+                                == Some(&row.key)
+                        })
+                        .ok_or(AtomicError::Corrupt)?;
+                    let charged = if terminal.accounted {
+                        latent_effects::dispatch_store::DispatchCatalog::retention_charge(
+                            authority,
+                        )?
+                    } else {
+                        bytes
+                    };
                     usage.effect_bytes = usage
                         .effect_bytes
-                        .checked_add(bytes)
+                        .checked_add(charged)
                         .ok_or(AtomicError::Limit)?;
                 }
                 Family::PayloadReference => {
                     usage.payload_bytes = usage
                         .payload_bytes
-                        .checked_add(bytes)
+                        .checked_add(if terminal.accounted {
+                            row_charge(&row.key, row.value.as_deref().ok_or(AtomicError::Corrupt)?)?
+                        } else {
+                            bytes
+                        })
                         .ok_or(AtomicError::Limit)?;
                 }
                 Family::Maintenance => {}
@@ -719,7 +963,7 @@ impl CompleteEnvelope {
                             generation: terminal.attempt,
                             bytes: reserve,
                         }
-                        .encode()?,
+                        .encode_for(terminal.accounted)?,
                     ),
                 },
             ],
@@ -738,7 +982,7 @@ impl CompleteEnvelope {
                 },
                 RowMutation {
                     key: usage_key,
-                    value: Some(usage.encode()),
+                    value: Some(usage.encode()?),
                 },
                 RowMutation {
                     key: reservation,
@@ -795,6 +1039,10 @@ impl CompleteEnvelope {
             }
             state.append_to(&mut batch, pins)?;
         } else {
+            let scope = super::record::record_scope(&terminal)?;
+            let captured = latent_state::session::version::capture_view(view, &scope)?;
+            batch.expectations.push(captured.history_expectation());
+            batch.expectations.push(captured.recovery_expectation());
             namespace.pins = pins;
             namespace.version.generation = namespace
                 .version
@@ -810,6 +1058,7 @@ impl CompleteEnvelope {
                 value: Some(namespace.encode().map_err(|_| AtomicError::Invalid)?),
             });
         }
+        super::accounting::apply(view, &TenantId(terminal.key.tenant.clone()), &mut batch)?;
         let staged = batch.mutations.iter().try_fold(0usize, |bytes, row| {
             bytes
                 .checked_add(row.key.key.len() + row.value.as_ref().map_or(0, Vec::len))
@@ -849,9 +1098,16 @@ pub fn inspect(
     mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
 ) -> Result<(CommandRecord, Option<DurableResult>), AtomicError> {
     authorize(CommandAccess::Replay, None)?;
+    latent_state::tenant::inspect(view, &TenantId(key.tenant.clone()))?;
     let bytes = view
         .get(&command_row_key(command_identity(key)?))?
         .ok_or(AtomicError::NotFound)?;
+    if super::RetiredCommand::is_present(&bytes) {
+        let floor = super::RetiredCommand::decode(&bytes)?;
+        floor.verify_key(key)?;
+        time.check(floor.retired_at())?;
+        return Err(AtomicError::Expired);
+    }
     let record = CommandRecord::decode(&bytes)?;
     authorize(CommandAccess::Replay, Some(&record))?;
     if record.key != *key {
@@ -872,12 +1128,46 @@ pub fn inspect(
     clippy::needless_pass_by_value,
     reason = "Result::map_err transfers the closed engine/fence error into the host error"
 )]
-fn fenced_error(error: FencedStoreError<AtomicError>) -> AtomicError {
+pub(super) fn fenced_error(error: FencedStoreError<AtomicError>) -> AtomicError {
     match error {
         FencedStoreError::Store(error) => error.into(),
         FencedStoreError::Fence(error) => error,
     }
 }
+pub(super) fn next_namespace_version(
+    view: &ReadView,
+    record: &CommandRecord,
+) -> Result<latent_state::namespace::NamespaceVersion, AtomicError> {
+    let (namespace, _, _) = namespace(view, &record.key, &record.source.state_schema)?;
+    Ok(latent_state::namespace::NamespaceVersion {
+        incarnation: namespace.version.incarnation,
+        generation: namespace
+            .version
+            .generation
+            .checked_add(1)
+            .ok_or(AtomicError::Limit)?,
+    })
+}
+
+pub(super) fn disposition_view_token(
+    view: &ReadView,
+    record: &CommandRecord,
+    state: Option<&StatePlan>,
+    version: latent_state::namespace::NamespaceVersion,
+) -> Result<Vec<u8>, AtomicError> {
+    let scope = super::record::record_scope(record)?;
+    let mut actual = latent_state::session::version::capture_view(view, &scope)?.identity();
+    actual.namespace = version;
+    if let Some(state) = state {
+        if state.view_identity() != actual || state.scope() != &scope {
+            return Err(AtomicError::Invalid);
+        }
+        Ok(state.view_token()?)
+    } else {
+        Ok(actual.token(&scope)?)
+    }
+}
+
 fn namespace(
     view: &ReadView,
     key: &latent_core::transaction_contract::CommandKey,
@@ -901,55 +1191,133 @@ fn namespace(
     }
     Ok((record, row, bytes))
 }
-#[derive(Default)]
-struct Usage {
-    results: u64,
-    result_bytes: u64,
-    effects: u64,
-    effect_bytes: u64,
-    payload_bytes: u64,
-    reserved: u64,
-    recovery_reserved: u64,
+pub(super) struct Usage {
+    pub(super) accounted: bool,
+    pub(super) review_clock: Option<super::MaintenanceProgress>,
+    pub(super) results: u64,
+    pub(super) result_bytes: u64,
+    pub(super) effects: u64,
+    pub(super) effect_bytes: u64,
+    pub(super) payload_bytes: u64,
+    pub(super) reserved: u64,
+    pub(super) recovery_reserved: u64,
+}
+impl Default for Usage {
+    fn default() -> Self {
+        Self {
+            accounted: true,
+            review_clock: None,
+            results: 0,
+            result_bytes: 0,
+            effects: 0,
+            effect_bytes: 0,
+            payload_bytes: 0,
+            reserved: 0,
+            recovery_reserved: 0,
+        }
+    }
 }
 impl Usage {
-    fn read(
+    pub(super) fn read(
         view: &ReadView,
         key: &latent_core::transaction_contract::CommandKey,
     ) -> Result<(Self, RowKey, Option<Vec<u8>>), AtomicError> {
-        let mut bytes = b"command-usage-v1\0".to_vec();
-        bytes.extend_from_slice(
-            &namespace_record_key(
-                &TenantId(key.tenant.clone()),
-                &StateNamespaceId(key.namespace.clone()),
-            )
-            .map_err(|_| AtomicError::Invalid)?,
-        );
-        bytes.extend_from_slice(&incarnation(key)?.to_le_bytes());
-        let row = RowKey {
-            family: Family::Maintenance,
-            key: bytes,
-        };
+        let row = usage_row_key(&key.tenant, &key.namespace, incarnation(key)?)?;
+        Self::read_row(view, row)
+    }
+    pub(super) fn read_row(
+        view: &ReadView,
+        row: RowKey,
+    ) -> Result<(Self, RowKey, Option<Vec<u8>>), AtomicError> {
         let bytes = view.get(&row)?;
         let usage = if let Some(bytes) = &bytes {
-            let mut input = Decoder::new(bytes, b"LCU\0\x01", 61)?;
-            let usage = Self {
-                results: input.number()?,
-                result_bytes: input.number()?,
-                effects: input.number()?,
-                effect_bytes: input.number()?,
-                payload_bytes: input.number()?,
-                reserved: input.number()?,
-                recovery_reserved: input.number()?,
-            };
-            input.finish()?;
-            usage
+            Self::decode(bytes)?
         } else {
             Self::default()
         };
         Ok((usage, row, bytes))
     }
-    fn encode(&self) -> Vec<u8> {
-        let mut out = Encoder::new(b"LCU\0\x01");
+    pub(super) fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
+        latent_state::reservation::NamespaceLedger::decode(bytes)?;
+        let accounted = bytes.starts_with(latent_state::reservation::QUOTA_MAGIC);
+        let bound = if accounted {
+            latent_state::reservation::QUOTA_BYTES
+        } else {
+            61
+        };
+        if bytes.len() != bound {
+            return Err(AtomicError::Corrupt);
+        }
+        let mut input = Decoder::new(
+            bytes,
+            if accounted {
+                latent_state::reservation::QUOTA_MAGIC
+            } else {
+                b"LCU\0\x01"
+            },
+            bound,
+        )?;
+        let mut usage = Self {
+            accounted,
+            review_clock: None,
+            results: input.number()?,
+            result_bytes: input.number()?,
+            effects: input.number()?,
+            effect_bytes: input.number()?,
+            payload_bytes: input.number()?,
+            reserved: input.number()?,
+            recovery_reserved: input.number()?,
+        };
+        if accounted {
+            let length = usize::from(u16::from_le_bytes(
+                input
+                    .take(2)?
+                    .try_into()
+                    .map_err(|_| AtomicError::Corrupt)?,
+            ));
+            if length > 146 {
+                return Err(AtomicError::Corrupt);
+            }
+            if length != 0 {
+                let clock = super::MaintenanceProgress::decode(input.take(length)?)?;
+                if clock.cursor.is_some() {
+                    return Err(AtomicError::Corrupt);
+                }
+                usage.review_clock = Some(clock);
+            }
+            if input
+                .take(bound - 63 - length)?
+                .iter()
+                .any(|byte| *byte != 0)
+            {
+                return Err(AtomicError::Corrupt);
+            }
+        }
+        input.finish()?;
+        if usage.results > 1_000_000
+            || usage.effects > 1_000_000
+            || [
+                usage.result_bytes,
+                usage.effect_bytes,
+                usage.payload_bytes,
+                usage.reserved,
+                usage.recovery_reserved,
+            ]
+            .iter()
+            .any(|bytes| *bytes > 1024 * 1024 * 1024)
+            || usage.reserved > usage.result_bytes
+            || usage.recovery_reserved > usage.reserved
+        {
+            return Err(AtomicError::Corrupt);
+        }
+        Ok(usage)
+    }
+    pub(super) fn encode(&self) -> Result<Vec<u8>, AtomicError> {
+        let mut out = Encoder::new(if self.accounted {
+            latent_state::reservation::QUOTA_MAGIC
+        } else {
+            b"LCU\0\x01"
+        });
         for number in [
             self.results,
             self.result_bytes,
@@ -961,9 +1329,35 @@ impl Usage {
         ] {
             out.number(number);
         }
-        out.0
+        if self.accounted {
+            let clock = self
+                .review_clock
+                .as_ref()
+                .map(super::MaintenanceProgress::encode)
+                .transpose()?
+                .unwrap_or_default();
+            if clock.len() > 146
+                || self
+                    .review_clock
+                    .as_ref()
+                    .is_some_and(|clock| clock.cursor.is_some())
+            {
+                return Err(AtomicError::Invalid);
+            }
+            out.0.extend_from_slice(
+                &u16::try_from(clock.len())
+                    .map_err(|_| AtomicError::Limit)?
+                    .to_le_bytes(),
+            );
+            out.0.extend_from_slice(&clock);
+            out.0.resize(latent_state::reservation::QUOTA_BYTES, 0);
+        } else if self.review_clock.is_some() {
+            return Err(AtomicError::UnsupportedFormat);
+        }
+        latent_state::reservation::NamespaceLedger::decode(&out.0)?;
+        Ok(out.0)
     }
-    fn check(&self, namespace: &NamespaceRecord) -> Result<(), AtomicError> {
+    pub(super) fn check(&self, namespace: &NamespaceRecord) -> Result<(), AtomicError> {
         let quota = namespace.quota;
         if self.results > quota.result_rows
             || self.result_bytes > quota.result_bytes
@@ -976,4 +1370,53 @@ impl Usage {
         }
         Ok(())
     }
+}
+
+pub(super) fn usage_row_key(
+    tenant: &str,
+    namespace: &str,
+    incarnation: u64,
+) -> Result<RowKey, AtomicError> {
+    Ok(latent_state::reservation::namespace_ledger_key(
+        &TenantId(tenant.into()),
+        &StateNamespaceId(namespace.into()),
+        incarnation,
+    )?)
+}
+
+/// Closed per-row accounting: encoded family/key/value plus the declared
+/// conservative index/table allowance. The engine also fences actual disk size.
+pub(super) fn row_charge(key: &RowKey, value: &[u8]) -> Result<u64, AtomicError> {
+    u64::try_from(key.key.len())
+        .ok()
+        .and_then(|bytes| bytes.checked_add(value.len() as u64))
+        .and_then(|bytes| bytes.checked_add(65))
+        .ok_or(AtomicError::Limit)
+}
+
+fn terminal_charge(
+    record: &CommandRecord,
+    command: &[u8],
+    result: &[u8],
+) -> Result<u64, AtomicError> {
+    if !record.accounted {
+        return Ok(result.len() as u64);
+    }
+    let mut bytes = row_charge(&command_row_key(record.id), command)?
+        .checked_add(row_charge(
+            &attempt_row_key(record.id, record.attempt),
+            command,
+        )?)
+        .and_then(|bytes| {
+            bytes.checked_add(row_charge(&result_row_key(record.id, record.attempt), result).ok()?)
+        })
+        .ok_or(AtomicError::Limit)?;
+    if record.outcome != Outcome::Aborted {
+        if let Some(inbox) = &record.inbox {
+            bytes = bytes
+                .checked_add(row_charge(&inbox.row_key(&record.key)?, &[0; 86])?)
+                .ok_or(AtomicError::Limit)?;
+        }
+    }
+    Ok(bytes)
 }

@@ -495,6 +495,35 @@ impl WasmtimeBackend {
             Err(outcome) => return Ok(outcome),
         };
         let function = self.requested_function(&runtime, &request)?;
+        let transaction = cancellation.transaction_host();
+        let needs_transaction = runtime
+            .surface
+            .imports
+            .contains(crate::surface::transaction::STATE)
+            || runtime
+                .surface
+                .imports
+                .contains(crate::surface::transaction::INTENTS);
+        if needs_transaction && transaction.is_none() {
+            return Err(platform_error(
+                PlatformErrorCode::PermissionDenied,
+                "scoped transaction execution owner required",
+                false,
+            ));
+        }
+        if let Some(host) = &transaction {
+            if !self.config.transactional_state
+                || !needs_transaction
+                || host.activation_id() != &request.activation.activation_id
+                || !host.budget().is_same_instance(accounting.budget())
+            {
+                return Err(platform_error(
+                    PlatformErrorCode::PermissionDenied,
+                    "transaction execution owner mismatch",
+                    false,
+                ));
+            }
+        }
         let temporary_buffer_guard = self.shared.resources.temporary_buffer();
         let raw_input = input::RawInvocationInput::new(
             std::mem::take(&mut request.activation.input),
@@ -507,21 +536,19 @@ impl WasmtimeBackend {
             self.config.value_codec_limits,
         )?;
 
-        let capabilities = self
-            .shared
-            .capabilities
-            .as_ref()
-            .map(|owner| {
-                let publication = runtime.eligibility.as_ref().ok_or_else(|| {
-                    platform_error(
-                        PlatformErrorCode::PermissionDenied,
-                        "capability publication owner required",
-                        false,
-                    )
-                })?;
-                owner.open_session(&request, cancellation, publication, accounting.deadline())
-            })
-            .transpose()?;
+        let capabilities = match self
+            .capability_session(
+                &runtime,
+                &request,
+                cancellation,
+                &stop,
+                accounting.deadline(),
+            )
+            .await?
+        {
+            Ok(session) => session,
+            Err(outcome) => return Ok(outcome),
+        };
         *capability_observer = capabilities
             .as_ref()
             .map(latent_capabilities::broker::CapabilitySession::observer);
@@ -536,8 +563,13 @@ impl WasmtimeBackend {
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
-        let mut store =
-            AccountedStore::new(self.invocation_store(request, &stop, accounting, capabilities)?);
+        let mut store = AccountedStore::new(self.invocation_store(
+            request,
+            &stop,
+            accounting,
+            capabilities,
+            transaction,
+        )?);
         // Decoding and every borrowed validation have completed. The Store now
         // owns only the moved context; destroy the actual raw input before call.
         raw_input.release(InvocationInputDropReason::BeforeGuestCall);
@@ -655,6 +687,7 @@ impl WasmtimeBackend {
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
+        transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -691,6 +724,9 @@ impl WasmtimeBackend {
         );
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
+        if let Some(transaction) = transaction {
+            host_state.transaction = crate::host::transaction::Access::attach(transaction);
+        }
         host_state.currentness_read_wait = self.shared.currentness_read_wait.clone();
         if self.config.java_guest {
             host_state.limiter.reserve_exception_heap()?;

@@ -11,6 +11,8 @@ mod tests;
 
 pub use control::{
     NamespaceControl, NamespaceControlFence, NamespaceControlRequest, PreparedNamespaceControl,
+    PreparedRetainedNamespaceControl, RetainedNamespaceControlFence,
+    RetainedNamespaceControlRequest,
 };
 pub use gate::{AcceptedCommit, CommitCancellation, CommitIoAcceptance};
 pub use page::ScopedPage;
@@ -88,6 +90,26 @@ impl NamespaceAuthority {
         admission: NamespaceAdmission<'_>,
         lifecycle: latent_state::namespace::lifecycle::NamespaceLifecycleHandle,
     ) -> Result<Self, PlatformError> {
+        Self::seal_retained(
+            store,
+            store.retain_decision(initial)?,
+            namespace,
+            admission,
+            lifecycle,
+        )
+    }
+
+    /// Seal against the coherent row observed after durable admission while
+    /// consuming the exact originally retained policy/publication decision.
+    /// Generation observation may advance; caller scope, authority and original
+    /// deadline cannot be refreshed. This leaves final commit acceptance open.
+    pub fn seal_retained(
+        store: &PolicyStore,
+        initial: OwnedPolicyDecision,
+        namespace: &NamespaceRead,
+        admission: NamespaceAdmission<'_>,
+        lifecycle: latent_state::namespace::lifecycle::NamespaceLifecycleHandle,
+    ) -> Result<Self, PlatformError> {
         let NamespaceAdmission {
             activation,
             deadline,
@@ -99,7 +121,7 @@ impl NamespaceAuthority {
             return Err(denied());
         }
         let mut captured = None;
-        store.with_current(initial, &mut |actual, ceiling| {
+        store.with_retained_decision(&initial, &mut |actual, ceiling| {
             let record = namespace.record();
             let ResourceTarget::State {
                 namespace: id,
@@ -154,7 +176,6 @@ impl NamespaceAuthority {
         let (ownership, publication, mode, ceiling) = captured.ok_or_else(denied)?;
         let deadline =
             deadline.min(Instant::now() + Duration::from_millis(ceiling.wall_time_millis));
-        let initial = store.retain_decision(initial)?;
         Ok(Self {
             initial,
             ownership,
@@ -168,6 +189,19 @@ impl NamespaceAuthority {
             selection: selection.clone(),
             lifecycle,
         })
+    }
+
+    /// Descriptive sealed activation identity; it creates no budget or access.
+    #[must_use]
+    pub const fn activation_id(&self) -> &ActivationId {
+        &self.activation
+    }
+
+    /// Original admitted deadline narrowed by the original policy ceiling.
+    /// Reading it never extends timing or creates a new execution reservation.
+    #[must_use]
+    pub const fn deadline(&self) -> Instant {
+        self.deadline
     }
 
     #[must_use]
@@ -208,9 +242,58 @@ impl NamespaceAuthority {
         expected_operation: &str,
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.with_operation_fenced(
+            store,
+            operation,
+            namespace,
+            expected_operation,
+            false,
+            action,
+        )
+    }
+
+    /// Current data permission for the original retained command/query response.
+    /// An accepted commit closes execution, while these two read operations
+    /// remain fenced by the original publication, scope and deadline. This port
+    /// cannot stage work, accept another commit or renew execution authority.
+    pub fn with_retained_response(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        expected_operation: &str,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if !matches!(expected_operation, "read-result" | "query-info") {
+            return Err(denied());
+        }
+        self.with_operation_fenced(
+            store,
+            operation,
+            namespace,
+            expected_operation,
+            true,
+            action,
+        )
+    }
+
+    fn with_operation_fenced(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        expected_operation: &str,
+        retained_response: bool,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
         let mut action = Some(action);
         store.with_captured(&self.initial, operation, &mut |inputs| {
-            self.check_namespace(namespace, expected_operation)?;
+            if retained_response {
+                self.gate.check_retained_response()?;
+                self.check_namespace_scope(namespace, expected_operation)?;
+            } else {
+                self.check_namespace(namespace, expected_operation)?;
+            }
             let actual = inputs.get(1).ok_or_else(denied)?;
             self.check_target(actual, expected_operation)?;
             let mut action_error = None;
@@ -301,6 +384,14 @@ impl NamespaceAuthority {
         operation: &str,
     ) -> Result<(), PlatformError> {
         self.gate.check()?;
+        self.check_namespace_scope(namespace, operation)
+    }
+
+    fn check_namespace_scope(
+        &self,
+        namespace: &NamespaceRead,
+        operation: &str,
+    ) -> Result<(), PlatformError> {
         let current = namespace.record();
         if Instant::now() >= self.deadline
             || current.tenant != self.ownership.tenant

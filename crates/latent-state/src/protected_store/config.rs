@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use super::ProtectedStoreError;
 use crate::embedded::StoreLimits;
-use crate::store_io::StoreIoLimits;
+use crate::store_io::{StoreIoLimits, StoreIoRecoveryLimits};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StoreFilesystemProfile {
@@ -43,7 +43,14 @@ impl ProtectedStoreConfig {
                 maximum_view_age: Duration::from_secs(30),
             },
             io: StoreIoLimits {
-                workers: 3,
+                recovery: Some(StoreIoRecoveryLimits {
+                    workers: 1,
+                    queued_jobs: 4,
+                    accepted_jobs: 8,
+                    retained_bytes: 16 * 1024 * 1024,
+                    job_bytes: 8 * 1024 * 1024 + 8 * 1024,
+                }),
+                workers: 4,
                 queued_jobs: 8,
                 accepted_jobs: 32,
                 active_reads: 2,
@@ -83,14 +90,16 @@ impl ProtectedStoreConfig {
             .and_then(|bytes| {
                 self.io
                     .queued_jobs
-                    .checked_next_power_of_two()
+                    .checked_add(self.io.recovery.map_or(0, |r| r.queued_jobs))
+                    .and_then(usize::checked_next_power_of_two)
                     .and_then(|slots| slots.checked_mul(32))
                     .and_then(|queued| bytes.checked_add(queued))
             })
             .and_then(|bytes| {
                 self.io
                     .accepted_jobs
-                    .checked_next_power_of_two()
+                    .checked_add(self.io.recovery.map_or(0, |r| r.accepted_jobs))
+                    .and_then(usize::checked_next_power_of_two)
                     .and_then(|slots| slots.checked_mul(16))
                     .and_then(|retirements| bytes.checked_add(retirements))
             })
