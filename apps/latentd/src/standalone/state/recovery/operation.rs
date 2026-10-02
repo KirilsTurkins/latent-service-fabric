@@ -60,7 +60,7 @@ pub(in crate::standalone) async fn recover(
         principal,
         &request.request,
         clock,
-        NativeProfile {
+        &NativeProfile {
             profile,
             digest: &digest,
             epoch: configuration.configuration_epoch,
