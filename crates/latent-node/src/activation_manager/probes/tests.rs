@@ -74,7 +74,7 @@ async fn actual_owner_signals_wake_linked_children_and_keep_late_provider_charge
         .await;
         match stop {
             0 => {
-                root.handle().cancel("parent cancelled");
+                assert!(root.handle().cancel("parent cancelled"));
             }
             1 => {
                 let _ = parent.finalize_at(None, sample.monotonic());

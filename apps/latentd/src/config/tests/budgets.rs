@@ -56,7 +56,7 @@ fn unknown_profiles_fields_and_invalid_tree_limits_fail_closed() {
     let (_, mut config) = config();
     for input in [
         "null",
-        r#"{"mode":"phase4"}"#,
+        r#"{"mode":"phase5"}"#,
         r#"{"mode":"phase1","maximumChildCalls":1}"#,
         r#"{"mode":"phase3","stateReadBytes":1}"#,
         r#"{"mode":"phase3","maximumChildCalls":-1}"#,
@@ -84,4 +84,73 @@ fn unknown_profiles_fields_and_invalid_tree_limits_fail_closed() {
     )
     .unwrap();
     assert!(config.derive().is_err());
+}
+
+#[test]
+fn explicit_phase4_profile_keeps_immediate_providers_denied_and_bounds_state() {
+    let (_, mut config) = config();
+    let ordinary = config.derive().unwrap();
+    config.budget_profile = serde_json::from_str(r#"{"mode":"phase4"}"#).unwrap();
+    let zero = config.derive().unwrap();
+    assert_eq!(zero.budget_profile, BudgetProfile::Phase4);
+    assert!(zero.wasmtime.transactional_state);
+    assert_eq!(zero.admission.budget_ceiling.state_read_bytes, 0);
+    assert_eq!(zero.admission.budget_ceiling.state_write_bytes, 0);
+    assert_eq!(zero.admission.budget_ceiling.effect_count, 0);
+    assert_ne!(zero.runtime_profile, ordinary.runtime_profile);
+    config.budget_profile = serde_json::from_str(
+        r#"{
+        "mode":"phase4","maximumStateReadBytes":4194304,
+        "maximumStateWriteBytes":8388608,"maximumEffects":128
+    }"#,
+    )
+    .unwrap();
+    let current = config.derive().unwrap();
+    let budget = current.admission.budget_ceiling;
+    assert_eq!(
+        (
+            budget.state_read_bytes,
+            budget.state_write_bytes,
+            budget.effect_count
+        ),
+        (4 * 1024 * 1024, 8 * 1024 * 1024, 128)
+    );
+    assert_eq!(
+        (
+            budget.child_calls,
+            budget.outbound_requests,
+            budget.blob_read_bytes,
+            budget.blob_write_bytes
+        ),
+        (0, 0, 0, 0)
+    );
+    assert_eq!(
+        ordinary.wasmtime.maximum_memory_bytes,
+        current.wasmtime.maximum_memory_bytes
+    );
+    assert_eq!(
+        ordinary.wasmtime.maximum_fuel,
+        current.wasmtime.maximum_fuel
+    );
+}
+
+#[test]
+fn phase4_rejects_oversized_state_and_undeclared_immediate_provider_fields() {
+    let (_, mut config) = config();
+    for input in [
+        r#"{"mode":"phase4","maximumStateReadBytes":4194305}"#,
+        r#"{"mode":"phase4","maximumStateWriteBytes":8388609}"#,
+        r#"{"mode":"phase4","maximumEffects":129}"#,
+    ] {
+        config.budget_profile = serde_json::from_str(input).unwrap();
+        assert!(config.derive().is_err());
+    }
+    for input in [
+        r#"{"mode":"phase4","maximumChildCalls":1}"#,
+        r#"{"mode":"phase4","maximumOutboundRequests":1}"#,
+        r#"{"mode":"phase4","maximumBlobWriteBytes":1}"#,
+        r#"{"mode":"phase4","maximumEffects":null}"#,
+    ] {
+        assert!(serde_json::from_str::<super::super::BudgetConfig>(input).is_err());
+    }
 }

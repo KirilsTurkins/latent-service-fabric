@@ -1,6 +1,7 @@
 //! Fixed node-owned composition for the standalone stateless runtime.
 
 mod audit;
+mod effects;
 pub mod http;
 mod load;
 #[cfg(all(test, target_os = "linux"))]
@@ -13,6 +14,7 @@ mod providers;
 mod rollouts;
 mod shutdown;
 mod start;
+pub mod state;
 mod telemetry;
 pub mod transport;
 
@@ -33,6 +35,11 @@ use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory};
 use latent_wire::invocation::{ActivationCleanupOwner, ActivationCleanupSnapshot};
 
 pub use audit::AuditShutdownReport;
+pub use effects::{
+    DispatcherControlError, DispatcherControlJob, DispatcherControlLookup,
+    DispatcherControlRequest, DispatcherSnapshot, EffectRuntime, EffectShutdownReport,
+    PreparedDispatcherControl,
+};
 pub use policies::PolicyShutdownReport;
 pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
@@ -52,6 +59,8 @@ pub struct StandaloneNode {
     transport: Option<transport::Transport>,
     http: Option<http::HttpOwner>,
     audit: Option<audit::AuditRuntime>,
+    effects: Option<effects::EffectRuntime>,
+    state: Option<Arc<state::StateRuntime>>,
     rollouts: Option<rollouts::RolloutRuntime>,
     policies: Option<policies::PolicyRuntime>,
     providers: Option<Box<providers::ProviderRuntime>>,
@@ -103,6 +112,12 @@ impl Drop for SupplyChainLifetime {
 }
 
 impl StandaloneNode {
+    /// The installed composition retains the single protected state owner.
+    #[must_use]
+    pub fn state_runtime(&self) -> Option<Arc<state::StateRuntime>> {
+        self.state.clone()
+    }
+
     #[must_use]
     pub fn configured_providers(&self) -> &[ProviderDescriptor] {
         self.providers

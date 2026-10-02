@@ -59,6 +59,11 @@ pub(super) fn wasmtime(
     if config.engine.java_guest {
         runtime.install_java_guest();
     }
+    // This changes the preparation/profile identity before compatibility and
+    // authenticated native-cache selection. Imports still need a real scoped
+    // host installed on the original activation before any guest Store exists.
+    runtime.transactional_state =
+        config.budget_profile.profile() == latent_core::BudgetProfile::Phase4;
     if config.renderer_profile.is_some() {
         if config.renderer_profile != Some(latent_manifest::RendererProfile::AngularSsrComponentV1)
         {

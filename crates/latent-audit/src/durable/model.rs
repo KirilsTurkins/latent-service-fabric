@@ -80,7 +80,17 @@ enumeration!(AuditControlAction {
     Rollout,
     Promotion,
     Rollback,
-    CapabilityCall
+    CapabilityCall,
+    NamespaceCreate,
+    NamespaceQuiesce,
+    NamespaceRetire,
+    NamespaceDestroy,
+    NamespaceRecreate,
+    NamespaceInspect,
+    DispatcherInspect,
+    DispatcherPause,
+    DispatcherResume,
+    DispatcherOperationRead
 });
 enumeration!(AuditOperationResult {
     Committed,
@@ -157,6 +167,18 @@ pub struct AuditStaticWebTarget {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditIdentities {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub dispatcher: Option<AuditDispatcherTarget>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub state: Option<AuditStateTarget>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -298,6 +320,23 @@ pub struct AuditIdentities {
         deserialize_with = "codec::present"
     )]
     pub lifecycle_generation: Option<u64>,
+}
+/// Exact namespace metadata target. No business key, payload or credential is
+/// recorded; this descriptive identity is never an execution/recovery grant.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AuditStateTarget {
+    pub namespace: String,
+    pub incarnation: u64,
+    #[serde(with = "codec::text")]
+    pub state_schema: ArtifactBlobDigest,
+}
+/// Captured node owner and actor tenant, without provider or execution authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AuditDispatcherTarget {
+    pub owner_epoch: u64,
+    pub actor_tenant: String,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -498,6 +537,67 @@ pub struct AuditSnapshot {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn dispatcher_attempt() -> AuditOperationAttempt {
+        let mut value = super::super::tests::attempt();
+        value.scope = AuditScope::Node;
+        value.action = AuditControlAction::DispatcherPause;
+        value.preview_receipt_digest = None;
+        value.expected_generation = Some(9_007_199_254_740_993);
+        value.identities = AuditIdentities {
+            dispatcher: Some(AuditDispatcherTarget {
+                owner_epoch: u64::MAX,
+                actor_tenant: "tenant".into(),
+            }),
+            ..Default::default()
+        };
+        value
+    }
+
+    #[test]
+    fn dispatcher_audit_preserves_node_actor_epoch_and_original_full_width_revision() {
+        let original = dispatcher_attempt();
+        codec::attempt(&original).unwrap();
+        let bytes = serde_json::to_vec(&original).unwrap();
+        let decoded: AuditOperationAttempt = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(decoded, original);
+        let mut conclusion = super::super::tests::conclusion();
+        conclusion.identities = decoded.identities.clone();
+        codec::capability_pair(&decoded, &conclusion).unwrap();
+        conclusion
+            .identities
+            .dispatcher
+            .as_mut()
+            .unwrap()
+            .owner_epoch -= 1;
+        assert!(codec::capability_pair(&decoded, &conclusion).is_err());
+    }
+
+    #[test]
+    fn dispatcher_audit_rejects_tenant_scope_hybrids_unrelated_action_and_explicit_null() {
+        let original = dispatcher_attempt();
+        for case in 0..6 {
+            let mut changed = original.clone();
+            match case {
+                0 => changed.scope = AuditScope::Tenant(latent_core::TenantId("tenant".into())),
+                1 => changed.identities.dispatcher.as_mut().unwrap().owner_epoch = 0,
+                2 => changed.identities.dispatcher.as_mut().unwrap().actor_tenant = String::new(),
+                3 => changed.expected_generation = None,
+                4 => changed.action = AuditControlAction::Publish,
+                _ => {
+                    changed.identities.component =
+                        Some(latent_core::ReleaseDigest("unrelated".into()))
+                }
+            }
+            assert!(codec::attempt(&changed).is_err(), "case {case}");
+        }
+        let mut json = serde_json::to_value(&original.identities).unwrap();
+        json["dispatcher"] = serde_json::Value::Null;
+        assert!(serde_json::from_value::<AuditIdentities>(json).is_err());
+        let old = br#"{"policies":[]}"#;
+        let decoded: AuditIdentities = serde_json::from_slice(old).unwrap();
+        assert_eq!(serde_json::to_vec(&decoded).unwrap(), old);
+    }
 
     #[test]
     fn absent_rollout_fields_preserve_old_canonical_identity_bytes() {

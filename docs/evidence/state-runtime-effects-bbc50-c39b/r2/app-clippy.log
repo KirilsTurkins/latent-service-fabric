@@ -1,0 +1,70 @@
+    Checking latent-core v0.1.0-alpha.5 (/source/crates/latent-core)
+    Checking wasmparser v0.259.0
+    Checking latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+    Checking latent-routing v0.1.0-alpha.5 (/source/crates/latent-routing)
+    Checking latent-activation v0.1.0-alpha.5 (/source/crates/latent-activation)
+    Checking latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+    Checking latent-contracts v0.1.0-alpha.5 (/source/crates/latent-contracts)
+    Checking latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+    Checking latent-protected-files v0.1.0-alpha.5 (/source/crates/latent-protected-files)
+    Checking latent-state v0.1.0-alpha.5 (/source/crates/latent-state)
+    Checking wit-parser v0.259.0
+    Checking latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+    Checking latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+    Checking latent-effects v0.1.0-alpha.5 (/source/crates/latent-effects)
+    Checking latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+    Checking latent-commit v0.1.0-alpha.5 (/source/crates/latent-commit)
+    Checking latent-executor v0.1.0-alpha.5 (/source/crates/latent-executor)
+    Checking latent-telemetry v0.1.0-alpha.5 (/source/crates/latent-telemetry)
+   Compiling cranelift-codegen v0.135.3
+    Checking latent-capabilities v0.1.0-alpha.5 (/source/crates/latent-capabilities)
+   Compiling wasmparser v0.254.0
+    Checking regalloc2 v0.15.2
+    Checking wasmprinter v0.254.0
+   Compiling wasm-encoder v0.254.0
+   Compiling wit-parser v0.254.0
+    Checking wasmtime-environ v48.0.3
+   Compiling wasm-metadata v0.254.0
+    Checking latent-admission v0.1.0-alpha.5 (/source/crates/latent-admission)
+    Checking latent-scheduler v0.1.0-alpha.5 (/source/crates/latent-scheduler)
+   Compiling wit-component v0.254.0
+   Compiling wasmtime-internal-wit-bindgen v48.0.3
+    Checking cranelift-native v0.135.3
+    Checking cranelift-frontend v0.135.3
+    Checking wasmtime-internal-unwinder v48.0.3
+    Checking latent-node v0.1.0-alpha.5 (/source/crates/latent-node)
+    Checking latent-triggers v0.1.0-alpha.5 (/source/crates/latent-triggers)
+    Checking latent-identity v0.1.0-alpha.5 (/source/crates/latent-identity)
+   Compiling wasmtime-internal-component-macro v48.0.3
+    Checking latent-ingress v0.1.0-alpha.5 (/source/crates/latent-ingress)
+    Checking wasmtime-internal-cranelift v48.0.3
+   Compiling latent-rpc v0.1.0-alpha.5 (/source/crates/latent-rpc)
+    Checking wasmtime-internal-fiber v48.0.3
+   Compiling latent-component-bindings v0.1.0-alpha.5 (/source/crates/latent-component-bindings)
+    Checking wasmtime v48.0.3
+    Checking latent-control-store v0.1.0-alpha.5 (/source/crates/latent-control-store)
+    Checking latent-network v0.1.0-alpha.5 (/source/crates/latent-network)
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/source/crates/latent-wasmtime)
+    Checking latent-http v0.1.0-alpha.5 (/source/crates/latent-http)
+    Checking latent-rollout v0.1.0-alpha.5 (/source/crates/latent-rollout)
+    Checking latent-blobs v0.1.0-alpha.5 (/source/crates/latent-blobs)
+    Checking latent-wire v0.1.0-alpha.5 (/source/crates/latent-wire)
+    Checking latent-nats v0.1.0-alpha.5 (/source/crates/latent-nats)
+    Checking latent-secrets v0.1.0-alpha.5 (/source/crates/latent-secrets)
+    Checking latentd v0.1.0-alpha.5 (/source/apps/latentd)
+error[E0308]: mismatched types
+   --> apps/latentd/src/standalone/providers/runtime.rs:127:55
+    |
+127 |                 owner.runtime.install_http(Arc::clone(&provider))?;
+    |                                            ---------- ^^^^^^^^^ expected `&Arc<dyn OutboundHttpInvoker>`, found `&Arc<HttpProvider>`
+    |                                            |
+    |                                            arguments to this function are incorrect
+    |
+    = note: expected reference `&std::sync::Arc<dyn latent_capabilities::broker::http::OutboundHttpInvoker>`
+               found reference `&std::sync::Arc<latent_http::HttpProvider>`
+    = help: `latent_http::HttpProvider` implements `OutboundHttpInvoker` so you could box the found value and coerce it to the trait object `Box<dyn OutboundHttpInvoker>`, you will have to change the expected type as well
+note: method defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/clone.rs:236:7
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `latentd` (lib) due to 1 previous error

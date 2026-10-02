@@ -82,6 +82,16 @@ impl ProtectedRoot {
         self.chain.last().expect("root anchor").identity
     }
 
+    /// Query the filesystem of the retained descriptor, not a replacement path.
+    pub fn filesystem_type(&self) -> Result<u64, PlatformError> {
+        self.check()?;
+        let info =
+            fs::fstatfs(&self.chain.last().expect("root anchor").file).map_err(|_| failure())?;
+        let kind = u64::try_from(info.f_type).map_err(|_| failure())?;
+        self.check()?;
+        Ok(kind)
+    }
+
     /// Open an explicitly configured engine file without truncation, following
     /// links or creating parent directories. Initialization is create-new only;
     /// an existing failed database is never replaced by an empty descriptor.
@@ -124,6 +134,47 @@ impl ProtectedRoot {
             file_identity: (metadata.dev(), metadata.ino()),
             maximum_bytes,
         };
+        self.check_mutable_file(&fence)?;
+        Ok((file, fence))
+    }
+
+    /// Explicit offline output creation. An existing leaf, failed staging file
+    /// or substituted name always refuses; this operation never reopens or
+    /// truncates it. Runs on the same bounded physical control worker.
+    pub fn create_mutable_file(
+        &self,
+        name: &str,
+        maximum_bytes: u64,
+    ) -> Result<(File, ProtectedMutableFile), PlatformError> {
+        if !valid_leaf(name) || maximum_bytes == 0 || maximum_bytes > 1_073_741_824 {
+            return Err(state_failure());
+        }
+        self.check().map_err(|_| state_failure())?;
+        let directory = &self.chain.last().expect("root anchor").file;
+        let descriptor = fs::openat(
+            directory,
+            name,
+            OFlags::RDWR
+                | OFlags::CREATE
+                | OFlags::EXCL
+                | OFlags::NOFOLLOW
+                | OFlags::CLOEXEC
+                | OFlags::NONBLOCK,
+            Mode::RUSR | Mode::WUSR,
+        )
+        .map_err(|_| state_failure())?;
+        let file = File::from(descriptor);
+        platform::require_mode_only_permissions(&file).map_err(|()| state_failure())?;
+        let metadata = file.metadata().map_err(|_| state_failure())?;
+        mutable_metadata(&metadata, self.uid, maximum_bytes)?;
+        let fence = ProtectedMutableFile {
+            name: name.into(),
+            root_identity: self.identity(),
+            file_identity: (metadata.dev(), metadata.ino()),
+            maximum_bytes,
+        };
+        file.sync_all().map_err(|_| state_failure())?;
+        directory.sync_all().map_err(|_| state_failure())?;
         self.check_mutable_file(&fence)?;
         Ok((file, fence))
     }

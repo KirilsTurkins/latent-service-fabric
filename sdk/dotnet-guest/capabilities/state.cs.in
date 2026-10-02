@@ -1,0 +1,72 @@
+using System;
+using @root@;
+using Raw = @raw@;
+namespace Lsf.Guest;
+
+public sealed class StateCommandKind { private StateCommandKind() {} }
+public sealed class StateQueryKind { private StateQueryKind() {} }
+public sealed class StatePageKind { private StatePageKind() {} }
+
+/// <summary>Scopes preserve generated WIT results. Drop releases access only.</summary>
+public static class State
+{
+    public abstract class Access : IDisposable
+    {
+        private int pages;
+        internal Access() {}
+        internal abstract T Guard<T>(Func<T> operation);
+        internal abstract void Release();
+        internal Page OwnPage(Raw.Page raw) { pages++; return new Page(raw, this); }
+        internal void PageClosed() { pages--; }
+        public void Dispose() {
+            if (pages != 0) throw new InvalidOperationException("state pages remain open");
+            Release();
+        }
+    }
+
+    public sealed class Command : Access
+    {
+        private readonly Owner<Raw.Transaction, StateCommandKind> owner;
+        internal Command(Raw.Transaction raw) { owner = new(raw, value => value.Dispose()); }
+        internal T Borrow<T>(Func<Raw.Transaction, T> operation) => owner.Borrow(operation);
+        internal override T Guard<T>(Func<T> operation) => owner.Borrow(_ => operation());
+        internal override void Release() => owner.Dispose();
+        public Result<Raw.CommandInfo, Raw.StateError> Info() => Borrow(Raw.Info);
+        public Result<Raw.VersionedValue?, Raw.StateError> Get(byte[] key) => Borrow(value => Raw.Get(value, key));
+        public Result<None, Raw.StateError> Put(byte[] key, Raw.Value value) => Borrow(raw => Raw.Put(raw, key, value));
+        public Result<None, Raw.StateError> Delete(byte[] key) => Borrow(raw => Raw.Delete(raw, key));
+        public Result<Page, Raw.StateError> Scan(byte[] prefix, uint limit, byte[]? cursor = null) =>
+            Borrow(raw => Results.Map(Raw.Scan(raw, prefix, limit, cursor), OwnPage));
+    }
+
+    /// <summary>Fresh query owners have no mutation or intent staging method.</summary>
+    public sealed class Query : Access
+    {
+        private readonly Owner<Raw.QueryView, StateQueryKind> owner;
+        internal Query(Raw.QueryView raw) { owner = new(raw, value => value.Dispose()); }
+        internal override T Guard<T>(Func<T> operation) => owner.Borrow(_ => operation());
+        internal override void Release() => owner.Dispose();
+        public Result<Raw.ViewIdentity, Raw.StateError> Info() => owner.Borrow(Raw.QueryInfo);
+        public Result<Raw.VersionedValue?, Raw.StateError> Get(byte[] key) => owner.Borrow(value => Raw.GetQuery(value, key));
+        public Result<Page, Raw.StateError> Scan(byte[] prefix, uint limit, byte[]? cursor = null) =>
+            owner.Borrow(raw => Results.Map(Raw.ScanQuery(raw, prefix, limit, cursor), OwnPage));
+    }
+
+    public sealed class Page : IDisposable
+    {
+        private readonly Owner<Raw.Page, StatePageKind> owner;
+        private readonly Access view;
+        private bool closed;
+        internal Page(Raw.Page raw, Access view) { owner = new(raw, value => value.Dispose()); this.view = view; }
+        public Result<Raw.PageInfo, Raw.StateError> Info() => view.Guard(() => owner.Borrow(Raw.DescribePage));
+        public Result<Raw.Entry?, Raw.StateError> Next() => view.Guard(() => owner.Borrow(Raw.PageNext));
+        public void Dispose() {
+            if (closed) return;
+            try { owner.Dispose(); }
+            finally { closed = true; view.PageClosed(); }
+        }
+    }
+
+    public static Result<Command, Raw.StateError> AcquireCommand() => Results.Map(Raw.AcquireCommand(), raw => new Command(raw));
+    public static Result<Query, Raw.StateError> AcquireQuery() => Results.Map(Raw.AcquireQuery(), raw => new Query(raw));
+}

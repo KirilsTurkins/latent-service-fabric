@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/check_testkit_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Extend the same unconditional acyclic and heavy dependency checks to the neutral process helper and Phase 4 state owner; no runtime dependency exemptions.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "eb61e1a2502a110a9331caad2922f219a82a7106c8a6892d851edfb333e49008"
+  "sha256": "1dc07f8b0b7b9eb23fe0417fa06f09c4358ab9f8de6864e31762e68f0a5a4117"
 }

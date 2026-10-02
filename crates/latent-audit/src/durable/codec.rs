@@ -143,6 +143,30 @@ pub(super) fn actor(v: &AuditActorIdentity) -> Result<()> {
     token(&v.subject, 512)
 }
 pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
+    if let Some(dispatcher) = &v.dispatcher {
+        token(&dispatcher.actor_tenant, 256)?;
+        if dispatcher.owner_epoch == 0
+            || *v
+                != (AuditIdentities {
+                    dispatcher: Some(dispatcher.clone()),
+                    ..Default::default()
+                })
+        {
+            return Err(invalid());
+        }
+    }
+    if let Some(state) = &v.state {
+        token(&state.namespace, 256)?;
+        if state.incarnation == 0
+            || v.publication.is_none()
+            || v.component.is_none()
+            || v.capability.is_some()
+            || v.static_web.is_some()
+            || v.trigger.is_some()
+        {
+            return Err(invalid());
+        }
+    }
     if let Some(web) = &v.static_web {
         if web.web_generation == 0
             || v.trigger.is_none()
@@ -204,7 +228,8 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
         || (v.state_version.is_some()
             && v.rollout.is_none()
             && v.deployment.is_none()
-            && v.static_web.is_none())
+            && v.static_web.is_none()
+            && v.state.is_none())
     {
         return Err(invalid());
     }
@@ -223,7 +248,9 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
 pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     scope(&v.scope)?;
     actor(&v.actor)?;
-    token(&v.operation_id, 128)?;
+    token(&v.operation_id, 256)?;
+    namespace_attempt(v)?;
+    dispatcher_attempt(v)?;
     let trigger = matches!(
         v.action,
         AuditControlAction::TriggerApply | AuditControlAction::TriggerDelete
@@ -321,6 +348,55 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     }
     identities(&v.identities)
 }
+fn namespace_attempt(v: &AuditOperationAttempt) -> Result<()> {
+    let namespace = matches!(
+        v.action,
+        AuditControlAction::NamespaceCreate
+            | AuditControlAction::NamespaceQuiesce
+            | AuditControlAction::NamespaceRetire
+            | AuditControlAction::NamespaceDestroy
+            | AuditControlAction::NamespaceRecreate
+            | AuditControlAction::NamespaceInspect
+    );
+    if namespace != v.identities.state.is_some()
+        || namespace
+            && (!matches!(v.scope, AuditScope::Tenant(_))
+                || v.expected_deployment_generation.is_some()
+                || v.expected_rollout_revision.is_some()
+                || v.expected_state_version.is_some()
+                || v.expected_rollback_target_generation.is_some()
+                || v.preview_receipt_digest.is_some()
+                || v.action != AuditControlAction::NamespaceInspect
+                    && v.expected_generation.is_none())
+    {
+        return Err(invalid());
+    }
+    Ok(())
+}
+fn dispatcher_attempt(v: &AuditOperationAttempt) -> Result<()> {
+    let dispatcher = matches!(
+        v.action,
+        AuditControlAction::DispatcherInspect
+            | AuditControlAction::DispatcherPause
+            | AuditControlAction::DispatcherResume
+            | AuditControlAction::DispatcherOperationRead
+    );
+    if dispatcher != v.identities.dispatcher.is_some()
+        || dispatcher
+            && (v.scope != AuditScope::Node
+                || v.expected_generation == Some(0)
+                || (v.action == AuditControlAction::DispatcherInspect)
+                    != v.expected_generation.is_none()
+                || v.expected_deployment_generation.is_some()
+                || v.expected_rollout_revision.is_some()
+                || v.expected_state_version.is_some()
+                || v.expected_rollback_target_generation.is_some()
+                || v.preview_receipt_digest.is_some())
+    {
+        return Err(invalid());
+    }
+    Ok(())
+}
 pub(super) fn conclusion(v: &AuditOperationConclusion) -> Result<()> {
     identities(&v.identities)?;
     if let Some(context) = &v.identities.capability {
@@ -363,6 +439,14 @@ pub(super) fn capability_pair(
     a: &AuditOperationAttempt,
     c: &AuditOperationConclusion,
 ) -> Result<()> {
+    if (a.identities.state.is_some()
+        || c.identities.state.is_some()
+        || a.identities.dispatcher.is_some()
+        || c.identities.dispatcher.is_some())
+        && a.identities != c.identities
+    {
+        return Err(invalid());
+    }
     match (&a.identities.capability, &c.identities.capability) {
         (None, None) => Ok(()),
         (Some(_), Some(terminal)) => {
@@ -385,6 +469,9 @@ pub(super) fn observation(v: &AuditObservation) -> Result<()> {
     scope(&v.scope)?;
     actor(&v.actor)?;
     identities(&v.identities)?;
+    if v.identities.dispatcher.is_some() {
+        return Err(invalid());
+    }
     let capability = matches!(
         v.kind,
         K::CapabilityGrantAllowed | K::CapabilityGrantDenied | K::CapabilityProviderOutcome

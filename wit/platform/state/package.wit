@@ -1,7 +1,11 @@
-package latent:state@0.1.0;
+package latent:state@0.2.0;
 
+// Activation-owned access. Only the host acquires the snapshot, seals staging,
+// commits, aborts or records a terminal rejection. Drop never commits.
 interface key-value {
-    type transaction-handle = u64;
+    resource transaction;
+    resource query-view;
+    resource page;
 
     record value {
         bytes: list<u8>,
@@ -9,9 +13,12 @@ interface key-value {
         metadata: list<tuple<string, string>>,
     }
 
+    // Tokens include namespace incarnation; their bytes are opaque to guests.
+    type version = list<u8>;
+
     record versioned-value {
         value: value,
-        version: u64,
+        version: version,
     }
 
     record entry {
@@ -19,28 +26,61 @@ interface key-value {
         value: versioned-value,
     }
 
-    record commit-receipt {
-        transaction-id: string,
-        committed-version: u64,
-        committed-at-unix-millis: u64,
+    record view-identity {
+        namespace: string,
+        incarnation: string,
+        version: version,
+        state-schema: string,
     }
 
-    variant state-error {
-        not-found,
-        conflict,
+    record command-info {
+        view: view-identity,
+        command-id: string,
+        attempt-id: string,
+        entity: option<string>,
+    }
+
+    record page-info {
+        view: view-identity,
+        entry-count: u32,
+        encoded-bytes: u64,
+        has-more: bool,
+        // Only valid in the same live activation/view, prefix and access mode.
+        next-cursor: option<list<u8>>,
+    }
+
+    enum state-error {
         permission-denied,
         invalid-key,
+        invalid-value,
+        invalid-limit,
+        invalid-cursor,
+        stale-input,
+        conflict,
         read-budget-exhausted,
         write-budget-exhausted,
-        transaction-closed,
+        handle-closed,
+        wrong-activation,
+        wrong-mode,
+        unsupported-version,
+        cancelled,
         unavailable,
     }
 
-    begin: func(namespace: string, entity-key: option<string>) -> result<transaction-handle, state-error>;
-    get: func(transaction: transaction-handle, key: list<u8>) -> result<option<versioned-value>, state-error>;
-    scan: func(transaction: transaction-handle, prefix: list<u8>, limit: u32) -> result<list<entry>, state-error>;
-    put: func(transaction: transaction-handle, key: list<u8>, value: value) -> result<bool, state-error>;
-    delete: func(transaction: transaction-handle, key: list<u8>) -> result<bool, state-error>;
-    commit: func(transaction: transaction-handle) -> result<commit-receipt, state-error>;
-    rollback: func(transaction: transaction-handle) -> result<bool, state-error>;
+    // At most one owner of each selected access mode per activation. These
+    // functions neither accept a namespace selector nor mint new authority.
+    acquire-command: func() -> result<own<transaction>, state-error>;
+    acquire-query: func() -> result<own<query-view>, state-error>;
+    info: func(transaction: borrow<transaction>) -> result<command-info, state-error>;
+    query-info: func(view: borrow<query-view>) -> result<view-identity, state-error>;
+    get: async func(transaction: borrow<transaction>, key: list<u8>) -> result<option<versioned-value>, state-error>;
+    get-query: async func(view: borrow<query-view>, key: list<u8>) -> result<option<versioned-value>, state-error>;
+    scan: async func(transaction: borrow<transaction>, prefix: list<u8>, limit: u32, cursor: option<list<u8>>) -> result<own<page>, state-error>;
+    scan-query: async func(view: borrow<query-view>, prefix: list<u8>, limit: u32, cursor: option<list<u8>>) -> result<own<page>, state-error>;
+    // Pull bounded entries singly; list<entry> amplifies nested inline lifting
+    // under the HTTP-enabled engine profile. A page owns no external cursor.
+    describe-page: func(page: borrow<page>) -> result<page-info, state-error>;
+    page-next: async func(page: borrow<page>) -> result<option<entry>, state-error>;
+    put: async func(transaction: borrow<transaction>, key: list<u8>, value: value) -> result<_, state-error>;
+    delete: async func(transaction: borrow<transaction>, key: list<u8>) -> result<_, state-error>;
 }

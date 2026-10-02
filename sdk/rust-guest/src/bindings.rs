@@ -12,3 +12,7 @@ pub use latent::secrets::reader as secrets;
 pub use latent::service::invoke as service;
 pub use latent::telemetry::custom as metrics;
 use latent_component_bindings::blob_guest::latent;
+
+pub use latent_component_bindings::transaction_guest::latent::intents::staging as intents;
+/// Opt-in Phase 4 bindings. Recognition is separate from installed authority.
+pub use latent_component_bindings::transaction_guest::latent::state::key_value as state;

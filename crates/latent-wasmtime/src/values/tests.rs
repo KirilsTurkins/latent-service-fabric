@@ -7,11 +7,13 @@ use wasmtime::{Config, Engine};
 use super::*;
 
 mod bounds;
+mod canonical;
 mod composites;
 mod differential;
 #[cfg(target_os = "linux")]
 mod measurement;
 mod scalars;
+mod transactions;
 mod web;
 
 fn types() -> &'static BTreeMap<String, Type> {
