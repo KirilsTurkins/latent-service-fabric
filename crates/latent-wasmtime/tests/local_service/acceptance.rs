@@ -94,9 +94,11 @@ async fn required_audit_records_real_local_acceptance_and_denies_full_sink_befor
     f.idle().await;
     assert_eq!(f.observations.starts.lock().unwrap().len(), starts + 1); // parent only
     audit.close();
-    assert!(worker
-        .join_until(Instant::now() + Duration::from_secs(2))
-        .unwrap());
+    assert!(
+        worker
+            .join_until(Instant::now() + Duration::from_secs(2))
+            .unwrap()
+    );
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn oversized_input_unknown_targets_and_expired_deadline_never_start_children() {
@@ -134,8 +136,17 @@ async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_c
     assert_eq!(success.consumption.child_calls, 2);
     assert!(success.consumption.cpu_fuel < super::packages::budget().cpu_fuel);
     assert!(success.consumption.peak_memory_bytes <= super::packages::budget().memory_bytes);
+    let actual = value(receipt);
+    if actual != ANSWER {
+        // The recorder already discarded messages, payloads and private details.
+        // Observe the original failure without invoking or accepting another call.
+        eprintln!(
+            "local-service-child-failures {:?}",
+            f.observations.child_failures.snapshot()
+        );
+    }
     assert_eq!(
-        value(receipt),
+        actual,
         ANSWER,
         "original child failures: {:?}",
         f.observations.child_failures.snapshot()
