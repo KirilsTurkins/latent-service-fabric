@@ -1,20 +1,12 @@
 {
   "kind": "workflow",
+  "requiredJobs": [
+    "compiler-component"
+  ],
+  "reviewReason": "Add exact Java HTTP fixture selection while retaining all existing authoring obligations CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Add source-bound transaction shape compiler evidence while preserving every existing language execution gate; retain the accepted CI performance dependency caches, correctness guards and independent execution obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-guest-feasibility.yml",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "java-guest-feasibility-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": "Java guest authoring",
     "on": {
       "pull_request": {
@@ -24,6 +16,7 @@
         "paths": [
           "sdk/java-guest/**",
           "examples/java-http-composition/**",
+          "sdk/transaction-contract/**",
           "tools/**",
           "apps/**",
           "crates/**",
@@ -38,12 +31,20 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "java-guest-feasibility-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
-  },
-  "requiredJobs": [
-    "compiler-component"
-  ],
-  "reviewReason": "Add exact Java HTTP fixture selection while retaining all existing authoring obligations CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "workflow": ".github/workflows/java-guest-feasibility.yml"
+  }
 }

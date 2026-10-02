@@ -22,6 +22,7 @@ latent-artifacts = { path = "../latent-artifacts" }
 latent-audit = { path = "../latent-audit" }
 latent-executor = { path = "../latent-executor" }
 latent-policy = { path = "../latent-policy" }
+latent-state = { path = "../latent-state" }
 latent-routing = { path = "../latent-routing" }
 latent-telemetry = { path = "../latent-telemetry" }
 sha2.workspace = true

@@ -102,9 +102,10 @@ fn stage_runtime_world(platform_wit: &Path, destination: &Path, world: &str) -> 
     for package in packages {
         if !package.file_type()?.is_dir()
             || package.file_name() == OsStr::new("runtime")
-            || package.file_name() == OsStr::new("runtime-phase3")
-            || package.file_name() == OsStr::new("runtime-phase3-streaming")
-            || package.file_name() == OsStr::new("runtime-phase3-blobs")
+            || package
+                .file_name()
+                .to_string_lossy()
+                .starts_with("runtime-")
         {
             continue;
         }

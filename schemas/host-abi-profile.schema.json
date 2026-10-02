@@ -7,7 +7,7 @@
   "required": ["formatVersion", "id", "world", "digest", "wasmtimeVersion", "guestGenerator", "interfaces"],
   "properties": {
     "formatVersion": {"const": 1},
-    "id": {"type": "string", "pattern": "^lsf-host-abi-phase3-v[1-9][0-9]*$", "maxLength": 64},
+    "id": {"type": "string", "pattern": "^lsf-host-abi-phase[34]-v[1-9][0-9]*$", "maxLength": 64},
     "world": {"type": "string", "maxLength": 128},
     "digest": {"$ref": "#/$defs/digest"},
     "wasmtimeVersion": {"type": "string", "maxLength": 32},

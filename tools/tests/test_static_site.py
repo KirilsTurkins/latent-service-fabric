@@ -107,7 +107,7 @@ class StaticSiteCaptureTests(unittest.TestCase):
     def test_font_preparation_keeps_glyphs_and_only_one_woff2_resource(self):
         package = Path(self.temp.name) / 'primeicons'
         (package / 'fonts').mkdir(parents=True)
-        (package / 'package.json').write_text('{"name":"primeicons","version":"8.0.1"}')
+        (package / 'package.json').write_text('{"name":"primeicons","version":"8.0.2"}')
         (package / 'LICENSE.md').write_text('Test-only fixture license')
         (package / 'fonts/primeicons.woff2').write_bytes(b'wOF2' + b'\0' * 44)
         css = "@font-face { font-family: 'primeicons'; src: url('./fonts/old.eot'); src: url('./fonts/primeicons.woff2') format('woff2'); }\n.pi-check:before { content: '\\e909'; }"
