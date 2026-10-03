@@ -17,6 +17,9 @@
     "CompilerDownloadBounds.test_pinned_zig_transfer_can_exceed_small_archive_deadline",
     "CompilerDownloadBounds.test_small_default_transfer_accepts_only_pinned_bytes",
     "CompilerDownloadBounds.test_truncated_changed_and_empty_archives_still_fail_digest",
+    "DotnetRuntimeDistribution.test_all_three_adapters_survive_actual_distribution_pack_and_private_unpack",
+    "DotnetRuntimeDistribution.test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published",
+    "DotnetRuntimeDistribution.test_missing_selected_composer_fails_before_a_distribution_can_be_published",
     "FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly",
     "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound",
     "ManagedCompilerInputs.test_changed_member_and_path_escape_are_rejected",
@@ -237,6 +240,42 @@
       ],
       "skipSites": []
     },
+    "DotnetRuntimeDistribution.test_all_three_adapters_survive_actual_distribution_pack_and_private_unpack": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:4896ea589cdca67fa22d017668e54ffd146d9a0c80d8a63b1a1a5664afe17826"
+      ],
+      "skipSites": []
+    },
+    "DotnetRuntimeDistribution.test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:4896ea589cdca67fa22d017668e54ffd146d9a0c80d8a63b1a1a5664afe17826"
+      ],
+      "skipSites": []
+    },
+    "DotnetRuntimeDistribution.test_missing_selected_composer_fails_before_a_distribution_can_be_published": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:4896ea589cdca67fa22d017668e54ffd146d9a0c80d8a63b1a1a5664afe17826"
+      ],
+      "skipSites": []
+    },
     "FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly": {
       "bases": [
         "unittest.TestCase"
@@ -358,6 +397,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_tools.py",
-  "reviewReason": "Import actual six-language packaged source closures in isolated interpreters without checkout fallback",
+  "reviewReason": "Preserve all accepted guards and retain three adapters plus the selected component composer through private developer bundle unpack",
   "schemaVersion": "latent.ci.contracts.v1"
 }

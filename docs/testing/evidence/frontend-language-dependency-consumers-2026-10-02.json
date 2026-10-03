@@ -1,0 +1,199 @@
+{
+  "formatVersion": 1,
+  "scope": "Authenticated outer/application dependency consumers and descriptor-shadow rejection",
+  "environment": {
+    "image": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+    "python": "3.13.5",
+    "network": "none",
+    "cpusPerAttempt": 1,
+    "memoryBytesPerAttempt": 1073741824,
+    "testDeadlineSeconds": 180
+  },
+  "results": [
+    {
+      "language": "rust",
+      "scope": "source/staged recipe and compiler-boundary controls",
+      "sourceHead": "28e5d39e66398a3f3e02cc4bb1bf1e26d84fe8fd",
+      "sourceRead": "git-objects",
+      "sourceDirty": false,
+      "selectedInputFiles": 2418,
+      "archiveDigest": "sha256:150685cedffc6fd0680c5f69612224e0bf96eed1b4f5d8fa36d4c8d633af5aa9",
+      "allInputBytesVerifiedBeforeAndAfter": true,
+      "modules": [
+        "tools.tests.test_guest_dependency_inputs",
+        "tools.tests.test_rust_frontend_dependencies",
+        "tools.tests.test_rust_application_dependencies",
+        "tools.tests.test_rust_capsule_authoring",
+        "tools.tests.test_dev_tools.SelectedRecipeImports"
+      ],
+      "tests": 59,
+      "skips": 0,
+      "testSeconds": 13.461,
+      "container": "32e3379ff6a64d010dec4f2eedb950a7307d816f7fdb728574f7b29667a2bbd8",
+      "exitCode": 0,
+      "oomKilled": false,
+      "nestedNamespaceControlsRequired": false
+    },
+    {
+      "language": "go",
+      "scope": "source/staged recipe and compiler-boundary controls",
+      "sourceHead": "cbf1fd23a3a208023b05d323c97f27acb55f6dc7",
+      "sourceRead": "git-objects",
+      "sourceDirty": false,
+      "selectedInputFiles": 2460,
+      "archiveDigest": "sha256:af5c793ee2c8f708252270d4f0be43e136612c0a11c1a3c4e579f8dfb77a5c0f",
+      "allInputBytesVerifiedBeforeAndAfter": true,
+      "modules": [
+        "tools.tests.test_guest_dependency_inputs",
+        "tools.tests.test_go_frontend_dependencies",
+        "tools.tests.test_go_application_dependencies",
+        "tools.tests.test_go_capsule_authoring",
+        "tools.tests.test_dev_tools.SelectedRecipeImports"
+      ],
+      "tests": 49,
+      "skips": 0,
+      "testSeconds": 10.256,
+      "container": "21353e572387099c284fafa1b7ebfe72631643a089c04c1f830483c54092ca05",
+      "exitCode": 0,
+      "oomKilled": false,
+      "nestedNamespaceControlsRequired": false
+    },
+    {
+      "language": "typescript",
+      "scope": "source/staged recipe and compiler-boundary controls",
+      "sourceHead": "250becb682e93d5f164e062dd773a0fe0be456c1",
+      "sourceRead": "git-objects",
+      "sourceDirty": false,
+      "selectedInputFiles": 2423,
+      "archiveDigest": "sha256:b25cbb4b70296e56dc37075775ad1bfb0eb1e43d22648a7ac501d28e4a9c6466",
+      "allInputBytesVerifiedBeforeAndAfter": true,
+      "modules": [
+        "tools.tests.test_guest_dependency_inputs",
+        "tools.tests.test_typescript_frontend_dependencies",
+        "tools.tests.test_typescript_application_dependencies",
+        "tools.tests.test_typescript_capsule_authoring",
+        "tools.tests.test_dev_tools.SelectedRecipeImports"
+      ],
+      "tests": 48,
+      "skips": 0,
+      "testSeconds": 12.207,
+      "container": "7636bea24bc2fc63c035215a9090b7d1d85c230c421579fc2cc66475cfe67141",
+      "exitCode": 0,
+      "oomKilled": false,
+      "nestedNamespaceControlsRequired": false
+    },
+    {
+      "language": "java",
+      "scope": "source/staged recipe and compiler-boundary controls",
+      "sourceHead": "dd9eb0bf013f694928f46adb66722078b6745c37",
+      "sourceRead": "git-objects",
+      "sourceDirty": false,
+      "selectedInputFiles": 2418,
+      "archiveDigest": "sha256:85af99d01e9744fa9f4e5b9abc0a5647d06c0b8e1ae1d8a4183b79e6ad10c0d0",
+      "allInputBytesVerifiedBeforeAndAfter": true,
+      "modules": [
+        "tools.tests.test_guest_dependency_inputs",
+        "tools.tests.test_java_frontend_dependencies",
+        "tools.tests.test_java_application_dependencies",
+        "tools.tests.test_dev_tools.SelectedRecipeImports"
+      ],
+      "tests": 45,
+      "skips": 0,
+      "testSeconds": 9.132,
+      "container": "ced52811c9be285b84930abdfbd9f96867a681297e34026f89c333856bc1b61c",
+      "exitCode": 0,
+      "oomKilled": false,
+      "nestedNamespaceControlsRequired": false
+    },
+    {
+      "language": "dotnet",
+      "scope": "source/staged recipe and compiler-boundary controls",
+      "sourceHead": "94d51a1e6ef3798d6f1bb3def1cd2be439c33577",
+      "sourceRead": "git-objects",
+      "sourceDirty": false,
+      "selectedInputFiles": 2470,
+      "archiveDigest": "sha256:81be27cea58a1be44ddc8db3204cad920e30a745965f3e562df078c96951a94f",
+      "allInputBytesVerifiedBeforeAndAfter": true,
+      "modules": [
+        "tools.tests.test_guest_dependency_inputs",
+        "tools.tests.test_dotnet_frontend_dependencies",
+        "tools.tests.test_dotnet_application_dependencies",
+        "tools.tests.test_dotnet_capsule_authoring",
+        "tools.tests.test_dev_tools.SelectedRecipeImports"
+      ],
+      "tests": 90,
+      "skips": 0,
+      "testSeconds": 10.578,
+      "container": "923b31fabcef0699c261ec07a774555a8ca1fa8e94d6786249842abbb80b5fdd",
+      "exitCode": 0,
+      "oomKilled": false,
+      "nestedNamespaceControlsRequired": true
+    },
+    {
+      "language": "c",
+      "scope": "source/staged recipe and compiler-boundary controls",
+      "sourceHead": "3b39ef7f6183101ede6bc8635bc59d7bc10ec50a",
+      "sourceRead": "git-objects",
+      "sourceDirty": false,
+      "selectedInputFiles": 2422,
+      "archiveDigest": "sha256:dca07b2b3e6c9d869b4429aeaf8cc1644683f1db40e20f866e17cf037aea9774",
+      "allInputBytesVerifiedBeforeAndAfter": true,
+      "modules": [
+        "tools.tests.test_guest_dependency_inputs",
+        "tools.tests.test_c_dependency_authoring",
+        "tools.tests.test_c_capsule_authoring",
+        "tools.tests.test_c_application_dependencies",
+        "tools.tests.test_c_static_symbols",
+        "tools.tests.test_dev_dependencies",
+        "tools.tests.test_dev_tools.SelectedRecipeImports"
+      ],
+      "tests": 89,
+      "skips": 0,
+      "testSeconds": 11.019,
+      "container": "1b8ace684f3aadeb83f3d9ce1d174cbe75a1b146682f696268f97f73fe85d9a4",
+      "exitCode": 0,
+      "oomKilled": false,
+      "nestedNamespaceControlsRequired": false
+    }
+  ],
+  "totalTests": 380,
+  "behaviors": [
+    "Actual staged recipe imports for all six languages without checkout fallback.",
+    "Actual common reviewed-lock/CAS verification, offline materialization and native-path projection after original source deletion.",
+    "Each of the five language builders selects the outer reviewed owner and rejects an inner capture or tampered captured bytes before its language compiler.",
+    "Descriptor shadowing is rejected at outer and application entrypoints for all six languages.",
+    "C CLI, component and static-archive paths reject descriptor redirection before compiler construction.",
+    "The unchanged .NET containment cases physically read only the selected owned workspace and preserve literal namespace arguments."
+  ],
+  "testBoundary": {
+    "nativeSelectionPlaceholders": "The new builder-boundary fixtures intentionally stop before interpreting their placeholder native graphs. They do not establish a successful native package selection.",
+    "standInCompilerTool": "One constructor-boundary tool is a deliberately nonexecutable fixture; no language compiler is substituted or reported successful.",
+    "dotnetContractStep": "The new .NET boundary test substitutes only a precompiler contracts command, then stops during real outer-input verification; no emitted component or admission is claimed."
+  },
+  "retainedSetupFailures": [
+    {
+      "container": "a81624eb3df8662d6d7a7fc50120392396a11fa52363b2dd88ea1188a914bf1c",
+      "sourceHead": "040fda261ac4a448439aced65cadc06670c9c4a2",
+      "archiveDigest": "sha256:76ddf62c15a9fbcdca16ffd1d24faad2a52312ca82710a1d9bdc0bfe043ac4ef",
+      "exitCode": 1,
+      "errors": 1,
+      "cause": "The diagnostic source archive omitted the unchanged Go guide.",
+      "repair": "The fresh third archive includes those exact committed files; product behavior, test bodies and deadlines are unchanged."
+    },
+    {
+      "container": "87f51e80114c88a4c0e4760720556f125425f9d16be419ffa67aef26eeb930ec",
+      "sourceHead": "cbf1fd23a3a208023b05d323c97f27acb55f6dc7",
+      "archiveDigest": "sha256:c40b496eaee6e1a38a651ee880ad6d9fe197f19e39661118726e57ff80098a7d",
+      "exitCode": 1,
+      "errors": 1,
+      "cause": "The diagnostic source archive omitted unchanged examples/guides metadata.",
+      "repair": "The fresh third archive includes those exact committed files; product behavior, test bodies and deadlines are unchanged."
+    }
+  ],
+  "qualificationPending": [
+    "Integrated installed language compiler and developer frontend consumers.",
+    "Actual signed normal-node library invocations, grants, recovery and dormant owners on this new source.",
+    "Actual per-language authoring, authenticated private inputs, updates/removals and watch lifecycle.",
+    "Complete acceptance for issues 678 and 682 through 687."
+  ]
+}
