@@ -105,6 +105,36 @@ retirement report.
 
 ## Qualification still required
 
+The control producers now expose the actual persisted policy image generation,
+the original charged secret generation for an exact HTTP or TLS credential
+scope, and the exact selected signed `transaction-binding.json` asset. Policy
+captures retain the finite read lease and original store owner; credential
+captures retain the original zeroizing generation without exposing plaintext
+through their metadata fence. Rotation, expiry, close, foreign owners and
+uncertain state refuse the original capture rather than refreshing it.
+
+The selected asset producer requires an existing Recovery reservation from the
+same native capacity owner, with 24 MiB of Work and 2 MiB of Response prepaid
+before source copying or filesystem reads. It reads at most 128 KiB of companion
+data and 256 KiB per structural document, with a 4 MiB allocation-accounted
+metadata parser. COMPLETE, the streamed component, package layout, metadata,
+detached evidence associations and the original current signing/lifecycle grant
+must all agree on the explicit selected publication. Other payloads are streamed;
+the complete package is never copied into this response. Actual retained
+capacities must fit the original Response allowance, whose permit follows the
+owned result through destruction. The original full job reservation and slot
+remain charged until its last worker/result owner drops, including after expiry.
+An installation must acquire its own resident control retention before moving
+these values out of their transient result; this API creates no additional quota,
+execution rule or readiness approval.
+
+Five policy-generation, five original credential-generation and six signed
+companion schedules are additional registered source. The companion cases use
+real Ed25519 publisher/provenance admission, including a payload larger than
+the retained response, corruption, malformed or oversized declarations, exact
+selection, expired or closed native ownership and physical last-owner retirement.
+Their native compilation, discovery and execution remain required.
+
 The source registers 53 additional `latentd` cases, retaining all 246 previous
 cases and their ignore states. They include real protected-engine/checkpoint
 startup, missing and malformed checkpoint recovery, same-owner factory admission,
@@ -127,8 +157,8 @@ The focused schema checks cover closed owner declarations, finite counters,
 immutable target pins, rejected authority flags and Phase 4 report identity.
 They do not qualify the native runtime.
 
-The remaining production work includes the sealed signed-operation and
-protected-credential installation producers, their current policy publication
+The remaining production work includes integrating the sealed signed-operation
+and protected-credential captures into actual installation, their current policy publication
 fence, original request/response integration with the Phase 4 wire runtime, and
 bootstrap-pause release that preserves durable operator pause and restore review,
 and native qualification of the stateless rejection probe on supported targets.
