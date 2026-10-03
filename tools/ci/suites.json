@@ -43,151 +43,6 @@
     "latent-telemetry",
     "latent-workflows"
   ],
-  "fixtureRecipes": {
-    "angular-renderer": {
-      "commands": [
-        {
-          "argv": [
-            "npm",
-            "ci",
-            "--ignore-scripts",
-            "--no-audit",
-            "--no-fund"
-          ],
-          "cwd": "examples/renderer-profile",
-          "timeoutSeconds": 600
-        },
-        {
-          "argv": [
-            "npm",
-            "run",
-            "build"
-          ],
-          "cwd": "examples/renderer-profile",
-          "timeoutSeconds": 600
-        },
-        {
-          "argv": [
-            "python3",
-            "tools/build_angular_renderer.py"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 1200
-        }
-      ],
-      "outputs": {
-        "component": {
-          "environment": "LSF_ANGULAR_COMPONENT",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "path": "examples/renderer-profile/dist/runtime/application.wasm"
-        },
-        "private-renderer": {
-          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "path": "examples/renderer-profile/dist/runtime/renderer.wasm"
-        }
-      },
-      "tools": [
-        "cargo",
-        "rustc",
-        "node",
-        "npm",
-        "wasm-tools"
-      ]
-    },
-    "echo-capsule": {
-      "commands": [
-        {
-          "argv": [
-            "python3",
-            "tools/build_echo_capsule.py"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 1800
-        }
-      ],
-      "outputs": {
-        "echo-build": {
-          "kind": "json",
-          "maximumBytes": 1048576,
-          "path": "{target}/capsules/echo/build.json"
-        },
-        "echo-capsule": {
-          "environment": "LSF_ECHO_CAPSULE",
-          "kind": "json",
-          "maximumBytes": 1048576,
-          "path": "{target}/capsules/echo/capsule.json"
-        },
-        "echo-component": {
-          "environment": "LSF_ECHO_COMPONENT",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "path": "{target}/capsules/echo/echo-capsule.wasm"
-        }
-      },
-      "tools": [
-        "cargo",
-        "rustc",
-        "wasm-tools"
-      ]
-    },
-    "oversized-log": {
-      "commands": [
-        {
-          "argv": [
-            "cargo",
-            "build",
-            "-p",
-            "latent-toolchain-smoke",
-            "--example",
-            "oversized-log-capsule",
-            "--target",
-            "wasm32-unknown-unknown",
-            "--release",
-            "--locked"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 900
-        },
-        {
-          "argv": [
-            "wasm-tools",
-            "component",
-            "new",
-            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
-            "-o",
-            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 60
-        },
-        {
-          "argv": [
-            "wasm-tools",
-            "validate",
-            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 60
-        }
-      ],
-      "outputs": {
-        "oversized-log-component": {
-          "environment": "LSF_OVERSIZED_LOG_COMPONENT",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-        }
-      },
-      "tools": [
-        "cargo",
-        "rustc",
-        "wasm-tools"
-      ]
-    }
-  },
   "forbiddenFastDependencies": [
     "latent-testkit",
     "latent-wasmtime",
@@ -202,159 +57,7 @@
     "latent-state",
     "latent-workflows"
   ],
-  "processContracts": {
-    "angular-renderer": {
-      "caseFilters": {
-        "latentd.lib.latentd": "actual_angular_http_"
-      },
-      "fixtures": [
-        "angular-renderer"
-      ],
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest",
-          "component",
-          "private-renderer"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [],
-        "tools": [
-          "git",
-          "rustc"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-wasmtime.test.angular-renderer",
-        "latentd.lib.latentd"
-      ],
-      "timeoutSeconds": 840
-    },
-    "oci-registry": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [
-          {
-            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-            "type": "docker-image"
-          }
-        ],
-        "tools": [
-          "git",
-          "rustc",
-          "docker",
-          "openssl"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-oci.test.registry"
-      ],
-      "timeoutSeconds": 240
-    },
-    "oci-web": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest",
-          "component"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [
-          {
-            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-            "type": "docker-image"
-          }
-        ],
-        "tools": [
-          "git",
-          "rustc",
-          "docker",
-          "openssl"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-policy.lib.latent-policy"
-      ],
-      "timeoutSeconds": 240
-    }
-  },
   "recipes": {
-    "core-host": {
-      "build": [
-        "cargo",
-        "test",
-        "-p",
-        "latent-core",
-        "--lib",
-        "--all-features",
-        "--locked",
-        "--no-run",
-        "--message-format=json,json-render-diagnostics"
-      ],
-      "features": "all (including default)",
-      "profile": "debug",
-      "target": "host"
-    },
-    "echo-runtime": {
-      "build": [
-        "cargo",
-        "test",
-        "-p",
-        "latent-wasmtime",
-        "--test",
-        "echo_backend",
-        "--all-features",
-        "--locked",
-        "--no-run",
-        "--message-format=json,json-render-diagnostics"
-      ],
-      "features": "all (including default)",
-      "profile": "debug",
-      "target": "host"
-    },
     "explicit-doctests": {
       "expectedResultCounts": [
         1,
@@ -423,6 +126,39 @@
       "features": "all (including default)",
       "profile": "debug",
       "target": "host"
+    },
+    "echo-runtime": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-wasmtime",
+        "--test",
+        "echo_backend",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
+    },
+    "core-host": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-core",
+        "--lib",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
     }
   },
   "rendererPackages": [
@@ -479,26 +215,8 @@
       "testThreads": 1,
       "timeoutSeconds": 300
     },
-    "echo-runtime": {
-      "exact": false,
-      "executionOnly": true,
-      "filter": "",
-      "ignored": true,
-      "names": [
-        "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
-        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
-        "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
-        "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
-      ],
-      "resourceClass": "runtime-bounded",
-      "runner": "ci_rust_artifacts",
-      "suite": "latent-wasmtime.test.echo-backend",
-      "testThreads": 1,
-      "timeoutSeconds": 900
-    },
     "metadata-working-set": {
       "exact": true,
-      "executionOnly": true,
       "filter": "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set",
       "ignored": true,
       "names": [
@@ -509,7 +227,8 @@
       "runner": "ci_rust_artifacts",
       "suite": "latent-control-store.lib.latent-control-store",
       "testThreads": 1,
-      "timeoutSeconds": 930
+      "timeoutSeconds": 930,
+      "executionOnly": true
     },
     "nats-events": {
       "exact": false,
@@ -662,6 +381,23 @@
       "suite": "latent-wasmtime.test.vault-secrets",
       "testThreads": 1,
       "timeoutSeconds": 300
+    },
+    "echo-runtime": {
+      "exact": false,
+      "filter": "",
+      "ignored": true,
+      "names": [
+        "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
+        "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
+        "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latent-wasmtime.test.echo-backend",
+      "testThreads": 1,
+      "timeoutSeconds": 900,
+      "executionOnly": true
     }
   },
   "sourceRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -829,6 +565,10 @@
         "lifecycle::store::tests::no_local_mode_composite_accepts_a_package_identity",
         "lifecycle::store::tests::poisoned_fence_and_unhealthy_owner_are_never_reported_as_retryable_contention",
         "lifecycle::store::tests::readers::healthy_final_starts_share_reads_and_exclude_generation_cutover",
+        "lifecycle::store::tests::rejection::accepted_lifecycle_change_rejects_only_exact_scoped_publication_and_not_receipt_replay",
+        "lifecycle::store::tests::rejection::lifecycle_observer_registration_refuses_duplicate_late_or_retired_actual_owner",
+        "lifecycle::store::tests::rejection::uncertain_lifecycle_persistence_never_reopens_rejected_original_stamp_after_roll_forward",
+        "lifecycle::store::tests::rejection::unpublished_evidence_recovery_preserves_registration_but_live_reclamation_seals_it",
         "local_repository::component_reader::tests::growth_is_observed_and_limit_plus_one_is_read_without_retention",
         "local_repository::component_reader::tests::metadata_verification_has_fixed_scratch_and_no_retained_component_allocation",
         "local_repository::component_reader::tests::oversized_initial_length_is_rejected_before_any_read",
@@ -1088,7 +828,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 266,
+      "minimumCases": 270,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -1198,6 +938,8 @@
       "expectedCases": [
         "durable::model::tests::absent_rollout_fields_preserve_old_canonical_identity_bytes",
         "durable::model::tests::canary_evidence_fields_require_exact_rollout_and_positive_epoch",
+        "durable::model::tests::dispatcher_audit_preserves_node_actor_epoch_and_original_full_width_revision",
+        "durable::model::tests::dispatcher_audit_rejects_tenant_scope_hybrids_unrelated_action_and_explicit_null",
         "durable::model::tests::rollout_counters_are_typed_bounded_and_require_their_identity",
         "durable::tests::abandoned_before_and_after_start_have_distinct_durable_outcomes",
         "durable::tests::acknowledged_record_missing_is_corruption_not_a_new_epoch",
@@ -1208,11 +950,15 @@
         "durable::tests::close_retains_live_attempt_and_accepts_its_prepaid_known_outcome",
         "durable::tests::deadlines_include_empty_end_cursor_and_final_read_boundary",
         "durable::tests::durable_attempt_outcome_reopen_and_page_lease",
+        "durable::tests::effect_management::approved_effect_actions_use_real_critical_audit_and_keep_exact_target_after_restart",
+        "durable::tests::effect_management::effect_audit_rejects_wrong_scope_missing_target_generation_and_reassigned_original",
         "durable::tests::expected_rollout_revision_is_distinct_from_other_generations",
         "durable::tests::first_start_creates_bounded_private_ancestors_without_following_links",
         "durable::tests::invalid_limits_reject_without_root_creation",
         "durable::tests::lowered_record_cap_checks_envelope_before_any_slot_or_disk_side_effect",
         "durable::tests::managed_deployment_state_precondition_is_optional_and_distinct",
+        "durable::tests::namespace::namespace_audit_original_target_and_maximum_operation_survive_restart",
+        "durable::tests::namespace::namespace_audit_rejects_node_scope_hybrids_and_reassigned_terminal_target",
         "durable::tests::oversized_terminal_envelope_falls_back_to_owned_unknown_and_shutdown_finishes",
         "durable::tests::partial_unreferenced_stage_recovers_but_unknown_and_links_are_preserved",
         "durable::tests::per_append_bytes_do_not_rewrite_history_and_future_records_stay_outside_cursor",
@@ -1240,7 +986,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-audit/Cargo.toml",
-      "minimumCases": 38,
+      "minimumCases": 44,
       "mode": "libtest",
       "package": "latent-audit",
       "platforms": [
@@ -1451,6 +1197,12 @@
         "namespace::tests::authority::result_replay_and_effect_inspection_require_current_subject_entity_and_policy",
         "namespace::tests::authority::retained::exact_publication_revocation_rejects_retained_admission_despite_shared_component",
         "namespace::tests::authority::retained::expired_original_deadline_does_not_gain_a_new_policy_wall_time",
+        "namespace::tests::authority::retained::listing::replacement_listing_permission_cannot_revive_the_original_retained_page_grant",
+        "namespace::tests::authority::retained::listing::retained_listing_handle_blocks_drain_and_cannot_cross_accepted_lifecycle_changes",
+        "namespace::tests::authority::retained::listing::retained_listing_requires_both_exact_caller_decisions_and_the_actual_catalog_handle",
+        "namespace::tests::authority::retained::management::configured_precondition_is_shared_by_inspection_and_action_without_reissuing_grant",
+        "namespace::tests::authority::retained::management::original_action_and_actual_namespace_lifecycle_are_checked_before_writer_acceptance",
+        "namespace::tests::authority::retained::management::revoked_original_management_decision_cannot_be_revived_by_replacement_configuration",
         "namespace::tests::authority::retained::new_incarnation_cannot_rebase_the_original_retained_scope",
         "namespace::tests::authority::retained::refreshed_policy_permission_cannot_revive_the_original_retained_acquisition",
         "namespace::tests::authority::retained::retained_admission_final_gate_still_accepts_inside_the_actual_writer_once",
@@ -1466,7 +1218,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 148,
+      "minimumCases": 154,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -1486,6 +1238,12 @@
       "boundary": "host",
       "expectedCases": [
         "atomic::tests::actual_engine_success_reopens_with_state_result_inbox_and_exact_effect_linkage",
+        "atomic::tests::captured::captured_intent_cannot_be_rebound_to_a_different_original_pending_claim",
+        "atomic::tests::captured::final_rule_narrowing_rejects_writer_acceptance_and_preserves_pending_owner",
+        "atomic::tests::captured::revoked_staged_effect_prevents_any_business_envelope_or_outbox_row",
+        "atomic::tests::captured::stage_grant_narrowing_before_prepare_is_frozen_in_the_complete_engine_envelope",
+        "atomic::tests::captured::stage_grant_widening_and_credential_rotation_never_expand_durable_commit_authority",
+        "atomic::tests::captured::staged_expiry_and_unproven_time_cannot_gain_a_new_lifetime_during_commit",
         "atomic::tests::coherent_startup_validates_pending_terminal_and_cross_family_links",
         "atomic::tests::compatible_rollout_replays_original_source_and_clock_rollback_is_closed",
         "atomic::tests::dropped_physical_guard_and_unknown_clock_never_authorize_a_retry",
@@ -1529,7 +1287,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-commit/Cargo.toml",
-      "minimumCases": 38,
+      "minimumCases": 44,
       "mode": "libtest",
       "package": "latent-commit",
       "platforms": [
@@ -1682,7 +1440,6 @@
         "deployments::tests::bindings::slow_preparation::slow_control_package_preparation_renews_before_plan_and_releases_cancelled_owners",
         "deployments::tests::bindings::slow_preparation::slow_startup_package_preparation_never_renews_control_authority",
         "deployments::tests::bindings::startup::configured_provider_restart_preserves_exact_versions_and_durable_bytes",
-        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations",
         "deployments::tests::bindings::startup::startup_cannot_silently_replace_durable_bindings_or_install_foreign_provider_owners",
         "deployments::tests::compiler_publisher_and_coalescing_source_enforce_complete_generations",
         "deployments::tests::concurrent_snapshot_replacement_never_exposes_half_a_batch",
@@ -1849,7 +1606,8 @@
         "deployments::tests::versioned::versioned_apply_compares_caller_preconditions_and_returns_normalized_committed_state",
         "deployments::tests::weighting_is_deterministic_order_independent_and_restart_stable",
         "http_routes::tests::exact_publication_selector_survives_manifest_codec_and_canonical_matching",
-        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny"
+        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny",
+        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations"
       ],
       "expectedIgnored": [
         "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set"
@@ -1905,6 +1663,12 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "authority_rejection::tests::bounded_replacement_reuses_one_slot_and_refuses_foreign_stamp_before_mutation",
+        "authority_rejection::tests::invalid_bounds_or_targets_leave_existing_original_token_current",
+        "authority_rejection::tests::observer_registration_is_once_only_and_refuses_late_exposure_and_contention",
+        "authority_rejection::tests::poisoned_metadata_registry_rejects_original_tokens_and_fresh_installation",
+        "authority_rejection::tests::scoped_rejection_is_irreversible_across_fresh_installation_without_other_tenant_churn",
+        "authority_rejection::tests::weak_observer_does_not_keep_retired_registry_or_current_stamps_alive",
         "budget::descendants::tests::abandoned_accepted_child_consumes_its_grant_without_a_completion_claim",
         "budget::descendants::tests::admission_cannot_restart_the_parents_absolute_child_deadline",
         "budget::descendants::tests::child_reservations_retire_only_after_execution_and_retained_provider_owners",
@@ -1932,6 +1696,10 @@
         "budget::profile::tests::phase3_is_explicit_and_intersects_each_enabled_counter_without_enabling_state",
         "budget::profile::tests::phase3_preserves_incoming_monotonic_time_despite_wall_clock_regression",
         "budget::profile::tests::phase3_reports_cannot_invent_host_owned_io_or_future_state_usage",
+        "budget::profile::tests::phase4_group_failure_is_atomic_and_live_reservations_survive_terminal_reports",
+        "budget::profile::tests::phase4_host_buffers_and_guest_growth_share_one_ceiling_through_real_cleanup",
+        "budget::profile::tests::phase4_retains_original_incoming_deadline_and_real_memory_reservation",
+        "budget::profile::tests::phase4_state_counters_are_explicit_intersected_and_not_invented_by_reports",
         "budget::runtime_usage::tests::failed_memory_or_fuel_observation_changes_neither_counter",
         "budget::runtime_usage::tests::finalization_racing_an_observation_never_freezes_half_a_transaction",
         "budget::runtime_usage::tests::overflow_and_finalized_state_leave_the_transaction_unchanged",
@@ -1973,6 +1741,16 @@
         "host_profile::tests::phase3_v1_is_exact_versioned_and_unique",
         "host_profile::tests::v2_preserves_every_builtin_and_selects_only_explicit_async_interfaces",
         "host_profile::tests::v3_preserves_v2_and_limits_resources_to_the_exact_streaming_interface",
+        "native_capacity::tests::bounded_buffer_parts_and_shells_cannot_borrow_or_duplicate_native_capacity",
+        "native_capacity::tests::concurrent_aliases_have_one_global_native_limit_and_no_recovery_permit_loan",
+        "native_capacity::tests::dropped_waiter_and_paused_actual_buffer_destructor_cannot_publish_physical_retirement",
+        "native_capacity::tests::finalized_original_activation_ledger_cannot_refund_live_native_response_frame",
+        "native_capacity::tests::native_response_retires_before_cutoff_even_when_original_drain_polls_later",
+        "native_capacity::tests::ordinary_slot_and_bytes_pressure_preserve_actual_reserved_recovery_capacity",
+        "native_capacity::tests::original_monotonic_deadline_and_close_fence_never_refund_retained_response_bytes",
+        "native_capacity::tests::overflow_invalid_deadline_and_size_reject_before_any_native_owner_is_created",
+        "native_capacity::tests::panicked_native_acceptance_fails_closed_without_refunding_original_buffer_owners",
+        "native_capacity::tests::single_drain_waiter_detachment_does_not_extend_original_native_buffer_cutoff",
         "publication::tests::canonical_round_trip_compacts_spare_capacity",
         "publication::tests::other_domains_and_noncanonical_inputs_fail_without_echoing_input",
         "test_support::clocks::tests::cancelled_timer_registration_does_not_wake_or_consume_reused_capacity",
@@ -2005,7 +1783,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 94,
+      "minimumCases": 114,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -2026,16 +1804,41 @@
       "expectedCases": [
         "authority::tests::bounded_retained_record_roundtrip_never_restores_current_authority",
         "authority::tests::bounded_rule_publication_rejects_rollback_and_same_revision_mutation",
+        "authority::tests::commit_fence_rejects_narrowing_after_refresh_and_allows_compatible_rotation",
+        "authority::tests::commit_refresh_freezes_current_intersection_and_original_expiry_without_dispatch_work",
+        "authority::tests::commit_refresh_rejects_profile_changes_expiry_and_unproven_time",
         "authority::tests::credential_rotation_preserves_destination_and_envelope_provenance",
         "authority::tests::current_ceiling_can_narrow_but_never_widen_a_committed_intent",
         "authority::tests::dropped_context_quarantines_capacity_instead_of_refunding_live_io",
         "authority::tests::expiry_and_uncertain_restart_clock_never_renew_durable_lifetime",
+        "authority::tests::explicit_redrive_intersects_narrowed_original_rules_through_final_acceptance",
+        "authority::tests::final_adapter_admission_refreshes_credential_and_narrows_original_deadline_under_fence",
         "authority::tests::final_commit_checks_every_intent_against_current_format_bounds_and_clock",
         "authority::tests::final_commit_fence_linearizes_revocation_without_allocating_dispatch_work",
         "authority::tests::guest_selected_alias_does_not_grant_cross_tenant_or_publication_authority",
+        "authority::tests::lookup::fresh_lookup_reads_revoked_expired_execution_without_becoming_send_authority",
+        "authority::tests::lookup::lookup_physical_partition_remains_finite_when_every_ordinary_context_is_occupied",
+        "authority::tests::lookup::lookup_preserves_provider_incarnation_credentials_payload_and_original_attempt",
+        "authority::tests::lookup::lookup_prewrite_observes_original_management_revocation_and_native_deadline",
+        "authority::tests::lookup::lookup_rejects_missing_or_repeated_current_gate_before_issuing_a_grant",
+        "authority::tests::namespace_close_invalidates_accepted_grants_without_refunding_physical_work",
+        "authority::tests::newer_publication_cannot_revive_revoked_original_redrive_scope",
+        "authority::tests::original_queued_deadline_narrows_context_and_grant_without_late_reopening",
+        "authority::tests::provider_grant_retains_original_native_capacity_after_context_retirement_and_refuses_replacement",
         "authority::tests::provider_replacement_and_old_decoder_removal_block_instead_of_redirecting",
+        "authority::tests::rejected_namespace_acceptance_preserves_current_original_effect_rules",
+        "authority::tests::rejection::disabled_then_reapproved_rule_never_revives_accepted_context_or_provider_grant",
+        "authority::tests::rejection::fresh_lookup_after_rejection_has_its_own_bounded_non_execution_stamp",
+        "authority::tests::rejection::rejected_provider_grant_keeps_exact_original_native_reservation_until_physical_retirement",
+        "authority::tests::rejection::scoped_owner_observer_rejects_original_installation_and_refuses_identical_stale_reinstall",
         "authority::tests::requested_expiry_only_narrows_and_malformed_typed_envelopes_grant_nothing",
+        "authority::tests::retained_grant_compatible_widening_preserves_original_ceiling_expiry_deadline_and_clock",
+        "authority::tests::retained_grant_rechecks_original_owner_revocation_profile_ceiling_and_credential_epoch",
+        "authority::tests::retired_or_quarantined_attempt_cannot_reauthorize_its_grant_through_another_live_owner",
         "authority::tests::revocation_after_acceptance_does_not_refund_live_physical_work",
+        "authority::tests::revocation_between_claim_and_adapter_acceptance_prevents_io_without_refunding_physical_owner",
+        "authority::tests::sticky_namespace_close_is_exact_and_bounded_before_original_acceptance",
+        "authority::tests::unretired_provider_context_quarantines_original_global_capacity_after_all_grants_drop",
         "dispatch::tests::delayed_retry_beyond_provider_horizon_blocks_without_network_send",
         "dispatch::tests::finite_attempt_ceiling_stops_even_proven_nondispatched_retries",
         "dispatch::tests::forged_terminal_record_without_physical_send_and_receipt_is_corrupt",
@@ -2046,19 +1849,94 @@
         "dispatch::tests::qualified_retry_preserves_payload_provider_incarnation_and_dedup_horizon",
         "dispatch::tests::receipt_and_record_limits_reject_corruption_without_false_acknowledgement",
         "dispatch::tests::retained_old_envelope_and_command_link_survive_state_schema_and_result_expiry",
+        "dispatch_store::catalog::tests::accepted_attempt_reserves_disposition_bytes_and_actual_history_row_under_full_store_pressure",
+        "dispatch_store::catalog::tests::claim_before_send_restart_is_known_nonexecution_and_missing_payload_fails_recovery",
+        "dispatch_store::catalog::tests::native_claim_send_complete_and_history_are_generation_cas_atomic",
+        "dispatch_store::catalog::tests::original_native_claim_fence_rejection_preserves_due_payload_and_every_attempt_row",
+        "dispatch_store::catalog::tests::original_native_send_fence_rejection_never_publishes_a_send_marker_or_receipt",
+        "dispatch_store::catalog::tests::policy_block_and_expiry_persist_without_send_and_clock_restore_rollback_never_advances",
+        "dispatch_store::catalog::tests::qualified_retry_persists_one_due_identity_and_history_pages_remain_bounded",
+        "dispatch_store::catalog::tests::reopened_send_boundary_is_uncertain_and_old_worker_receipt_cannot_overwrite_it",
+        "dispatch_store::catalog::tests::uncertain_completion_never_retries_without_qualified_exact_payload_provider_proof",
+        "dispatch_store::catalog::tests::validation::coherent_dispatch_links_validate_claim_send_recovery_and_terminal_payload_retirement",
+        "dispatch_store::catalog::tests::validation::coherent_dispatch_validator_walks_multiple_pages_and_leaves_foreign_registry_prefixes",
+        "dispatch_store::catalog::tests::validation::individually_valid_but_orphaned_dispatch_rows_fail_coherent_readiness",
+        "dispatch_store::effect_management::tests::abandoned_management_plans_have_a_finite_per_effect_capacity",
+        "dispatch_store::effect_management::tests::administrative_terminal_disposition_keeps_uncertain_facts_and_payload_holds",
+        "dispatch_store::effect_management::tests::interrupted_recovery_uses_original_history_identity_instead_of_replacement_epoch",
+        "dispatch_store::effect_management::tests::missing_reserved_disposition_or_orphaned_management_receipt_rejects_readiness",
+        "dispatch_store::effect_management::tests::old_unmanaged_format_remains_exact_and_foreign_managed_versions_fail_closed",
+        "dispatch_store::effect_management::tests::preallocated_management_disposition_progresses_at_exact_native_logical_high_water",
+        "dispatch_store::effect_management::tests::provider_confirmation_is_distinct_from_original_uncertain_attempt_and_admin_declaration",
+        "dispatch_store::effect_management::tests::qualified_redrive_is_original_payload_profile_and_horizon_bound",
+        "dispatch_store::effect_management::tests::retired_known_nonexecution_redrive_preserves_attempt_and_one_original_receipt",
+        "dispatch_store::effect_management::tests::stale_operation_recovery_cannot_change_actor_action_target_or_original_cas",
+        "dispatch_store::effect_management::tests::unknown_send_never_manufactures_absence_or_redrive_proof",
         "dispatch_store::tests::due_index_orders_time_and_identity_and_rejects_unknown_or_malformed_rows",
         "dispatch_store::tests::envelope_outbox_payload_and_due_index_are_atomic_and_survive_reopen",
         "payload::tests::canonical_payload_identity_sorts_metadata_and_binds_media_and_binary_bytes",
         "payload::tests::payload_byte_and_metadata_caps_preserve_empty_presence_and_exact_authority_link",
         "payload::tests::payload_decoder_checks_all_lengths_counts_utf8_formats_and_trailing_bytes",
-        "payload::tests::tampered_retained_payload_cannot_dispatch_with_the_original_authority"
+        "payload::tests::sealed_adapter_grant_rejects_changed_payload_identity_media_metadata_and_bytes",
+        "payload::tests::tampered_retained_payload_cannot_dispatch_with_the_original_authority",
+        "runtime::control::tests::concurrent_stale_control_does_not_advance_generation_or_rewrite_receipt",
+        "runtime::control::tests::denied_or_missing_authorization_callback_prevents_receipt_and_acceptance",
+        "runtime::control::tests::discontinuous_clock_still_allows_pause_but_never_authorizes_resume",
+        "runtime::control::tests::fences::original_operator_policy_fence_is_inside_the_same_role_order_as_effect_management",
+        "runtime::control::tests::fences::protected_clock_observation_never_enters_locked_control_acceptance_or_publication",
+        "runtime::control::tests::lost_response_lookup_and_historical_replay_do_not_reapply_resume",
+        "runtime::control::tests::malformed_double_acceptance_leaves_conservative_pending_pause_without_a_receipt",
+        "runtime::control::tests::original_live_gate_denial_prevents_receipt_and_logical_acceptance_after_native_plan",
+        "runtime::control::tests::original_live_gate_encloses_actual_dispatcher_acceptance_before_native_receipt_flush",
+        "runtime::control::tests::original_operation_identity_cannot_change_action_precondition_or_actor",
+        "runtime::control::tests::pause_has_one_attributed_durable_receipt_and_preserves_original_precondition",
+        "runtime::control::tests::persisted_pause_survives_new_exclusive_owner_epoch_and_restore_review_is_sticky",
+        "runtime::control::tests::request_bounds_and_generation_exhaustion_reject_before_staging",
+        "runtime::control::tests::resume_stays_paused_through_the_final_fence_until_actual_engine_durability",
+        "runtime::reconciliation::tests::original_attempt_payload_and_version_bind_positive_confirmation",
+        "runtime::reconciliation::tests::provider_confirmation_bounds_reject_arbitrary_text_and_unknown_versions",
+        "runtime::tests::admission::command_capacity_projection_retains_exact_installed_global_owner_and_rejects_substitution",
+        "runtime::tests::admission::command_role_generation_restore_review_and_close_reject_final_writer_callback",
+        "runtime::tests::admission::detached_command_writer_keeps_role_until_actual_fence_rejection_and_buffer_drop",
+        "runtime::tests::admission::first_command_capture_permanently_seals_unbound_capacity_after_actual_role_retirement",
+        "runtime::tests::admission::original_command_guard_prevents_new_node_epoch_until_positive_retirement",
+        "runtime::tests::admission::zero_adapter_commands_use_actual_epoch_bounded_owners_and_nonrewinding_clock",
+        "runtime::tests::capacity::foreign_global_owner_cannot_claim_against_another_protected_store_capacity_binding",
+        "runtime::tests::capacity::full_shared_ordinary_slots_leave_effect_pending_and_preserve_actual_recovery_engine_lane",
+        "runtime::tests::capacity::ordinary_byte_pressure_rejects_before_claim_even_with_a_spare_shared_slot",
+        "runtime::tests::capacity::ordinary_operation_pin_retains_original_native_buffer_until_actual_reserved_retirement",
+        "runtime::tests::capacity::queued_attempt_keeps_original_native_deadline_and_never_claims_after_expiry",
+        "runtime::tests::capacity::unbound_dispatcher_leaves_due_payload_unclaimed_until_exact_global_owner_is_installed",
+        "runtime::tests::control::affine_control_rejects_foreign_engine_owner_and_generic_restore_resume",
+        "runtime::tests::control::detached_control_waiter_keeps_actual_writer_and_original_receipt_on_shared_owner",
+        "runtime::tests::control::durable_pause_never_refunds_an_already_accepted_provider_or_claims_retirement",
+        "runtime::tests::control::persisted_pause_survives_actual_role_retirement_and_explicit_fresh_epoch_resume",
+        "runtime::tests::effect_management::administrator_stop_and_expired_receipt_recovery_do_not_manufacture_provider_ack",
+        "runtime::tests::effect_management::affirmative_original_nonexecution_redrive_commits_schedule_without_provider_work",
+        "runtime::tests::effect_management::changed_original_row_rejects_stale_lookup_plan_before_provider_work",
+        "runtime::tests::effect_management::current_management_revocation_after_lookup_acceptance_prevents_disposition_write",
+        "runtime::tests::effect_management::detached_reconciliation_waiter_retains_original_capacity_until_cleanup_and_receipt",
+        "runtime::tests::effect_management::explicit_lookup_progresses_with_ordinary_native_workers_slots_and_global_admission_full",
+        "runtime::tests::effect_management::fresh_lookup_recovers_revoked_expired_execution_without_renewing_old_send",
+        "runtime::tests::effect_management::original_effect_revocation_after_redrive_plan_preserves_known_failure_and_reservation",
+        "runtime::tests::effect_management::restore_review_prevents_safe_redrive_without_preventing_administrative_stop",
+        "runtime::tests::effect_management::uncertain_send_without_original_provider_dedup_qualification_cannot_plan_redrive",
+        "runtime::tests::effect_management::unknown_provider_status_preserves_original_uncertainty_and_preallocated_plan",
+        "runtime::tests::ownership::dropped_dispatcher_waiter_keeps_provider_and_root_until_actual_record_and_cleanup",
+        "runtime::tests::ownership::live_provider_owner_blocks_alias_epoch_recovery_and_deadline_never_resends",
+        "runtime::tests::pressure::full_native_queue_retains_one_bounded_receipt_and_root_pin_until_actual_record_cas",
+        "runtime::tests::recovery::persisted_owner_history_requires_external_checkpoint_before_new_epoch_or_claim",
+        "runtime::tests::scheduling::compatible_retained_decoders_dispatch_old_and_new_publications_without_reinterpreting_payloads",
+        "runtime::tests::scheduling::exact_retained_profile_inventory_blocks_missing_decoder_without_redirecting",
+        "runtime::tests::scheduling::indexed_hot_tenant_backlog_does_not_starve_cold_tenant_or_allocate_backlog_workers",
+        "runtime::tests::scheduling::pause_and_current_revocation_prevent_claim_without_refunding_unrelated_live_work"
       ],
       "expectedIgnored": [],
       "id": "latent-effects.lib.latent-effects",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 28,
+      "minimumCases": 128,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [
@@ -2077,7 +1955,6 @@
     {
       "boundary": "host",
       "expectedCases": [
-        "preparation_read_wait::tests::default_materialization_wait_delegates_once_without_timer_or_replaying_failure",
         "preparation_read_wait::tests::default_wait_api_delegates_once_without_consulting_timer_or_replaying_failure",
         "preparation_read_wait::tests::default_wait_api_preserves_unpolled_and_pending_future_ownership",
         "prepared_readiness::tests::failed_downcast_preserves_readiness_and_drops_exactly_once",
@@ -2085,7 +1962,8 @@
         "prepared_readiness::tests::legacy_fallback_moves_original_owner_and_import_allocation",
         "prepared_use::tests::an_unpolled_future_and_unwind_drop_the_original_owner",
         "prepared_use::tests::ownership_survives_failed_downcast_and_is_released_exactly_once",
-        "tests::budget_dimensions_have_deterministic_interruption_mappings"
+        "tests::budget_dimensions_have_deterministic_interruption_mappings",
+        "preparation_read_wait::tests::default_materialization_wait_delegates_once_without_timer_or_replaying_failure"
       ],
       "expectedIgnored": [],
       "id": "latent-executor.lib.latent-executor",
@@ -2231,7 +2109,6 @@
         "http::browser::tests::guest_cannot_override_security_headers_enable_cors_or_supply_encoded_bodies",
         "http::browser::tests::html_requires_explicit_utf8_and_does_not_claim_to_sanitize_application_html",
         "http::browser::tests::only_canonical_origin_relative_redirects_survive_and_never_split_headers",
-        "http::browser::tests::public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method",
         "http::cache::tests::isolation::absent_empty_duplicate_and_unapproved_vary_values_are_distinct",
         "http::cache::tests::isolation::alternate_tenants_public_principals_and_languages_never_cross_bytes",
         "http::cache::tests::isolation::credentials_cookies_unknown_headers_queries_and_user_principals_bypass",
@@ -2246,7 +2123,8 @@
         "http::cache::tests::response::browser_policy_rejection_discards_a_pending_fill_before_any_local_delivery",
         "http::cache::tests::response::no_store_private_cookies_unknown_vary_and_ttl_extensions_never_publish",
         "http::cache::tests::response::only_application_200_can_publish_and_failures_are_no_store",
-        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted"
+        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted",
+        "http::browser::tests::public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method"
       ],
       "expectedIgnored": [],
       "id": "latent-ingress.lib.latent-ingress",
@@ -2780,7 +2658,6 @@
         "budgeted_execution::tests::owned::owned_invocation_forwards_identity_guard_accounting_and_cleanup",
         "budgeted_execution::tests::owned::rejected_or_unpolled_owned_invocations_release_without_calling_backend",
         "budgeted_execution::tests::preparation_wait::dropping_wait_aware_readiness_reclaims_unpolled_and_pending_owners_once",
-        "budgeted_execution::tests::preparation_wait::wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay",
         "budgeted_execution::tests::preparation_wait::wait_aware_readiness_forwards_exact_inputs_without_eager_poll_or_replay",
         "cancellation::tests::bounded_reason_preserves_utf8_boundaries",
         "cancellation::tests::cancellation_and_terminal_publication_have_one_linearization_winner",
@@ -2814,7 +2691,8 @@
         "journal::tests::registration_failure_leaves_no_journal_reservation_or_received_event",
         "journal::tests::tenant_queries_and_cancellation_never_expose_another_tenants_record",
         "journal::tests::terminal_eviction_and_monotonic_ttl_never_remove_active_records",
-        "journal::tests::unowned_append_is_rejected_without_changing_a_live_history"
+        "journal::tests::unowned_append_is_rejected_without_changing_a_live_history",
+        "budgeted_execution::tests::preparation_wait::wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
@@ -2894,6 +2772,8 @@
         "races::bounded_start_capacity_rejects_before_retaining_more_work_and_refunds_on_drop",
         "races::cancellation_completion_and_status_race_publish_exactly_one_terminal_event",
         "races::concurrent_starts_cannot_replace_the_same_identity_owner",
+        "transaction::namespace_admission_runs_on_the_original_ledger_before_any_preparation_or_cell",
+        "transaction::ordinary_admission_cannot_install_state_by_selecting_a_transaction_entry_point",
         "transport_cleanup::acknowledged_disconnects_reuse_the_same_capacity_without_explicit_cancel_events",
         "transport_cleanup::exact_expiry_and_explicit_cancel_keep_priority_over_transport_and_success",
         "transport_cleanup::marking_an_already_completed_handle_cannot_stop_its_reused_id",
@@ -2908,7 +2788,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 62,
+      "minimumCases": 64,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -3485,30 +3365,6 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
-      "id": "latent-packaging.example.component-work",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-packaging",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/component_work.rs",
-      "target": "component_work",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
       "id": "latent-packaging.example.package",
       "ignoredLeaves": [],
       "kind": "example",
@@ -3922,6 +3778,9 @@
         "capability::store::tests::perimeter::storage_permissions_links_corruption_and_oversized_history_fail_closed",
         "capability::store::tests::perimeter::unwinding_preflight_retires_authority_until_verified_reopen",
         "capability::store::tests::reader_limits_include_cloned_body_owners_and_have_separate_mutation_headroom",
+        "capability::store::tests::rejection::accepted_policy_withdrawal_reapproval_and_receipt_replay_never_revive_original_stamp",
+        "capability::store::tests::rejection::every_unknown_policy_flush_cut_keeps_original_stamp_rejected_after_restart",
+        "capability::store::tests::rejection::policy_observer_installation_is_once_before_real_owner_exposure",
         "capability::store::tests::response_preflight_deadline_and_disk_capacity_fail_before_any_persistence",
         "capability::tests::additional_restrictions_inherit_only_when_absent_and_never_grant_by_themselves",
         "capability::tests::binding_digest_tracks_only_validated_immutable_configuration_identity",
@@ -4033,7 +3892,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 105,
+      "minimumCases": 108,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -4235,11 +4094,20 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "phase4::effect_management::tests::absent_old_version_and_hidden_large_buffer_cannot_authorize_planning",
+        "phase4::effect_management::tests::applying_plan_preserves_original_cas_action_reason_and_publication",
+        "phase4::effect_management::tests::fresh_read_publication_does_not_rewrite_original_plan",
+        "phase4::effect_management::tests::historical_receipt_keeps_expired_plan_and_independent_unknown_audit",
+        "phase4::effect_management::tests::lookup_and_dedup_safety_need_original_attempt_and_finite_horizon",
+        "phase4::effect_management::tests::provider_confirmation_cannot_be_an_administrator_declaration",
         "phase4::tests::business_rejection_remains_durable_without_application_commit",
         "phase4::tests::compatible_current_publication_preserves_original_retained_source",
         "phase4::tests::create_preserves_present_zero_and_requires_finite_configuration",
         "phase4::tests::cross_tenant_current_publication_fails_before_lookup",
         "phase4::tests::current_read_publication_is_required_without_changing_command_selector",
+        "phase4::tests::dispatcher::dispatcher_replay_cannot_publish_and_pending_control_cannot_claim_unpaused",
+        "phase4::tests::dispatcher::historical_dispatcher_receipt_requires_exact_action_epoch_revision_and_safe_resume_facts",
+        "phase4::tests::dispatcher::node_control_requires_explicit_scope_closed_action_original_generation_and_profile",
         "phase4::tests::exact_negotiated_profile_has_no_unknown_fallback",
         "phase4::tests::incarnation_is_positive_canonical_lossless_unsigned64",
         "phase4::tests::namespaces_reject_unknown_mutation_and_unbounded_page_requests",
@@ -4255,7 +4123,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-rpc/Cargo.toml",
-      "minimumCases": 14,
+      "minimumCases": 23,
       "mode": "libtest",
       "package": "latent-rpc",
       "platforms": [
@@ -4980,17 +4848,25 @@
         "namespace::tests::namespace_record_round_trip_is_bounded_and_independent_of_revision",
         "namespace::tests::tenant_actor_and_operation_key_framing_cannot_alias_or_leak_cross_scope",
         "namespace::tests::wrong_format_truncation_unknown_status_and_trailing_bytes_fail_closed",
+        "protected_store::tests::lifecycle::detached_view_response_witness_waits_for_actual_native_retirement_after_close",
+        "protected_store::tests::lifecycle::dispatcher_registration_is_exclusive_across_ready_aliases_until_actual_retirement",
         "protected_store::tests::lifecycle::foreign_views_and_native_view_caps_reject_without_cross_store_reads",
         "protected_store::tests::lifecycle::lost_protected_fence_after_flush_reports_commit_uncertain_and_never_business_abort",
         "protected_store::tests::lifecycle::native_read_view_survives_deadline_and_retires_only_on_fixed_worker",
+        "protected_store::tests::lifecycle::physical_operation_pins_bound_admission_keep_root_through_deadline_and_retire_after_close",
         "protected_store::tests::lifecycle::protected_initialization_shared_families_snapshots_and_reopen_are_real",
         "protected_store::tests::lifecycle::root_replacement_during_read_gates_after_worker_operation_and_preserves_new_bytes",
+        "protected_store::tests::native_capacity::first_native_admission_seals_unbound_store_and_closed_store_cannot_bind",
+        "protected_store::tests::native_capacity::original_global_capacity_binding_is_same_owner_only_and_survives_native_admission",
         "protected_store::tests::recovery::actual_backend_sync_failure_is_uncertain_gated_and_recovers_one_atomic_bundle",
         "protected_store::tests::recovery::exclusive_root_owner_failure_keeps_first_engine_usable_and_data_intact",
         "protected_store::tests::recovery::malformed_and_unsupported_formats_fail_readiness_without_empty_replacement",
         "protected_store::tests::recovery::physical_file_ceiling_refuses_growth_and_never_claims_aborted_commit",
         "protected_store::tests::recovery::protected_root_permissions_and_substituted_paths_gate_initialization_and_live_jobs",
         "protected_store::tests::recovery::unsupported_filesystem_and_unsafe_configuration_never_create_a_store",
+        "protected_store::tests::reserved::detached_recovery_view_keeps_original_global_reservation_until_native_retirement",
+        "protected_store::tests::reserved::recovery_snapshot_reads_and_retires_on_reserved_worker_under_ordinary_pressure",
+        "protected_store::tests::reserved::reserved_native_status_progresses_while_all_ordinary_workers_and_queue_are_full",
         "protected_store::tests::validation::bounded_startup_codec_validation_visits_every_row_across_page_continuations",
         "protected_store::tests::validation::coherent_cross_family_validation_holds_readiness_and_exclusive_physical_owner",
         "protected_store::tests::validation::incoherent_logical_links_fail_before_ready_and_preserve_every_existing_row",
@@ -5002,7 +4878,20 @@
         "session::tests::current_authorization_and_namespace_schema_incarnation_fences_fail_closed",
         "session::tests::cursor_scope_query_overlay_generation_and_once_only_use_are_enforced",
         "session::tests::empty_and_truncated_prefix_scans_conflict_on_phantom_insert_delete",
+        "session::tests::entities::entity_continuations_refuse_changed_generation_schema_and_recovery_epochs",
+        "session::tests::entities::entity_discovery_deduplicates_live_cells_keeps_tombstones_and_changes_no_records",
+        "session::tests::entities::entity_discovery_refuses_partial_capacity_results_and_rechecks_current_access",
+        "session::tests::entities::entity_discovery_uses_canonical_scope_prefix_and_accepts_full_bounded_identity",
+        "session::tests::entities::entity_pages_resume_lexically_in_one_exact_view_without_a_false_last_page",
+        "session::tests::entities::filtered_entity_rows_cannot_hide_unsupported_or_corrupt_cells",
         "session::tests::exact_maximum_key_value_and_generation_exhaustion_do_not_wrap",
+        "session::tests::history::changed_history_invalidates_old_record_preconditions_without_changing_business_cells",
+        "session::tests::history::history_decoder_refuses_corruption_unknown_fields_wrong_scope_and_zero_epochs",
+        "session::tests::history::live_command_plan_cannot_commit_when_an_absent_or_present_history_row_changes",
+        "session::tests::history::no_state_disposition_captures_the_same_exact_history_fence",
+        "session::tests::history::opaque_minimum_view_binds_scope_schema_recovery_and_exact_unsigned_versions",
+        "session::tests::history::ordinary_engine_restart_preserves_the_original_history_view_token",
+        "session::tests::history::restored_history_preserves_namespace_receipt_bytes_and_stays_paused",
         "session::tests::logical_age_and_close_do_not_refund_a_live_physical_view",
         "session::tests::lost_update_has_one_serializable_winner_without_guest_retry",
         "session::tests::malformed_lengths_and_unknown_state_formats_are_storage_errors_not_absence",
@@ -5021,11 +4910,20 @@
         "store_io::tests::ownership::queue_accepted_and_retained_byte_limits_reject_before_submission",
         "store_io::tests::ownership::response_buffer_destruction_precedes_detached_reservation_refund",
         "store_io::tests::ownership::worker_panic_is_recovery_required_and_gates_queued_writes",
+        "store_io::tests::recovery::absent_or_invalid_recovery_configuration_cannot_synthesize_reserved_admission",
+        "store_io::tests::recovery::blocked_ordinary_native_destructor_cannot_occupy_reserved_recovery_worker",
+        "store_io::tests::recovery::detached_recovery_owner_keeps_its_partition_until_physical_buffer_retirement",
+        "store_io::tests::recovery::recovery_native_owner_retires_on_reserved_worker_when_ordinary_capacity_is_full",
+        "store_io::tests::recovery::recovery_worker_and_admission_progress_with_all_ordinary_workers_and_quotas_full",
+        "store_io::tests::recovery::recovery_write_never_steals_a_live_writer_and_read_can_pass_its_backlog",
         "store_io::tests::retirement::completed_response_memory_prevents_clean_drain_until_actual_waiter_drop",
         "store_io::tests::retirement::dropping_drain_cannot_extend_original_deadline_or_make_late_retirement_clean",
+        "store_io::tests::retirement::dropping_retirement_receipt_detaches_without_refunding_paused_physical_cleanup",
         "store_io::tests::retirement::engine_resident_bytes_remain_reserved_until_physical_destruction",
         "store_io::tests::retirement::excessive_worker_and_queue_configuration_rejects_before_any_thread_owner",
         "store_io::tests::retirement::native_retirement_remains_charged_and_on_worker_through_paused_destructor",
+        "store_io::tests::retirement::original_capacity_keeper_survives_detached_native_retirement_until_actual_destruction",
+        "store_io::tests::retirement::original_job_capacity_survives_callback_completion_and_detached_buffer_destruction",
         "store_io::tests::shutdown::completed_before_deadline_is_clean_even_if_waiter_polls_later",
         "store_io::tests::shutdown::deadline_quarantine_retains_live_io_and_late_retirement_is_distinct",
         "store_io::tests::shutdown::failed_finalization_is_quarantined_after_physical_engine_close",
@@ -5037,7 +4935,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 103,
+      "minimumCases": 133,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
@@ -5065,7 +4963,6 @@
         "custom::registry::tests::retirement::validated_custom_path_does_not_relax_the_original_runtime_dimension_allowlist",
         "custom::registry::tests::series_caps_separate_tenants_and_fixed_rate_windows_refund_rejections",
         "custom::registry::tests::validation::descriptors_reject_incompatible_reuse_reserved_names_and_unbounded_configuration",
-        "custom::registry::tests::validation::real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names",
         "custom::registry::tests::validation::selections_cannot_move_between_registries_or_trusted_sources_or_survive_retirement",
         "custom::registry::tests::validation::sum_overflow_rejects_without_mutating_the_aggregate_or_queue",
         "local::tests::bounded_records_preserve_structured_fields_without_implicit_payloads",
@@ -5113,7 +5010,8 @@
         "pipeline::tests::redacted_short_strings_with_large_retained_allocations_are_rejected",
         "pipeline::tests::shutdown_deadline_aborts_export_and_closes_retained_handles",
         "pipeline::tests::sink_errors_and_constructor_poll_and_drop_panics_are_isolated",
-        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting"
+        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting",
+        "custom::registry::tests::validation::real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names"
       ],
       "expectedIgnored": [],
       "id": "latent-telemetry.lib.latent-telemetry",
@@ -5135,51 +5033,6 @@
       "source": "src/lib.rs",
       "target": "latent_telemetry",
       "timeoutSeconds": 180
-    },
-    {
-      "boundary": "host",
-      "expectedCases": [
-        "process::owned::tests::aborting_a_reader_drops_the_pipe_without_waiting_for_inherited_writers",
-        "process::owned::tests::child_records_and_both_pipes_are_complete_after_wait",
-        "process::owned::tests::dropping_a_pending_wait_keeps_the_child_under_tokio_cleanup",
-        "process::owned::tests::invalid_limits_fail_before_attempting_to_spawn_a_program",
-        "process::owned::tests::lifetime_timeout_reaps_the_child_and_explicit_termination_retains_status",
-        "process::owned::tests::overflowing_either_pipe_is_an_error_and_the_live_child_is_reaped",
-        "process::tests::builds_a_repeatable_command",
-        "resources::child::tests::captures_the_live_child_listener_and_rejects_foreign_or_exited_owners",
-        "resources::child::tests::observed_u64_values_and_unavailable_fields_roundtrip_losslessly",
-        "resources::child::tests::resource_child_fixture",
-        "resources::current::tests::own_sampling_has_stable_identity_and_does_not_count_its_directory_handle",
-        "resources::linux::tests::descendants_created_by_other_tasks_are_included_and_bounded",
-        "resources::linux::tests::disappearing_fd_and_missing_or_oversized_proc_files_are_unavailable",
-        "resources::linux::tests::reused_foreign_pid_is_not_reported_as_an_owned_descendant",
-        "resources::parse::tests::descendant_lists_have_an_independent_count_bound",
-        "resources::parse::tests::process_name_parentheses_and_spaces_cannot_shift_start_time",
-        "resources::parse::tests::rss_units_absence_and_overflow_are_not_zero_measurements",
-        "resources::parse::tests::tcp_listener_counts_intersect_owned_inodes_instead_of_namespace_totals",
-        "resources::tests::captures_the_current_process_identity",
-        "resources::tests::parses_linux_status_values"
-      ],
-      "expectedIgnored": [],
-      "id": "latent-test-process.lib.latent-test-process",
-      "ignoredLeaves": [],
-      "kind": "lib",
-      "manifest": "crates/latent-test-process/Cargo.toml",
-      "minimumCases": 20,
-      "mode": "libtest",
-      "package": "latent-test-process",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "host-bounded",
-      "source": "src/lib.rs",
-      "target": "latent_test_process",
-      "timeoutSeconds": 300
     },
     {
       "boundary": "host",
@@ -5348,30 +5201,6 @@
       "resourceClass": "runtime-bounded",
       "source": "examples/containment_capsule/component.rs",
       "target": "containment-capsule",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-toolchain-smoke.example.dotnet-closed-runtime",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-toolchain-smoke",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/dotnet_closed_runtime.rs",
-      "target": "dotnet-closed-runtime",
       "timeoutSeconds": 900
     },
     {
@@ -5688,30 +5517,6 @@
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-toolchain-smoke.example.transaction-contract",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-toolchain-smoke",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "../../sdk/transaction-contract/rust/component.rs",
-      "target": "transaction-contract",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
       "expectedCases": [
         "tests::greets_trimmed_names_and_explains_invalid_input"
       ],
@@ -5923,30 +5728,6 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
-      "id": "latent-wasmtime.bin.latent-aot-compiler",
-      "ignoredLeaves": [],
-      "kind": "bin",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "src/bin/latent-aot-compiler.rs",
-      "target": "latent-aot-compiler",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
       "id": "latent-wasmtime.example.go-runtime-probe",
       "ignoredLeaves": [],
       "kind": "example",
@@ -5971,9 +5752,9 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
-      "id": "latent-wasmtime.example.java-runtime-probe",
+      "id": "latent-wasmtime.bin.latent-aot-compiler",
       "ignoredLeaves": [],
-      "kind": "example",
+      "kind": "bin",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
       "minimumCases": 0,
       "mode": "compile-only",
@@ -5987,32 +5768,8 @@
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
-      "source": "examples/java_runtime_probe.rs",
-      "target": "java_runtime_probe",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-wasmtime.example.typescript-runtime-probe",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/typescript_runtime_probe.rs",
-      "target": "typescript_runtime_probe",
+      "source": "src/bin/latent-aot-compiler.rs",
+      "target": "latent-aot-compiler",
       "timeoutSeconds": 900
     },
     {
@@ -6147,6 +5904,8 @@
         "bindings::compatibility_tests::generated_async_provider_binding_accepts_only_its_exact_interface",
         "bindings::compatibility_tests::generated_builtin_linker_matches_every_exact_pinned_shape",
         "bindings::compatibility_tests::streaming_preparation_accepts_only_exact_resource_types_ownership_and_async_shapes",
+        "bindings::compatibility_tests::transaction_preparation_requires_exact_mixed_async_and_affine_resource_shapes",
+        "bindings::compatibility_tests::transaction_support_changes_prepared_and_native_identity_without_mutating_stateless_abi",
         "bindings::tests::declared_linker_registrations_match_active_profile_exactly",
         "cache::accounting::tests::failures::image_and_metadata_gate_errors_preserve_residents_and_refund_pending_state",
         "cache::accounting::tests::failures::registration_overflow_does_not_partially_change_any_population",
@@ -6368,7 +6127,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 338,
+      "minimumCases": 340,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -6607,31 +6366,6 @@
     },
     {
       "boundary": "runtime",
-      "expectedCustomCases": [
-        "active-shutdown",
-        "cancel-running-prefix",
-        "diagnostic-overflow",
-        "fragmented-success",
-        "healthy-after-failures",
-        "inherited-descriptor",
-        "last-owner-drop",
-        "launch-mismatch",
-        "malformed-readiness",
-        "nonzero-exit",
-        "oversized",
-        "probe-launch-mismatch",
-        "probe-stalled-launch",
-        "readiness-malformed",
-        "readiness-relative-path",
-        "readiness-success",
-        "readiness-wrong-digest",
-        "running-deadline",
-        "stalled-launch",
-        "trailing",
-        "truncated-body",
-        "truncated-header",
-        "zero"
-      ],
       "id": "latent-wasmtime.test.aot-supervisor",
       "ignoredLeaves": [
         "actual_built_angular_application_renders_fresh_hydration_and_rejects_excess_data",
@@ -6751,7 +6485,32 @@
       "sourceSha256": "4c1a85079da0baefb6178caa493f15aed5a528e6cc88808d2e75c56fc91149fb",
       "successMarker": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
       "target": "aot_supervisor",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCustomCases": [
+        "active-shutdown",
+        "cancel-running-prefix",
+        "diagnostic-overflow",
+        "fragmented-success",
+        "healthy-after-failures",
+        "inherited-descriptor",
+        "last-owner-drop",
+        "launch-mismatch",
+        "malformed-readiness",
+        "nonzero-exit",
+        "oversized",
+        "probe-launch-mismatch",
+        "probe-stalled-launch",
+        "readiness-malformed",
+        "readiness-relative-path",
+        "readiness-success",
+        "readiness-wrong-digest",
+        "running-deadline",
+        "stalled-launch",
+        "trailing",
+        "truncated-body",
+        "truncated-header",
+        "zero"
+      ]
     },
     {
       "boundary": "runtime",
@@ -6957,45 +6716,6 @@
     {
       "boundary": "runtime",
       "expectedCases": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "expectedIgnored": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "id": "latent-wasmtime.test.dotnet-guest",
-      "ignoredLeaves": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "kind": "test",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 2,
-      "mode": "libtest",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "tests/dotnet_guest.rs",
-      "target": "dotnet_guest",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "caseFixtures": {
-        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel": [
-          "oversized-log"
-        ]
-      },
-      "expectedCases": [
         "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
         "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
         "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
@@ -7006,9 +6726,6 @@
         "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
         "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
         "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
-      ],
-      "fixtures": [
-        "echo-capsule"
       ],
       "id": "latent-wasmtime.test.echo-backend",
       "ignoredLeaves": [
@@ -7033,7 +6750,15 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/echo_backend.rs",
       "target": "echo_backend",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "fixtures": [
+        "echo-capsule"
+      ],
+      "caseFixtures": {
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel": [
+          "oversized-log"
+        ]
+      }
     },
     {
       "boundary": "runtime",
@@ -7965,6 +7690,51 @@
         "phase4::lease::tests::unpolled_response_body_drop_retires_exact_owner_once",
         "phase4::public_error::tests::business_rejection_and_success_payloads_remain_original_application_values",
         "phase4::public_error::tests::technical_cleanup_diagnostics_are_redacted_without_changing_durable_outcome",
+        "phase4::state_management::recovery::tests::recovery_original_deadline_and_closed_owner_deny_without_refunding_retained_capacity",
+        "phase4::state_management::recovery::tests::shared_recovery_admission_keeps_exact_capacities_and_does_not_borrow_ordinary_slots",
+        "phase4::state_management::tests::actual_authenticated_namespace_create_inspect_and_original_receipt",
+        "phase4::state_management::tests::bindings::foreign_actual_request_reservation_is_refused_before_native_management_submission",
+        "phase4::state_management::tests::bindings::management_construction_rejects_unbound_or_foreign_native_owner_before_lookup",
+        "phase4::state_management::tests::bindings::management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_same_engine",
+        "phase4::state_management::tests::bindings::recovery_binding_installation_is_bounded_unique_and_frozen_before_sharing",
+        "phase4::state_management::tests::bindings::unknown_or_incompatible_requested_recovery_scope_fails_before_native_admission",
+        "phase4::state_management::tests::dispatcher::accepted_namespace_close_invalidates_original_provider_grant_before_more_io",
+        "phase4::state_management::tests::dispatcher::actual_authenticated_dispatcher_receipt_is_historical_and_audit_failure_cannot_mutate",
+        "phase4::state_management::tests::dispatcher::dispatcher_original_policy_is_captured_before_poll_and_reallow_cannot_revive_it",
+        "phase4::state_management::tests::durable_typed_audit_precedes_mutation_and_closed_audit_cannot_create",
+        "phase4::state_management::tests::effects::absent_provider_status_preserves_uncertainty_original_plan_and_independent_audit",
+        "phase4::state_management::tests::effects::accepted_effect_response_rechecks_current_data_read_before_physical_frame_release",
+        "phase4::state_management::tests::effects::authenticated_effect_terminal_plan_and_expired_original_receipt_preserve_separate_facts",
+        "phase4::state_management::tests::effects::detached_revoked_lookup_keeps_original_native_owner_until_actual_provider_cleanup",
+        "phase4::state_management::tests::effects::effect_identifiers_and_operator_flag_cannot_replace_exact_caller_data_read_permission",
+        "phase4::state_management::tests::effects::effect_plan_full_original_semantics_and_stale_policy_are_never_refreshed",
+        "phase4::state_management::tests::effects::fresh_lookup_after_execution_expiry_uses_reserved_capacity_and_preserves_provider_fact",
+        "phase4::state_management::tests::effects::frozen_rpc_adapter_preserves_effect_plan_receipt_and_original_recovery_association",
+        "phase4::state_management::tests::effects::unknown_actual_dispatch_attempt_cannot_be_redriven_from_an_operator_declaration",
+        "phase4::state_management::tests::entities::actual_entity_rpc_frame_and_snapshot_progress_through_reserved_recovery_capacity",
+        "phase4::state_management::tests::entities::authenticated_entity_discovery_observes_real_cells_tombstones_and_critical_audit",
+        "phase4::state_management::tests::entities::entity_reply_revocation_before_encoding_keeps_snapshot_until_native_cleanup",
+        "phase4::state_management::tests::entities::namespace_inspection_permission_cannot_supply_entity_listing_or_revive_old_reply",
+        "phase4::state_management::tests::entities::retained_entity_data_frame_blocks_namespace_drain_until_physical_view_retirement",
+        "phase4::state_management::tests::entities::rpc_entity_cursor_binds_caller_prefix_and_fresh_exact_namespace_generation",
+        "phase4::state_management::tests::entities::rpc_entity_cursor_refuses_schema_and_restored_history_without_quarantining_store",
+        "phase4::state_management::tests::exact_selected_service_mismatch_denies_before_native_lookup_even_when_store_closed",
+        "phase4::state_management::tests::lifecycle_transition_invalidates_old_metadata_and_tombstone_is_inspectable",
+        "phase4::state_management::tests::original_actor_operation_and_generation_survive_replay_without_refresh",
+        "phase4::state_management::tests::physical::concurrent_original_generation_checks_have_one_native_writer_without_refresh",
+        "phase4::state_management::tests::physical::detached_namespace_waiter_retains_real_work_until_commit_and_clean_recovery",
+        "phase4::state_management::tests::physical::final_request_gate_refuses_native_write_and_leaves_no_receipt_or_lifecycle_slot",
+        "phase4::state_management::tests::physical::namespace_usage_is_observed_from_native_accounting_and_tombstones_remain_charged",
+        "phase4::state_management::tests::postcommit_revocation_denies_retained_body_and_fresh_authorization_recovers_original",
+        "phase4::state_management::tests::recovery::authenticated_recovery_and_retained_rpc_frame_progress_under_real_ordinary_saturation",
+        "phase4::state_management::tests::recovery::detached_recovery_write_keeps_global_capacity_until_original_expiry_and_real_retirement",
+        "phase4::state_management::tests::recovery_response_capacity_is_reserved_before_poll_and_retained_until_body_drops",
+        "phase4::state_management::tests::rejection::actual_policy_withdraw_then_reapprove_reseals_fresh_work_and_keeps_held_original_native_owner",
+        "phase4::state_management::tests::rejection::actual_publication_withdrawal_denies_held_original_and_stale_install_while_new_current_work_reseals",
+        "phase4::state_management::tests::view_identity::authenticated_namespace_inspection_uses_canonical_scope_bound_legacy_history_token",
+        "phase4::state_management::tests::view_identity::malformed_or_wrong_scope_history_cannot_fall_back_to_an_inspection_token_on_restart",
+        "phase4::state_management::tests::view_identity::paused_namespace_history_remains_inspectable_with_actual_schema_and_recovery_epochs",
+        "phase4::state_management::tests::wrong_tenant_target_and_expired_arrival_cannot_reserve_or_lookup",
         "phase4::tests::malformed_profile_and_stale_transport_deadline_never_admit_work",
         "phase4::tests::missing_identity_and_wrong_tenant_cannot_touch_recovery_runtime",
         "phase4::tests::namespace_operations_require_management_role_before_domain_owner",
@@ -7975,7 +7745,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 128,
+      "minimumCases": 173,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -8250,6 +8020,11 @@
         "management::phase4::tests::command_lookup_keeps_explicit_attempt_and_current_publication_separate",
         "management::phase4::tests::command_name_and_offline_preflight_do_not_contact_a_node",
         "management::phase4::tests::configuration_is_closed_bounded_lossless_and_not_arbitrary_state_editing",
+        "management::phase4::tests::dispatcher::dispatcher_cli_requires_explicit_node_scope_action_and_original_precondition",
+        "management::phase4::tests::dispatcher::dispatcher_recovery_keeps_lossless_original_epoch_revision_action_and_operation",
+        "management::phase4::tests::effect_management::effect_apply_and_recovery_preserve_the_original_plan_and_separate_current_read_target",
+        "management::phase4::tests::effect_management::effect_plan_input_rejects_oversize_unknown_fields_bad_cas_and_unqualified_delay",
+        "management::phase4::tests::effect_management::expired_historical_effect_plan_projects_losslessly_and_recovers_without_resubmitting",
         "management::phase4::tests::grammar_requires_current_target_and_original_operation_precondition",
         "management::phase4::tests::human_and_json_projection_keep_exact_retention_source_and_cleanup_facts",
         "management::phase4::tests::paging_uses_exact_opaque_continuation_without_hidden_polling",
@@ -8322,7 +8097,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 138,
+      "minimumCases": 143,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
@@ -8500,23 +8275,12 @@
         "config::tests::engine::engine_json_has_closed_choices_and_preserves_omitted_defaults",
         "config::tests::engine::finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage",
         "config::tests::engine::java_guest_engine_is_explicit_and_does_not_raise_operator_limits",
-        "config::tests::events::event_binding_requires_exact_tenant_and_provider_service",
-        "config::tests::events::event_input_rejects_inline_secrets_ambient_auth_and_unknown_fields",
-        "config::tests::events::event_protected_configuration_rejects_foreign_topics_paths_and_colliding_identity",
         "config::tests::invalid_capacity_and_retention_combinations_fail_before_startup",
-        "config::tests::local_service::local_dispatcher_preserves_exact_provider_target_and_isolated_mode",
-        "config::tests::local_service::local_dispatcher_protected_configuration_rejects_ambiguous_provider_identity",
-        "config::tests::local_service::local_dispatcher_rejects_foreign_scope_self_calls_and_invalid_targets",
         "config::tests::malformed_json_never_echoes_secret_values",
-        "config::tests::metrics::metrics_contracts_require_a_matching_configured_provider",
-        "config::tests::metrics::metrics_descriptor_validation_starts_no_exporter_and_rejects_reserved_unbounded_or_ambiguous_inputs",
         "config::tests::nonlocal_bind_duplicate_tokens_and_unusable_manifest_tenants_are_rejected",
         "config::tests::providers::protected_provider_configuration_is_opt_in_closed_and_side_effect_free",
         "config::tests::providers::provider_input_rejects_null_unknown_and_raw_secret_fields",
         "config::tests::providers::scalar_provider_definitions_require_the_exact_installed_identity_and_contract",
-        "config::tests::providers::secret_bindings_require_the_actual_provider_service_and_tenant",
-        "config::tests::providers::secret_input_rejects_plaintext_environment_and_unknown_authority",
-        "config::tests::providers::secret_paths_and_reference_limits_are_validated_without_loading_values",
         "config::tests::relative_paths_anchor_to_configuration_parent_and_port_zero_is_valid",
         "config::tests::renderer::renderer_opt_in_is_closed_and_preserves_operator_budgets",
         "config::tests::security::a_profile_label_cannot_replace_enforced_admission_or_isolated_compilation",
@@ -8532,7 +8296,6 @@
         "standalone::http::assets::cache::tests::corruption_refetches_once_and_bad_source_never_becomes_a_cache_hit",
         "standalone::http::assets::cache::tests::eviction_and_clear_do_not_release_pinned_output_bytes",
         "standalone::http::assets::cache::tests::zero_length_assets_are_verified_and_oversized_declarations_do_not_read",
-        "standalone::http::assets::csp::tests::signed_style_identities_only_extend_styles_and_reject_policy_text",
         "standalone::http::assets::integration::assets_and_response_cache_keep_independent_accounting_and_both_stop_on_drain",
         "standalone::http::assets::integration::cached_bytes_and_prepared_304_are_not_authority_after_policy_change_or_revocation",
         "standalone::http::assets::integration::disconnected_blocking_read_keeps_its_slot_until_actual_completion",
@@ -8548,8 +8311,6 @@
         "standalone::http::assets::request::tests::selected_prerender_keeps_conditional_headers_and_rejects_foreign_scope",
         "standalone::http::assets::static_site::tests::static_redirect_preserves_canonical_mount_and_query_with_finite_scratch",
         "standalone::http::assets::static_site::tests::static_resolution_orders_signed_routes_assets_indexes_and_navigation_fallback",
-        "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access",
-        "standalone::http::assets::static_tests::signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache",
         "standalone::http::assets::static_tests::static_cached_head_and_prepared_304_recheck_current_publication_authority",
         "standalone::http::assets::static_tests::static_concurrency_corruption_and_read_saturation_never_enter_renderer_or_fallback",
         "standalone::http::assets::static_tests::static_cutover_rollback_delete_recreate_and_specific_precedence_keep_captured_publication",
@@ -8564,7 +8325,6 @@
         "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity",
         "standalone::http::tests::browser_config::browser_origin_bindings_are_closed_unique_tenant_scoped_and_optional_for_native_clients",
         "standalone::http::tests::browser_config::public_browser_origins_are_derived_not_overridden",
-        "standalone::http::tests::browser_config::public_document_navigation_is_explicit_public_tenant_scoped_and_mount_bounded",
         "standalone::http::tests::cache::actual_http_component_cache_preserves_admission_revocation_and_owner_reclamation",
         "standalone::http::tests::cache_config::response_cache_configuration_rejects_unsafe_domains_and_cross_origin_approvals",
         "standalone::http::tests::cache_config::response_cache_defaults_off_and_requires_public_operator_approval",
@@ -8625,7 +8385,6 @@
         "standalone::measurements::node::tests::configuration_reserves_records_for_all_running_and_queued_requests",
         "standalone::measurements::phase1_measurement_collector",
         "standalone::measurements::plan::tests::full_measurements_cannot_be_replaced_with_smoke_counts",
-        "standalone::measurements::scale::tests::catalog_content_growth_does_not_mask_owner_or_capacity_changes",
         "standalone::measurements::scale::tests::variant_identity_is_one_bounded_custom_section",
         "standalone::measurements::soak::tests::bounded_retention_is_allowed_but_active_owners_or_missing_observations_fail",
         "standalone::measurements::soak::tests::full_warmup_exercises_every_measured_fault_family",
@@ -8674,8 +8433,6 @@
         "standalone::start::tests::rollouts::manual_owner_starts_and_joins_with_one_control_blocking_thread",
         "standalone::start::tests::rollouts::recovery::disabled_rollouts_reconcile_existing_history_without_exposing_the_service",
         "standalone::start::tests::rollouts::rollback::rollback_restores_real_base_invocation_and_retires_canary_observation",
-        "standalone::start::tests::telemetry::changed_exporter_limits_reject_composition_and_join_the_bootstrap_owner",
-        "standalone::start::tests::telemetry::provider_bootstrap_transfers_the_same_exporter_to_the_running_node",
         "standalone::start::tests::trust_currentness::profile::external_profile_preserves_cold_warm_and_restart_requirements",
         "standalone::start::tests::trust_currentness::real_policy_expiry_denies_native_work_and_recovers_readable_negative_history",
         "standalone::start::tests::trust_currentness::real_proof_age_expiry_denies_retained_native_work_with_a_current_clock_lease",
@@ -8703,7 +8460,25 @@
         "standalone::transport::tests::shutdown::already_panicked_server_is_joined_without_repolling_its_handle",
         "standalone::transport::tests::shutdown::timed_out_server_is_aborted_and_joined_before_returning_failure",
         "standalone::transport::tests::web_preparation::only_exact_web_control_paths_get_separate_bounded_transport_waits",
-        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication"
+        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication",
+        "config::tests::providers::secret_input_rejects_plaintext_environment_and_unknown_authority",
+        "config::tests::providers::secret_bindings_require_the_actual_provider_service_and_tenant",
+        "config::tests::providers::secret_paths_and_reference_limits_are_validated_without_loading_values",
+        "config::tests::metrics::metrics_contracts_require_a_matching_configured_provider",
+        "config::tests::metrics::metrics_descriptor_validation_starts_no_exporter_and_rejects_reserved_unbounded_or_ambiguous_inputs",
+        "standalone::start::tests::telemetry::provider_bootstrap_transfers_the_same_exporter_to_the_running_node",
+        "standalone::start::tests::telemetry::changed_exporter_limits_reject_composition_and_join_the_bootstrap_owner",
+        "config::tests::local_service::local_dispatcher_preserves_exact_provider_target_and_isolated_mode",
+        "config::tests::local_service::local_dispatcher_rejects_foreign_scope_self_calls_and_invalid_targets",
+        "config::tests::local_service::local_dispatcher_protected_configuration_rejects_ambiguous_provider_identity",
+        "config::tests::events::event_input_rejects_inline_secrets_ambient_auth_and_unknown_fields",
+        "config::tests::events::event_binding_requires_exact_tenant_and_provider_service",
+        "config::tests::events::event_protected_configuration_rejects_foreign_topics_paths_and_colliding_identity",
+        "standalone::http::tests::browser_config::public_document_navigation_is_explicit_public_tenant_scoped_and_mount_bounded",
+        "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access",
+        "standalone::measurements::scale::tests::catalog_content_growth_does_not_mask_owner_or_capacity_changes",
+        "standalone::http::assets::csp::tests::signed_style_identities_only_extend_styles_and_reject_policy_text",
+        "standalone::http::assets::static_tests::signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -9030,6 +8805,469 @@
       "source": "tests/standalone_shutdown.rs",
       "target": "standalone_shutdown",
       "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.dotnet-closed-runtime",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/dotnet_closed_runtime.rs",
+      "target": "dotnet-closed-runtime",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "expectedIgnored": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "id": "latent-wasmtime.test.dotnet-guest",
+      "ignoredLeaves": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 2,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/dotnet_guest.rs",
+      "target": "dotnet_guest",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.example.typescript-runtime-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/typescript_runtime_probe.rs",
+      "target": "typescript_runtime_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-packaging.example.component-work",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/component_work.rs",
+      "target": "component_work",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.example.java-runtime-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/java_runtime_probe.rs",
+      "target": "java_runtime_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "host",
+      "expectedCases": [
+        "process::owned::tests::aborting_a_reader_drops_the_pipe_without_waiting_for_inherited_writers",
+        "process::owned::tests::child_records_and_both_pipes_are_complete_after_wait",
+        "process::owned::tests::dropping_a_pending_wait_keeps_the_child_under_tokio_cleanup",
+        "process::owned::tests::invalid_limits_fail_before_attempting_to_spawn_a_program",
+        "process::owned::tests::lifetime_timeout_reaps_the_child_and_explicit_termination_retains_status",
+        "process::owned::tests::overflowing_either_pipe_is_an_error_and_the_live_child_is_reaped",
+        "process::tests::builds_a_repeatable_command",
+        "resources::child::tests::captures_the_live_child_listener_and_rejects_foreign_or_exited_owners",
+        "resources::child::tests::observed_u64_values_and_unavailable_fields_roundtrip_losslessly",
+        "resources::child::tests::resource_child_fixture",
+        "resources::current::tests::own_sampling_has_stable_identity_and_does_not_count_its_directory_handle",
+        "resources::linux::tests::descendants_created_by_other_tasks_are_included_and_bounded",
+        "resources::linux::tests::disappearing_fd_and_missing_or_oversized_proc_files_are_unavailable",
+        "resources::linux::tests::reused_foreign_pid_is_not_reported_as_an_owned_descendant",
+        "resources::parse::tests::descendant_lists_have_an_independent_count_bound",
+        "resources::parse::tests::process_name_parentheses_and_spaces_cannot_shift_start_time",
+        "resources::parse::tests::rss_units_absence_and_overflow_are_not_zero_measurements",
+        "resources::parse::tests::tcp_listener_counts_intersect_owned_inodes_instead_of_namespace_totals",
+        "resources::tests::captures_the_current_process_identity",
+        "resources::tests::parses_linux_status_values"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-test-process.lib.latent-test-process",
+      "ignoredLeaves": [],
+      "kind": "lib",
+      "manifest": "crates/latent-test-process/Cargo.toml",
+      "minimumCases": 20,
+      "mode": "libtest",
+      "package": "latent-test-process",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "host-bounded",
+      "source": "src/lib.rs",
+      "target": "latent_test_process",
+      "timeoutSeconds": 300
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.transaction-contract",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "../../sdk/transaction-contract/rust/component.rs",
+      "target": "transaction-contract",
+      "timeoutSeconds": 900
     }
-  ]
+  ],
+  "processContracts": {
+    "angular-renderer": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component",
+          "private-renderer"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [],
+        "tools": [
+          "git",
+          "rustc"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-wasmtime.test.angular-renderer",
+        "latentd.lib.latentd"
+      ],
+      "timeoutSeconds": 840,
+      "caseFilters": {
+        "latentd.lib.latentd": "actual_angular_http_"
+      },
+      "fixtures": [
+        "angular-renderer"
+      ]
+    },
+    "oci-registry": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-oci.test.registry"
+      ],
+      "timeoutSeconds": 240
+    },
+    "oci-web": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-policy.lib.latent-policy"
+      ],
+      "timeoutSeconds": 240
+    }
+  },
+  "fixtureRecipes": {
+    "echo-capsule": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "python3",
+            "tools/build_echo_capsule.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1800
+        }
+      ],
+      "outputs": {
+        "echo-component": {
+          "path": "{target}/capsules/echo/echo-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ECHO_COMPONENT"
+        },
+        "echo-capsule": {
+          "path": "{target}/capsules/echo/capsule.json",
+          "kind": "json",
+          "maximumBytes": 1048576,
+          "environment": "LSF_ECHO_CAPSULE"
+        },
+        "echo-build": {
+          "path": "{target}/capsules/echo/build.json",
+          "kind": "json",
+          "maximumBytes": 1048576
+        }
+      }
+    },
+    "oversized-log": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "build",
+            "-p",
+            "latent-toolchain-smoke",
+            "--example",
+            "oversized-log-capsule",
+            "--target",
+            "wasm32-unknown-unknown",
+            "--release",
+            "--locked"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 900
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "component",
+            "new",
+            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
+            "-o",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "validate",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        }
+      ],
+      "outputs": {
+        "oversized-log-component": {
+          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_OVERSIZED_LOG_COMPONENT"
+        }
+      }
+    },
+    "angular-renderer": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "node",
+        "npm",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "npm",
+            "ci",
+            "--ignore-scripts",
+            "--no-audit",
+            "--no-fund"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "python3",
+            "tools/build_angular_renderer.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1200
+        }
+      ],
+      "outputs": {
+        "component": {
+          "path": "examples/renderer-profile/dist/runtime/application.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_COMPONENT"
+        },
+        "private-renderer": {
+          "path": "examples/renderer-profile/dist/runtime/renderer.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT"
+        }
+      }
+    }
+  }
 }

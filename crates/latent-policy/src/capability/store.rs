@@ -91,6 +91,33 @@ pub struct PolicyStore {
     started: Instant,
 }
 impl PolicyStore {
+    #[must_use]
+    pub fn rejection_observer_matches(
+        &self,
+        observer: &Arc<dyn latent_core::authority_rejection::AuthorityRejectionObserver>,
+    ) -> bool {
+        self.owner.rejection.observes(observer)
+    }
+
+    /// Attach the actual node effect owner's weak rejection adapter once,
+    /// before any read, mutation or decision can expose this policy owner.
+    /// It retains no effect/provider/native owner and grants no permission.
+    pub fn install_rejection_observer(
+        &self,
+        observer: Arc<dyn latent_core::authority_rejection::AuthorityRejectionObserver>,
+    ) -> Result<(), PlatformError> {
+        let _fence = self.owner.fence.try_write().map_err(|_| unavailable())?;
+        if !self.owner.live.load(std::sync::atomic::Ordering::Acquire)
+            || !self
+                .owner
+                .healthy
+                .load(std::sync::atomic::Ordering::Acquire)
+        {
+            return Err(unavailable());
+        }
+        self.owner.rejection.install(observer)
+    }
+
     /// Bounded ownership for a redacted management inspection response. The
     /// caller must preflight its response before releasing the control job.
     pub fn reserve_inspection(&self) -> Result<PolicyReadLease, PlatformError> {

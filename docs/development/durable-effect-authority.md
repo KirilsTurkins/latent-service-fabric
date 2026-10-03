@@ -15,6 +15,33 @@ accepted, while destination, provider, payload/intent format or idempotency
 profile changes block old work. The original application state schema does not
 select a new decoder for an old intent.
 
+Guest staging captures this ceiling and exact profile immediately. Final command
+preparation calls `EffectAuthorityOwner::refresh_for_commit` with the staged
+envelope. It preserves the payload and all command/effect provenance, intersects
+the captured ceiling with the current compatible rule, and records that narrower
+intersection. The lifetime origin becomes the final preparation time; its age
+and timeout are capped by the original remaining lifetime, so this step cannot
+extend staged expiry. Compatible policy revision and protected-credential
+rotation do not change the destination or decoder.
+
+The final `commit_fence` then checks the complete finite intent set. Any further
+ceiling narrowing rejects this prepared commit instead of persisting broader
+authority. The caller retains the original command claim for physical retirement
+and a durable technical-abort disposition; it must not re-run the guest to hide
+this conflict. The metadata-only fence remains held through namespace and
+cancellation acceptance and is released before engine I/O. Neither refresh nor
+this final fence allocates a dispatch permit.
+
+Final adapter delegation also seals the exact payload digest, byte count and
+durable lifetime. `PayloadRecord::verify_grant` checks the retained payload
+against that delegation before transport admission, including media and sorted
+metadata. `into_value` transfers the verified request buffer into the transport
+owner without allocating a second body. The focused ownership schedule rejects
+changed effect identity, media, metadata and bytes and verifies the transferred
+buffer keeps its allocation. Windows library validation passes all 44 portable
+cases and strict all-target Clippy; the eight Linux runtime schedules retain
+their separate platform requirement.
+
 Durable expiry, bounded per-attempt timeout and originating activation lifetime
 are separate. A persisted clock floor and an affirmative continuity witness are
 required after restart. Regression or unknown continuity blocks dispatch for
@@ -42,6 +69,123 @@ cargo test -p latent-effects --lib --locked
 cargo clippy -p latent-effects --all-targets --locked -- -D warnings
 ```
 
-The registered `latent-effects.lib.latent-effects` suite requires all nine
-authority cases. Phase 4 uses explicitly unordered effect dispatch; sequence
+The registered `latent-effects.lib.latent-effects` suite requires all seventeen
+authority cases alongside the bounded payload and storage cases. Phase 4 uses
+explicitly unordered effect dispatch; sequence
 numbers allocate identity and do not promise provider completion ordering.
+
+The staging refresh and strict final fence were validated with all 43 effect
+library cases and strict all-target Clippy on Windows on 2026-10-01. The three
+new schedules cover immutable provenance and expiry under narrowing/widening,
+incompatible profiles and clock/expiry failures, and a policy change between
+refresh and final acceptance. The local Linux rerun was blocked before execution
+by a Docker Desktop engine HTTP 500; it supplies no new Linux evidence.
+
+## Rechecking a retained transport grant
+
+Accepted policy and publication changes also close each affected grant's
+original irreversible installation token. Reapproval cannot revive a held
+grant; its original physical and request owners survive until cleanup. See
+[the scoped rejection observer contract](effect-rejection-observers.md) for the
+required pre-exposure owner attachment and qualification boundary.
+
+`DispatchGrant::check_current(EffectTime)` checks the exact original sealed
+effect owner after any awaited connection or qualification work and before
+protocol writes. It reads bounded current metadata under the same short rule
+fence. Revocation, changed adapter/profile, a narrower ceiling, credential
+epoch/reference replacement, expired original age/deadline, or clock rollback
+fails closed. Compatible policy widening cannot change the captured ceiling,
+expiry or original attempt deadline. The provider request separately checks its
+original installed provider epoch and protected credential material.
+
+A bounded shared liveness flag belongs to the original affine
+`DispatchContext`. Actual retirement or unexpected context drop closes only
+that attempt's grants; another live attempt cannot revive them. This check
+allocates no physical permit, queue, retry or worker and never refreshes a
+lease. It must run outside the already held `accept_with` fence. The maintained
+NATS adapter invokes it before setup and immediately before publication.
+
+All 57 portable Windows effect library cases passed on Rust 1.97.1, including
+three new current-grant schedules, with zero ignored or filtered cases; strict
+all-target/all-feature effect Clippy passed. The exact Linux inventory is now
+73 cases. New native transport execution remains separately qualified by the
+owned provider fixture; these metadata tests do not establish broker or HTTP
+endpoint qualification.
+
+## Accepted namespace closure and retained provider grants
+
+Namespace management uses `prepare_namespace_close` inside its actual final
+Policy -> Namespace -> Effects acceptance fence. The affine metadata fence
+checks finite sticky-closure capacity before invoking the original native
+request gate. Rejected native acceptance changes no rule. Successful acceptance
+disables every rule for the exact tenant, namespace and incarnation before
+engine I/O. It preserves all original physical provider owners and deadlines.
+
+The same rules owner backs `DispatchGrant::check_current`, so a provider waiting
+for connection/TLS cannot use a retained grant to write after accepted closure.
+Rule publication cannot re-enable that closed incarnation, including under a
+newer publication. A recreated namespace has a distinct incarnation. An
+uncertain durable close remains conservatively closed; no management response,
+timeout or policy replacement supplies physical retirement or an abort proof.
+The closure registry is bounded by the existing configured maximum rule count.
+
+The actual state-management adapter attaches this fence to quiesce, retire,
+destroy and recreate, using the installed dispatcher's same rules/store owner.
+It also binds the original global request keeper before native submission, so
+callback errors and protected-root checks cannot release it early. This bridge
+is separate from publication policy mutation, whose trusted installation owner
+must publish the corresponding current effect rule revocation.
+
+On the pinned Linux Rust 1.97.1 image, all 95 effect library cases and all 19
+state-management cases passed; the latter selected the actual native management
+adapter rather than unrelated Wire cases. Strict all-target/all-feature effect
+Clippy passed. The new Wire schedule creates a real namespace, retains an
+accepted provider grant, commits authenticated quiescence, and proves its
+original grant is denied while the physical permit remains charged. These
+checks establish the metadata/engine bridge; the provider's held-TLS schedule
+separately establishes transport behavior.
+
+`DispatchContext::retain_owner` binds one already reserved original request or
+global owner before any grant is issued. Refused replacement or late retention
+returns the exact owner unchanged. Every issued grant retains the same opaque
+keeper as its last field, so the existing provider request carries it through
+actual payload, socket and response cleanup. Returned management confirmations
+and transport responses retain it independently. This adds no reservation,
+worker, retry authority or renewed deadline.
+
+Explicit context retirement releases its own keeper after positive physical
+cleanup. Unexpected context drop instead preserves the exact keeper with the
+already quarantined physical permit, bounded by the existing physical/global
+capacity limits. Dropping all grants or response waiters cannot refund that
+unresolved capacity; process loss remains the conservative recovery boundary.
+
+All 97 effect library cases and strict all-target/all-feature Clippy passed on
+the pinned Linux Rust 1.97.1 image. The two new cases use real shared native
+reservations to check replacement refusal, retained grant capacity after
+positive context retirement, and exact owner quarantine after unexpected drop.
+
+## Fresh provider receipt lookup
+
+`accept_lookup` retains current management operator/publication/result-read
+authorization and the original finite request deadline separately from the old
+execution decision. It creates the immutable `ReconcileOnly` purpose. A regular
+provider send must call `require_execution` before allocating or admitting work;
+lookup permission never supplies redrive, absence or nonexecution proof.
+
+The retained provider rule must still describe the exact original profile,
+destination, payload and attempt. Original credential rotation, decoder changes,
+current byte limits, clock continuity and management permission are rechecked
+before acceptance and protocol I/O. Execution expiry remains descriptive original
+history and is never extended. A positive lookup depends on the provider's own
+finite original receipt-retention contract; absent/expired/ambiguous status
+remains uncertain. The current gate uses Policy -> Namespace -> Effects -> Native
+order, without disk/network I/O, audit flush or await inside the fence.
+
+Four authority schedules verify revoked/expired execution versus fresh lookup,
+original management withdrawal/native expiry, exact provider/credential/payload
+association and missing current-fence rejection. These are authority schedules;
+the concrete authenticated management and native provider schedules establish
+their separate production boundaries.
+
+All 101 effect library cases and strict all-target/all-feature effect Clippy
+passed on the pinned Linux Rust 1.97.1 image after this source addition.

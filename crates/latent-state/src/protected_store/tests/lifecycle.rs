@@ -1,6 +1,130 @@
 use super::*;
 
 #[test]
+fn detached_view_response_witness_waits_for_actual_native_retirement_after_close() {
+    let (_root, config) = fixture();
+    let owner = start(config.clone());
+    let mut view = wait(owner.open_view().unwrap()).unwrap().unwrap();
+    let witness = view.retirement_witness().unwrap();
+    assert!(view.retirement_witness().is_none());
+    let gates = Rendezvous::new(1);
+    let worker_gates = gates.clone();
+    let (notice, receiver) = mpsc::channel();
+    let operation = owner
+        .with_view(view, 1024, move |native| {
+            let (registration, mut tracked) = worker_gates.track(vec![0_u8; 1024]).unwrap();
+            tracked.commit(Stage::Entered).unwrap();
+            wait(async {
+                let mut pause = Box::pin(tracked.pause());
+                PollProbe::default().pending(pause.as_mut());
+                let ticket = worker_gates.blocked(registration, Stage::Entered).unwrap();
+                notice.send(ticket).unwrap();
+                pause.await;
+            });
+            native.get(&key(Family::State, "missing"))
+        })
+        .unwrap();
+    let ticket = receiver.recv_timeout(WATCHDOG).unwrap();
+    drop(operation);
+    owner.close();
+    assert!(!witness.has_retired());
+    assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
+    assert_eq!(owner.snapshot().unwrap().active_reads, 1);
+    assert_eq!(
+        failed_start(config.clone()),
+        ProtectedStoreError::Store(StoreError::Unavailable)
+    );
+    gates.release(ticket).unwrap();
+    let report = finish(&owner);
+    assert!(report.clean);
+    assert!(witness.has_retired());
+    assert_eq!(report.snapshot.physical_owners, 0);
+    let reopened = start(config);
+    assert!(finish(&reopened).clean);
+}
+
+#[test]
+fn dispatcher_registration_is_exclusive_across_ready_aliases_until_actual_retirement() {
+    let (_root, config) = fixture();
+    let owner = start(config.clone());
+    let alias = owner.clone();
+    let first = wait(owner.reserve_dispatcher().unwrap()).unwrap().unwrap();
+    assert!(matches!(
+        wait(alias.reserve_dispatcher().unwrap()).unwrap(),
+        Err(ProtectedStoreError::Store(StoreError::Conflict))
+    ));
+    assert!(owner.failure().is_none());
+    wait(owner.apply(batch(b"first-dispatcher-still-live")).unwrap())
+        .unwrap()
+        .unwrap();
+    wait(first.retire());
+    let second = wait(alias.reserve_dispatcher().unwrap()).unwrap().unwrap();
+    owner.close();
+    assert!(matches!(
+        alias.reserve_dispatcher(),
+        Err(ProtectedStoreError::Io(StoreIoError::AdmissionClosed))
+    ));
+    assert_eq!(
+        failed_start(config.clone()),
+        ProtectedStoreError::Store(StoreError::Unavailable)
+    );
+    wait(second.retire());
+    assert!(finish(&owner).clean);
+    let reopened = start(config);
+    assert!(finish(&reopened).clean);
+}
+
+#[test]
+fn physical_operation_pins_bound_admission_keep_root_through_deadline_and_retire_after_close() {
+    let (_root, mut config) = fixture();
+    config.io.accepted_jobs = 4;
+    config.io.queued_jobs = 4;
+    let clock = TestClock::new(1000, Instant::now(), 1);
+    let owner = wait(
+        ProtectedStoreOwner::start_with_clock(config.clone(), Arc::new(clock.clone())).unwrap(),
+    )
+    .unwrap();
+    let pins: Vec<_> = (0..4).map(|_| owner.reserve_operation().unwrap()).collect();
+    assert!(matches!(
+        owner.reserve_operation(),
+        Err(ProtectedStoreError::Io(StoreIoError::AcceptedFull))
+    ));
+    assert_eq!(owner.snapshot().unwrap().physical_owners, 4);
+    let deadline = clock.monotonic_now() + std::time::Duration::from_secs(1);
+    let mut drain = Box::pin(
+        owner
+            .drain_async(deadline, clock.sleep_until(deadline))
+            .unwrap(),
+    );
+    PollProbe::default().pending(drain.as_mut());
+    clock.advance(std::time::Duration::from_secs(1));
+    let report = wait(drain);
+    assert!(!report.clean);
+    assert!(report.snapshot.quarantined);
+    assert_eq!(report.snapshot.physical_owners, 4);
+    assert!(!report.snapshot.engine_closed());
+    assert_eq!(
+        failed_start(config.clone()),
+        ProtectedStoreError::Store(StoreError::Unavailable)
+    );
+    for pin in pins {
+        wait(pin.retire());
+    }
+    let late = wait(
+        owner
+            .drain_async(
+                clock.monotonic_now() + std::time::Duration::from_secs(2),
+                std::future::pending(),
+            )
+            .unwrap(),
+    );
+    assert!(late.snapshot.physically_retired());
+    assert!(!late.clean);
+    let reopened = start(config);
+    assert!(finish(&reopened).clean);
+}
+
+#[test]
 fn protected_initialization_shared_families_snapshots_and_reopen_are_real() {
     let (_root, config) = fixture();
     let owner = start(config.clone());

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve native NuGet capture, exact generator approval and selected composer while installing all three reviewed runtime adapters",
+  "reviewReason": "Preserve every authored transaction compiler and refusal variant alongside all captured-library approvals, three reviewed .NET runtime adapters, exact guards and retained evidence directories from development.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b4c6f8b848f11e2bc36b29d262d99445d3294f52cd5601be193c3dad9778c6a7"
+  "sha256": "8acfb513fbd382a4fd04da8b8fdfcf3b4f69af905c4608c48f0ecdd73bf6ecaf"
 }

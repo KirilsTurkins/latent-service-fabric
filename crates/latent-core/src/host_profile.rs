@@ -33,6 +33,7 @@ impl HostInterfaceSpec {
             "latent:http/streaming@0.3.0" => &["upload", "body", "chunk"],
             "latent:blob/blob@0.2.0" => &["chunk"],
             "latent:state/key-value@0.2.0" => &["transaction", "query-view", "page"],
+            "latent:intents/staging@0.1.0" => &["transaction"],
             _ => &[],
         }
     }

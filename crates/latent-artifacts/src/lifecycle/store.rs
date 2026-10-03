@@ -127,7 +127,7 @@ impl LifecycleStore {
         limits.validate()?;
         let root = io::root(root)?;
         let state = persistence::open(&root, limits, authority.is_some(), baseline)?;
-        let store = Self {
+        let mut store = Self {
             root,
             limits,
             owner: Owner::new(authority),
@@ -431,6 +431,28 @@ impl LifecycleFence<'_> {
             old_revision.as_ref(),
             new_revision.as_ref(),
         )?;
+        if prepared.receipt.disposition == ReleaseOperationDisposition::Committed {
+            if let Some(publication) = &prepared.publication {
+                let unchanged = state.entries.get(publication).is_some_and(|entry| {
+                    prepared.receipt.record.as_ref() == Some(&entry.stored.record)
+                });
+                // Exact validated publication/scope, after CAS/preflight and
+                // before the first durable mutation. No effect/provider callback
+                // or metadata lock survives into filesystem persistence.
+                if !unchanged {
+                    self.store.owner.rejection.reject(
+                        latent_core::authority_rejection::AuthorityRejection::Publication {
+                            tenant: prepared
+                                .receipt
+                                .scope
+                                .tenant()
+                                .map(|tenant| tenant.0.as_str()),
+                            publication: publication.as_str(),
+                        },
+                    )?;
+                }
+            }
+        }
         self.mutated.set(true);
         let result = persistence::commit(&self.store.root, self.store.limits, &mut state, prepared);
         if result.is_err() {

@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod authority_rejection;
 pub mod budget;
 pub mod clock;
 pub mod deadline_diagnostic_observer;
@@ -12,6 +13,7 @@ pub mod host_profile;
 pub mod identity;
 pub mod ids;
 pub mod lifecycle;
+pub mod native_capacity;
 pub mod publication;
 #[cfg(feature = "test-support")]
 pub mod test_support;
@@ -21,8 +23,8 @@ pub use budget::{
     ActivationBudget, BudgetCancellationProbe, BudgetConsumption, BudgetDimension, BudgetError,
     BudgetFinalization, BudgetProfile, BudgetReservation, BudgetReservationGroup,
     ChildBudgetDelegation, ChildBudgetOwner, ClockSample, DelegationLimits,
-    DescendantBudgetSnapshot, EffectiveActivationBudget, EffectiveDeadline, IncomingDeadline,
-    ResourceBudget, RuntimeMemoryReservation,
+    DescendantBudgetSnapshot, EffectiveActivationBudget, EffectiveDeadline, HostMemoryReservation,
+    IncomingDeadline, ResourceBudget, RuntimeMemoryReservation,
 };
 pub use clock::{ActivationClock, SystemActivationClock};
 pub use deadline_diagnostic_observer::{

@@ -30,7 +30,9 @@ use tonic::{Request, Response, Status};
 use crate::invocation::PrincipalPolicy;
 
 pub use audit::AuditResponseService;
-pub use authentication::{LocalManagementPolicy, ManagementOperation, ManagementPolicy};
+pub use authentication::{
+    LocalManagementPolicy, ManagementDecision, ManagementOperation, ManagementPolicy,
+};
 use bounds::{identifier, RequestBudget};
 pub use deployment::{
     control_budget_from_proto, control_budget_to_proto, deployment_from_proto,
