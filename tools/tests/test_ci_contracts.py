@@ -699,14 +699,20 @@ class RepositoryMigrationTests(unittest.TestCase):
                         '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
-            if key == reviewed_narrow_fixture:
-                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
-                                 {k: v for k, v in value.items() if k != "run"})
-                # Only the fixture path changes: real state dependencies now
-                # select the full profile. Keep every command and assertion.
-                self.assertEqual(data["after"][key]["run"].rstrip("\n"),
-                                 value["run"].replace("crates/latent-state/src/lib.rs",
-                                                      "crates/latent-workflows/src/lib.rs"))
+            host_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
+            if key == host_fixture:
+                # State now has real engine consumers. Preserve its original
+                # selected subset and runner, and explicitly prove full CI is
+                # still selected alongside this smaller host qualification.
+                expected = dict(value)
+                expected["run"] = value["run"].replace(
+                    "assert selection.profile == 'fast'\n",
+                    "from tools import ci_suite_inventory as registry\n"
+                    "assert selection.profile == 'full'\n"
+                    "assert selection.fast_packages\n"
+                    "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
+                )
+                self.assertEqual(data["after"][key], expected, key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:
