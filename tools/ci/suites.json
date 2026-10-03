@@ -7401,7 +7401,12 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/echo_backend.rs",
       "target": "echo_backend",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "caseFixtures": {
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel": [
+          "oversized-log"
+        ]
+      }
     },
     {
       "boundary": "runtime",
