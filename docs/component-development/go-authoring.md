@@ -1,6 +1,7 @@
 # Go compiler and runtime profile
 
 For application development, use [Creating a capsule](creating-a-capsule.md).
+For normal application module locks, private proxies, local replacements and offline inputs, see [Captured Go modules](go-dependencies.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,
 `deploy` and `test`. You do not need the source-build commands below for it.
 
