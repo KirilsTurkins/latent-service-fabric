@@ -14,7 +14,9 @@ from tools.phase2_operator_process import (
     Client, WorkflowError, bounded_receipt, diagnostic_code, diagnostic_grpc, failed_call_record, file_digest,
     stopped_record, write_candidate_manifest, write_json, write_selected_deployment,
 )
-from tools.phase2_operator_scenario import DENIED_TOKEN, TOKEN, configure_node, route_identity
+from tools.phase2_operator_scenario import (
+    DENIED_TOKEN, TOKEN, configure_node, inspect_deadline_operation, route_identity,
+)
 from tools.run_phase2_operator_workflow import build_identity, inventory, registry_profile
 
 
@@ -223,6 +225,156 @@ def cli_document(**changes):
              "requestDispatched": True, "error": {"code": "resource-exhausted",
              "message": "PRIVATE-MESSAGE", "details": ["PRIVATE-DETAIL"]}}
     return dict(value, **changes)
+
+
+class DeadlineOperationInspectionTests(unittest.TestCase):
+    def setUp(self):
+        self.clock = SimpleNamespace(now=10.0)
+        self.enterContext(patch("tools.phase2_operator_scenario.time.monotonic", side_effect=lambda: self.clock.now))
+        self.sleep = self.enterContext(patch("tools.phase2_operator_scenario.time.sleep",
+                                            side_effect=lambda delay: setattr(self.clock, "now", self.clock.now + delay)))
+        self.client = Client("fixture-cli", Path("fixture-client"), Mock(), 100)
+        self.client.calls = 72
+        self.client.last_exit_status = 5
+        self.attempted = cli_document(command="deployment apply", category="transport-failure",
+                                      outcomeKnown=False, requestDispatched=True,
+                                      error={"code": "rpc-failed", "grpcCode": "deadline-exceeded"})
+        self.capacity = cli_document(command="deployment operation", category="transport-failure",
+                                     outcomeKnown=False, requestDispatched=True,
+                                     error={"code": "rpc-failed", "grpcCode": "resource-exhausted",
+                                            "message": "PRIVATE-PEER-CONTEXT"})
+        self.unknown = cli_document(command="deployment operation", category="success", outcomeKnown=False,
+                                    data={"receipt": None, "disposition": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_UNKNOWN"},
+                                    error=None)
+        self.processes = []
+
+    def launch_results(self, results):
+        for status, value in results:
+            process = Mock()
+            process.complete.return_value = subprocess.CompletedProcess(
+                [], status, json.dumps(value).encode(), b"PRIVATE-STDERR")
+            self.processes.append(process)
+        return self.enterContext(patch("tools.phase2_operator_process.Process", side_effect=self.processes))
+
+    def assert_reads_only(self, launch):
+        for call, process in zip(launch.call_args_list, self.processes):
+            self.assertEqual(call.args[0][-3:], ["deployment", "operation", "deadline-inspect"])
+            self.assertNotIn("apply", call.args[0])
+            process.close.assert_called_once_with()
+
+    def test_two_retiring_dispatch_rejections_recover_unknown_without_replaying_apply(self):
+        launch = self.launch_results([(5, self.capacity), (5, self.capacity), (0, self.unknown)])
+        original = json.dumps(self.attempted, sort_keys=True)
+        returned = inspect_deadline_operation(self.client, self.attempted)
+        self.assertEqual(returned, self.unknown)
+        self.assertIs(returned["outcomeKnown"], False)
+        self.assertIsNone(returned["data"]["receipt"])
+        self.assertEqual(json.dumps(self.attempted, sort_keys=True), original)
+        observation = self.client.deadline_inspection
+        self.assertIs(observation["originalApply"]["outcomeKnown"], False)
+        self.assertIs(observation["originalApply"]["requestDispatched"], True)
+        self.assertEqual(observation["originalApply"]["exitStatus"], 5)
+        self.assertEqual([record["call"] for record in observation["rejectedReads"]], [73, 74])
+        self.assertEqual([record["grpcCode"] for record in observation["rejectedReads"]],
+                         ["resource-exhausted", "resource-exhausted"])
+        self.assertNotIn("PRIVATE", json.dumps(observation))
+        self.assertIs(observation["lookupReturned"], True)
+        self.assertIsNone(self.client.failed_call)
+        self.assertEqual(launch.call_count, 3)
+        self.assert_reads_only(launch)
+
+    def test_found_receipt_and_known_outcome_are_forwarded_without_reinterpretation(self):
+        found = dict(self.unknown, outcomeKnown=True,
+                     data={"receipt": {"operationId": "deadline-inspect", "committed": True}})
+        launch = self.launch_results([(0, found)])
+        self.assertEqual(inspect_deadline_operation(self.client, self.attempted), found)
+        self.assertEqual(self.client.deadline_inspection["rejectedReads"], [])
+        self.sleep.assert_not_called()
+        self.assert_reads_only(launch)
+
+    def test_typed_platform_capacity_is_fatal_without_a_second_read(self):
+        typed = cli_document(command="deployment operation", category="platform-failure",
+                             error={"code": "resource-exhausted", "details": []})
+        launch = self.launch_results([(4, typed)])
+        with self.assertRaisesRegex(WorkflowError, "cli-exit-call-73-status-4"):
+            inspect_deadline_operation(self.client, self.attempted)
+        self.assertEqual(self.client.failed_call["category"], "platform-failure")
+        self.assertEqual(self.client.deadline_inspection["rejectedReads"], [])
+        self.assertEqual(launch.call_count, 1)
+        self.assert_reads_only(launch)
+
+    def test_other_transport_or_malformed_capacity_signatures_are_not_retried(self):
+        variants = [dict(self.capacity, command="deployment apply"),
+                    dict(self.capacity, outcomeKnown=True), dict(self.capacity, requestDispatched=False),
+                    dict(self.capacity, category="success"), dict(self.capacity, data={"receipt": None})]
+        variants.extend(dict(self.capacity, error=error) for error in (
+            {"code": "rpc-failed", "grpcCode": "unavailable"},
+            {"code": "invalid-error-response", "grpcCode": "resource-exhausted"},
+            {"code": "rpc-failed", "grpcCode": "resource-exhausted", "details": []},
+            None))
+        for value in variants:
+            with self.subTest(value=value):
+                process = Mock()
+                process.complete.return_value = subprocess.CompletedProcess([], 5, json.dumps(value).encode(), b"")
+                self.client.failed_call = None
+                with patch("tools.phase2_operator_process.Process", return_value=process) as launch, \
+                     self.assertRaisesRegex(WorkflowError, "deadline-lookup-not-dispatch-capacity"):
+                    inspect_deadline_operation(self.client, self.attempted)
+                self.assertEqual(launch.call_count, 1)
+                process.close.assert_called_once_with()
+                self.assertEqual(self.client.deadline_inspection["rejectedReads"], [])
+        self.sleep.assert_not_called()
+
+    def test_global_deadline_caps_read_budget_and_retains_rejected_observation(self):
+        self.client.deadline = 10.01
+        launch = self.launch_results([(5, self.capacity)])
+        with self.assertRaisesRegex(WorkflowError, "deadline-lookup-read-budget"):
+            inspect_deadline_operation(self.client, self.attempted)
+        self.assertEqual(launch.call_count, 1)
+        self.assertAlmostEqual(self.processes[0].complete.call_args.args[0], 10.01)
+        self.assertEqual(self.client.failed_call, self.client.deadline_inspection["rejectedReads"][0])
+        self.assertIs(self.client.deadline_inspection["lookupReturned"], False)
+        self.assert_reads_only(launch)
+
+    def test_expired_workflow_never_launches_a_lookup(self):
+        self.client.deadline = self.clock.now
+        with patch("tools.phase2_operator_process.Process") as launch, \
+             self.assertRaisesRegex(WorkflowError, "deadline-lookup-read-budget"):
+            inspect_deadline_operation(self.client, self.attempted)
+        launch.assert_not_called()
+        self.assertEqual(self.client.deadline_inspection["rejectedReads"], [])
+
+    def test_lookup_process_watchdog_is_capped_at_five_seconds_and_is_not_retried(self):
+        launch = self.launch_results([(0, self.unknown)])
+        self.processes[0].complete.side_effect = WorkflowError("process-watchdog")
+        with self.assertRaisesRegex(WorkflowError, "process-watchdog"):
+            inspect_deadline_operation(self.client, self.attempted)
+        self.processes[0].complete.assert_called_once_with(15.0)
+        self.assertEqual(launch.call_count, 1)
+        self.assertIs(self.client.deadline_inspection["lookupReturned"], False)
+        self.assert_reads_only(launch)
+
+    def test_stalled_clock_still_enforces_finite_attempt_and_receipt_bounds(self):
+        self.sleep.side_effect = None
+        launch = self.launch_results([(5, self.capacity)] * 64)
+        with self.assertRaisesRegex(WorkflowError, "deadline-lookup-read-attempts"):
+            inspect_deadline_operation(self.client, self.attempted)
+        self.assertEqual(launch.call_count, 64)
+        self.assertEqual(len(self.client.deadline_inspection["rejectedReads"]), 64)
+        self.assertLess(len(json.dumps(self.client.deadline_inspection).encode()), 32768)
+        self.assert_reads_only(launch)
+
+    def test_cancellation_remains_authoritative_after_completed_read_cleanup(self):
+        launch = self.launch_results([(5, self.capacity)])
+        original = SystemExit(143)
+        self.client.cancellation.check.side_effect = [None, None, original]
+        with self.assertRaises(SystemExit) as caught:
+            inspect_deadline_operation(self.client, self.attempted)
+        self.assertIs(caught.exception, original)
+        self.assertEqual(len(self.client.deadline_inspection["rejectedReads"]), 1)
+        self.assertIs(self.client.deadline_inspection["lookupReturned"], False)
+        self.assertEqual(launch.call_count, 1)
+        self.assert_reads_only(launch)
 
 
 class FailedCallObservationTests(unittest.TestCase):
@@ -470,6 +622,38 @@ class FailedOperatorReceiptTests(unittest.TestCase):
         self.process.close.assert_called_once_with()
         self.build_mock.assert_called_once()
         self.collector_mock.assert_called_once()
+
+    def test_failed_inspection_receipt_preserves_uncertain_apply_and_each_rejected_read(self):
+        attempted = cli_document(command="deployment apply", category="transport-failure",
+                                 outcomeKnown=False, requestDispatched=True,
+                                 error={"code": "rpc-failed", "grpcCode": "deadline-exceeded"})
+        capacity = cli_document(command="deployment operation", category="transport-failure",
+                                outcomeKnown=False, requestDispatched=True,
+                                error={"code": "rpc-failed", "grpcCode": "resource-exhausted"})
+        unavailable = dict(capacity, error={"code": "rpc-failed", "grpcCode": "unavailable"})
+        self.process.complete.side_effect = [subprocess.CompletedProcess([], 5, json.dumps(value).encode(), b"")
+                                            for value in (capacity, unavailable)]
+
+        def node(client, *_args):
+            client.calls = 72
+            client.last_exit_status = 5
+            inspect_deadline_operation(client, attempted)
+
+        with patch.object(self.workflow, "node_workflow", side_effect=node), \
+             patch("tools.phase2_operator_scenario.time.sleep"), \
+             self.assertRaisesRegex(WorkflowError, "node-management:deadline-lookup-not-dispatch-capacity"):
+            self.workflow.main()
+        value = json.loads(self.stdout.getvalue())
+        observation = value["deadlineOperationInspection"]
+        self.assertIs(observation["originalApply"]["outcomeKnown"], False)
+        self.assertIs(observation["originalApply"]["requestDispatched"], True)
+        self.assertEqual([record["call"] for record in observation["rejectedReads"]], [73])
+        self.assertEqual(value["failedCall"]["grpcCode"], "unavailable")
+        self.assertIs(observation["lookupReturned"], False)
+        self.assertNotIn("PRIVATE", self.stdout.getvalue())
+        self.assertEqual(self.launch.call_count, 2)
+        self.assertEqual(self.process.close.call_count, 2)
+        self.assertEqual(self.events[-3:], ["registry-exit", "temporary-exit", "cancellation-exit"])
 
     def test_failure_before_client_acquisition_retains_only_completed_identity_capture(self):
         self.collector_mock.side_effect = RuntimeError("PRIVATE-EXCEPTION")

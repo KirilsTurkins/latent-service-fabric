@@ -58,6 +58,119 @@ fn setup() -> (EffectAuthorityOwner, EffectRule, DurableEffectAuthority) {
 }
 
 #[test]
+fn final_commit_fence_linearizes_revocation_without_allocating_dispatch_work() {
+    use std::sync::mpsc;
+    let (owner, mut grant, captured) = setup();
+    let fence = owner
+        .commit_fence(std::slice::from_ref(&captured), time(101))
+        .unwrap();
+    assert!(matches!(
+        owner.0.state.try_lock(),
+        Err(std::sync::TryLockError::WouldBlock)
+    ));
+    let worker_owner = owner.clone();
+    grant.policy_revision = 2;
+    grant.enabled = false;
+    let (started_tx, started_rx) = mpsc::channel();
+    let (finished_tx, finished_rx) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        started_tx.send(()).unwrap();
+        finished_tx.send(worker_owner.publish(grant)).unwrap();
+    });
+    started_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    assert_eq!(finished_rx.try_recv(), Err(mpsc::TryRecvError::Empty));
+    drop(fence);
+    assert_eq!(
+        finished_rx.recv_timeout(Duration::from_secs(3)).unwrap(),
+        Ok(())
+    );
+    worker.join().unwrap();
+    assert!(matches!(
+        owner.commit_fence(&[captured], time(102)),
+        Err(AuthorityError::PolicyBlocked)
+    ));
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
+#[test]
+fn final_commit_checks_every_intent_against_current_format_bounds_and_clock() {
+    let (owner, mut grant, captured) = setup();
+    grant.policy_revision = 2;
+    grant.ceiling.maximum_payload_bytes = 99;
+    owner.publish(grant.clone()).unwrap();
+    assert!(matches!(
+        owner.commit_fence(std::slice::from_ref(&captured), time(101)),
+        Err(AuthorityError::Capacity)
+    ));
+    grant.policy_revision = 3;
+    grant.ceiling.maximum_payload_bytes = 100;
+    grant.profile.intent_format = 2;
+    owner.publish(grant).unwrap();
+    assert!(matches!(
+        owner.commit_fence(&[captured], time(102)),
+        Err(AuthorityError::UnsupportedFormat)
+    ));
+    assert!(matches!(
+        owner.commit_fence(&[], time(101)),
+        Err(AuthorityError::ClockDiscontinuity)
+    ));
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
+#[test]
+fn requested_expiry_only_narrows_and_malformed_typed_envelopes_grant_nothing() {
+    let (owner, grant, captured) = setup();
+    let short = owner
+        .capture_until(
+            &grant.scope,
+            captured.link.clone(),
+            100,
+            "a".repeat(64),
+            time(100),
+            Some(200),
+        )
+        .unwrap();
+    assert_eq!(short.ceiling().maximum_age_millis, 100);
+    assert_eq!(
+        DurableEffectAuthority::decode(&short.encode().unwrap()),
+        Ok(short.clone())
+    );
+    let long = owner
+        .capture_until(
+            &grant.scope,
+            captured.link.clone(),
+            100,
+            "a".repeat(64),
+            time(100),
+            Some(u64::MAX),
+        )
+        .unwrap();
+    assert_eq!(long.ceiling(), captured.ceiling());
+    assert_eq!(
+        owner.capture_until(
+            &grant.scope,
+            captured.link.clone(),
+            100,
+            "a".repeat(64),
+            time(100),
+            Some(100)
+        ),
+        Err(AuthorityError::Invalid)
+    );
+    assert!(matches!(
+        owner.commit_fence(&[short], time(200)),
+        Err(AuthorityError::Expired)
+    ));
+    let mut forged = captured;
+    forged.policy_revision = 0;
+    assert_eq!(forged.encode(), Err(AuthorityError::Invalid));
+    assert!(matches!(
+        owner.accept(&forged, 1, time(201)),
+        Err(AuthorityError::Invalid)
+    ));
+}
+
+#[test]
 fn guest_selected_alias_does_not_grant_cross_tenant_or_publication_authority() {
     let (owner, grant, captured) = setup();
     for forged in [
