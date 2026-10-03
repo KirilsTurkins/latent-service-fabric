@@ -47,6 +47,10 @@ def sdk_snapshot(root: Path) -> dict:
         "tools/teavm_platform.py", "tools/capture.py")}
     for folder in ("runtime", "templates", "wit"):
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
+    if (root / "server").exists():
+        files.update({"server/" + name: data for name, data in snapshot(root / "server").items()})
+    if (root / "client").exists():
+        files.update({"client/" + name: data for name, data in snapshot(root / "client").items()})
     return dict(sorted(files.items()))
 
 
@@ -159,7 +163,13 @@ class Compiler:
             write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
-                application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None) -> tuple[Path, dict]:
+                application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
+                server_profile: bool = False, server_bridge: bytes | None = None,
+                http_client_profile: bool = False) -> tuple[Path, dict]:
+        if type(server_profile) is not bool or server_bridge is not None and not server_profile:
+            raise ValueError("automatic server bridge requires an explicitly selected profile")
+        if type(http_client_profile) is not bool:
+            raise ValueError("Java standard HTTP requires an explicitly selected profile")
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
@@ -191,11 +201,49 @@ class Compiler:
             "org.gradle.java.installations.fromEnv=JAVA_HOME\n", encoding="utf-8")
         java_root = project / "src/main/java"
         shutil.copytree(self.sdk / "runtime/dev", java_root / "dev")
+        if server_profile:
+            # Only captured SDK extension code executes in the compiler JVM.
+            # Application JAR/service policy stays separate and denied by the
+            # ingestion recipe. No application initialization discovers routes.
+            for folder in ("server/dev", "server/compiler/dev"):
+                for name, data in snapshot(self.sdk / folder).items():
+                    target = java_root / "dev" / name
+                    if target.exists(): raise ValueError("server SDK overrides runtime source")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+            shutil.copytree(self.sdk / "server/services", project / "src/main/resources")
+            with (project / "build.gradle").open("a", encoding="utf-8") as build:
+                build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
+        if http_client_profile:
+            for folder in ("client/dev", "client/compiler/dev"):
+                for relative, data in snapshot(self.sdk / folder).items():
+                    target = java_root / "dev" / relative
+                    if target.exists(): raise ValueError("standard HTTP SDK overrides runtime source")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+            # The same selected project can contain both server and client
+            # profiles. Append distinct SDK providers rather than replacing
+            # either service list or accepting an application-owned plugin.
+            for relative, data in snapshot(self.sdk / "client/services").items():
+                target = project / "src/main/resources" / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                previous = target.read_bytes() if target.exists() else b""
+                rows = previous.splitlines() + data.splitlines()
+                if len(rows) != len(set(rows)): raise ValueError("duplicate SDK compiler provider")
+                target.write_bytes(b"\n".join(rows) + b"\n")
+            if not server_profile:
+                with (project / "build.gradle").open("a", encoding="utf-8") as build:
+                    build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")
             target = java_root / path.relative_to(sources)
             if target.exists(): raise ValueError("application overrides Java SDK source")
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(read_file(path))
+        if server_bridge is not None:
+            target = java_root / "dev/latent/app/Capsule.java"
+            if target.exists(): raise ValueError("application overrides the automatic server invocation bridge")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(server_bridge)
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
         self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)
