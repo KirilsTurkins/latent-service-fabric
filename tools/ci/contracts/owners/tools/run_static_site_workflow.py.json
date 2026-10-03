@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_static_site_workflow.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Preserve all signed static publication/browser/retirement obligations; observe actual empty GET/HEAD rejection framing and no-store without applying signed-error-page cache or ETag policy",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "cb06179e97b1b7122579e7137fab5508ca5566131ba4e0ee2e860cc77cd0d788"
+  "sha256": "268da2bc96c0ff377ef904617400ee21bb5b4b9743ffd4825693db8244599cf7"
 }

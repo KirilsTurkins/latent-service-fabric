@@ -19,6 +19,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import ci_suite_inventory as registry
+from tools.ci_lane_inventory import response_policy_cases
 from tools.owned_test_process import ProcessFailure
 from tools.test_run import TestRun, require
 
@@ -40,6 +41,7 @@ PROVIDER_STEPS = [
 RENDERER_STEPS = [
     "angular-ssr-hydration",
     "browser-boundary",
+    "http-response-policy",
     "angular-renderer",
     "renderer-failure-control",
     "angular-build-contracts",
@@ -64,6 +66,9 @@ def _renderer_cases(data: dict, part: str = "both") -> list[str]:
     selected = data["selections"]["browser-boundary"]
     require(selected["runner"] == "ci_rust_artifacts", "invalid-fixture", "browser-selection-contract")
     values = list(selected["names"]) if part != "angular" else []
+    policy = response_policy_cases(data)
+    if part != "angular":
+        values.extend(policy)
     process = data["processContracts"]["angular-renderer"]
     for key, selected_cases in registry.process_cases(data, "angular-renderer").items():
         require(rows[key]["recipe"] == "workspace-all-features",
@@ -190,6 +195,9 @@ def renderer(run: TestRun, manifest: Path, data: dict, part: str = "both") -> tu
         _command(run, [sys.executable, "tools/ci_rust_artifacts.py",
                        "--inventory", str(manifest), "--suite", "browser-boundary"],
                  stage="renderer-browser-boundary", timeout=360, env=browser_env)
+        _command(run, [sys.executable, "tools/ci_rust_artifacts.py",
+                       "--inventory", str(manifest), "--suite", "http-response-policy"],
+                 stage="renderer-http-response-policy", timeout=210, env=browser_env)
 
         _command(run, [sys.executable, "tools/build_angular_renderer.py"],
                  stage="renderer-public-fixture", timeout=480)
@@ -241,8 +249,8 @@ def renderer(run: TestRun, manifest: Path, data: dict, part: str = "both") -> tu
         _command(run, [node, "tools/check_angular_hydration.mjs",
                        "examples/renderer-profile", str(build), str(html), chrome],
                  stage="renderer-angular-hydration", timeout=180)
-    steps = RENDERER_STEPS[:4] if part == "public" else (
-        RENDERER_STEPS[4:] if part == "angular" else RENDERER_STEPS)
+    steps = RENDERER_STEPS[:5] if part == "public" else (
+        RENDERER_STEPS[5:] if part == "angular" else RENDERER_STEPS)
     return steps, selected
 
 

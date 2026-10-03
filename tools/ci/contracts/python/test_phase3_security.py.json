@@ -675,6 +675,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_phase3_security.py",
-  "reviewReason": "Preserve every existing security runner case and guard; add six closed child snapshot receipt controls without replay or relaxing acceptance",
+  "reviewReason": "Preserve every existing security case and guard; retain finite browser referrer/token/cache/recovery observations and all six closed child snapshot controls without replay or relaxing acceptance.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

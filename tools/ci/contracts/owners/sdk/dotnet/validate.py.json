@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/dotnet/validate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Stage the exact declared diagnostic Node protobuf input and require its two additional native generated sources; preserve all qualification checks.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f16d1917e58fb7f0e9239e3d8ca43ba3bc0a415b650f30dcb6f54d4c52d77c64"
+  "sha256": "f87dec2c1d7d5a9688bfae23ce47928e33b25c6f8ead705169bbc0d83eff38f9"
 }

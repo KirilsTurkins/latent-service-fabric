@@ -12,6 +12,132 @@ final class ProfileVectors {
     }
     static void run() {
         {
+            Management.ActivationDiagnostic value = new Management.ActivationDiagnostic(Integer.parseUnsignedInt("1"), new Management.DiagnosticStage(3), new Management.DiagnosticReason(1), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+            check(value.schemaVersion() == Integer.parseUnsignedInt("1"), "diagnostic-absent-profile-and-bound.schema_version");
+            check(value.stage().value() == 3, "diagnostic-absent-profile-and-bound.stage");
+            check(value.reason().value() == 1, "diagnostic-absent-profile-and-bound.reason");
+            check(!(value.profile().isPresent()), "diagnostic-absent-profile-and-bound.profile.presence");
+            check(!(value.profileDigest().isPresent()), "diagnostic-absent-profile-and-bound.profile_digest.presence");
+            check(!(value.configuredBound().isPresent()), "diagnostic-absent-profile-and-bound.configured_bound.presence");
+            check(!(value.calculatedRequirement().isPresent()), "diagnostic-absent-profile-and-bound.calculated_requirement.presence");
+            check(!(value.fixedBytes().isPresent()), "diagnostic-absent-profile-and-bound.fixed_bytes.presence");
+            check(!(value.liftingFuel().isPresent()), "diagnostic-absent-profile-and-bound.lifting_fuel.presence");
+            check(!(value.liftMultiplier().isPresent()), "diagnostic-absent-profile-and-bound.lift_multiplier.presence");
+        }
+        {
+            Management.ActivationDiagnostic value = new Management.ActivationDiagnostic(Integer.parseUnsignedInt("1"), new Management.DiagnosticStage(2147483647), new Management.DiagnosticReason(-1), Optional.of(new Management.DiagnosticProfile(999)), Optional.of("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), Optional.of(Long.parseUnsignedLong("0")), Optional.of(Long.parseUnsignedLong("18446744073709551615")), Optional.of(Long.parseUnsignedLong("9223372036854775808")), Optional.of(Long.parseUnsignedLong("0")), Optional.of(Long.parseUnsignedLong("18446744073709551615")));
+            check(value.schemaVersion() == Integer.parseUnsignedInt("1"), "diagnostic-unknown-enums-and-present-zero.schema_version");
+            check(value.stage().value() == 2147483647, "diagnostic-unknown-enums-and-present-zero.stage");
+            check(value.reason().value() == -1, "diagnostic-unknown-enums-and-present-zero.reason");
+            check(value.profile().isPresent(), "diagnostic-unknown-enums-and-present-zero.profile.presence");
+            check(value.profile().get().value() == 999, "diagnostic-unknown-enums-and-present-zero.profile");
+            check(value.profileDigest().isPresent(), "diagnostic-unknown-enums-and-present-zero.profile_digest.presence");
+            check(value.profileDigest().get().equals("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), "diagnostic-unknown-enums-and-present-zero.profile_digest");
+            check(value.configuredBound().isPresent(), "diagnostic-unknown-enums-and-present-zero.configured_bound.presence");
+            check(value.configuredBound().get() == Long.parseUnsignedLong("0"), "diagnostic-unknown-enums-and-present-zero.configured_bound");
+            check(value.calculatedRequirement().isPresent(), "diagnostic-unknown-enums-and-present-zero.calculated_requirement.presence");
+            check(value.calculatedRequirement().get() == Long.parseUnsignedLong("18446744073709551615"), "diagnostic-unknown-enums-and-present-zero.calculated_requirement");
+            check(value.fixedBytes().isPresent(), "diagnostic-unknown-enums-and-present-zero.fixed_bytes.presence");
+            check(value.fixedBytes().get() == Long.parseUnsignedLong("9223372036854775808"), "diagnostic-unknown-enums-and-present-zero.fixed_bytes");
+            check(value.liftingFuel().isPresent(), "diagnostic-unknown-enums-and-present-zero.lifting_fuel.presence");
+            check(value.liftingFuel().get() == Long.parseUnsignedLong("0"), "diagnostic-unknown-enums-and-present-zero.lifting_fuel");
+            check(value.liftMultiplier().isPresent(), "diagnostic-unknown-enums-and-present-zero.lift_multiplier.presence");
+            check(value.liftMultiplier().get() == Long.parseUnsignedLong("18446744073709551615"), "diagnostic-unknown-enums-and-present-zero.lift_multiplier");
+        }
+        {
+            Management.InspectActivationTreeRequest value = new Management.InspectActivationTreeRequest("activation-a", Optional.empty(), Optional.empty(), Optional.empty());
+            check(value.activationId().equals("activation-a"), "activation-tree-default-page.activation_id");
+            check(!(value.page().isPresent()), "activation-tree-default-page.page.presence");
+            check(!(value.service().isPresent()), "activation-tree-default-page.service.presence");
+            check(!(value.fromUnixMillis().isPresent()), "activation-tree-default-page.from_unix_millis.presence");
+        }
+        {
+            Management.InspectActivationTreeRequest value = new Management.InspectActivationTreeRequest("", Optional.of(new Management.PageRequest(Integer.parseUnsignedInt("128"), Optional.empty())), Optional.of("examples/java-http-adapter"), Optional.of(Long.parseUnsignedLong("18446744073709551615")));
+            check(value.activationId().equals(""), "activation-roots-service-time-selector.activation_id");
+            check(value.page().isPresent(), "activation-roots-service-time-selector.page.presence");
+            check(value.page().get().pageSize() == Integer.parseUnsignedInt("128"), "activation-roots-service-time-selector.page.page_size");
+            check(!(value.page().get().pageToken().isPresent()), "activation-roots-service-time-selector.page.page_token.presence");
+            check(value.service().isPresent(), "activation-roots-service-time-selector.service.presence");
+            check(value.service().get().equals("examples/java-http-adapter"), "activation-roots-service-time-selector.service");
+            check(value.fromUnixMillis().isPresent(), "activation-roots-service-time-selector.from_unix_millis.presence");
+            check(value.fromUnixMillis().get() == Long.parseUnsignedLong("18446744073709551615"), "activation-roots-service-time-selector.from_unix_millis");
+        }
+        {
+            Management.InspectActivationTreeResponse value = new Management.InspectActivationTreeResponse(Integer.parseUnsignedInt("1"), List.of(new Management.ActivationTreeNode("host-generated-root", Optional.empty(), "host-generated-root", "running", Optional.empty(), Long.parseUnsignedLong("0"), Optional.empty(), "trigger", Optional.empty(), Optional.empty(), Optional.empty(), false, "examples/java-http-adapter", Long.parseUnsignedLong("18446744073709551615"))), Optional.of(new Management.PageResponse(Optional.empty())), true, false, true);
+            check(value.schemaVersion() == Integer.parseUnsignedInt("1"), "activation-root-real-ingress-identity.schema_version");
+            check(value.nodes().size() == 1, "activation-root-real-ingress-identity.nodes.count");
+            check(value.nodes().get(0).activationId().equals("host-generated-root"), "activation-root-real-ingress-identity.nodes.0.activation_id");
+            check(!(value.nodes().get(0).parentActivationId().isPresent()), "activation-root-real-ingress-identity.nodes.0.parent_activation_id.presence");
+            check(value.nodes().get(0).rootActivationId().equals("host-generated-root"), "activation-root-real-ingress-identity.nodes.0.root_activation_id");
+            check(value.nodes().get(0).phase().equals("running"), "activation-root-real-ingress-identity.nodes.0.phase");
+            check(!(value.nodes().get(0).terminalState().isPresent()), "activation-root-real-ingress-identity.nodes.0.terminal_state.presence");
+            check(value.nodes().get(0).lastUpdatedUnixMillis() == Long.parseUnsignedLong("0"), "activation-root-real-ingress-identity.nodes.0.last_updated_unix_millis");
+            check(!(value.nodes().get(0).diagnostic().isPresent()), "activation-root-real-ingress-identity.nodes.0.diagnostic.presence");
+            check(value.nodes().get(0).principalKind().equals("trigger"), "activation-root-real-ingress-identity.nodes.0.principal_kind");
+            check(!(value.nodes().get(0).callerService().isPresent()), "activation-root-real-ingress-identity.nodes.0.caller_service.presence");
+            check(!(value.nodes().get(0).grantedBudget().isPresent()), "activation-root-real-ingress-identity.nodes.0.granted_budget.presence");
+            check(!(value.nodes().get(0).effectiveDeadlineUnixMillis().isPresent()), "activation-root-real-ingress-identity.nodes.0.effective_deadline_unix_millis.presence");
+            check(value.nodes().get(0).diagnosticIsTerminal() == false, "activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal");
+            check(value.nodes().get(0).targetService().equals("examples/java-http-adapter"), "activation-root-real-ingress-identity.nodes.0.target_service");
+            check(value.nodes().get(0).receivedAtUnixMillis() == Long.parseUnsignedLong("18446744073709551615"), "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis");
+            check(value.page().isPresent(), "activation-root-real-ingress-identity.page.presence");
+            check(!(value.page().get().nextPageToken().isPresent()), "activation-root-real-ingress-identity.page.next_page_token.presence");
+            check(value.historyAvailable() == true, "activation-root-real-ingress-identity.history_available");
+            check(value.cursorExpired() == false, "activation-root-real-ingress-identity.cursor_expired");
+            check(value.retainedHistoryOnly() == true, "activation-root-real-ingress-identity.retained_history_only");
+        }
+        {
+            Management.InspectActivationTreeResponse value = new Management.InspectActivationTreeResponse(Integer.parseUnsignedInt("1"), List.of(), Optional.of(new Management.PageResponse(Optional.empty())), false, true, true);
+            check(value.schemaVersion() == Integer.parseUnsignedInt("1"), "activation-tree-expired-is-not-absence-proof.schema_version");
+            check(value.nodes().size() == 0, "activation-tree-expired-is-not-absence-proof.nodes.count");
+            check(value.page().isPresent(), "activation-tree-expired-is-not-absence-proof.page.presence");
+            check(!(value.page().get().nextPageToken().isPresent()), "activation-tree-expired-is-not-absence-proof.page.next_page_token.presence");
+            check(value.historyAvailable() == false, "activation-tree-expired-is-not-absence-proof.history_available");
+            check(value.cursorExpired() == true, "activation-tree-expired-is-not-absence-proof.cursor_expired");
+            check(value.retainedHistoryOnly() == true, "activation-tree-expired-is-not-absence-proof.retained_history_only");
+        }
+        {
+            Management.InspectActivationTreeResponse value = new Management.InspectActivationTreeResponse(Integer.parseUnsignedInt("1"), List.of(new Management.ActivationTreeNode("child-a", Optional.of("root-a"), "root-a", "received", Optional.of("resource_exhausted"), Long.parseUnsignedLong("18446744073709551615"), Optional.of(new Management.ActivationDiagnostic(Integer.parseUnsignedInt("1"), new Management.DiagnosticStage(3), new Management.DiagnosticReason(1), Optional.of(new Management.DiagnosticProfile(1)), Optional.empty(), Optional.of(Long.parseUnsignedLong("16777216")), Optional.of(Long.parseUnsignedLong("67108864")), Optional.empty(), Optional.empty(), Optional.empty())), "service", Optional.of("adapter"), Optional.empty(), Optional.empty(), true, "", Long.parseUnsignedLong("0"))), Optional.of(new Management.PageResponse(Optional.of("opaque-scoped-cursor"))), true, false, true);
+            check(value.schemaVersion() == Integer.parseUnsignedInt("1"), "activation-tree-failed-preparation-before-guest.schema_version");
+            check(value.nodes().size() == 1, "activation-tree-failed-preparation-before-guest.nodes.count");
+            check(value.nodes().get(0).activationId().equals("child-a"), "activation-tree-failed-preparation-before-guest.nodes.0.activation_id");
+            check(value.nodes().get(0).parentActivationId().isPresent(), "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id.presence");
+            check(value.nodes().get(0).parentActivationId().get().equals("root-a"), "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id");
+            check(value.nodes().get(0).rootActivationId().equals("root-a"), "activation-tree-failed-preparation-before-guest.nodes.0.root_activation_id");
+            check(value.nodes().get(0).phase().equals("received"), "activation-tree-failed-preparation-before-guest.nodes.0.phase");
+            check(value.nodes().get(0).terminalState().isPresent(), "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state.presence");
+            check(value.nodes().get(0).terminalState().get().equals("resource_exhausted"), "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state");
+            check(value.nodes().get(0).lastUpdatedUnixMillis() == Long.parseUnsignedLong("18446744073709551615"), "activation-tree-failed-preparation-before-guest.nodes.0.last_updated_unix_millis");
+            check(value.nodes().get(0).diagnostic().isPresent(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.presence");
+            check(value.nodes().get(0).diagnostic().get().schemaVersion() == Integer.parseUnsignedInt("1"), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.schema_version");
+            check(value.nodes().get(0).diagnostic().get().stage().value() == 3, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.stage");
+            check(value.nodes().get(0).diagnostic().get().reason().value() == 1, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.reason");
+            check(value.nodes().get(0).diagnostic().get().profile().isPresent(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile.presence");
+            check(value.nodes().get(0).diagnostic().get().profile().get().value() == 1, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile");
+            check(!(value.nodes().get(0).diagnostic().get().profileDigest().isPresent()), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile_digest.presence");
+            check(value.nodes().get(0).diagnostic().get().configuredBound().isPresent(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound.presence");
+            check(value.nodes().get(0).diagnostic().get().configuredBound().get() == Long.parseUnsignedLong("16777216"), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound");
+            check(value.nodes().get(0).diagnostic().get().calculatedRequirement().isPresent(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement.presence");
+            check(value.nodes().get(0).diagnostic().get().calculatedRequirement().get() == Long.parseUnsignedLong("67108864"), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement");
+            check(!(value.nodes().get(0).diagnostic().get().fixedBytes().isPresent()), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.fixed_bytes.presence");
+            check(!(value.nodes().get(0).diagnostic().get().liftingFuel().isPresent()), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lifting_fuel.presence");
+            check(!(value.nodes().get(0).diagnostic().get().liftMultiplier().isPresent()), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lift_multiplier.presence");
+            check(value.nodes().get(0).principalKind().equals("service"), "activation-tree-failed-preparation-before-guest.nodes.0.principal_kind");
+            check(value.nodes().get(0).callerService().isPresent(), "activation-tree-failed-preparation-before-guest.nodes.0.caller_service.presence");
+            check(value.nodes().get(0).callerService().get().equals("adapter"), "activation-tree-failed-preparation-before-guest.nodes.0.caller_service");
+            check(!(value.nodes().get(0).grantedBudget().isPresent()), "activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence");
+            check(!(value.nodes().get(0).effectiveDeadlineUnixMillis().isPresent()), "activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence");
+            check(value.nodes().get(0).diagnosticIsTerminal() == true, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
+            check(value.nodes().get(0).targetService().equals(""), "activation-tree-failed-preparation-before-guest.nodes.0.target_service");
+            check(value.nodes().get(0).receivedAtUnixMillis() == Long.parseUnsignedLong("0"), "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis");
+            check(value.page().isPresent(), "activation-tree-failed-preparation-before-guest.page.presence");
+            check(value.page().get().nextPageToken().isPresent(), "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
+            check(value.page().get().nextPageToken().get().equals("opaque-scoped-cursor"), "activation-tree-failed-preparation-before-guest.page.next_page_token");
+            check(value.historyAvailable() == true, "activation-tree-failed-preparation-before-guest.history_available");
+            check(value.cursorExpired() == false, "activation-tree-failed-preparation-before-guest.cursor_expired");
+            check(value.retainedHistoryOnly() == true, "activation-tree-failed-preparation-before-guest.retained_history_only");
+        }
+        {
             Management.InvokeRequest value = new Management.InvokeRequest(Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(new Management.InvocationTarget("tenant-a", "echo", "example:echo/api@1.0.0", "echo", Optional.empty())), ByteBuffer.wrap(new byte[]{(byte)0, (byte)1, (byte)2, (byte)255}), "application/octet-stream", Optional.empty(), Integer.parseUnsignedInt("0"), Optional.empty(), Optional.of(new Management.ResourceBudget(Long.parseUnsignedLong("18446744073709551615"), Long.parseUnsignedLong("9223372036854775808"), Integer.parseUnsignedInt("0"), Integer.parseUnsignedInt("0"), Long.parseUnsignedLong("0"), Long.parseUnsignedLong("0"), Long.parseUnsignedLong("0"), Long.parseUnsignedLong("0"), Long.parseUnsignedLong("0"), Integer.parseUnsignedInt("0"), Optional.empty())), Map.ofEntries(Map.entry("trace", "redacted")));
             check(!(value.activationId().isPresent()), "invoke-absent-identity-and-deadlines.activation_id.presence");
             check(!(value.parentActivationId().isPresent()), "invoke-absent-identity-and-deadlines.parent_activation_id.presence");
@@ -922,6 +1048,6 @@ final class ProfileVectors {
         try { Management.parseU64Decimal("1\000"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\r\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
-        System.out.println("shared profile vectors: 67");
+        System.out.println("shared profile vectors: 74");
     }
 }

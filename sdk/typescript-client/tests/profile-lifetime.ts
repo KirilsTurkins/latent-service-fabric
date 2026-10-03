@@ -40,6 +40,10 @@ class FixtureClient implements Profile.ClientProfile {
     return this.response(this.policy?.id === request.id ? { policy: structuredClone(this.policy) } : {});
   }
 
+  inspectActivationTree(_request: Profile.InspectActivationTreeRequest): Promise<Profile.ClientResponse<Profile.InspectActivationTreeResponse>> {
+    return this.response({ schemaVersion: 1, retainedHistoryOnly: true, historyAvailable: false, cursorExpired: false, nodes: [], page: {} });
+  }
+
   listPolicies(_request: Profile.ListPoliciesRequest): Promise<Profile.ClientResponse<Profile.ListPoliciesResponse>> {
     this.pageCalls++;
     return this.response({ policies: this.policy ? [structuredClone(this.policy)] : [], catalogGeneration: 1n, page: { nextPageToken: "opaque-next-page" } });

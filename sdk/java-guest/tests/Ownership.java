@@ -8,6 +8,7 @@ public final class Ownership {
         catch (IllegalStateException expected) { }
     }
     public static void main(String[] arguments) {
+        ResponseValidation.run(arguments);
         int[] released = {0};
         Handle owner = new Handle(new Unsigned64(-1), value -> {
             require(value.bits() == -1); released[0]++;

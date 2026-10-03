@@ -8,6 +8,7 @@ const operations = {
   invoke: ["latent.invocation.v1.InvocationService", "Invoke"],
   cancel: ["latent.invocation.v1.InvocationService", "Cancel"],
   getActivation: ["latent.invocation.v1.InvocationService", "GetActivation"],
+  inspectActivationTree: ["latent.control.v1.NodeService", "InspectActivationTree"],
   getPolicy: ["latent.control.v1.PolicyService", "GetPolicy"],
   listPolicies: ["latent.control.v1.PolicyService", "ListPolicies"],
   listCapabilities: ["latent.control.v1.CapabilityService", "ListCapabilities"],
