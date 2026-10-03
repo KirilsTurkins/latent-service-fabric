@@ -143,11 +143,8 @@ def qualify(client, targets, releases, publications, host, evidence: Path):
         result["reducedParent"] = {"requestedBudget": reduced, "tree": reduced_tree, "limits": narrowed(parent, child)}
 
         record = client.call("policy", "get", "--id", "clockMonotonic-allow")["data"]["policy"]
-        wrong = deepcopy(record["document"])
-        for rule in wrong["rules"]:
-            for principal in rule["principals"]:
-                if principal["kind"] == "service" and principal["subject"] == CHILD_SUBJECT:
-                    principal["subject"] = "service:8:examples:22:examples/wrong-adapter"
+        from tools.java_http_composition.policy_proposals import wrong_clock
+        wrong = wrong_clock(record["document"])
         changed = policy(client, "policy", "clockMonotonic-allow", wrong, int(record["generation"]))
         try:
             result["wrongClockPolicyRebinding"] = rebind(client, targets, releases, publications, ("domain", "adapter"))
