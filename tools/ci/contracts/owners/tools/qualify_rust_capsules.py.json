@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the exact TypeScript reviewed authoring and selected frontend helpers in qualification fingerprints; preserve all native, SDK, signed node and printed guide operations",
+  "reviewReason": "Retain every TypeScript dependency fixture and authoring helper fingerprint alongside current Rust, Go and .NET approval, entropy and signing stages.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f0078a5576a170a7400bfd5a188490434afcdd85883a72626251afc65a780265"
+  "sha256": "0aeb53670a406b05c3168ec42da7efcc73eceff6bd9b5790055452429a336f0b"
 }

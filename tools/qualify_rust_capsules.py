@@ -32,7 +32,8 @@ HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py"
     "build_observation.py", "build_process.py", "build_process_linux.py", "build_process_windows.py", "build_process_signals.py",
     "phase2_operator_process.py", "phase2_operator_scenario.py", "phase3_management_scenario.py",
     "phase3_resource_os.py", "phase3_resource_identity.py", "phase3_resource_profile.py", "sdk_provider_scenario.py",
-    "sdk_provider_http_fixture.py", "stage_runtime_wit.py", "build_guest_capsules.py", "wait_capsule_audit_idle.py")
+    "sdk_provider_http_fixture.py", "stage_runtime_wit.py", "build_guest_capsules.py", "wait_capsule_audit_idle.py",
+    "guest_compatibility.py", "guest_compatibility_build.py", "dev_workflow/common.py")
 
 
 def inputs(language="rust"):
@@ -49,7 +50,10 @@ def inputs(language="rust"):
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
-                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml")
+                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml",
+                    "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
+                    "application_dependency_approval.py", "go_application_dependencies.py", "captured_compiler_isolation.py",
+                    "go_dependency_fixture.py")
     elif language == "typescript":
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
@@ -60,8 +64,12 @@ def inputs(language="rust"):
                     "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "guest_authoring_frontend.py")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
-                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/sdk.py",
+                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/compatibility.py", "dotnet_guest/outputs.py", "dotnet_guest/sdk.py",
+                    "dotnet_guest/runtime.py", "dotnet_guest/entropy.py", "dotnet_guest/entropy_grants.py",
                     "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
+                    'application_dependencies.py', 'application_dependency_store.py', 'application_dependency_tools.py',
+                    'application_dependency_approval.py', 'captured_compiler_isolation.py', 'dotnet_compiler_isolation.py',
+                    'dotnet_application_dependencies.py', 'dotnet_dependency_fixture.py',
                     "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
@@ -209,13 +217,56 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 result["applicationDependencies"] = install(project, output / "outside-project-dependencies")
                 write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
                 stage = "standalone-builds"
+            if language == "go" and application_dependencies and template == "greeting":
+                from tools.go_dependency_fixture import install
+                stage = "application-dependency-capture"
+                go = shutil.which("go", path=commands.environment["PATH"])
+                if go is None:
+                    raise ValueError("missing pinned Go module resolver")
+                result["applicationDependencies"] = install(project, output / "outside-project-dependencies", Path(go).resolve(strict=True))
+                write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
+                stage = "standalone-builds"
+            if language == 'dotnet' and application_dependencies and template == 'greeting':
+                from tools.dotnet_dependency_fixture import install
+                stage = 'application-dependency-capture'
+                result['applicationDependencies'] = install(project, output / 'outside-project-dependencies', dotnet_tools)
+                write_json(output / 'application-dependency-fixture.json', result['applicationDependencies'])
+                stage = 'unapproved-executable-input-denial'
+                denied = output / 'builds/greeting-approval-required'
+                try:
+                    builder(project, denied, binaries['examples/capsule_contracts'], binaries['examples/package'],
+                            'https://github.com/KirilsTurkins/latent-service-fabric', tools=dotnet_tools, offline=True)
+                except ValueError as error:
+                    failure = read_json(denied / 'BUILD-FAILED.json')
+                    if failure['stage'] != 'executable-input-approval' or (denied / 'BUILD-COMPLETE.json').exists():
+                        raise ValueError('unapproved NuGet generator failed outside the retained approval boundary') from error
+                    request = read_json(denied / 'executable-input-approval-request.json')
+                    # Only the SDK-owned controlled fixture policy approves this
+                    # freshly retained exact request. Normal builds never do so.
+                    executable_approval = request['identity']
+                    result['applicationDependencies']['executableApproval'] = executable_approval
+                else:
+                    raise ValueError('application NuGet generator executed without exact approval')
+                stage = 'standalone-builds'
             artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],
                 binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric",
                 **({"offline": offline or executable_approval is not None, "executable_approval": executable_approval} if language == "rust" else
                    {"tools": typescript_tools} if language == "typescript" else
-                   {"tools": dotnet_tools} if language == "dotnet" else {}))
+                   {"tools": dotnet_tools, "offline": offline or executable_approval is not None,
+                    "executable_approval": executable_approval} if language == "dotnet" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
+            if language == 'dotnet' and application_dependencies and template == 'greeting':
+                receipt = read_json(artifact / 'executable-input-outputs.json')
+                outputs = receipt['outputs']
+                generated = [name for name in outputs if 'CapturedPayload' in name and name.endswith('.cs')]
+                if not generated or receipt['approvalIdentity'] != executable_approval or receipt['compilerCommandSucceeded'] is not True:
+                    raise ValueError('approved serializer generator did not emit the actual captured payload source')
+                for name, expected in outputs.items():
+                    data = (artifact / 'executable-input-outputs' / name).read_bytes()
+                    if {'digest': digest(data), 'size': len(data)} != expected:
+                        raise ValueError('retained NuGet generated output differs from the compiled capture')
+                result['applicationDependencies']['generatedOutputs'] = outputs
         if language == "go":
             stage = "go-recovery-diagnostic"
             commands.run(stage, binaries["examples/go_runtime_probe"],
@@ -279,7 +330,8 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
-        result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language=language)
+        result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
+            language=language, noncrypto_entropy=language == "dotnet" and application_dependencies)
         stage = "printed-guide"
         result["guide"] = guide(output / "guide", environment, language)
         stage = "final-integrity"

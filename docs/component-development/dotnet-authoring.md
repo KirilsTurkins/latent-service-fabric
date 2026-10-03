@@ -15,7 +15,7 @@ package on a local node. Your application lives outside the LSF checkout.
 Use Linux x86-64, Python 3.13.5, Rust 1.97.1 and .NET SDK **10.0.100**.
 The captured compiler uses Componentize.NET 0.8.0-preview00011 and its exact
 NativeAOT LLVM dependency lock. This experimental profile is not a general .NET
-host: no JIT, dynamic assemblies, application packages, thread pool, timers or
+host: no JIT, dynamic assemblies, qualified thread pool, timers or
 host event loop. Contract calls suspend through the LSF runtime.
 Run from the checkout after installing the pinned .NET and Rust SDKs:
 
@@ -65,7 +65,8 @@ The project includes authoritative WIT, `capsule-project.json`, pinned
 Edit `src/*.cs` and `wit`, using the generated export namespace/class for your
 selected `service` world. Keep SDK/compiler configuration unchanged.
 The builder rejects SDK drift, escaping paths, unreviewed MSBuild inputs and
-application NuGet dependencies. Generated C# and typed `Lsf.Guest` capability
+uncaptured NuGet dependencies. Use [captured NuGet application inputs](dotnet-dependencies.md)
+for reviewed application packages and embedded resources. Generated C# and typed `Lsf.Guest` capability
 facades are compiled from the actual selected WIT, not handwritten ABI guesses.
 
 The `word-count` and `shipping` templates provide equivalent C# implementations
