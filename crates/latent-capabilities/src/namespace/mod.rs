@@ -88,6 +88,26 @@ impl NamespaceAuthority {
         admission: NamespaceAdmission<'_>,
         lifecycle: latent_state::namespace::lifecycle::NamespaceLifecycleHandle,
     ) -> Result<Self, PlatformError> {
+        Self::seal_retained(
+            store,
+            store.retain_decision(initial)?,
+            namespace,
+            admission,
+            lifecycle,
+        )
+    }
+
+    /// Seal against the coherent row observed after durable admission while
+    /// consuming the exact originally retained policy/publication decision.
+    /// Generation observation may advance; caller scope, authority and original
+    /// deadline cannot be refreshed. This leaves final commit acceptance open.
+    pub fn seal_retained(
+        store: &PolicyStore,
+        initial: OwnedPolicyDecision,
+        namespace: &NamespaceRead,
+        admission: NamespaceAdmission<'_>,
+        lifecycle: latent_state::namespace::lifecycle::NamespaceLifecycleHandle,
+    ) -> Result<Self, PlatformError> {
         let NamespaceAdmission {
             activation,
             deadline,
@@ -99,7 +119,7 @@ impl NamespaceAuthority {
             return Err(denied());
         }
         let mut captured = None;
-        store.with_current(initial, &mut |actual, ceiling| {
+        store.with_retained_decision(&initial, &mut |actual, ceiling| {
             let record = namespace.record();
             let ResourceTarget::State {
                 namespace: id,
@@ -154,7 +174,6 @@ impl NamespaceAuthority {
         let (ownership, publication, mode, ceiling) = captured.ok_or_else(denied)?;
         let deadline =
             deadline.min(Instant::now() + Duration::from_millis(ceiling.wall_time_millis));
-        let initial = store.retain_decision(initial)?;
         Ok(Self {
             initial,
             ownership,
@@ -168,6 +187,19 @@ impl NamespaceAuthority {
             selection: selection.clone(),
             lifecycle,
         })
+    }
+
+    /// Descriptive sealed activation identity; it creates no budget or access.
+    #[must_use]
+    pub const fn activation_id(&self) -> &ActivationId {
+        &self.activation
+    }
+
+    /// Original admitted deadline narrowed by the original policy ceiling.
+    /// Reading it never extends timing or creates a new execution reservation.
+    #[must_use]
+    pub const fn deadline(&self) -> Instant {
+        self.deadline
     }
 
     #[must_use]
