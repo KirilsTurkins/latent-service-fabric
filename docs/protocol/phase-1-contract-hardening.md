@@ -527,3 +527,7 @@ capability events retain their resource class through RPC and CLI projection.
 Every prior descriptor, field number, enum value and RPC signature remains
 unchanged. The additive descriptor comparison checks those prior members before
 updating the golden; existing audit clients may retain an unknown numeric value.
+
+WIT guest ABI versions and durable storage formats retain independent
+compatibility boundaries. A namespace, command, effect or receipt identifier
+confers no runtime authority.
