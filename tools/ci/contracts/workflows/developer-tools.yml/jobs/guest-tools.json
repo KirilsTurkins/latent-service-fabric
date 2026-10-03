@@ -295,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain every historical guest-tool step, six-language matrix, deadline and immutable tool pin while adopting the reviewed runner-owned compiler cache selection from development.",
+  "reviewReason": "Retain every historical guest compiler, application and evidence command, six-language matrix, deadlines, immutable pins and source-owned cache environment while composing the reviewed current bounded cache, browser and qualification output isolation from development.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

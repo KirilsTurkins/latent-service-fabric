@@ -34,7 +34,9 @@
         "latent:http/client@0.2.0",
         "latent:http/streaming@0.3.0",
         "latent:telemetry/custom@0.1.0",
-        "latent:service/invoke@0.1.0"
+        "latent:service/invoke@0.1.0",
+        "latent:state/key-value@0.2.0",
+        "latent:intents/staging@0.1.0"
       ]
     },
     "providerProfile": {
@@ -463,6 +465,88 @@
               },
               "resources": {
                 "$ref": "capability-policy.schema.json#/$defs/blob"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:state/key-value@0.2.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "acquire-command",
+                    "acquire-query",
+                    "info",
+                    "query-info",
+                    "get",
+                    "get-query",
+                    "scan",
+                    "scan-query",
+                    "describe-page",
+                    "page-next",
+                    "put",
+                    "delete",
+                    "commit",
+                    "read-result",
+                    "inspect-effect",
+                    "cancel-command",
+                    "namespace-create",
+                    "namespace-inspect",
+                    "namespace-list",
+                    "namespace-quiesce",
+                    "namespace-retire",
+                    "namespace-destroy",
+                    "namespace-recreate"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/state"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capability": {
+            "const": "latent:intents/staging@0.1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "restriction": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "stage"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "capability-policy.schema.json#/$defs/state"
               }
             }
           }
