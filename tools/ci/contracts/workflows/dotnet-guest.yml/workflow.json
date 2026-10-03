@@ -31,13 +31,20 @@
           "tools/dotnet_guest*",
           "tools/dotnet_guest/**",
           "tools/dotnet_capsule.py",
+          "tools/dotnet_application_dependencies.py",
+          "tools/dotnet_dependency_fixture.py",
+          "tools/dotnet_compiler_isolation.py",
+          "tools/application_dependenc*.py",
+          "tools/captured_compiler_isolation.py",
           "tools/*dotnet*guest*capsules.py",
           "tools/*dotnet_capsule*.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
           "tools/wait_capsule_audit_idle.py",
           "tools/tests/test_dotnet_capsule_authoring.py",
+          "tools/tests/test_dotnet_application_dependencies.py",
           "docs/component-development/dotnet-authoring.md",
+          "docs/component-development/dotnet-dependencies.md",
           "crates/latent-signing/**",
           "crates/latent-packaging/**",
           "crates/latent-policy/**",
@@ -58,7 +65,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
+  "reviewReason": "Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

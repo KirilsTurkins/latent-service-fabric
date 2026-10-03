@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "package": "runtime.wasi-wasm.microsoft.dotnet.ilcompiler.llvm",
+  "version": "10.0.0-rc.1.26306.1",
+  "repository": "https://github.com/dotnet/runtimelab",
+  "revision": "8449ba666dd991e495d8363d9852f18eb86a1aa1",
+  "path": "runtimes/wasi-wasm/native-hidden/libSystem.Native.a",
+  "archiveDigest": "sha256:48b05195164bf556bf6cf41456f7a531275a8ad192ca74a1f0388d375955ae95",
+  "archiveSize": 254498,
+  "member": "pal_random.c.obj",
+  "memberDigest": "sha256:5012866cd28f6e0e7eb173cf764d77b7fdefc4b4198eeb7fd26a9db716fa0093",
+  "memberSize": 2325,
+  "entrypoint": "SystemNative_GetNonCryptographicallySecureRandomBytes",
+  "profile": "dotnet-hash-entropy-v1"
+}

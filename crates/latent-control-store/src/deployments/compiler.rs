@@ -552,6 +552,7 @@ async fn compile_catalog_inner(
                     recovery,
                     runtime_profile,
                     lifecycle,
+                    control_authority.is_some() && !recovery,
                 )
                 .await?;
                 #[cfg(test)]
