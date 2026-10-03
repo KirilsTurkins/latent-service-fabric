@@ -1,0 +1,47 @@
+package latent:runtime@0.1.0;
+
+/// Versioned compiler/runtime support beneath language standard APIs. Tokens
+/// identify only Store-local logical owners; they confer no external authority.
+interface activation {
+    enum owner-kind { task, managed-idle-worker, executor, queued-work, wait, timer, %result, native }
+    record token { generation: u64, id: u64 }
+    enum error { unavailable, permission-denied, resource-exhausted, cancelled, deadline, invalid-state, invalid-token }
+    enum phase { running, waiting, closing, draining, cancelling, retired }
+    record observation {
+        phase: phase,
+        tasks: u32,
+        executors: u32,
+        queued-work: u32,
+        waits: u32,
+        timers: u32,
+        results: u32,
+        native-owners: u32,
+        parked-tasks: u32,
+        managed-idle-workers: u32,
+        native-memory-bytes: u64,
+        admission-failures: u64,
+        stale-wakes: u64,
+    }
+    register: func(kind: owner-kind, continuation: option<token>) -> result<token, error>;
+    park: func(owner: token) -> result<_, error>;
+    wake: func(owner: token) -> result<_, error>;
+    settle: func(owner: token) -> result<_, error>;
+    close: func() -> result<_, error>;
+    observe: func() -> result<observation, error>;
+    /// A cancelled/root-deadline-limited wait never reports requested elapsed
+    /// success. The host owns no sleeping worker and borrows no Store at await.
+    wait-for: async func(nanos: u64, continuation: option<token>) -> result<_, error>;
+    /// Convert the absolute wall value once at registration into monotonic
+    /// waiting; later wall adjustments do not restart the accepted wait.
+    wait-until: async func(unix-millis: u64, continuation: option<token>) -> result<_, error>;
+    /// Invocation-local single-shot or fixed-rate recurrence. Recurrence
+    /// coalesces missed ticks; the host never dispatches a callback or builds
+    /// a catch-up queue. Zero periods are invalid. Language callback execution
+    /// remains bounded by the same task/queue limits and original deadline.
+    timer-start: func(first-delay-nanos: u64, period-nanos: option<u64>, continuation: option<token>) -> result<token, error>;
+    /// Only one next wait may be live per timer. Returns the number of missed
+    /// recurring ticks coalesced into this single readiness result.
+    timer-next: async func(timer: token) -> result<u64, error>;
+    /// Cancels readiness. Pending physical owners stay charged until dropped.
+    timer-stop: func(timer: token) -> result<_, error>;
+}
