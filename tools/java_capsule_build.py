@@ -7,11 +7,13 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_resources
+from tools import guest_compatibility_build, guest_resources, guest_dependency_inputs, guest_authoring_frontend
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
+from tools.java_guest import resources as java_resources
 from tools.application_dependencies import prepare
 from tools.java_application_dependencies import classpath
+from tools.java_resource_artifacts import packaged_resources
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
                                         read_file, read_json, snapshot, write_json)
@@ -20,7 +22,9 @@ BUILD_TYPE = "https://latent.dev/build/java-capsule/v1"
 RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py",
           "tools/application_dependency_tools.py", "tools/java_application_dependencies.py", "tools/java_dependency_resolution.py",
-          "tools/java_guest/compiler.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
+          "tools/java_registry_tls.py",
+          "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
+          "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
@@ -28,6 +32,8 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "examples/echo-contract/deployment.json")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
+RECIPE += guest_dependency_inputs.RECIPE
+RECIPE += guest_authoring_frontend.RECIPE
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -46,7 +52,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
           offline_cache: Path | None = None) -> Path:
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
-    project_path, output = checked_path(project_path), checked_path(output)
+    project_path = guest_dependency_inputs.application_root(checked_path(project_path), 'java')
+    output = checked_path(output)
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
         raise ValueError("build output must be outside source or beneath its target directory")
@@ -55,7 +62,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     commands, compiler, stage = None, None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
-        files = snapshot(project_path)
+        observed = guest_dependency_inputs.capture_source(project_path, 'java')
+        files = observed.files
         project, _lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
@@ -72,11 +80,14 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands = Commands(work, output, build_environment(temporary))
                 commands.deadline = start + timeout
                 stage = "application-dependencies"
-                closure = prepare(project_path, work, output, "java")
+                closure = prepare(observed.dependency_root, work, output, "java")
                 if closure is not None and offline_cache is None:
                     raise ValueError("captured Java builds require the verified offline compiler cache")
                 application_jars, application_inventory = classpath(closure, temporary / "selected-application-jars")
                 write_json(output / "java-classpath.json", application_inventory)
+                additional_resources, resource_sources = packaged_resources(closure, application_inventory, files)
+                application_resources = java_resources.materialize({**files, **resource_sources}, source_inputs,
+                    additional_resources, temporary / "selected-application-resources")
                 stage = "compiler-inputs"
                 compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
                     sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
@@ -92,7 +103,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
-                                                             application_classpath=application_jars)
+                    application_classpath=application_jars, application_resources=application_resources)
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
                 write_json(output / "bindings.json", generated)
@@ -112,17 +123,20 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 for name in ("contracts.json", "wit-lock.json", "surface.json"):
                     (output / name).write_bytes(read_file(derived / name))
                 package_files = dict(files)
+                package_files.update(resource_sources)
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
                 surface = read_json(derived / "surface.json")
                 stage = "compatibility"
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
-                package_inputs(output, project, surface, package_files, component)
+                package_inputs(output, project, surface, package_files, component,
+                               additional_resources=additional_resources)
                 if packager is not None:
                     stage = "package"
                     commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                     commands.run("inspect", paths["packager"], "inspect", output / "package")
                 stage = "recheck"
-                if snapshot(project_path) != files or snapshot(work, exclude=("dependencies", "application-vendor")) != files:
+                observed.check_unchanged()
+                if snapshot(work, exclude=("dependencies", "application-vendor")) != files:
                     raise ValueError("project changed during the observed Java build")
                 if closure is not None:
                     closure.check_unchanged()

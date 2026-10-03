@@ -58,6 +58,13 @@
           "tools/c_capsule*.py",
           "tools/c_guest/**",
           "tools/java_capsule*.py",
+          "tools/java_dependency*.py",
+          "tools/java_application_dependencies.py",
+          "tools/java_resource_artifacts.py",
+          "tools/java_registry_tls.py",
+          "tools/tests/test_java_dependency_authoring.py",
+          "tools/tests/test_java_resource_runtime.py",
+          "tools/tests/test_java_private_resolution.py",
           "tools/java_guest/**",
           "tools/dotnet_capsule.py",
           "tools/dotnet_guest/**",
@@ -133,7 +140,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Add only private Java resolver source and test triggers; preserve every existing job and policy",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
