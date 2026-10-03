@@ -1,5 +1,6 @@
 //! Staged bytes do not monopolize the authority fence or bypass its final check.
 use super::*;
+use crate::local_repository::integrity::faults::AfterMetadataScanGuard;
 use std::sync::Mutex;
 
 #[derive(Default)]
@@ -243,5 +244,88 @@ fn control_commit_renews_after_preparation_and_staging_without_reviving_denied_g
         assert!(worker
             .join_until(std::time::Instant::now() + std::time::Duration::from_secs(5))
             .unwrap());
+    }
+}
+
+#[test]
+fn web_control_metadata_scan_renews_after_bytes_without_reviving_or_replaying() {
+    for outcome in ["control", "ordinary", "revoked", "uncertain"] {
+        let root = TempRoot::new();
+        let lease = Arc::new(Mutex::new(Lease {
+            ceiling: 5,
+            renew_control: true,
+            ..Lease::default()
+        }));
+        let repo = DirectoryArtifactRepository::open_enforced(
+            root.path(),
+            DirectoryArtifactRepositoryConfig::default(),
+            AdmissionStorageLimits::default(),
+            Arc::new(FencedHost(lease.clone())),
+        )
+        .unwrap();
+        let publication = repo
+            .publish_web_package(
+                context("renderer", 0),
+                renderer_test_upload(b"original assets"),
+                &mut |_| Ok(()),
+            )
+            .unwrap()
+            .receipt
+            .publication;
+        let before = repo.verification_snapshot();
+        let renewals = lease.lock().unwrap().renewals;
+        let scanned = Arc::new(std::sync::atomic::AtomicU64::new(0));
+        let barrier = scanned.clone();
+        let clock = lease.clone();
+        let expected = publication.clone();
+        let _hook = AfterMetadataScanGuard::new(move |reference| {
+            assert_eq!(reference, &expected);
+            assert_eq!(barrier.fetch_add(1, Ordering::SeqCst), 0);
+            let mut clock = clock
+                .try_lock()
+                .expect("renderer scan owns no policy fence");
+            clock.now = 6;
+            clock.revoked = outcome == "revoked";
+            clock.fail_renewal = outcome == "uncertain";
+        });
+        let release = crate::content_digest(b"\0asm\x0d\0\x01\0");
+        let source = repo.preparation_source().unwrap();
+        let result = if outcome == "ordinary" {
+            source.historical_snapshot_selected(&release, Some(&publication.id))
+        } else {
+            source.control_historical_snapshot_selected(&release, Some(&publication.id))
+        };
+        if outcome == "uncertain" {
+            assert_eq!(
+                result.err().unwrap().code,
+                latent_core::PlatformErrorCode::Unavailable
+            );
+        } else {
+            let snapshot = result.unwrap();
+            assert!(snapshot.metadata().is_web_execution_projection());
+            assert!(snapshot.web_layout().is_some());
+            assert_eq!(
+                matches!(snapshot.state(), HistoricalExecutionState::Eligible(_)),
+                outcome == "control"
+            );
+        }
+        assert_eq!(scanned.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            repo.verification_snapshot().metadata_fetch_attempts,
+            before.metadata_fetch_attempts + 1
+        );
+        let clock = lease.lock().unwrap();
+        assert_eq!(
+            clock.renewals,
+            renewals + usize::from(matches!(outcome, "control" | "revoked"))
+        );
+        assert_eq!(
+            clock.ceiling,
+            if matches!(outcome, "control" | "revoked") {
+                11
+            } else {
+                5
+            }
+        );
     }
 }
