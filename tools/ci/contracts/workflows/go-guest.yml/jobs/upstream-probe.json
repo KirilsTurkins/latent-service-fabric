@@ -4,7 +4,7 @@
   "coverage": {},
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Add source-bound transaction shape compiler evidence while preserving every existing language execution gate; retain the accepted CI performance dependency caches, correctness guards and independent execution obligations.",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Add source-bound transaction shape compiler evidence while preserving every existing language execution gate; retain the accepted CI performance dependency caches, correctness guards and independent execution obligations. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml",
   "definition": {
@@ -41,6 +41,10 @@
       },
       {
         "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Install captured Go compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
       },
       {
         "name": "Restore compiled Rust dependencies",
@@ -101,8 +105,16 @@
         "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_capsule_authoring tools.tests.test_build_provenance_schemas\n"
       },
       {
+        "name": "Test captured Go native graphs and namespace",
+        "run": "LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation\n"
+      },
+      {
         "name": "Qualify editable projects, all SDK owners, enforced node and printed guide",
-        "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\""
+        "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\"\n"
+      },
+      {
+        "name": "Qualify captured Go libraries in signed components",
+        "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
       {
         "name": "Retain successful and failed upstream observations",
@@ -110,7 +122,7 @@
         "uses": "actions/upload-artifact",
         "with": {
           "name": "go-guest-upstream-${{ github.sha }}",
-          "path": "${{ runner.temp }}/transaction-guests-go/**/report.json\n${{ runner.temp }}/transaction-guests-go/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-go/**/component.wasm\n${{ runner.temp }}/transaction-guests-go/**/component.wit\n${{ runner.temp }}/transaction-guests-go/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/logs/**\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-go/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/report.json\n${{ runner.temp }}/transaction-contract-go/source.tar.gz\n${{ runner.temp }}/transaction-contract-go/component.wit\n${{ runner.temp }}/transaction-contract-go/preparation.json\n${{ runner.temp }}/transaction-contract-go/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-go/logs/**\n${{ runner.temp }}/transaction-contract-go/compiler/*.log\n${{ runner.temp }}/transaction-contract-go/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-go/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-go/compiled/component.wit\n${{ runner.temp }}/transaction-contract-go/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-go/compiled/generated/**\n${{ runner.temp }}/transaction-contract-go/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/bindings/**\n${{ runner.temp }}/transaction-contract-go/component.wasm\n${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-authoring/\n",
+          "path": "${{ runner.temp }}/transaction-guests-go/**/report.json\n${{ runner.temp }}/transaction-guests-go/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-go/**/component.wasm\n${{ runner.temp }}/transaction-guests-go/**/component.wit\n${{ runner.temp }}/transaction-guests-go/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/logs/**\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-go/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/report.json\n${{ runner.temp }}/transaction-contract-go/source.tar.gz\n${{ runner.temp }}/transaction-contract-go/component.wit\n${{ runner.temp }}/transaction-contract-go/preparation.json\n${{ runner.temp }}/transaction-contract-go/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-go/logs/**\n${{ runner.temp }}/transaction-contract-go/compiler/*.log\n${{ runner.temp }}/transaction-contract-go/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-go/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-go/compiled/component.wit\n${{ runner.temp }}/transaction-contract-go/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-go/compiled/generated/**\n${{ runner.temp }}/transaction-contract-go/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/bindings/**\n${{ runner.temp }}/transaction-contract-go/component.wasm\n${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-dependencies/**\n${{ runner.temp }}/go-capsule-authoring/\n",
           "if-no-files-found": "warn",
           "retention-days": 7
         }

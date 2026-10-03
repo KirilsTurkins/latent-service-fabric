@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Select the captured transaction template explicitly without changing stateless cases",
+  "reviewReason": "Select the captured transaction template explicitly without changing stateless cases Preserve native NuGet capture, exact generator approval and selected composer while installing all three reviewed runtime adapters",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "836b6abac0ecec069b086f4968c57dccf4d97bdf28430e17bf9da9cafc0e62c3"
+  "sha256": "8acfb513fbd382a4fd04da8b8fdfcf3b4f69af905c4608c48f0ecdd73bf6ecaf"
 }
