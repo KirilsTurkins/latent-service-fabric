@@ -72,6 +72,16 @@ the fixed worker. Dropping borrowed preparation objects cannot refund that
 lease or refresh its grant. A copied allow result, namespace descriptor, cursor
 or publication string cannot construct this authority.
 
+When durable command admission advances namespace metadata before guest entry,
+`NamespaceAuthority::seal_retained` consumes the exact `OwnedPolicyDecision`
+captured at acquisition and seals a fresh coherent namespace observation.
+`PolicyStore::with_retained_decision` rechecks the original owner, policy/binding
+row revisions and exact publication under its existing short fence; it exposes
+no reusable borrowed grant and acquires no replacement policy snapshot. Revoked
+or changed acquisition authority cannot be repaired by a fresh grant. The
+original activation ID and narrowed deadline are descriptive getters only;
+sealing the newer observation does not accept the final commit cancellation gate.
+
 Every operation checks the captured grant and a fresh operation decision under
 one current policy/publication fence, then checks the mutable namespace fence.
 The logical read view alone cannot detect a concurrent lifecycle change, so the
