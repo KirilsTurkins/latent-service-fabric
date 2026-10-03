@@ -108,6 +108,7 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
             registry_config: Path | None = None) -> dict:
     """Explicit fetch stage. Cargo metadata/vendor do not run application hooks."""
     project = regular_path(project).resolve(strict=True)
+    recipe_before = file_identity(Path(__file__), 'cargo-capture-recipe')
     if candidate.exists():
         raise DependencyError('dependency-candidate-exists')
     before = snapshot(project)
@@ -184,7 +185,7 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
                                    temporary, environment, 600, 4 * 1024 * 1024).stdout
         resolver = {'cargo': file_identity(cargo, 'cargo-resolver'), 'version': version,
                     'metadataDigest': digest(raw), 'selectedMetadataDigest': digest(selected_raw), 'nativeLockDigest': digest(original_lock),
-                    'registryConfigurationDigest': digest(canonical(registries))}
+                    'registryConfigurationDigest': digest(canonical(registries)), 'recipe': recipe_before}
         artifacts, graph = analyze(metadata, project, vendor, resolver)
         graph['selectedResolve'] = json.loads(selected_raw)['resolve']
         mappings = {Path(package['manifest_path']).parent.resolve(): Path(row['mount'])
@@ -245,6 +246,8 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
             raise DependencyError('cargo-resolution-input-mutated')
         if file_identity(cargo, 'cargo-resolver') != resolver['cargo']:
             raise DependencyError('cargo-resolver-mutated')
+        if file_identity(Path(__file__), 'cargo-capture-recipe') != recipe_before:
+            raise DependencyError('cargo-capture-recipe-mutated')
         with candidate.open('xb') as output:
             output.write(canonical(locked) + b'\n')
         return locked
