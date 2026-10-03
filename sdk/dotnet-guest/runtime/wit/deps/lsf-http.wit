@@ -1,0 +1,56 @@
+package latent:http@0.3.0;
+
+// Owned, immediate HTTP operations. No automatic replay, redirect, upgrade,
+// application transaction, durable outbox, or rollback is implied.
+// Every operation and resource retains the original activation deadline.
+// Dropping an upload/body aborts actual I/O; separately held chunks stay charged.
+interface streaming {
+    enum method { get, head, post, put, patch, delete, options }
+    record header { name: string, value: string }
+    record request {
+        method: method,
+        url: string,
+        headers: list<header>,
+        body-length: option<u64>,
+        body-media-type: option<string>,
+        idempotency-key: option<string>,
+        timeout-millis: option<u64>,
+    }
+    resource upload;
+    resource body;
+    resource chunk;
+    record response {
+        status: u16,
+        headers: list<header>,
+        body-media-type: option<string>,
+        body: body,
+    }
+    variant http-error {
+        invalid-url, invalid-request, permission-denied,
+        request-too-large, response-too-large, deadline-exceeded,
+        cancelled, budget-exhausted, dns-failed, tls-failed,
+        connection-failed, unavailable, uncertain,
+        invalid-state, unexpected-eof, unsupported-encoding,
+    }
+    // Accept exact metadata and create one bounded operation. A publisher proof
+    // or an import declaration is not permission to open a connection.
+    open: async func(request: request) -> result<upload, http-error>;
+    // Success accepts this finite chunk into the owned transport; it does not
+    // promise remote application processing. An idempotency key permits no retry.
+    write: async func(target: borrow<upload>, bytes: list<u8>) -> result<_, http-error>;
+    // Consume the upload, finish its framing, and return validated response
+    // headers plus an owned body. Header success does not promise a complete body.
+    finish: async func(target: upload) -> result<response, http-error>;
+    // None is verified EOF, never a truncated body or a post-header error.
+    // A held chunk keeps its complete capacity; closing the body cannot refund it.
+    read: async func(source: borrow<body>, maximum-bytes: u32) -> result<option<chunk>, http-error>;
+    // Materialize once per chunk. Later calls return invalid-state. Keep the
+    // chunk until this call has returned, then Drop it to release its capacity.
+    chunk-bytes: async func(value: borrow<chunk>) -> result<list<u8>, http-error>;
+    // Materialize once after verified EOF; repeated or premature calls return
+    // invalid-state. Trailers are never used as authorization metadata.
+    trailers: async func(source: borrow<body>) -> result<list<header>, http-error>;
+    // Abort consumes ownership. It cannot undo bytes already sent to a peer.
+    abort-upload: async func(target: upload) -> result<_, http-error>;
+    abort-body: async func(source: body) -> result<_, http-error>;
+}

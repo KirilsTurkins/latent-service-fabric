@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution",
+    "ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement",
+    "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed",
+    "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough",
+    "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source",
+    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt"
+  ],
+  "guards": {
+    "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
+      ],
+      "skipSites": []
+    },
+    "ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
+      ],
+      "skipSites": []
+    },
+    "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
+      ],
+      "skipSites": []
+    },
+    "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
+      ],
+      "skipSites": []
+    },
+    "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
+      ],
+      "skipSites": []
+    },
+    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_exact_composition.py",
+  "reviewReason": "Add six exact-interface composition controls after the actual pinned WAC semver duplicate-argument failure; preserve all historical authoring and entropy cases.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
