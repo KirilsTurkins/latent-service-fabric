@@ -32,6 +32,7 @@ fn original_queued_deadline_narrows_context_and_grant_without_late_reopening() {
     assert_eq!(owner.owners().unwrap().physical, 0);
 }
 
+mod control_generation;
 mod lookup;
 mod rejection;
 

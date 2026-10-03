@@ -118,6 +118,7 @@ fn resident_startup_owner_cannot_consume_the_last_full_recovery_slot_or_byte_env
             .startup_memory_bytes(super::super::STARTUP_VALIDATOR_BYTES)
             .unwrap()
             + super::super::STARTUP_APPLICATION_BYTES
+            + effect_metadata_bytes().unwrap()
     );
     assert!(work > 24 * MIB);
     limits.recovery.slots = 1;

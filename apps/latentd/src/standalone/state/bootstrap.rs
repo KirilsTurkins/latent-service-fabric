@@ -54,6 +54,14 @@ impl StateBootstrap {
             .startup_memory_bytes(crate::config::state::STARTUP_VALIDATOR_BYTES)
             .map_err(|_| super::unavailable())?
             .checked_add(crate::config::state::STARTUP_APPLICATION_BYTES)
+            .and_then(|bytes| {
+                bytes.checked_add(
+                    EffectAuthorityOwner::retained_memory_bytes(
+                        crate::config::state::EFFECT_AUTHORITY_MAXIMUM_RULES,
+                    )
+                    .ok()?,
+                )
+            })
             .ok_or_else(super::unavailable)?;
         if expected != state.startup_work_bytes {
             return Err(super::unavailable());
@@ -86,8 +94,14 @@ impl StateBootstrap {
             .map_err(|_| super::unavailable())?;
         // No rule is installed. Actual protected checkpoint/covered-clock
         // admission later supplies the floor; zero is only an empty lower bound.
-        let authority = EffectAuthorityOwner::new(128, state.dispatcher.accepted_jobs, 0)
-            .map_err(|_| super::unavailable())?;
+        let authority = EffectAuthorityOwner::with_retained_capacity(
+            crate::config::state::EFFECT_AUTHORITY_MAXIMUM_RULES,
+            state.dispatcher.accepted_jobs,
+            0,
+            &native,
+            Arc::clone(&original),
+        )
+        .map_err(|_| super::unavailable())?;
         let configuration = super::configuration::identity(state);
         Ok(Self {
             authority,
