@@ -149,7 +149,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
+  "reviewReason": "Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

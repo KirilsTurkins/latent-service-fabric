@@ -96,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_wit_contracts.py",
-  "reviewReason": "Preserve the exact union of both source case inventories and unchanged reviewed guards; retain original deadlines, atomic compiler readiness, all reaping assertions, and exact WIT package closure.",
+  "reviewReason": "Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
