@@ -48,7 +48,8 @@ impl ActivationClock for Clock {
         ClockSample::system_now()
     }
 }
-type PlanHook = Arc<Mutex<Option<Box<dyn FnOnce() + Send>>>>;
+pub type PlanLookupHook = Arc<Mutex<Option<Box<dyn FnOnce() + Send>>>>;
+type PlanHook = PlanLookupHook;
 struct Plans(Arc<CompiledCapabilityPlan>, PlanHook);
 impl CapabilityPlanSource for Plans {
     fn plan(&self, _: &ResolvedRevision) -> Result<Arc<CompiledCapabilityPlan>, PlatformError> {
@@ -100,6 +101,7 @@ pub struct Fixture {
     pub runtime: Arc<ActivationCapabilityRuntime>,
     pub clock: Arc<Clock>,
     pub plan_hook: PlanHook,
+    pub plan_lookup_hook: PlanLookupHook,
     pub revision: ResolvedRevision,
     _provider: ProviderRegistration,
     _directory: tempfile::TempDir,
@@ -267,6 +269,7 @@ impl Fixture {
             broker,
             runtime,
             clock,
+            plan_lookup_hook: Arc::clone(&plan_hook),
             plan_hook,
             revision,
             _provider: provider,

@@ -64,10 +64,10 @@ impl WasmtimeBackend {
     ) -> Result<Result<T, GuestOutcome>, PlatformError> {
         let window =
             super::readiness::wait::Window::new(self.shared.currentness_read_wait.as_deref());
-        // Only the pure final authorization decision is repeated. The caller
-        // retains one original prepared use and its capacity permit. No cache
-        // lookup, re-verification, grant renewal, capability session, Store or
-        // guest invocation is inside this loop. Timer-less callers fail closed.
+        // The caller retains one original prepared use, publication, ledger
+        // and capacity permit. An unsuccessful authority observation allocates
+        // no session or Store and starts no provider or guest work. Timer-less
+        // callers fail closed. The read window does not extend the original stop.
         let result = window
             .check(|| {
                 if let Some(outcome) =
