@@ -2,6 +2,7 @@
 """Create, compile and package an independent C# component using the pinned SDK."""
 from __future__ import annotations
 import argparse
+import json
 import os
 import platform
 from pathlib import Path
@@ -16,6 +17,7 @@ from tools.build_observation import build_environment
 from tools.dotnet_guest.project import create
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
+from tools.dotnet_guest.runtime import ADAPTERS
 
 
 def install(directory: Path, wasi_sdk: Path):
@@ -55,12 +57,17 @@ def install(directory: Path, wasi_sdk: Path):
         "-p:NuGetAudit=false", "-nodeReuse:false")
     command.run("closed-runtime-compile", "cargo", "build", "--quiet", "--locked",
         "--manifest-path", ROOT / "tools/toolchain-smoke/Cargo.toml", "-p", "latent-toolchain-smoke",
-        "--example", "dotnet-closed-runtime", "--target", "wasm32-unknown-unknown", "--release", "--target-dir", target)
-    command.run("closed-runtime-component", wasm, "component", "new",
-        target / "wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm", "-o", directory / "runtime.wasm")
+        *(argument for example, _binary in ADAPTERS.values() for argument in ("--example", example)),
+        "--target", "wasm32-unknown-unknown", "--release", "--target-dir", target)
+    for profile, (example, binary) in ADAPTERS.items():
+        command.run(profile + "-runtime-component", wasm, "component", "new",
+            target / "wasm32-unknown-unknown/release/examples" / (example.replace("-", "_") + ".wasm"),
+            "-o", directory / binary)
     if runtime_inputs(ROOT) != before:
-        raise ValueError("closed runtime sources changed during compilation")
+        raise ValueError("runtime sources changed during compilation")
     (directory / "runtime-inputs.json").write_bytes(before)
+    from tools.dotnet_guest.composer import install as install_composer
+    install_composer(directory, sdk, command)
     write_json(directory / "wasi-sdk.json", {"path": str(wasi_sdk)})
     write_json(directory / "INSTALL-COMPLETE.json", {"commands": command.records})
     return directory
@@ -76,11 +83,19 @@ def main():
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=TEMPLATES, default="greeting")
     new.add_argument("--name")
+    resolve_ = commands.add_parser('resolve')
+    resolve_.add_argument('project', type=Path)
+    resolve_.add_argument('--candidate', type=Path, required=True)
+    resolve_.add_argument('--dotnet', type=Path, required=True)
+    resolve_.add_argument('--tools', type=Path, required=True)
+    resolve_.add_argument('--feed-config', type=Path)
+    resolve_.add_argument('--update-lock', action='store_true')
     compile_ = commands.add_parser("build")
     compile_.add_argument("project", type=Path)
     compile_.add_argument("--tools", type=Path, required=True)
     compile_.add_argument("--output", type=Path, required=True)
     compile_.add_argument("--repository", required=True)
+    compile_.add_argument('--executable-approval')
     compile_.add_argument("--contracts-tool", type=Path, default=ROOT / "target/debug/examples/capsule_contracts")
     compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
     args = parser.parse_args()
@@ -89,8 +104,13 @@ def main():
             result = install(args.directory, args.wasi_sdk)
         elif args.command == "new":
             result = create(args.directory, args.template, args.name)
+        elif args.command == 'resolve':
+            from tools.dotnet_application_dependencies import resolve
+            result = resolve(args.project, args.candidate, dotnet=args.dotnet, tools=args.tools,
+                policy=json.loads(read_file(args.feed_config)) if args.feed_config else None, update_lock=args.update_lock)
         else:
-            result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository, tools=args.tools)
+            result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository, tools=args.tools,
+                executable_approval=args.executable_approval)
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError) as error:

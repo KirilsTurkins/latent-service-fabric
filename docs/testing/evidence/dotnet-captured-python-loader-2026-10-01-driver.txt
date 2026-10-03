@@ -1,0 +1,64 @@
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import sysconfig
+import tempfile
+
+from tools.application_dependency_store import DependencyError
+from tools.build_process import run_bounded_result
+from tools.captured_compiler_isolation import Isolation
+from tools.dotnet_compiler_isolation import DotnetIsolation
+
+
+captured = Path('/capture/dotnet-capsule-dependencies/projects/captured-dotnet-tools/python')
+binary = captured / 'bin/python'
+library = captured / 'lib/libpython3.13.so.1.0'
+assert hashlib.sha256(binary.read_bytes()).hexdigest() == '9cf89c50189de85411dd34b0f0ec5daaab41bf6cd447628572defe3b3ffd0a04'
+with tempfile.TemporaryDirectory(prefix='actual-ci-python-loader-') as temporary:
+    workspace = Path(temporary) / 'workspace'
+    workspace.mkdir()
+    private = Path(temporary) / 'python'
+    (private / 'bin').mkdir(parents=True)
+    (private / 'lib/python3.13').mkdir(parents=True)
+    executable = private / 'bin/python'
+    shutil.copyfile(binary, executable)
+    executable.chmod(0o700)
+    selected_library = private / 'lib' / library.name
+    shutil.copyfile(library, selected_library)
+    shutil.copytree(Path(sysconfig.get_path('stdlib')), private / 'lib/python3.13', dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns('site-packages', 'dist-packages', '__pycache__'))
+    # This original path is an owned fixture inside this diagnostic container.
+    # No host Python directory is mounted or modified.
+    original = Path('/opt/hostedtoolcache/Python/3.13.5/x64/lib') / library.name
+    assert not original.exists()
+    original.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(library, original)
+    tools = {'python': executable}
+    distributions = {'compiler-python-stdlib': private}
+    try:
+        Isolation(workspace, tools, distributions)
+    except DependencyError as error:
+        assert str(error) == 'compiler-runtime-library-outside-system-root'
+        baseline = str(error)
+    else:
+        raise AssertionError('original hosted RUNPATH unexpectedly accepted')
+    shell = Path(shutil.which('sh')).resolve(strict=True)
+    tools.update({name: shell for name in ('shell', 'dotnet', 'wasm-tools', 'wit-bindgen')})
+    isolated = DotnetIsolation(workspace, tools, distributions, loader_directories=(private / 'lib',))
+    original.unlink()
+    environment = {'PATH': os.defpath, 'LC_ALL': 'C', 'PYTHONHOME': str(private),
+                   'LD_LIBRARY_PATH': '/uncaptured-ambient-library-directory'}
+    command = isolated.wrap(executable, ['-S', '-c', 'import sys; print("42", sys.version_info[:3])'],
+                            workspace, environment)
+    result = run_bounded_result(command, workspace, environment, 10, 16384)
+    assert result.returncode == 0, result.stderr.decode('utf-8', errors='replace')
+    assert result.stdout == b'42 (3, 13, 5)\n'
+    isolated.check_unchanged()
+    print(json.dumps({'artifactId': 11190341838, 'binarySha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
+        'librarySha256': hashlib.sha256(library.read_bytes()).hexdigest(), 'libraryBytes': library.stat().st_size,
+        'baselineFailure': baseline, 'originalLibraryDeletedBeforeExecution': True,
+        'namespaceOutput': result.stdout.decode().strip(), 'loaderSelection': isolated.receipt['loaderLibraryDirectories'],
+        'loaderLibraryCapturedByDistribution': not any('libpython' in name for name in isolated.shared),
+        'sourceRecheckPassed': True}), flush=True)
