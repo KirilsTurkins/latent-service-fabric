@@ -410,12 +410,13 @@ impl ProviderCall {
         }
     }
 
-    /// Original broker-selected source, for trusted child registration. This
-    /// descriptor grants no independent invocation or journal authority; the
+    /// Original broker-selected source tenant and service, for trusted child
+    /// registration. This identity grants no independent journal authority; the
     /// adapter must retain this live call and its original activation ledger.
     #[must_use]
-    pub fn local_invocation_source(&self) -> &latent_routing::InvocationTarget {
-        &self.work.as_ref().expect("affine call").session.plan.target
+    pub fn local_invocation_source(&self) -> (&latent_core::TenantId, &latent_core::ServiceId) {
+        let source = &self.work.as_ref().expect("affine call").session.plan.target;
+        (&source.tenant, &source.service)
     }
 
     #[must_use]

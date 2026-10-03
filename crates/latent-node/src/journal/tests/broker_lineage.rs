@@ -26,7 +26,7 @@ fn broker_parent_requires_original_live_budget_and_selected_source() {
         let state = journal.inner.lock();
         assert!(!owns_broker_parent(
             &state.records[&value.activation_id],
-            &value.target,
+            (&value.target.tenant, &value.target.service),
             &original,
         ));
     }
@@ -34,11 +34,15 @@ fn broker_parent_requires_original_live_budget_and_selected_source() {
     {
         let state = journal.inner.lock();
         let parent = &state.records[&value.activation_id];
-        assert!(owns_broker_parent(parent, &value.target, &original.clone()));
+        assert!(owns_broker_parent(
+            parent,
+            (&value.target.tenant, &value.target.service),
+            &original.clone()
+        ));
         // Equal limits/deadlines or a matching string ID are never ownership.
         assert!(!owns_broker_parent(
             parent,
-            &value.target,
+            (&value.target.tenant, &value.target.service),
             &budget(&value, &clock)
         ));
         for source in [
@@ -51,14 +55,22 @@ fn broker_parent_requires_original_live_budget_and_selected_source() {
                 ..value.target.clone()
             },
         ] {
-            assert!(!owns_broker_parent(parent, &source, &original));
+            assert!(!owns_broker_parent(
+                parent,
+                (&source.tenant, &source.service),
+                &original
+            ));
         }
     }
     owner.finish(outcome());
     let state = journal.inner.lock();
     let terminal = &state.records[&value.activation_id];
     assert!(terminal.active_budget.is_none());
-    assert!(!owns_broker_parent(terminal, &value.target, &original));
+    assert!(!owns_broker_parent(
+        terminal,
+        (&value.target.tenant, &value.target.service),
+        &original
+    ));
     assert!(terminal.granted_budget.is_some());
 }
 
@@ -79,8 +91,16 @@ fn reused_parent_id_cannot_adopt_an_old_broker_budget() {
     {
         let state = journal.inner.lock();
         let parent = &state.records[&value.activation_id];
-        assert!(!owns_broker_parent(parent, &value.target, &old_budget));
-        assert!(owns_broker_parent(parent, &value.target, &current_budget));
+        assert!(!owns_broker_parent(
+            parent,
+            (&value.target.tenant, &value.target.service),
+            &old_budget
+        ));
+        assert!(owns_broker_parent(
+            parent,
+            (&value.target.tenant, &value.target.service),
+            &current_budget
+        ));
     }
     second.finish(outcome());
     assert_eq!(journal.snapshot().active, 0);
