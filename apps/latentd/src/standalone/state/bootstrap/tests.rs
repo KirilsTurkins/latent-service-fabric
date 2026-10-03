@@ -52,6 +52,7 @@ fn bootstrap_prepays_the_original_recovery_owner_without_opening_files_or_instal
     assert_eq!(original.work_bytes(), settings.startup_work_bytes);
     assert_eq!(original.original_deadline(), bootstrap.deadline);
     assert!(Arc::ptr_eq(&bootstrap.clock, &clock));
+    assert!(bootstrap.authority.uses_native_capacity(&bootstrap.native));
     let snapshot = bootstrap.native.snapshot().unwrap();
     assert_eq!(snapshot.ordinary.slots, 0);
     assert_eq!(snapshot.recovery.slots, 1);
@@ -153,6 +154,32 @@ fn changed_startup_sizing_is_refused_before_global_admission_or_authority_shell_
     let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
     assert!(StateBootstrap::new_state(&settings, &clock).is_err());
     assert!(!settings.store.root.exists());
+}
+
+#[test]
+fn actual_effect_rule_metadata_keeps_the_same_resident_charge_after_bootstrap_retirement() {
+    let root = tempfile::tempdir().unwrap();
+    let settings = settings(root.path());
+    let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
+    let bootstrap = StateBootstrap::new_state(&settings, &clock).unwrap();
+    let native = bootstrap.native.clone();
+    let authority = bootstrap.authority.clone();
+    let original = Arc::downgrade(&bootstrap.original());
+    assert!(authority.uses_native_capacity(&native));
+    let total = native.snapshot().unwrap().recovery.bytes;
+    assert_eq!(
+        total,
+        settings.startup_work_bytes
+            + latent_core::native_capacity::NATIVE_RESERVATION_METADATA_BYTES
+    );
+    drop(bootstrap);
+    assert!(native.snapshot().unwrap().admission_closed);
+    assert_eq!(native.snapshot().unwrap().recovery.bytes, total);
+    assert!(original.upgrade().is_some());
+    assert!(!settings.store.root.exists());
+    drop(authority);
+    assert!(original.upgrade().is_none());
+    assert!(native.snapshot().unwrap().physically_retired());
 }
 
 #[tokio::test]

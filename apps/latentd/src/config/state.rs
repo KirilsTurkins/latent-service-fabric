@@ -13,6 +13,9 @@ pub(crate) const STARTUP_VALIDATOR_BYTES: u64 = 8 * 1024 * 1024;
 // Exact quota/identity/path captures and the early empty authority shell are
 // prepaid before the initializer can reserve its separate native buffers.
 pub(crate) const STARTUP_APPLICATION_BYTES: u64 = 64 * 1024;
+// Existing fixed authority rule ceiling; its actual resident map is charged
+// separately from the application shell, before either owner allocates.
+pub(crate) const EFFECT_AUTHORITY_MAXIMUM_RULES: usize = 128;
 
 // Operator objects retain streaming duplicate/unknown-field rejection and
 // refuse Serde's positional struct-array representation at every owner layer.

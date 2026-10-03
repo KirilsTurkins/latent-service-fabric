@@ -31,7 +31,7 @@ restore approval, caller authority or deferred execution permission.
 The explicit bounded native profile used by the source fixtures has 128 ordinary
 slots, a 256 MiB ordinary aggregate and a 64 MiB per-reservation ceiling. Recovery
 has eight slots, a 96 MiB aggregate and a 32 MiB per-reservation ceiling. Derivation
-checks the real initializer, validator, engine-resident and namespace-resident
+checks the real initializer, validator, engine-resident, namespace-resident and effect-rule
 footprints, plus separately usable headroom for a complete 32 MiB management
 request. A larger engine cache needs corresponding explicit native capacity; no
 fallback capacity owner or unlimited budget is installed.
@@ -50,6 +50,14 @@ store already bound to that same native owner. A coherent bounded validation
 checks supported producer codecs and cross-row ownership without repairing
 counters or accepting unknown opaque records. Retained namespace metadata then
 uses that original reservation.
+
+The early effect authority also reserves its actual finite rule, rejection and
+closed-namespace metadata on that same original Work admission before allocation.
+The existing 128-rule ceiling requires 2,113,536 resident bytes, including fixed
+owner/observer and lookup-registry shells. Owned string capacities are checked
+before retaining or cloning rules. Its last actual context or control capture
+keeps that resident charge after bootstrap expiry or close; logical retirement
+cannot refund it. The existing aggregate and per-reservation ceilings are unchanged.
 
 The [private checkpoint](transaction-checkpoint.md) is opened and checked before
 tenant preparation or dispatcher writes. Only the initializer's affine Fresh
@@ -111,7 +119,13 @@ scope, and the exact selected signed `transaction-binding.json` asset. Policy
 captures retain the finite read lease and original store owner; credential
 captures retain the original zeroizing generation without exposing plaintext
 through their metadata fence. Rotation, expiry, close, foreign owners and
-uncertain state refuse the original capture rather than refreshing it.
+uncertain state refuse the original capture rather than refreshing it. A sealed
+effect control capture retains that same real resident authority, its actual
+rules generation, and the original rejection registry generation, prepaid with
+2 KiB of caller Work. Real policy/publication rejection advances the registry
+even with no matching rule, so an unchanged rules counter cannot approve a stale
+installation. The final short rule/rejection fence holds the original caller
+Native acceptance fence; these descriptive counters confer no operation authority.
 
 The selected asset producer requires an existing Recovery reservation from the
 same native capacity owner, with 24 MiB of Work and 2 MiB of Response prepaid
@@ -135,7 +149,13 @@ the retained response, corruption, malformed or oversized declarations, exact
 selection, expired or closed native ownership and physical last-owner retirement.
 Their native compilation, discovery and execution remain required.
 
-The source registers 53 additional `latentd` cases, retaining all 246 previous
+Three actual rejection-registry and five retained effect-control schedules are
+also registered source. They cover foreign owners, empty-map policy rejection,
+actual credential/rule rotation and namespace closure, finite original capture
+capacity, busy fences, clock rollback, expiry, close, overflow, callback unwind
+and the final physical owner drop. Source checks cannot qualify these schedules.
+
+The source registers 54 additional `latentd` cases, retaining all 246 previous
 cases and their ignore states. They include real protected-engine/checkpoint
 startup, missing and malformed checkpoint recovery, same-owner factory admission,
 one-time readiness, pre-I/O installation refusal, original-deadline refusal and

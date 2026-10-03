@@ -208,6 +208,7 @@ pub(super) fn startup_footprint(
         .startup_memory_bytes(super::STARTUP_VALIDATOR_BYTES)
         .map_err(|_| invalid("store"))?
         .checked_add(super::STARTUP_APPLICATION_BYTES)
+        .and_then(|bytes| bytes.checked_add(effect_metadata_bytes().ok()?))
         .ok_or_else(|| invalid("native"))?;
     let namespace_bytes =
         latent_state::namespace::lifecycle::NamespaceLifecycleRegistry::retained_memory_bytes(
@@ -222,6 +223,7 @@ pub(super) fn startup_footprint(
         .resident_bytes
         .checked_add(namespace_bytes)
         .and_then(|bytes| bytes.checked_add(super::STARTUP_APPLICATION_BYTES))
+        .and_then(|bytes| bytes.checked_add(effect_metadata_bytes().ok()?))
         .and_then(|bytes| bytes.checked_add(latent_state::protected_store::STATE_MODE_NATIVE_BYTES))
         .is_none_or(|resident| resident > work)
     {
@@ -261,6 +263,13 @@ pub(super) fn startup_footprint(
         return Err(invalid("native"));
     }
     Ok(work)
+}
+
+pub(crate) fn effect_metadata_bytes() -> Result<u64, PlatformError> {
+    latent_effects::authority::EffectAuthorityOwner::retained_memory_bytes(
+        super::EFFECT_AUTHORITY_MAXIMUM_RULES,
+    )
+    .map_err(|_| invalid("native"))
 }
 
 configuration_object! {
