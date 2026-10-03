@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "StaticSymbolTests.test_archive_source_recipe_denies_missing_resolved_libraries_before_compiler",
+    "StaticSymbolTests.test_core_validator_visits_every_member_including_unused_members",
+    "StaticSymbolTests.test_current_observed_profile_accepts_unknown_archives_offline",
+    "StaticSymbolTests.test_defined_functions_data_globals_events_and_tables_are_strong",
+    "StaticSymbolTests.test_distinct_unused_members_with_duplicate_symbols_fail_before_linking",
+    "StaticSymbolTests.test_separate_archives_cannot_hide_duplicate_strong_symbols",
+    "StaticSymbolTests.test_stale_compiler_distribution_runtime_target_and_checkpoint_fail",
+    "StaticSymbolTests.test_static_capture_preserves_public_header_resource_and_offline_closure",
+    "StaticSymbolTests.test_symbol_counts_individual_names_and_total_name_bytes_are_bounded",
+    "StaticSymbolTests.test_tls_unknown_flags_and_invalid_local_or_common_imports_fail",
+    "StaticSymbolTests.test_truncation_bad_utf8_nul_repeated_table_and_trailing_symbol_fail",
+    "StaticSymbolTests.test_two_strong_definitions_in_one_object_fail",
+    "StaticSymbolTests.test_undefined_weak_local_and_common_do_not_conflict_with_strong"
+  ],
+  "guards": {
+    "StaticSymbolTests.test_archive_source_recipe_denies_missing_resolved_libraries_before_compiler": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_core_validator_visits_every_member_including_unused_members": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_current_observed_profile_accepts_unknown_archives_offline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_defined_functions_data_globals_events_and_tables_are_strong": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_distinct_unused_members_with_duplicate_symbols_fail_before_linking": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_separate_archives_cannot_hide_duplicate_strong_symbols": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_stale_compiler_distribution_runtime_target_and_checkpoint_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_static_capture_preserves_public_header_resource_and_offline_closure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_symbol_counts_individual_names_and_total_name_bytes_are_bounded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_tls_unknown_flags_and_invalid_local_or_common_imports_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_truncation_bad_utf8_nul_repeated_table_and_trailing_symbol_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_two_strong_definitions_in_one_object_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    },
+    "StaticSymbolTests.test_undefined_weak_local_and_common_do_not_conflict_with_strong": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:126475ab99df745a8179638bcc0fee59baa6dbd1376b45967a6169d2f6c63430",
+        "class:setup-sha256:ca2202ade7483ca5fcddbc3b9e0d4754f547062fbf29bae20508b9d80f5d3a8d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_static_symbols.py",
+  "reviewReason": "Review finite isolated source/static C archive production, validation of all core members and strong definitions, direct third-party and developer calls, immutable resource recapture and separate signed node qualification; retain all historical commands/cases/guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,53 @@
+{
+  "cases": [
+    "GeneratorFailureReceipts.test_cleanup_and_ownership_failures_never_claim_reaped",
+    "GeneratorNativeFailureReceipts.test_actual_deadline_keeps_failed_status_and_reaped_descendants",
+    "GeneratorNativeFailureReceipts.test_actual_output_overflow_keeps_failed_status_and_reaped_descendants"
+  ],
+  "guards": {
+    "GeneratorFailureReceipts.test_cleanup_and_ownership_failures_never_claim_reaped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5234667776eb4a926adc52dc5ed7660e328521f77345f777d89d260b566c2a6a",
+        "class:setup-sha256:fa9a4861f5aac307c92738d81fcbef9a311f0d8d2dc713033c82e8150acd3be3"
+      ],
+      "skipSites": []
+    },
+    "GeneratorNativeFailureReceipts.test_actual_deadline_keeps_failed_status_and_reaped_descendants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5234667776eb4a926adc52dc5ed7660e328521f77345f777d89d260b566c2a6a",
+        "class:raise:raise unittest.SkipTest('actual generator retirement requires Linux Bubblewrap')",
+        "class:setup-sha256:8309050d2fcc5ce21f10c8710418103d076993d083809322198bd6d96f01cbab",
+        "class:skip:unittest.SkipTest('actual generator retirement requires Linux Bubblewrap')"
+      ],
+      "skipSites": []
+    },
+    "GeneratorNativeFailureReceipts.test_actual_output_overflow_keeps_failed_status_and_reaped_descendants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5234667776eb4a926adc52dc5ed7660e328521f77345f777d89d260b566c2a6a",
+        "class:raise:raise unittest.SkipTest('actual generator retirement requires Linux Bubblewrap')",
+        "class:setup-sha256:8309050d2fcc5ce21f10c8710418103d076993d083809322198bd6d96f01cbab",
+        "class:skip:unittest.SkipTest('actual generator retirement requires Linux Bubblewrap')"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_application_dependency_tools.py",
+  "reviewReason": "Actual namespace deadline and output-overflow retirement; cleanup/ownership failures must keep unconfirmed receipts",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
