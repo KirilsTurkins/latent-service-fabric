@@ -41,6 +41,16 @@ pub struct AttemptIdentity {
 
 impl AttemptIdentity {
     #[must_use]
+    pub const fn owner_epoch(&self) -> u64 {
+        self.owner_epoch
+    }
+
+    #[must_use]
+    pub const fn claim_generation(&self) -> u64 {
+        self.claim_generation
+    }
+
+    #[must_use]
     pub const fn attempt(&self) -> u32 {
         self.attempt
     }
@@ -66,7 +76,7 @@ pub struct AttemptReceipt {
 }
 
 impl AttemptReceipt {
-    fn valid(&self) -> bool {
+    pub(crate) fn valid(&self) -> bool {
         matches!(
             self.disposition,
             Disposition::ProviderAcknowledged
@@ -139,8 +149,59 @@ impl EffectRecord {
     }
 
     #[must_use]
+    pub const fn owner_epoch(&self) -> u64 {
+        self.owner_epoch
+    }
+
+    #[must_use]
+    pub const fn claim_generation(&self) -> u64 {
+        self.claim_generation
+    }
+
+    #[must_use]
+    pub const fn retry_at_millis(&self) -> u64 {
+        self.retry_at_millis
+    }
+
+    #[must_use]
+    pub const fn send_started(&self) -> bool {
+        self.send_started
+    }
+
+    /// A missing exact decoder or current policy denies an unclaimed intent.
+    /// Physical in-flight work and terminal outcomes cannot be overwritten.
+    pub fn block_eligible(&mut self, time: EffectTime) -> Result<(), AuthorityError> {
+        self.check_clock(time)?;
+        if !matches!(
+            self.disposition,
+            Disposition::Pending | Disposition::RetryScheduled
+        ) {
+            return Err(AuthorityError::Stale);
+        }
+        self.disposition = if time.unix_millis >= self.authority()?.expires_at_millis() {
+            Disposition::Expired
+        } else {
+            Disposition::PolicyBlocked
+        };
+        Ok(())
+    }
+
+    #[must_use]
     pub fn latest(&self) -> Option<&AttemptReceipt> {
         self.latest.as_ref()
+    }
+
+    pub(crate) fn active_attempt(&self) -> Result<AttemptIdentity, AuthorityError> {
+        if self.disposition != Disposition::Dispatching {
+            return Err(AuthorityError::Stale);
+        }
+        Ok(AttemptIdentity {
+            effect: self.authority()?.link().effect.clone(),
+            owner_epoch: self.owner_epoch,
+            claim_generation: self.claim_generation,
+            attempt: self.attempt,
+            retry_horizon_millis: self.retry_horizon_millis,
+        })
     }
 
     /// Only `Pending` or explicitly qualified `RetryScheduled` work is claimable.
@@ -414,7 +475,7 @@ impl EffectRecord {
         Ok(())
     }
 
-    fn check_claim(&self, claim: &AttemptIdentity) -> Result<(), AuthorityError> {
+    pub(crate) fn check_claim(&self, claim: &AttemptIdentity) -> Result<(), AuthorityError> {
         if self.disposition != Disposition::Dispatching
             || claim.effect != self.authority()?.link().effect
             || claim.owner_epoch != self.owner_epoch

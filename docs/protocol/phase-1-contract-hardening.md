@@ -497,6 +497,23 @@ does not by itself enable Angular T1, additional renderer imports or providers.
 The [management reference](../reference/management-services.md#web-publication-and-preparation)
 defines the trust fence, finite ownership and uncertainty boundary.
 
+### Phase 4 state and transaction definitions (#382)
+
+The descriptor baseline adds `latent/control/v1/state.proto` and
+`latent/transaction/v1/transaction.proto`. Their four `StateService` and seven
+`TransactionService` methods describe bounded namespace/entity selection,
+explicit management operations, commands, fresh queries and outcome/effect
+recovery. All thirteen earlier file descriptors remain unchanged in full,
+including their field numbers, types, cardinalities, oneofs, enum values and
+service signatures. The strict descriptor validator continues to reject any
+unreviewed semantic change.
+
+This record freezes transport definitions. The companion
+[transaction contract](transactions.md) defines host authority, durable formats
+and recovery identities; these definitions grant no access and do not install a
+transactional runtime. Later methods or fields require another reviewed baseline
+update.
+
 ## Alpha removal of component-only release selectors
 
 Release get, lifecycle inspection, revoke/retire and evidence renewal now require
