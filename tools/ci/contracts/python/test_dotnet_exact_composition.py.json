@@ -15,7 +15,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc",
         "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
       ],
       "skipSites": []
@@ -27,7 +27,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc",
         "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
       ],
       "skipSites": []
@@ -39,7 +39,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc",
         "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
       ],
       "skipSites": []
@@ -51,7 +51,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc",
         "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
       ],
       "skipSites": []
@@ -63,7 +63,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc",
         "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
       ],
       "skipSites": []
@@ -75,7 +75,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc",
         "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
       ],
       "skipSites": []
@@ -83,6 +83,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_exact_composition.py",
-  "reviewReason": "Add six exact-interface composition controls after the actual pinned WAC semver duplicate-argument failure; preserve all historical authoring and entropy cases.",
+  "reviewReason": "Add six exact-interface composition controls after the actual pinned WAC semver duplicate-argument failure; preserve all historical authoring and entropy cases. Callable-member fixture repair: preserve every original case, test body, skip, base, decorator and execution guard; update only the reviewed graph-helper setup identity. The frozen type-only reader reproduces nine failures before this fixture repair; production clock authority, structural type-only classification and exact-version matching are unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

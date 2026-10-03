@@ -46,7 +46,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
-        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+        "class:setup-sha256:e00fbbfb5760cad4b9be50e4aac3b9b263a3aebf51684991794c198d4e76bda1"
       ],
       "skipSites": []
     },
@@ -58,7 +58,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
-        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+        "class:setup-sha256:e00fbbfb5760cad4b9be50e4aac3b9b263a3aebf51684991794c198d4e76bda1"
       ],
       "skipSites": []
     },
@@ -70,7 +70,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
-        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+        "class:setup-sha256:e00fbbfb5760cad4b9be50e4aac3b9b263a3aebf51684991794c198d4e76bda1"
       ],
       "skipSites": []
     },
@@ -82,7 +82,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
-        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+        "class:setup-sha256:e00fbbfb5760cad4b9be50e4aac3b9b263a3aebf51684991794c198d4e76bda1"
       ],
       "skipSites": []
     },
@@ -94,7 +94,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
-        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+        "class:setup-sha256:e00fbbfb5760cad4b9be50e4aac3b9b263a3aebf51684991794c198d4e76bda1"
       ],
       "skipSites": []
     },
@@ -479,6 +479,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_application_dependencies.py",
-  "reviewReason": "Retain all historical NuGet controls and add actual nested outside-library namespace source-read and ambient-denial regression",
+  "reviewReason": "Retain all historical NuGet controls and add actual nested outside-library namespace source-read and ambient-denial regression Callable-member fixture repair: preserve every original case, test body, skip, base, decorator and execution guard; update only the reviewed graph-helper setup identity. The frozen type-only reader reproduces nine failures before this fixture repair; production clock authority, structural type-only classification and exact-version matching are unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
