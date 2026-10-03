@@ -42,6 +42,7 @@ members = [
     "crates/latent-rollout",
     "crates/latent-telemetry",
     "crates/latent-audit",
+    "crates/latent-test-process",
     "crates/latent-testkit",
     "sdk/rust",
     "sdk/rust-guest",

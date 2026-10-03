@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn finite_engine_qualification_records_actual_commit_conflict_snapshot_and_recovery_costs() {
-    use latent_testkit::{CurrentProcessProbe, ResourceProbe};
+    use latent_test_process::{CurrentProcessProbe, ResourceProbe};
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("measured.redb");
     let limits = StoreLimits {

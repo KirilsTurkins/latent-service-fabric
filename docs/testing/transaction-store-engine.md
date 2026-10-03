@@ -38,7 +38,7 @@ cargo clippy -p latent-state --all-targets --locked -- -D warnings
 ```
 
 The source-matched suite inventory includes every new case. The process-crash
-test uses the existing `latent-testkit` owned process and output limits. It
+test uses the existing `latent-test-process` owned process and output limits. It
 terminates and reaps a child at the pre-commit and post-commit barriers, then
 reopens the same database and checks state, command and outbox together. A
 test-only barrier never enters a product build. Corrupt bytes and concurrent
@@ -47,10 +47,10 @@ one-over row quota changes no family. Old snapshots stay coherent; expired
 views refuse further reads while their physical pin remains owned until drop.
 
 These physical storage and owned-process tests run in the full Rust lane.
-`latent-state` and its affected `latent-commit` and `latent-workflows` consumers
-leave the fast package selection because their actual test graph includes
-`latent-testkit`. The existing fast lane still rejects that helper; the full
-lane retains the exact storage cases and their bounds.
+Their existing process and resource helpers now live in the neutral
+`latent-test-process` crate. This removes the Wasmtime-bearing helper from the
+fast package graph while retaining every physical storage case and its bounds
+in the full and affected validation selections.
 
 The finite workload performs 32 immediate commits, a writer while a snapshot
 is retained, a conflicting batch, compaction after view retirement, a closed
