@@ -1525,6 +1525,7 @@
         "atomic::tests::managed_accounting::namespace_quota_refuses_optional_management_without_writing_or_quarantining_store",
         "atomic::tests::managed_accounting::simultaneous_original_management_plans_conflict_without_rebinding_or_quota_refresh",
         "atomic::tests::managed_accounting::unfinished_management_plan_protects_original_rows_after_its_deadline",
+        "atomic::tests::maximum_intent_count_respects_original_namespace_effect_reserve_without_partial_rows",
         "atomic::tests::maximum_result_and_128_intents_commit_as_one_complete_envelope",
         "atomic::tests::original_terminal_namespace_version_survives_later_commit_and_reopen",
         "atomic::tests::oversized_results_intents_and_capacity_fail_before_business_mutation",
@@ -1620,7 +1621,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-commit/Cargo.toml",
-      "minimumCases": 114,
+      "minimumCases": 115,
       "mode": "libtest",
       "package": "latent-commit",
       "platforms": [
