@@ -214,9 +214,13 @@ fn validate_imports(
         {
             // Recognition is data-only. Providers require an installed trusted port;
             // a label or a package manifest cannot install I/O.
-            return Err(incompatible(
+            return Err(latent_core::diagnostic::ActivationDiagnostic::new(
+                latent_core::diagnostic::DiagnosticStage::Binding,
+                latent_core::diagnostic::DiagnosticReason::ProviderAbsent,
+            )
+            .attach(incompatible(
                 "required host capability provider is unavailable",
-            ));
+            )));
         }
         let ComponentItem::ComponentInstance(interface) = item.ty else {
             return Err(incompatible(

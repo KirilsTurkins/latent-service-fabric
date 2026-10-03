@@ -19,6 +19,9 @@ def converted(field, expression, direction, messages, enums):
     if field.get("repeated"):
         return expression + ".into_iter().map(Into::into).collect()" if kind in messages else expression
     if field.get("optional"):
+        if kind in enums:
+            return (expression + ".map(model::" + kind + ")" if direction == "model"
+                    else expression + ".map(|value| value.0)")
         return expression + ".map(Into::into)" if kind in messages else expression
     if kind in enums:
         return "model::" + kind + "(" + expression + ")" if direction == "model" else expression + ".0"
