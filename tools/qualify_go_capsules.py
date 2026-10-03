@@ -13,4 +13,6 @@ from tools.qualify_rust_capsules import qualify
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    print(json.dumps(qualify(parser.parse_args().output, language="go")))
+    parser.add_argument("--application-dependencies", action="store_true")
+    args = parser.parse_args()
+    print(json.dumps(qualify(args.output, language="go", application_dependencies=args.application_dependencies)))
