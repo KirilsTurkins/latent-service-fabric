@@ -104,30 +104,9 @@ def configure(directory: Path, settings: dict, port: int) -> dict:
 
 def grant(client, node, domain_publication: str, port: int) -> dict:
     """Use actual installed identity and original source-service/caller policy."""
-    require(type(port) is int and 1 <= port <= 65535
-            and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", domain_publication),
-            "java-provider-selected-publication")
-    installed = [row for row in node.startup_record["providers"] if row["id"] == "http"]
-    require(len(installed) == 1, "java-provider-original-installed-owner")
-    actual = installed[0]
-    require(actual["tenant"] == TENANT and actual["service"] == "http-host"
-            and actual["capability"] == CAPABILITY and actual["profile"] == "bounded-http-v1"
-            and actual["configurationEpoch"] == "1"
-            and re.fullmatch(r"sha256:[0-9a-f]{64}", actual["configurationDigest"]),
-            "java-provider-installed-profile")
-    policy(client, "provider-binding", BINDING, {"formatVersion": 1, "tenant": TENANT,
-        "capability": CAPABILITY, "providerProfile": actual["profile"],
-        "configurationDigest": actual["configurationDigest"], "configurationEpoch": 1,
-        "restriction": {"operations": ["send"]}})
-    policy(client, "policy", POLICY, {"formatVersion": 1, "tenant": TENANT, "rules": [{
-        "id": "selected-domain", "effect": "allow", "principals": [
-            {"kind": "administrator", "subject": "workflow-operator"},
-            {"kind": "service", "subject": CHILD_SUBJECT}],
-        "services": [DOMAIN], "publications": [domain_publication], "capability": CAPABILITY,
-        "operations": ["send"], "resources": {"kind": "http",
-            "origins": [{"scheme": "http", "host": "localhost", "port": port}],
-            "methods": ["GET"], "paths": ["/allowed"], "pathPrefixes": []},
-        "ceiling": {"operations": 1, "inputBytes": 4096, "outputBytes": 8192, "wallTimeMillis": 1000}}]})
+    from tools.java_http_composition.policy_proposals import http
+    for proposal in http(node.startup_record, domain_publication, port):
+        policy(client, proposal["kind"], proposal["id"], proposal["document"])
     return {"capability": CAPABILITY, "policy": POLICY}
 
 
@@ -236,6 +215,15 @@ def verify_shutdown(shutdown: dict) -> dict:
 
 def stop_peer(process) -> dict:
     """Reap the original peer, retaining its one held and one fresh request."""
+    return _stop_peer(process, {"requests": 2, "authorized": 2, "unexpected": 0, "holds": 1, "closedHolds": 1})
+
+
+def stop_unused_peer(process) -> dict:
+    """Positive prepare-only teardown; this establishes no business disposition."""
+    return _stop_peer(process, {"requests": 0, "authorized": 0, "unexpected": 0, "holds": 0, "closedHolds": 0})
+
+
+def _stop_peer(process, expected) -> dict:
     process.stop()
     lines = bytes(process.buffers[0]).splitlines()
     require(len(lines) == 1 and len(lines[0]) <= 4096, "java-provider-peer-shutdown-record")
@@ -243,8 +231,7 @@ def stop_peer(process) -> dict:
     require(set(result) == {"requests", "authorized", "unexpected", "holds", "closedHolds"}
             and all(type(value) is int and 0 <= value <= 32 for value in result.values()),
             "java-provider-peer-shutdown-bound")
-    require(result["requests"] == result["authorized"] == 2 and result["unexpected"] == 0
-            and result["holds"] == result["closedHolds"] == 1,
+    require(result == expected,
             "java-provider-peer-authority-or-physical-close")
     require(process.closed and process.owner.finished and process.owner.process.returncode == 0,
             "java-provider-peer-not-reaped")

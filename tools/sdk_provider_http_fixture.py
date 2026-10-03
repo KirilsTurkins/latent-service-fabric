@@ -144,13 +144,15 @@ def observe_held_get(method, directory, selected):
         marker(directory, "get-" + selected)
 
 
-def run(directory, *, deadline=None):
+def run(directory, *, deadline=None, port=0):
     counts = {"requests": 0, "authorized": 0, "unexpected": 0, "holds": 0, "closedHolds": 0}
     # An explicit absolute owner deadline cannot be extended by process startup.
     # Validate before opening the listener; ordinary standalone use keeps 300 s.
     deadline = expiry(deadline)
+    if type(port) is not int or not 0 <= port <= 65535:
+        raise ValueError("provider fixture port bound")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
-        listener.bind(("127.0.0.1", 0))
+        listener.bind(("127.0.0.1", port))
         listener.listen(4)
         print(json.dumps({"port": listener.getsockname()[1]}), flush=True)
         while not STOPPING and time.monotonic() < deadline and counts["requests"] < 32:
@@ -189,13 +191,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--control", type=Path, required=True)
     parser.add_argument("--deadline-monotonic", type=float)
+    parser.add_argument("--port", type=int, default=0)
     args = parser.parse_args()
     directory = args.control.resolve(strict=True)
     if not directory.is_dir() or directory.stat().st_mode & 0o077:
         raise ValueError("protected rendezvous directory required")
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
-    print(json.dumps(run(directory, deadline=args.deadline_monotonic)), flush=True)
+    print(json.dumps(run(directory, deadline=args.deadline_monotonic, port=args.port)), flush=True)
 
 
 if __name__ == "__main__":

@@ -43,11 +43,19 @@ def projects(output: Path) -> dict[str, Path]:
     return result
 
 
-def compile_pair(output: Path, wasi_sdk: Path, binaries: dict) -> dict[str, Path]:
+def compile_pair(output: Path, wasi_sdk: Path, binaries: dict, *, diagnostics=False) -> dict[str, Path]:
+    if type(diagnostics) is not bool:
+        raise ValueError("Java diagnostic build selection must be explicit")
     selected = projects(output / "projects")
     qualify_generation(selected["domain"], ROOT / "examples/java-http-composition/routes.json",
         selected["adapter"], output / "generation-cases")
+    if diagnostics:
+        from tools.java_http_composition import provider_timeout
+        adaptations = {"domain": provider_timeout.adapt_domain(selected["domain"])}
+        for name in ("adapter", "adapter-next"):
+            adaptations[name] = provider_timeout.adapt_adapter(selected[name])
+        write_json(output / "diagnostic-adaptations.json", adaptations)
     return {name: build(project, output / "builds" / name,
-        binaries["examples/capsule_contracts"], binaries["examples/package"],
+        binaries["examples/capsule_contracts"], binaries.get("examples/package"),
         "https://github.com/KirilsTurkins/latent-service-fabric", wasi_sdk)
         for name, project in selected.items()}
