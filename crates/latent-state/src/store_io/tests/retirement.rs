@@ -1,4 +1,122 @@
 use super::*;
+use latent_core::native_capacity::{
+    NativeAdmissionClass, NativeCapacityError, NativeCapacityOwner, NativeReservation,
+    NativeReservationRequest,
+};
+
+struct KeptNative {
+    pause: Rendezvous,
+    notice: mpsc::Sender<(Registration, PauseTicket)>,
+    bytes: Vec<u8>,
+    destroyed: Arc<AtomicBool>,
+}
+impl Drop for KeptNative {
+    fn drop(&mut self) {
+        pause(&self.pause, &self.notice, std::mem::take(&mut self.bytes));
+        self.destroyed.store(true, Ordering::SeqCst);
+    }
+}
+struct OriginalKeeper {
+    _capacity: NativeReservation,
+    native_destroyed: Arc<AtomicBool>,
+    io: StoreIoOwner<Store>,
+    notice: mpsc::Sender<usize>,
+}
+impl Drop for OriginalKeeper {
+    fn drop(&mut self) {
+        assert!(self.native_destroyed.load(Ordering::SeqCst));
+        // The native allocation is destroyed, but the enclosing storage
+        // reservation and retirement witness have not been released yet.
+        self.notice
+            .send(self.io.snapshot().unwrap().physical_owners)
+            .unwrap();
+    }
+}
+
+#[test]
+fn original_capacity_keeper_survives_detached_native_retirement_until_actual_destruction() {
+    let (physical, _, closed) = store();
+    let owner = StoreIoOwner::new(physical, limits(), |_| Ok(())).unwrap();
+    let mut global_limits = latent_core::native_capacity::NativeCapacityLimits::default();
+    global_limits.ordinary.slots = 1;
+    let global = NativeCapacityOwner::new(global_limits).unwrap();
+    let request = NativeReservationRequest {
+        request_bytes: 128,
+        work_bytes: 512,
+        response_bytes: 1024,
+    };
+    let deadline = Instant::now() + WATCHDOG;
+    let capacity = global
+        .reserve(NativeAdmissionClass::Ordinary, request, deadline)
+        .unwrap();
+    let native_destroyed = Arc::new(AtomicBool::new(false));
+    let (keeper_notice, keeper_retired) = mpsc::channel();
+    let keeper = Arc::new(OriginalKeeper {
+        _capacity: capacity,
+        native_destroyed: Arc::clone(&native_destroyed),
+        io: owner.clone(),
+        notice: keeper_notice,
+    });
+    let weak_keeper = Arc::downgrade(&keeper);
+    let mut retained = owner.reserve_retained::<KeptNative>(512).unwrap();
+    assert!(retained.retain_owner(keeper).is_ok());
+    let foreign: Arc<dyn std::any::Any + Send + Sync> = Arc::new(());
+    let refused = retained.retain_owner(Arc::clone(&foreign)).unwrap_err();
+    assert!(Arc::ptr_eq(&refused, &foreign));
+    drop(refused);
+    let witness = retained.retirement_witness().unwrap();
+    let rendezvous = Rendezvous::new(1);
+    let worker_pause = rendezvous.clone();
+    let (notice, receiver) = mpsc::channel();
+    let destroyed = Arc::clone(&native_destroyed);
+    let opened = owner
+        .submit(StoreIoKind::Read, 512, move |_| {
+            assert!(retained
+                .attach(KeptNative {
+                    pause: worker_pause,
+                    notice,
+                    bytes: vec![0; 512],
+                    destroyed,
+                })
+                .is_ok());
+            retained
+        })
+        .unwrap();
+    let retained = wait(opened).unwrap();
+    // Drop the original response without retaining an explicit receipt. The
+    // pre-reserved destructor and original global keeper remain physical owners.
+    drop(retained);
+    let (_, ticket) = ready(&receiver);
+    owner.close();
+    assert!(!native_destroyed.load(Ordering::SeqCst));
+    assert!(!witness.has_retired());
+    assert!(weak_keeper.upgrade().is_some());
+    assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
+    assert!(owner.snapshot().unwrap().retained_bytes >= 512);
+    assert!(matches!(
+        global.reserve(NativeAdmissionClass::Ordinary, request, deadline),
+        Err(NativeCapacityError::SlotsFull)
+    ));
+    assert!(!closed.load(Ordering::SeqCst));
+    rendezvous.release(ticket).unwrap();
+    assert!(finish(&owner).clean);
+    assert_eq!(keeper_retired.recv_timeout(WATCHDOG).unwrap(), 1);
+    assert!(native_destroyed.load(Ordering::SeqCst));
+    assert!(witness.has_retired());
+    assert!(weak_keeper.upgrade().is_none());
+    let replacement = global
+        .reserve(NativeAdmissionClass::Ordinary, request, deadline)
+        .unwrap();
+    drop(replacement);
+
+    let (store, _, _) = store();
+    let late = StoreIoOwner::new(store, limits(), |_| Ok(())).unwrap();
+    let mut retained = late.reserve_retained::<u8>(1).unwrap();
+    assert!(retained.attach(1).is_ok());
+    assert!(retained.retain_owner(foreign).is_err());
+    drop(retained);
+    assert!(finish(&late).clean);
+}
 
 #[test]
 fn native_retirement_remains_charged_and_on_worker_through_paused_destructor() {
@@ -38,13 +156,18 @@ fn native_retirement_remains_charged_and_on_worker_through_paused_destructor() {
     );
     PollProbe::default().pending(drain.as_mut());
     assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
-    drop(retained);
+    let witness = retained.retirement_witness().unwrap();
+    assert!(retained.retirement_witness().is_none());
+    assert!(!witness.has_retired());
+    let mut retired = Box::pin(retained.retire());
     let (_, ticket) = ready(&receiver);
     assert_ne!(
         threads.recv_timeout(WATCHDOG).unwrap(),
         std::thread::current().id()
     );
     let during = owner.snapshot().unwrap();
+    PollProbe::default().pending(retired.as_mut());
+    assert!(!witness.has_retired());
     assert_eq!(during.physical_owners, 1);
     assert_eq!(during.accepted, 1);
     assert!(during.retained_bytes >= 256);
@@ -52,6 +175,8 @@ fn native_retirement_remains_charged_and_on_worker_through_paused_destructor() {
     clock.advance(Duration::from_secs(1));
     assert!(!wait(drain).clean);
     rendezvous.release(ticket).unwrap();
+    wait(retired);
+    assert!(witness.has_retired());
     let report = wait(
         owner
             .drain_async(
@@ -63,6 +188,47 @@ fn native_retirement_remains_charged_and_on_worker_through_paused_destructor() {
     assert!(report.snapshot.physically_retired());
     assert!(!report.clean);
     assert!(closed.load(Ordering::SeqCst));
+}
+
+#[test]
+fn dropping_retirement_receipt_detaches_without_refunding_paused_physical_cleanup() {
+    struct Native {
+        pause: Rendezvous,
+        notice: mpsc::Sender<(Registration, PauseTicket)>,
+        destroyed: Arc<AtomicBool>,
+    }
+    impl Drop for Native {
+        fn drop(&mut self) {
+            pause(&self.pause, &self.notice, vec![0_u8; 512]);
+            self.destroyed.store(true, Ordering::SeqCst);
+        }
+    }
+    let (store, _, _) = store();
+    let owner = StoreIoOwner::new(store, limits(), |_| Ok(())).unwrap();
+    let mut retained = owner.reserve_retained::<Native>(512).unwrap();
+    let rendezvous = Rendezvous::new(1);
+    let (notice, receiver) = mpsc::channel();
+    let destroyed = Arc::new(AtomicBool::new(false));
+    assert!(retained
+        .attach(Native {
+            pause: rendezvous.clone(),
+            notice,
+            destroyed: Arc::clone(&destroyed),
+        })
+        .is_ok());
+    let mut retired = Box::pin(retained.retire());
+    let (_, ticket) = ready(&receiver);
+    PollProbe::default().pending(retired.as_mut());
+    drop(retired);
+    assert!(!destroyed.load(Ordering::SeqCst));
+    assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
+    assert!(owner.snapshot().unwrap().retained_bytes >= 512);
+    owner.close();
+    rendezvous.release(ticket).unwrap();
+    let report = finish(&owner);
+    assert!(report.clean);
+    assert!(report.snapshot.physically_retired());
+    assert!(destroyed.load(Ordering::SeqCst));
 }
 
 #[test]

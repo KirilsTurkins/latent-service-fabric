@@ -26,6 +26,18 @@ pub(crate) fn info(line: &[u8]) -> Result<usize> {
     }
     Ok(info.max_payload)
 }
+
+pub(crate) fn server_version(line: &[u8]) -> Option<String> {
+    #[derive(Deserialize)]
+    struct Version<'a> {
+        #[serde(borrow)]
+        version: &'a str,
+    }
+    let bytes = line.strip_prefix(b"INFO ")?;
+    guard(bytes).ok()?;
+    let version: Version<'_> = serde_json::from_slice(bytes).ok()?;
+    crate::config::text(version.version, 64).then(|| version.version.to_owned())
+}
 /// Reject deep containers before serde visits ignored extension fields. Borrowed
 /// strings and fixed structures keep server-selected allocations finite.
 pub(crate) fn guard(bytes: &[u8]) -> Result<()> {

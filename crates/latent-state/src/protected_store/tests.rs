@@ -15,6 +15,7 @@ use crate::embedded::{Family, RowKey, RowMutation};
 
 mod lifecycle;
 mod recovery;
+mod reserved;
 mod validation;
 
 fn wait<T>(future: impl Future<Output = T>) -> T {
