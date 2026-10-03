@@ -16,6 +16,7 @@ mod publication_access;
 mod publication_preparation;
 mod retained_package;
 mod root_durability;
+mod selected_transaction_asset;
 mod shared_content;
 pub use capacity::PublicationCapacitySnapshot;
 pub use shared_content::{PublicationContentReclamation, PublicationStorageSnapshot};
@@ -462,6 +463,16 @@ impl DirectoryArtifactRepository {
         retention: Retention,
         limits: ArtifactPreparationReadLimits,
     ) -> Result<VerifiedEntry, PlatformError> {
+        self.load_complete_entry_with_metadata_budget(path, retention, limits, None)
+    }
+
+    fn load_complete_entry_with_metadata_budget(
+        &self,
+        path: &Path,
+        retention: Retention,
+        limits: ArtifactPreparationReadLimits,
+        metadata_budget: Option<usize>,
+    ) -> Result<VerifiedEntry, PlatformError> {
         let completion = CompletionRecord::read(path)?;
         let admission = match (self.admission.as_ref(), completion.admission_digest()) {
             (Some(config), Some(digest)) => Some(admission_storage::StoredAdmission::read(
@@ -479,8 +490,14 @@ impl DirectoryArtifactRepository {
             "catalog metadata",
         )?;
         completion.verify_metadata(&metadata_bytes)?;
-        let (descriptor, contracts) =
-            decode_metadata(&metadata_bytes, limits.maximum_metadata_document_bytes)?;
+        let (descriptor, contracts) = match metadata_budget {
+            Some(budget) => metadata_codec::decode_control_metadata(
+                &metadata_bytes,
+                limits.maximum_metadata_document_bytes,
+                budget,
+            )?,
+            None => decode_metadata(&metadata_bytes, limits.maximum_metadata_document_bytes)?,
+        };
         drop(metadata_bytes);
         self.validate_descriptor_bounds(&descriptor)?;
         completion.verify_component_association(&descriptor)?;
@@ -495,6 +512,13 @@ impl DirectoryArtifactRepository {
             "capsule manifest",
         )?;
         completion.verify_manifest(&manifest_bytes)?;
+        if let Some(budget) = metadata_budget {
+            drop(contract_metadata::parse_control_document(
+                &manifest_bytes,
+                limits.maximum_manifest_document_bytes,
+                budget,
+            )?);
+        }
         let manifest = self
             .codec
             .decode_capsule(&manifest_bytes)

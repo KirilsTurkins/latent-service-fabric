@@ -63,15 +63,33 @@ impl Fixture {
     pub fn transactional() -> Self {
         Self::configured("builder-a", true, None, true)
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
-    )]
+    pub fn transactional_with_companion(bytes: Vec<u8>, large_asset: bool) -> Self {
+        Self::configured_companion("builder-a", true, None, true, Some((bytes, large_asset)))
+    }
     fn configured(
         builder_id: &str,
         with_inventory: bool,
         requirements: Option<Value>,
         transactional: bool,
+    ) -> Self {
+        Self::configured_companion(
+            builder_id,
+            with_inventory,
+            requirements,
+            transactional,
+            None,
+        )
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
+    )]
+    fn configured_companion(
+        builder_id: &str,
+        with_inventory: bool,
+        requirements: Option<Value>,
+        transactional: bool,
+        companion: Option<(Vec<u8>, bool)>,
     ) -> Self {
         let mut input = if transactional {
             packaging::transactional_capsule()
@@ -87,6 +105,22 @@ impl Fixture {
                         .insert(key.clone(), value.clone());
                 }
             });
+        }
+        if let Some((bytes, large_asset)) = companion {
+            input.layers.push(packaging::layer(
+                "transaction-binding.json",
+                latent_artifacts::package::LayerRole::Asset,
+                "application/vnd.latent.transaction-binding.v1+json",
+                bytes,
+            ));
+            if large_asset {
+                input.layers.push(packaging::layer(
+                    "payload.bin",
+                    latent_artifacts::package::LayerRole::Asset,
+                    "application/octet-stream",
+                    vec![0x5a; 3 * 1024 * 1024],
+                ));
+            }
         }
         let inventory = sbom::inventory(&input);
         let limits = PackagingLimits {

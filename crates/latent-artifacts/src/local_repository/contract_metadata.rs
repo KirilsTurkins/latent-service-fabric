@@ -75,6 +75,25 @@ pub fn decode_contract_metadata(
     Ok(contracts)
 }
 
+/// The selected control reader uses the same allocation-accounted JSON visitor
+/// before consuming a catalog DTO. This grants no schema or signing authority.
+pub(in crate::local_repository) fn parse_control_document(
+    bytes: &[u8],
+    maximum_document_bytes: usize,
+    maximum_retained_bytes: usize,
+) -> Result<serde_json::Value, PlatformError> {
+    let limits = ContractMetadataLimits {
+        max_document_bytes: maximum_document_bytes,
+        max_retained_bytes: maximum_retained_bytes,
+        ..ContractMetadataLimits::default()
+    };
+    validate_limits(limits)?;
+    if bytes.len() > maximum_document_bytes {
+        return Err(exhausted("control-document-byte-limit"));
+    }
+    bounded::parse(bytes, limits)
+}
+
 /// Encodes the same versioned schema. A bounded preflight precedes storage DTO cloning;
 /// the writer rejects growth before allocating beyond the document limit.
 pub fn encode_contract_metadata(
