@@ -229,15 +229,44 @@ impl DirectoryArtifactRepository {
         component: &ReleaseDigest,
         publication: Option<&PublicationId>,
     ) -> Result<HistoricalExecutionSnapshot, PlatformError> {
+        self.selected_historical_snapshot_inner(component, publication, false)
+    }
+
+    pub(crate) fn selected_control_historical_snapshot(
+        &self,
+        component: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+    ) -> Result<HistoricalExecutionSnapshot, PlatformError> {
+        self.selected_historical_snapshot_inner(component, publication, true)
+    }
+
+    fn selected_historical_snapshot_inner(
+        &self,
+        component: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+        control: bool,
+    ) -> Result<HistoricalExecutionSnapshot, PlatformError> {
         let reference = self.selected_publication(component, publication)?;
         add(&self.verification_statistics.metadata_fetch_attempts, 1);
         if self.is_web_publication(&reference)? {
-            return self.web_historical_execution(&reference);
+            return self.web_historical_execution(&reference, control);
         }
         let verified =
             self.load_complete_entry(&self.publication_path(&reference.id), Retention::Metadata)?;
         self.verify_publication_index(&reference, &verified)?;
         verified.metadata.verify_requested(component)?;
+        #[cfg(test)]
+        super::integrity::faults::after_metadata_scan(&reference);
+        // Structural verification can exceed the sampler's finite lease, but
+        // creates no positive grant. Only the explicit control preparation
+        // renews the same repository authority now, outside every catalog and
+        // policy fence. The first eligibility read still checks current policy,
+        // lifecycle, tenant and expiry; no scan or accepted mutation is replayed.
+        if control {
+            if let Some(admission) = &self.admission {
+                admission.authority.renew_control_lease()?;
+            }
+        }
         HistoricalExecutionSnapshot::directory(
             verified.metadata,
             reference.clone(),
