@@ -608,7 +608,7 @@
         "id": "integration_lanes",
         "if": "matrix.lane == 'provider' || ((matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular') && needs.profile.outputs.renderer == 'true')",
         "name": "Run bounded renderer and provider integration lanes",
-        "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py tools/build_s3_fixture.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --lane \"$CI_NATIVE_LANE\" --output \"$RUNNER_TEMP/ci-lanes\"\n",
+        "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/run_nats_deferred_tests.py tools/nats_deferred_support.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py tools/build_s3_fixture.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --lane \"$CI_NATIVE_LANE\" --output \"$RUNNER_TEMP/ci-lanes\"\n",
         "timeout-minutes": 70
       },
       {
@@ -815,7 +815,7 @@
   },
   "jobId": "rust",
   "kind": "job",
-  "reviewReason": "Preserve complete workspace tests and every metadata/security qualification command, separating qualification onto a required fresh-inventory lane. Preserve both website builds and all five browser suites while using the digest-pinned official matching Noble image for preinstalled system libraries and fonts; exact project browser installation remains mandatory.",
+  "reviewReason": "Preserve complete workspace tests, every fixed Rust matrix lane and metadata/security qualification command, separating qualification onto a required fresh-inventory lane. Preserve delegated real deferred JetStream owners, current-job inventories, complete case parity and protected results. Preserve both website builds and all five browser suites with the digest-pinned official matching Noble image; exact project browser installation remains mandatory.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
