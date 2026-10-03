@@ -56,6 +56,10 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\n"
       },
       {
+        "name": "Qualify proposed transaction shapes with the maintained async C compiler",
+        "run": "python3 tools/qualify_transaction_contracts.py --language c --output \"$RUNNER_TEMP/transaction-contract-c\""
+      },
+      {
         "env": {
           "LSF_GUEST_CAPSULES": "${{ runner.temp }}/c-guest-capsules"
         },
@@ -81,7 +85,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "c-guest-ownership-${{ github.run_id }}",
-          "path": "${{ runner.temp }}/c-guest-*.log\n${{ runner.temp }}/c-guest-capsules/BUILD-COMPLETE.json\n${{ runner.temp }}/c-guest-capsules/c-*/*.json\n${{ runner.temp }}/c-capsule-authoring/*.json\n${{ runner.temp }}/c-capsule-authoring/logs/**\n${{ runner.temp }}/c-capsule-authoring/builds/**\n${{ runner.temp }}/c-capsule-authoring/node/**\n${{ runner.temp }}/c-capsule-authoring/releases/**\n${{ runner.temp }}/c-capsule-authoring/guide/guide.json\n${{ runner.temp }}/c-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/c-capsule-authoring/guide/logs/**\n${{ runner.temp }}/c-capsule-authoring/guide/projects/results/**\n${{ runner.temp }}/c-application-library/**\n${{ runner.temp }}/c-dependency-controls/**\n",
+          "path": "${{ runner.temp }}/transaction-contract-c/report.json\n${{ runner.temp }}/transaction-contract-c/source.tar.gz\n${{ runner.temp }}/transaction-contract-c/component.wit\n${{ runner.temp }}/transaction-contract-c/preparation.json\n${{ runner.temp }}/transaction-contract-c/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-c/logs/**\n${{ runner.temp }}/transaction-contract-c/compiler/*.log\n${{ runner.temp }}/transaction-contract-c/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-c/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-c/compiled/component.wit\n${{ runner.temp }}/transaction-contract-c/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-c/compiled/generated/**\n${{ runner.temp }}/transaction-contract-c/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-c/bindings/**\n${{ runner.temp }}/transaction-contract-c/component.wasm\n${{ runner.temp }}/c-guest-*.log\n${{ runner.temp }}/c-guest-capsules/BUILD-COMPLETE.json\n${{ runner.temp }}/c-guest-capsules/c-*/*.json\n${{ runner.temp }}/c-capsule-authoring/*.json\n${{ runner.temp }}/c-capsule-authoring/logs/**\n${{ runner.temp }}/c-capsule-authoring/builds/**\n${{ runner.temp }}/c-capsule-authoring/node/**\n${{ runner.temp }}/c-capsule-authoring/releases/**\n${{ runner.temp }}/c-capsule-authoring/guide/guide.json\n${{ runner.temp }}/c-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/c-capsule-authoring/guide/logs/**\n${{ runner.temp }}/c-capsule-authoring/guide/projects/results/**\n${{ runner.temp }}/c-application-library/**\n${{ runner.temp }}/c-dependency-controls/**\n",
           "retention-days": 7
         }
       }
@@ -90,7 +94,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Preserve historical C gates and run actual archive/generated-header denials plus generator cleanup controls with retained failure artifacts CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Preserve both C runtime parents exact compiler/isolation controls and artifact path union, including actual dependency-control failures and Phase4 transaction receipts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

@@ -117,8 +117,8 @@ Use `latent_core::test_support::{TestClock, DeterministicIds}` and
 The standard-library-only helpers and their 21 unit tests live together under
 `latent-core/src/test_support/`. The feature is opt-in. Tokio and tempfile are
 **dev-dependencies only** of core, used to run the relocated tests; core has no
-production dependencies and no back edge into a workspace crate. No new crate,
-production clock hook or scheduling semantics are introduced.
+production dependencies and no back edge into a workspace crate. Production
+clock hooks and scheduling semantics remain unchanged.
 
 `latent-testkit` re-exports those exact modules and types, including its existing
 root-level exports. Existing harness users and the executable examples retain
@@ -127,6 +127,15 @@ activation/executor/node/telemetry harness dependencies, but **feature gating is
 not an exception to the workspace acyclicity rule**. Upstream crates must not add
 a testkit dependency, even with `default-features = false`.
 
+Storage tests requiring an actual child or Linux resource observation depend on
+the neutral [latent-test-process crate](../../crates/latent-test-process/Cargo.toml).
+It owns the bounded `OwnedProcess` pipe readers, watchdog, explicit termination
+and reap, plus identity-bound current/child probes. It has only external Tokio
+and serde dependencies and no edge to a node, runtime harness, or provider. The
+testkit `process` and `resources` modules re-export these same types. The
+process/probe regression cases run in the new crate rather than disappearing
+from the suite inventory; API type identity is checked separately in testkit.
+
 ```sh
 python3 tools/validate_foundation.py
 python3 tools/check_testkit_dependencies.py
@@ -134,6 +143,7 @@ python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testki
 cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=1
 cargo test -p latent-core --features test-support --lib --locked test_support:: -- --test-threads=4
 cargo test -p latent-admission -p latent-scheduler --lib --locked
+cargo test -p latent-test-process --all-targets --locked
 cargo test -p latent-testkit --no-default-features --lib --test test_support_compatibility --locked
 cargo test -p latent-testkit --lib --test test_support_compatibility --locked
 ```
@@ -142,7 +152,8 @@ The guard first invokes the existing foundation validator over **all** workspace
 manifest edges, including optional, development, build and target-specific edges.
 Only then does it inspect independently selected Cargo graphs, including their
 test dependencies. The Python regressions reconstruct the originally missed
-admission/testkit/node and scheduler/testkit/node cycles and require failure
+admission/testkit/node, scheduler/testkit/node, and
+capability/state/testkit/node cycles and require failure
 before Cargo is invoked. They also cover aliases, optional/target/build edges,
 missing feature selection, empty graphs and heavyweight dependencies. CI runs
 these regressions and the guard before the expensive workspace build; it does
