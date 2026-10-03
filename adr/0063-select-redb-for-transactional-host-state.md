@@ -1,4 +1,4 @@
-# ADR-0061: Select redb for transactional host state
+# ADR-0063: Select redb for transactional host state
 
 - Status: Accepted for the bounded first-engine profile
 - Date: 2026-09-30

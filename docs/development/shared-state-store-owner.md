@@ -1,7 +1,7 @@
 # Shared state store ownership
 
 `latent_state::protected_store::ProtectedStoreOwner` owns one node database on
-the [selected redb profile](../../adr/0061-select-redb-for-transactional-host-state.md).
+the [selected redb profile](../../adr/0063-select-redb-for-transactional-host-state.md).
 It runs protected opening, engine verification, bounded logical-record validation,
 ordinary storage jobs, snapshot retirement, the final flush and engine destruction
 on the same fixed workers. A future poll does no engine or filesystem I/O.
@@ -192,3 +192,12 @@ The shared owner is implemented here; standalone activation readiness, complete
 command envelopes, retention/restore and six-language runtime conformance remain
 their Phase 4 integration tickets. This document makes no packaged-node or
 power-loss qualification claim.
+
+The current-development CI follow-up preserves the SDK dependency and compiler
+cache gates. The real concurrent child-import acceptance case that failed in
+the remote Rust job passed on pinned Linux after the reviewed session
+currentness fix. All nine signed clock/session-currentness cases also passed,
+with no ignored or filtered cases. That fix waits only before admission on the
+original currentness fence; it preserves cancellation and the original lease
+and creates the guest once. Existing child-failure diagnostics remain bounded
+and are reported only if the unchanged acceptance assertion fails.

@@ -115,6 +115,7 @@ old implementation snapshots are not setup instructions.
 ### Library transport research
 
 - [ADR-0059: Defer general outbound streams; evaluate typed protocol boundaries first](0059-defer-general-outbound-streams.md)
+- [ADR-0061: Bound standard outbound streams beneath language runtimes](0061-bound-standard-outbound-streams.md)
 
 ### Library concurrency research
 
@@ -122,5 +123,5 @@ old implementation snapshots are not setup instructions.
 
 ### Transactional state and durable outcomes
 
-- [ADR-0061: Select redb for transactional host state](0061-select-redb-for-transactional-host-state.md)
+- [ADR-0063: Select redb for transactional host state](0063-select-redb-for-transactional-host-state.md)
 - [ADR-0062: Host-own serializable transactions and durable outcomes](0062-host-own-serializable-transactions-and-durable-outcomes.md)
