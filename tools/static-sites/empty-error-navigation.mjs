@@ -7,6 +7,15 @@ import assert from 'node:assert/strict';
 // origin bytes through its bounded HTTP client.
 export async function emptyErrorNavigation(page, target, expected) {
   assert.ok(expected === 403 || expected === 404);
+  return observeEmptyError(page, target, expected);
+}
+
+// This separate, fixed server-error vector cannot relax the 403/404 oracle.
+export async function emptyServerErrorNavigation(page, target) {
+  return observeEmptyError(page, target, 502);
+}
+
+async function observeEmptyError(page, target, expected) {
   const received = page.waitForResponse(response => response.url() === target, {timeout: 15000});
   let navigationFailed = false;
   const [response] = await Promise.all([received,
