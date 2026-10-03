@@ -129,6 +129,7 @@ enum Value {
     Unsigned,
     Known(&'static [&'static str]),
     PlatformCode,
+    GuestTrapKind,
 }
 
 fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
@@ -149,6 +150,7 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("reason", Known(ADMISSION_REASONS)),
         ],
         "scheduler.limit" => &[("reason", Known(SCHEDULER_REASONS))],
+        "activation.guest-trap-kind" => &[("kind", Value::GuestTrapKind)],
         "admission.currentness" => &[(
             "reason",
             Known(latent_core::error::ADMISSION_CURRENTNESS_REASONS),
@@ -254,6 +256,10 @@ pub(super) fn sanitize(details: &[ErrorDetail]) -> Vec<JsonValue> {
                     Value::Known(known) => known.contains(&value.as_str()).then(|| value.clone()),
                     Value::PlatformCode => PlatformErrorCode::from_wire_code(value)
                         .map(|code| code.wire_code().to_owned()),
+                    Value::GuestTrapKind => {
+                        latent_core::error::GuestTrapKind::from_wire_name(value)
+                            .map(|kind| kind.wire_name().to_owned())
+                    }
                 };
                 if let Some(value) = accepted {
                     output.insert((*key).to_owned(), json!(value));

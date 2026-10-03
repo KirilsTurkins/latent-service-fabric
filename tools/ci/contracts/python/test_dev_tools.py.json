@@ -18,6 +18,8 @@
     "CompilerDownloadBounds.test_small_default_transfer_accepts_only_pinned_bytes",
     "CompilerDownloadBounds.test_truncated_changed_and_empty_archives_still_fail_digest",
     "DotnetRuntimeDistribution.test_all_three_adapters_survive_actual_distribution_pack_and_private_unpack",
+    "DotnetRuntimeDistribution.test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack",
+    "DotnetRuntimeDistribution.test_missing_bcl_patch_tool_or_source_fails_before_publication",
     "DotnetRuntimeDistribution.test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published",
     "DotnetRuntimeDistribution.test_missing_selected_composer_fails_before_a_distribution_can_be_published",
     "FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly",
@@ -248,7 +250,31 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
-        "class:setup-sha256:4896ea589cdca67fa22d017668e54ffd146d9a0c80d8a63b1a1a5664afe17826"
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
+      ],
+      "skipSites": []
+    },
+    "DotnetRuntimeDistribution.test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
+      ],
+      "skipSites": []
+    },
+    "DotnetRuntimeDistribution.test_missing_bcl_patch_tool_or_source_fails_before_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
       ],
       "skipSites": []
     },
@@ -260,7 +286,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
-        "class:setup-sha256:4896ea589cdca67fa22d017668e54ffd146d9a0c80d8a63b1a1a5664afe17826"
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
       ],
       "skipSites": []
     },
@@ -272,7 +298,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
-        "class:setup-sha256:4896ea589cdca67fa22d017668e54ffd146d9a0c80d8a63b1a1a5664afe17826"
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
       ],
       "skipSites": []
     },
@@ -397,6 +423,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_tools.py",
-  "reviewReason": "Preserve all accepted guards and retain three adapters plus the selected component composer through private developer bundle unpack",
+  "reviewReason": "Reviewed fixed-development NuGet/composer/entropy union preserves HTTP BCL controls, private captured namespace, original case bodies and job guards; only the target composer/four-adapter receipt extension and local runtime module alias are retained.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -2,6 +2,50 @@ use super::*;
 use latent_core::ErrorDetail;
 
 #[test]
+fn combined_closed_diagnostics_keep_order_bounds_and_certainty() {
+    let error = PlatformError {
+        code: PlatformErrorCode::GuestTrap,
+        message: "private engine diagnostic".into(),
+        retryable: false,
+        details: [
+            (
+                "admission.currentness",
+                "reason",
+                "admission-authority-busy",
+            ),
+            ("activation.guest-host-failure", "code", "unavailable"),
+            ("activation.guest-trap-kind", "kind", "runtime-error"),
+        ]
+        .into_iter()
+        .map(|(kind, key, value)| ErrorDetail {
+            kind: kind.into(),
+            fields: [
+                (key.into(), value.into()),
+                ("credential".into(), "private-secret-token".into()),
+            ]
+            .into(),
+        })
+        .collect(),
+    };
+    let data = json!({"terminalState":"guest_trap"});
+    let outcome = crate::output::Outcome::platform_failure(data.clone(), &error);
+    assert_eq!(outcome.exit_code(), 4);
+    assert_eq!(
+        outcome.document("invoke"),
+        json!({"schemaVersion":"latent.cli.result.v1", "command":"invoke",
+            "category":"platform-failure", "data":data,
+            "error":{"code":"guest-trap", "message":"The platform reported a failure.",
+                "retryable":false, "details":[
+                    {"kind":"admission.currentness", "fields":{"reason":"admission-authority-busy"}},
+                    {"kind":"activation.guest-host-failure", "fields":{"code":"unavailable"}},
+                    {"kind":"activation.guest-trap-kind", "fields":{"kind":"runtime-error"}}
+                ]},
+            "requestDispatched":false, "outcomeKnown":true})
+    );
+    assert!(!outcome.document("invoke").to_string().contains("private"));
+}
+
+#[test]
 fn guest_host_failure_projects_only_closed_code_without_changing_known_outcome() {
     for code in [
         PlatformErrorCode::Unavailable,
@@ -482,4 +526,108 @@ fn malformed_commit_details_cannot_turn_an_ambiguous_failure_into_known_commit()
         assert!(!failure.outcome_known, "{key}={value}");
         assert_eq!(failure.error["details"], json!([]));
     }
+}
+
+#[test]
+fn fixed_trap_kinds_survive_public_invocation_without_private_text() {
+    for kind in latent_core::error::GuestTrapKind::ALL {
+        let error = PlatformError {
+            code: PlatformErrorCode::GuestTrap,
+            message: "private engine context secret-token".into(),
+            retryable: false,
+            details: vec![ErrorDetail {
+                kind: "activation.guest-trap-kind".into(),
+                fields: [
+                    ("kind".into(), kind.wire_name().into()),
+                    ("request".into(), "private request bytes".into()),
+                    ("credential".into(), "private secret-token".into()),
+                    ("backtrace".into(), "private engine frame".into()),
+                ]
+                .into(),
+            }],
+        };
+        let data = json!({"terminalState":"guest_trap", "consumption":{
+            "cpuFuel":"17", "peakMemoryBytes":"23", "wallTimeMicros":"29"}});
+        let outcome = crate::output::Outcome::platform_failure(data.clone(), &error);
+        assert_eq!(outcome.exit_code(), 4);
+        assert_eq!(
+            outcome.document("invoke"),
+            json!({"schemaVersion":"latent.cli.result.v1", "command":"invoke",
+                "category":"platform-failure", "data":data,
+                "error":{"code":"guest-trap", "message":"The platform reported a failure.",
+                    "retryable":false, "details":[{"kind":"activation.guest-trap-kind",
+                        "fields":{"kind":kind.wire_name()}}]},
+                "requestDispatched":false, "outcomeKnown":true})
+        );
+        assert!(!outcome.document("invoke").to_string().contains("private"));
+    }
+}
+
+#[test]
+fn unknown_or_unbounded_trap_kinds_are_dropped_by_public_projection() {
+    for value in [
+        "future-trap".to_owned(),
+        "runtime-error ".to_owned(),
+        "unreachable-code secret-token".to_owned(),
+        "unreachable-code\n".to_owned(),
+        "private-secret-token".repeat(128),
+    ] {
+        let error = PlatformError {
+            code: PlatformErrorCode::GuestTrap,
+            message: "private engine diagnostic".into(),
+            retryable: false,
+            details: vec![ErrorDetail {
+                kind: "activation.guest-trap-kind".into(),
+                fields: [("kind".into(), value)].into(),
+            }],
+        };
+        let public = platform_value(&error);
+        assert_eq!(public["details"], json!([]));
+        assert_eq!(public["code"], "guest-trap");
+        assert_eq!(public["retryable"], false);
+        assert!(!public.to_string().contains("private"));
+        assert!(!public.to_string().contains("secret-token"));
+    }
+}
+
+#[test]
+fn trap_kind_cannot_expand_transport_certainty_or_detail_bounds() {
+    let detail = proto::ErrorDetail {
+        kind: "activation.guest-trap-kind".into(),
+        fields: [("kind".into(), "unreachable-code".into())].into(),
+    };
+    let error = proto::PlatformError {
+        code: "guest-trap".into(),
+        message: "private engine diagnostic".into(),
+        retryable: false,
+        detail_items: vec![detail],
+    };
+    let status = Status::with_details(Code::Internal, "private", error.encode_to_vec().into());
+    let failure = Failure::from_status(&status);
+    assert_eq!(failure.category, Category::PlatformError);
+    assert!(!failure.outcome_known);
+    assert!(failure.request_dispatched);
+    assert_eq!(failure.error["code"], "guest-trap");
+    assert_eq!(failure.error["retryable"], false);
+    assert_eq!(failure.error["details"].as_array().unwrap().len(), 1);
+    let public = platform_value(&PlatformError {
+        code: PlatformErrorCode::GuestTrap,
+        message: "private engine diagnostic".into(),
+        retryable: false,
+        details: vec![
+            ErrorDetail {
+                kind: "activation.guest-trap-kind".into(),
+                fields: [("kind".into(), "unreachable-code".into())].into(),
+            };
+            17
+        ],
+    });
+    assert_eq!(public["details"].as_array().unwrap().len(), 16);
+    for detail in public["details"].as_array().unwrap() {
+        assert_eq!(
+            detail,
+            &json!({"kind":"activation.guest-trap-kind", "fields":{"kind":"unreachable-code"}})
+        );
+    }
+    assert!(!failure.error.to_string().contains("private"));
 }

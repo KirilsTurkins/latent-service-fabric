@@ -36,6 +36,8 @@
           "tools/guest_runtime_grants.py",
           "tools/wait_capsule_audit_idle.py",
           "tools/tests/test_dotnet_capsule_authoring.py",
+          "tools/tests/test_dotnet_http_errors.py",
+          "tools/probe_dotnet_http_errors.py",
           "tools/tests/test_dotnet_application_dependencies.py",
           "docs/component-development/dotnet-authoring.md",
           "docs/component-development/dotnet-dependencies.md",
@@ -59,7 +61,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
+  "reviewReason": "Reviewed fixed-development NuGet/composer/entropy union preserves HTTP BCL controls, private captured namespace, original case bodies and job guards; only the target composer/four-adapter receipt extension and local runtime module alias are retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
