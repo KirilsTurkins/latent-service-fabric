@@ -165,6 +165,14 @@ different temporary directories; child processes and registry cleanup have
 finite owners and deadlines. CI runs this after the existing Rust tests and
 reuses their build outputs.
 
+The tiny-deadline check submits its apply once and inspects that exact operation.
+If the cancelled apply still owns the control dispatch slot, only an untyped
+`rpc-failed` / `resource-exhausted` inspection read can be repeated: at most 64
+reads, 25 ms apart, within five seconds and the original workflow deadline.
+Typed platform failures and other transport failures stop the check. The receipt
+retains the original apply certainty and each rejected read. A successful lookup
+may return `Unknown`; that remains an uncertain mutation outcome.
+
 Its explicit ignored `export_operator_workflow_fixture` policy test creates
 fresh publisher and independent builder keys in memory, emits only signed test
 evidence and public trust configuration, and requires a new directory selected

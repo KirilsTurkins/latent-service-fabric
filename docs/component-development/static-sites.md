@@ -94,7 +94,7 @@ For font-based PrimeIcons applications, prepare the pinned WOFF2-only stylesheet
 **before** the Angular or documentation build:
 
 ```sh
-npm install --save-exact primeicons@8.0.1
+npm install --save-exact primeicons@8.0.2
 python3 tools/static_fonts.py --primeicons node_modules/primeicons --output src/primeicons-woff2
 ```
 
@@ -108,7 +108,7 @@ its normal build. Keep the resulting CSS, font and license in the reviewed
 public inventory. This recipe targets the font-based package; SVG component
 icon libraries do not need font preparation.
 
-PrimeIcons 8.0.1 ships under the [PrimeUI licensing terms](https://primeui.dev/licenses/community),
+PrimeIcons 8.0.2 ships under the [PrimeUI licensing terms](https://primeui.dev/licenses/community),
 replacing the MIT notice shipped with 7.0.0. The helper copies the package's
 `LICENSE.md` verbatim to the generated `LICENSE.txt`; that notice remains part
 of the published asset inventory.
