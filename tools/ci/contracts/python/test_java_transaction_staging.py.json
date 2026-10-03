@@ -18,6 +18,10 @@
     "ClockOracle.test_pause_consumes_original_deadline_without_renewing_or_certifying_continuity",
     "EvidenceResumeOracle.test_retention_preserves_exclusive_bytes_cases_and_remaining_capacity",
     "EvidenceResumeOracle.test_unknown_file_changed_bytes_boolean_size_and_duplicate_or_unknown_cases_refuse",
+    "NativeStoreOracle.test_changed_link_topology_with_identical_bytes_refuses_before_candidate_consumption",
+    "NativeStoreOracle.test_closed_retired_native_links_preserve_original_topology_and_deduplication",
+    "NativeStoreOracle.test_external_or_non_store_link_refuses_before_candidate_capture",
+    "NativeStoreOracle.test_native_links_require_digest_addressed_blob_and_closed_publication_paths",
     "RetainedPolicyProgramOracle.test_any_later_document_or_mutation_drift_refuses_before_first_apply",
     "RetainedPolicyProgramOracle.test_frozen_policy_bytes_ids_and_preconditions_survive_extra_read_calls",
     "RetainedPolicyProgramOracle.test_uncertain_native_apply_is_not_retried_and_no_later_mutation_runs"
@@ -239,6 +243,54 @@
       ],
       "skipSites": []
     },
+    "NativeStoreOracle.test_changed_link_topology_with_identical_bytes_refuses_before_candidate_consumption": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:6e8a4b1d77b3b2b7bd3ffae1a4edc453b0da8217a3152fa8b349ecd5125f1b55"
+      ],
+      "skipSites": []
+    },
+    "NativeStoreOracle.test_closed_retired_native_links_preserve_original_topology_and_deduplication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:6e8a4b1d77b3b2b7bd3ffae1a4edc453b0da8217a3152fa8b349ecd5125f1b55"
+      ],
+      "skipSites": []
+    },
+    "NativeStoreOracle.test_external_or_non_store_link_refuses_before_candidate_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:6e8a4b1d77b3b2b7bd3ffae1a4edc453b0da8217a3152fa8b349ecd5125f1b55"
+      ],
+      "skipSites": []
+    },
+    "NativeStoreOracle.test_native_links_require_digest_addressed_blob_and_closed_publication_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:6e8a4b1d77b3b2b7bd3ffae1a4edc453b0da8217a3152fa8b349ecd5125f1b55"
+      ],
+      "skipSites": []
+    },
     "RetainedPolicyProgramOracle.test_any_later_document_or_mutation_drift_refuses_before_first_apply": {
       "bases": [
         "unittest.TestCase"
@@ -278,6 +330,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_staging.py",
-  "reviewReason": "Add source-only stopped-candidate, nonrenewable clock, exact policy program, physical teardown, cumulative capacity and no-retry ordering cases; these do not qualify native authority or execution.",
+  "reviewReason": "Review four additional native CAS containment and topology cases with every original fixture and guard preserved",
   "schemaVersion": "latent.ci.contracts.v1"
 }

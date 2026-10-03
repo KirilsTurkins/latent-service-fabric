@@ -35,7 +35,8 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/lifecycle.py", "tools/java_transaction_qualification/http.py",
     "tools/java_transaction_qualification/campaign.py", "tools/java_transaction_qualification/provider.py",
     "tools/java_transaction_qualification/recovery.py", "tools/java_transaction_qualification/offline_campaign.py",
-    "tools/java_transaction_qualification/staging.py", "tools/java_transaction_qualification/diagnostic_inputs.py",
+    "tools/java_transaction_qualification/staging.py", "tools/java_transaction_qualification/native_store.py",
+    "tools/java_transaction_qualification/diagnostic_inputs.py",
     "tools/java_transaction_qualification/diagnostic_campaign.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",

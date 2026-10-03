@@ -14,7 +14,7 @@ import time
 
 from tools.rust_capsule_project import read_file
 
-from . import configuration as cfg
+from . import configuration as cfg, native_store
 from .evidence import encoded
 from .inputs import decode, digest, require
 
@@ -22,7 +22,7 @@ NAME = "authority-candidate.json"
 CLAIM = "authority-candidate-used.json"
 EXCLUDED = {NAME, "campaign-receipt.json"}
 FIELDS = {"schemaVersion", "root", "rootIdentity", "clock", "sources", "nativeTools", "collectors",
-          "originalInputs", "prepared", "recipient", "node", "cliCalls", "evidence", "files"}
+          "originalInputs", "prepared", "recipient", "node", "cliCalls", "evidence", "files", "nativeStore"}
 
 
 def integer(value, maximum, minimum=0):
@@ -72,6 +72,19 @@ def root_identity(root):
 
 
 def files(root):
+    """Ordinary candidate material must always be independent single-link files."""
+    return _files(root)
+
+
+def native_files(root, node_directory):
+    """Observe the stopped native store through its separate closed owner port."""
+    store = native_store.observe(root, node_directory)
+    observed = _files(root, store["files"] if store is not None else {})
+    require(native_store.observe(root, node_directory) == store, "original-native-store-topology-drift")
+    return {"files": observed, "nativeStore": store}
+
+
+def _files(root, store=None):
     """A bounded streaming identity census of the stopped original owners.
 
     These are observation limits, not native storage/profile configuration.
@@ -95,8 +108,12 @@ def files(root):
                 result[relative] = {"kind": "directory", "mode": stat.S_IMODE(before.st_mode)}
                 pending.append(path)
                 continue
-            require(stat.S_ISREG(before.st_mode) and before.st_nlink == 1,
+            retained = (store or {}).get(relative)
+            require(stat.S_ISREG(before.st_mode) and (before.st_nlink == 1 or retained is not None),
                     "candidate-single-link-regular-file-required")
+            if retained is not None:
+                require(native_store.identity(before) == tuple(retained["identity"]),
+                        "original-native-store-topology-drift")
             if relative in EXCLUDED:
                 continue
             require(before.st_size <= 268435456
@@ -189,6 +206,7 @@ def capture(root, original_clock, args, record, prepared, client, node, peer):
     require(all(observed[name] == 0 for name in ("requests", "puts", "gets", "acceptedRecords", "appliedRecords",
                 "retainedRecords", "duplicatePuts", "disconnectedAfterAcceptance")),
             "authority-staging-cannot-have-application-provider-requests")
+    census = native_files(root, node.directory)
     value = {"schemaVersion": "latent.java-transaction.authority-candidate.v1", "root": str(root),
         "rootIdentity": root_identity(root), "clock": original_clock,
         "sources": sources(args),
@@ -199,7 +217,7 @@ def capture(root, original_clock, args, record, prepared, client, node, peer):
             "port": peer.port, "session": 1, "shutdown": peer.shutdown},
         "node": {"directory": node.directory.relative_to(root).as_posix(),
                  "ordinal": node.ordinal, "shutdown": node.shutdown},
-        "cliCalls": client.calls, "evidence": client.evidence.summary(), "files": files(root)}
+        "cliCalls": client.calls, "evidence": client.evidence.summary(), **census}
     if "diagnostic" in value["sources"]:
         require(isinstance(record.get("diagnosticInput"), dict), "original-diagnostic-candidate-input-required")
         value["diagnosticInput"] = record["diagnosticInput"]
@@ -224,7 +242,6 @@ def retain(args, tools, collectors):
             "original-candidate-source-or-tool-drift")
     until = deadline(value["clock"], args.timeout)
     integer(value["cliCalls"], 255)
-    require(value["files"] == files(args.output), "original-candidate-retained-file-drift")
     node, peer = value["node"], value["recipient"]
     require(isinstance(node, dict) and set(node) == {"directory", "ordinal", "shutdown"}
             and type(node["ordinal"]) is int and node["ordinal"] == 1
@@ -244,7 +261,10 @@ def retain(args, tools, collectors):
     require(all(observed[name] == 0 for name in COUNTERS), "authority-staging-cannot-have-application-provider-requests")
     for field in ("directory", "tls", "credential"):
         path(args.output, peer[field])
-    path(args.output, node["directory"])
+    directory = path(args.output, node["directory"])
+    census = native_files(args.output, directory)
+    require(value["files"] == census["files"] and value["nativeStore"] == census["nativeStore"],
+            "original-candidate-retained-file-drift")
     prepared = value["prepared"]
     require(isinstance(prepared, dict) and set(prepared) == {"bootstrap", "full", "signed", "authority", "origin", "publications", "mutations",
                              "proposals", "catalog", "hosts"}, "closed-original-prepared-candidate")

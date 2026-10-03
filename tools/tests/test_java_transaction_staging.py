@@ -247,6 +247,76 @@ class CandidateOracle(unittest.TestCase):
                 staging.files(root)
 
 
+class NativeStoreOracle(unittest.TestCase):
+    def setUp(self):
+        self.fixture = CandidateOracle()
+        self.fixture.setUp()
+        self.addCleanup(self.fixture.doCleanups)
+        self.root, self.args = self.fixture.root, self.fixture.args
+
+    def _linked_native_content(self):
+        store = self.root / "node/data/releases"
+        (store / "blobs").mkdir(parents=True)
+        publication = store / "publications" / ("d" * 64)
+        publication.mkdir(parents=True)
+        content = b"immutable admitted native-store fixture"
+        blob = store / "blobs" / inputs.digest(content).removeprefix("sha256:")
+        blob.write_bytes(content)
+        alias = publication / "component.wasm"
+        alias.hardlink_to(blob)
+        return store, blob, alias, content
+
+    def test_closed_retired_native_links_preserve_original_topology_and_deduplication(self):
+        store, blob, alias, content = self._linked_native_content()
+        with self.assertRaises(ValueError):
+            staging.files(self.root)
+        self.fixture.capture()
+        retained, _ = self.fixture.retain()
+        topology = retained["nativeStore"]
+        self.assertEqual(topology["root"], "node/data/releases")
+        self.assertEqual((topology["fileCount"], topology["inodeCount"]), (2, 1))
+        self.assertEqual((topology["logicalPathBytes"], topology["distinctInodeBytes"]),
+                         (2 * len(content), len(content)))
+        self.assertEqual(blob.stat().st_ino, alias.stat().st_ino)
+        self.assertEqual(blob.stat().st_nlink, 2)
+        self.assertTrue(all(len(row["members"]) == 2 for row in topology["files"].values()))
+        self.assertEqual(blob.read_bytes(), content)
+
+    def test_external_or_non_store_link_refuses_before_candidate_capture(self):
+        store, blob, alias, content = self._linked_native_content()
+        with tempfile.TemporaryDirectory() as temporary:
+            for destination in (Path(temporary) / "external", self.root / "policy-alias.json"):
+                destination.hardlink_to(blob)
+                try:
+                    with self.subTest(destination=destination.name), self.assertRaisesRegex(ValueError, "fully-contained"):
+                        self.fixture.capture()
+                    self.assertFalse(self.args.resume_candidate.exists())
+                finally:
+                    destination.unlink()
+
+    def test_native_links_require_digest_addressed_blob_and_closed_publication_paths(self):
+        store, blob, alias, content = self._linked_native_content()
+        blob.write_bytes(content + b"changed")
+        with self.assertRaisesRegex(ValueError, "addressed-content"):
+            self.fixture.capture()
+        blob.write_bytes(content)
+        alias.rename(store / "unexpected-link")
+        with self.assertRaisesRegex(ValueError, "closed-content-links"):
+            self.fixture.capture()
+        self.assertFalse(self.args.resume_candidate.exists())
+
+    def test_changed_link_topology_with_identical_bytes_refuses_before_candidate_consumption(self):
+        store, blob, alias, content = self._linked_native_content()
+        self.fixture.capture()
+        original = self.args.resume_candidate.read_bytes()
+        alias.unlink()
+        alias.write_bytes(content)
+        with self.assertRaisesRegex(ValueError, "retained-file-drift"):
+            self.fixture.retain()
+        self.assertEqual(self.args.resume_candidate.read_bytes(), original)
+        self.assertFalse((self.root / staging.CLAIM).exists())
+
+
 class EvidenceResumeOracle(unittest.TestCase):
     def test_retention_preserves_exclusive_bytes_cases_and_remaining_capacity(self):
         with tempfile.TemporaryDirectory() as temporary:
