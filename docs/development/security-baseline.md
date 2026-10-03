@@ -246,19 +246,17 @@ are accepted. Expiry is exclusive at UTC midnight, with a maximum 30-day lifetim
 expired or future entries fail every invocation, including docs-only scope checks.
 An expired unused entry must still be removed or explicitly re-reviewed.
 
-The initial policy proposed one compatibility waiver: zizmor
-`self-repository` on the exact job-level local RustSec call, expiring **2026-10-03**.
-GitHub resolves this reusable workflow at the caller commit, unlike a mutable
-workspace-relative action step. #281 currently validates `./` references, not the
-new `$/` syntax recommended by zizmor 1.30.1. The parent reviewed that exact call
-in PR #363. Update the pin policy or re-review before expiry; adding an exception
-file alone is not approval. The same reviewed policy now includes 16 exact
-noncredential secret-rule occurrences: one labelled API-journal digest, one
-synthetic environment-variable name and fourteen historical preparation lookup
-identities. Their producer/ownership review and clean snapshot results are in the
-[evidence ledger](security-baseline-evidence.md). They expire on 2026-10-03 and
-cannot match a changed file, scanner location or rule. No dependency exception,
-general digest exemption or path allowlist exists.
+The initial `self-repository` compatibility exception expired on 2026-10-03.
+The coordinator now uses the supported `$/` reusable workflow reference. A fresh
+pinned zizmor scan found no workflow finding, so that obsolete exception was
+removed. The 16 exact noncredential secret-rule occurrences were individually
+re-reviewed on 2026-10-03: one labelled API-journal digest, one synthetic denied
+environment-variable name and fourteen original preparation lookup identities.
+The fresh pinned scanner results, private match comparisons and original producer
+review are recorded in the [evidence ledger](security-baseline-evidence.md).
+These re-reviewed entries expire exclusively on **2026-10-17** and retain their
+original full-content, location and rule fingerprints. All scanner canaries still
+apply. No dependency exception, general digest exemption or path allowlist exists.
 
 ## Settings and operator commands
 
