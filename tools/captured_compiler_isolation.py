@@ -83,7 +83,8 @@ class Isolation:
     def observe_distribution(root: Path):
         return distribution(root)
 
-    def __init__(self, workspace: Path, tools: dict[str, Path], distributions: dict[str, Path]):
+    def __init__(self, workspace: Path, tools: dict[str, Path], distributions: dict[str, Path], *,
+                 loader_directories: tuple[Path, ...] = ()):
         if sys.platform != "linux" or not (sandbox := shutil.which("bwrap")) or not (loader_probe := shutil.which("ldd")):
             raise DependencyError("captured-compiler-isolation-requires-linux-bubblewrap")
         self.workspace = regular_path(workspace).resolve(strict=True)
@@ -92,13 +93,24 @@ class Isolation:
         self.sandbox = regular_path(Path(sandbox)).resolve(strict=True)
         self.tools = {name: regular_path(path).resolve(strict=True) for name, path in tools.items()}
         self.distributions = {name: regular_path(path).resolve(strict=True) for name, path in distributions.items()}
+        if len(loader_directories) > 8:
+            raise DependencyError("compiler-loader-directory-limit")
+        self.loader_directories = tuple(regular_path(path).resolve(strict=True) for path in loader_directories)
+        if (len(set(self.loader_directories)) != len(self.loader_directories)
+                or any(not path.is_dir() or ":" in str(path)
+                       or not any(path.is_relative_to(root) for root in self.distributions.values())
+                       for path in self.loader_directories)):
+            raise DependencyError("compiler-loader-directory-outside-captured-distribution")
         self.before = {name: self.observe_distribution(root) for name, root in self.distributions.items()}
         self.tool_before = {name: file_identity(path, name) for name, path in self.tools.items()}
         self.sandbox_before = file_identity(self.sandbox, "build-sandbox")
         self.shared: dict[str, dict] = {}
         probe_identity = file_identity(Path(loader_probe), "loader-dependency-observer")
+        probe_environment = {"PATH": os.defpath, "LC_ALL": "C"}
+        if self.loader_directories:
+            probe_environment["LD_LIBRARY_PATH"] = ":".join(map(str, self.loader_directories))
         for tool in self.tools.values():
-            result = run_bounded_result([loader_probe, str(tool)], self.workspace, {"PATH": os.defpath, "LC_ALL": "C"}, 10, 16384)
+            result = run_bounded_result([loader_probe, str(tool)], self.workspace, probe_environment, 10, 16384)
             text = (result.stdout + result.stderr).decode("utf-8")
             if result.returncode and "not a dynamic executable" not in text and "statically linked" not in text:
                 raise DependencyError("compiler-runtime-library-observation-failed")
@@ -116,6 +128,14 @@ class Isolation:
             "loaderObserver": probe_identity, "hostRuntimeLibraries": self.shared,
             "network": "denied", "ambientHome": "absent", "credentials": "not-inherited",
             "boundary": "trusted-single-user-compiler-host-not-hardened-multitenant-vm"}
+        if self.loader_directories:
+            # Approval binds the selected owner and relative path, so a fresh
+            # owned build directory preserves the same compiler input identity.
+            selected = []
+            for path in self.loader_directories:
+                name, root = next((name, root) for name, root in self.distributions.items() if path.is_relative_to(root))
+                selected.append({"distribution": name, "path": path.relative_to(root).as_posix()})
+            self.receipt["loaderLibraryDirectories"] = selected
 
     def wrap(self, tool: Path, arguments: list[str], cwd: Path, environment: dict[str, str]) -> list[str]:
         if Path(tool).resolve(strict=True) not in self.tools.values():
@@ -137,6 +157,8 @@ class Isolation:
             command += ["--ro-bind", str(selected), str(selected)]
         for name in self.shared:
             command += ["--ro-bind", str(Path(name).resolve(strict=True)), name]
+        if self.loader_directories:
+            command += ["--setenv", "LD_LIBRARY_PATH", ":".join(map(str, self.loader_directories))]
         for key in ("LC_ALL", "LANG", "TZ", "ZIG_GLOBAL_CACHE_DIR", "ZIG_LOCAL_CACHE_DIR",
                     "CARGO_HOME", "CARGO_NET_OFFLINE", "CARGO_TARGET_DIR", "CARGO_INCREMENTAL", "CARGO_BUILD_JOBS",
                     "RUSTC", "RUSTDOC", "RUSTUP_AUTO_INSTALL", "RUSTUP_TOOLCHAIN",
