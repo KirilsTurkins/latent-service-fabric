@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "dropping_session_authority_wait_reclaims_original_owner_without_allocating_session",
+        "session_authority_wait_never_replaces_revoked_original_publication",
+        "session_authority_wait_observes_original_cancellation_and_deadline",
+        "session_authority_wait_opens_once_and_executes_each_original_import_once",
+        "session_authority_wait_preserves_expired_original_lease",
+        "timerless_session_authority_and_actual_session_capacity_remain_immediate"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.test.session-admission",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 6,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": ["linux-x86_64"],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/session_admission.rs",
+      "target": "session_admission",
+      "timeoutSeconds": 900
+    }
+  ]
+}
