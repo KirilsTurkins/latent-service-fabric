@@ -35,10 +35,6 @@ also unavailable. A compiler sandbox does not supply that guest boundary.
   recovery policy and the obsolete catalog/selector compatibility in ADR-0019/0027.
 - ADR-0041 governs documentation ownership, versions and publishing. A working
   website build does not complete human guide review or authorize a runtime release.
-- ADR-0062 supersedes the unsupported guest-owned transaction lifecycle in
-  ADR-0013 with host-owned serializable commands, durable rejection/recovery and
-  independent bounded queries. It preserves ADR-0025 stateless uncertainty;
-  executable model schedules do not establish physical storage durability.
 
 Dates, original rationale and historical measurements remain useful decision
 history. Current guides and reference pages must use the implemented contract;
@@ -123,6 +119,8 @@ old implementation snapshots are not setup instructions.
 ### Library concurrency research
 
 - [ADR-0060: Provide activation-scoped runtime compatibility for ordinary dependencies](0060-bound-invocation-scoped-concurrency.md)
+
+- [ADR-0061: Bound standard outbound streams](0061-bound-standard-outbound-streams.md)
 
 ### Transactional state and durable outcomes
 

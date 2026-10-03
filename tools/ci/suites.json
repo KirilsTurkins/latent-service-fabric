@@ -481,7 +481,6 @@
     },
     "echo-runtime": {
       "exact": false,
-      "executionOnly": true,
       "filter": "",
       "ignored": true,
       "names": [
@@ -494,11 +493,11 @@
       "runner": "ci_rust_artifacts",
       "suite": "latent-wasmtime.test.echo-backend",
       "testThreads": 1,
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "executionOnly": true
     },
     "metadata-working-set": {
       "exact": true,
-      "executionOnly": true,
       "filter": "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set",
       "ignored": true,
       "names": [
@@ -509,7 +508,8 @@
       "runner": "ci_rust_artifacts",
       "suite": "latent-control-store.lib.latent-control-store",
       "testThreads": 1,
-      "timeoutSeconds": 930
+      "timeoutSeconds": 930,
+      "executionOnly": true
     },
     "nats-events": {
       "exact": false,
@@ -863,6 +863,11 @@
         "local_repository::tests::admission::preflight_runs_once_without_locks_and_cannot_stage_on_rejection",
         "local_repository::tests::admission::publication_lease::capsule_publication_renews_after_preparation_and_reads_outside_policy_fence",
         "local_repository::tests::admission::publication_lease::capsule_publication_staging_cannot_revive_revocation_or_failed_renewal",
+        "local_repository::tests::admission::publication_lease::control_metadata_scan_cannot_revive_revocation_or_expired_policy",
+        "local_repository::tests::admission::publication_lease::control_metadata_scan_corrupt_bytes_cannot_renew_authority",
+        "local_repository::tests::admission::publication_lease::control_metadata_scan_failed_durable_renewal_has_no_positive_read_or_replay",
+        "local_repository::tests::admission::publication_lease::control_metadata_scan_renews_after_verified_bytes_once_with_original_scope",
+        "local_repository::tests::admission::publication_lease::ordinary_execution_and_historical_metadata_never_renew_an_expired_scan",
         "local_repository::tests::admission::read_wait::scheduling_hook_cannot_supply_success_and_legacy_fetch_remains_immediate",
         "local_repository::tests::admission::read_wait::sealed_worker_fetch_cannot_upgrade_original_grant_during_post_read_wait",
         "local_repository::tests::admission::read_wait::sealed_worker_fetch_never_schedules_non_busy_or_malformed_errors",
@@ -1007,6 +1012,7 @@
         "local_repository::tests::web::projection::web_projection_rejects_foreign_catalog_even_with_the_same_admission_authority",
         "local_repository::tests::web::staging::control_commit_renews_after_preparation_and_staging_without_reviving_denied_grants",
         "local_repository::tests::web::staging::staged_web_payload_allows_lease_renewal_but_expiry_and_revocation_cannot_commit",
+        "local_repository::tests::web::staging::web_control_metadata_scan_renews_after_bytes_without_reviving_or_replaying",
         "local_repository::tests::web::web_capacity_rejection_never_stages_payload_or_consumes_an_operation",
         "local_repository::tests::web::web_durability_faults_poison_held_tokens_and_restart_distinguishes_commit_from_no_commit",
         "local_repository::tests::web::web_empty_initialization_interruption_can_resume_without_treating_temporary_bytes_as_authority",
@@ -1082,7 +1088,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 260,
+      "minimumCases": 266,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -1355,6 +1361,8 @@
         "broker::pools::tests::control_admission::poisoned_queue_registry_is_not_treated_as_transient_contention",
         "broker::pools::tests::control_admission::queued_request_waits_for_registry_contention_without_losing_ownership",
         "broker::pools::tests::control_admission::registry_contention_does_not_extend_the_original_queue_deadline",
+        "broker::pools::tests::deferred::deferred_authority_cannot_select_another_provider_or_refund_live_rotated_requests",
+        "broker::pools::tests::deferred::deferred_socket_preserves_shared_capacity_after_request_drop_and_finite_operations",
         "broker::pools::tests::fixed_limits_reserve_before_dial_and_lowering_preserves_live_owners",
         "broker::pools::tests::idle_socket_is_shared_while_activation_ownership_is_reclaimed",
         "broker::pools::tests::ingress::cloned_requests_share_finite_operations_and_rotation_fences_network_work",
@@ -1467,7 +1475,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 151,
+      "minimumCases": 153,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -2802,6 +2810,8 @@
       "boundary": "product",
       "expectedCases": [
         "config::tests::retained_endpoint_capacity_cannot_bypass_the_configuration_bound",
+        "deferred::qualification::tests::qualified_stream_rejects_recreation_eviction_retention_transform_and_window_changes",
+        "deferred::qualification::tests::stream_qualification_decoding_is_finite_and_requires_pinned_identity",
         "protocol::tests::frames_reject_foreign_inboxes_unbounded_lengths_and_protocol_extensions",
         "protocol::tests::receipts_require_exact_stream_positive_sequence_and_unambiguous_shapes",
         "triggers::tests::acknowledgements_cannot_address_foreign_consumers_or_arbitrary_subjects",
@@ -2813,7 +2823,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-nats/Cargo.toml",
-      "minimumCases": 6,
+      "minimumCases": 8,
       "mode": "libtest",
       "package": "latent-nats",
       "platforms": [
@@ -3618,6 +3628,30 @@
       "resourceClass": "runtime-bounded",
       "source": "examples/capsule_contracts.rs",
       "target": "capsule_contracts",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-packaging.example.component-work",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/component_work.rs",
+      "target": "component_work",
       "timeoutSeconds": 900
     },
     {
@@ -5400,34 +5434,14 @@
         "harness::tests::contracts::work_limit_cannot_masquerade_as_an_expected_resource_exhaustion",
         "harness::tests::probes::idle_scaling_requires_explicit_measurement_and_exact_release_count",
         "harness::tests::probes::inventory_is_delegated_without_reconstructing_or_hiding_source_failures",
-        "harness::tests::probes::telemetry_returns_actual_metrics_and_rejects_large_source_maxima_even_when_empty",
-        "process::owned::tests::aborting_a_reader_drops_the_pipe_without_waiting_for_inherited_writers",
-        "process::owned::tests::child_records_and_both_pipes_are_complete_after_wait",
-        "process::owned::tests::dropping_a_pending_wait_keeps_the_child_under_tokio_cleanup",
-        "process::owned::tests::invalid_limits_fail_before_attempting_to_spawn_a_program",
-        "process::owned::tests::lifetime_timeout_reaps_the_child_and_explicit_termination_retains_status",
-        "process::owned::tests::overflowing_either_pipe_is_an_error_and_the_live_child_is_reaped",
-        "process::tests::builds_a_repeatable_command",
-        "resources::child::tests::captures_the_live_child_listener_and_rejects_foreign_or_exited_owners",
-        "resources::child::tests::observed_u64_values_and_unavailable_fields_roundtrip_losslessly",
-        "resources::child::tests::resource_child_fixture",
-        "resources::current::tests::own_sampling_has_stable_identity_and_does_not_count_its_directory_handle",
-        "resources::linux::tests::descendants_created_by_other_tasks_are_included_and_bounded",
-        "resources::linux::tests::disappearing_fd_and_missing_or_oversized_proc_files_are_unavailable",
-        "resources::linux::tests::reused_foreign_pid_is_not_reported_as_an_owned_descendant",
-        "resources::parse::tests::descendant_lists_have_an_independent_count_bound",
-        "resources::parse::tests::process_name_parentheses_and_spaces_cannot_shift_start_time",
-        "resources::parse::tests::rss_units_absence_and_overflow_are_not_zero_measurements",
-        "resources::parse::tests::tcp_listener_counts_intersect_owned_inodes_instead_of_namespace_totals",
-        "resources::tests::captures_the_current_process_identity",
-        "resources::tests::parses_linux_status_values"
+        "harness::tests::probes::telemetry_returns_actual_metrics_and_rejects_large_source_maxima_even_when_empty"
       ],
       "expectedIgnored": [],
       "id": "latent-testkit.lib.latent-testkit",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-testkit/Cargo.toml",
-      "minimumCases": 40,
+      "minimumCases": 20,
       "mode": "libtest",
       "package": "latent-testkit",
       "platforms": [
@@ -5517,6 +5531,30 @@
       "resourceClass": "runtime-bounded",
       "source": "examples/containment_capsule/component.rs",
       "target": "containment-capsule",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.dotnet-closed-runtime",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/dotnet_closed_runtime.rs",
+      "target": "dotnet-closed-runtime",
       "timeoutSeconds": 900
     },
     {
@@ -5833,6 +5871,30 @@
     },
     {
       "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.transaction-contract",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "../../sdk/transaction-contract/rust/component.rs",
+      "target": "transaction-contract",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
       "expectedCases": [
         "tests::greets_trimmed_names_and_explains_invalid_input"
       ],
@@ -6044,6 +6106,30 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
+      "id": "latent-wasmtime.bin.latent-aot-compiler",
+      "ignoredLeaves": [],
+      "kind": "bin",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/bin/latent-aot-compiler.rs",
+      "target": "latent-aot-compiler",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
       "id": "latent-wasmtime.example.go-runtime-probe",
       "ignoredLeaves": [],
       "kind": "example",
@@ -6068,9 +6154,9 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
-      "id": "latent-wasmtime.bin.latent-aot-compiler",
+      "id": "latent-wasmtime.example.java-runtime-probe",
       "ignoredLeaves": [],
-      "kind": "bin",
+      "kind": "example",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
       "minimumCases": 0,
       "mode": "compile-only",
@@ -6084,8 +6170,32 @@
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
-      "source": "src/bin/latent-aot-compiler.rs",
-      "target": "latent-aot-compiler",
+      "source": "examples/java_runtime_probe.rs",
+      "target": "java_runtime_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.example.typescript-runtime-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/typescript_runtime_probe.rs",
+      "target": "typescript_runtime_probe",
       "timeoutSeconds": 900
     },
     {
@@ -6659,7 +6769,7 @@
       "kind": "test",
       "listContract": "unsupported",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 1,
+      "minimumCases": 0,
       "mode": "custom",
       "package": "latent-wasmtime",
       "platforms": [
@@ -6678,7 +6788,9 @@
       "sourceSha256": "2715e19a626446efff35a2c03623b2d2f78fa4143eab62422e1f265181b4c83f",
       "successMarker": "AOT sandbox: 12 unprivileged real-entry probes and exact-policy syscall probe passed",
       "target": "aot_sandbox",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
@@ -6826,7 +6938,9 @@
       "sourceSha256": "4c1a85079da0baefb6178caa493f15aed5a528e6cc88808d2e75c56fc91149fb",
       "successMarker": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
       "target": "aot_supervisor",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
@@ -7031,6 +7145,40 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/containment_backend.rs",
       "target": "containment_backend",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "expectedIgnored": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "id": "latent-wasmtime.test.dotnet-guest",
+      "ignoredLeaves": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 2,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/dotnet_guest.rs",
+      "target": "dotnet_guest",
       "timeoutSeconds": 900
     },
     {
@@ -7512,6 +7660,7 @@
         "asynchronous_error_and_child_failure_forward_original_results_and_owners",
         "closed_constructor_shapes_have_distinct_safe_reasons",
         "dropping_unpolled_or_pending_invocations_preserves_inner_ownership",
+        "failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness",
         "full_contended_or_poisoned_observation_storage_never_changes_invocation_results",
         "successful_and_declared_outcomes_keep_payloads_and_owners_without_records",
         "synchronous_start_failure_is_forwarded_once_without_cloning",
@@ -7522,7 +7671,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 8,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -9097,160 +9246,6 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/standalone_shutdown.rs",
       "target": "standalone_shutdown",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-toolchain-smoke.example.dotnet-closed-runtime",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-toolchain-smoke",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/dotnet_closed_runtime.rs",
-      "target": "dotnet-closed-runtime",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "expectedIgnored": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "id": "latent-wasmtime.test.dotnet-guest",
-      "ignoredLeaves": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "kind": "test",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 2,
-      "mode": "libtest",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "tests/dotnet_guest.rs",
-      "target": "dotnet_guest",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-wasmtime.example.typescript-runtime-probe",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/typescript_runtime_probe.rs",
-      "target": "typescript_runtime_probe",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-packaging.example.component-work",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-packaging",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/component_work.rs",
-      "target": "component_work",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-wasmtime.example.java-runtime-probe",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/java_runtime_probe.rs",
-      "target": "java_runtime_probe",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-toolchain-smoke.example.transaction-contract",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-toolchain-smoke",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "../../sdk/transaction-contract/rust/component.rs",
-      "target": "transaction-contract",
       "timeoutSeconds": 900
     }
   ]
