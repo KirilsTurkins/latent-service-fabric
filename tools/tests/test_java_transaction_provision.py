@@ -142,6 +142,36 @@ class ProvisioningOracle(unittest.TestCase):
             with self.subTest(count=len(changed)), self.assertRaises(ValueError):
                 policies.documents(hosts, changed)
 
+    def test_generated_proposals_fit_the_unchanged_retained_policy_program(self):
+        from types import SimpleNamespace
+
+        value, operations, publications = observation()
+        original = copy.deepcopy(value)
+        proposal = policies.documents(policies.ObservedHosts.read(value, operations), publications)
+        with tempfile.TemporaryDirectory() as directory:
+            calls = []
+            client = SimpleNamespace(directory=Path(directory), call=lambda *args: calls.append(args))
+            mutations = policies.prepare_mutations(client, proposal)
+            self.assertEqual(len(mutations), 10)
+            self.assertEqual([row['id'] for row in mutations], [
+                'transaction-java-aggregate', 'clock-monotonic-installed', 'clock-wall-installed',
+                'java-staging-installed', 'java-dispatch-installed', 'java-state',
+                'clock-monotonic-allow', 'clock-wall-allow', 'java-staging', 'java-dispatch'])
+            self.assertEqual(proposal['deploymentGrants'], [
+                {'capability': cfg.CLOCKS['clockMonotonic'][0], 'policy': 'clock-monotonic-allow'},
+                {'capability': cfg.CLOCKS['clockWall'][0], 'policy': 'clock-wall-allow'}])
+            self.assertTrue(all(row['expectedGeneration'] == 0 for row in mutations))
+            self.assertEqual(calls, [])
+            invalid = copy.deepcopy(proposal)
+            invalid['bindings']['clockMonotonic-installed'] = invalid['bindings'].pop('clock-monotonic-installed')
+            invalid_root = Path(directory) / 'invalid'
+            invalid_root.mkdir()
+            invalid_client = SimpleNamespace(directory=invalid_root, call=client.call)
+            with self.assertRaisesRegex(ValueError, 'bounded-original-policy-mutation-set'):
+                policies.prepare_mutations(invalid_client, invalid)
+            self.assertEqual(calls, [])
+        self.assertEqual(value, original)
+
     def test_selected_configuration_preserves_original_checkpoint_and_refuses_large_input(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

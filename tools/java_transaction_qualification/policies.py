@@ -176,12 +176,15 @@ def documents(hosts: ObservedHosts, publications: dict[str, str], *, diagnostic=
     result["policies"][STATE_POLICY] = {"formatVersion": 1, "tenant": TENANT, "rules": state_rules}
     for name, (capability, operation) in CLOCKS.items():
         descriptor = hosts.providers[name]
-        result["bindings"][name + "-installed"] = binding(capability, descriptor["profile"],
+        # Native provider IDs retain their observed spelling. Ordinary policy
+        # IDs use the existing closed lowercase CLI identifier grammar.
+        policy_name = {"clockMonotonic": "clock-monotonic", "clockWall": "clock-wall"}[name]
+        result["bindings"][policy_name + "-installed"] = binding(capability, descriptor["profile"],
             descriptor["configurationDigest"], epoch(descriptor["configurationEpoch"], decimal=True), [operation])
-        result["policies"][name + "-allow"] = {"formatVersion": 1, "tenant": TENANT, "rules": [
+        result["policies"][policy_name + "-allow"] = {"formatVersion": 1, "tenant": TENANT, "rules": [
             rule("clock", "user", ALICE, pubs, capability, [operation], {"kind": "clock"},
                  input_bytes=0, output_bytes=32768, calls=4096, wall=120000)]}
-        result["deploymentGrants"].append({"capability": capability, "policy": name + "-allow"})
+        result["deploymentGrants"].append({"capability": capability, "policy": policy_name + "-allow"})
     effect = hosts.effects[0]
     for selected, operation in (("java-staging-installed", "stage"), ("java-dispatch-installed", "dispatch")):
         result["bindings"][selected] = binding(INTENT_CONTRACT, effect["providerProfile"],
