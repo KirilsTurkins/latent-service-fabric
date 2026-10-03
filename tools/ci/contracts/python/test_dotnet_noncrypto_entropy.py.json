@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "NoncryptoNativePort.test_absent_declaration_never_reads_or_compiles_a_native_port",
+    "NoncryptoNativePort.test_changed_archive_and_member_fail_before_object_compilation",
+    "NoncryptoNativePort.test_exact_preimages_derive_protected_object_and_bind_actual_link_response",
+    "NoncryptoNativePort.test_missing_duplicate_and_secure_redirects_fail_actual_link_binding",
+    "NoncryptoNativePort.test_original_source_private_object_targets_and_retained_changes_are_rejected",
+    "NoncryptoNativePort.test_private_msbuild_paths_are_literal_and_control_characters_are_denied",
+    "NoncryptoNativePort.test_unknown_profile_descriptor_cannot_select_a_native_entrypoint",
+    "SeparateEntropySelection.test_completed_build_binds_final_derivation_without_overwriting_preparation",
+    "SeparateEntropySelection.test_only_exact_declaration_enables_insecure_versions_and_secure_stays_primary",
+    "SeparateEntropySelection.test_real_compiler_seam_passes_two_plugs_and_retains_both_graph_identities",
+    "SeparateEntropySelection.test_separate_export_coverage_rejects_duplicate_authority_and_retains_legacy_gaps"
+  ],
+  "guards": {
+    "NoncryptoNativePort.test_absent_declaration_never_reads_or_compiles_a_native_port": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:d071a46d318ecfc0508768dd3d80f1ad32b552349b1238be2a894689e68c29d7"
+      ],
+      "skipSites": []
+    },
+    "NoncryptoNativePort.test_changed_archive_and_member_fail_before_object_compilation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:d071a46d318ecfc0508768dd3d80f1ad32b552349b1238be2a894689e68c29d7"
+      ],
+      "skipSites": []
+    },
+    "NoncryptoNativePort.test_exact_preimages_derive_protected_object_and_bind_actual_link_response": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:d071a46d318ecfc0508768dd3d80f1ad32b552349b1238be2a894689e68c29d7"
+      ],
+      "skipSites": []
+    },
+    "NoncryptoNativePort.test_missing_duplicate_and_secure_redirects_fail_actual_link_binding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:d071a46d318ecfc0508768dd3d80f1ad32b552349b1238be2a894689e68c29d7"
+      ],
+      "skipSites": []
+    },
+    "NoncryptoNativePort.test_original_source_private_object_targets_and_retained_changes_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:d071a46d318ecfc0508768dd3d80f1ad32b552349b1238be2a894689e68c29d7"
+      ],
+      "skipSites": []
+    },
+    "NoncryptoNativePort.test_private_msbuild_paths_are_literal_and_control_characters_are_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:d071a46d318ecfc0508768dd3d80f1ad32b552349b1238be2a894689e68c29d7"
+      ],
+      "skipSites": []
+    },
+    "NoncryptoNativePort.test_unknown_profile_descriptor_cannot_select_a_native_entrypoint": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:d071a46d318ecfc0508768dd3d80f1ad32b552349b1238be2a894689e68c29d7"
+      ],
+      "skipSites": []
+    },
+    "SeparateEntropySelection.test_completed_build_binds_final_derivation_without_overwriting_preparation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:bde0d978b41e874957cbc79af0270096c0333125ee7fcaa883eb665291de5cfe"
+      ],
+      "skipSites": []
+    },
+    "SeparateEntropySelection.test_only_exact_declaration_enables_insecure_versions_and_secure_stays_primary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:bde0d978b41e874957cbc79af0270096c0333125ee7fcaa883eb665291de5cfe"
+      ],
+      "skipSites": []
+    },
+    "SeparateEntropySelection.test_real_compiler_seam_passes_two_plugs_and_retains_both_graph_identities": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:bde0d978b41e874957cbc79af0270096c0333125ee7fcaa883eb665291de5cfe"
+      ],
+      "skipSites": []
+    },
+    "SeparateEntropySelection.test_separate_export_coverage_rejects_duplicate_authority_and_retains_legacy_gaps": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b46dc4a97b259730034d59c708df241fb808b77418690b58a03dc1e171a1663b",
+        "class:setup-sha256:bde0d978b41e874957cbc79af0270096c0333125ee7fcaa883eb665291de5cfe"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_noncrypto_entropy.py",
+  "reviewReason": "Add eleven exact-preimage and denial controls, including actual completed-build material execution; retain all reviewed cases and guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
