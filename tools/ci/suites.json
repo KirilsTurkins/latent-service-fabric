@@ -3913,6 +3913,7 @@
         "capability::control::tests::shutdown_timeout_reports_owned_work_and_rejects_new_submissions",
         "capability::resources::stream_tests::endpoint_scope_is_exact_and_cannot_be_derived_from_http_authority",
         "capability::resources::stream_tests::malformed_ambiguous_and_wildcard_endpoints_fail_closed",
+        "capability::store::authority::owned::tests::owned_stream_target_retains_exact_endpoint_without_borrowed_authority",
         "capability::store::tests::authority::held_policy_snapshots_reject_later_calls_after_revocation_and_owner_retirement",
         "capability::store::tests::authority::principal_policy_and_binding_revisions_narrow_and_invalidate_independently",
         "capability::store::tests::authority::publication::final_admission_checks_real_catalog_owner_publication_and_every_narrowing",
@@ -4039,7 +4040,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 108,
+      "minimumCases": 109,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
