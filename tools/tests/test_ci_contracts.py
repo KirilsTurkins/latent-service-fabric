@@ -700,13 +700,21 @@ class RepositoryMigrationTests(unittest.TestCase):
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
             if key == reviewed_narrow_fixture:
-                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
-                                 {k: v for k, v in value.items() if k != "run"})
-                # Only the fixture path changes: real state dependencies now
-                # select the full profile. Keep every command and assertion.
-                self.assertEqual(data["after"][key]["run"].rstrip("\n"),
-                                 value["run"].replace("crates/latent-state/src/lib.rs",
-                                                      "crates/latent-workflows/src/lib.rs"))
+                # State keeps its independent full-CI precheck. The fixed
+                # Identity source proves the real nonempty proper subset under
+                # the unchanged optimizer-owned eligibility policy.
+                expected = dict(value)
+                expected["run"] = value["run"].replace(
+                    "selection = classify_paths(['crates/latent-state/src/lib.rs'])\n"
+                    "assert selection.profile == 'fast'\n",
+                    "from tools import ci_suite_inventory as registry\n"
+                    "assert classify_paths(['crates/latent-state/src/lib.rs']).profile == 'full'\n"
+                    "selection = classify_paths(['crates/latent-identity/src/lib.rs'])\n"
+                    "assert selection.profile == 'full'\n"
+                    "assert selection.fast_packages\n"
+                    "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
+                )
+                self.assertEqual(data["after"][key], expected, key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:

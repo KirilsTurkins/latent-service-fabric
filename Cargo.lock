@@ -1686,6 +1686,7 @@ dependencies = [
  "serde_json",
  "sha2 0.11.0",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -1724,12 +1725,14 @@ dependencies = [
  "latent-audit",
  "latent-capabilities",
  "latent-core",
+ "latent-effects",
  "latent-executor",
  "latent-manifest",
  "latent-network",
  "latent-policy",
  "latent-routing",
  "latent-secrets",
+ "latent-state",
  "rcgen",
  "rustls",
  "serde",
@@ -2289,6 +2292,7 @@ dependencies = [
  "latent-capabilities",
  "latent-control-store",
  "latent-core",
+ "latent-effects",
  "latent-executor",
  "latent-http",
  "latent-ingress",
@@ -2304,6 +2308,7 @@ dependencies = [
  "latent-scheduler",
  "latent-secrets",
  "latent-signing",
+ "latent-state",
  "latent-telemetry",
  "latent-testkit",
  "latent-wasmtime",
