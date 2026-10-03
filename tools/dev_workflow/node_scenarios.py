@@ -8,7 +8,7 @@ from . import build, node_cancellation, node_deployment, node_fixtures, node_inv
 from .common import decode, digest, members, require
 
 
-def run(root, arguments, *, deadline: float | None = None):
+def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=None):
     from .helper import client, deploy, installation
     members(arguments, {"environment", "selection"})
     require(arguments["environment"] == "node", "linux-test-cannot-fallback-to-portable")
@@ -64,17 +64,24 @@ def run(root, arguments, *, deadline: float | None = None):
                 budget[target] = int(execution[key])
         state.atomic(root, "test-budget.json", budget)
         cancellation = None
+        original_client_reaped = False
         def call(activation):
-            nonlocal cancellation
+            nonlocal cancellation, original_client_reaped
             if execution is not None and execution.get("cancelWhenRunning", False):
                 cancellation = node_cancellation.Cancellation(root, cli, activation, deadline)
-            return cli.call("invoke", "--service", case["service"], "--contract", case["contract"],
+            result = cli.call("invoke", "--service", case["service"], "--contract", case["contract"],
                 "--function", case["function"], "--input", path, "--media-type", case["mediaType"], "--activation-id", activation,
                 "--budget", root / "test-budget.json", "--budget-profile", "phase3" if installed is not None else "phase1",
                 "--rpc-timeout-ms", str(case["timeoutMillis"] + 1000), timeout=case["timeoutMillis"] / 1000 + 5,
                 check=cancellation.check if cancellation is not None else None)
+            # Client.call returns only after its owned process is positively
+            # reaped. The observer receives no environment or raw process logs.
+            original_client_reaped = True
+            return result
         result = node_invocation.execute(cli, journal,
             {"case": case["id"], "inputSha256": digest(raw), "expectedRevision": revision}, call, deadline)
+        if diagnostic_observer is not None:
+            diagnostic_observer(case["id"], result, original_client_reaped)
         if cancellation is not None:
             result["data"]["cancellation"] = cancellation.finish(result)
         return result
