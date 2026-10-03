@@ -41,8 +41,10 @@ def write_workflow_receipt(path, value):
     path.chmod(0o600)
 
 
-def run(cli, node_binary, fixture, evidence, *, language="rust"):
+def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
+    require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
+            "authoring-noncrypto-entropy-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -81,7 +83,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                                          evidence=evidence / "controls", invocation_timeout_millis=invocation_millis,
                                          control_timeout_millis=control_millis)
                 peer, port = start_provider(client, work / "peer", maximum_seconds=seconds)
-                config, settings = configure(work / "node", fixture, port, runtime_grants=language in {"go", "dotnet", "java"}, language=language)
+                config, settings = configure(work / "node", fixture, port,
+                    runtime_grants=language in {"go", "dotnet", "java"}, language=language,
+                    noncrypto_entropy=noncrypto_entropy)
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
@@ -113,6 +117,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
                     if language in {"go", "dotnet", "java"}:
                         from tools.guest_runtime_grants import grant
                         grant(client, node, fixture, targets, publications, result, language=language)
+                    if noncrypto_entropy:
+                        from tools.dotnet_guest.entropy_grants import grant as grant_entropy
+                        targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",
+                            publications["greeting"], targets["greeting"], result)
                     tutorials(client, targets, result)
                     result["samples"].append(sample(client, probe, "after-tutorials", len(names)))
                     faults(client, targets["recovery"], probe, result, len(names), language=language)
