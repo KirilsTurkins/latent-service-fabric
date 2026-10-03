@@ -78,6 +78,27 @@ class SuiteFragmentTests(unittest.TestCase):
         self.assertEqual(result["recipes"], self.base["recipes"])
         self.assertEqual(self.path.read_text(), before)
 
+    def test_dotnet_adapter_fragment_registers_each_forced_empty_native_harness(self):
+        manifest = ROOT / "tools/toolchain-smoke/Cargo.toml"
+        examples = {row["name"]: row for row in tomllib.loads(manifest.read_text())["example"]}
+        expected = {"dotnet-activation-runtime", "dotnet-http-runtime", "dotnet-noncrypto-entropy"}
+        rows = json.loads((ROOT / "tools/ci/suites.d/dotnet-runtime.json").read_text())["suites"]
+        self.assertEqual({row["target"] for row in rows}, expected)
+        for row in rows:
+            with self.subTest(target=row["target"]):
+                example = examples[row["target"]]
+                self.assertFalse(example["test"])
+                self.assertEqual(row["source"], example["path"])
+                self.assertEqual(row["manifest"], "tools/toolchain-smoke/Cargo.toml")
+                self.assertEqual(row["kind"], "example")
+                self.assertEqual(row["id"], "latent-toolchain-smoke.example." + row["target"])
+                self.assertEqual(row["mode"], "compile-only")
+                self.assertEqual(row["minimumCases"], 0)
+                self.assertEqual(row["expectedCases"], [])
+                self.assertEqual(row["expectedIgnored"], [])
+                source = (manifest.parent / row["source"]).read_text()
+                self.assertIn('#![cfg(target_arch = "wasm32")]', source)
+
     def test_duplicate_suite_ids_across_primary_and_fragments_are_rejected(self):
         self.base["suites"] = self.fragment["suites"][:1]
         self.path.write_text(json.dumps(self.base))
