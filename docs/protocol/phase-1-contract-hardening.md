@@ -512,28 +512,16 @@ explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
 
-## Phase 4 namespace and transaction descriptors
+## Additive Phase 4 transaction definitions
 
-The schema/history foundations add `latent/control/v1/state.proto` and
-`latent/transaction/v1/transaction.proto` to the normalized descriptor contract.
-`StateService` declares namespace inspection and mutation, entity selection,
-state mutation and original operation-receipt lookup. `TransactionService`
-declares command invocation, queries, command/commit lookup, effect inspection
-and history, and command cancellation. Their typed messages preserve namespace,
-caller, command, result, effect and view identities as separate fields. See the
-[state management contract](state-management.md) and
-[transaction contract](transactions.md) for their authority and recovery rules.
+The descriptor baseline includes `latent/transaction/v1/transaction.proto` and
+`latent/control/v1/state.proto`, plus `AuditCapabilityResourceClass` value 11
+for state resources. The Buf-generated descriptor was reviewed against every
+existing file: all previous field numbers, types, enum values, messages and RPC
+signatures remain unchanged. The exhaustive descriptor oracle includes both
+new files and still rejects unreviewed semantic changes.
 
-The only addition inside an existing descriptor is
-`AuditCapabilityResourceClass.AUDIT_CAPABILITY_RESOURCE_CLASS_STATE = 11`.
-Pinned Buf 1.72.0 generation and recursive descriptor comparison preserve every
-original field's type, number, cardinality and presence, oneof, reservation,
-enum value and RPC signature. Removing that single added enum value makes all
-13 original file descriptors exactly equal to the preceding golden. The two new
-files bring the exhaustive set to 15; this graph contains no dispatcher
-descriptor or later command-floor-release mutation.
-
-The golden records the declared wire contract. It does not establish installed
-runtime support, namespace access, schema compatibility, signed Java migration
-or permission to resume restored work. Those requirements retain their own
-current authority checks and runtime qualification gates.
+These definitions describe [transaction and recovery contracts](transactions.md).
+They do not establish that a host implements the profile or grant access from
+a namespace, command, effect or receipt identifier. WIT guest ABI versions and
+durable storage formats retain their separate compatibility boundaries.

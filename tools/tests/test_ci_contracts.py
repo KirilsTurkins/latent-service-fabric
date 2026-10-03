@@ -700,7 +700,7 @@ class RepositoryMigrationTests(unittest.TestCase):
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
             if key == reviewed_narrow_fixture:
-                # State requires engine validation. Use the fixed real Workflows
+                # State requires engine validation. Use the fixed real Identity
                 # reverse-dependent host subset, retaining full CI, step identity
                 # and its original runner. Derive only this exact reviewed change.
                 expected = dict(value)
@@ -710,7 +710,7 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "from tools import ci_suite_inventory as registry\n"
                     "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
                     "assert state.profile == 'full'\n"
-                    "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
+                    "selection = classify_paths(['crates/latent-identity/src/lib.rs'])\n"
                     "assert selection.profile == 'full'\n"
                     "assert selection.fast_packages\n"
                     "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",

@@ -55,18 +55,12 @@ class InventoryTests(unittest.TestCase):
 
     def test_a_new_reverse_dependency_prevents_filename_allowlist_bypass(self):
         graph = registry.workspace(registry.ROOT)
-        node = graph['latent-node']
-        graph['latent-node'] = registry.Package(node.name, node.directory, node.dependencies | {'latent-state'})
-        with patch.object(registry, 'workspace', return_value=graph):
-            decision = ci_profile.classify_paths(['crates/latent-state/src/lib.rs'])
-        self.assertEqual(decision.profile, 'full')
-        self.assertTrue(decision.renderer)
-
         original = ci_profile.classify_paths(['crates/latent-workflows/src/lib.rs'])
-        self.assertEqual(original.profile, 'full')
+        self.assertEqual(original.profile, 'fast')
         self.assertFalse(original.renderer)
         self.assertTrue(original.fast_packages)
         self.assertLess(set(original.fast_packages), set(registry.load()['fastPackages']))
+        node = graph['latent-node']
         graph['latent-node'] = registry.Package(node.name, node.directory, node.dependencies | {'latent-workflows'})
         with patch.object(registry, 'workspace', return_value=graph):
             expanded = ci_profile.classify_paths(['crates/latent-workflows/src/lib.rs'])

@@ -30,6 +30,7 @@
   "fastPackages": [
     "latent-activation",
     "latent-admission",
+    "latent-commit",
     "latent-core",
     "latent-effects",
     "latent-executor",
@@ -38,7 +39,9 @@
     "latent-network",
     "latent-routing",
     "latent-scheduler",
-    "latent-telemetry"
+    "latent-state",
+    "latent-telemetry",
+    "latent-workflows"
   ],
   "fixtureRecipes": {
     "angular-renderer": {
@@ -194,7 +197,10 @@
     "latent-angular-renderer-adapter"
   ],
   "narrowPackages": [
-    "latent-effects"
+    "latent-commit",
+    "latent-effects",
+    "latent-state",
+    "latent-workflows"
   ],
   "processContracts": {
     "angular-renderer": {
@@ -1683,6 +1689,7 @@
         "deployments::tests::bindings::slow_preparation::slow_control_package_preparation_renews_before_plan_and_releases_cancelled_owners",
         "deployments::tests::bindings::slow_preparation::slow_startup_package_preparation_never_renews_control_authority",
         "deployments::tests::bindings::startup::configured_provider_restart_preserves_exact_versions_and_durable_bytes",
+        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations",
         "deployments::tests::bindings::startup::startup_cannot_silently_replace_durable_bindings_or_install_foreign_provider_owners",
         "deployments::tests::compiler_publisher_and_coalescing_source_enforce_complete_generations",
         "deployments::tests::concurrent_snapshot_replacement_never_exposes_half_a_batch",
@@ -1849,8 +1856,7 @@
         "deployments::tests::versioned::versioned_apply_compares_caller_preconditions_and_returns_normalized_committed_state",
         "deployments::tests::weighting_is_deterministic_order_independent_and_restart_stable",
         "http_routes::tests::exact_publication_selector_survives_manifest_codec_and_canonical_matching",
-        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny",
-        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations"
+        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny"
       ],
       "expectedIgnored": [
         "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set"
@@ -2120,6 +2126,7 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "preparation_read_wait::tests::default_materialization_wait_delegates_once_without_timer_or_replaying_failure",
         "preparation_read_wait::tests::default_wait_api_delegates_once_without_consulting_timer_or_replaying_failure",
         "preparation_read_wait::tests::default_wait_api_preserves_unpolled_and_pending_future_ownership",
         "prepared_readiness::tests::failed_downcast_preserves_readiness_and_drops_exactly_once",
@@ -2127,8 +2134,7 @@
         "prepared_readiness::tests::legacy_fallback_moves_original_owner_and_import_allocation",
         "prepared_use::tests::an_unpolled_future_and_unwind_drop_the_original_owner",
         "prepared_use::tests::ownership_survives_failed_downcast_and_is_released_exactly_once",
-        "tests::budget_dimensions_have_deterministic_interruption_mappings",
-        "preparation_read_wait::tests::default_materialization_wait_delegates_once_without_timer_or_replaying_failure"
+        "tests::budget_dimensions_have_deterministic_interruption_mappings"
       ],
       "expectedIgnored": [],
       "id": "latent-executor.lib.latent-executor",
@@ -2274,6 +2280,7 @@
         "http::browser::tests::guest_cannot_override_security_headers_enable_cors_or_supply_encoded_bodies",
         "http::browser::tests::html_requires_explicit_utf8_and_does_not_claim_to_sanitize_application_html",
         "http::browser::tests::only_canonical_origin_relative_redirects_survive_and_never_split_headers",
+        "http::browser::tests::public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method",
         "http::cache::tests::isolation::absent_empty_duplicate_and_unapproved_vary_values_are_distinct",
         "http::cache::tests::isolation::alternate_tenants_public_principals_and_languages_never_cross_bytes",
         "http::cache::tests::isolation::credentials_cookies_unknown_headers_queries_and_user_principals_bypass",
@@ -2288,8 +2295,7 @@
         "http::cache::tests::response::browser_policy_rejection_discards_a_pending_fill_before_any_local_delivery",
         "http::cache::tests::response::no_store_private_cookies_unknown_vary_and_ttl_extensions_never_publish",
         "http::cache::tests::response::only_application_200_can_publish_and_failures_are_no_store",
-        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted",
-        "http::browser::tests::public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method"
+        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted"
       ],
       "expectedIgnored": [],
       "id": "latent-ingress.lib.latent-ingress",
@@ -2823,6 +2829,7 @@
         "budgeted_execution::tests::owned::owned_invocation_forwards_identity_guard_accounting_and_cleanup",
         "budgeted_execution::tests::owned::rejected_or_unpolled_owned_invocations_release_without_calling_backend",
         "budgeted_execution::tests::preparation_wait::dropping_wait_aware_readiness_reclaims_unpolled_and_pending_owners_once",
+        "budgeted_execution::tests::preparation_wait::wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay",
         "budgeted_execution::tests::preparation_wait::wait_aware_readiness_forwards_exact_inputs_without_eager_poll_or_replay",
         "cancellation::tests::bounded_reason_preserves_utf8_boundaries",
         "cancellation::tests::cancellation_and_terminal_publication_have_one_linearization_winner",
@@ -2856,8 +2863,7 @@
         "journal::tests::registration_failure_leaves_no_journal_reservation_or_received_event",
         "journal::tests::tenant_queries_and_cancellation_never_expose_another_tenants_record",
         "journal::tests::terminal_eviction_and_monotonic_ttl_never_remove_active_records",
-        "journal::tests::unowned_append_is_rejected_without_changing_a_live_history",
-        "budgeted_execution::tests::preparation_wait::wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay"
+        "journal::tests::unowned_append_is_rejected_without_changing_a_live_history"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
@@ -3524,6 +3530,30 @@
       "resourceClass": "runtime-bounded",
       "source": "examples/capsule_contracts.rs",
       "target": "capsule_contracts",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-packaging.example.component-work",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/component_work.rs",
+      "target": "component_work",
       "timeoutSeconds": 900
     },
     {
@@ -5137,6 +5167,7 @@
         "custom::registry::tests::retirement::validated_custom_path_does_not_relax_the_original_runtime_dimension_allowlist",
         "custom::registry::tests::series_caps_separate_tenants_and_fixed_rate_windows_refund_rejections",
         "custom::registry::tests::validation::descriptors_reject_incompatible_reuse_reserved_names_and_unbounded_configuration",
+        "custom::registry::tests::validation::real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names",
         "custom::registry::tests::validation::selections_cannot_move_between_registries_or_trusted_sources_or_survive_retirement",
         "custom::registry::tests::validation::sum_overflow_rejects_without_mutating_the_aggregate_or_queue",
         "local::tests::bounded_records_preserve_structured_fields_without_implicit_payloads",
@@ -5184,8 +5215,7 @@
         "pipeline::tests::redacted_short_strings_with_large_retained_allocations_are_rejected",
         "pipeline::tests::shutdown_deadline_aborts_export_and_closes_retained_handles",
         "pipeline::tests::sink_errors_and_constructor_poll_and_drop_panics_are_isolated",
-        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting",
-        "custom::registry::tests::validation::real_node_revision_ids_preserve_exact_source_attributes_without_relaxing_guest_names"
+        "pipeline::tests::strict_mode_reports_full_invalid_and_closed_without_waiting"
       ],
       "expectedIgnored": [],
       "id": "latent-telemetry.lib.latent-telemetry",
@@ -5420,6 +5450,30 @@
       "resourceClass": "runtime-bounded",
       "source": "examples/containment_capsule/component.rs",
       "target": "containment-capsule",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.dotnet-closed-runtime",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/dotnet_closed_runtime.rs",
+      "target": "dotnet-closed-runtime",
       "timeoutSeconds": 900
     },
     {
@@ -5736,6 +5790,30 @@
     },
     {
       "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.transaction-contract",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "../../sdk/transaction-contract/rust/component.rs",
+      "target": "transaction-contract",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
       "expectedCases": [
         "tests::greets_trimmed_names_and_explains_invalid_input"
       ],
@@ -5947,6 +6025,30 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
+      "id": "latent-wasmtime.bin.latent-aot-compiler",
+      "ignoredLeaves": [],
+      "kind": "bin",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/bin/latent-aot-compiler.rs",
+      "target": "latent-aot-compiler",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
       "id": "latent-wasmtime.example.go-runtime-probe",
       "ignoredLeaves": [],
       "kind": "example",
@@ -5971,9 +6073,9 @@
       "boundary": "runtime",
       "expectedCases": [],
       "expectedIgnored": [],
-      "id": "latent-wasmtime.bin.latent-aot-compiler",
+      "id": "latent-wasmtime.example.java-runtime-probe",
       "ignoredLeaves": [],
-      "kind": "bin",
+      "kind": "example",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
       "minimumCases": 0,
       "mode": "compile-only",
@@ -5987,8 +6089,32 @@
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
-      "source": "src/bin/latent-aot-compiler.rs",
-      "target": "latent-aot-compiler",
+      "source": "examples/java_runtime_probe.rs",
+      "target": "java_runtime_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.example.typescript-runtime-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/typescript_runtime_probe.rs",
+      "target": "typescript_runtime_probe",
       "timeoutSeconds": 900
     },
     {
@@ -6710,7 +6836,7 @@
       "kind": "test",
       "listContract": "custom-list",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
+      "minimumCases": 23,
       "mode": "custom",
       "package": "latent-wasmtime",
       "platforms": [
@@ -6930,6 +7056,40 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/containment_backend.rs",
       "target": "containment_backend",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "expectedIgnored": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "id": "latent-wasmtime.test.dotnet-guest",
+      "ignoredLeaves": [
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock"
+      ],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 2,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory",
+        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/dotnet_guest.rs",
+      "target": "dotnet_guest",
       "timeoutSeconds": 900
     },
     {
@@ -7411,6 +7571,7 @@
         "asynchronous_error_and_child_failure_forward_original_results_and_owners",
         "closed_constructor_shapes_have_distinct_safe_reasons",
         "dropping_unpolled_or_pending_invocations_preserves_inner_ownership",
+        "failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness",
         "full_contended_or_poisoned_observation_storage_never_changes_invocation_results",
         "successful_and_declared_outcomes_keep_payloads_and_owners_without_records",
         "synchronous_start_failure_is_forwarded_once_without_cloning",
@@ -7421,7 +7582,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 8,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -8443,12 +8604,23 @@
         "config::tests::engine::engine_json_has_closed_choices_and_preserves_omitted_defaults",
         "config::tests::engine::finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage",
         "config::tests::engine::java_guest_engine_is_explicit_and_does_not_raise_operator_limits",
+        "config::tests::events::event_binding_requires_exact_tenant_and_provider_service",
+        "config::tests::events::event_input_rejects_inline_secrets_ambient_auth_and_unknown_fields",
+        "config::tests::events::event_protected_configuration_rejects_foreign_topics_paths_and_colliding_identity",
         "config::tests::invalid_capacity_and_retention_combinations_fail_before_startup",
+        "config::tests::local_service::local_dispatcher_preserves_exact_provider_target_and_isolated_mode",
+        "config::tests::local_service::local_dispatcher_protected_configuration_rejects_ambiguous_provider_identity",
+        "config::tests::local_service::local_dispatcher_rejects_foreign_scope_self_calls_and_invalid_targets",
         "config::tests::malformed_json_never_echoes_secret_values",
+        "config::tests::metrics::metrics_contracts_require_a_matching_configured_provider",
+        "config::tests::metrics::metrics_descriptor_validation_starts_no_exporter_and_rejects_reserved_unbounded_or_ambiguous_inputs",
         "config::tests::nonlocal_bind_duplicate_tokens_and_unusable_manifest_tenants_are_rejected",
         "config::tests::providers::protected_provider_configuration_is_opt_in_closed_and_side_effect_free",
         "config::tests::providers::provider_input_rejects_null_unknown_and_raw_secret_fields",
         "config::tests::providers::scalar_provider_definitions_require_the_exact_installed_identity_and_contract",
+        "config::tests::providers::secret_bindings_require_the_actual_provider_service_and_tenant",
+        "config::tests::providers::secret_input_rejects_plaintext_environment_and_unknown_authority",
+        "config::tests::providers::secret_paths_and_reference_limits_are_validated_without_loading_values",
         "config::tests::relative_paths_anchor_to_configuration_parent_and_port_zero_is_valid",
         "config::tests::renderer::renderer_opt_in_is_closed_and_preserves_operator_budgets",
         "config::tests::security::a_profile_label_cannot_replace_enforced_admission_or_isolated_compilation",
@@ -8464,6 +8636,7 @@
         "standalone::http::assets::cache::tests::corruption_refetches_once_and_bad_source_never_becomes_a_cache_hit",
         "standalone::http::assets::cache::tests::eviction_and_clear_do_not_release_pinned_output_bytes",
         "standalone::http::assets::cache::tests::zero_length_assets_are_verified_and_oversized_declarations_do_not_read",
+        "standalone::http::assets::csp::tests::signed_style_identities_only_extend_styles_and_reject_policy_text",
         "standalone::http::assets::integration::assets_and_response_cache_keep_independent_accounting_and_both_stop_on_drain",
         "standalone::http::assets::integration::cached_bytes_and_prepared_304_are_not_authority_after_policy_change_or_revocation",
         "standalone::http::assets::integration::disconnected_blocking_read_keeps_its_slot_until_actual_completion",
@@ -8479,6 +8652,8 @@
         "standalone::http::assets::request::tests::selected_prerender_keeps_conditional_headers_and_rejects_foreign_scope",
         "standalone::http::assets::static_site::tests::static_redirect_preserves_canonical_mount_and_query_with_finite_scratch",
         "standalone::http::assets::static_site::tests::static_resolution_orders_signed_routes_assets_indexes_and_navigation_fallback",
+        "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access",
+        "standalone::http::assets::static_tests::signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache",
         "standalone::http::assets::static_tests::static_cached_head_and_prepared_304_recheck_current_publication_authority",
         "standalone::http::assets::static_tests::static_concurrency_corruption_and_read_saturation_never_enter_renderer_or_fallback",
         "standalone::http::assets::static_tests::static_cutover_rollback_delete_recreate_and_specific_precedence_keep_captured_publication",
@@ -8493,6 +8668,7 @@
         "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity",
         "standalone::http::tests::browser_config::browser_origin_bindings_are_closed_unique_tenant_scoped_and_optional_for_native_clients",
         "standalone::http::tests::browser_config::public_browser_origins_are_derived_not_overridden",
+        "standalone::http::tests::browser_config::public_document_navigation_is_explicit_public_tenant_scoped_and_mount_bounded",
         "standalone::http::tests::cache::actual_http_component_cache_preserves_admission_revocation_and_owner_reclamation",
         "standalone::http::tests::cache_config::response_cache_configuration_rejects_unsafe_domains_and_cross_origin_approvals",
         "standalone::http::tests::cache_config::response_cache_defaults_off_and_requires_public_operator_approval",
@@ -8553,6 +8729,7 @@
         "standalone::measurements::node::tests::configuration_reserves_records_for_all_running_and_queued_requests",
         "standalone::measurements::phase1_measurement_collector",
         "standalone::measurements::plan::tests::full_measurements_cannot_be_replaced_with_smoke_counts",
+        "standalone::measurements::scale::tests::catalog_content_growth_does_not_mask_owner_or_capacity_changes",
         "standalone::measurements::scale::tests::variant_identity_is_one_bounded_custom_section",
         "standalone::measurements::soak::tests::bounded_retention_is_allowed_but_active_owners_or_missing_observations_fail",
         "standalone::measurements::soak::tests::full_warmup_exercises_every_measured_fault_family",
@@ -8601,6 +8778,8 @@
         "standalone::start::tests::rollouts::manual_owner_starts_and_joins_with_one_control_blocking_thread",
         "standalone::start::tests::rollouts::recovery::disabled_rollouts_reconcile_existing_history_without_exposing_the_service",
         "standalone::start::tests::rollouts::rollback::rollback_restores_real_base_invocation_and_retires_canary_observation",
+        "standalone::start::tests::telemetry::changed_exporter_limits_reject_composition_and_join_the_bootstrap_owner",
+        "standalone::start::tests::telemetry::provider_bootstrap_transfers_the_same_exporter_to_the_running_node",
         "standalone::start::tests::trust_currentness::profile::external_profile_preserves_cold_warm_and_restart_requirements",
         "standalone::start::tests::trust_currentness::real_policy_expiry_denies_native_work_and_recovers_readable_negative_history",
         "standalone::start::tests::trust_currentness::real_proof_age_expiry_denies_retained_native_work_with_a_current_clock_lease",
@@ -8628,25 +8807,7 @@
         "standalone::transport::tests::shutdown::already_panicked_server_is_joined_without_repolling_its_handle",
         "standalone::transport::tests::shutdown::timed_out_server_is_aborted_and_joined_before_returning_failure",
         "standalone::transport::tests::web_preparation::only_exact_web_control_paths_get_separate_bounded_transport_waits",
-        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication",
-        "config::tests::providers::secret_input_rejects_plaintext_environment_and_unknown_authority",
-        "config::tests::providers::secret_bindings_require_the_actual_provider_service_and_tenant",
-        "config::tests::providers::secret_paths_and_reference_limits_are_validated_without_loading_values",
-        "config::tests::metrics::metrics_contracts_require_a_matching_configured_provider",
-        "config::tests::metrics::metrics_descriptor_validation_starts_no_exporter_and_rejects_reserved_unbounded_or_ambiguous_inputs",
-        "standalone::start::tests::telemetry::provider_bootstrap_transfers_the_same_exporter_to_the_running_node",
-        "standalone::start::tests::telemetry::changed_exporter_limits_reject_composition_and_join_the_bootstrap_owner",
-        "config::tests::local_service::local_dispatcher_preserves_exact_provider_target_and_isolated_mode",
-        "config::tests::local_service::local_dispatcher_rejects_foreign_scope_self_calls_and_invalid_targets",
-        "config::tests::local_service::local_dispatcher_protected_configuration_rejects_ambiguous_provider_identity",
-        "config::tests::events::event_input_rejects_inline_secrets_ambient_auth_and_unknown_fields",
-        "config::tests::events::event_binding_requires_exact_tenant_and_provider_service",
-        "config::tests::events::event_protected_configuration_rejects_foreign_topics_paths_and_colliding_identity",
-        "standalone::http::tests::browser_config::public_document_navigation_is_explicit_public_tenant_scoped_and_mount_bounded",
-        "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access",
-        "standalone::measurements::scale::tests::catalog_content_growth_does_not_mask_owner_or_capacity_changes",
-        "standalone::http::assets::csp::tests::signed_style_identities_only_extend_styles_and_reject_policy_text",
-        "standalone::http::assets::static_tests::signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache"
+        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -8972,160 +9133,6 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/standalone_shutdown.rs",
       "target": "standalone_shutdown",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-toolchain-smoke.example.dotnet-closed-runtime",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-toolchain-smoke",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/dotnet_closed_runtime.rs",
-      "target": "dotnet-closed-runtime",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "expectedIgnored": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "id": "latent-wasmtime.test.dotnet-guest",
-      "ignoredLeaves": [
-        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap",
-        "diagnostic_dotnet_component_requires_only_the_declared_clock"
-      ],
-      "kind": "test",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 2,
-      "mode": "libtest",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "tests/dotnet_guest.rs",
-      "target": "dotnet_guest",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-wasmtime.example.typescript-runtime-probe",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/typescript_runtime_probe.rs",
-      "target": "typescript_runtime_probe",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-packaging.example.component-work",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-packaging",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/component_work.rs",
-      "target": "component_work",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-wasmtime.example.java-runtime-probe",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-wasmtime",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "examples/java_runtime_probe.rs",
-      "target": "java_runtime_probe",
-      "timeoutSeconds": 900
-    },
-    {
-      "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
-      "id": "latent-toolchain-smoke.example.transaction-contract",
-      "ignoredLeaves": [],
-      "kind": "example",
-      "manifest": "tools/toolchain-smoke/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
-      "package": "latent-toolchain-smoke",
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory"
-      ],
-      "recipe": "workspace-all-features",
-      "resourceClass": "runtime-bounded",
-      "source": "../../sdk/transaction-contract/rust/component.rs",
-      "target": "transaction-contract",
       "timeoutSeconds": 900
     }
   ]

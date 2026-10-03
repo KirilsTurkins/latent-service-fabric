@@ -96,6 +96,22 @@ The PR selection has no external provider, browser or guest-toolchain build
 prerequisite beyond the ordinary workspace test build. It uses 27 exact
 already non-ignored tests. It does not claim the broader manual profile passed.
 
+Failed trusted libtest commands retain bounded source coordinates, integer
+assertions and closed platform/reason codes. The concurrent local-service case
+also emits its existing child-error recorder when the result assertion fails.
+The optional `failedCommand.childFailureSnapshot` records only enum stage,
+platform code and reason, with the recorder's `incomplete` flag and explicit
+recorded/omitted counts. It retains at most eight of the recorder's 32 entries;
+an empty incomplete observation establishes no child failure cause.
+
+The [October 2 failure observation](evidence/local-service-child-failure-2026-10-02.json)
+preserves the original guest result `2004`, expected result `1563571291` and
+two consumed child calls. That original receipt has no platform/reason codes,
+so its cause remains unknown. The added parser controls qualify the closed
+diagnostic format; a native replay is still required. Original result, grant,
+budget, start-count and resource-retirement assertions continue to determine
+acceptance.
+
 ## Explicitly owned manual command
 
 Run the broader profile only in a **dedicated disposable Linux x86-64
