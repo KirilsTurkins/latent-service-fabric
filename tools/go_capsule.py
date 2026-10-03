@@ -19,6 +19,12 @@ def main() -> int:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=TEMPLATES, default="greeting")
     new.add_argument("--name")
+    resolve_ = commands.add_parser("resolve", help="Explicitly fetch and capture a locked native module graph")
+    resolve_.add_argument("project", type=Path)
+    resolve_.add_argument("--candidate", type=Path, required=True)
+    resolve_.add_argument("--go", type=Path)
+    resolve_.add_argument("--tag", action="append", default=[])
+    resolve_.add_argument("--proxy-config", type=Path)
     compile_ = commands.add_parser("build", help="Compile, validate and package captured Go sources")
     compile_.add_argument("project", type=Path)
     compile_.add_argument("--output", type=Path, required=True)
@@ -27,8 +33,13 @@ def main() -> int:
     compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
     args = parser.parse_args()
     try:
-        result = (create(args.directory, args.template, args.name) if args.command == "new" else
-                  build(args.project, args.output, args.contracts_tool, args.packager, args.repository))
+        if args.command == "resolve":
+            from tools.go_application_dependencies import resolve
+            resolve(args.project, args.candidate, go=args.go, selected={"tags": args.tag}, proxy_config=args.proxy_config)
+            result = args.candidate
+        else:
+            result = (create(args.directory, args.template, args.name) if args.command == "new" else
+                      build(args.project, args.output, args.contracts_tool, args.packager, args.repository))
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError) as error:

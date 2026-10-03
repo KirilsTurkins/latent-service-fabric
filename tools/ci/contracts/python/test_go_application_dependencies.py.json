@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "GoDependencies.test_empty_import_linkage_markers_are_distinct_from_native_assembly_or_preprocessor_reads",
+    "GoDependencies.test_expanded_module_tampering_extra_files_or_unsafe_original_archive_fail",
+    "GoDependencies.test_go_declarations_require_reviewed_common_capture_and_keep_sdk_bytes_immutable",
+    "GoDependencies.test_go_dirhash_matches_the_known_empty_hash_and_binds_names_and_bytes",
+    "GoDependencies.test_native_graph_records_mvs_minimums_replacements_excludes_and_closed_selection",
+    "GoDependencies.test_native_json_stream_is_bounded_closed_and_never_accepts_unresolved_records",
+    "GoDependencies.test_offline_staging_only_copies_verified_local_sources_and_selected_native_manifest",
+    "GoDependencies.test_original_module_zip_and_manifest_are_independently_bound_to_reviewed_go_sums",
+    "GoDependencies.test_target_tags_and_runtime_selection_are_exact_without_a_module_catalogue"
+  ],
+  "guards": {
+    "GoDependencies.test_empty_import_linkage_markers_are_distinct_from_native_assembly_or_preprocessor_reads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"
+      ],
+      "skipSites": []
+    },
+    "GoDependencies.test_expanded_module_tampering_extra_files_or_unsafe_original_archive_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"
+      ],
+      "skipSites": []
+    },
+    "GoDependencies.test_go_declarations_require_reviewed_common_capture_and_keep_sdk_bytes_immutable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"
+      ],
+      "skipSites": []
+    },
+    "GoDependencies.test_go_dirhash_matches_the_known_empty_hash_and_binds_names_and_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"
+      ],
+      "skipSites": []
+    },
+    "GoDependencies.test_native_graph_records_mvs_minimums_replacements_excludes_and_closed_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"
+      ],
+      "skipSites": []
+    },
+    "GoDependencies.test_native_json_stream_is_bounded_closed_and_never_accepts_unresolved_records": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"
+      ],
+      "skipSites": []
+    },
+    "GoDependencies.test_offline_staging_only_copies_verified_local_sources_and_selected_native_manifest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"
+      ],
+      "skipSites": []
+    },
+    "GoDependencies.test_original_module_zip_and_manifest_are_independently_bound_to_reviewed_go_sums": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"
+      ],
+      "skipSites": []
+    },
+    "GoDependencies.test_target_tags_and_runtime_selection_are_exact_without_a_module_catalogue": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:90ce528ba6e096c21c522dfe660f8abcdfdabd1df18c5222b008d97ce4dea4d0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_application_dependencies.py",
+  "reviewReason": "Bind native MVS/h1/archive/profile/offline controls and harmless Go import markers versus native instructions.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
