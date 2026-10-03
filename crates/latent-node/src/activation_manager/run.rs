@@ -525,11 +525,7 @@ async fn admit_transaction(
                 "transaction staging identity unavailable",
             )
         })?;
-        let observer = lifecycle
-            .journal
-            .as_ref()
-            .expect("original journal owner")
-            .staging_observer(identity)?;
+        let observer = lifecycle.staging_observer(identity)?;
         host.bind_staging_observer(observer).map_err(|_| {
             error(
                 PlatformErrorCode::PermissionDenied,

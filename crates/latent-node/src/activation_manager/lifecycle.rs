@@ -113,6 +113,17 @@ impl Lifecycle {
         self.registration().activation_id()
     }
 
+    pub(super) fn staging_observer(
+        &self,
+        identity: latent_executor::transaction::TransactionStagingIdentity,
+    ) -> Result<Arc<dyn latent_executor::transaction::TransactionStagingObserver>, PlatformError>
+    {
+        self.journal
+            .as_ref()
+            .expect("original journal owner")
+            .staging_observer(identity)
+    }
+
     pub(super) fn advance(
         &mut self,
         phase: ActivationPhase,
