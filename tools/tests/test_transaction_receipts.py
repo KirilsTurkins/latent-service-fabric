@@ -156,7 +156,24 @@ class TransactionReceiptTests(unittest.TestCase):
         self.assertFalse(value["guest"]["executionQualified"])
         self.assertFalse(value["externalClient"]["transportExecutionQualified"])
         self.assertEqual(sum(len(item["operations"]) for item in value["guest"]["requiredInterfaces"]), 13)
-        self.assertEqual(sum(len(item["operations"]) for item in value["externalClient"]["requiredServices"]), 12)
+        services = {item["service"]: {operation["name"] for operation in item["operations"]}
+                    for item in value["externalClient"]["requiredServices"]}
+        self.assertEqual(services, {
+            "latent.transaction.v1.TransactionService": {
+                "InvokeCommand", "Query", "LookupCommand", "LookupCommit", "GetEffect",
+                "ListEffectHistory", "CancelCommand"},
+            "latent.control.v1.StateService": {
+                "MutateNamespace", "InspectNamespace", "SelectEntity", "MutateState",
+                "GetStateOperationReceipt"},
+            "latent.control.v1.DispatcherService": {
+                "InspectDispatcher", "ControlDispatcher", "GetDispatcherOperation"},
+        })
+        self.assertEqual(sum(len(item["operations"]) for item in value["externalClient"]["requiredServices"]), 15)
+        # All twelve original command/state operations remain independently
+        # required; the three explicit dispatcher-management operations add no
+        # installed runtime, guest authority or transport qualification.
+        self.assertEqual(sum(len(item["operations"]) for item in value["externalClient"]["requiredServices"]
+                             if item["service"] != "latent.control.v1.DispatcherService"), 12)
         operations = {operation["name"] for item in value["externalClient"]["requiredServices"] for operation in item["operations"]}
         self.assertIn("MutateNamespace", operations)
         self.assertIn("GetStateOperationReceipt", operations)
