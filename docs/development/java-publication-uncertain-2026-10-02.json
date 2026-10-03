@@ -1,0 +1,46 @@
+{
+  "sourceBefore": "18879411d28a1e6da92525766633acd387a9dd3f",
+  "historicalTestMethodsUnchanged": 50,
+  "historicalCasesAndGuardsUnchanged": 41,
+  "addedCases": [
+    "JournalRpcObservations.test_closed_rpc_failure_codes_preserve_uncertain_original_operation_without_replay",
+    "JournalRpcObservations.test_rpc_token_requires_transport_failure_and_the_generic_rpc_public_code",
+    "JournalRpcObservations.test_unknown_malformed_and_non_string_rpc_codes_are_not_retained_or_coerced"
+  ],
+  "sourceCheck": {
+    "passed": 63,
+    "skipped": 3,
+    "historicalWindowsOnlySkips": true,
+    "seconds": 4.955
+  },
+  "originalCiFailure": {
+    "run": 36972049696,
+    "jobArtifact": 11217628590,
+    "testedMergeSource": "04fb1abfcadf6421dd1cf588781ec8c830ba022d",
+    "artifactSha256": "2801fa60f331c5bd8df537d346550e395e04c28ec3d80203afb7488b0663c8db",
+    "language": "java",
+    "template": "word-count",
+    "phase": "publish-deploy",
+    "seconds": 9.248,
+    "publicCode": "rpc-failed",
+    "category": "transport-failure",
+    "outcomeKnown": false,
+    "requestDispatched": true,
+    "rootCause": "unclassified; prior probe did not retain the public closed gRPC status",
+    "originalOperationRetained": true,
+    "nodePhysicallyReaped": true,
+    "cleanup": "unconfirmed-private-workspace-retained"
+  },
+  "diagnosticChange": {
+    "closedRpcFailureTokens": 16,
+    "rawRemoteMessagesRetained": false,
+    "mutationReplayed": false,
+    "originalRpcDeadlineMilliseconds": 5000,
+    "deadlineChanged": false,
+    "outcomeOrCleanupReclassified": false
+  },
+  "precommitFailureRetained": "Initial test edit caused an indentation error before execution; fixed before recording passing source controls.",
+  "ownerProposal": "Journal is not a delegated executable owner; rejected proposal retained, no owner contract added.",
+  "allHostedCi": false,
+  "wholeIssue681Complete": false
+}
