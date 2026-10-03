@@ -1,0 +1,523 @@
+{
+  "formatVersion": 1,
+  "issue": 687,
+  "status": "entropy-native-aot-passed-exact-composition-probe-passed-maintained-builder-pending",
+  "sdkSourceRevision": "260ca8aead1a851a873162ff1138819c21c78025",
+  "completeTrackedSourceArchive": {
+    "digest": "sha256:7b59cb9e0e3c3b4d451f1ce19e76ab146a8e9a17bafbba425b67334f9727dbc3",
+    "size": 552017920
+  },
+  "resourceLimits": {
+    "cpus": 2,
+    "memoryBytes": 4294967296,
+    "network": "Docker --network none and captured compiler namespace"
+  },
+  "adapterRebuild": {
+    "commands": [
+      {
+        "exitCode": 0,
+        "seconds": 0.02343,
+        "stage": "rust-version"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.011751,
+        "stage": "wasm-tools-version"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 45.677234,
+        "stage": "four-adapter-compile"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.02156,
+        "stage": "closed-component"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.011267,
+        "stage": "closed-validate"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.011534,
+        "stage": "closed-wit"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.011716,
+        "stage": "runtime-component"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.011502,
+        "stage": "runtime-validate"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.01154,
+        "stage": "runtime-wit"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.011302,
+        "stage": "http-component"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.011237,
+        "stage": "http-validate"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.021606,
+        "stage": "http-wit"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.011578,
+        "stage": "entropy-component"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.01159,
+        "stage": "entropy-validate"
+      },
+      {
+        "exitCode": 0,
+        "seconds": 0.011461,
+        "stage": "entropy-wit"
+      }
+    ],
+    "completeTrackedArchive": {
+      "digest": "sha256:7b59cb9e0e3c3b4d451f1ce19e76ab146a8e9a17bafbba425b67334f9727dbc3",
+      "size": 552017920
+    },
+    "formatVersion": 1,
+    "image": "sha256:7cc3f5d034635d35c328591dbd993fb355816fc8124f6a6a9948f83cca74cbf0",
+    "managedConfiguration": {
+      "digest": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a",
+      "size": 652
+    },
+    "materials": {
+      "closed": {
+        "component": {
+          "digest": "sha256:88a53d6d01eb20d2e2f652391857fe9d92068fa3168bc16524e9771cf38786c2",
+          "size": 93844
+        },
+        "raw": {
+          "digest": "sha256:d755924c61ea3752279d1921e9042ba23ae69dd57d41a56660142e2b247591e8",
+          "size": 56849
+        },
+        "wit": {
+          "digest": "sha256:3a7dab274ca024222c71b237e6a2acee19a060fac275117efb8ecc2ac48afde6",
+          "size": 58719
+        }
+      },
+      "entropy": {
+        "component": {
+          "digest": "sha256:a61962873225c8a099210daba2cdb9f11825a19bc2af45cb9289256191333816",
+          "size": 28716
+        },
+        "raw": {
+          "digest": "sha256:820b21359bf42f834e2a58a8af95107283199cff0a6c27a09fafaa99dd92fd06",
+          "size": 26233
+        },
+        "wit": {
+          "digest": "sha256:22b3c4c3b9c4a06181047b153a65433b5ce8c8493fab67c55eeadbfd3f13cabb",
+          "size": 3628
+        }
+      },
+      "http": {
+        "component": {
+          "digest": "sha256:93dfc00dda0dd4ec4743b36772caf11a51f3af77a3f589709d0b4484375b3265",
+          "size": 226061
+        },
+        "raw": {
+          "digest": "sha256:cde7101e9aa21dfc10b39545d02fb1da7472f07f932bf266d09fa91b6d07ca0e",
+          "size": 186124
+        },
+        "wit": {
+          "digest": "sha256:bf5c65c4e0f69a4a365d1e71b9f5bc225c372206ee68fdb9781f68223e2369c8",
+          "size": 70386
+        }
+      },
+      "runtime": {
+        "component": {
+          "digest": "sha256:cf26c137d1a95117476b563e25a5edf61dd7e079bd03e301b907c8ff87a4a107",
+          "size": 147479
+        },
+        "raw": {
+          "digest": "sha256:b292061d76714b8ff011682d1980dbd8e95fb09c6c1ed6a991b8884281ef0c89",
+          "size": 109701
+        },
+        "wit": {
+          "digest": "sha256:66d27027e5d68f98e49a44f21df3d2121b9f4c7dc4d51fc286b29327b6ad94ab",
+          "size": 62098
+        }
+      }
+    },
+    "network": "Docker --network none plus Cargo --locked --offline",
+    "ordinaryLibraryExecutionQualified": false,
+    "originalAdapters": {
+      "activation-runtime.wasm": {
+        "digest": "sha256:c9266a3a2515cf975d1acac46e0f8442802a9c63fb6366f6d9060fefc13a8c44",
+        "size": 147560
+      },
+      "http-runtime.wasm": {
+        "digest": "sha256:63936d9dd83de3a3914d659a20be0519974f02eb6a24f92d011a381d28f865bb",
+        "size": 226137
+      },
+      "runtime-inputs.json": {
+        "digest": "sha256:b7eefa37d16172af28faa266905fcee1193f6b810f5e3fcc4bbf3df8c9d8e11d",
+        "size": 3775
+      },
+      "runtime.wasm": {
+        "digest": "sha256:2d4d4de0c6fa08a5118acb4ed2ffb11535e6a95c8cfb016fef2757feb422a0b0",
+        "size": 93876
+      }
+    },
+    "publicRegistryInputs": "readonly Windows .cargo registry/cache and registry/index",
+    "runtimeInputs": {
+      "digest": "sha256:ef53f33492f474b17945e2bf755f7d40a15dcc01c5ff32c1ff3d77b503f5d556",
+      "size": 4546
+    },
+    "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "scope": "four adapter rebuild using original compiler/package/composer inputs; not a fresh compiler installation",
+    "seconds": 64.426917,
+    "sourceRevision": "260ca8aead1a851a873162ff1138819c21c78025",
+    "status": "four-adapter-rebuild-passed",
+    "trackedFiles": 7347,
+    "trackedSourceInventory": {
+      "digest": "sha256:a13a3f80bb89ebdaa89159510eef3f4321de2675860bbee6632906d2ac272f75",
+      "size": 1392560
+    }
+  },
+  "unchangedApplication": {
+    "ordinaryApplicationSource": {
+      "digest": "sha256:d42b6d6aebe36e1dac55d1c2b600a4c24b94f9fd9ff67772705bc9ac38099aa8",
+      "size": 1259
+    },
+    "ordinaryCallsChanged": false,
+    "dependencyInputIdentity": "sha256:33d7a1d5a5914ad5ac26e866ca5a81f6584896b6fd6b441cb2d4c4fdaa2d59fc",
+    "capturedBytes": 1333132,
+    "originalFeedAndSource": "deleted before capture-only offline rebuild",
+    "declaration": "latent:random/random@0.1.0",
+    "secureRandom": "unchanged-denial"
+  },
+  "capturedObjects": 33,
+  "approvalIdentity": "sha256:22026891912ecebbc27e7130c0a153f5fe34516d05975890b72fb8abf8e0b96c",
+  "generatorCommandSucceeded": true,
+  "retainedGeneratorOutputIdentity": {
+    "digest": "sha256:5928139e8e90c7bebcbd1b312f4c3929f8b96f6e3f328495bfcbcc01fb99bbe7",
+    "size": 888
+  },
+  "nativePort": {
+    "schemaVersion": "lsf.dotnet.noncrypto-entropy.v1",
+    "profile": "dotnet-hash-entropy-v1",
+    "entrypoint": "SystemNative_GetNonCryptographicallySecureRandomBytes",
+    "requiredDeclaration": "latent:random/random@0.1.0",
+    "secureRandom": "unchanged-denial",
+    "original": {
+      "name": "noncrypto-entropy-original-native-archive",
+      "digest": "sha256:48b05195164bf556bf6cf41456f7a531275a8ad192ca74a1f0388d375955ae95",
+      "size": 254498
+    },
+    "originalMember": {
+      "digest": "sha256:5012866cd28f6e0e7eb173cf764d77b7fdefc4b4198eeb7fd26a9db716fa0093",
+      "size": 2325
+    },
+    "sourceDigest": "sha256:a7b8bee4f103f9736aeb2e62865b6cb83e4f4a9eba1438fde1b59749e2f01695",
+    "targetsDigest": "sha256:5ae4eb78b6656ec61a6addaaabbe0ed65e40f49762c3b15da61baa09604d6e15",
+    "derived": {
+      "name": "noncrypto-entropy-object",
+      "digest": "sha256:982dfce9255f7fbe10804ec69877d26309be3a880d2651be587e7f5d2e6e8c96",
+      "size": 592
+    },
+    "upstream": {
+      "formatVersion": 1,
+      "package": "runtime.wasi-wasm.microsoft.dotnet.ilcompiler.llvm",
+      "version": "10.0.0-rc.1.26306.1",
+      "repository": "https://github.com/dotnet/runtimelab",
+      "revision": "8449ba666dd991e495d8363d9852f18eb86a1aa1",
+      "path": "runtimes/wasi-wasm/native-hidden/libSystem.Native.a",
+      "archiveDigest": "sha256:48b05195164bf556bf6cf41456f7a531275a8ad192ca74a1f0388d375955ae95",
+      "archiveSize": 254498,
+      "member": "pal_random.c.obj",
+      "memberDigest": "sha256:5012866cd28f6e0e7eb173cf764d77b7fdefc4b4198eeb7fd26a9db716fa0093",
+      "memberSize": 2325,
+      "entrypoint": "SystemNative_GetNonCryptographicallySecureRandomBytes",
+      "profile": "dotnet-hash-entropy-v1"
+    },
+    "nativeLinkBinding": {
+      "responseDigest": "sha256:a0f0a8750007a5372ab026d143290630f7101c8d0e576fa5358123d01049cc8b",
+      "responseSize": 3117,
+      "objectOccurrences": 1,
+      "wrapOccurrences": 1
+    },
+    "ordinaryLibraryExecutionQualified": false
+  },
+  "fullBuilderAttempt": {
+    "stage": "compile",
+    "reason": "closed-runtime-composition failed; inspect the retained bounded compiler diagnostics",
+    "commands": [
+      {
+        "stage": "contracts",
+        "exitCode": 0,
+        "seconds": 0.012052
+      },
+      {
+        "stage": "dotnet-version",
+        "exitCode": 0,
+        "seconds": 0.15401
+      },
+      {
+        "stage": "wasm-tools-version",
+        "exitCode": 0,
+        "seconds": 0.011401
+      },
+      {
+        "stage": "wit-bindgen-version",
+        "exitCode": 0,
+        "seconds": 0.011702
+      },
+      {
+        "stage": "dotnet-sdks",
+        "exitCode": 0,
+        "seconds": 0.011305
+      },
+      {
+        "stage": "nuget-content-hash",
+        "exitCode": 0,
+        "seconds": 0.317407
+      },
+      {
+        "stage": "nuget-content-hash",
+        "exitCode": 0,
+        "seconds": 0.389582
+      },
+      {
+        "stage": "nuget-content-hash",
+        "exitCode": 0,
+        "seconds": 0.144775
+      },
+      {
+        "stage": "nuget-content-hash",
+        "exitCode": 0,
+        "seconds": 0.195942
+      },
+      {
+        "stage": "nuget-content-hash",
+        "exitCode": 0,
+        "seconds": 0.124216
+      },
+      {
+        "stage": "nuget-content-hash",
+        "exitCode": 0,
+        "seconds": 0.093343
+      },
+      {
+        "stage": "nuget-content-hash",
+        "exitCode": 0,
+        "seconds": 0.196915
+      },
+      {
+        "stage": "component-composer-version",
+        "exitCode": 0,
+        "seconds": 0.01195
+      },
+      {
+        "stage": "declared-runtime-wit",
+        "exitCode": 0,
+        "seconds": 0.052574
+      },
+      {
+        "stage": "bindings",
+        "exitCode": 0,
+        "seconds": 0.318977
+      },
+      {
+        "stage": "bindings-drift",
+        "exitCode": 0,
+        "seconds": 0.318527
+      },
+      {
+        "stage": "canonical-wit",
+        "exitCode": 0,
+        "seconds": 0.042105
+      },
+      {
+        "stage": "noncrypto-native-preimage",
+        "exitCode": 0,
+        "seconds": 0.053155
+      },
+      {
+        "stage": "noncrypto-entropy-compile",
+        "exitCode": 0,
+        "seconds": 0.073544
+      },
+      {
+        "stage": "locked-restore",
+        "exitCode": 0,
+        "seconds": 1.487402
+      },
+      {
+        "stage": "native-aot",
+        "exitCode": 0,
+        "seconds": 69.65448
+      },
+      {
+        "stage": "native-runtime-wit",
+        "exitCode": 0,
+        "seconds": 0.063317
+      },
+      {
+        "stage": "native-aot-raw-wit",
+        "exitCode": 0,
+        "seconds": 0.063345
+      },
+      {
+        "stage": "closed-runtime-adapter-wit",
+        "exitCode": 0,
+        "seconds": 0.053317
+      },
+      {
+        "stage": "additional-runtime-entropy-wit",
+        "exitCode": 0,
+        "seconds": 0.063547
+      },
+      {
+        "stage": "closed-runtime-composition",
+        "exitCode": 1,
+        "seconds": 0.083887
+      }
+    ],
+    "compositionStderr": "error: an error occurred when building the composition graph\n\nCaused by:\n    argument `wasi:random/insecure@0.2.6` has already been passed to the instantiation",
+    "retainedArtifacts": {
+      "BUILD-FAILED.json": {
+        "digest": "sha256:79b2c33e10ffe6c35f9b8aec146c9edd13d477687655c6d90aecd019c0f3bd55",
+        "size": 2689
+      },
+      "native-aot-raw.wasm": {
+        "digest": "sha256:c70903214ca9a0e13a26f7849c8239a4cc4b6595070592af4a40e55968153300",
+        "size": 8403722
+      },
+      "native-aot-raw.wit.json": {
+        "digest": "sha256:70c8495ac2bf37ea97d689b5ece15705a54af6b7fa2cef29828fc2d7f80d22c4",
+        "size": 34219
+      },
+      "closed-runtime-adapter.wit.json": {
+        "digest": "sha256:3a7dab274ca024222c71b237e6a2acee19a060fac275117efb8ecc2ac48afde6",
+        "size": 58719
+      },
+      "additional-runtime-entropy.wit.json": {
+        "digest": "sha256:22b3c4c3b9c4a06181047b153a65433b5ce8c8493fab67c55eeadbfd3f13cabb",
+        "size": 3628
+      },
+      "closed-runtime-coverage.json": {
+        "digest": "sha256:9d58061a2d7d697a07633a24d37f8115fcd0e756e755ecf62833af608fd2f53f",
+        "size": 2297
+      },
+      "noncrypto-entropy-port.json": {
+        "digest": "sha256:cafd4934cfb5f8b1f0e556ba5cd8b069fa83fcf3e45d806ab9053435a6869e81",
+        "size": 1913
+      },
+      "noncrypto-entropy.o": {
+        "digest": "sha256:982dfce9255f7fbe10804ec69877d26309be3a880d2651be587e7f5d2e6e8c96",
+        "size": 592
+      },
+      "executable-input-outputs.json": {
+        "digest": "sha256:5928139e8e90c7bebcbd1b312f4c3929f8b96f6e3f328495bfcbcc01fb99bbe7",
+        "size": 888
+      },
+      "compiler-inputs.json": {
+        "digest": "sha256:c1305f4bdfc728b8f3f48c2b89963bebb80918c5303f22051a79b3401bb818aa",
+        "size": 3550353
+      },
+      "compiler-containment.json": {
+        "digest": "sha256:123acd499b5b077e675842b46c130366dce56d70e27f916c4d046cab4409c0f1",
+        "size": 5061635
+      }
+    },
+    "signedNodeExecuted": false
+  },
+  "exactCompositionDiagnostic": {
+    "formatVersion": 1,
+    "status": "exact-named-composition-passed",
+    "inputs": {
+      "/work/attempt2/fixture-build-attempt1/approved-build/native-aot-raw.wasm": {
+        "digest": "sha256:c70903214ca9a0e13a26f7849c8239a4cc4b6595070592af4a40e55968153300",
+        "size": 8403722
+      },
+      "/work/attempt2/tools/runtime.wasm": {
+        "digest": "sha256:88a53d6d01eb20d2e2f652391857fe9d92068fa3168bc16524e9771cf38786c2",
+        "size": 93844
+      },
+      "/work/attempt2/tools/noncrypto-entropy.wasm": {
+        "digest": "sha256:a61962873225c8a099210daba2cdb9f11825a19bc2af45cb9289256191333816",
+        "size": 28716
+      },
+      "/work/attempt2/tools/component-composer/wac": {
+        "digest": "sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406",
+        "size": 21726840
+      }
+    },
+    "sourceRevision": "260ca8aead1a851a873162ff1138819c21c78025",
+    "component": {
+      "digest": "sha256:546fa3503eb3984e9064da54f6bf06e876bcdf9f0914e836fd4084c2cfb0becf",
+      "size": 8527820
+    },
+    "script": {
+      "digest": "sha256:72f6ad80ae5f7419b8a208ade518e18438c5e638d2ef52924a9013082780e8f0",
+      "size": 1498
+    },
+    "finalGraph": {
+      "imports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:random/random@0.1.0"
+      ],
+      "exports": [
+        "examples:greeting/api@1.0.0"
+      ]
+    },
+    "commands": [
+      {
+        "stage": "exact-named-interface-composition",
+        "exitCode": 0,
+        "seconds": 0.065013
+      },
+      {
+        "stage": "validate",
+        "exitCode": 0,
+        "seconds": 0.053488
+      },
+      {
+        "stage": "final-wit",
+        "exitCode": 0,
+        "seconds": 0.032458
+      }
+    ],
+    "seconds": 0.284228,
+    "ordinaryLibraryExecutionQualified": false,
+    "scope": "untouched raw compiler/adapter graph probe only"
+  },
+  "upstreamCause": {
+    "source": "https://github.com/bytecodealliance/wac/blob/v0.10.1/crates/wac-graph/src/plug.rs",
+    "behavior": "plug iterates both compatible exports and assigns the same actual 0.2.6 instantiation argument twice",
+    "remedy": "exact named interface edges with normal WAC signature/resource validation and unchanged WASI export versions"
+  },
+  "sourceValidation": {
+    "linuxTests": 115,
+    "existingNamespaceSkips": 1,
+    "windowsFocusedTests": 17,
+    "newCases": 6
+  },
+  "ordinaryLibraryExecutionQualified": false,
+  "remaining": [
+    "fresh maintained builder on the composition repair",
+    "signing and normal signed node invocation with explicit entropy denial/grant",
+    "ordinary embedded-resource lookup and serialization",
+    "recovery and original dormant counters"
+  ]
+}
