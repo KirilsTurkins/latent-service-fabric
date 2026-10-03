@@ -2,7 +2,7 @@
 from pathlib import Path
 import time
 
-from . import paths, process
+from . import paths, process, transaction_binding
 from .common import MAX_DOCUMENT, decode, digest, require, sha
 
 
@@ -28,6 +28,7 @@ def package(cli: Path, source: Path, artifacts: dict, deadline: float, check, *,
     require(component[:8] == b"\0asm\x0d\0\x01\0", "build-output-is-not-component-model")
     capsule = decode(paths.read(source, artifacts["capsule"], MAX_DOCUMENT))
     require(capsule.get("component", {}).get("digest") == digest(component), "built-component-digest-mismatch")
+    transaction_binding.check_package(source, artifacts, capsule)
     invoke(cli, source, ["validate", "capsule", str(source / artifacts["capsule"])], deadline, check)
     destination = source / artifacts["packageRoot"]
     if not cached:

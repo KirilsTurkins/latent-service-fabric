@@ -11,7 +11,7 @@ import sys
 import tomllib
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.rust_capsule_project import ROOT, TEMPLATES, fresh, read_file, snapshot, write_json
+from tools.rust_capsule_project import ROOT, AUTHORING_TEMPLATES, fresh, read_file, snapshot, write_json
 from tools.rust_capsule_build import Commands
 from tools.build_observation import build_environment
 from tools.dotnet_guest.project import create
@@ -81,7 +81,7 @@ def main():
     tools.add_argument("--wasi-sdk", type=Path, required=True)
     new = commands.add_parser("new")
     new.add_argument("directory", type=Path)
-    new.add_argument("--template", choices=TEMPLATES, default="greeting")
+    new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
     resolve_ = commands.add_parser('resolve')
     resolve_.add_argument('project', type=Path)

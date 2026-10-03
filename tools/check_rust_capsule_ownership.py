@@ -14,7 +14,7 @@ from tools.build_observation import build_environment, resolve_tools
 from tools.build_process import run_bounded_result
 from tools.rust_capsule_project import create, digest, fresh, read_json, snapshot, inventory, write_json
 
-PRELUDE = "#![allow(dead_code)]\nuse latent_guest::{blob, streaming, secrets::Secret};\n"
+PRELUDE = "#![allow(dead_code)]\nuse latent_guest::{blob, streaming, secrets::Secret, state::{Command, Query}, intents::Intent};\n"
 POSITIVE = """
 async fn released_borrows(mut writer: blob::Writer, mut reader: blob::Reader,
                          mut upload: streaming::Upload, mut body: streaming::Body, secret: Secret) {
@@ -27,6 +27,12 @@ async fn released_borrows(mut writer: blob::Writer, mut reader: blob::Reader,
 async fn owned_chunks(blob: blob::Chunk, http: streaming::Chunk) {
     let _owned_guest_bytes = blob.bytes().await;
     let _independent_guest_bytes = http.bytes().await;
+}
+async fn released_transaction_borrows(mut command: Command, mut query: Query) {
+    let read = command.get(vec![]); drop(read);
+    let read = query.get(vec![]); drop(read);
+    { let mut page = query.scan(vec![], 1, None).await.unwrap(); let _ = page.next().await; page.close(); }
+    command.close(); query.close();
 }
 """
 CASES = {
@@ -41,6 +47,14 @@ CASES = {
     "body-exclusive-pending-reads": ("E0499", "async fn rejected(mut value: streaming::Body) { let first=value.read(1); let second=value.read(1); drop((first,second)); }"),
     "http-chunk-single-owner": ("E0382", "async fn rejected(value: streaming::Chunk) { let _=value.bytes().await; let _=value.bytes().await; }"),
     "secret-bytes-cannot-outlive-owner": ("E0505", "fn rejected(value: Secret) { let borrowed=value.bytes(); drop(value); let _=borrowed.len(); }"),
+    "command-pending-get-excludes-close": ("E0505", "async fn rejected(mut value: Command) { let pending=value.get(vec![]); value.close(); drop(pending); }"),
+    "command-exclusive-pending-gets": ("E0499", "async fn rejected(mut value: Command) { let first=value.get(vec![]); let second=value.get(vec![]); drop((first,second)); }"),
+    "query-pending-get-excludes-close": ("E0505", "async fn rejected(mut value: Query) { let pending=value.get(vec![]); value.close(); drop(pending); }"),
+    "command-page-cannot-outlive-view": ("E0505", "async fn rejected(mut value: Command) { let page=value.scan(vec![],1,None).await.unwrap(); value.close(); page.close(); }"),
+    "query-page-cannot-outlive-view": ("E0505", "async fn rejected(mut value: Query) { let page=value.scan(vec![],1,None).await.unwrap(); value.close(); page.close(); }"),
+    "query-does-not-expose-put": ("E0599", "async fn rejected(mut value: Query, data: latent_guest::state::Value) { let _=value.put(vec![],data).await; }"),
+    "query-cannot-stage-intent": ("E0308", "async fn rejected(mut value: Query, intent: Intent) { let _=intent.stage(&mut value).await; }"),
+    "command-close-consumes-owner": ("E0382", "fn rejected(value: Command) { value.close(); value.close(); }"),
 }
 
 
