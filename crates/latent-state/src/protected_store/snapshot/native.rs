@@ -145,7 +145,9 @@ impl SnapshotFile {
         Arc::clone(&self.original)
     }
 
-    pub(super) fn retain_current(&self) -> Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync> {
+    pub(in crate::protected_store) fn retain_current(
+        &self,
+    ) -> Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync> {
         Arc::clone(&self.current)
     }
 

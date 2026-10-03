@@ -55,6 +55,22 @@ response; the transport must carry this same response owner through its last
 physical encoded frame. Waiter loss detaches the already accepted worker and
 cannot release the file, authority inputs or global capacity early.
 
+The nonmutating `review_restore_window` read follows the same physical response
+rule. Before decoding the original private archive, it reserves an 8 MiB response
+permit from that archive's existing native reservation. The source manifest and
+canonical window are each bounded by 1 MiB, with at most 128 namespace, retained
+format and artifact entries; current closure collections must also fit those
+limits, including retained allocation capacity. The returned
+`ProtectedRestoreInput` retains the exact original reservation and installed
+current read, audit and artifact owners after positive file retirement.
+`encode_window` carries that owner through the last actual frame. A smaller
+original response declaration refuses before archive decode; expired original
+deadlines or revoked current read decisions refuse without renewing authority.
+The native capacity profile and its existing request ceilings stay unchanged.
+Six additional source-registered schedules exercise these response cases; their
+native execution remains pending. None supplies a Fresh destination or restore
+approval.
+
 Thirteen source-registered schedules cover Count and captured Java format
 activation, actual original receipt/restart recovery, stale and wrong-scope
 requests, revoked current review, actual guard races, incomplete migration,

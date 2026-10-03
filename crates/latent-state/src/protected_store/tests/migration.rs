@@ -13,6 +13,7 @@ use fixture::{Owners, Setup};
 use std::sync::atomic::Ordering;
 
 mod fixture;
+mod restore_response;
 mod resume;
 
 fn restore_input(
@@ -26,7 +27,7 @@ fn restore_input(
 
 #[test]
 fn protected_restore_input_rereads_same_file_without_mutation_or_original_capacity_refund() {
-    let setup = Setup::new();
+    let setup = Setup::with_restore_response();
     let (snapshot, owners, request) = setup.checkpoint();
     let before = fs::read(setup.checkpoint_path()).unwrap();
     let (snapshot, reviewed) = wait(
@@ -62,7 +63,7 @@ fn protected_restore_input_rereads_same_file_without_mutation_or_original_capaci
 
 #[test]
 fn restore_input_ignored_native_gate_and_stale_digest_refuse_with_healthy_reusable_owner() {
-    let setup = Setup::new();
+    let setup = Setup::with_restore_response();
     let (snapshot, owners, request) = setup.checkpoint();
     owners.accept_mode.store(2, Ordering::SeqCst);
     let (snapshot, refused) = wait(
@@ -106,7 +107,7 @@ fn restore_input_ignored_native_gate_and_stale_digest_refuse_with_healthy_reusab
 
 #[test]
 fn detached_restore_input_retains_real_file_view_and_original_native_until_physical_cleanup() {
-    let mut setup = Setup::new();
+    let mut setup = Setup::with_restore_response();
     let (snapshot, owners, request) = setup.checkpoint();
     let (gates, receiver) = owners.pause_review();
     let weak_original = Arc::downgrade(setup.original());

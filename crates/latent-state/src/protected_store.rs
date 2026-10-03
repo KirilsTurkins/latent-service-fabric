@@ -28,8 +28,8 @@ pub use migration::{
 pub use operation::ProtectedStoreOperation;
 pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
 pub use restore_input::{
-    ProtectedRestoreInput, ProtectedRestoreInputJob, RestoreInputOwners, RestoreInputPrecondition,
-    RestoreReadFence,
+    ProtectedRestoreInput, ProtectedRestoreInputJob, ProtectedRestoreWindowFrame,
+    RestoreInputOwners, RestoreInputPrecondition, RestoreReadFence, RESTORE_INPUT_RESPONSE_BYTES,
 };
 pub use resume::{
     MigrationResumeCommitFence, ProtectedMigrationResumeJob, ProtectedMigrationResumeReceipt,

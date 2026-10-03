@@ -1,5 +1,5 @@
 //! Nonmutating restore input review under the original affine snapshot custody.
-//! The new destination's Fresh/checkpoint/control admission remains Root-owned.
+//! The destination's Fresh/checkpoint/control admission uses its actual owners.
 
 use super::{
     custody::ProtectedCustodyJob, snapshot::SnapshotFile, ProtectedSnapshot, ProtectedStoreError,
@@ -15,7 +15,9 @@ use crate::{
     },
     store_io::{StoreIoError, StoreIoKind},
 };
-use latent_core::native_capacity::{NativeCapacityError, NativeReservation};
+use latent_core::native_capacity::{
+    NativeBufferClass, NativeBufferPermit, NativeCapacityError, NativeReservation,
+};
 use std::{
     cell::Cell,
     future::Future,
@@ -23,6 +25,13 @@ use std::{
     sync::Arc,
     task::{Context, Poll},
 };
+
+/// Finite decoded snapshot/window/closure metadata plus one canonical window
+/// frame. The source manifest and window each admit at most 128 namespaces and
+/// 1 MiB encoded metadata; all record, format and artifact collections remain
+/// bounded. This is a response charge on the SAME original reservation, separate
+/// from its existing 8 MiB worker scratch charge and private archive file.
+pub const RESTORE_INPUT_RESPONSE_BYTES: u64 = 8 * 1024 * 1024;
 
 /// Exact input preconditions only. Knowing either digest supplies no read,
 /// cross-tenant, migration, restore, provider or resume authority.
@@ -41,6 +50,9 @@ pub trait RestoreInputOwners: Send + Sync + 'static {
     fn current_closure(&self, view: &ReadView) -> Result<SnapshotClosure, SnapshotError>;
     fn required_artifact(&self, artifact: &RequiredArtifact) -> Result<(), StoreError>;
     fn review_window(&self, view: &ReadView, window: &RestoreWindow) -> Result<(), StoreError>;
+    /// Same installed current read/audit/artifact decisions at every physical
+    /// response check. No fresh owner, callback default or renewed grant.
+    fn current(&self) -> Result<(), StoreError>;
     fn accept_read(&self, original: RestoreReadFence<'_>) -> Result<(), StoreError>;
 }
 
@@ -61,12 +73,18 @@ impl RestoreReadFence<'_> {
     }
 }
 
-/// Complete input/read descriptions only. Final staged imported links, current
-/// controls, fresh ownership and explicit reconciliation remain mandatory.
+/// Nonclone input/read descriptions. Metadata and installed inputs precede the
+/// prepaid buffer/native owner in destruction order, even after file retirement.
+/// Final staged links, current controls, Fresh ownership and reconciliation remain
+/// mandatory; this read result creates none of those authorities.
 pub struct ProtectedRestoreInput {
     snapshot: SnapshotReceipt,
     current: SnapshotClosure,
     window: RestoreWindow,
+    current_check: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+    owners: Arc<dyn RestoreInputOwners>,
+    buffer: NativeBufferPermit,
+    original: Arc<NativeReservation>,
 }
 impl ProtectedRestoreInput {
     #[must_use]
@@ -80,6 +98,54 @@ impl ProtectedRestoreInput {
     #[must_use]
     pub const fn window(&self) -> &RestoreWindow {
         &self.window
+    }
+
+    #[must_use]
+    pub fn response_bytes(&self) -> u64 {
+        self.buffer.bytes()
+    }
+
+    pub fn check(&self) -> Result<(), SnapshotError> {
+        self.original
+            .with_live(|| ())
+            .map_err(native_snapshot_error)?;
+        (self.current_check)().map_err(SnapshotError::Review)?;
+        self.owners.current().map_err(SnapshotError::Review)
+    }
+
+    /// Encode only the finite descriptive loss window under the already prepaid
+    /// response. The transport must retain this same owner through frame drop.
+    pub fn encode_window(self) -> Result<ProtectedRestoreWindowFrame, SnapshotError> {
+        self.check()?;
+        let bytes = self
+            .window
+            .canonical_bytes()
+            .map_err(SnapshotError::Review)?;
+        self.check()?;
+        Ok(ProtectedRestoreWindowFrame { bytes, owner: self })
+    }
+}
+
+/// Existing transport `Bytes::from_owner` can hold this nonclone frame. Encoded
+/// bytes die before the decoded metadata, installed pins and original permit.
+/// No detach-to-Vec method bypasses that physical destruction order.
+pub struct ProtectedRestoreWindowFrame {
+    bytes: Vec<u8>,
+    owner: ProtectedRestoreInput,
+}
+impl ProtectedRestoreWindowFrame {
+    #[must_use]
+    pub fn input(&self) -> &ProtectedRestoreInput {
+        &self.owner
+    }
+
+    pub fn check(&self) -> Result<(), SnapshotError> {
+        self.owner.check()
+    }
+}
+impl AsRef<[u8]> for ProtectedRestoreWindowFrame {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes
     }
 }
 
@@ -129,7 +195,7 @@ impl ProtectedStoreOwner {
                 if let Err(error) = file.retain_restore_input_owner(&owners) {
                     return Ok(Err(SnapshotError::Review(error)));
                 }
-                let result = review(file, store, &expected, &owners);
+                let result = review(file, store, &expected, owners);
                 match result {
                     Err(SnapshotError::Source(error)) => Err(error),
                     result => Ok(result),
@@ -144,8 +210,15 @@ fn review(
     file: &SnapshotFile,
     store: &crate::embedded::EmbeddedStore,
     expected: &RestoreInputPrecondition,
-    owners: &Arc<dyn RestoreInputOwners>,
+    owners: Arc<dyn RestoreInputOwners>,
 ) -> Result<ProtectedRestoreInput, SnapshotError> {
+    let original = file.retain_original();
+    // These locals are declared before any decoded metadata. Early refusal and
+    // detached completions destroy that metadata before refunding the permit.
+    let buffer = original
+        .reserve_buffer(NativeBufferClass::Response, RESTORE_INPUT_RESPONSE_BYTES)
+        .map_err(native_snapshot_error)?;
+    owners.current().map_err(SnapshotError::Review)?;
     file.check()
         .map_err(|_| SnapshotError::Review(StoreError::Unavailable))?;
     let snapshot = inspect_snapshot(&mut file.cursor(), file.deadline(), |key, bytes| {
@@ -166,6 +239,7 @@ fn review(
     }
     let view = store.snapshot().map_err(SnapshotError::source)?;
     let current = owners.current_closure(&view)?;
+    require_finite_closure(&current)?;
     let window = RestoreWindow::capture(&view, &snapshot, file.deadline(), || {
         file.original().with_live(|| ()).map_err(native_error)
     })?;
@@ -191,11 +265,37 @@ fn review(
         return Err(SnapshotError::Review(StoreError::Invalid));
     }
     drop(view);
-    Ok(ProtectedRestoreInput {
+    let input = ProtectedRestoreInput {
         snapshot,
         current,
         window,
-    })
+        current_check: file.retain_current(),
+        owners,
+        buffer,
+        original,
+    };
+    input.check()?;
+    Ok(input)
+}
+
+fn require_finite_closure(current: &SnapshotClosure) -> Result<(), SnapshotError> {
+    if current.required_artifacts.len() > crate::recovery::snapshot::SNAPSHOT_ARTIFACTS
+        || current.required_artifacts.capacity() > crate::recovery::snapshot::SNAPSHOT_ARTIFACTS
+    {
+        return Err(SnapshotError::Capacity);
+    }
+    for artifact in &current.required_artifacts {
+        crate::namespace::identity(&artifact.identity).map_err(|_| SnapshotError::Capacity)?;
+        if artifact.identity.capacity() > 256 || artifact.digest == [0; 32] {
+            return Err(SnapshotError::Capacity);
+        }
+    }
+    for format in current.inventory.entries().keys() {
+        if format.identity.capacity() > 256 {
+            return Err(SnapshotError::Capacity);
+        }
+    }
+    Ok(())
 }
 
 fn native_error(error: NativeCapacityError) -> StoreError {
@@ -203,5 +303,15 @@ fn native_error(error: NativeCapacityError) -> StoreError {
         StoreError::SnapshotExpired
     } else {
         StoreError::Unavailable
+    }
+}
+
+fn native_snapshot_error(error: NativeCapacityError) -> SnapshotError {
+    match error {
+        NativeCapacityError::DeadlineExceeded => SnapshotError::Deadline,
+        NativeCapacityError::BufferLimit
+        | NativeCapacityError::BufferTooLarge
+        | NativeCapacityError::AllocationFailed => SnapshotError::Capacity,
+        _ => SnapshotError::Review(StoreError::Unavailable),
     }
 }

@@ -21,7 +21,7 @@ use latent_core::{
 use std::{
     path::Path,
     sync::{
-        atomic::{AtomicBool, AtomicU8},
+        atomic::{AtomicBool, AtomicU8, AtomicUsize},
         Mutex,
     },
     time::Duration,
@@ -37,6 +37,7 @@ pub(super) struct Setup {
     target: tempfile::TempDir,
     config: ProtectedStoreConfig,
     clock: Arc<dyn ActivationClock>,
+    response_bytes: u64,
     pub owner: ProtectedStoreOwner,
     pub native: NativeCapacityOwner,
     original: Option<Arc<NativeReservation>>,
@@ -54,6 +55,8 @@ pub(super) struct Owners {
     seed: Arc<Seed>,
     pub accept_mode: AtomicU8,
     pub source_fault: AtomicBool,
+    pub archive_reads: AtomicUsize,
+    pub read_acceptances: AtomicUsize,
     pause: Mutex<Option<(Rendezvous, mpsc::Sender<PauseTicket>)>>,
 }
 
@@ -63,6 +66,8 @@ impl Owners {
             seed,
             accept_mode: AtomicU8::new(0),
             source_fault: AtomicBool::new(false),
+            archive_reads: AtomicUsize::new(0),
+            read_acceptances: AtomicUsize::new(0),
             pause: Mutex::new(None),
         }
     }
@@ -180,6 +185,7 @@ impl AggregateMigrationOwners for Owners {
 
 impl RestoreInputOwners for Owners {
     fn archive_row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        self.archive_reads.fetch_add(1, Ordering::SeqCst);
         self.row(key, bytes)
     }
     fn current_closure(&self, view: &ReadView) -> Result<SnapshotClosure, SnapshotError> {
@@ -208,11 +214,20 @@ impl RestoreInputOwners for Owners {
         Ok(())
     }
     fn accept_read(&self, original: RestoreReadFence<'_>) -> Result<(), StoreError> {
+        self.read_acceptances.fetch_add(1, Ordering::SeqCst);
         match self.accept_mode.load(Ordering::SeqCst) {
             0 => original.accept(),
             1 => Err(StoreError::Unavailable),
             2 => Ok(()),
             _ => Err(StoreError::Invalid),
+        }
+    }
+
+    fn current(&self) -> Result<(), StoreError> {
+        if self.accept_mode.load(Ordering::SeqCst) == 1 {
+            Err(StoreError::Unavailable)
+        } else {
+            Ok(())
         }
     }
 }
@@ -223,13 +238,24 @@ impl Setup {
     }
 
     pub fn with_clock(clock: Arc<dyn ActivationClock>) -> Self {
+        Self::with_response(clock, 1024 * 1024)
+    }
+
+    pub fn with_restore_response() -> Self {
+        Self::with_response(
+            Arc::new(SystemActivationClock),
+            RESTORE_INPUT_RESPONSE_BYTES,
+        )
+    }
+
+    pub fn with_response(clock: Arc<dyn ActivationClock>, response_bytes: u64) -> Self {
         let (root, config) = super::super::fixture();
         let (target, _) = super::super::fixture();
         let owner = start(&config, Arc::clone(&clock));
         let native =
             NativeCapacityOwner::with_clock(Default::default(), Arc::clone(&clock)).unwrap();
         owner.bind_native_capacity(&native).unwrap();
-        let original = reserve(&native, clock.as_ref());
+        let original = reserve(&native, clock.as_ref(), response_bytes);
         let seed = wait(
             owner
                 .with_store_retaining(
@@ -266,6 +292,7 @@ impl Setup {
             target,
             config,
             clock,
+            response_bytes,
             owner,
             native,
             original: Some(original),
@@ -469,6 +496,7 @@ impl Setup {
             target,
             mut config,
             clock,
+            response_bytes,
             native,
             original,
             seed,
@@ -480,12 +508,13 @@ impl Setup {
         config.create_if_missing = false;
         let owner = start(&config, Arc::clone(&clock));
         owner.bind_native_capacity(&native).unwrap();
-        let original = reserve(&native, clock.as_ref());
+        let original = reserve(&native, clock.as_ref(), response_bytes);
         Self {
             root,
             target,
             config,
             clock,
+            response_bytes,
             owner,
             native,
             original: Some(original),
@@ -512,7 +541,11 @@ fn start(config: &ProtectedStoreConfig, clock: Arc<dyn ActivationClock>) -> Prot
     .unwrap()
 }
 
-fn reserve(native: &NativeCapacityOwner, clock: &dyn ActivationClock) -> Arc<NativeReservation> {
+fn reserve(
+    native: &NativeCapacityOwner,
+    clock: &dyn ActivationClock,
+    response_bytes: u64,
+) -> Arc<NativeReservation> {
     Arc::new(
         native
             .reserve(
@@ -520,7 +553,7 @@ fn reserve(native: &NativeCapacityOwner, clock: &dyn ActivationClock) -> Arc<Nat
                 NativeReservationRequest {
                     request_bytes: 8192,
                     work_bytes: 9 * 1024 * 1024,
-                    response_bytes: 1024 * 1024,
+                    response_bytes,
                 },
                 clock.monotonic_now() + Duration::from_secs(30),
             )
