@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "NpmDependencies.test_conditions_are_bound_without_forcing_browser_or_enabling_async",
+    "NpmDependencies.test_native_declarations_extend_project_only_with_a_reviewed_capture",
+    "NpmDependencies.test_native_graph_uses_nearest_nested_package_and_peer_identity",
+    "NpmDependencies.test_native_lock_requires_exact_supported_graph_and_no_url_credentials",
+    "NpmDependencies.test_offline_module_lookup_consumes_captured_bytes_with_owned_paths",
+    "NpmDependencies.test_optional_platform_absence_is_explicit_and_does_not_hide_required_edges",
+    "NpmDependencies.test_original_archive_is_required_even_when_expanded_cache_exists",
+    "NpmDependencies.test_original_native_archive_sri_and_all_entries_are_rechecked",
+    "NpmDependencies.test_required_missing_or_mismatched_installed_transitive_fails"
+  ],
+  "guards": {
+    "NpmDependencies.test_conditions_are_bound_without_forcing_browser_or_enabling_async": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_native_declarations_extend_project_only_with_a_reviewed_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_native_graph_uses_nearest_nested_package_and_peer_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_native_lock_requires_exact_supported_graph_and_no_url_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_offline_module_lookup_consumes_captured_bytes_with_owned_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_optional_platform_absence_is_explicit_and_does_not_hide_required_edges": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_original_archive_is_required_even_when_expanded_cache_exists": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_original_native_archive_sri_and_all_entries_are_rechecked": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    },
+    "NpmDependencies.test_required_missing_or_mismatched_installed_transitive_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77bab9fdd23cc2e6ab8dd726bccf3494a2df25805a46fa8c3c022bd6ca80d737",
+        "class:setup-sha256:8b216460899ab4a8c22af2e0e4e4d9fb1b666b6836b4056c457c072758aadec1"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_application_dependencies.py",
+  "reviewReason": "Record native npm closure, original SRI archive, module profile, source-only preservation and offline lookup security controls",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

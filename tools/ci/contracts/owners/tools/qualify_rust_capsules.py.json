@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve every historical qualification command and require explicit entropy declaration, missing-grant denial and bounded bytes-only authority solely for the dotnet application dependency fixture.",
+  "reviewReason": "Retain every TypeScript dependency fixture and authoring helper fingerprint alongside current Rust, Go and .NET approval, entropy and signing stages.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2a0d07989501827cdb86a0abc8095dd1107f4217a57b14d1c58af0233befa554"
+  "sha256": "0aeb53670a406b05c3168ec42da7efcc73eceff6bd9b5790055452429a336f0b"
 }
