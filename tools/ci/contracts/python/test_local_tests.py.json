@@ -648,6 +648,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_local_tests.py",
-  "reviewReason": "Preserve every both-parent local execution case, reviewed guard and historical test body while integrating development source comments.",
+  "reviewReason": "Both fixed-development parents have identical 49 cases, bodies, setup, skip and fixture guards; preserve every identity while resolving only review prose.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
