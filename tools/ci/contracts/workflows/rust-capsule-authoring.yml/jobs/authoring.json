@@ -54,12 +54,23 @@
         }
       },
       {
+        "name": "Install captured Rust compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
         "name": "Install pinned validation and guest tools",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\ncargo fetch --locked\n"
       },
       {
         "name": "Test standalone validation and process ownership",
-        "run": "python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process"
+        "env": {
+          "LSF_REQUIRE_COMPILER_ISOLATION": "1"
+        },
+        "run": "python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process\n"
+      },
+      {
+        "name": "Test captured Rust executable-input approvals and namespace",
+        "run": "LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_rust_application_dependencies tools.tests.test_application_dependency_approval tools.tests.test_captured_compiler_isolation\n"
       },
       {
         "name": "Qualify proposed transaction shapes with the maintained Rust compiler and HTTP preparation",
@@ -70,7 +81,11 @@
       },
       {
         "name": "Execute complete outside-checkout authoring qualification",
-        "run": "python3 tools/qualify_rust_capsules.py --output \"$RUNNER_TEMP/rust-capsule-authoring\""
+        "run": "python3 tools/qualify_rust_capsules.py --output \"$RUNNER_TEMP/rust-capsule-authoring\"\n"
+      },
+      {
+        "name": "Qualify captured Rust libraries and approved generators",
+        "run": "python3 tools/qualify_rust_capsules.py --application-dependencies --output \"$RUNNER_TEMP/rust-capsule-dependencies\"\n"
       },
       {
         "name": "Exercise developer cache with the actual operator and compiled Rust package inputs",
@@ -87,7 +102,7 @@
         "uses": "actions/upload-artifact",
         "with": {
           "name": "rust-capsule-authoring-${{ github.run_id }}",
-          "path": "${{ runner.temp }}/transaction-contract-rust/report.json\n${{ runner.temp }}/transaction-contract-rust/source.tar.gz\n${{ runner.temp }}/transaction-contract-rust/component.wit\n${{ runner.temp }}/transaction-contract-rust/preparation.json\n${{ runner.temp }}/transaction-contract-rust/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-rust/logs/**\n${{ runner.temp }}/transaction-contract-rust/compiler/*.log\n${{ runner.temp }}/transaction-contract-rust/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wit\n${{ runner.temp }}/transaction-contract-rust/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-rust/compiled/generated/**\n${{ runner.temp }}/transaction-contract-rust/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-rust/bindings/**\n${{ runner.temp }}/transaction-contract-rust/component.wasm\n${{ runner.temp }}/dev-build-cache/\n${{ runner.temp }}/rust-capsule-authoring/*.json\n${{ runner.temp }}/rust-capsule-authoring/*.log\n${{ runner.temp }}/rust-capsule-authoring/*.stdout\n${{ runner.temp }}/rust-capsule-authoring/*.stderr\n${{ runner.temp }}/rust-capsule-authoring/logs/**\n${{ runner.temp }}/rust-capsule-authoring/builds/**\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.json\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.jsonl\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr.txt\n${{ runner.temp }}/rust-capsule-authoring/node/**\n${{ runner.temp }}/rust-capsule-authoring/releases/**\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.json\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/rust-capsule-authoring/guide/logs/**\n${{ runner.temp }}/rust-capsule-authoring/guide/projects/results/**\n",
+          "path": "${{ runner.temp }}/transaction-contract-rust/report.json\n${{ runner.temp }}/transaction-contract-rust/source.tar.gz\n${{ runner.temp }}/transaction-contract-rust/component.wit\n${{ runner.temp }}/transaction-contract-rust/preparation.json\n${{ runner.temp }}/transaction-contract-rust/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-rust/logs/**\n${{ runner.temp }}/transaction-contract-rust/compiler/*.log\n${{ runner.temp }}/transaction-contract-rust/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wit\n${{ runner.temp }}/transaction-contract-rust/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-rust/compiled/generated/**\n${{ runner.temp }}/transaction-contract-rust/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-rust/bindings/**\n${{ runner.temp }}/transaction-contract-rust/component.wasm\n${{ runner.temp }}/dev-build-cache/\n${{ runner.temp }}/rust-capsule-dependencies/**\n${{ runner.temp }}/rust-capsule-authoring/*.json\n${{ runner.temp }}/rust-capsule-authoring/*.log\n${{ runner.temp }}/rust-capsule-authoring/*.stdout\n${{ runner.temp }}/rust-capsule-authoring/*.stderr\n${{ runner.temp }}/rust-capsule-authoring/logs/**\n${{ runner.temp }}/rust-capsule-authoring/builds/**\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.json\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.jsonl\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr.txt\n${{ runner.temp }}/rust-capsule-authoring/node/**\n${{ runner.temp }}/rust-capsule-authoring/releases/**\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.json\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/rust-capsule-authoring/guide/logs/**\n${{ runner.temp }}/rust-capsule-authoring/guide/projects/results/**\n",
           "if-no-files-found": "warn",
           "retention-days": 3
         }
@@ -96,7 +111,7 @@
   },
   "jobId": "authoring",
   "kind": "job",
-  "reviewReason": "Preserve every historical and Phase4 compiler qualification while combining the reviewed missing-fixture schedule with all required native CI lane checks.",
+  "reviewReason": "Preserve all original linked result/payload retention and reserved recovery cases, every authored transaction and captured dependency compiler obligation, actual SDK source recipes, exact guards and both evidence paths while reconciling current development and the reviewed complete sixteen-method client contract.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

@@ -90,7 +90,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Preserve every historical and Phase4 compiler qualification while combining the reviewed missing-fixture schedule with all required native CI lane checks.",
+  "reviewReason": "Preserve all original linked result/payload retention and reserved recovery cases, every authored transaction and captured dependency compiler obligation, actual SDK source recipes, exact guards and both evidence paths while reconciling current development and the reviewed complete sixteen-method client contract.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

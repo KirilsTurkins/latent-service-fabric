@@ -497,27 +497,6 @@ does not by itself enable Angular T1, additional renderer imports or providers.
 The [management reference](../reference/management-services.md#web-publication-and-preparation)
 defines the trust fence, finite ownership and uncertainty boundary.
 
-### Phase 4 transaction definitions and State capability audit (#382, #397)
-
-The descriptor baseline adds `latent/control/v1/state.proto` and
-`latent/transaction/v1/transaction.proto`. Their four `StateService` and seven
-`TransactionService` methods describe bounded namespace/entity selection,
-explicit management operations, commands, fresh queries and outcome/effect
-recovery. The golden preserves all earlier field numbers, types, oneofs,
-existing enum values and service signatures.
-
-`AuditCapabilityResourceClass` appends `STATE` at value 11 for the typed State
-capability decision already emitted by this delivery. Values 0 through 10 and
-the rest of the earlier audit descriptor remain unchanged. The other twelve
-earlier file descriptors are unchanged in full. The strict descriptor validator
-continues to reject any unreviewed semantic change.
-
-This record freezes transport definitions. The companion
-[transaction contract](transactions.md) defines host authority, durable formats
-and recovery identities; these definitions grant no access and do not install a
-transactional runtime. Later methods or fields require another reviewed baseline
-update.
-
 ## Alpha removal of component-only release selectors
 
 Release get, lifecycle inspection, revoke/retire and evidence renewal now require
@@ -532,3 +511,28 @@ mutation preconditions, tenant isolation and current authority checks remain
 explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
+
+## Phase 4 transaction and management descriptor additions
+
+The Buf 1.72.0 descriptor baseline adds `latent/transaction/v1/transaction.proto`,
+`latent/control/v1/state.proto` and `latent/control/v1/dispatcher.proto`. The seven
+transaction, six state and three dispatcher methods use independent bounded
+messages. Every prior file, field, enum value and service signature is preserved.
+The audit descriptor adds state and dispatcher targets at fields 25 and 26,
+state resource class 11 and control actions 13 through 29; all prior audit rows
+remain exact.
+
+`PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
+reconciliation and termination require that complete original plan when calling
+`MutateState`. Receipt recovery preserves the original action, record version,
+policy digest and operation ID while requesting a separately current read
+publication. An expired historical plan can describe an already completed
+operation. It supplies neither a grant nor provider proof. Provider confirmation,
+administrator declaration and scheduled redrive remain separate typed facts.
+Historical effect records without the new record version remain readable and
+cannot authorize a new mutation.
+
+The golden matches the frozen sixteen-operation client descriptor and was
+reviewed against every prior named row using actual Buf output. The
+[transaction reference](transactions.md) describes the separate guest ABI,
+durable-format, authority and production qualification boundaries.
