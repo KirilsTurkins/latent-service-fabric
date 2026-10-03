@@ -110,7 +110,7 @@ impl Fixture {
         let held = Arc::new(Mutex::new(None));
         let keep = Arc::clone(&held);
         let eligibility = self.eligibility.clone();
-        *self.guest.plan_hook.lock().unwrap() = Some(Box::new(move || {
+        *self.guest.plan_lookup_hook.lock().unwrap() = Some(Box::new(move || {
             *keep.lock().unwrap() = Some(Fence::hold(&eligibility));
         }));
         held

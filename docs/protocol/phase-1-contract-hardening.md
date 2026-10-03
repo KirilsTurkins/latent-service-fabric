@@ -497,6 +497,27 @@ does not by itself enable Angular T1, additional renderer imports or providers.
 The [management reference](../reference/management-services.md#web-publication-and-preparation)
 defines the trust fence, finite ownership and uncertainty boundary.
 
+### Phase 4 transaction definitions and State capability audit (#382, #397)
+
+The descriptor baseline adds `latent/control/v1/state.proto` and
+`latent/transaction/v1/transaction.proto`. Their four `StateService` and seven
+`TransactionService` methods describe bounded namespace/entity selection,
+explicit management operations, commands, fresh queries and outcome/effect
+recovery. The golden preserves all earlier field numbers, types, oneofs,
+existing enum values and service signatures.
+
+`AuditCapabilityResourceClass` appends `STATE` at value 11 for the typed State
+capability decision already emitted by this delivery. Values 0 through 10 and
+the rest of the earlier audit descriptor remain unchanged. The other twelve
+earlier file descriptors are unchanged in full. The strict descriptor validator
+continues to reject any unreviewed semantic change.
+
+This record freezes transport definitions. The companion
+[transaction contract](transactions.md) defines host authority, durable formats
+and recovery identities; these definitions grant no access and do not install a
+transactional runtime. Later methods or fields require another reviewed baseline
+update.
+
 ## Alpha removal of component-only release selectors
 
 Release get, lifecycle inspection, revoke/retire and evidence renewal now require
@@ -511,3 +532,17 @@ mutation preconditions, tenant isolation and current authority checks remain
 explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
+
+## Additive Phase 4 transaction definitions
+
+The descriptor baseline includes `latent/transaction/v1/transaction.proto` and
+`latent/control/v1/state.proto`, plus `AuditCapabilityResourceClass` value 11
+for state resources. The Buf-generated descriptor was reviewed against every
+existing file: all previous field numbers, types, enum values, messages and RPC
+signatures remain unchanged. The exhaustive descriptor oracle includes both
+new files and still rejects unreviewed semantic changes.
+
+These definitions describe [transaction and recovery contracts](transactions.md).
+They do not establish that a host implements the profile or grant access from
+a namespace, command, effect or receipt identifier. WIT guest ABI versions and
+durable storage formats retain their separate compatibility boundaries.

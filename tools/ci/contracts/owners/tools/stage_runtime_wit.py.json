@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve exact versioned WIT dependency closure, type-use selector parsing, and all source/platform overlap refusals across the reviewed development reconciliation.",
+  "reviewReason": "Preserve the exact SemVer tokenizer and both type-use dependency regression schedules; the selector separator never extends a package version and closed staging remains enforced.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6e3289de7838781f404756c6eadd10e5fc04b57237349b2f8db70ee21429a642"
+  "sha256": "4cd0556eecc99f1a2d06a9220ece2476dba1ab9e586c2872d11da6904e7afaee"
 }

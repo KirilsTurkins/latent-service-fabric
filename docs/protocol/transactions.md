@@ -6,6 +6,8 @@ The Phase 4 definition profile is `lsf-transaction-v1`, with host ABI
 This is a contract definition. It installs no engine, transport integration or
 authority. Unsupported profiles fail before execution. The supported stateless
 V4 profile and existing invocation field numbers retain their meanings.
+The [authenticated native management boundary](state-management.md) specifies
+current access selectors, explicit operation recovery and response ownership.
 The unsupported state 0.1 declaration with guest `begin`/`commit` is retired;
 historical release and evidence bytes remain unchanged.
 
@@ -180,7 +182,7 @@ state/query/intent operations for #389/#718, and all external transactional RPCs
 plus authenticated management inspection/writes for #401. Client generation
 cannot qualify guest lowering; guest compilation cannot qualify a client transport.
 [The generated requirements](../../sdk/profile/transaction-requirements-v1.json)
-enumerate all 13 guest operations and 11 external/management RPCs. Guest profile
+enumerate all 13 guest operations and 12 external/management RPCs. Guest profile
 `latent.guest.transaction.v1` and client profile `latent.client.transaction.v1`
 both consume the single `lsf-transaction-v1` wire contract and retain independent
 execution evidence; neither becomes qualified by generating the other.

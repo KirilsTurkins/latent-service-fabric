@@ -12,11 +12,13 @@ ROOT = Path(__file__).resolve().parents[1]
 PLATFORM_WIT = ROOT / "wit" / "platform"
 DEFAULT_SOURCE = PLATFORM_WIT / "runtime"
 PACKAGE = re.compile(r"\bpackage\s+([^\s;]+)\s*;")
-# A type-use selector follows the version with `.{...}`. Its dot belongs to
-# WIT, not the version; internal prerelease/build dots remain part of the token.
+# A WIT `use ...@0.2.0.{type}` reference ends its version before the dot.
+# SemVer suffixes require an identifier after each dot, so that separator cannot
+# be swallowed as part of an otherwise valid imported package version.
 REFERENCE = re.compile(
     r"\b([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/[a-z][a-z0-9-]*@"
-    r"([0-9](?:[a-zA-Z0-9.+-]*[a-zA-Z0-9])?)"
+    r"([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)"
 )
 
 

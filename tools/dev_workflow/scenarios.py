@@ -14,6 +14,31 @@ from .common import DevError, MAX_DOCUMENT, decode, digest, encode, identifier, 
 OUTCOMES = {"success", "declared-error", "platform-failure", "transport-failure"}
 NODE_ONLY = {"authentication", "deployment", "restart", "pressure", "compiler-isolation", "protected-files", "native-cache", "running-cancellation", "immutable-blob-fixture", "scoped-secret-fixture", "local-service-fixture", "immediate-event-fixture"}
 PORTABLE = {"context", "log", "clock", "random", "metrics", "buffered-http-fixture", "fresh-state", "fuel", "memory"}
+ADMISSION_CURRENTNESS_REASONS = frozenset({
+    "admission-authority-busy", "admission-authority-poisoned", "admission-control-busy",
+    "admission-clock-lease-uncovered", "admission-clock-regression", "admission-durability-uncertain",
+    "admission-owner-retired", "admission-restart-clock-floor", "admission-verification-busy",
+    "signature-clock-regression", "signature-trust-conflict", "signature-stale-proof",
+})
+
+
+def _admission_reason(result: dict) -> str | None:
+    """Keep one closed public observation; remote fields never become authority."""
+    if result.get("category") != "platform-failure":
+        return None
+    error = result.get("error")
+    details = error.get("details") if isinstance(error, dict) else None
+    if not isinstance(details, list):
+        return None
+    reasons = set()
+    for detail in details[:16]:
+        if not isinstance(detail, dict) or detail.get("kind") != "admission.currentness":
+            continue
+        fields = detail.get("fields")
+        reason = fields.get("reason") if isinstance(fields, dict) else None
+        if type(reason) is str and reason in ADMISSION_CURRENTNESS_REASONS:
+            reasons.add(reason)
+    return next(iter(reasons)) if len(reasons) == 1 else None
 
 
 def validate(value: dict, environment: str) -> dict:
@@ -199,6 +224,9 @@ def run_prepared(prepared: list, unsupported: dict, environment: str, adapter, i
                         "execution": decode(encode(case["execution"])) if "execution" in case else None,
                         "resolvedRevision": revision, "targetMatches": target_matches,
                         "expectedRevision": dict(expected_target) if expected_target is not None else None})
+        admission_reason = _admission_reason(result)
+        if admission_reason is not None:
+            results[-1]["admissionReason"] = admission_reason
         recovery = result.get("data", {}).get("recovery")
         if recovery is not None:
             results[-1]["recovery"] = recovery

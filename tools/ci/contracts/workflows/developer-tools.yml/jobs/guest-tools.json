@@ -295,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Preserve every guest/compiler execution, matrix, cache, timeout and evidence obligation while retaining the actual reviewed development job model.",
+  "reviewReason": "Preserve exact historical coverage and all current actual compiler/package/runtime obligations while reconciling independently reviewed Phase 4 owners.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

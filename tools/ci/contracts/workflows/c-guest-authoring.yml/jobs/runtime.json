@@ -29,15 +29,15 @@
         "name": "Restore compiled Rust dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -90,7 +90,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Merge source-bound transaction shape compiler evidence with every current captured C library/isolation gate and retain both complete artifact sets; preserve historical commands exactly. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Preserve exact historical coverage and all current actual compiler/package/runtime obligations while reconciling independently reviewed Phase 4 owners.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }
