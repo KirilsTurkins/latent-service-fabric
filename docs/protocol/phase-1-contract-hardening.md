@@ -525,3 +525,12 @@ These definitions describe [transaction and recovery contracts](transactions.md)
 They do not establish that a host implements the profile or grant access from
 a namespace, command, effect or receipt identifier. WIT guest ABI versions and
 durable storage formats retain their separate compatibility boundaries.
+
+The additive baseline also includes the three `DispatcherService` management
+methods and their typed request, response, generation, snapshot and operation
+receipt messages, together with the typed audit state and dispatcher targets.
+The 2026-10-03 regeneration used Buf 1.72.0 and retained all field names, numbers,
+types, nested messages, oneof membership, enum values and service signatures
+from both the earlier transaction source and current development. These are
+contract definitions; they do not qualify installed dispatch or transport
+execution.
