@@ -6,8 +6,12 @@ pub mod embedded;
 pub mod entity_lanes;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
+pub mod protected_store;
+/// Logical disposition capacity charged in the same physical atomic store.
+pub mod reservation;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.
 pub mod session;
+pub mod store_io;
 
 use latent_core::{
     ActivationId, BoxFuture, EntityKey, LeaseId, Metadata, PlatformError, StateNamespaceId,

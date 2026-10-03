@@ -3,8 +3,6 @@
 //! callback inside `EmbeddedStore::apply_fenced` before physical commit. This
 //! module never opens a path, creates a second database or holds a policy lock.
 
-use std::sync::Arc;
-
 use crate::embedded::{
     AtomicBatch, EmbeddedStore, ExpectedRow, Family, ReadView, RowKey, RowMutation, StoreError,
 };
@@ -102,6 +100,107 @@ impl NamespaceMutation {
         bytes.extend_from_slice(&record.encode()?);
         Ok(bytes)
     }
+
+    fn decode_canonical(bytes: &[u8]) -> Result<Self, NamespaceError> {
+        let mut cursor = super::Cursor { bytes, offset: 1 };
+        let mutation = match bytes.first() {
+            Some(1) => {
+                let record = NamespaceRecord::decode(cursor.take(bytes.len() - 1)?)?;
+                Self::Create {
+                    id: record.id,
+                    state_schema: record.state_schema,
+                    quota: record.quota,
+                }
+            }
+            Some(2) => {
+                let id = StateNamespaceId(cursor.text()?);
+                let expected = NamespaceVersion {
+                    incarnation: cursor.u64()?,
+                    generation: cursor.u64()?,
+                };
+                let action = match cursor.take(1)?[0] {
+                    1 => NamespaceTransition::Quiesce,
+                    2 => NamespaceTransition::Retire,
+                    3 => NamespaceTransition::Destroy,
+                    4 => {
+                        let record =
+                            NamespaceRecord::decode(cursor.take(bytes.len() - cursor.offset)?)?;
+                        if record.id != id {
+                            return Err(NamespaceError::Corrupt);
+                        }
+                        NamespaceTransition::Recreate {
+                            state_schema: record.state_schema,
+                            quota: record.quota,
+                        }
+                    }
+                    _ => return Err(NamespaceError::Corrupt),
+                };
+                Self::Transition {
+                    id,
+                    expected,
+                    action,
+                }
+            }
+            _ => return Err(NamespaceError::Corrupt),
+        };
+        if cursor.offset != bytes.len() || mutation.canonical()? != bytes {
+            return Err(NamespaceError::Corrupt);
+        }
+        Ok(mutation)
+    }
+
+    fn matches_outcome(&self, record: &NamespaceRecord) -> Result<bool, NamespaceError> {
+        Ok(match self {
+            Self::Create {
+                id,
+                state_schema,
+                quota,
+            } => {
+                NamespaceRecord::create(
+                    record.tenant.clone(),
+                    id.clone(),
+                    state_schema.clone(),
+                    *quota,
+                )? == *record
+            }
+            Self::Transition {
+                id,
+                expected,
+                action,
+            } => {
+                let (incarnation, status, configuration) = match action {
+                    NamespaceTransition::Quiesce => (
+                        Some(expected.incarnation),
+                        super::NamespaceStatus::Quiescing,
+                        true,
+                    ),
+                    NamespaceTransition::Retire => (
+                        Some(expected.incarnation),
+                        super::NamespaceStatus::Retired,
+                        true,
+                    ),
+                    NamespaceTransition::Destroy => (
+                        Some(expected.incarnation),
+                        super::NamespaceStatus::Tombstone,
+                        true,
+                    ),
+                    NamespaceTransition::Recreate {
+                        state_schema,
+                        quota,
+                    } => (
+                        expected.incarnation.checked_add(1),
+                        super::NamespaceStatus::Active,
+                        record.state_schema == *state_schema && record.quota == *quota,
+                    ),
+                };
+                record.id == *id
+                    && Some(record.version.generation) == expected.generation.checked_add(1)
+                    && Some(record.version.incarnation) == incarnation
+                    && record.status == status
+                    && configuration
+            }
+        })
+    }
 }
 
 /// Immutable historical outcome, distinct from current inspection permission.
@@ -158,6 +257,9 @@ impl NamespaceOperationReceipt {
         }
         identity(&context.actor).map_err(|_| NamespaceError::Corrupt)?;
         identity(&context.operation_id).map_err(|_| NamespaceError::Corrupt)?;
+        if !NamespaceMutation::decode_canonical(&request)?.matches_outcome(&record)? {
+            return Err(NamespaceError::Corrupt);
+        }
         Ok(Self {
             context,
             record,
@@ -173,10 +275,12 @@ pub struct PreparedNamespaceMutation {
     pub batch: AtomicBatch,
     pub receipt: NamespaceOperationReceipt,
     pub replay: bool,
+    pub observed: Option<NamespaceRead>,
 }
 
 /// A decoded row and its exact bytes from one engine read view. It is data,
 /// never an allow decision. Preserve `expectation()` in the actual writer.
+#[derive(Debug)]
 pub struct NamespaceRead {
     record: NamespaceRecord,
     expected: ExpectedRow,
@@ -203,21 +307,63 @@ pub struct NamespacePage {
 }
 
 pub struct NamespaceCatalog {
-    store: Arc<EmbeddedStore>,
+    lifecycle: super::lifecycle::NamespaceLifecycleRegistry,
+}
+
+impl Default for NamespaceCatalog {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl NamespaceCatalog {
     #[must_use]
-    pub fn new(store: Arc<EmbeddedStore>) -> Self {
-        Self { store }
+    pub fn new() -> Self {
+        Self {
+            lifecycle: super::lifecycle::NamespaceLifecycleRegistry::new(
+                super::lifecycle::NamespaceLifecycleLimits::default(),
+            )
+            .expect("valid finite defaults"),
+        }
+    }
+
+    #[must_use]
+    pub fn lifecycle(&self) -> &super::lifecycle::NamespaceLifecycleRegistry {
+        &self.lifecycle
+    }
+
+    /// Register this bounded decoder with the protected owner's startup scan.
+    /// Other families require their own decoder; unknown keys/formats fail closed.
+    pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), NamespaceError> {
+        if key.family != Family::Namespace {
+            return Err(NamespaceError::UnsupportedFormat);
+        }
+        let expected = if key.key.starts_with(b"ns-v1\0") {
+            let record = NamespaceRecord::decode(bytes)?;
+            namespace_record_key(&record.tenant, &record.id)?
+        } else if key.key.starts_with(b"ns-op-v1\0") {
+            let receipt = NamespaceOperationReceipt::decode(bytes)?;
+            namespace_operation_key(
+                &receipt.context.tenant,
+                &receipt.context.actor,
+                &receipt.context.operation_id,
+            )?
+        } else {
+            return Err(NamespaceError::UnsupportedFormat);
+        };
+        if key.key != expected {
+            return Err(NamespaceError::Corrupt);
+        }
+        Ok(())
     }
 
     pub fn inspect(
         &self,
+        store: &EmbeddedStore,
         tenant: &TenantId,
         id: &StateNamespaceId,
     ) -> Result<Option<NamespaceRecord>, NamespaceError> {
-        let view = self.store.snapshot().map_err(storage)?;
+        let view = store.snapshot().map_err(storage)?;
         Ok(Self::read_in(&view, tenant, id)?.map(|read| read.record))
     }
 
@@ -250,14 +396,14 @@ impl NamespaceCatalog {
 
     pub fn outcome(
         &self,
+        store: &EmbeddedStore,
         context: &NamespaceOperationContext,
     ) -> Result<Option<NamespaceOperationReceipt>, NamespaceError> {
         let key = RowKey {
             family: Family::Namespace,
             key: namespace_operation_key(&context.tenant, &context.actor, &context.operation_id)?,
         };
-        let bytes = self
-            .store
+        let bytes = store
             .snapshot()
             .map_err(storage)?
             .get(&key)
@@ -278,6 +424,7 @@ impl NamespaceCatalog {
     /// active owner checks must be repeated in the store's actual commit callback.
     pub fn prepare(
         &self,
+        store: &EmbeddedStore,
         context: NamespaceOperationContext,
         mutation: &NamespaceMutation,
         active_commits: u64,
@@ -291,7 +438,7 @@ impl NamespaceCatalog {
             key: namespace_operation_key(&context.tenant, &context.actor, &context.operation_id)?,
         };
         let request = mutation.canonical()?;
-        let view = self.store.snapshot().map_err(storage)?;
+        let view = store.snapshot().map_err(storage)?;
         if let Some(bytes) = view.get(&operation_key).map_err(storage)? {
             let receipt = NamespaceOperationReceipt::decode(&bytes)?;
             if receipt.context != context || receipt.request != request {
@@ -301,9 +448,11 @@ impl NamespaceCatalog {
                 batch: AtomicBatch::default(),
                 receipt,
                 replay: true,
+                observed: Self::read_in(&view, &context.tenant, mutation.id())?,
             });
         }
         let previous = view.get(&namespace_key).map_err(storage)?;
+        let observed = Self::read_in(&view, &context.tenant, mutation.id())?;
         let record = match mutation {
             NamespaceMutation::Create {
                 id,
@@ -366,6 +515,7 @@ impl NamespaceCatalog {
             batch,
             receipt,
             replay: false,
+            observed,
         })
     }
 
@@ -373,11 +523,12 @@ impl NamespaceCatalog {
     /// Fetch exactly one bounded tenant prefix; never compute global counts.
     pub fn page(
         &self,
+        store: &EmbeddedStore,
         tenant: &TenantId,
         after: Option<&StateNamespaceId>,
         limit: usize,
     ) -> Result<NamespacePage, NamespaceError> {
-        let view = self.store.snapshot().map_err(storage)?;
+        let view = store.snapshot().map_err(storage)?;
         Self::page_in(&view, tenant, after, limit)
     }
 
@@ -450,6 +601,7 @@ mod tests {
     use super::*;
     use crate::embedded::StoreLimits;
     use std::fs::OpenOptions;
+    use std::sync::Arc;
 
     fn context(operation_id: &str) -> NamespaceOperationContext {
         NamespaceOperationContext {
@@ -481,32 +633,43 @@ mod tests {
         let temporary = tempfile::tempdir().unwrap();
         let path = temporary.path().join("namespace.redb");
         let store = open(&path);
-        let catalog = NamespaceCatalog::new(Arc::clone(&store));
+        let catalog = NamespaceCatalog::new();
         let prepared = catalog
-            .prepare(context("create"), &create("opaque"), 0)
+            .prepare(&store, context("create"), &create("opaque"), 0)
             .unwrap();
         let receipt = prepared.receipt.clone();
         // Trusted fixture persists data only; this is not production authorization.
         store.apply(prepared.batch).unwrap();
         assert_eq!(
             catalog
-                .inspect(&TenantId("a".into()), &StateNamespaceId("opaque".into()))
+                .inspect(
+                    &store,
+                    &TenantId("a".into()),
+                    &StateNamespaceId("opaque".into())
+                )
                 .unwrap(),
             Some(receipt.record.clone())
         );
         drop(catalog);
         drop(store);
         let store = open(&path);
-        let catalog = NamespaceCatalog::new(Arc::clone(&store));
-        assert_eq!(catalog.outcome(&context("create")).unwrap(), Some(receipt));
+        let catalog = NamespaceCatalog::new();
+        assert_eq!(
+            catalog.outcome(&store, &context("create")).unwrap(),
+            Some(receipt)
+        );
         assert!(
             catalog
-                .prepare(context("create"), &create("opaque"), 0)
+                .prepare(&store, context("create"), &create("opaque"), 0)
                 .unwrap()
                 .replay
         );
         assert!(catalog
-            .inspect(&TenantId("b".into()), &StateNamespaceId("opaque".into()))
+            .inspect(
+                &store,
+                &TenantId("b".into()),
+                &StateNamespaceId("opaque".into())
+            )
             .unwrap()
             .is_none());
     }
@@ -515,9 +678,9 @@ mod tests {
     fn concurrent_lifecycle_candidates_have_one_cas_winner_and_changed_operation_is_rejected() {
         let temporary = tempfile::tempdir().unwrap();
         let store = open(&temporary.path().join("namespace.redb"));
-        let catalog = NamespaceCatalog::new(Arc::clone(&store));
+        let catalog = NamespaceCatalog::new();
         let first = catalog
-            .prepare(context("create"), &create("opaque"), 0)
+            .prepare(&store, context("create"), &create("opaque"), 0)
             .unwrap();
         let original = first.receipt.record;
         store.apply(first.batch).unwrap();
@@ -526,19 +689,26 @@ mod tests {
             expected: original.version,
             action: NamespaceTransition::Quiesce,
         };
-        let left = catalog.prepare(context("left"), &mutation, 0).unwrap();
-        let right = catalog.prepare(context("right"), &mutation, 0).unwrap();
+        let left = catalog
+            .prepare(&store, context("left"), &mutation, 0)
+            .unwrap();
+        let right = catalog
+            .prepare(&store, context("right"), &mutation, 0)
+            .unwrap();
         store.apply(left.batch).unwrap();
         assert_eq!(store.apply(right.batch), Err(StoreError::Conflict));
-        assert!(catalog.outcome(&context("right")).unwrap().is_none());
+        assert!(catalog
+            .outcome(&store, &context("right"))
+            .unwrap()
+            .is_none());
         assert!(
             catalog
-                .prepare(context("left"), &mutation, 0)
+                .prepare(&store, context("left"), &mutation, 0)
                 .unwrap()
                 .replay
         );
         assert!(matches!(
-            catalog.prepare(context("left"), &create("other"), 0),
+            catalog.prepare(&store, context("left"), &create("other"), 0),
             Err(NamespaceError::Conflict)
         ));
     }
@@ -547,25 +717,32 @@ mod tests {
     fn scoped_enumeration_is_bounded_and_does_not_include_operation_receipts() {
         let temporary = tempfile::tempdir().unwrap();
         let store = open(&temporary.path().join("namespace.redb"));
-        let catalog = NamespaceCatalog::new(Arc::clone(&store));
+        let catalog = NamespaceCatalog::new();
         for id in ["aa", "bb", "cc"] {
             store
-                .apply(catalog.prepare(context(id), &create(id), 0).unwrap().batch)
+                .apply(
+                    catalog
+                        .prepare(&store, context(id), &create(id), 0)
+                        .unwrap()
+                        .batch,
+                )
                 .unwrap();
         }
-        let first = catalog.page(&TenantId("a".into()), None, 2).unwrap();
+        let first = catalog
+            .page(&store, &TenantId("a".into()), None, 2)
+            .unwrap();
         assert_eq!(first.records.len(), 2);
         let next = catalog
-            .page(&TenantId("a".into()), first.next_after.as_ref(), 2)
+            .page(&store, &TenantId("a".into()), first.next_after.as_ref(), 2)
             .unwrap();
         assert_eq!(next.records.len(), 1);
         assert!(catalog
-            .page(&TenantId("b".into()), None, 2)
+            .page(&store, &TenantId("b".into()), None, 2)
             .unwrap()
             .records
             .is_empty());
         assert!(matches!(
-            catalog.page(&TenantId("a".into()), None, 129),
+            catalog.page(&store, &TenantId("a".into()), None, 129),
             Err(NamespaceError::Capacity)
         ));
     }
@@ -574,11 +751,13 @@ mod tests {
     fn coherent_pages_cross_engine_limit_and_mixed_length_keys_without_omission() {
         let temporary = tempfile::tempdir().unwrap();
         let store = open(&temporary.path().join("namespace.redb"));
-        let catalog = NamespaceCatalog::new(Arc::clone(&store));
+        let catalog = NamespaceCatalog::new();
         let mut batch = AtomicBatch::default();
         for index in 0..260 {
             let id = format!("{}-{index}", "n".repeat(index % 5 + 1));
-            let prepared = catalog.prepare(context(&id), &create(&id), 0).unwrap();
+            let prepared = catalog
+                .prepare(&store, context(&id), &create(&id), 0)
+                .unwrap();
             batch.expectations.extend(prepared.batch.expectations);
             batch.mutations.extend(prepared.batch.mutations);
             if batch.mutations.len() == 128 || index == 259 {
@@ -589,7 +768,7 @@ mod tests {
         store
             .apply(
                 catalog
-                    .prepare(context("new"), &create("new"), 0)
+                    .prepare(&store, context("new"), &create("new"), 0)
                     .unwrap()
                     .batch,
             )
@@ -610,5 +789,54 @@ mod tests {
         }
         assert_eq!(found.len(), 260);
         assert!(!found.contains(&StateNamespaceId("new".into())));
+    }
+
+    #[test]
+    fn startup_decoder_rejects_wrong_scope_unknown_keys_and_malformed_historical_requests() {
+        let temporary = tempfile::tempdir().unwrap();
+        let store = open(&temporary.path().join("namespace.redb"));
+        let catalog = NamespaceCatalog::new();
+        let prepared = catalog
+            .prepare(&store, context("create"), &create("orders"), 0)
+            .unwrap();
+        for mutation in &prepared.batch.mutations {
+            let bytes = mutation.value.as_deref().unwrap();
+            NamespaceCatalog::validate_row(&mutation.key, bytes).unwrap();
+            let mut wrong_key = mutation.key.clone();
+            wrong_key.key.push(0);
+            assert_eq!(
+                NamespaceCatalog::validate_row(&wrong_key, bytes),
+                Err(NamespaceError::Corrupt)
+            );
+            wrong_key.family = Family::State;
+            assert_eq!(
+                NamespaceCatalog::validate_row(&wrong_key, bytes),
+                Err(NamespaceError::UnsupportedFormat)
+            );
+            assert!(
+                NamespaceCatalog::validate_row(&mutation.key, &bytes[..bytes.len() - 1]).is_err()
+            );
+        }
+        let key = RowKey {
+            family: Family::Namespace,
+            key: namespace_operation_key(&TenantId("a".into()), "alice", "create").unwrap(),
+        };
+        let mut malformed = prepared.receipt.clone();
+        malformed.request = vec![2];
+        assert!(NamespaceCatalog::validate_row(&key, &malformed.encode().unwrap()).is_err());
+        malformed = prepared.receipt;
+        malformed.record.version.generation += 1;
+        assert_eq!(
+            NamespaceCatalog::validate_row(&key, &malformed.encode().unwrap()),
+            Err(NamespaceError::Corrupt)
+        );
+        let unknown = RowKey {
+            family: Family::Namespace,
+            key: b"ns-v99\0".to_vec(),
+        };
+        assert_eq!(
+            NamespaceCatalog::validate_row(&unknown, &[]),
+            Err(NamespaceError::UnsupportedFormat)
+        );
     }
 }

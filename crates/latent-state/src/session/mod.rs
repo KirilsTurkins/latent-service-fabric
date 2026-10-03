@@ -4,6 +4,7 @@
 //! Scope descriptors and cursors never grant policy or commit authority.
 
 mod codec;
+mod validation;
 use crate::{
     embedded::{AtomicBatch, ExpectedRow, Family, ReadView, RowKey, RowMutation, StoreError},
     namespace::{
@@ -20,6 +21,7 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
     time::{Duration, Instant},
 };
+pub use validation::validate_row;
 static NEXT_SESSION: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
