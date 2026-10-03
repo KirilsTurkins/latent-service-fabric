@@ -40,6 +40,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
         vendor.update({folder + "/" + path: data for path, data in snapshot(ROOT / folder).items()})
     for path in ("Cargo.toml", "Cargo.lock", "tools/toolchain.toml", "LICENSE", "NOTICE",
                  "tools/toolchain-smoke/Cargo.toml", *EXAMPLES, "tools/dotnet_guest_bindings.py",
+                 "sdk/dotnet-guest/component-composer.json",
                  "sdk/dotnet-guest/global.json", "sdk/dotnet-guest/nuget.config",
                  "sdk/dotnet-guest/probes/smoke/Smoke.csproj", "sdk/dotnet-guest/probes/smoke/packages.lock.json"):
         vendor[path] = read_file(ROOT / path)
@@ -95,12 +96,20 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
     if json.loads(inventory(vendor)) != lock["sdk"]:
         raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    captured = "latent.dependencies.json" in files
+    if captured:
+        from tools.application_dependencies import validate_manifest
+        from tools.dotnet_application_dependencies import declarations
+        validate_manifest(decode_json(files['latent.dependencies.json']), 'dotnet')
+        declarations(files)
+        if not {'packages.lock.json', 'nuget-resolved.lock.json'} <= files.keys():
+            raise ValueError('captured NuGet inputs require native restore lock and asset metadata')
     for path in files:
-        if path.startswith("vendor/lsf/") or path in {"Capsule.csproj", "global.json"}:
+        if path.startswith("vendor/lsf/") or path in {"Capsule.csproj", "global.json"} or captured and path == 'packages.lock.json':
             continue
         if Path(path).suffix.lower() in {".csproj", ".props", ".targets", ".sln", ".config"} or Path(path).name in {"global.json", "packages.lock.json"}:
             raise ValueError("application MSBuild/package overrides require a reviewed capture extension")
-    if files.get("Capsule.csproj") != project_xml(vendor["sdk/dotnet-guest/probes/smoke/Smoke.csproj"]):
+    if not captured and files.get("Capsule.csproj") != project_xml(vendor["sdk/dotnet-guest/probes/smoke/Smoke.csproj"]):
         raise ValueError("application project compiler configuration differs from its reviewed SDK template")
     if files.get("global.json") != vendor["sdk/dotnet-guest/global.json"]:
         raise ValueError("application .NET SDK version differs from its pinned template")

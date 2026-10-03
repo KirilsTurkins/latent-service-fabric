@@ -83,7 +83,13 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
     if json.loads(inventory(vendor)) != lock["sdk"]:
         raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
-    if any(files[name] != vendor["sdk/go-guest/runtime-deps/" + name] for name in ("go.mod", "go.sum")):
+    captured = "latent.dependencies.json" in files
+    if captured:
+        from tools.application_dependencies import validate_manifest
+        validate_manifest(decode_json(files["latent.dependencies.json"]), "go")
+        if "go-resolved.lock.json" not in files:
+            raise ValueError("captured Go modules require the native resolved graph")
+    if not captured and any(files[name] != vendor["sdk/go-guest/runtime-deps/" + name] for name in ("go.mod", "go.sum")):
         raise ValueError("unreviewed Go module inputs; retain the pinned SDK dependency graph")
     limits = project["limits"]
     required = set(json.loads(read_file(ROOT / "examples/echo-contract/capsule.json"))["execution"]["limits"])
