@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve every historical qualification command and require explicit entropy declaration, missing-grant denial and bounded bytes-only authority solely for the dotnet application dependency fixture.",
+  "reviewReason": "Preserve exact Go authoring/direct-library qualification and current Rust/.NET executable approval, noncrypto entropy and signed-node commands.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2a0d07989501827cdb86a0abc8095dd1107f4217a57b14d1c58af0233befa554"
+  "sha256": "da08b79e924586c08f31d1377122fefd0ceccc71adf51883032afe6d67cc2dfa"
 }
