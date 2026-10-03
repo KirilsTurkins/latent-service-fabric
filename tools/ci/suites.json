@@ -1089,7 +1089,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 267,
+      "minimumCases": 273,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
