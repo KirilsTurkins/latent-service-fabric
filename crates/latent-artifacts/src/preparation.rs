@@ -294,6 +294,20 @@ impl ArtifactPreparationSource<'_> {
         self.repository
             .selected_historical_snapshot(release, publication)
     }
+
+    /// Metadata preparation for one authenticated catalog mutation. Verify the
+    /// selected immutable bytes once, then let the repository's original
+    /// authority cover its finite lease before the first eligibility check.
+    /// Execution, startup/recovery and historical operation replay use the
+    /// ordinary historical snapshot above and never renew authority here.
+    pub fn control_historical_snapshot_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+    ) -> Result<crate::HistoricalExecutionSnapshot, PlatformError> {
+        self.repository
+            .selected_control_historical_snapshot(release, publication)
+    }
     pub fn fetch_selected<'a>(
         &'a self,
         release: &'a ReleaseDigest,

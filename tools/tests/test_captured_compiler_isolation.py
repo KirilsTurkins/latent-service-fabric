@@ -140,6 +140,50 @@ class CompilerNamespace(unittest.TestCase):
         result = run_bounded_result(command, self.workspace, environment, 5, 16384)
         self.assertEqual(result.stdout, b'off|local|0')
 
+    def test_loader_search_uses_captured_libraries_and_cannot_inherit_ambient_paths(self):
+        captured = self.root / 'captured-libraries'
+        captured.mkdir()
+        original = next(Path(name) for name in self.isolation.shared if Path(name).name == 'libc.so.6')
+        shutil.copyfile(original, captured / original.name)
+        boundary = Isolation(self.workspace, {'cat': self.cat}, {'loader': captured},
+                             loader_directories=(captured,))
+        self.assertEqual(boundary.receipt['loaderLibraryDirectories'], [{'distribution': 'loader', 'path': '.'}])
+        self.assertNotIn(str(original), boundary.shared)
+        command = boundary.wrap(self.cat, ['--version'], self.workspace,
+                                {**self.environment, 'LD_LIBRARY_PATH': str(self.root / 'ambient')})
+        self.assertIn(['--setenv', 'LD_LIBRARY_PATH', str(captured)],
+                      [command[index:index + 3] for index in range(len(command) - 2)])
+        self.assertNotIn(str(self.root / 'ambient'), command)
+        result = run_bounded_result(command, self.workspace, self.environment, 5, 16384)
+        self.assertEqual(result.returncode, 0)
+        boundary.check_unchanged()
+        relocated = self.root / 'relocated-captured-libraries'
+        relocated.mkdir()
+        shutil.copyfile(original, relocated / original.name)
+        fresh = Isolation(self.workspace, {'cat': self.cat}, {'loader': relocated},
+                          loader_directories=(relocated,))
+        self.assertEqual(boundary.receipt, fresh.receipt)
+
+    def test_loader_search_rejects_uncaptured_duplicate_and_excessive_directories(self):
+        captured = self.root / 'captured-libraries'
+        captured.mkdir()
+        (captured / 'identity').write_bytes(b'captured')
+        for selected in ((self.workspace,), (captured, captured), (captured,) * 9):
+            with self.subTest(directories=selected), self.assertRaisesRegex(DependencyError, 'compiler-loader-directory'):
+                Isolation(self.workspace, {'cat': self.cat}, {'loader': captured}, loader_directories=selected)
+
+    def test_captured_loader_mutation_is_rejected_before_reuse(self):
+        captured = self.root / 'captured-libraries'
+        captured.mkdir()
+        original = next(Path(name) for name in self.isolation.shared if Path(name).name == 'libc.so.6')
+        target = captured / original.name
+        shutil.copyfile(original, target)
+        boundary = Isolation(self.workspace, {'cat': self.cat}, {'loader': captured},
+                             loader_directories=(captured,))
+        target.write_bytes(b'changed-captured-library')
+        with self.assertRaisesRegex(DependencyError, 'compiler-distribution-or-sysroot-mutated'):
+            boundary.check_unchanged()
+
 
 if __name__ == '__main__':
     unittest.main()
