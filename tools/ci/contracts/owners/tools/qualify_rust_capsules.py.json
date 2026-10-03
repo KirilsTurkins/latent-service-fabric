@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add the captured C library fixture while retaining all five existing signed components and direct SDK regressions",
+  "reviewReason": "Preserve every historical qualification command and require explicit entropy declaration, missing-grant denial and bounded bytes-only authority solely for the dotnet application dependency fixture.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9bcca87f8f920d59b9825f227ef1d3d94d6387b42d6199a436d5fd9bdeb87170"
+  "sha256": "2a0d07989501827cdb86a0abc8095dd1107f4217a57b14d1c58af0233befa554"
 }
