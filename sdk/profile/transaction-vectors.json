@@ -1,0 +1,432 @@
+{
+  "schemaVersion": "latent.transaction.boundary-vectors.v1",
+  "evidenceKind": "contract-vocabulary",
+  "executionQualified": false,
+  "encodings": {
+    "bytes": "canonical-padded-base64",
+    "u64": "canonical-decimal-string",
+    "strings": "strict-utf8"
+  },
+  "identities": [
+    {
+      "name": "caller-default",
+      "value": {
+        "tenant": "tenant",
+        "namespace": "app",
+        "incarnation": "i1",
+        "recoveryScope": "caller/alice",
+        "operation": "save",
+        "clientKey": "one"
+      },
+      "framedHex": "6c73662d636f6d6d616e642d6b65792d763100060000000000000074656e616e740300000000000000617070020000000000000069310c0000000000000063616c6c65722f616c6963650400000000000000736176650003000000000000006f6e65",
+      "sha256": "sha256:9fc8ffd82b85dcf839a7eac9fe386a1ea04f2a0734748f396d51103d0658ba5b"
+    },
+    {
+      "name": "different-caller",
+      "value": {
+        "tenant": "tenant",
+        "namespace": "app",
+        "incarnation": "i1",
+        "recoveryScope": "caller/bob",
+        "operation": "save",
+        "clientKey": "one"
+      },
+      "framedHex": "6c73662d636f6d6d616e642d6b65792d763100060000000000000074656e616e740300000000000000617070020000000000000069310a0000000000000063616c6c65722f626f620400000000000000736176650003000000000000006f6e65",
+      "sha256": "sha256:373d22337b52829dfce9a4b5064decfffa04340f471cf21abf7d15076578b4e6"
+    },
+    {
+      "name": "new-incarnation",
+      "value": {
+        "tenant": "tenant",
+        "namespace": "app",
+        "incarnation": "i2",
+        "recoveryScope": "caller/alice",
+        "operation": "save",
+        "clientKey": "one"
+      },
+      "framedHex": "6c73662d636f6d6d616e642d6b65792d763100060000000000000074656e616e740300000000000000617070020000000000000069320c0000000000000063616c6c65722f616c6963650400000000000000736176650003000000000000006f6e65",
+      "sha256": "sha256:9a7f62e0501060089ef41709cde16815631280db92e2ff3dfa0e378d10a5ce7b"
+    },
+    {
+      "name": "delegated-shared-scope",
+      "value": {
+        "tenant": "tenant",
+        "namespace": "app",
+        "incarnation": "i1",
+        "recoveryScope": "shared/team",
+        "operation": "save",
+        "clientKey": "one"
+      },
+      "framedHex": "6c73662d636f6d6d616e642d6b65792d763100060000000000000074656e616e740300000000000000617070020000000000000069310b000000000000007368617265642f7465616d0400000000000000736176650003000000000000006f6e65",
+      "sha256": "sha256:f561fc3b271fb16481a665e223701ed5eb8f40a86fa39a2e7f13e8d299d86d49"
+    },
+    {
+      "name": "entity-selection",
+      "value": {
+        "tenant": "tenant",
+        "namespace": "app",
+        "incarnation": "i1",
+        "recoveryScope": "caller/alice",
+        "operation": "save",
+        "clientKey": "one",
+        "entity": "document-1"
+      },
+      "framedHex": "6c73662d636f6d6d616e642d6b65792d763100060000000000000074656e616e740300000000000000617070020000000000000069310c0000000000000063616c6c65722f616c696365040000000000000073617665010a00000000000000646f63756d656e742d3103000000000000006f6e65",
+      "sha256": "sha256:8547c0e792f85dee36f14e78df80670c7a60553c92aa53222390376bac7ef122"
+    }
+  ],
+  "fingerprints": [
+    {
+      "name": "empty",
+      "value": {
+        "inputFormat": "raw-v1",
+        "input": {
+          "bytes": "",
+          "mediaType": "application/octet-stream",
+          "metadata": []
+        },
+        "expectedVersions": []
+      },
+      "framedHex": "6c73662d636f6d6d616e642d66696e6765727072696e742d76310006000000000000007261772d763118000000000000006170706c69636174696f6e2f6f637465742d73747265616d000000000000000000000000000000000000000000000000",
+      "sha256": "sha256:51e0c29b10040c93a0e45258ef34ffe54ed736cee2ceacebdef6f31ee9f68cd0"
+    },
+    {
+      "name": "changed-body",
+      "value": {
+        "inputFormat": "raw-v1",
+        "input": {
+          "bytes": "ZGlmZmVyZW50",
+          "mediaType": "application/octet-stream",
+          "metadata": []
+        },
+        "expectedVersions": []
+      },
+      "framedHex": "6c73662d636f6d6d616e642d66696e6765727072696e742d76310006000000000000007261772d763118000000000000006170706c69636174696f6e2f6f637465742d73747265616d0900000000000000646966666572656e7400000000000000000000000000000000",
+      "sha256": "sha256:8ce355e33823d211cca863bc4c6749585dd3c649f3f02cfea87772fd682343d8"
+    },
+    {
+      "name": "expected-absent",
+      "value": {
+        "inputFormat": "raw-v1",
+        "input": {
+          "bytes": "",
+          "mediaType": "application/octet-stream",
+          "metadata": []
+        },
+        "expectedVersions": [
+          {
+            "key": "YQ==",
+            "absent": true
+          }
+        ]
+      },
+      "framedHex": "6c73662d636f6d6d616e642d66696e6765727072696e742d76310006000000000000007261772d763118000000000000006170706c69636174696f6e2f6f637465742d73747265616d00000000000000000000000000000000010000000000000001000000000000006100",
+      "sha256": "sha256:e69a0aae03eb730bd9b4b62032f5f8931a65f0def401dd40e2bcb07435d60c70"
+    },
+    {
+      "name": "expected-version",
+      "value": {
+        "inputFormat": "raw-v1",
+        "input": {
+          "bytes": "",
+          "mediaType": "application/octet-stream",
+          "metadata": []
+        },
+        "expectedVersions": [
+          {
+            "key": "YQ==",
+            "version": "aTE6Mg=="
+          }
+        ]
+      },
+      "framedHex": "6c73662d636f6d6d616e642d66696e6765727072696e742d76310006000000000000007261772d763118000000000000006170706c69636174696f6e2f6f637465742d73747265616d00000000000000000000000000000000010000000000000001000000000000006101040000000000000069313a32",
+      "sha256": "sha256:f88c7aea37b30f6ff68dbe9806a4e13f4b47ad44677b0233ce9f75cb12d76c38"
+    }
+  ],
+  "unsigned64": [
+    "0",
+    "9007199254740991",
+    "9007199254740992",
+    "9223372036854775808",
+    "18446744073709551615"
+  ],
+  "invalidUnsigned64": [
+    "",
+    "01",
+    "-1",
+    "18446744073709551616"
+  ],
+  "boundaries": {
+    "identityUtf8Bytes": 256,
+    "keyBytes": 1024,
+    "valueBytes": 1048576,
+    "metadataPairs": 32,
+    "metadataBytes": 8192,
+    "pageEntries": 128,
+    "pageBytes": 1048576,
+    "stagedBytes": 8388608
+  },
+  "scenarios": [
+    {
+      "id": "absent-empty-max",
+      "actions": [
+        "absent",
+        "empty-present",
+        "maximum",
+        "over-limit"
+      ],
+      "expected": "preserve-presence-and-reject-over-limit",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "mismatched-command-body",
+      "actions": [
+        "admit",
+        "replay-changed-fingerprint"
+      ],
+      "expected": "fingerprint-mismatch-without-execution",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "same-tenant-different-caller",
+      "actions": [
+        "commit-as-alice",
+        "lookup-as-bob"
+      ],
+      "expected": "permission-denied",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "delegated-scope",
+      "actions": [
+        "host-approve-shared-scope",
+        "replay-current-authorized-reader"
+      ],
+      "expected": "same-command-with-current-read-check",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "revoked-result-read",
+      "actions": [
+        "commit",
+        "revoke-result-read",
+        "lookup"
+      ],
+      "expected": "permission-denied-despite-retained-decoder",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "rejection-after-state-change",
+      "actions": [
+        "business-reject",
+        "change-business-state",
+        "replay"
+      ],
+      "expected": "original-durable-rejection-no-reexecution",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "concurrent-proven-abort-retry",
+      "actions": [
+        "technical-abort-and-owner-retired",
+        "two-explicit-fenced-attempts"
+      ],
+      "expected": "one-next-attempt-original-receipt-retained",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "unknown-expired-not-abort",
+      "actions": [
+        "unknown-or-expired-lookup",
+        "retry-without-fence"
+      ],
+      "expected": "recovery-required-no-execution",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "fresh-query-after-ack",
+      "actions": [
+        "commit-ack",
+        "fresh-query-minimum-view"
+      ],
+      "expected": "view-at-least-acknowledged-version",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "stale-edit-precondition",
+      "actions": [
+        "user-read",
+        "intervening-write",
+        "command-expected-old-version"
+      ],
+      "expected": "stale-input-distinct-from-occ-conflict",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "uncertain-commit",
+      "actions": [
+        "atomic-write",
+        "lose-transport-ack",
+        "lookup-current-authorized-reader"
+      ],
+      "expected": "committed-or-recovery-required-never-invent-abort",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "cancel-after-commit",
+      "actions": [
+        "commit",
+        "cancel-or-cleanup-failure"
+      ],
+      "expected": "already-committed-with-receipt",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "effect-uncertainty",
+      "actions": [
+        "dispatch",
+        "provider-ack-lost"
+      ],
+      "expected": "uncertain-after-dispatch-no-unqualified-retry",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "bounded-paging",
+      "actions": [
+        "page-max",
+        "wrong-prefix-or-view-cursor",
+        "cross-request-query-cursor"
+      ],
+      "expected": "bounded-page-or-invalid-cursor",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "source-identity",
+      "actions": [
+        "commit-revision-a",
+        "route-to-revision-b",
+        "replay"
+      ],
+      "expected": "original-exact-source-current-permission",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "retained-old-format",
+      "actions": [
+        "retain-result-v1",
+        "upgrade-active-result-format",
+        "decode-v1-current-authorized-reader"
+      ],
+      "expected": "original-application-bytes-no-security-header-replay",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "unknown-enum-version",
+      "actions": [
+        "unknown-profile-or-enum-or-record-version"
+      ],
+      "expected": "unsupported-before-execution-no-default-success",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    },
+    {
+      "id": "restore-incarnation",
+      "actions": [
+        "acknowledge-i1",
+        "restore-older-history-as-i2",
+        "query-or-command-with-i1"
+      ],
+      "expected": "incarnation-mismatch",
+      "consumers": [
+        "guest-model",
+        "external-client-model",
+        "http-model",
+        "actual-execution"
+      ]
+    }
+  ]
+}
