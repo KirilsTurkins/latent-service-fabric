@@ -27,6 +27,15 @@ ERRORS: list[str] = []
 WARNINGS: list[str] = []
 MAX_BENCHMARK_TREE_BYTES = 600 * 1024 * 1024
 
+# These aggregate worlds are alternatives staged in separate compilation roots.
+# Their package/world label is shared; their independently bound ABI surfaces are not.
+ISOLATED_WIT_WORLDS = {
+    "latent:platform@0.5.0": frozenset({
+        Path("wit/platform/runtime-phase3-activation/world.wit"),
+        Path("wit/platform/runtime-phase4/world.wit"),
+    }),
+}
+
 IGNORED_DIRECTORY_NAMES = {
     ".git",
     ".generated",
@@ -399,10 +408,12 @@ def validate_wit() -> None:
             continue
         package = match.group(1).strip()
         if package in packages and path.parent != packages[package].parent:
-            fail(
-                f"duplicate WIT package {package}: "
-                f"{packages[package].relative_to(ROOT)} and {path.relative_to(ROOT)}"
-            )
+            pair = frozenset({packages[package].relative_to(ROOT), path.relative_to(ROOT)})
+            if pair != ISOLATED_WIT_WORLDS.get(package):
+                fail(
+                    f"duplicate WIT package {package}: "
+                    f"{packages[package].relative_to(ROOT)} and {path.relative_to(ROOT)}"
+                )
         packages[package] = path
         if "interface " not in text and "world " not in text:
             fail(f"WIT file defines neither interface nor world: {path.relative_to(ROOT)}")
