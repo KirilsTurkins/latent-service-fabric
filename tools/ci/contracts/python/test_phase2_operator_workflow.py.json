@@ -23,6 +23,12 @@
     "FailedOperatorReceiptTests.test_failure_before_client_acquisition_retains_only_completed_identity_capture",
     "FailedOperatorReceiptTests.test_interrupts_remain_authoritative_after_a_failed_receipt_and_existing_cleanup",
     "FailedOperatorReceiptTests.test_receipt_sink_failure_does_not_replace_the_original_nonzero_failure",
+    "FailedPublicationReceiptTests.test_cancellation_is_preserved_after_existing_owner_scopes_unwind",
+    "FailedPublicationReceiptTests.test_cleanup_failure_is_retained_without_claiming_successful_retirement",
+    "FailedPublicationReceiptTests.test_failure_before_acquisition_keeps_missing_identity_explicit",
+    "FailedPublicationReceiptTests.test_original_cli_failure_receipt_is_bounded_and_after_all_cleanup",
+    "FailedPublicationReceiptTests.test_other_tenant_failed_call_is_retained_without_an_additional_process",
+    "FailedPublicationReceiptTests.test_receipt_sink_failure_never_replaces_the_original_cli_error",
     "OperatorWorkflowTests.test_binary_identity_hashes_exact_bytes_without_retaining_paths",
     "OperatorWorkflowTests.test_both_auth_tokens_pass_local_profile_grammar",
     "OperatorWorkflowTests.test_candidate_weights_are_explicit_client_copies_only",
@@ -315,6 +321,78 @@
       ],
       "skipSites": []
     },
+    "FailedPublicationReceiptTests.test_cancellation_is_preserved_after_existing_owner_scopes_unwind": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:12e34fc7e40afad837c9ae4968c17764c490be817821571d6f3755014edba0a2",
+        "class:setup-sha256:1be00ac86aabe768fab0b5ce4fd737ed047a21e5121f2cd4e98a2122d4ab6c2f"
+      ],
+      "skipSites": []
+    },
+    "FailedPublicationReceiptTests.test_cleanup_failure_is_retained_without_claiming_successful_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:12e34fc7e40afad837c9ae4968c17764c490be817821571d6f3755014edba0a2",
+        "class:setup-sha256:1be00ac86aabe768fab0b5ce4fd737ed047a21e5121f2cd4e98a2122d4ab6c2f"
+      ],
+      "skipSites": []
+    },
+    "FailedPublicationReceiptTests.test_failure_before_acquisition_keeps_missing_identity_explicit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:12e34fc7e40afad837c9ae4968c17764c490be817821571d6f3755014edba0a2",
+        "class:setup-sha256:1be00ac86aabe768fab0b5ce4fd737ed047a21e5121f2cd4e98a2122d4ab6c2f"
+      ],
+      "skipSites": []
+    },
+    "FailedPublicationReceiptTests.test_original_cli_failure_receipt_is_bounded_and_after_all_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:12e34fc7e40afad837c9ae4968c17764c490be817821571d6f3755014edba0a2",
+        "class:setup-sha256:1be00ac86aabe768fab0b5ce4fd737ed047a21e5121f2cd4e98a2122d4ab6c2f"
+      ],
+      "skipSites": []
+    },
+    "FailedPublicationReceiptTests.test_other_tenant_failed_call_is_retained_without_an_additional_process": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:12e34fc7e40afad837c9ae4968c17764c490be817821571d6f3755014edba0a2",
+        "class:setup-sha256:1be00ac86aabe768fab0b5ce4fd737ed047a21e5121f2cd4e98a2122d4ab6c2f"
+      ],
+      "skipSites": []
+    },
+    "FailedPublicationReceiptTests.test_receipt_sink_failure_never_replaces_the_original_cli_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:12e34fc7e40afad837c9ae4968c17764c490be817821571d6f3755014edba0a2",
+        "class:setup-sha256:1be00ac86aabe768fab0b5ce4fd737ed047a21e5121f2cd4e98a2122d4ab6c2f"
+      ],
+      "skipSites": []
+    },
     "OperatorWorkflowTests.test_binary_identity_hashes_exact_bytes_without_retaining_paths": {
       "bases": [
         "unittest.TestCase"
@@ -486,6 +564,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_phase2_operator_workflow.py",
-  "reviewReason": "Preserve all existing cases, decorators and skip guards; review the helper import and bounded read-only deployment-inspection recovery, uncertainty, cleanup and rejection controls.",
+  "reviewReason": "Retain bounded publication failure receipts only after original cleanup scopes unwind; preserve every original stage, deadline, ownership/error assertion and no-replay decision, including all historical operator controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
