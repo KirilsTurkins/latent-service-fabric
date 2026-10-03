@@ -1,0 +1,71 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "LSF_REQUIRE_NATIVE_PROCESS_TESTS": "1",
+      "RUSTUP_TOOLCHAIN": "1.97.1"
+    },
+    "name": "Isolated Cargo evidence",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Initialize attempt diagnostics before prerequisites",
+        "run": "mkdir -p \"$RUNNER_TEMP/cargo-recipe-evaluation\"\ngit rev-parse HEAD > \"$RUNNER_TEMP/cargo-recipe-evaluation/revision.txt\"\n"
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install pinned validation dependencies",
+        "run": "python3 -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt, clippy",
+          "targets": "wasm32-wasip2,wasm32-unknown-unknown"
+        }
+      },
+      {
+        "name": "Install maintained MSRV for cache fault controls",
+        "run": "rustup toolchain install 1.95.0 --profile minimal --no-self-update"
+      },
+      {
+        "name": "Validate recipe and cache observations with native process accounting",
+        "run": "# Reviewed imported observer owner; not an additional runner:\n# tools/ci_cargo_observe.py\nset -o pipefail\npython3 -m unittest tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_observe tools.tests.test_ci_cargo_evaluate 2>&1 | tee \"$RUNNER_TEMP/cargo-recipe-evaluation/tests.log\"\n"
+      },
+      {
+        "name": "Exercise real Cargo freshness and cache faults without shared cache writes",
+        "run": "python3 tools/ci_cargo_probe.py --include-msrv --output \"$RUNNER_TEMP/cargo-recipe-evaluation/probe\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded evaluation diagnostics",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "cargo-recipe-evaluation-${{ github.sha }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/cargo-recipe-evaluation/",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "evaluate",
+  "kind": "job",
+  "reviewReason": "PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/cargo-recipe-evaluation.yml"
+}

@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "cargo-recipe-evaluation-${{ github.ref }}"
+    },
+    "name": "Cargo recipe evaluation",
+    "on": {
+      "workflow_dispatch": {
+        "inputs": {
+          "run_full_recipes": {
+            "default": false,
+            "description": "Replay the complete reviewed Rust Cargo selection cold and twice dependency-warm",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "evaluate",
+    "recipes"
+  ],
+  "reviewReason": "PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/cargo-recipe-evaluation.yml"
+}

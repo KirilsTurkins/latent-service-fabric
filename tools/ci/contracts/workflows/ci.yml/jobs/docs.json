@@ -64,7 +64,7 @@
       },
       {
         "name": "Validate documentation and profile selection",
-        "run": "LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_contracts tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner\npython3 tools/validate_docs.py\n"
+        "run": "LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_contracts tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff tools.tests.test_ci_cargo_evaluate\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner tools.tests.test_ci_cargo_observe\npython3 tools/validate_docs.py\n"
       },
       {
         "if": "needs.profile.outputs.profile == 'fast'",
@@ -92,7 +92,7 @@
   },
   "jobId": "docs",
   "kind": "job",
-  "reviewReason": "Issue #732: retain sharded review inputs, run contract regressions, and upload commit-bound failure diagnostics without changing required result coverage.",
+  "reviewReason": "PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

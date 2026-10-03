@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/ci_cargo_evaluate.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Consume both independently captured redacted streams for unchanged exact-case coverage; keep raw stdout as exclusive artifact inventory authority",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "3444bca90744167e2ed1025ff67a003c391eb79f33598f81942939e1d0b253b6"
+}
