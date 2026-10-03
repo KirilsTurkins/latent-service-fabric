@@ -1589,11 +1589,17 @@
       "sha256": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6"
     }
   },
-  "completionBoundary": {
+  "completionBoundaryAtCallableReview": {
     "freshMaintainedStrictFingerprintRunPending": true,
     "newComponentBuilt": false,
     "normalSigningOrNodeExecutionPerformed": false,
     "normalGuestOwnershipQualified": false,
     "completeIssue741CriteriaSatisfied": false
+  },
+  "subsequentStrictMaintainedModelObservation": {
+    "sourceCommit": "6cc9a42c274119c55499a8d3888d41223b732e51",
+    "status": "maintained-strict-fingerprint-passed",
+    "proof": "java-completable-executor-model-fingerprint-2026-10-03.json",
+    "proofSha256": "823fde9d4e0b14555caa658565af6f5b812ce496a66982ebb09cb6f05b564dd6"
   }
 }

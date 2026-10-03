@@ -390,7 +390,14 @@ The [callable review](../testing/evidence/java-completable-executor-model-review
 retains all 180 original callable identities. It compares 177 unchanged canonical
 IR bodies, three intentional ownership changes, and the sole added SDK rejection
 witness. Fingerprint version 2 requires exactly 181 bodies with the original
-24/25/23 monitor, owner and callback counts and all closed negatives. Its fresh
-maintained-helper observation, full build and signed normal execution remain
-required. The source repair does not explain the earlier mode-0 trap or complete
-#741.
+24/25/23 monitor, owner and callback counts and all closed negatives. The fresh
+[maintained-helper observation](../testing/evidence/java-completable-executor-model-fingerprint-2026-10-03.json)
+passes that strict fingerprint at source `6cc9a42c` with the same ten locked
+TeaVM jars and Windows Temurin 25.0.3+9. Both JVM Jobs physically retire within
+the original 90/30-second, one-CPU, 512-MiB and 8-MiB bounds, and every input seal
+matches. The 33 focused qualification controls, CI inventory and foundation
+checks pass; the unchanged documentation validator reaches its original
+240-second limit and remains a retained timeout.
+
+A fresh full build and signed normal execution remain required. The source
+repair does not explain the earlier mode-0 trap or complete #741.
