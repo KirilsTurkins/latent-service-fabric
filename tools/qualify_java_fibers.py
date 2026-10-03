@@ -222,12 +222,12 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
                  "-d", output, *sources)
     expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
         "resolved-reference-closure;unsupported-no-fallback;actual-coroutine-monitors=24;owned-callback-bodies=25;"
-        "bodies=180;actual-generated-callbacks=23;application-identity")
+        "bodies=181;actual-generated-callbacks=23;application-identity")
     observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
     if observed != expected: raise ValueError("Java CompletableFuture model control did not complete")
-    return {"status": "actual-locked-classlib-model-passed", "modelMethodBodies": 180,
+    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 2, "modelMethodBodies": 181,
             "coroutineMonitorBodies": 24, "ownedCallbackBodies": 25, "actualGeneratedCallbacks": 23,
             "jarDigests": identities,
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}

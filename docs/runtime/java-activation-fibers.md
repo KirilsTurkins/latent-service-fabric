@@ -356,11 +356,41 @@ library behavior and the complete #741 profile remain open.
 A separate actual Windows JDK comparison at the same implementation source found
 an ordinary executor failure defect. If an executor queues a callback and then
 throws, the JDK still runs an accepted `supplyAsync` callback and keeps a
-`completeAsync` target pending until its queued callback runs. The port eagerly
+`completeAsync` target pending until its queued callback runs. The port at that source eagerly
 fails that work and skips the supplier. Its private source ledger also reports
 zero callback and result owners while one callback remains physically queued.
 Both `RejectedExecutionException` and a generic exception reproduced the public
 difference. These [paired source observations](../testing/evidence/java-completable-executor-throw-2026-10-02.json)
-identify an unimplemented repair and preserve all original controls and counts.
+record the defect at that source and preserve the original observed counts.
 They do not explain the normal mode-0 trap, whose application uses the default
 executor, or qualify TeaVM lowering or native admission.
+
+Source `c8ccba41` repairs uncertain executor acceptance. A queued producer can
+still run after its submission throws, and a `completeAsync` target remains
+pending as on the JDK. Logical cancellation retains its callback and result
+leases until physical execution retires them. Immediate retirement requires an
+absence witness from the SDK-managed queue. The private rejection fixture now
+uses that witness while preserving all original assertions.
+
+All six fresh JDK executor cases match the port. The maintained source helper
+passes its original 82 behavior and 419 ownership assertions, 32 race rounds,
+49 new acceptance assertions and 30 bounded uncertainty assertions. Eight
+uncertain producers retain the original eight queued and eight result leases;
+a ninth is denied, cancellation retains the leases, and activation cleanup
+correctly remains unqualified. The enclosing bounded JVM is physically retired.
+
+The actual locked TeaVM model resolves the callback closure and retains its
+original negatives, 24 coroutine monitors, 25 owned callback bodies and 23
+generated callbacks. The rejection witness adds one method body, yielding 181.
+The historical maintained guard expects 180 and rejects this result. This
+[source repair observation](../testing/evidence/java-completable-executor-acceptance-2026-10-02.json)
+preserves that failure and the source-bound input seals.
+
+The [callable review](../testing/evidence/java-completable-executor-model-review-2026-10-03.json)
+retains all 180 original callable identities. It compares 177 unchanged canonical
+IR bodies, three intentional ownership changes, and the sole added SDK rejection
+witness. Fingerprint version 2 requires exactly 181 bodies with the original
+24/25/23 monitor, owner and callback counts and all closed negatives. Its fresh
+maintained-helper observation, full build and signed normal execution remain
+required. The source repair does not explain the earlier mode-0 trap or complete
+#741.
