@@ -4,7 +4,6 @@ use super::{error, state::Record, state::State};
 use latent_activation::ActivationEnvelope;
 use latent_capabilities::broker::ProviderCall;
 use latent_core::{ActivationBudget, PlatformError, PlatformErrorCode, TenantId};
-use latent_routing::InvocationTarget;
 
 pub(super) enum RegistrationScope<'a> {
     SameTenant,
@@ -62,11 +61,11 @@ impl RegistrationScope<'_> {
 
 pub(super) fn owns_broker_parent(
     parent: &Record,
-    source: &InvocationTarget,
+    source: (&TenantId, &latent_core::ServiceId),
     budget: &ActivationBudget,
 ) -> bool {
-    parent.tenant == source.tenant
-        && parent.target_service == source.service
+    &parent.tenant == source.0
+        && &parent.target_service == source.1
         && parent.terminal_at.is_none()
         && parent
             .active_budget
