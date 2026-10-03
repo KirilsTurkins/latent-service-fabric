@@ -246,19 +246,26 @@ are accepted. Expiry is exclusive at UTC midnight, with a maximum 30-day lifetim
 expired or future entries fail every invocation, including docs-only scope checks.
 An expired unused entry must still be removed or explicitly re-reviewed.
 
-The initial policy proposed one compatibility waiver: zizmor
-`self-repository` on the exact job-level local RustSec call, expiring **2026-10-03**.
-GitHub resolves this reusable workflow at the caller commit, unlike a mutable
-workspace-relative action step. #281 currently validates `./` references, not the
-new `$/` syntax recommended by zizmor 1.30.1. The parent reviewed that exact call
-in PR #363. Update the pin policy or re-review before expiry; adding an exception
-file alone is not approval. The same reviewed policy now includes 16 exact
-noncredential secret-rule occurrences: one labelled API-journal digest, one
-synthetic environment-variable name and fourteen historical preparation lookup
-identities. Their producer/ownership review and clean snapshot results are in the
-[evidence ledger](security-baseline-evidence.md). They expire on 2026-10-03 and
-cannot match a changed file, scanner location or rule. No dependency exception,
-general digest exemption or path allowlist exists.
+The original compatibility waiver for the job-level local RustSec call expired
+on 2026-10-03. The workflow and pin validator now support the recommended `$/`
+reference; pinned zizmor 1.30.1 reports no workflow findings, so the obsolete
+`self-repository` exception has been removed.
+
+The sixteen content and location bound Gitleaks false positives were each
+re-reviewed on 2026-10-03, using the pinned 8.30.1 scanner and private field
+comparisons. They cover one explicitly labelled historical API-journal SHA256,
+fourteen digest suffixes of the recorded noncredential preparation lookup
+handles, and the synthetic denied environment-variable name. Every complete
+file matches the earlier reviewed historical bytes. The recorded producer hashes
+artifact metadata, engine/target identity and a process-local epoch; the lookup
+handle does not authorize execution. No raw match or credential was retained or
+probed. The [individual review](security-exception-review-2026-10-03.json) records
+the exact fingerprints, locations and file identities.
+
+These sixteen exact exceptions expire at UTC midnight on **2026-10-17**. Changed
+content, locations, rules and other occurrences continue to fail; the original
+30-day maximum, exclusive expiry and future-created guards remain unchanged.
+No dependency exception, general digest exemption or path allowlist exists.
 
 ## Settings and operator commands
 
