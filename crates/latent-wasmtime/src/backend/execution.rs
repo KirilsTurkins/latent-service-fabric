@@ -61,8 +61,13 @@ impl WasmtimeBackend {
             runtime.surface.value_codec_limits,
         )?;
 
-        let capabilities =
-            self.invocation_capabilities(&runtime, &request, &accounting, cancellation)?;
+        let capabilities = match self
+            .invocation_capabilities(&runtime, &request, &accounting, cancellation, stop)
+            .await?
+        {
+            Ok(capabilities) => capabilities,
+            Err(outcome) => return Ok(outcome),
+        };
         *capability_observer = capabilities
             .as_ref()
             .map(latent_capabilities::broker::CapabilitySession::observer);
@@ -200,26 +205,36 @@ impl WasmtimeBackend {
         Ok(transaction)
     }
 
-    fn invocation_capabilities(
+    async fn invocation_capabilities(
         &self,
         runtime: &PreparedRuntime,
         request: &ExecutionRequest,
         accounting: &InvocationAccounting,
         cancellation: &dyn ExecutionCancellation,
-    ) -> Result<Option<latent_capabilities::broker::CapabilitySession>, PlatformError> {
-        self.shared
-            .capabilities
-            .as_ref()
-            .map(|owner| {
-                let publication = runtime.eligibility.as_ref().ok_or_else(|| {
-                    platform_error(
-                        PlatformErrorCode::PermissionDenied,
-                        "capability publication owner required",
-                        false,
-                    )
-                })?;
-                owner.open_session(request, cancellation, publication, accounting.deadline())
-            })
-            .transpose()
+        stop: &StopControl,
+    ) -> Result<
+        Result<Option<latent_capabilities::broker::CapabilitySession>, GuestOutcome>,
+        PlatformError,
+    > {
+        let Some(owner) = &self.shared.capabilities else {
+            return Ok(Ok(None));
+        };
+        let publication = runtime.eligibility.as_ref().ok_or_else(|| {
+            platform_error(
+                PlatformErrorCode::PermissionDenied,
+                "capability publication owner required",
+                false,
+            )
+        })?;
+        self.capability_session(
+            owner,
+            request,
+            cancellation,
+            publication,
+            accounting.deadline(),
+            stop,
+        )
+        .await
+        .map(|result| result.map(Some))
     }
 }
