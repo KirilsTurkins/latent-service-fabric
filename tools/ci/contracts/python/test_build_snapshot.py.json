@@ -101,6 +101,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_build_snapshot.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain the original aggregate/entry/file/archive refusal case and every guard; its invalid aggregate configuration is exactly one byte above the reviewed current source ceiling rather than the obsolete33MiB profile.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
