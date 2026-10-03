@@ -3,6 +3,7 @@ syntax = "proto3";
 package latent.transaction.v1;
 
 import "latent/invocation/v1/invocation.proto";
+import "latent/control/v1/release.proto";
 
 // The complete profile is mandatory. Unknown names/versions reject before
 // execution; decoding these messages does not install an engine or authority.
@@ -145,12 +146,17 @@ message LookupCommandRequest {
   TransactionProfile profile = 1;
   CommandSelector command = 2;
   optional string attempt_id = 3;
+  // Current read-authority target only. The host resolves this installed exact
+  // publication and seals current namespace/result permission before lookup.
+  // It never changes command identity, fingerprint or original SourceIdentity.
+  latent.control.v1.PublicationRef authorization_publication = 4;
 }
 
 message LookupCommitRequest {
   TransactionProfile profile = 1;
   CommandSelector command = 2;
   string receipt_id = 3;
+  latent.control.v1.PublicationRef authorization_publication = 4;
 }
 
 message QueryRequest {
@@ -218,6 +224,7 @@ message GetEffectRequest {
   TransactionProfile profile = 1;
   CommandSelector command = 2;
   string effect_id = 3;
+  latent.control.v1.PublicationRef authorization_publication = 4;
 }
 
 message ListEffectHistoryRequest {

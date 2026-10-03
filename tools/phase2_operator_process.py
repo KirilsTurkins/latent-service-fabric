@@ -295,6 +295,7 @@ class Client:
         self.config = None
         self.node = None
         self.calls = 0
+        self.last_exit_status = None
         self.failed_call = None
         self.environment = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(directory),
                             "LANG": "C.UTF-8", "RUST_BACKTRACE": "0"}
@@ -316,6 +317,7 @@ class Client:
         if self.node:
             self.node.drain()
         self.calls += 1
+        self.last_exit_status = result.returncode
         try:
             value = json.loads(result.stdout)
         except (ValueError, UnicodeError):
