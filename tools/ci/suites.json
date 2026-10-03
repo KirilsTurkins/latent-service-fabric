@@ -8358,14 +8358,18 @@
         "phase4::tests::malformed_profile_and_stale_transport_deadline_never_admit_work",
         "phase4::tests::missing_identity_and_wrong_tenant_cannot_touch_recovery_runtime",
         "phase4::tests::namespace_operations_require_management_role_before_domain_owner",
-        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation"
+        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation",
+        "management::release::web::preparation::tests::web_preparation_retains_same_source_and_readiness_pin_with_timer",
+        "management::release::web::preparation::tests::web_preparation_original_deadline_retires_waiting_owner_without_replay",
+        "management::release::web::preparation::tests::expired_web_preparation_starts_no_backend_or_owner",
+        "management::release::web::preparation::tests::web_preparation_hard_denial_is_not_retried_or_relabelled"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.lib.latent-wire",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 149,
+      "minimumCases": 153,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
