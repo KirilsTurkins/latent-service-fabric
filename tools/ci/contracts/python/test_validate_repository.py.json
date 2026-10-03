@@ -22,6 +22,10 @@
     "SourceTraversalTests.test_json_rejects_duplicate_keys_in_each_bad_file",
     "SourceTraversalTests.test_tool_binary_and_library_sources_are_checked",
     "SourceTraversalTests.test_wit_ignores_installed_dependencies_but_checks_owned_sources",
+    "WitPackageProfileTests.test_alternative_worlds_still_require_a_definition",
+    "WitPackageProfileTests.test_exact_alternative_worlds_keep_their_distinct_sources",
+    "WitPackageProfileTests.test_profile_location_filename_or_package_version_cannot_expand_the_exception",
+    "WitPackageProfileTests.test_third_profile_and_ordinary_duplicate_packages_remain_rejected",
     "WorkspaceDependencyTests.test_accepts_an_acyclic_path_dependency_graph",
     "WorkspaceDependencyTests.test_detects_path_dependency_cycles"
   ],
@@ -290,6 +294,54 @@
       ],
       "skipSites": []
     },
+    "WitPackageProfileTests.test_alternative_worlds_still_require_a_definition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:96146b176bf2049d7e6b766d4ef2c491197464e437f568e1fc9f4489946f7284"
+      ],
+      "skipSites": []
+    },
+    "WitPackageProfileTests.test_exact_alternative_worlds_keep_their_distinct_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:96146b176bf2049d7e6b766d4ef2c491197464e437f568e1fc9f4489946f7284"
+      ],
+      "skipSites": []
+    },
+    "WitPackageProfileTests.test_profile_location_filename_or_package_version_cannot_expand_the_exception": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:96146b176bf2049d7e6b766d4ef2c491197464e437f568e1fc9f4489946f7284"
+      ],
+      "skipSites": []
+    },
+    "WitPackageProfileTests.test_third_profile_and_ordinary_duplicate_packages_remain_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:96146b176bf2049d7e6b766d4ef2c491197464e437f568e1fc9f4489946f7284"
+      ],
+      "skipSites": []
+    },
     "WorkspaceDependencyTests.test_accepts_an_acyclic_path_dependency_graph": {
       "bases": [
         "unittest.TestCase"
@@ -317,6 +369,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_validate_repository.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain every original case body and execution guard; add closed alternative-world package rejection and independent exact staging controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
