@@ -3,11 +3,11 @@ import path from 'node:path';
 import {readFile, writeFile, rename} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {publicNavigation} from './public-navigation.mjs';
-import {emptyErrorNavigation} from './empty-error-navigation.mjs';
+import {emptyErrorNavigation, emptyServerErrorNavigation} from './empty-error-navigation.mjs';
 import {qualifyEmptyErrorOracle} from './empty-error-oracle.mjs';
 
 const [toolchain, chrome, origin, generator, version, receipt, mode = 'navigation', ready, resume] = process.argv.slice(2);
-assert.ok(['navigation', 'cutover', 'error-configured', 'error-unconfigured', 'error-denied'].includes(mode));
+assert.ok(['navigation', 'cutover', 'error-configured', 'error-unconfigured', 'error-denied', 'error-corrupt'].includes(mode));
 const {chromium} = createRequire(path.join(toolchain, 'package.json'))('playwright-core');
 const browser = await chromium.launch({executablePath: chrome, headless: true,
   args: process.platform === 'linux' && process.getuid() === 0 ? ['--no-sandbox'] : []});
@@ -44,12 +44,14 @@ try {
   });
   if (mode.startsWith('error-')) {
     const target = generator + '/guide/missing';
-    const expected = mode === 'error-denied' ? 403 : 404;
+    const expected = mode === 'error-corrupt' ? 502 : mode === 'error-denied' ? 403 : 404;
     if (mode === 'error-configured') {
       const response = await page.goto(target, {waitUntil: 'networkidle', timeout: 15000});
       assert.equal(response.status(), expected);
       headers(response, true);
       assert.equal(await page.locator('#view').textContent(), 'Page not found');
+    } else if (mode === 'error-corrupt') {
+      result.emptyServerErrorNavigation = await emptyServerErrorNavigation(page, target);
     } else {
       result.emptyErrorNavigation = await emptyErrorNavigation(page, target, expected);
     }

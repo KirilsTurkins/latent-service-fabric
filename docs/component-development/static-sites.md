@@ -313,6 +313,21 @@ vectors that reject nonempty origin errors, incorrect status, cacheable errors
 and missing zero-length framing. These vectors validate the oracle; the signed
 publication workflow supplies the real-node evidence.
 
+The signed workflow also has a physical corruption vector for its configured
+404 asset. Immediately after the stopped restore, before that asset first
+enters the verified HTTP cache, the harness changes one byte in the active
+restored installation's original digest-addressed blob. It requires empty,
+uncached GET and HEAD 502 responses and checks Chromium's origin framing and
+error-document identity. The fixed signed bytes are restored through the held
+original inode in `finally`, including when the campaign is cancelled. GET and
+HEAD must then select the original signed 404 representation again. Normal
+guide delivery, request-owner retirement and conservative catalog accounting
+remain checked; corruption never authorizes a renderer or fallback document.
+The two documentation publications each retain all 250 captured assets under
+the unchanged 252-asset ceiling. Their receipt labels these counts as signed
+fixture inventory, alongside actual node ownership and catalog observations;
+it does not report physical cache allocation or a throughput benchmark.
+
 ## Apply a static publication and recover an operation
 
 After verifying and publishing your signed package, put the returned exact
