@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/go/generate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add release.proto for the bounded tenth read-only NodeService operation; retain every prior generated source and native transport obligation",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3262f4be99e860716c4cda7e4e9182ea68991ecd5643c14e0b25f8c3da8ab5fe"
+  "sha256": "a7429dae7cce45d4d3d8232e68d860bf93d86e5d1bac29df5db6b05cbadcb4d6"
 }

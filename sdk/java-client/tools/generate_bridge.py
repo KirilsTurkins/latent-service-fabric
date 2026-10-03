@@ -88,7 +88,7 @@ def generate():
             if field.get("map"):
                 expression = f"Map.copyOf(value.get{getter}Map())"
             elif field.get("repeated"):
-                expression = f"value.get{getter}List().stream().map(item -> {converted(kind, 'item', False)}).toList()"
+                expression = f"value.get{getter}{suffix}List().stream().map(item -> {converted(kind, 'item', False)}).toList()"
             else:
                 expression = converted(kind, accessor, False)
                 if field.get("optional"):
