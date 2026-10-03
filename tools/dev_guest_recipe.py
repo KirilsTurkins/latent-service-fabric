@@ -98,8 +98,12 @@ def compile_c(payload: Path, project: Path, output: Path, check) -> None:
     check()
 
 
-def compile_managed(payload: Path, project: Path, output: Path, check, language: str) -> None:
+def compile_managed(payload: Path, project: Path, output: Path, check, language: str,
+                    *, executable_approval: str | None = None) -> None:
     from tools.dev_managed_tools import unpack
+    if executable_approval is not None:
+        require(language == "java", "selected-frontend-adapter-has-no-executable-approval-consumer")
+        sha(executable_approval)
     require(sys.platform == "linux" and platform.machine() == "x86_64", "managed-adapter-requires-linux-x86-64")
     cache = project.parent / "build-cache"
     require(cache.is_dir() and output.parent == project.parent, "managed-adapter-owned-attempt-paths")
@@ -111,7 +115,8 @@ def compile_managed(payload: Path, project: Path, output: Path, check, language:
         from tools.java_capsule_build import build
         os.environ.update(JAVA_HOME=str(staged / "jdk"), PATH=str(staged / "jdk/bin") + os.pathsep + os.environ["PATH"])
         build(project, output, sdk / "bin/capsule-contracts", None, repository, staged / "wasi-sdk",
-              gradle=str(staged / "gradle/bin/gradle"), offline_cache=staged / "gradle-cache")
+              gradle=str(staged / "gradle/bin/gradle"), offline_cache=staged / "gradle-cache",
+              **({"executable_approval": executable_approval} if executable_approval is not None else {}))
     elif language == "dotnet":
         from tools.dotnet_guest.build import build
         os.environ["PATH"] = str(staged / "dotnet") + os.pathsep + os.environ["PATH"]
@@ -146,9 +151,13 @@ def main() -> int:
     try:
         with owned_cancellation() as cancellation:
             if args.executable_approval is not None:
-                require(args.language == "rust", "selected-frontend-adapter-has-no-executable-approval-consumer")
+                require(args.language in {"rust", "java"}, "selected-frontend-adapter-has-no-executable-approval-consumer")
                 sha(args.executable_approval)
-                compile_rust(payload, project, output, cancellation.check, executable_approval=args.executable_approval)
+                if args.language == "rust":
+                    compile_rust(payload, project, output, cancellation.check, executable_approval=args.executable_approval)
+                else:
+                    compile_managed(payload, project, output, cancellation.check, args.language,
+                                    executable_approval=args.executable_approval)
             elif args.language in {"java", "dotnet", "go", "typescript"}:
                 compile_managed(payload, project, output, cancellation.check, args.language)
             else:

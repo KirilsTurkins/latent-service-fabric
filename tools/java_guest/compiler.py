@@ -46,8 +46,8 @@ def sdk_snapshot(root: Path) -> dict:
         "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
         "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
         "tools/teavm_platform.py", "tools/capture.py")}
-    for folder in ("runtime", "templates", "wit", "resources"):
-        if folder == "resources" and not (root / folder).is_dir(): continue
+    for folder in ("runtime", "templates", "wit", "resources", "processors"):
+        if folder in {"resources", "processors"} and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
     return dict(sorted(files.items()))
 
@@ -188,7 +188,8 @@ class Compiler:
             write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
-                application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None) -> tuple[Path, dict]:
+                application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
+                processor_stage=None) -> tuple[Path, dict]:
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
@@ -210,6 +211,11 @@ class Compiler:
             target = project / "captured-application/jars" / f"{index:04d}.jar"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(read_file(jar, 64 * 1024 * 1024))
+        if processor_stage is not None:
+            for index, jar in enumerate(processor_stage[1]):
+                target = project / 'captured-processor-api/jars' / f'{index:04d}.jar'
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(read_file(jar, 64 * 1024 * 1024))
         # Never let Gradle silently select or provision an unobserved JDK. This
         # generated private property file is part of this source-bound recipe.
         (project / "gradle.properties").write_text(
@@ -230,6 +236,12 @@ class Compiler:
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(read_file(path))
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
+        processor_profile = None
+        if processor_stage is not None:
+            from tools.java_annotation_processors import process
+            processor_profile = process(self, java_root,
+                tuple(path.relative_to(sources).as_posix() for path in sorted(sources.rglob('*.java'))),
+                project, processor_stage, application_classpath)
         self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)
         retain = source_module(self.sdk / "tools/dependencies.py").retain
         retained = retain(self.directory / "gradle-home/caches/modules-2/files-2.1", project, destination, False)
@@ -260,6 +272,8 @@ class Compiler:
         if resource_profile is not None:
             resources.recheck(application_resources, resource_profile)
             details["immutableResources"] = resource_profile
+        if processor_profile is not None:
+            details['annotationProcessors'] = processor_profile
         return component, details
 
     def check_unchanged(self):

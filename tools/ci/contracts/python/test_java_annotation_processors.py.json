@@ -1,0 +1,413 @@
+{
+  "cases": [
+    "ProcessorAuthoring.test_actual_cli_reviews_a_local_processor_and_helper_without_running_a_jvm",
+    "ProcessorAuthoring.test_conflicting_helper_and_processor_roles_leave_all_reviewed_inputs_unchanged",
+    "ProcessorAuthoring.test_reviewed_in_application_processor_bytes_are_passive_until_exact_execution_approval",
+    "ProcessorCapture.test_alias_capture_is_deterministic_without_library_catalogues",
+    "ProcessorCapture.test_alias_owner_role_mount_bytes_and_metadata_cannot_drift",
+    "ProcessorCapture.test_changed_explicit_class_selection_invalidates_the_native_candidate",
+    "ProcessorCapture.test_deleted_originals_use_captured_complete_processor_and_runtime_classpaths",
+    "ProcessorCapture.test_duplicate_capture_alias_and_missing_graph_input_are_denied",
+    "ProcessorCapture.test_duplicate_or_oversized_processor_class_selection_is_denied",
+    "ProcessorCapture.test_processor_helper_is_explicitly_captured_without_becoming_a_runtime_root",
+    "ProcessorCapture.test_processor_input_declaration_has_one_exact_role",
+    "ProcessorCapture.test_removed_alias_and_unaliased_executable_edge_are_rejected",
+    "ProcessorCapture.test_reselection_or_extra_executable_alias_is_denied",
+    "ProcessorCapture.test_runtime_and_processor_selection_cannot_share_the_processor_root",
+    "ProcessorCapture.test_shared_transitives_have_separate_approved_inputs_and_unchanged_runtime_owners",
+    "ProcessorCapture.test_unapproved_processor_graph_cannot_materialize_or_execute",
+    "ProcessorCapture.test_uncaptured_processor_class_is_a_static_denial",
+    "ProcessorCapture.test_unreachable_processor_input_cannot_enter_an_execution_receipt",
+    "ProcessorFrontend.test_exact_java_approval_is_forwarded_once_through_the_selected_frontend",
+    "ProcessorFrontend.test_invalid_or_unimplemented_frontend_approval_never_dispatches_a_compiler",
+    "ProcessorFrontend.test_managed_java_consumer_keeps_the_approval_and_selected_offline_cache",
+    "ProcessorStage.test_class_output_does_not_enter_the_guest",
+    "ProcessorStage.test_generated_source_mutation_after_owner_check_is_rejected",
+    "ProcessorStage.test_invalid_encoding_existing_source_and_non_source_outputs_are_rejected",
+    "ProcessorStage.test_only_explicit_processors_and_new_source_enter_the_compilation",
+    "ProcessorStage.test_original_command_failures_preserve_confirmed_and_unconfirmed_cleanup",
+    "ProcessorStage.test_owner_denial_cannot_install_generated_sources",
+    "ProcessorStage.test_precreated_validation_link_cannot_overwrite_an_outside_workspace_witness",
+    "ProcessorStage.test_processor_nonzero_is_retained_without_promoting_untrusted_diagnostics",
+    "ProcessorStage.test_readonly_source_mutation_is_detected_before_generated_source_is_copied",
+    "ProcessorStage.test_unqualified_sibling_outputs_do_not_become_parent_validation_inputs"
+  ],
+  "guards": {
+    "ProcessorAuthoring.test_actual_cli_reviews_a_local_processor_and_helper_without_running_a_jvm": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:aeac29d2151165ac76032f36312a448b502098e01cc967c742a1936f5fc0ac3e"
+      ],
+      "skipSites": []
+    },
+    "ProcessorAuthoring.test_conflicting_helper_and_processor_roles_leave_all_reviewed_inputs_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:aeac29d2151165ac76032f36312a448b502098e01cc967c742a1936f5fc0ac3e"
+      ],
+      "skipSites": []
+    },
+    "ProcessorAuthoring.test_reviewed_in_application_processor_bytes_are_passive_until_exact_execution_approval": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:aeac29d2151165ac76032f36312a448b502098e01cc967c742a1936f5fc0ac3e"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_alias_capture_is_deterministic_without_library_catalogues": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_alias_owner_role_mount_bytes_and_metadata_cannot_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_changed_explicit_class_selection_invalidates_the_native_candidate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_deleted_originals_use_captured_complete_processor_and_runtime_classpaths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_duplicate_capture_alias_and_missing_graph_input_are_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_duplicate_or_oversized_processor_class_selection_is_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_processor_helper_is_explicitly_captured_without_becoming_a_runtime_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_processor_input_declaration_has_one_exact_role": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_removed_alias_and_unaliased_executable_edge_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_reselection_or_extra_executable_alias_is_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_runtime_and_processor_selection_cannot_share_the_processor_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_shared_transitives_have_separate_approved_inputs_and_unchanged_runtime_owners": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_unapproved_processor_graph_cannot_materialize_or_execute": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_uncaptured_processor_class_is_a_static_denial": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorCapture.test_unreachable_processor_input_cannot_enter_an_execution_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:fd18344da2a485df0d9897b1442df9f71b9c040b273f2f597f608afbf40991a4"
+      ],
+      "skipSites": []
+    },
+    "ProcessorFrontend.test_exact_java_approval_is_forwarded_once_through_the_selected_frontend": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProcessorFrontend.test_invalid_or_unimplemented_frontend_approval_never_dispatches_a_compiler": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProcessorFrontend.test_managed_java_consumer_keeps_the_approval_and_selected_offline_cache": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_class_output_does_not_enter_the_guest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_generated_source_mutation_after_owner_check_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_invalid_encoding_existing_source_and_non_source_outputs_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_only_explicit_processors_and_new_source_enter_the_compilation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_original_command_failures_preserve_confirmed_and_unconfirmed_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_owner_denial_cannot_install_generated_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_precreated_validation_link_cannot_overwrite_an_outside_workspace_witness": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_processor_nonzero_is_retained_without_promoting_untrusted_diagnostics": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_readonly_source_mutation_is_detected_before_generated_source_is_copied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    },
+    "ProcessorStage.test_unqualified_sibling_outputs_do_not_become_parent_validation_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b525bc5547c66acfb2d01b9dc61abcc46c4d46df9c1291ee636e512b286a67b0",
+        "class:setup-sha256:433b1f75f878d13c5a62c2a44a6662a8e8885fe17390c925295c5816825f3e8a"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_annotation_processors.py",
+  "reviewReason": "Add reviewed in-application processor-byte capture and tamper denial; preserve the original30 finite processor control names and guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

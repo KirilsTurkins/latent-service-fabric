@@ -25,6 +25,10 @@ configurations.configureEach {
 }
 dependencies { implementation teavm.libs.interop }
 dependencies { implementation fileTree(dir: 'captured-application/jars', include: '*.jar') }
+// Explicitly approved processors may also supply SOURCE-retention annotation
+// types. proc:none keeps them passive here; TeaVM's runtime classpath excludes
+// compileOnly, so their executable classes/resources do not become guest input.
+dependencies { compileOnly fileTree(dir: 'captured-processor-api/jars', include: '*.jar') }
 sourceSets.main.resources.srcDir('captured-application/resources')
 teavm {
     c {

@@ -26,6 +26,10 @@
       {
         "name": "Exercise library authoring frontend and Java dependency boundaries",
         "run": "python -m unittest tools.tests.test_guest_authoring_frontend tools.tests.test_java_dependency_authoring tools.tests.test_java_resource_runtime tools.tests.test_java_private_resolution"
+      },
+      {
+        "name": "Exercise explicit captured Java processor boundaries",
+        "run": "python -m unittest tools.tests.test_java_annotation_processors"
       }
     ],
     "strategy": {
@@ -41,7 +45,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Restore the exact historical controller command; retain every added frontend, Java capture, resource and private registry case in a separate required matrix step with unchanged prior guards.",
+  "reviewReason": "Add explicit captured Java processor controls as a separate step while preserving both historical controller commands and every required job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

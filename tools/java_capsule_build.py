@@ -11,7 +11,11 @@ from tools import guest_compatibility_build, guest_resources, guest_dependency_i
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.java_guest import resources as java_resources
-from tools.application_dependencies import prepare
+from tools.application_dependencies import prepare, verify_inputs
+from tools.application_dependency_approval import request as execution_request, approve as approve_execution
+from tools.application_dependency_store import DependencyError
+from tools.build_snapshot import canonical
+from tools import java_annotation_processors
 from tools.java_application_dependencies import classpath
 from tools.java_resource_artifacts import packaged_resources
 from tools.rust_capsule_build import Commands, package_inputs
@@ -22,6 +26,7 @@ BUILD_TYPE = "https://latent.dev/build/java-capsule/v1"
 RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py",
           "tools/application_dependency_tools.py", "tools/java_application_dependencies.py", "tools/java_dependency_resolution.py",
+          "tools/application_dependency_approval.py", "tools/captured_compiler_isolation.py", "tools/java_annotation_processors.py",
           "tools/java_registry_tls.py",
           "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
           "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
@@ -49,7 +54,7 @@ def retain_logs(source: Path, output: Path) -> None:
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900,
-          offline_cache: Path | None = None) -> Path:
+          offline_cache: Path | None = None, executable_approval: str | None = None) -> Path:
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
     project_path = guest_dependency_inputs.application_root(checked_path(project_path), 'java')
@@ -72,7 +77,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         with tempfile.TemporaryDirectory(prefix="lsf-java-capsule-") as owned:
             temporary, compiler_dir = Path(owned), Path(owned) / "compiler"
             try:
-                work = temporary / "project"
+                verified = verify_inputs(observed.dependency_root, 'java')
+                has_processors = verified is not None and bool(verified.lock['executableInputs'])
+                processor_workspace = temporary / 'processor-workspace'
+                if has_processors:
+                    processor_workspace.mkdir()
+                work = processor_workspace / 'inputs/project' if has_processors else temporary / "project"
                 for name, data in files.items():
                     path = work / name
                     path.parent.mkdir(parents=True, exist_ok=True)
@@ -80,18 +90,44 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands = Commands(work, output, build_environment(temporary))
                 commands.deadline = start + timeout
                 stage = "application-dependencies"
-                closure = prepare(observed.dependency_root, work, output, "java")
+                approval, processor_stage, processor_inventory = None, None, None
+                if has_processors:
+                    if offline_cache is None:
+                        raise DependencyError('java-annotation-processors-require-captured-compiler-cache')
+                    stage = 'processor-compiler-inputs'
+                    compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
+                        sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
+                        config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache)
+                    isolated = java_annotation_processors.isolation(compiler, processor_workspace)
+                    compiler_jars = java_annotation_processors.compiler_classpath(compiler)
+                    recipe_identity = digest(canonical({'recipe': digest(recipe_inputs), 'sourceSnapshot': digest(source_inputs)}))
+                    requested = execution_request(verified, isolated, recipe_identity)
+                    write_json(output / 'executable-input-approval-request.json', {
+                        'formatVersion': 1, 'identity': digest(canonical(requested)), 'specification': requested})
+                    stage = 'executable-input-approval'
+                    if executable_approval is None:
+                        raise DependencyError('java-annotation-processors-require-exact-executable-approval')
+                    approval = approve_execution(verified, isolated, recipe_identity, executable_approval)
+                closure = prepare(observed.dependency_root, work, output, "java", execution_approval=approval)
                 if closure is not None and offline_cache is None:
                     raise ValueError("captured Java builds require the verified offline compiler cache")
-                application_jars, application_inventory = classpath(closure, temporary / "selected-application-jars")
+                selected_inputs = processor_workspace / 'inputs' if has_processors else temporary
+                application_jars, application_inventory = classpath(closure, selected_inputs / "selected-application-jars")
+                if has_processors:
+                    processor_jars, processor_names, processor_inventory = java_annotation_processors.classpath(
+                        closure, selected_inputs / 'selected-processor-jars')
+                    processor_stage = (isolated, processor_jars, processor_names,
+                                       processor_workspace / 'outputs', compiler_jars)
+                    write_json(output / 'java-processor-classpath.json', processor_inventory)
                 write_json(output / "java-classpath.json", application_inventory)
                 additional_resources, resource_sources = packaged_resources(closure, application_inventory, files)
                 application_resources = java_resources.materialize({**files, **resource_sources}, source_inputs,
                     additional_resources, temporary / "selected-application-resources")
                 stage = "compiler-inputs"
-                compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
-                    sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
-                    config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache)
+                if compiler is None:
+                    compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
+                        sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
+                        config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache)
                 (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
                 materials = list(compiler.materials)
                 paths = {"contracts-tool": checked_path(contracts_tool)}
@@ -103,7 +139,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
-                    application_classpath=application_jars, application_resources=application_resources)
+                    application_classpath=application_jars, application_resources=application_resources,
+                    processor_stage=processor_stage)
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
                 write_json(output / "bindings.json", generated)
@@ -125,6 +162,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 package_files = dict(files)
                 package_files.update(resource_sources)
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
+                if has_processors:
+                    from tools.application_dependency_store import directory_files
+                    processor_sources = directory_files(processor_workspace / 'outputs/generated')
+                    package_files.update({'derived/annotation-processors/' + name: data for name, data in processor_sources.items()})
+                    write_json(output / 'java-annotation-processors.json', generated['annotationProcessors'])
                 surface = read_json(derived / "surface.json")
                 stage = "compatibility"
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
@@ -163,7 +205,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     data = read_file(output / "application-dependencies.json", 8 * 1024 * 1024)
                     materials.extend([{"name": "application-dependency-closure", "digest": digest(data), "size": len(data)},
                                       {"name": "java-classpath-selection", "digest": digest(read_file(output / "java-classpath.json", 8 * 1024 * 1024)),
-                                       "size": (output / "java-classpath.json").stat().st_size}])
+                                      "size": (output / "java-classpath.json").stat().st_size}])
+                if has_processors:
+                    for name, path in [('java-processor-classpath', output / 'java-processor-classpath.json'),
+                                       ('java-annotation-processors', output / 'java-annotation-processors.json')]:
+                        data = read_file(path, 8 * 1024 * 1024)
+                        materials.append({'name': name, 'digest': digest(data), 'size': len(data)})
                 finished = int(time.time())
                 if finished < started or finished - started > 900 or time.monotonic() - start > timeout:
                     raise ValueError("Java build clock or overall deadline invalid")

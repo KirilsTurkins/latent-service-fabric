@@ -82,8 +82,10 @@ def reviewed_local_jars(files: dict[str, bytes]) -> dict[str, str]:
     lock = decode_json(files[LOCK])
     if lock.get('language') != 'java' or lock.get('manifestDigest') != digest(files[MANIFEST]):
         raise ValueError('Java reviewed local JAR lock drift')
-    selected = {row['id']: row for row in lock['artifacts'] if row['role'] == 'application'
-                and row['metadata'].get('ecosystem') == 'captured-local-jar'}
+    selected = {row['id']: row for row in lock['artifacts']
+                if row['metadata'].get('ecosystem') == 'captured-local-jar'
+                and (row['role'] == 'application' or row['role'] == 'build-tool'
+                     and row['metadata'].get('executableKind') == 'java-annotation-processor')}
     allowed = {}
     for row in config['localJars']:
         path = Path(row['path'])

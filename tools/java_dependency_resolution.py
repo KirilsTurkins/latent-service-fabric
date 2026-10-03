@@ -18,6 +18,7 @@ from tools.build_process import run_bounded_result
 from tools.build_snapshot import canonical, digest
 from tools.java_resource_artifacts import capture_resources, release_profile
 from tools import java_registry_tls
+from tools import java_annotation_processors
 from tools.rust_capsule_project import ROOT
 
 DECLARATIONS = "java-dependencies.json"
@@ -35,12 +36,18 @@ def declarations(value: dict) -> dict:
     metadata(value["selection"])
     release_profile(value["selection"].get("release", 25))
     for row in value["dependencies"]:
-        if (not isinstance(row, dict) or set(row) != {"group", "name", "version", "scope", "exclusions"}
+        if (not isinstance(row, dict) or set(row) not in ({"group", "name", "version", "scope", "exclusions"},
+                {"group", "name", "version", "scope", "exclusions", "processorClasses"},
+                {"group", "name", "version", "scope", "exclusions", "processorInput"})
                 or not all(isinstance(row[key], str) and TOKEN.fullmatch(row[key]) for key in ("group", "name", "version"))
                 or not re.fullmatch(r"[0-9][A-Za-z0-9_.-]*", row["version"]) or "SNAPSHOT" in row["version"]
                 or row["scope"] not in {"compile", "runtime"} or not isinstance(row["exclusions"], list)
                 or len(row["exclusions"]) > 256):
             raise DependencyError("java-maven-coordinate-or-scope-invalid")
+        if 'processorClasses' in row:
+            java_annotation_processors.classes(row['processorClasses'])
+        if 'processorInput' in row and row['processorInput'] is not True:
+            raise DependencyError('java-annotation-processor-input-declaration-invalid')
         for excluded in row["exclusions"]:
             if (not isinstance(excluded, dict) or set(excluded) != {"group", "name"}
                     or not all(isinstance(excluded[key], str) and TOKEN.fullmatch(excluded[key]) for key in excluded)):
@@ -55,10 +62,16 @@ def declarations(value: dict) -> dict:
             raise DependencyError("java-repository-credentials-denied")
     java_registry_tls.certificates(value)
     for row in value["localJars"]:
-        if (not isinstance(row, dict) or set(row) != {"id", "path", "dependencies"}
+        if (not isinstance(row, dict) or set(row) not in ({"id", "path", "dependencies"},
+                {"id", "path", "dependencies", "processorClasses"},
+                {"id", "path", "dependencies", "processorInput"})
                 or not isinstance(row["dependencies"], list) or len(row["dependencies"]) > 1024
                 or not isinstance(row["path"], str) or not 0 < len(row["path"]) <= 4096 or '\0' in row["path"]):
             raise DependencyError("java-local-jar-declaration-invalid")
+        if 'processorClasses' in row:
+            java_annotation_processors.classes(row['processorClasses'])
+        if 'processorInput' in row and row['processorInput'] is not True:
+            raise DependencyError('java-annotation-processor-input-declaration-invalid')
         label(row['id'])
         if len(set(row['dependencies'])) != len(row['dependencies']):
             raise DependencyError('java-local-jar-declaration-invalid')
@@ -146,7 +159,8 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     before = snapshot(project)
     previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
     previous_graph = optional(project, RESOLUTION)
-    recipe_paths = [Path(__file__), ROOT / 'tools/java_registry_tls.py', ROOT / 'tools/java_dependency_authoring.py', ROOT / 'tools/java_resource_artifacts.py',
+    recipe_paths = [Path(__file__), ROOT / 'tools/java_registry_tls.py', ROOT / 'tools/java_annotation_processors.py',
+                    ROOT / 'tools/java_dependency_authoring.py', ROOT / 'tools/java_resource_artifacts.py',
                     ROOT / 'tools/java_application_dependencies.py', ROOT / 'tools/toolchain.toml']
     recipe_before = {str(path): digest(read_bytes(path)) for path in recipe_paths}
     declaration_bytes = read_bytes(project / DECLARATIONS)
@@ -254,6 +268,7 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                 "dependencies": list(row["dependencies"]), "metadata": {"ecosystem": "captured-local-jar", "scope": "runtime",
                     "originalLocalPath": row['path']}})
             identities[row["id"]] = identity
+        java_annotation_processors.mark(config, artifacts)
         artifacts = capture_resources(owner, store, artifacts)
         native = {"formatVersion": 1, "resolver": resolver, "graph": list(graph.values()),
                   "artifacts": identities, "configurationDigest": digest(read_bytes(project / DECLARATIONS)),

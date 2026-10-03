@@ -4,8 +4,9 @@ The Java recipe accepts developer-selected Maven and local/private JARs through
 the [captured dependency contract](application-dependencies.md). Maven resolution
 uses the pinned Gradle/JDK pair and an SDK-owned finite task. Local-only JAR
 capture reads the selected bytes without starting Gradle or a host JVM.
-Application Gradle plugins, arbitrary Maven scripts and annotation processors
-do not execute.
+Application Gradle plugins and arbitrary Maven scripts do not execute. Annotation
+processing is disabled unless the developer selects processor classes and approves
+their exact captured executable closure for the finite source stage below.
 
 These commands use the source-owned Java tool from an LSF checkout. Keep its
 compiler and immutable SDK inputs pinned as described in
@@ -140,9 +141,53 @@ assets remain attributed inputs; their presence does not establish reachable JNI
 compatibility. Platform/JDK/SDK class overrides and too-new or malformed bytecode
 fail concretely.
 
-TeaVM compiler extension services are host executable inputs and fail closed
-until a separately approved isolated tool stage supplies them. Ordinary guest
-service-provider resources are preserved; annotation processing is disabled.
+TeaVM compiler extension services remain rejected application inputs. Processor
+approval does not install application TeaVM plugins or substitution policies.
+Ordinary guest service-provider resources are preserved; automatic annotation
+processor discovery remains disabled.
+
+Select a source-generating processor by its ordinary Java class name. A helper
+JAR selected with `--processor-input` must be reachable through a processor's
+declared dependency edges; it does not become an application runtime root:
+
+```powershell
+python tools/java_capsule.py add-local ./my-java --id developer/processor-helper/1 --jar ./private/processor-helper.jar --processor-input
+python tools/java_capsule.py add-local ./my-java --id developer/source-processor/1 --jar ./private/source-processor.jar --depends developer/processor-helper/1 --processor-class example.compiler.SourceProcessor
+python tools/java_capsule.py resolve ./my-java --candidate ./processor-candidate.json
+```
+
+Review the candidate with the same digest-bound `review-lock` command before
+building. Maven `add` accepts the same explicit processor selection. A processor
+and its reachable helper inputs receive the build-tool role. If a helper also
+belongs to the ordinary application graph, a separate executable artifact binds
+the same original bytes to processor approval while retaining the runtime owner
+and its resource graph. There is no package catalogue gate.
+
+A processor build requires the pinned Linux JDK and a verified offline compiler
+cache. Its first unapproved build retains
+`executable-input-approval-request.json` and stops before processor execution.
+Review the exact source, recipe, compiler profile, selected processor classes and
+executable input hashes in that request. Supply its `identity` through
+`build --executable-approval sha256:...` with a fresh output directory. Changing
+any bound input invalidates the approval. The protected Java frontend recipe
+accepts the same explicit flag; existing project trust still binds its argv and
+captured inputs.
+
+The selected stage uses `javac -proc:only` inside the captured compiler namespace
+with read-only sources and inputs, no network or inherited credentials, a
+256 MiB Java heap, and at most 60 seconds within the original build deadline.
+Only new UTF-8 Java sources are accepted, up to 512 files and 16 MiB. A trusted
+pinned-JDK parser checks package paths, original declaration ownership and
+reserved platform classes before those files enter the ordinary `-proc:none`
+compilation. Bytecode, other outputs, source replacement and undeclared compiler
+extensions fail. Processor annotation types are passive compile-only inputs and
+are excluded from TeaVM's runtime classpath. Original and selected JAR identities,
+the generated source inventory and parser identity enter retained build materials.
+
+This finite processor stage has source, capture, approval and frontend controls.
+Actual isolated JVM execution and signed generated-library invocation remain
+pending qualification. Those controls do not establish support for AST-changing
+compiler plugins, bytecode generators or arbitrary application build scripts.
 
 `java-classpath.json` binds original JARs to deterministic selected JARs, every
 class/resource entry, selection rules and classpath order. Original vendor
