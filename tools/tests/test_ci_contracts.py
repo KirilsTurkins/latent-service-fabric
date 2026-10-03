@@ -701,14 +701,20 @@ class RepositoryMigrationTests(unittest.TestCase):
             self.assertIn(key, data["after"])
             host_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
             if key == host_fixture:
-                # State now has real engine consumers. Preserve its original
-                # selected subset and runner, and explicitly prove full CI is
-                # still selected alongside this smaller host qualification.
+                # State now requires its real engine renderer. Keep that
+                # assertion alongside a genuinely narrow workflow selection,
+                # preserving the original runner and all other metadata.
                 expected = dict(value)
                 expected["run"] = value["run"].replace(
+                    "from tools.ci_profile import classify_paths\n"
+                    "selection = classify_paths(['crates/latent-state/src/lib.rs'])\n"
                     "assert selection.profile == 'fast'\n",
+                    "from tools.ci_profile import classify_paths\n"
                     "from tools import ci_suite_inventory as registry\n"
-                    "assert selection.profile == 'full'\n"
+                    "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
+                    "assert state.profile == 'full' and state.renderer\n"
+                    "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
+                    "assert selection.profile == 'fast'\n"
                     "assert selection.fast_packages\n"
                     "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
                 )
