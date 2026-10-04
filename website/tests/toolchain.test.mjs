@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
+import {createHash} from 'node:crypto';
 import {test} from 'node:test';
 import serialize from 'serialize-javascript';
 import {template} from 'lodash-es';
@@ -18,13 +19,28 @@ test('website pins and lock agree without a root workspace or dependency lifecyc
     assert.equal(lock.packages[`node_modules/${name}`].version, version);
   }
   assert.equal(lock.lockfileVersion, 3);
+  const repairs = JSON.parse(fs.readFileSync(path.join(repositoryRoot, '.github/security/npm-source-repairs.json'), 'utf8'));
+  const maintained = new Set();
   for (const [location, dependency] of Object.entries(lock.packages)) {
     if (location === '') continue;
     assert.match(dependency.version, /^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/);
-    assert.equal(new URL(dependency.resolved).origin, 'https://registry.npmjs.org');
+    if (location === 'node_modules/braces' || location === 'node_modules/http-cache-semantics') {
+      const name = location.slice('node_modules/'.length);
+      const repair = repairs.repairs[name];
+      assert.equal(dependency.version, repair.version);
+      assert.equal(dependency.resolved, `file:../target/website-package-manager/${repair.profile}.tar`);
+      assert.equal(manifest.overrides[name], dependency.resolved);
+      const raw = fs.readFileSync(path.join(repositoryRoot, 'target/website-package-manager', `${repair.profile}.tar`));
+      assert.equal(dependency.integrity, `sha512-${createHash('sha512').update(raw).digest('base64')}`);
+      assert.equal(dependency.integrity, repair.integrity);
+      maintained.add(name);
+    } else {
+      assert.equal(new URL(dependency.resolved).origin, 'https://registry.npmjs.org');
+    }
     assert.match(dependency.integrity, /^sha512-[A-Za-z0-9+/]+={0,2}$/);
     assert.equal(dependency.link, undefined);
   }
+  assert.deepEqual([...maintained].sort(), ['braces', 'http-cache-semantics']);
   assert.match(fs.readFileSync(path.join(websiteRoot, '.npmrc'), 'utf8'), /^ignore-scripts=true$/m);
   assert.equal(fs.existsSync(path.join(websiteRoot, '../package.json')), false);
   assert.equal(fs.existsSync(path.join(websiteRoot, 'docs')), false);
