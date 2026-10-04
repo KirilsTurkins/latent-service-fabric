@@ -16,7 +16,10 @@ function sections(items, groups, remainder) {
 export function buildSidebars(pages) {
   const sidebars = {start: [], learn: [], howTo: [], reference: [], understand: [], contribute: [], records: []};
   const start = new Set(['reference/standalone-node', 'installation']);
-  const howTo = new Set(['phase-2-delivery', 'component-development/portable-tests', 'component-development/devcontainer']);
+  const libraryGuides = ['rust', 'c', 'typescript', 'go', 'java', 'dotnet']
+    .map(language => `component-development/${language}-library-authoring`);
+  const howTo = new Set(['phase-2-delivery', 'component-development/portable-tests',
+    'component-development/devcontainer', ...libraryGuides]);
   const references = new Set(['phase-2-operator-workflows', 'phase-2-rollouts', 'phase-2-rollback',
     'phase-2-canary-promotion', 'phase-2-canary-observation', 'phase-2-audit',
     'component-development/guest-sdk', 'component-development/packaging', 'component-development/sbom', 'component-development/static-sites',
@@ -51,7 +54,8 @@ export function buildSidebars(pages) {
     {label: 'Contracts and execution', ids: ['learn/runtime-identities', 'learn/read-contracts-and-evidence']},
   ], 'Application concepts');
   sidebars.howTo = sections(sidebars.howTo, [
-    {label: 'Application development', ids: ['how-to/developer-commands', 'component-development/portable-tests', 'component-development/devcontainer']},
+    {label: 'Application development', ids: ['how-to/developer-commands', 'component-development/portable-tests',
+      'component-development/devcontainer', ...libraryGuides]},
     {label: 'Web delivery', ids: ['how-to/deliver-a-website', 'how-to/serve-angular-and-docusaurus',
       'how-to/static-site-and-api', 'operations/static-release-workflow', 'operations/static-route-sets',
       'operations/static-compression', 'operations/publication-retention', 'how-to/diagnose-angular-delivery']},
