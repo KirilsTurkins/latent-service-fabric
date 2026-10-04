@@ -691,6 +691,7 @@ class NodePortableComparison(unittest.TestCase):
 class SourceNodeProbe(unittest.TestCase):
     def test_workspace_expiry_stimulus_waits_for_both_overlap_scenarios_and_changes_only_a(self):
         from tools import dev_workspace_isolation_probe as probe
+        from tools.dev_workflow import paths
         from tools.tests.test_dev_contracts import descriptor
 
         # Exercise the real probe's control flow and private configuration
@@ -701,7 +702,7 @@ class SourceNodeProbe(unittest.TestCase):
             owner = parent / 'owners'; owner.mkdir(mode=0o700)
             supplied = parent / 'runtime'; supplied.mkdir()
             payload = parent / 'payload'; payload.mkdir()
-            configuration_roots, tested = {}, []
+            configuration_roots, prepared, tested = {}, {}, []
 
             class ExpiryBoundary(Exception):
                 pass
@@ -733,8 +734,14 @@ class SourceNodeProbe(unittest.TestCase):
                     self.root = root
 
                 def call(self, operation, _arguments, **_options):
-                    if operation == 'prepare-test': return {}
+                    if operation == 'prepare-test':
+                        raw = paths.read(self.root / 'runtime/config', 'node.json')
+                        prepared[self.root.name] = common.digest(raw)
+                        state.atomic(self.root, 'test-profile.json', {'configurationSha256': prepared[self.root.name]})
+                        return {}
                     if operation == 'up':
+                        self_test.assertEqual(common.digest(paths.read(self.root / 'runtime/config', 'node.json')),
+                                              prepared[self.root.name], 'prepared fixture configuration changed')
                         state.atomic(self.root, 'lifecycle.json', {'state': 'ready'})
                         return {'state': 'ready'}
                     if operation == 'status': return {'state': 'ready'}
@@ -778,9 +785,15 @@ class SourceNodeProbe(unittest.TestCase):
                 self.assertIn(('a', ['cold-read']), tested)
                 self.assertIn(('b', ['cold-read']), tested)
                 self.assertEqual(state.load(configuration_roots['a'] / 'runtime/config', 'node.json')['retention'],
-                                 {'maximumTerminalReceipts': 64, 'terminalTtlMillis': 3000})
+                                 {'maximumTerminalReceipts': 64})
                 self.assertEqual(state.load(configuration_roots['b'] / 'runtime/config', 'node.json')['retention'],
                                  {'maximumTerminalReceipts': 64})
+                self.assertEqual(state.load(configuration_roots['expiry'] / 'runtime/config', 'node.json')['retention'],
+                                 {'maximumTerminalReceipts': 64, 'terminalTtlMillis': 3000})
+                self.assertEqual(state.load(configuration_roots['a'], 'lifecycle.json')['state'], 'stopped')
+                for selected_root in configuration_roots.values():
+                    self.assertEqual(common.digest(paths.read(selected_root / 'runtime/config', 'node.json')),
+                                     prepared[selected_root.name])
                 self.assertEqual((options['timeout'], options['maximum']), (60, 262144))
                 raise ExpiryBoundary()
 
