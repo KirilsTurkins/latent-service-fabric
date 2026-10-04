@@ -49,7 +49,9 @@ async fn shutdown_waits_for_the_actual_os_exit_after_logical_store_retirement() 
         loop {
             match observed.try_recv() {
                 Ok(()) => break,
-                Err(mpsc::TryRecvError::Empty) => tokio::task::yield_now().await,
+                Err(mpsc::TryRecvError::Empty) => {
+                    tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+                }
                 Err(mpsc::TryRecvError::Disconnected) => panic!("owned exit gate disappeared"),
             }
         }
@@ -62,7 +64,7 @@ async fn shutdown_waits_for_the_actual_os_exit_after_logical_store_retirement() 
         // The gated worker can reach its OS epilogue before its peers publish
         // their retirement. Keep polling shutdown until every counter retires.
         while !state.0.store.snapshot().unwrap().physically_retired() {
-            tokio::task::yield_now().await;
+            tokio::time::sleep(std::time::Duration::from_millis(1)).await;
         }
     };
     tokio::select! {
