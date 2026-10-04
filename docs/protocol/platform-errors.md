@@ -24,6 +24,17 @@ Component domain errors are declared by each WIT contract. Infrastructure failur
 
 Every platform failure carries a stable code, human-readable message, explicit retryability hint, and structured details. The hint does not override operation-level idempotency rules.
 
+Guest failures keep the public `guest-trap` code. When the backend supplies a
+known classification, the node adds an `activation.guest-trap-kind` detail with
+one `kind` field. Public invocation and retained-status conversion and the CLI
+accept only the fixed vocabulary in
+[`GuestTrapKind`](../../crates/latent-core/src/error/guest_trap_kind.rs): Wasmtime
+trap labels and `runtime-error` for host-import or component-model failures.
+Unknown, contradictory or text-bearing classifications stay unclassified.
+This detail identifies a failure category; it does not establish a cause or
+authorize a retry. Engine messages, backtraces, request bytes and credentials
+remain outside the public diagnostic.
+
 `latent-rpc::platform_error` is the canonical Rust/domain-to-Protobuf conversion seam for both invocation and control-plane `PlatformError` messages. It preserves ordered detail items and every detail field exactly. Unknown wire codes return `UnknownPlatformErrorCode`; they are never coerced to `internal` or another known meaning.
 
 The Prost regression suite covers every current code, unknown-code rejection, empty and multiple detail lists, multiple fields, and both generated message types at the configured 512-byte message, eight-detail, 16-field, 64-byte kind/name, and 256-byte value boundaries.
