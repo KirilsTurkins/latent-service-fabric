@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/build_static_sites.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "retained finite generator packages now expose capture budget diagnostics beside unchanged signed inputs",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "132e857ad9d997a3efef6b779b9cb2204a555d102419e8cb3437b1c34e15ade4"
-}
+{"kind":"owner","path":"tools/build_static_sites.py","reviewBoundary":"committed-fingerprint","reviewReason":"retained finite generator packages now expose capture budget diagnostics beside unchanged signed inputs","schemaVersion":"latent.ci.contracts.v1","sha256":"132e857ad9d997a3efef6b779b9cb2204a555d102419e8cb3437b1c34e15ade4"}
