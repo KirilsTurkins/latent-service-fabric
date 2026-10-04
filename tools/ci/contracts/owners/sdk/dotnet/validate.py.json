@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "sdk/dotnet/validate.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Stage the exact declared diagnostic Node protobuf input and require its two additional native generated sources; preserve all qualification checks.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f87dec2c1d7d5a9688bfae23ce47928e33b25c6f8ead705169bbc0d83eff38f9"
-}
+{"kind":"owner","path":"sdk/dotnet/validate.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve the original owner review boundary; review the actual merged captured source inputs, profile and compiler recipe.","schemaVersion":"latent.ci.contracts.v1","sha256":"f87dec2c1d7d5a9688bfae23ce47928e33b25c6f8ead705169bbc0d83eff38f9"}

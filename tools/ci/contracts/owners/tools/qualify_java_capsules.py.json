@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_capsules.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review feature-gated old-profile reproduction build while retaining all Java authoring qualification stages",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "96c17f5f07af7940bff5ccc6250334cc57282281823fec417221480406a3f72a"
-}
+{"kind":"owner","path":"tools/qualify_java_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve the original owner review boundary; review the actual merged captured source inputs, profile and compiler recipe.","schemaVersion":"latent.ci.contracts.v1","sha256":"0a1c8e5d85da58dc901f83cd0f4416d67bc5e4b5eda18296b74e64ec4d354ba2"}
