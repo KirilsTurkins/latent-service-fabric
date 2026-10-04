@@ -41,6 +41,13 @@ pub struct SelectedTransactionAsset {
 }
 
 impl SelectedTransactionAsset {
+    /// Exact original physical job identity. An equal-capacity fresh admission
+    /// cannot refresh this already captured signed selection's deadline.
+    #[must_use]
+    pub fn is_from_reservation(&self, original: &Arc<NativeReservation>) -> bool {
+        Arc::ptr_eq(&self.original, original)
+    }
+
     #[must_use]
     pub fn metadata(&self) -> &VerifiedArtifactMetadata {
         &self.metadata

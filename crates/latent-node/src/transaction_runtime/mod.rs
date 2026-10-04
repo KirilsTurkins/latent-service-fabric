@@ -16,7 +16,8 @@ pub use command_role::PendingCommandAdmission;
 pub use completion::{CommandCompletion, CommandCompletionDisposition};
 pub use factory::{
     NativeTransactionAdmission, TransactionAdmissionOwners, TransactionAdmissionResult,
-    TransactionCompletionResult, TransactionInstallation, TransactionSelection,
+    TransactionCompletionResult, TransactionInstallation, TransactionInstallationSelection,
+    TransactionSelection,
 };
 pub use response::{OwnedTransactionCompletion, TransactionResponseAuthority};
 
