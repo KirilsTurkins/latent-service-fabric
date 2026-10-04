@@ -84,6 +84,7 @@ mod tests {
                     message: "guest execution failed".into(),
                     guest_backtrace: vec!["private-backtrace".into()],
                     metadata,
+                    diagnostic: None,
                 },
                 consumption: consumption.clone(),
             }),
