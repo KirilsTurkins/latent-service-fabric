@@ -17,6 +17,7 @@ public sealed partial class BoundedClient : IAsyncDisposable, IDisposable
     private readonly CancellationTokenSource lifetime = new();
     private TaskCompletionSource changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource drained = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource teardown = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private Task? disposal;
     private int handedOff;
     private int active;
@@ -130,17 +131,29 @@ public sealed partial class BoundedClient : IAsyncDisposable, IDisposable
             PulseLocked();
             disposal = FinishDisposeAsync();
         }
-        lifetime.Cancel();
-        http.Dispose();
-        stream.Dispose();
+        try
+        {
+            try { lifetime.Cancel(); }
+            finally
+            {
+                try { http.Dispose(); }
+                finally { stream.Dispose(); }
+            }
+            teardown.TrySetResult();
+        }
+        catch (Exception failure)
+        {
+            teardown.TrySetException(failure);
+            throw;
+        }
     }
 
     private async Task FinishDisposeAsync()
     {
-        await Task.Yield();
         try
         {
             using var deadline = new CancellationTokenSource(config.ConnectTimeout);
+            await teardown.Task.WaitAsync(deadline.Token).ConfigureAwait(false);
             await drained.Task.WaitAsync(deadline.Token).ConfigureAwait(false);
             await stream.Drained.WaitAsync(deadline.Token).ConfigureAwait(false);
         }
