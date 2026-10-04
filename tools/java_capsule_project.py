@@ -59,6 +59,46 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     return directory
 
 
+def validate_sdk_inputs(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
+    if 'sdk-lock.json' not in files:
+        raise ValueError('incomplete Java capsule SDK inputs')
+    lock = decode_json(files['sdk-lock.json'])
+    if (not isinstance(lock, dict) or set(lock) != {'formatVersion', 'language', 'sdk', 'bindings', 'template'}
+            or type(lock['formatVersion']) is not int or lock['formatVersion'] != 1 or lock['language'] != 'java'
+            or lock['bindings'] != 'lsf-java-wit-v1+wit-bindgen-0.62.0'):
+        raise ValueError('unsupported Java SDK lock')
+    vendor = {path.removeprefix('vendor/lsf/'): data for path, data in files.items() if path.startswith('vendor/lsf/')}
+    if json.loads(inventory(vendor)) != lock['sdk']:
+        raise ValueError('vendored SDK changed; review and regenerate the SDK source lock')
+    return lock, vendor, tomllib.loads(vendor['tools/toolchain.toml'].decode())
+
+
+def reviewed_local_jars(files: dict[str, bytes]) -> dict[str, str]:
+    from tools.application_dependencies import LOCK, MANIFEST
+    from tools.java_dependency_resolution import DECLARATIONS, declarations
+    if not {DECLARATIONS, MANIFEST, LOCK} <= files.keys():
+        return {}
+    config = declarations(decode_json(files[DECLARATIONS]))
+    lock = decode_json(files[LOCK])
+    if lock.get('language') != 'java' or lock.get('manifestDigest') != digest(files[MANIFEST]):
+        raise ValueError('Java reviewed local JAR lock drift')
+    selected = {row['id']: row for row in lock['artifacts'] if row['role'] == 'application'
+                and row['metadata'].get('ecosystem') == 'captured-local-jar'}
+    allowed = {}
+    for row in config['localJars']:
+        path = Path(row['path'])
+        # Explicit external originals are capture inputs, never compiler sources.
+        if path.is_absolute() or '..' in path.parts:
+            continue
+        name = path.as_posix()
+        item = selected.get(row['id'])
+        if (item is None or item['metadata'].get('originalLocalPath') != row['path']
+                or name in allowed):
+            raise ValueError('Java local JAR declaration drift')
+        allowed[name] = item['original']['digest']
+    return allowed
+
+
 def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if not {"capsule-project.json", "sdk-lock.json", "wit/world.wit"} <= files.keys():
         raise ValueError("incomplete Java capsule project")
@@ -81,17 +121,14 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if (not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "service", "world"))
             or project["tenant"] is not None and (not isinstance(project["tenant"], str) or not 0 < len(project["tenant"]) <= 128)):
         raise ValueError("invalid capsule identity")
-    if (not isinstance(lock, dict) or set(lock) != {"formatVersion", "language", "sdk", "bindings", "template"}
-            or type(lock["formatVersion"]) is not int or lock["formatVersion"] != 1 or lock["language"] != "java"
-            or lock["bindings"] != "lsf-java-wit-v1+wit-bindgen-0.62.0"):
-        raise ValueError("unsupported Java SDK lock")
-    vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
-    if json.loads(inventory(vendor)) != lock["sdk"]:
-        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    lock, vendor, pins = validate_sdk_inputs(files)
+    allowed_jars = reviewed_local_jars(files)
     # Captured application JARs enter through the separately reviewed closure.
     # Arbitrary application Gradle/Maven executable build recipes remain denied.
     for path in files:
         if path.startswith("vendor/lsf/"): continue
+        if path.endswith('.jar') and allowed_jars.get(path) == digest(files[path]):
+            continue
         if path.endswith((".jar", ".class", ".gradle", ".gradle.kts")) or Path(path).name == "pom.xml":
             raise ValueError("uncaptured Java binary dependencies or executable application build scripts")
         if path.startswith("src/") and not path.endswith(".java"):
@@ -104,4 +141,4 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("Java invocation budgets require finite unsigned full-width integers")
     if not limits["cpuFuel"] or limits["memoryBytes"] <= 4_194_304 or not limits["wallTimeLimitMillis"]:
         raise ValueError("positive fuel, wall-time and memory above the charged exception reservation required")
-    return project, lock, tomllib.loads(vendor["tools/toolchain.toml"].decode())
+    return project, lock, pins
