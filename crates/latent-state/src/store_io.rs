@@ -281,6 +281,16 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         }
         Ok(retired)
     }
+
+    /// Remaining owned OS handles, including a retired worker's exit epilogue.
+    /// A zero physical-worker counter does not itself prove these were joined.
+    pub fn pending_thread_joins(&self) -> Result<usize, StoreIoError> {
+        self.inner
+            .threads
+            .lock()
+            .map(|threads| threads.len())
+            .map_err(|_| StoreIoError::Poisoned)
+    }
 }
 
 #[cfg(test)]

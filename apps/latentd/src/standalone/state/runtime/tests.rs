@@ -7,6 +7,8 @@ use latent_policy::capability::PolicyStoreLimits;
 use latent_state::{store_io::StoreIoKind, tenant::TenantRecord};
 use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf, time::Instant};
 
+mod os_retirement;
+
 struct Fixture {
     _root: tempfile::TempDir,
     settings: NodeSettings,

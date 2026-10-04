@@ -56,11 +56,7 @@ impl StateRuntime {
             .drain_async(deadline, tokio::time::sleep_until(deadline.into()))
             .map_err(|_| super::unavailable())?
             .await;
-        let store_threads_joined = self
-            .0
-            .store
-            .reap_retired_threads()
-            .map_err(|_| super::unavailable())?;
+        let store_threads_joined = self.join_store_threads(deadline).await?;
         Ok(StateShutdownReport {
             clean: native.clean
                 && store.clean
@@ -86,5 +82,40 @@ impl StateRuntime {
             store_quarantined: store.snapshot.quarantined,
             store_threads_joined,
         })
+    }
+
+    async fn join_store_threads(&self, deadline: Instant) -> Result<usize, PlatformError> {
+        let store = &self.0.store;
+        let mut joined = 0;
+        while store
+            .pending_thread_joins()
+            .map_err(|_| super::unavailable())?
+            != 0
+        {
+            let now = Instant::now();
+            if now >= deadline {
+                store.quarantine();
+                return Err(super::unavailable());
+            }
+            joined += store
+                .reap_retired_threads()
+                .map_err(|_| super::unavailable())?;
+            if store
+                .pending_thread_joins()
+                .map_err(|_| super::unavailable())?
+                == 0
+            {
+                break;
+            }
+            // Logical retirement can precede the last OS exit epilogue. Poll
+            // only the fixed owned handles under the original absolute cutoff.
+            tokio::time::sleep_until(
+                deadline
+                    .min(now + std::time::Duration::from_millis(1))
+                    .into(),
+            )
+            .await;
+        }
+        Ok(joined)
     }
 }

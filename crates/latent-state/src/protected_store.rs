@@ -234,6 +234,12 @@ impl ProtectedStoreOwner {
             .map_err(ProtectedStoreError::Io)
     }
 
+    pub fn pending_thread_joins(&self) -> Result<usize, ProtectedStoreError> {
+        self.ready
+            .pending_thread_joins()
+            .map_err(ProtectedStoreError::Io)
+    }
+
     fn available(&self) -> Result<(), ProtectedStoreError> {
         self.failure.get().map_or(Ok(()), Err)
     }

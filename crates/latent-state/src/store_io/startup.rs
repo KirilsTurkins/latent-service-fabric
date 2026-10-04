@@ -246,4 +246,8 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
     pub fn reap_retired_threads(&self) -> Result<usize, StoreIoError> {
         self.owner.reap_retired_threads()
     }
+
+    pub fn pending_thread_joins(&self) -> Result<usize, StoreIoError> {
+        self.owner.pending_thread_joins()
+    }
 }
