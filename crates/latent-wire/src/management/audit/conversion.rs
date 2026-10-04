@@ -29,6 +29,8 @@ fn scope_to_proto(value: domain::AuditScope) -> proto::AuditQueryScope {
 }
 pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentities {
     proto::AuditIdentities {
+        dispatcher: None,
+        state: None,
         static_web: value.static_web.map(|web| proto::AuditStaticWebTarget {
             web_manifest_digest: web.web_manifest_digest.into_string(),
             assets_digest: web.assets_digest.into_string(),
