@@ -558,6 +558,7 @@ fn start(config: &ProtectedStoreConfig, clock: Arc<dyn ActivationClock>) -> Prot
                 visit_view(view, Instant::now() + WATCHDOG, |_, key, bytes| {
                     logical::row(view, key, bytes)
                 })
+                .map(|_| ())
             },
             clock,
         )

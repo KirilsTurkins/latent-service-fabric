@@ -63,7 +63,7 @@ impl Receipt {
     }
 }
 
-pub(super) fn deadline() -> Instant {
+pub(in crate::recovery) fn deadline() -> Instant {
     Instant::now() + Duration::from_secs(20)
 }
 

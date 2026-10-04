@@ -117,7 +117,8 @@ fn original_authenticated_snapshot_imports_only_into_private_fresh_paused_destin
         .decode()
         .unwrap()
         .1
-        .recovery_epoch;
+        .epochs
+        .recovery;
     let source_before = fs::read(setup.source_path()).unwrap();
     let archive_before = fs::read(setup.checkpoint_path()).unwrap();
     let (snapshot, restored) = wait(job(&setup, snapshot, input, &owners, request)).unwrap();
@@ -149,7 +150,7 @@ fn original_authenticated_snapshot_imports_only_into_private_fresh_paused_destin
         .unwrap();
         let actual = NamespaceHistory::decode(&view.get(&key)?.unwrap()).unwrap();
         assert_eq!(actual, reviewed_history);
-        assert!(actual.recovery_epoch > previous_epoch);
+        assert!(actual.epochs.recovery > previous_epoch);
         let rows = view.scan_after(Family::State, b"state-v1\0", None, 2, 4096)?;
         assert_eq!(rows.rows.len(), 1);
         let (key, bytes) = &rows.rows[0];

@@ -16,7 +16,7 @@ const FILE_NAME: &str = "transaction-checkpoint.v1";
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 const LOCK_NAME: &str = "transaction-checkpoint-owner.lock";
 
-pub(super) struct CheckpointFile {
+pub(in crate::protected_store) struct CheckpointFile {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     root: ProtectedRoot,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
