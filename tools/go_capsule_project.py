@@ -80,12 +80,7 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("invalid capsule identity")
     if project["tenant"] is not None and (not isinstance(project["tenant"], str) or not 0 < len(project["tenant"]) <= 512):
         raise ValueError("invalid capsule tenant scope")
-    if (not isinstance(lock, dict) or set(lock) != {"formatVersion", "language", "sdk", "template"}
-            or type(lock["formatVersion"]) is not int or lock["formatVersion"] != 1 or lock["language"] != "go"):
-        raise ValueError("unsupported Go SDK lock")
-    vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
-    if json.loads(inventory(vendor)) != lock["sdk"]:
-        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    lock, vendor, pins = validate_sdk_inputs(files)
     captured = "latent.dependencies.json" in files
     if captured:
         from tools.application_dependencies import validate_manifest
@@ -102,4 +97,18 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("Go invocation budgets require finite unsigned full-width integers")
     if not limits["cpuFuel"] or not limits["memoryBytes"] or not limits["wallTimeLimitMillis"]:
         raise ValueError("positive fuel, memory and wall-time budgets required")
-    return project, lock, tomllib.loads(vendor["tools/toolchain.toml"].decode())
+    return project, lock, pins
+
+
+def validate_sdk_inputs(files: dict[str, bytes]) -> tuple[dict, dict[str, bytes], dict]:
+    """Validate the exact immutable SDK independently from application resolution."""
+    if "sdk-lock.json" not in files:
+        raise ValueError("incomplete Go capsule SDK")
+    lock = decode_json(files["sdk-lock.json"])
+    if (not isinstance(lock, dict) or set(lock) != {"formatVersion", "language", "sdk", "template"}
+            or type(lock["formatVersion"]) is not int or lock["formatVersion"] != 1 or lock["language"] != "go"):
+        raise ValueError("unsupported Go SDK lock")
+    vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
+    if json.loads(inventory(vendor)) != lock["sdk"]:
+        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    return lock, vendor, tomllib.loads(vendor["tools/toolchain.toml"].decode())
