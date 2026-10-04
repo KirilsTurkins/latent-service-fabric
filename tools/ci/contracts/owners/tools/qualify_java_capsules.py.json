@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_capsules.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all standalone, SDK ownership, signed-node and printed-guide checks; add ordinary Java HttpServer projects built outside the checkout, signed only after completed builds and exercised through authenticated route tooling on the normal shared listener, with bounded HTTP/TLS, failure and original-ledger retirement evidence.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0fbbf0f46c1effa5c365e3645c6aa1bed52f06dd599ab131d39f30b6defe84d9"
-}
+{"kind":"owner","path":"tools/qualify_java_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain all standalone, SDK ownership, signed-node and printed-guide checks; add ordinary Java HttpServer projects built outside the checkout, signed only after completed builds and exercised through authenticated route tooling on the normal shared listener, with bounded HTTP/TLS, failure and original-ledger retirement evidence.","schemaVersion":"latent.ci.contracts.v1","sha256":"0fbbf0f46c1effa5c365e3645c6aa1bed52f06dd599ab131d39f30b6defe84d9"}
