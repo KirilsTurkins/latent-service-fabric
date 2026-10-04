@@ -1919,6 +1919,14 @@
         "deployments::tests::versioned::tenant_scope_is_checked_independently_of_object_identity_and_generation",
         "deployments::tests::versioned::versioned_apply_compares_caller_preconditions_and_returns_normalized_committed_state",
         "deployments::tests::weighting_is_deterministic_order_independent_and_restart_stable",
+        "deployments::transaction_selection::pin::tests::actual_namespace_lifecycle_acceptance_invalidates_selection_before_commit_io",
+        "deployments::transaction_selection::pin::tests::actual_resident_transfer_requires_same_node_distinct_recovery_and_original_live_fences",
+        "deployments::transaction_selection::pin::tests::actual_weighted_selection_keeps_only_weak_catalog_pins_and_exact_original_source",
+        "deployments::transaction_selection::pin::tests::exact_original_publication_and_admission_cannot_be_replaced_after_revocation",
+        "deployments::transaction_selection::pin::tests::installed_selection_checks_actual_tenant_namespace_entity_incarnation_revision_and_generation",
+        "deployments::transaction_selection::pin::tests::original_deadline_and_node_close_do_not_refund_physically_retained_selection_metadata",
+        "deployments::transaction_selection::pin::tests::original_work_prepay_is_required_before_any_namespace_or_catalog_pin",
+        "deployments::transaction_selection::pin::tests::retained_old_route_snapshot_cannot_replace_the_actual_current_repository_owner",
         "http_routes::tests::exact_publication_selector_survives_manifest_codec_and_canonical_matching",
         "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny"
       ],
@@ -1931,7 +1939,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 251,
+      "minimumCases": 259,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [

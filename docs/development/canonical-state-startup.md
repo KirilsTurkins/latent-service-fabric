@@ -177,6 +177,33 @@ The focused schema checks cover closed owner declarations, finite counters,
 immutable target pins, rejected authority flags and Phase 4 report identity.
 They do not qualify the native runtime.
 
+The current-selection source producer now retains the exact confirmed deployment
+transaction, weighted route selection, revision and original publication
+eligibility beside the same opaque namespace read and lifecycle handle. Its
+current repository and compiled routes are weak pins. It reserves 64 KiB of the
+original Recovery job's Work capacity before allocating or copying metadata.
+Transfer into a distinct existing same-node resident Recovery reservation occurs
+inside the original publication, namespace and final Native fence, with both
+physical charges retained until the old capture is destroyed. The additive node
+selection port checks the original tenant, namespace, entity, incarnation,
+operation, deployment revision and route generation; selectors create no grant.
+Resident expiry is physical retention only. The canonical caller must separately
+retain its original enforced admission and enter its final Native fence once,
+after current publication, catalog, namespace and control checks. The selection
+port introduces no additional entry into that same Native owner.
+
+Eight additional source schedules use actual enforced catalog owners, opaque
+native namespace rows, real lifecycle transitions and finite native reservations.
+They cover weak retired catalogs, a retained historical route snapshot, foreign
+publication owners with equal descriptive IDs, revocation, lifecycle acceptance
+before commit, exhausted original Work capacity, foreign/ordinary/aliased resident
+reservations, original expiry and physical destruction. Their injected host
+admission fixture verifies no signatures; the original six Policy signed-asset
+schedules retain that separate boundary. These metadata leaves do not qualify
+the configured protected-worker capture path, complete native node installation,
+recovery, current wire requests or the milestone gate. Compilation, exact native
+discovery, execution and strict Clippy remain pending for these new schedules.
+
 The remaining production work includes integrating the sealed signed-operation
 and protected-credential captures into actual installation, their current policy publication
 fence, original request/response integration with the Phase 4 wire runtime, and

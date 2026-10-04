@@ -301,6 +301,18 @@ pub struct NamespaceRead {
 }
 
 impl NamespaceRead {
+    /// Actual owned capacities for a trusted producer moving this native read
+    /// beside its prepaid metadata permit. This is descriptive, never authority.
+    #[must_use]
+    pub fn retained_bytes(&self) -> usize {
+        std::mem::size_of::<Self>()
+            .saturating_add(self.record.tenant.0.capacity())
+            .saturating_add(self.record.id.0.capacity())
+            .saturating_add(self.record.state_schema.capacity())
+            .saturating_add(self.expected.key.key.capacity())
+            .saturating_add(self.expected.value.as_ref().map_or(0, Vec::capacity))
+    }
+
     #[must_use]
     pub fn record(&self) -> &NamespaceRecord {
         &self.record

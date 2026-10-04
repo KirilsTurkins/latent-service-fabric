@@ -4,7 +4,9 @@ mod completion;
 mod policy;
 mod replay;
 mod selection;
+mod selection_pins;
 pub use selection::{TransactionInstallation, TransactionSelection};
+pub use selection_pins::TransactionInstallationSelection;
 
 use super::{
     authorization, CommandTimeSource, PolicyCallBinding, StateTransactionHost, TransactionRetention,

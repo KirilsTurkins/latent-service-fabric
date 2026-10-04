@@ -17,6 +17,7 @@ pub struct TransactionInstallation {
     pub(super) recovery: RecoverySelection,
     pub(super) result_read_policy: String,
     pub(super) result_policy: ResultPolicy,
+    pub(super) selection: Option<Arc<dyn super::TransactionInstallationSelection>>,
 }
 impl TransactionInstallation {
     /// Validate the descriptive caller choice against this trusted binding.
@@ -115,6 +116,7 @@ impl TransactionInstallation {
             recovery,
             result_read_policy,
             result_policy,
+            selection: None,
         })
     }
 
@@ -138,6 +140,9 @@ impl TransactionInstallation {
         &self,
         resolved: &latent_routing::ResolvedRevision,
     ) -> Result<SourceIdentity, PlatformError> {
+        if let Some(selection) = &self.selection {
+            selection.check_resolved(resolved, &self.publication)?;
+        }
         let operation = self
             .declaration
             .operations
@@ -197,6 +202,14 @@ impl TransactionSelection {
         &self,
         installation: &TransactionInstallation,
     ) -> Result<(), PlatformError> {
+        if let Some(selected) = &installation.selection {
+            selected.check_selectors(
+                &self.namespace,
+                self.incarnation,
+                self.entity.as_deref(),
+                &self.operation,
+            )?;
+        }
         let mode = self.mode == TransactionOperationMode::StrictCommand;
         let operation = installation
             .declaration

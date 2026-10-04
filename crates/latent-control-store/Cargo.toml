@@ -20,6 +20,7 @@ latent-ingress = { path = "../latent-ingress" }
 latent-manifest = { path = "../latent-manifest" }
 latent-routing = { path = "../latent-routing" }
 latent-node = { path = "../latent-node" }
+latent-state = { path = "../latent-state" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-policy = { path = "../latent-policy" }
 latent-capabilities = { path = "../latent-capabilities" }
