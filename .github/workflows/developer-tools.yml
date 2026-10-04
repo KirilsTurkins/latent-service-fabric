@@ -69,7 +69,10 @@ on:
       - tools/java_dependency*.py
       - tools/java_application_dependencies.py
       - tools/java_resource_artifacts.py
+      - tools/java_registry_tls.py
       - tools/tests/test_java_dependency_authoring.py
+      - tools/tests/test_java_resource_runtime.py
+      - tools/tests/test_java_private_resolution.py
       - tools/java_guest/**
       - tools/dotnet_capsule.py
       - tools/dotnet_guest/**
@@ -144,6 +147,8 @@ jobs:
         run: python -m unittest tools.tests.test_guest_authoring_frontend
       - name: Exercise Java dependency authoring boundaries
         run: python -m unittest tools.tests.test_java_dependency_authoring
+      - name: Exercise library authoring frontend and Java dependency boundaries
+        run: python -m unittest tools.tests.test_guest_authoring_frontend tools.tests.test_java_dependency_authoring tools.tests.test_java_resource_runtime tools.tests.test_java_private_resolution
 
   guest-tools:
     if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository

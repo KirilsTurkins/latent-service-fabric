@@ -1,0 +1,87 @@
+name: Cargo cache service evaluation
+
+on:
+  push:
+    branches: [development]
+    paths:
+      - .github/workflows/cargo-cache-service-evaluation.yml
+      - .github/workflows/cargo-cache-service-sample.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cargo-cache-service-${{ github.sha }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  cold:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        kind: [baseline, recipe]
+    uses: $/.github/workflows/cargo-cache-service-sample.yml
+    with:
+      kind: ${{ matrix.kind }}
+      state: cold
+      experiment: ${{ github.run_id }}-${{ github.run_attempt }}
+
+  warm-1:
+    needs: cold
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        kind: [baseline, recipe]
+    uses: $/.github/workflows/cargo-cache-service-sample.yml
+    with:
+      kind: ${{ matrix.kind }}
+      state: warm-1
+      experiment: ${{ github.run_id }}-${{ github.run_attempt }}
+
+  warm-2:
+    needs: warm-1
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        kind: [baseline, recipe]
+    uses: $/.github/workflows/cargo-cache-service-sample.yml
+    with:
+      kind: ${{ matrix.kind }}
+      state: warm-2
+      experiment: ${{ github.run_id }}-${{ github.run_attempt }}
+
+  report:
+    name: Reconcile completed cache service observations
+    if: always()
+    needs: [cold, warm-1, warm-2]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: cargo-service-*-sample-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/cargo-service-samples/
+      - name: Require complete jobs, actual cache bytes and equivalent suites
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/ci_cargo_service.py collect --reports "$RUNNER_TEMP/cargo-service-samples" --output "$RUNNER_TEMP/cargo-service-comparison/comparison.json"
+      - name: Retain measured comparison and failed reconciliation inputs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cargo-service-comparison-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/cargo-service-comparison/
+            ${{ runner.temp }}/cargo-service-samples/
+          if-no-files-found: error
+          retention-days: 7

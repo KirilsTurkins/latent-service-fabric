@@ -96,6 +96,7 @@ def configuration(app: Path) -> dict:
 def edit(project: Path, operation: str, *, coordinate: str | None = None,
          local_id: str | None = None, jar: Path | None = None, dependencies: tuple[str, ...] = (),
          scope: str = 'runtime', exclusions: tuple[str, ...] = (), repository: tuple[str, str] | None = None,
+         repository_ca: str | None = None,
          identity: str | None = None, version: str | None = None) -> dict:
     from tools.java_dependency_resolution import declarations
     with transaction(project) as (owner, app, private, sdk):
@@ -150,7 +151,12 @@ def edit(project: Path, operation: str, *, coordinate: str | None = None,
         if repository is not None:
             if any(item['id'] == repository[0] for item in value['repositories']):
                 raise DependencyError('java-repository-already-declared')
-            value['repositories'].append({'id': repository[0], 'url': repository[1]})
+            declared = {'id': repository[0], 'url': repository[1]}
+            if repository_ca is not None:
+                declared['tlsTrust'] = {'caFile': repository_ca}
+            value['repositories'].append(declared)
+        elif repository_ca is not None:
+            raise DependencyError('java-registry-certificate-requires-repository')
         declarations(value)
         prefix = app.relative_to(owner).as_posix() + '/' if owner != app else ''
         raw = canonical(value) + b'\n'
