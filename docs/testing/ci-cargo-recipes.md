@@ -97,9 +97,9 @@ There are two dependency-cache variants, using the same pinned
 | Baseline | Default for PR, push and manual CI | Existing prefix/key and dependency-only paths |
 | Recipe identity | Manual CI input `cargo_dependency_cache=recipe` | Observed build-compatibility digest in the non-fallback prefix and a compatible shared key, without hashing workflow layout |
 
-The baseline already requests `.fingerprint`, `build` and `deps` directories.
-`cache-targets: false` is **not** evidence that compiled dependencies are absent:
-those are explicit cache directories. The pinned action's save implementation
+Current CI selects `cache-targets: true`; its earlier explicit `.fingerprint`,
+`build` and `deps` configuration also cached compiled dependencies. Neither
+configuration is a compilation-cache absence baseline. The pinned action's save implementation
 prunes workspace artifacts while retaining dependency material. The candidate
 preserves `cache-workspace-crates: false`, `cache-bin: false`,
 `cache-all-crates: false`, `cache-on-failure: false` and the same directory scope.
@@ -126,9 +126,9 @@ linker or target-directory overrides that it does not observe, missing input
 files, malformed Cargo configuration, unresolved tools and input bounds. It
 currently supports the pinned native runner setup, not arbitrary custom SDKs.
 
-Only a push to `development`, or an explicit manual run on `development` or
-`release`, may save either cache. Pull requests and feature-branch manual runs
-are read-only. A cache identity failure fails the selected candidate step.
+Only successful pushes to `development` in the designated writer lanes may
+save a production cache. Pull requests and all manual runs are read-only.
+A cache identity failure fails the selected candidate step.
 A restore miss can rebuild normally. A corrupt restored dependency may be rebuilt
 by Cargo or cause a nonzero Cargo result; the latter remains a CI failure. The
 real-compiler mechanism trial now observes both outcomes: an invalid fingerprint
@@ -145,6 +145,11 @@ overflow checks retained, and two concurrent Cargo build jobs. Cargo jobs bound
 compiler/linker processes, not every internal worker thread or total RSS.
 There is no release-profile override and no benchmark, calibration or historical
 evidence profile change. The helper rejects applying it to the MSRV recipe.
+
+Current ordinary CI already selects debug level 0 and two Cargo jobs. The
+earlier correctness-profile proposal uses debug level 1, so its new service
+trial compares that complete candidate against today's debug-0 baseline; it
+does not describe level 1 as a further reduction from current CI.
 
 Run it only in a separate correctness-experiment checkout; do not reuse that
 checkout's `target/debug` output as ordinary qualification or resource evidence:
@@ -389,6 +394,52 @@ cache download/upload timings. Downstream renderer/provider qualification,
 MSRV, release and calibration jobs are explicitly excluded from this local
 recipe measurement and remain in normal CI. Consequently this runner cannot
 promote a default on its own or replace the shared #426/#342 end-to-end evidence.
+
+## GitHub cache-service comparison
+
+The separate `Cargo cache service evaluation` workflow runs when its two
+workflow files change on a push to `development`. It uses the same pinned
+`Swatinem/rust-cache` GitHub backend and dependency-only writer settings as
+ordinary CI. Production keys are not read, changed or deleted: the experiment
+adds a unique run/attempt prefix to each configuration, producing an actual
+cold service miss followed by two fresh-runner exact-hit observations. The
+baseline retains its ordinary identity shape; the candidate places its whole
+observed build-compatibility digest inside its isolated prefix. No additional
+compiler-cache service is installed.
+
+The two candidates are the current cache/profile and the explicit recipe key
+with the bounded correctness profile. Their cold jobs may save only after all
+reviewed invocations and artifact retention succeed on a development push.
+Both warm jobs are read-only and still execute every reviewed Cargo invocation,
+including both Clippy configurations, exact discovery, authenticated AOT
+handoffs, custom test coverage, doctests and signing compatibility. Ordinary CI
+and its independent MSRV check are unchanged. A missing warm entry or a cold
+restore is a failed comparison, never a relabeled successful warm sample.
+
+`tools/ci_cargo_service.py collect` reads completed job steps and cache entries
+through the read-only GitHub API. It requires all six successful observations
+on the same source and attempt, complete invocation coverage, unchanged build
+identity within each candidate, identical active-case digests, observed cache
+sizes and native maximum-child RSS. Cache-action time includes lookup and
+compression/pruning or extraction together with service transfer. The report
+keeps separate network and extraction times unset because the action API does
+not measure them independently. Maximum child RSS is not simultaneous process
+tree memory. Failed attempts and original recipe observations remain separate
+artifacts outside the dependency caches.
+
+This workflow and its regression controls provide the collection mechanism;
+they are not cache-service performance results. The existing completed local
+archive trials and older hosted recipe replays retain their original source,
+profiles, sample counts and backend boundaries. A new completed six-sample
+service report is required before selecting a different default or closing
+issue #432. Even a successful report never changes the default automatically:
+one cold and two serial warm samples on separate runners provide limited
+uncertainty evidence and must be reviewed with the actual end-to-end CI result.
+
+The exporter also closes its temporary JSON file before atomic replacement.
+Actual Windows controls cover replacement and failure preserving the previous
+evidence; Linux collector controls retain all earlier process, stream, archive
+and failure assertions. No exporter success waives failed recipe execution.
 
 ## Rollback
 

@@ -36,14 +36,17 @@ def atomic_json(path: Path, value: object) -> None:
     encoded = (json.dumps(value, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
     if len(encoded) > MAX_BYTES:
         raise ValueError("observation-byte-limit")
-    with tempfile.NamedTemporaryFile(dir=path.parent, prefix=".observation-", delete=False) as stream:
-        temporary = Path(stream.name)
-        try:
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=".observation-", delete=False) as stream:
+            temporary = Path(stream.name)
             stream.write(encoded)
             stream.flush()
             os.fsync(stream.fileno())
-            temporary.replace(path)
-        finally:
+        # Windows cannot atomically replace or remove an open temporary file.
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
             temporary.unlink(missing_ok=True)
 
 

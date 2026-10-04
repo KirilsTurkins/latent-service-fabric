@@ -24,6 +24,24 @@ def stream(fresh=False):
 
 
 class ObservationTests(unittest.TestCase):
+    def test_atomic_json_replaces_existing_evidence_with_closed_file_handles(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "observation.json"
+            observe.atomic_json(target, {"attempt": 1})
+            observe.atomic_json(target, {"attempt": 2})
+            self.assertEqual(json.loads(target.read_bytes()), {"attempt": 2})
+            self.assertEqual(list(Path(directory).iterdir()), [target])
+
+    def test_failed_atomic_replacement_preserves_previous_evidence_and_retires_temporary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "observation.json"
+            target.write_text('{"attempt":1}')
+            with mock.patch.object(Path, "replace", side_effect=PermissionError("closed destination")):
+                with self.assertRaises(PermissionError):
+                    observe.atomic_json(target, {"attempt": 2})
+            self.assertEqual(json.loads(target.read_bytes()), {"attempt": 1})
+            self.assertEqual(list(Path(directory).iterdir()), [target])
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

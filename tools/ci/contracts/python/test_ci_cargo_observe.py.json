@@ -5,7 +5,9 @@
     "NativeObservationTests.test_native_stderr_case_records_validate_without_polluting_json_handoff",
     "NativeObservationTests.test_real_owned_failure_preserves_status_and_failed_stage_record",
     "NativeObservationTests.test_real_owned_success_retains_inventory_without_cache_short_circuit",
+    "ObservationTests.test_atomic_json_replaces_existing_evidence_with_closed_file_handles",
     "ObservationTests.test_cargo_freshness_is_artifacts_not_compiler_processes",
+    "ObservationTests.test_failed_atomic_replacement_preserves_previous_evidence_and_retires_temporary",
     "ObservationTests.test_fingerprint_and_output_links_are_rejected",
     "ObservationTests.test_fingerprint_data_is_hashed_not_disclosed",
     "ObservationTests.test_gnu_time_requires_finite_complete_fields_and_defines_rss",
@@ -91,7 +93,31 @@
       ],
       "skipSites": []
     },
+    "ObservationTests.test_atomic_json_replaces_existing_evidence_with_closed_file_handles": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
     "ObservationTests.test_cargo_freshness_is_artifacts_not_compiler_processes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_failed_atomic_replacement_preserves_previous_evidence_and_retires_temporary": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -262,6 +288,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_ci_cargo_observe.py",
-  "reviewReason": "Preserve historical native guards; add actual owned child stderr case writes, exclusive JSON handoff, redaction and cleanup accounting",
+  "reviewReason": "PR729: add isolated development-push cache-service cold and repeated-warm observations; retain every existing recipe, workflow obligation, case and guard; close exporter files before atomic replacement on Windows.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

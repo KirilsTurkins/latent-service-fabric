@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_cargo_observe.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "PR729: retain every historical command, case and guard; separate Cargo stdout and stderr under one unchanged descendant owner, deadline and combined output bound; add three native stream regressions.",
+  "reviewReason": "PR729: add isolated development-push cache-service cold and repeated-warm observations; retain every existing recipe, workflow obligation, case and guard; close exporter files before atomic replacement on Windows.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8cdc4740b562da4ba24af31b924ade9db3670729fc90d202f6f1b7e958f86b1d"
+  "sha256": "65ffa7c037d053a68c0ee927ce503459d1b30289467bdf023e15a96084414dc1"
 }

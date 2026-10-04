@@ -146,11 +146,32 @@ def execution_text(output: Path) -> str:
     return "\n".join(streams)
 
 
-def evaluate(repo: Path, output: Path, configuration: str) -> dict:
+def evaluate(repo: Path, output: Path, configuration: str, *,
+             service_state: str | None = None, service_hit: bool | None = None) -> dict:
     repo = repo.resolve()
     target = repo / "target"
-    if target.exists() or target.is_symlink():
+    if service_state is not None and service_state not in STATES:
+        raise ValueError("unknown-cache-service-sample")
+    if service_state is not None and type(service_hit) is not bool:
+        raise ValueError("cache-service-hit-observation-required")
+    if target.is_symlink() or (target.exists() and service_state not in ("warm-1", "warm-2")):
         raise ValueError("evaluation-requires-disposable-checkout-with-no-target")
+    if service_state == "cold" and service_hit:
+        raise ValueError("cold-cache-service-sample-restored-an-existing-cache")
+    if service_state in ("warm-1", "warm-2") and not service_hit:
+        raise ValueError("warm-cache-service-sample-requires-an-exact-cache-hit")
+    if service_state in ("warm-1", "warm-2"):
+        if not target.is_dir():
+            raise ValueError("warm-cache-service-target-missing")
+        files, total = 0, 0
+        for path in target.rglob("*"):
+            if path.is_symlink() or not (path.is_dir() or path.is_file()):
+                raise ValueError("linked-or-special-cache-service-target")
+            if path.is_file():
+                files += 1
+                total += path.stat().st_size
+                if files > MAX_ARCHIVE_FILES or total > MAX_ARCHIVE_BYTES:
+                    raise ValueError("cache-service-target-limit")
     if Path(os.path.abspath(output)).is_relative_to(repo):
         raise ValueError("evaluation-diagnostics-must-be-outside-checkout")
     output = observations.output_directory(output, repo)
@@ -162,7 +183,8 @@ def evaluate(repo: Path, output: Path, configuration: str) -> dict:
     record = {"schemaVersion": "latent.ci.cargo-evaluation.v1", "passed": False,
               "scope": "all-reviewed-rust-cargo-recipes-with-authenticated-aot-and-suite-discovery",
               "configuration": configuration, "samples": [], "eligibleForDefaultPromotion": False,
-              "cacheBackend": "local-tar-gzip-dependency-products-not-GitHub-cache",
+              "cacheBackend": ("GitHub-cache-service-pinned-rust-cache" if service_state is not None
+                               else "local-tar-gzip-dependency-products-not-GitHub-cache"),
               "sharedCacheWrites": False, "networkTransferSeconds": None,
               "excluded": ["downstream-renderer-and-provider-qualification", "release-and-resource-calibration", "msrv-job"]}
     try:
@@ -179,12 +201,14 @@ def evaluate(repo: Path, output: Path, configuration: str) -> dict:
         expected = None
         with tempfile.TemporaryDirectory(prefix="lsf-cargo-evaluation-") as private_directory:
             archive = Path(private_directory) / "dependencies.tar.gz"
-            for state in STATES:
+            for state in ((service_state,) if service_state is not None else STATES):
                 sample = {"state": state, "passed": False, "restore": None, "save": None}
+                if service_state is not None:
+                    sample["cacheServiceExactHit"] = service_hit
                 record["samples"].append(sample)
                 if state == "cold":
                     target.mkdir()
-                else:
+                elif service_state is None:
                     # The target did not exist when this invocation took ownership.
                     if target.is_symlink() or target.parent != repo:
                         raise ValueError("evaluation-target-ownership-changed")
@@ -231,7 +255,7 @@ def evaluate(repo: Path, output: Path, configuration: str) -> dict:
                 sample["builtArtifactRecords"] = sum(item["builtArtifactRecords"] for item in observed)
                 sample["freshArtifactRecords"] = sum(item["freshArtifactRecords"] for item in observed)
                 sample["overlap"] = overlaps(observed)
-                if state == "cold":
+                if state == "cold" and service_state is None:
                     start = time.monotonic()
                     checked(["cargo", "clean", *[argument for package in packages for argument in ("--package", package)]], repo, env)
                     sample["pruneSeconds"] = time.monotonic() - start
@@ -257,9 +281,15 @@ def main() -> int:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--configuration", choices=ci_cargo.CONFIGURATIONS, default="current")
     parser.add_argument("--disposable-checkout", action="store_true", required=True)
+    parser.add_argument("--service-state", choices=STATES)
+    parser.add_argument("--service-hit", choices=("true", "false"))
     args = parser.parse_args()
     try:
-        evaluate(ci_cargo.ROOT, args.output, args.configuration)
+        if (args.service_state is None) != (args.service_hit is None):
+            raise ValueError("service-state-and-hit-must-be-supplied-together")
+        evaluate(ci_cargo.ROOT, args.output, args.configuration,
+                 service_state=args.service_state,
+                 service_hit=(args.service_hit == "true") if args.service_hit is not None else None)
         return 0
     except (ProcessFailure, OSError, ValueError, tarfile.TarError) as error:
         print("Cargo recipe evaluation failed: " + str(error), file=sys.stderr)
