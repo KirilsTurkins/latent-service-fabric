@@ -141,3 +141,19 @@ license metadata and provenance. Its SBOM boundary covers declared application
 inputs. It does not claim a complete runtime SBOM, hermeticity, reproducibility,
 library compatibility or runtime authority. Native/generated/tool inputs and
 compiler/sysroot/runtime locks require their own attributable inventories.
+
+Language authoring commands delegate tests and watch updates to the maintained
+frontend. A source command may use the controller only from its own observed
+source tree. A staged compiler recipe omits that controller and requires an
+explicit standalone frontend path and exact `sha256:<64 hex>` byte identity;
+it never selects a controller through `PATH` or another Python installation.
+Use the frontend from the already authenticated developer installation. The
+executable digest selects those bytes and does not grant recipe, publisher or
+application dependency trust.
+
+The standalone delegate holds protected input handles, rechecks the executable
+and pathname after execution, omits ambient production credentials, and retains
+only bounded output. Its finite wrapper deadline and local process cleanup do
+not settle a remote operation. Frontend exit 5 remains uncertain and exit 130
+remains interrupted; inspect the original workspace status before continuing.
+Receipt-write failure preserves that original outcome and never permits replay.
