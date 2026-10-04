@@ -82,7 +82,7 @@ pub async fn context(harness: &mut Harness, evidence: &mut Evidence, package: &P
                 "--parent-activation-id",
                 "forged-parent",
             ],
-            (4, "platform-error"),
+            (4, "platform-failure"),
         )
         .await;
     assert_eq!(forged["error"]["code"], "permission-denied");
