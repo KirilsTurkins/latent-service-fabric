@@ -58,6 +58,17 @@ async fn shutdown_waits_for_the_actual_os_exit_after_logical_store_retirement() 
         result = &mut shutdown => panic!("shutdown returned before the actual OS exit: {result:?}"),
         result = tokio::time::timeout_at(deadline.into(), exit_started) => result.unwrap(),
     }
+    let logically_retired = async {
+        // The gated worker can reach its OS epilogue before its peers publish
+        // their retirement. Keep polling shutdown until every counter retires.
+        while !state.0.store.snapshot().unwrap().physically_retired() {
+            tokio::task::yield_now().await;
+        }
+    };
+    tokio::select! {
+        result = &mut shutdown => panic!("shutdown returned with an owned OS exit still gated: {result:?}"),
+        result = tokio::time::timeout_at(deadline.into(), logically_retired) => result.unwrap(),
+    }
     assert!(state.0.store.snapshot().unwrap().physically_retired());
     assert!(state.0.store.pending_thread_joins().unwrap() > 0);
     release.send(()).unwrap();
