@@ -59,6 +59,10 @@ impl Fixture {
             .unwrap()
             .await
             .unwrap();
+        // The completed result may arrive before the filesystem worker has
+        // physically retired. Preserve the original initial-control deadline
+        // while excluding that worker from later HTTP ownership baselines.
+        retire_initial_worker(&http, deadline).await;
         let binding = secrets
             .bind_credential(
                 CredentialScope {
@@ -206,6 +210,24 @@ impl Fixture {
             self.authority.owners().unwrap(),
             latent_effects::authority::DispatchOwners::default()
         );
+    }
+}
+
+async fn retire_initial_worker(http: &HttpFixture, deadline: Instant) {
+    loop {
+        match http.pools.snapshot() {
+            Ok(snapshot) if snapshot.workers == 0 => return,
+            Ok(_) => {}
+            Err(error)
+                if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                    && error.message == "capability-busy" => {}
+            Err(error) => panic!("initial provider worker snapshot failed: {error:?}"),
+        }
+        assert!(
+            Instant::now() < deadline,
+            "initial provider worker did not retire"
+        );
+        tokio::task::yield_now().await;
     }
 }
 
