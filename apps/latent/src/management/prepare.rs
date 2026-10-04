@@ -9,8 +9,8 @@ use latent_wire::management::{deployment_to_proto, proto};
 use serde_json::json;
 
 use crate::args::{
-    Command, DeploymentCommand, NodeCommand, PublishArgs, ReleaseCommand, RouteCommand,
-    ValidateCommand,
+    ActivationTreeArgs, Command, DeploymentCommand, NodeCommand, PublishArgs, ReleaseCommand,
+    RouteCommand, ValidateCommand,
 };
 use crate::config::ResolvedConfig;
 use crate::error::Failure;
@@ -115,6 +115,16 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
             "This is not a management operation.",
         )),
     }
+}
+
+fn activation_tree(args: &ActivationTreeArgs) -> Result<Operation, Failure> {
+    identifier(&args.id)?;
+    Ok(Operation::InspectActivationTree(
+        proto::InspectActivationTreeRequest {
+            activation_id: args.id.clone(),
+            page: Some(page(args.page_size, args.page_token.as_deref())?),
+        },
+    ))
 }
 
 pub fn validate(command: &ValidateCommand) -> Result<Outcome, Failure> {
