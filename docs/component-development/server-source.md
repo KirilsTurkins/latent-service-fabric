@@ -21,7 +21,7 @@ bytes cannot transfer to it.
 
 | Source path | Ordinary/default source delivery | Runtime-dependent server behavior | Developer extension |
 | --- | --- | --- | --- |
-| Java `HttpServer` | Consumer implementation and real ingress qualification tracked in #728 | Executor/task/timer server lifecycle consumes #736/#741 | Separately labelled, never ordinary-source proof |
+| Java `HttpServer` | [Selected compiler/AST profile](java-httpserver.md); actual component probe and native conformance, real ingress qualification pending #728 | Executor/task/timer server lifecycle consumes #736/#741 | Separately labelled, never ordinary-source proof |
 | Rust server APIs | No common server-source compiler adapter delivered | Selected runtime port #743 needs separate server lifecycle integration | Finite declarations can be used by an explicit extension |
 | C server APIs | No common server-source compiler adapter delivered | Selected runtime port #744 needs separate server lifecycle integration | Finite declarations can be used by an explicit extension |
 | TypeScript server APIs | No common server-source compiler adapter delivered | Selected runtime port #745 needs separate server lifecycle integration | Finite declarations can be used by an explicit extension |
