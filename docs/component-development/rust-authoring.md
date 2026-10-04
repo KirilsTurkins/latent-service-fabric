@@ -13,6 +13,9 @@ Create an independent Cargo project, edit its typed contract, and run its signed
 package on a local node. Your application lives outside the LSF checkout and
 uses a pinned copy of the maintained guest SDK.
 
+For application dependencies, exact lock review and the maintained test/watch
+commands, see [Rust application library inputs](rust-library-authoring.md).
+
 Use Linux, Python 3.13.5, Rust 1.97.1, wasm-tools 1.254.0 and wit-bindgen-cli
 0.62.0. Follow the [toolchain setup](../development/toolchain.md), install
 `tools/requirements.lock` in your Python environment, and run these commands
