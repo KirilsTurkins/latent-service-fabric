@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "profile": "http-cache-semantics-4.3.0-lsf-cache-v1",
+  "name": "http-cache-semantics",
+  "version": "4.3.0",
+  "upstreamIntegrity": "sha512-M5t5LlJpS1UHMjvwRQVdFHvPISGeLAxNcrWuJkeGh0KxsqCHZ1O3NXZU/8x7cD0BDcGW8kapxMKTvwlqrNkHkA==",
+  "files": [
+    {
+      "path": "index.js",
+      "beforeSha256": "ede1cc404a492fa348eb9d97a3007a0d72aa717bd22cd86a56bd0824c19729ca",
+      "afterSha256": "1b9c08bb65a535d344e851fafc2a83c06bf5b31b3974621a73c8ee435306d793",
+      "edits": [
+        {
+          "before": "    evaluateRequest(req) {\n        this._assertRequestHasHeaders(req);\n",
+          "after": "    evaluateRequest(req) {\n        this._assertRequestHasHeaders(req);\n\n        // Security-zeroed entries cannot become reusable through max-stale.\n        // Keep legitimate public stale responses subject to the original rules.\n        if (!this.storable() || this._rescc['no-cache'] ||\n            (this._isShared && (this._rescc['proxy-revalidate'] ||\n                (this._resHeaders['set-cookie'] && !this._rescc.public && !this._rescc.immutable)))) {\n            return this._evaluateRequestMissResult(req);\n        }\n\n",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}
