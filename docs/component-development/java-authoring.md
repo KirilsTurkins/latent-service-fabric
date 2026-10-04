@@ -83,10 +83,13 @@ files and update the selected world in `capsule-project.json` when renaming
 the contract. Keep the SDK files unchanged. The build rejects SDK drift,
 path escapes and unsupported contract shapes. Put additional `.java` sources beneath `src`.
 Your entry class `dev.latent.app.Capsule` implements the generated
-`dev.latent.generated.Bindings.Exports`. The supported build captures Java source,
-not arbitrary JARs, application Gradle scripts or Maven projects. The compiler's
-70-JAR closure is version-locked and checksum-verified; downloaded application
-dependencies, JNI, reflection-based loading and dynamic class loading are not supported.
+`dev.latent.generated.Bindings.Exports`. The build captures Java source and explicitly
+reviewed [application JARs](java-dependencies.md). The compiler's 70-JAR closure
+is version-locked and checksum-verified. Application JARs have a separate
+captured lock; arbitrary unreviewed JARs, application Gradle scripts and Maven
+projects are rejected. Reachable JNI, reflection-based loading and dynamic class
+loading still require compatible compiler/runtime support and emitted-component
+evidence.
 
 The `word-count` and `shipping` templates provide equivalent Java implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory
@@ -116,6 +119,29 @@ The output includes `component.wasm`, `capsule.json`, `contracts.json`,
 `wit-lock.json`, `deployment.json`, `package/` and `build-observation.json`.
 Full-width WIT integers retain their original types; application errors remain
 `result` values. Unsupported WIT types fail explicitly during contract derivation.
+
+For the explicit SDK activation runtime profile, use
+`--runtime-profile teavm-activation-fibers-v1` on the build command. The selected
+world must declare `latent:runtime/activation@0.1.0` and
+`latent:clock/monotonic@0.1.0`. The compiler preserves the application's original
+Java classes and stages the SDK's runtime substitutions, continuation handling
+and owned dispatch. It records source origins and the selected checkpoint class
+index in `source-origins.json` and `runtime-profile.json`; both become signed
+build materials after the entire build succeeds. The compatibility check captures
+the frozen V5 ABI from the declared WIT surface. Operator provider installation
+and grants remain separate requirements.
+
+Keep the selected world and exported contracts in the project tenant's namespace.
+The isolated example signer uses tenant `examples`. The normal full activation
+build and its first signed execution attempt are recorded in
+[Java activation fibers](../runtime/java-activation-fibers.md); that invocation
+failed and does not establish complete CompletableFuture execution support.
+
+`--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
+dependency cache. Gradle writes locks and updates to the build's private home.
+Choose one cache mode per build. Profile selection does not change invocation
+limits or establish complete Java concurrency qualification; the measured
+boundaries are described in [Java activation fibers](../runtime/java-activation-fibers.md).
 
 ## 3. Sign for this local experiment
 

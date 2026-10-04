@@ -4,6 +4,7 @@ import json
 import importlib.util
 import os
 from pathlib import Path
+import re
 import shutil
 import sys
 import time
@@ -45,11 +46,33 @@ def sdk_snapshot(root: Path) -> dict:
         "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
         "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
         "tools/teavm_platform.py", "tools/capture.py")}
-    for folder in ("runtime", "templates", "wit"):
+    for folder in ("runtime", "templates", "wit", "fibers", "server"):
+        if folder in ("fibers", "server") and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
-    if (root / "server").exists():
-        files.update({"server/" + name: data for name, data in snapshot(root / "server").items()})
     return dict(sorted(files.items()))
+
+
+def stage_sdk_service(target: Path, name: str, data: bytes) -> None:
+    """Merge explicit trusted SDK extensions without replacing another profile."""
+    if (not name.startswith("META-INF/services/org.teavm.") or len(data) > 16384
+            or target.is_symlink()):
+        raise ValueError("invalid Java SDK compiler service")
+    def entries(raw: bytes) -> list[str]:
+        providers = []
+        for line in raw.decode("utf-8").splitlines():
+            provider = line.split("#", 1)[0].strip()
+            if not provider: continue
+            if (len(providers) >= 128 or not re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", provider)
+                    or provider in providers):
+                raise ValueError("invalid Java SDK compiler service provider")
+            providers.append(provider)
+        if not providers: raise ValueError("empty Java SDK compiler service")
+        return providers
+    previous = entries(read_file(target, 16384)) if target.exists() else []
+    selected = entries(data)
+    if set(previous) & set(selected): raise ValueError("duplicate Java SDK compiler service provider")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(("\n".join([*previous, *selected]) + "\n").encode("utf-8"))
 
 
 def tool_inventory(roots: dict[str, Path]) -> bytes:
@@ -71,10 +94,29 @@ def tool_inventory(roots: dict[str, Path]) -> bytes:
     return canonical(files)
 
 
+def read_only_dependency_cache(path: Path) -> Path:
+    """Select the completed pinned module cache without copying its artifacts.
+
+    Gradle 9.1 reads this cache through GRADLE_RO_DEP_CACHE and keeps every lock,
+    transformation and update in this compiler's private Gradle user home.
+    """
+    if path.name != "modules-2" or path.is_symlink():
+        raise ValueError("invalid read-only Gradle module cache")
+    path = path.resolve(strict=True)
+    if not all((path / name).is_dir() and not (path / name).is_symlink()
+               for name in ("files-2.1", "metadata-2.107")):
+        raise ValueError("incomplete pinned read-only Gradle module cache")
+    tool_inventory({"gradle-cache": path})
+    return path
+
+
 class Compiler:
     def __init__(self, directory: Path, wasi_sdk: Path, *, gradle="gradle", sdk: Path | None = None,
                  platform: Path | None = None, config: dict | None = None, timeout=900,
-                 offline_cache: Path | None = None):
+                 offline_cache: Path | None = None, read_only_cache: Path | None = None):
+        if offline_cache is not None and read_only_cache is not None:
+            raise ValueError("Java dependency cache selections are mutually exclusive")
+        selected_cache = read_only_dependency_cache(read_only_cache) if read_only_cache is not None else None
         self.directory, self.wasi_sdk = directory.resolve(), wasi_sdk.resolve()
         self.sdk = sdk or ROOT / "sdk/java-guest"
         self.platform = platform or ROOT / "wit/platform"
@@ -86,13 +128,17 @@ class Compiler:
         # An explicit JDK may be needed by Gradle's Java toolchain discovery.
         if "JAVA_HOME" in os.environ: self.environment["JAVA_HOME"] = os.environ["JAVA_HOME"]
         self.environment["GRADLE_USER_HOME"] = str(self.directory / "gradle-home")
-        self.offline = offline_cache is not None
+        self.offline = offline_cache is not None or selected_cache is not None
+        self.dependency_cache = self.directory / "gradle-home/caches/modules-2/files-2.1"
         if offline_cache is not None:
             # Only a captured, checksummed dependency cache is accepted. Gradle
             # locks and metadata updates belong to this private compilation.
             offline_cache = offline_cache.resolve(strict=True)
             tool_inventory({"gradle-cache": offline_cache})
             shutil.copytree(offline_cache, self.directory / "gradle-home/caches/modules-2")
+        if selected_cache is not None:
+            self.environment["GRADLE_RO_DEP_CACHE"] = str(selected_cache.parent)
+            self.dependency_cache = selected_cache / "files-2.1"
         self.deadline = time.monotonic() + timeout
         self.records = []
         self.retained_bytes = 0
@@ -124,6 +170,7 @@ class Compiler:
         self.original_sdk = sdk_snapshot(self.sdk)
         self.tool_roots = {"wasi-sdk": self.wasi_sdk, "jdk": self.paths["java"].parent.parent,
                            "gradle": self.paths["gradle"].parent.parent}
+        if selected_cache is not None: self.tool_roots["gradle-cache"] = selected_cache
         self.compiler_inputs = tool_inventory(self.tool_roots)
         from tools.java_guest.lock import verify
         self.binding_digest = verify(self.run, self.sdk, self.platform, self.directory / "sdk-reference")
@@ -162,15 +209,24 @@ class Compiler:
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
-                server_profile: bool = False, server_bridge: bytes | None = None) -> tuple[Path, dict]:
+                activation_profile: bool = False, server_profile: bool = False,
+                server_bridge: bytes | None = None) -> tuple[Path, dict]:
+        if type(activation_profile) is not bool:
+            raise ValueError("Java activation profile requires an explicit boolean selection")
         if type(server_profile) is not bool or server_bridge is not None and not server_profile:
             raise ValueError("automatic server bridge requires an explicitly selected profile")
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
         for package in dependencies(wit, self.platform): copy_wit_tree(package, staged / "deps" / package.name)
-        bindings = generate(self.run, staged, world, destination / "bindings")
-        second = generate(self.run, staged, world, destination / "bindings-check")
+        if activation_profile:
+            declared = wit_surface(json.loads(self.run("activation-profile-wit", "wasm-tools",
+                "component", "wit", staged, "--json")), world)
+            required_imports = {"latent:runtime/activation@0.1.0", "latent:clock/monotonic@0.1.0"}
+            if not required_imports <= set(declared["imports"]):
+                raise ValueError("Java activation profile requires explicit runtime and monotonic clock WIT imports")
+        bindings = generate(self.run, staged, world, destination / "bindings", activation_profile=activation_profile)
+        second = generate(self.run, staged, world, destination / "bindings-check", activation_profile=activation_profile)
         if second != bindings: raise ValueError("nondeterministic Java WIT bindings")
         project = destination / "project"
         project.mkdir()
@@ -196,24 +252,30 @@ class Compiler:
             "org.gradle.java.installations.fromEnv=JAVA_HOME\n", encoding="utf-8")
         java_root = project / "src/main/java"
         shutil.copytree(self.sdk / "runtime/dev", java_root / "dev")
-        if server_profile:
-            # Only captured SDK extension code executes in the compiler JVM.
-            # Application JAR/service policy stays separate and denied by the
-            # ingestion recipe. No application initialization discovers routes.
-            for folder in ("server/dev", "server/compiler/dev"):
+        for selected, profile in ((server_profile, "server"), (activation_profile, "fibers")):
+            if not selected: continue
+            # Both extensions are SDK-owned; application compiler services stay
+            # separate. Source collisions fail instead of replacing either port.
+            for folder in (profile + "/dev", profile + "/compiler/dev"):
                 for name, data in snapshot(self.sdk / folder).items():
                     target = java_root / "dev" / name
-                    if target.exists(): raise ValueError("server SDK overrides runtime source")
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    target.write_bytes(data)
-            shutil.copytree(self.sdk / "server/services", project / "src/main/resources")
+                    if target.exists(): raise ValueError("Java runtime source collision")
+                    target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+            for name, data in snapshot(self.sdk / (profile + "/services")).items():
+                target = project / "src/main/resources" / name
+                stage_sdk_service(target, name, data)
+        if activation_profile or server_profile:
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
+                if activation_profile:
+                    build.write("dependencies { compileOnly 'org.teavm:teavm-platform:0.15.0' }\n")
+        application_source_names = set()
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")
             target = java_root / path.relative_to(sources)
             if target.exists(): raise ValueError("application overrides Java SDK source")
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(read_file(path))
+            application_source_names.add(path.relative_to(sources).as_posix())
         if server_bridge is not None:
             target = java_root / "dev/latent/app/Capsule.java"
             if target.exists(): raise ValueError("application overrides the automatic server invocation bridge")
@@ -221,14 +283,44 @@ class Compiler:
             target.write_bytes(server_bridge)
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
+        if activation_profile:
+            from tools.java_guest.class_origin import checkpoint_index
+            origins = json.loads(self.run("java-source-origins", "java",
+                self.sdk / "fibers/analysis/SourceOrigins.java", sources))
+            if (not isinstance(origins, dict) or set(origins) != {"schemaVersion", "sources"}
+                    or origins["schemaVersion"] != "lsf.java.source-origins.v1"
+                    or not isinstance(origins["sources"], list)):
+                raise ValueError("invalid Java source origin analysis")
+            source_packages = {}
+            for row in origins["sources"]:
+                if (not isinstance(row, dict) or set(row) != {"source", "package"}
+                        or not isinstance(row["source"], str)
+                        or row["source"] not in application_source_names or row["source"] in source_packages
+                        or not isinstance(row["package"], str)
+                        or any(char in row["package"] for char in "/\\\x00\r\n")):
+                    raise ValueError("invalid Java captured source origin")
+                source_packages[row["source"]] = row["package"]
+            if set(source_packages) != application_source_names:
+                raise ValueError("incomplete Java captured source origins")
+            write_json(destination / "source-origins.json", origins)
+            self.run("java-owned-classes", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "classes", cwd=project)
+            index = checkpoint_index(project / "build/classes/java/main", source_packages, application_classpath)
+            target = project / "src/main/resources/META-INF/latent/runtime-checkpoints.classes"
+            target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(index)
+            write_json(destination / "runtime-profile.json", {
+                "profile": "teavm-activation-fibers-v1", "qualification": "pending",
+                "sourceOriginDigest": digest(canonical(origins)),
+                "checkpointClassIndexDigest": digest(index), "checkpointClasses": index.decode("utf-8").splitlines(),
+            })
         self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)
         retain = source_module(self.sdk / "tools/dependencies.py").retain
-        retained = retain(self.directory / "gradle-home/caches/modules-2/files-2.1", project, destination, False)
+        retained = retain(self.dependency_cache, project, destination, False)
         generated = project / "build/teavm-c/c"
         adapt = source_module(self.sdk / "tools/teavm_platform.py").adapt
         adaptation = adapt(generated)
         core, component = destination / "core.wasm", destination / "component.wasm"
         self.run("c-to-wasm", "clang", "-target", "wasm32-wasip1", "-std=c11", "-O2",
+                 *(["-DLSF_JAVA_ACTIVATION_PROFILE=1"] if activation_profile else []),
                  "-DLSF_TEAVM_WASM=1", "-DTEAVM_CUSTOM_LOG=1", "-mllvm", "-wasm-enable-sjlj", "-lsetjmp",
                  "-mllvm", "-wasm-use-legacy-eh=false", "-mexec-model=reactor", "-Wl,--no-entry",
                  "-Wl,--export-memory", "-Wl,-z,stack-size=65536", "-Wl,--max-memory=67108864",

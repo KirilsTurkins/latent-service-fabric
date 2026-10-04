@@ -10,11 +10,13 @@ import tempfile
 import tomllib
 from urllib.parse import urlsplit
 
-from tools.application_dependencies import MANIFEST, LOCK, capture, document, metadata
+from tools.application_dependencies import (MANIFEST, LOCK, MAX_CLOSURE_BYTES, capture, document,
+                                           metadata, label, validate_manifest)
 from tools.application_dependency_store import DependencyError, Store, read_bytes, regular_path
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_snapshot import canonical, digest
+from tools.java_resource_artifacts import capture_resources, release_profile
 from tools.rust_capsule_project import ROOT
 
 DECLARATIONS = "java-dependencies.json"
@@ -23,30 +25,47 @@ TOKEN = re.compile(r"[A-Za-z0-9_.-]{1,128}\Z")
 
 
 def declarations(value: dict) -> dict:
-    if (set(value) != {"formatVersion", "dependencies", "localJars", "repositories", "selection"}
-            or value["formatVersion"] != 1 or not isinstance(value["dependencies"], list)
+    if (not isinstance(value, dict) or set(value) != {"formatVersion", "dependencies", "localJars", "repositories", "selection"}
+            or type(value["formatVersion"]) is not int or value["formatVersion"] != 1 or not isinstance(value["dependencies"], list)
             or not isinstance(value["localJars"], list) or not isinstance(value["repositories"], list)
-            or len(value["dependencies"]) + len(value["localJars"]) > 256 or not value["repositories"]):
+            or len(value["dependencies"]) + len(value["localJars"]) > 256 or not 1 <= len(value["repositories"]) <= 64
+            or not isinstance(value["selection"], dict)):
         raise DependencyError("java-dependency-declarations")
     metadata(value["selection"])
+    release_profile(value["selection"].get("release", 25))
     for row in value["dependencies"]:
-        if (set(row) != {"group", "name", "version", "scope", "exclusions"}
+        if (not isinstance(row, dict) or set(row) != {"group", "name", "version", "scope", "exclusions"}
                 or not all(isinstance(row[key], str) and TOKEN.fullmatch(row[key]) for key in ("group", "name", "version"))
                 or not re.fullmatch(r"[0-9][A-Za-z0-9_.-]*", row["version"]) or "SNAPSHOT" in row["version"]
-                or row["scope"] not in {"compile", "runtime"} or not isinstance(row["exclusions"], list)):
+                or row["scope"] not in {"compile", "runtime"} or not isinstance(row["exclusions"], list)
+                or len(row["exclusions"]) > 256):
             raise DependencyError("java-maven-coordinate-or-scope-invalid")
         for excluded in row["exclusions"]:
-            if set(excluded) != {"group", "name"} or not all(TOKEN.fullmatch(excluded[key]) for key in excluded):
+            if (not isinstance(excluded, dict) or set(excluded) != {"group", "name"}
+                    or not all(isinstance(excluded[key], str) and TOKEN.fullmatch(excluded[key]) for key in excluded)):
                 raise DependencyError("java-maven-exclusion-invalid")
     for row in value["repositories"]:
-        if set(row) != {"id", "url"} or not TOKEN.fullmatch(row["id"]):
+        if (not isinstance(row, dict) or set(row) != {"id", "url"}
+                or not isinstance(row["id"], str) or not TOKEN.fullmatch(row["id"])
+                or not isinstance(row["url"], str)):
             raise DependencyError("java-repository-policy-invalid")
         parsed = urlsplit(row["url"])
         if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise DependencyError("java-repository-credentials-denied")
     for row in value["localJars"]:
-        if set(row) != {"id", "path", "dependencies"} or not isinstance(row["dependencies"], list):
+        if (not isinstance(row, dict) or set(row) != {"id", "path", "dependencies"}
+                or not isinstance(row["dependencies"], list) or len(row["dependencies"]) > 1024
+                or not isinstance(row["path"], str) or not 0 < len(row["path"]) <= 4096 or '\0' in row["path"]):
             raise DependencyError("java-local-jar-declaration-invalid")
+        label(row['id'])
+        if len(set(row['dependencies'])) != len(row['dependencies']):
+            raise DependencyError('java-local-jar-declaration-invalid')
+        for dependency in row['dependencies']:
+            label(dependency)
+    if (len({(row['group'], row['name']) for row in value['dependencies']}) != len(value['dependencies'])
+            or len({row['id'] for row in value['localJars']}) != len(value['localJars'])
+            or len({row['id'].upper().replace('-', '_') for row in value['repositories']}) != len(value['repositories'])):
+        raise DependencyError('java-declaration-identity-or-credential-slot-ambiguous')
     return value
 
 
@@ -110,14 +129,29 @@ tasks.register('captureRuntime') {
 
 
 def resolve(project: Path, candidate: Path, *, gradle: str = "gradle") -> dict:
-    project = regular_path(project)
-    if candidate.exists():
+    from tools.java_dependency_authoring import transaction
+    with transaction(project) as (owner, app, private, sdk):
+        return _resolve(owner, app, private, sdk, candidate, gradle=gradle)
+
+
+def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *, gradle: str) -> dict:
+    from tools.java_dependency_authoring import candidate_location, optional, replace, unchanged
+    from tools.dev_workflow import paths
+    from tools.rust_capsule_project import snapshot
+    candidate = candidate_location(owner, candidate)
+    if os.path.lexists(candidate):
         raise DependencyError("java-lock-candidate-exists")
+    before = snapshot(project)
+    previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
+    previous_graph = optional(project, RESOLUTION)
+    recipe_paths = [Path(__file__), ROOT / 'tools/java_dependency_authoring.py', ROOT / 'tools/java_resource_artifacts.py',
+                    ROOT / 'tools/java_application_dependencies.py', ROOT / 'tools/toolchain.toml']
+    recipe_before = {str(path): digest(read_bytes(path)) for path in recipe_paths}
     declaration_bytes = read_bytes(project / DECLARATIONS)
     config = declarations(document(project / DECLARATIONS))
     pins = tomllib.loads(read_bytes(ROOT / "tools/toolchain.toml").decode())
-    store = Store(project / "dependency-inputs/objects")
-    with tempfile.TemporaryDirectory(prefix="lsf-java-resolution-") as owned:
+    store = Store(owner / "dependency-inputs/objects")
+    with tempfile.TemporaryDirectory(prefix="lsf-java-resolution-", dir=private) as owned:
         work = Path(owned)
         environment = build_environment(work)
         environment.update(HOME=str(work / "home"), USERPROFILE=str(work / "home"), GRADLE_USER_HOME=str(work / "gradle"))
@@ -129,31 +163,41 @@ def resolve(project: Path, candidate: Path, *, gradle: str = "gradle") -> dict:
             for suffix in ("_USERNAME", "_PASSWORD"):
                 if prefix + suffix in os.environ:
                     environment[prefix + suffix] = os.environ[prefix + suffix]
-        resolver_path = shutil.which(gradle, path=environment.get("PATH"))
-        if not resolver_path:
-            raise DependencyError("java-pinned-resolver-unavailable")
-        resolver_digest = digest(read_bytes(Path(resolver_path)))
-        java = shutil.which("java", path=environment.get("PATH"))
-        if not java:
-            raise DependencyError("java-pinned-resolution-jdk-unavailable")
-        java_version = run_bounded_result([java, "-version"], work, environment, 30, 16384)
-        reported = (java_version.stdout + java_version.stderr).decode("utf-8")
-        if java_version.returncode or pins["sdk"]["java"] not in reported:
-            raise DependencyError("java-pinned-resolution-jdk-version-mismatch")
-        version = run_bounded_result([resolver_path, "--version"], work, environment, 30, 16384)
-        if version.returncode or not re.search(r"\bGradle " + re.escape(pins["sdk"]["gradle"]) + r"\b", version.stdout.decode("utf-8")):
-            raise DependencyError("java-pinned-resolver-version-mismatch")
-        (work / "settings.gradle").write_text("rootProject.name = 'captured-application-resolution'\n", encoding="utf-8")
-        (work / "gradle.properties").write_text("org.gradle.java.installations.auto-download=false\n", encoding="utf-8")
-        (work / "build.gradle").write_text(script(config), encoding="utf-8")
-        result = run_bounded_result([resolver_path, "--no-daemon", "captureRuntime"], work, environment, 300, 4 * 1024 * 1024)
-        if result.returncode:
-            raise DependencyError("java-maven-resolution-failed-private-diagnostics-discarded")
-        resolved = document(work / "resolved.json")
+        tools_before = {}
+        resolver = {'name': 'captured-local-jar', 'version': '1', 'recipeDigest': recipe_before[str(Path(__file__))]}
+        if config['dependencies']:
+            resolver_path = shutil.which(gradle, path=environment.get("PATH"))
+            if not resolver_path:
+                raise DependencyError("java-pinned-resolver-unavailable")
+            resolver_digest = digest(read_bytes(Path(resolver_path)))
+            java = shutil.which("java", path=environment.get("PATH"))
+            if not java:
+                raise DependencyError("java-pinned-resolution-jdk-unavailable")
+            tools_before = {resolver_path: resolver_digest, java: digest(read_bytes(Path(java)))}
+            java_version = run_bounded_result([java, "-version"], work, environment, 30, 16384)
+            reported = (java_version.stdout + java_version.stderr).decode("utf-8")
+            if java_version.returncode or pins["sdk"]["java"] not in reported:
+                raise DependencyError("java-pinned-resolution-jdk-version-mismatch")
+            version = run_bounded_result([resolver_path, "--version"], work, environment, 30, 16384)
+            if version.returncode or not re.search(r"\bGradle " + re.escape(pins["sdk"]["gradle"]) + r"\b", version.stdout.decode("utf-8")):
+                raise DependencyError("java-pinned-resolver-version-mismatch")
+            (work / "settings.gradle").write_text("rootProject.name = 'captured-application-resolution'\n", encoding="utf-8")
+            (work / "gradle.properties").write_text("org.gradle.java.installations.auto-download=false\n", encoding="utf-8")
+            (work / "build.gradle").write_text(script(config), encoding="utf-8")
+            result = run_bounded_result([resolver_path, "--no-daemon", "captureRuntime"], work, environment, 300, 4 * 1024 * 1024)
+            if result.returncode:
+                raise DependencyError("java-maven-resolution-failed-private-diagnostics-discarded")
+            resolved = document(work / "resolved.json")
+            resolver = {'name': 'gradle', 'version': pins['sdk']['gradle'], 'executableDigest': resolver_digest,
+                        'jdkVersion': pins['sdk']['java'], 'jdkExecutableDigest': tools_before[java]}
+        else:
+            resolved = {'graph': [], 'artifacts': []}
         if len(resolved["graph"]) > 1024 or len(resolved["artifacts"]) > 1024:
             raise DependencyError("java-dependency-graph-limit")
         graph = {row["id"]: row for row in resolved["graph"]}
         jar_ids = {row["id"] for row in resolved["artifacts"]}
+        if len(graph) != len(resolved['graph']) or len(jar_ids) != len(resolved['artifacts']):
+            raise DependencyError('java-native-module-selection-ambiguous')
         # Fresh resolution metadata contains selected POMs, parent/BOM metadata
         # and Gradle module descriptors. Keep original bytes rather than infer
         # the complete native graph from the classpath's JAR names.
@@ -171,7 +215,7 @@ def resolve(project: Path, candidate: Path, *, gradle: str = "gradle") -> dict:
             identity = store.put(read_bytes(selected_path))
             metadata_rows.append({"id": selected_id, "role": "application", "format": "file",
                 "mount": f"dependencies/java/metadata/{index:04d}{selected_path.suffix}",
-                "source": {"path": store.path(identity["digest"]).relative_to(project).as_posix()},
+                "source": {"path": store.path(identity["digest"]).relative_to(owner).as_posix()},
                 "dependencies": [], "metadata": {"ecosystem": "maven", "assetType": "maven-resolution-metadata", "coordinates": coordinate}})
         artifacts, identities = [], {}
         for index, row in enumerate(sorted(resolved["artifacts"], key=lambda row: row["id"])):
@@ -181,7 +225,7 @@ def resolve(project: Path, candidate: Path, *, gradle: str = "gradle") -> dict:
             if not path.is_relative_to(work):
                 raise DependencyError("java-resolver-artifact-escape")
             identity = store.put(read_bytes(path))
-            source = store.path(identity["digest"]).relative_to(project).as_posix()
+            source = store.path(identity["digest"]).relative_to(owner).as_posix()
             component = graph[row["id"]]
             edges = sorted({edge["selected"] if edge["selected"] in jar_ids else primary_metadata.get(edge["selected"], edge["selected"])
                             for edge in component["dependencies"]})
@@ -191,24 +235,58 @@ def resolve(project: Path, candidate: Path, *, gradle: str = "gradle") -> dict:
                              "resolution": component, "repositoryPolicy": [row["id"] for row in config["repositories"]]}})
             identities[row["id"]] = identity
         artifacts.extend(metadata_rows)
+        local_before = {}
         for row in config["localJars"]:
-            identity = store.put(read_bytes(regular_path(project / row["path"])))
+            selected = regular_path(project / row['path'])
+            payload = read_bytes(selected)
+            local_before[selected] = digest(payload)
+            identity = store.put(payload)
             artifacts.append({"id": row["id"], "role": "application", "format": "file",
                 "mount": f"dependencies/java/{len(artifacts):04d}.jar",
-                "source": {"path": store.path(identity["digest"]).relative_to(project).as_posix()},
-                "dependencies": row["dependencies"], "metadata": {"ecosystem": "captured-local-jar", "scope": "runtime"}})
+                "source": {"path": store.path(identity["digest"]).relative_to(owner).as_posix()},
+                "dependencies": list(row["dependencies"]), "metadata": {"ecosystem": "captured-local-jar", "scope": "runtime",
+                    "originalLocalPath": row['path']}})
             identities[row["id"]] = identity
-        if read_bytes(project / DECLARATIONS) != declaration_bytes or digest(read_bytes(Path(resolver_path))) != resolver_digest:
-            raise DependencyError("java-resolution-input-mutated")
-        native = {"formatVersion": 1, "resolver": {"name": "gradle", "version": pins["sdk"]["gradle"],
-                  "executableDigest": resolver_digest, "jdkVersion": pins["sdk"]["java"], "jdkExecutableDigest": digest(read_bytes(Path(java)))}, "graph": list(graph.values()),
+        artifacts = capture_resources(owner, store, artifacts)
+        native = {"formatVersion": 1, "resolver": resolver, "graph": list(graph.values()),
                   "artifacts": identities, "configurationDigest": digest(read_bytes(project / DECLARATIONS)),
                   "selection": config["selection"], "lifecycleScripts": "disabled"}
-        (project / RESOLUTION).write_bytes(canonical(native) + b"\n")
+        native_bytes = canonical(native) + b'\n'
+        prefix = project.relative_to(owner).as_posix() + '/' if owner != project else ''
         manifest = {"formatVersion": 1, "language": "java", "selection": config["selection"],
-                    "nativeLocks": [DECLARATIONS, RESOLUTION], "artifacts": artifacts, "transformations": []}
-        (project / MANIFEST).write_bytes(canonical(manifest) + b"\n")
-        lock = capture(project)
-        with candidate.open("xb") as stream:
-            stream.write(canonical(lock) + b"\n")
+                    "nativeLocks": [prefix + DECLARATIONS, prefix + RESOLUTION], "artifacts": artifacts, "transformations": []}
+        validate_manifest(manifest, 'java')
+        manifest_bytes = canonical(manifest) + b'\n'
+        check = work / 'capture-inputs'; check.mkdir(mode=0o700)
+        (check / MANIFEST).write_bytes(manifest_bytes)
+        for name, payload in ((DECLARATIONS, declaration_bytes), (RESOLUTION, native_bytes)):
+            target = check / (prefix + name); target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(payload)
+        # Capture the exact final portable manifest. Its source objects are
+        # verified private copies; no receipt identity is rewritten afterward.
+        copied, copied_bytes = set(), 0
+        for row in artifacts:
+            source = row['source']['path']
+            paths.relative(source)
+            if source in copied:
+                continue
+            payload = read_bytes(owner / source)
+            copied_bytes += len(payload)
+            if copied_bytes > MAX_CLOSURE_BYTES:
+                raise DependencyError('dependency-closure-limit')
+            target = check / source; target.parent.mkdir(parents=True, exist_ok=True)
+            paths.write_new(target, payload)
+            copied.add(source)
+        lock = capture(check, cache=owner / 'dependency-inputs/objects')
+        if (snapshot(project) != before or read_bytes(project / DECLARATIONS) != declaration_bytes
+                or any(digest(read_bytes(path)) != identity for path, identity in local_before.items())
+                or any(digest(read_bytes(Path(path))) != identity for path, identity in tools_before.items())
+                or any(digest(read_bytes(Path(path))) != identity for path, identity in recipe_before.items())
+                or optional(owner, MANIFEST) != previous_manifest or optional(owner, LOCK) != previous_lock):
+            raise DependencyError('java-declaration-lock-tool-or-capture-input-mutated')
+        unchanged(owner, sdk)
+        replace(owner, private, prefix + RESOLUTION, native_bytes, previous_graph, sdk)
+        replace(owner, private, MANIFEST, manifest_bytes, previous_manifest, sdk)
+        candidate.parent.mkdir(parents=True, exist_ok=True)
+        paths.write_new(candidate, canonical(lock) + b'\n')
         return lock

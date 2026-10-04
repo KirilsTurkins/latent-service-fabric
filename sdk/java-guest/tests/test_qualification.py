@@ -1,12 +1,459 @@
 """Binary-identity guard tests; mocked builds are not execution evidence."""
+import hashlib
 import json
 from pathlib import Path
+import shutil
 import tempfile
+from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from tools import build_java_guest_capsules as sdk
 from tools import qualify_java_capsules as qualification
+from tools import qualify_java_fibers as fibers
+
+
+class ThrowableModelIntegrity(unittest.TestCase):
+    @staticmethod
+    def fixture(root, *, include_platform=False):
+        compiler = SimpleNamespace(sdk=root / "sdk", directory=root / "compiler", run=Mock())
+        names = ("teavm-classlib", "teavm-core", "teavm-extension-spi", "teavm-interop",
+                 "teavm-relocated-libs-asm", "teavm-relocated-libs-asm-analysis",
+                 "teavm-relocated-libs-asm-commons", "teavm-relocated-libs-asm-tree", "teavm-relocated-libs-hppc")
+        if include_platform: names += ("teavm-platform",)
+        artifacts, jars = [], []
+        for name in names:
+            raw = name.encode()
+            jar = compiler.directory / "gradle-home/caches/modules-2/files-2.1/org.teavm" / name / "0.15.0/hash" / (name + "-0.15.0.jar")
+            jar.parent.mkdir(parents=True)
+            jar.write_bytes(raw)
+            jars.append(jar)
+            artifacts.append({"path": "org/teavm/" + name + "/0.15.0/" + jar.name,
+                              "sha256": hashlib.sha256(raw).hexdigest(), "size": len(raw)})
+        lock = compiler.sdk / "feasibility/dependencies.lock.json"
+        lock.parent.mkdir(parents=True)
+        lock.write_text(json.dumps({"artifacts": artifacts}))
+        return compiler, jars, lock
+
+    def test_changed_locked_jar_cannot_enter_host_model_compilation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = self.fixture(root)
+            jars[0].write_bytes(b"X" + jars[0].read_bytes()[1:])
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.throwable_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+
+    def test_model_tooling_is_verified_in_place_without_copying_the_read_only_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = self.fixture(root, include_platform=True)
+            original = compiler.directory / "gradle-home/caches/modules-2"
+            selected = root / "read-only/modules-2"
+            selected.parent.mkdir()
+            shutil.move(original, selected)
+            compiler.dependency_cache = selected / "files-2.1"
+            classpath, identities = fibers.locked_model_classpath(compiler, include_platform=True)
+            self.assertEqual(len(identities), 10)
+            self.assertTrue(all(Path(path).is_relative_to(selected) for path in classpath.split(fibers.os.pathsep)))
+            self.assertFalse(original.exists())
+            first = Path(classpath.split(fibers.os.pathsep)[0])
+            first.write_bytes(b"changed read-only tooling")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.completable_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse(original.exists())
+            self.assertFalse((root / "model").exists())
+            self.assertFalse((root / "model").exists())
+
+    def test_capsule_digest_prefix_cannot_replace_maven_inventory_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, lock = self.fixture(root)
+            document = json.loads(lock.read_bytes())
+            for item in document["artifacts"]: item["sha256"] = "sha256:" + item["sha256"]
+            lock.write_text(json.dumps(document))
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.throwable_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+
+    def test_missing_ambiguous_and_duplicate_tooling_fail_before_compilation(self):
+        for defect in ("missing", "ambiguous", "duplicate-lock"):
+            with self.subTest(defect=defect), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler, jars, lock = self.fixture(root)
+                if defect == "missing": jars[0].unlink()
+                elif defect == "ambiguous":
+                    duplicate = jars[0].parent.parent / "other-hash" / jars[0].name
+                    duplicate.parent.mkdir()
+                    duplicate.write_bytes(jars[0].read_bytes())
+                else:
+                    document = json.loads(lock.read_bytes())
+                    document["artifacts"][-1] = document["artifacts"][0]
+                    lock.write_text(json.dumps(document))
+                with self.assertRaises(ValueError): fibers.throwable_model_control(compiler, root / "model")
+                compiler.run.assert_not_called()
+
+    def test_model_uses_only_sdk_control_and_verified_tooling(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = self.fixture(root)
+            compiler.run.return_value = ("THROWABLE_INITIALIZATION_CONTROL PASS constructors=5;original-negative;"
+                "real-array-initializer;method-owners;layout-and-repeated-port-negatives;application-identity\n")
+            report = fibers.throwable_model_control(compiler, root / "model")
+            self.assertEqual(len(report["jarDigests"]), 9)
+            self.assertEqual(compiler.run.call_count, 2)
+            first, second = compiler.run.call_args_list
+            self.assertEqual(first.args[:3], ("throwable-model-compile", "javac", "-proc:none"))
+            self.assertEqual(first.args[-2:], (
+                compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java",
+                compiler.sdk / "fibers/conformance/compiler/ThrowableInitializationControl.java"))
+            self.assertEqual(second.args[-1], "dev.latent.guest.runtime.compiler.ThrowableInitializationControl")
+
+
+class TimeUnitModelIntegrity(unittest.TestCase):
+    def test_changed_tooling_is_rejected_before_any_host_model_or_reference_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = ThrowableModelIntegrity.fixture(root)
+            jars[-1].write_bytes(b"modified compiler tooling")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.timeunit_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_incomplete_model_proof_cannot_proceed_to_reference_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root)
+            compiler.run.side_effect = ["", "TIMEUNIT_MODEL_CONTROL PASS bodies=0"]
+            with self.assertRaisesRegex(ValueError, "TimeUnit model control did not complete"):
+                fibers.timeunit_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+    def test_source_control_requires_both_model_and_real_reference_conversion_receipts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root)
+            compiler.run.side_effect = ["", ("TIMEUNIT_MODEL_CONTROL PASS missing-declarations-negative;"
+                "standard-body-and-reference-closure;enum-owners-preserved;layout-negative;"
+                "application-identity-preserved bodies=20"), "TIMEUNIT_NATIVE_SOURCE_CONTROL PASS checks=1661"]
+            report = fibers.timeunit_model_control(compiler, root / "model")
+            self.assertEqual(len(report["jarDigests"]), 9)
+            self.assertEqual(report["referenceConversionChecks"], 1661)
+            self.assertEqual(compiler.run.call_count, 3)
+            first, model, native = compiler.run.call_args_list
+            self.assertEqual(first.args[:3], ("timeunit-model-compile", "javac", "-proc:none"))
+            self.assertEqual(model.args[-1], "dev.latent.guest.runtime.compiler.TimeUnitModelControl")
+            self.assertEqual(native.args[-1], "TimeUnitNativeControl")
+
+
+class WaitFrameModelIntegrity(unittest.TestCase):
+    def test_changed_tooling_cannot_enter_host_frame_model_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            jars[0].write_bytes(b"modified classlib")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_missing_callback_model_closure_fails_before_host_loading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, lock = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            document = json.loads(lock.read_bytes())
+            document["artifacts"] = document["artifacts"][:-1]
+            lock.write_text(json.dumps(document))
+            with self.assertRaisesRegex(ValueError, "exact locked tooling closure"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_partial_native_pair_receipt_is_not_owner_frame_proof(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler.run.side_effect = ["", "WAIT_FRAME_MODEL_CONTROL PASS real-native-callback-pairs"]
+            with self.assertRaisesRegex(ValueError, "wait frame model control did not complete"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+    def test_model_receipt_requires_both_actual_standard_api_pairs_and_closed_shape_negatives(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
+                "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "actual-platform-order;async-lowered-owned-pairs;platform-first-negative;"
+                "shape-and-repeat-negatives;application-identity;"
+                "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative\n")]
+            report = fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(report["nativeCallbackPairs"], 2)
+            self.assertEqual(report["pluginOrder"], ["runtime", "platform"])
+            self.assertEqual(report["asyncLoweredOwnedPairs"], 2)
+            self.assertEqual(report["coroutineWrappers"], 6)
+            self.assertEqual(report["coroutineMonitors"], 2)
+            self.assertEqual(report["coroutineNativePairs"], 2)
+            self.assertEqual(len(report["jarDigests"]), 10)
+            compile_call, model_call = compiler.run.call_args_list
+            self.assertEqual(compile_call.args[:3], ("wait-frame-model-compile", "javac", "-proc:none"))
+            self.assertEqual(compile_call.args[-4:], tuple(compiler.sdk / source for source in (
+                "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
+                "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java",
+                "fibers/conformance/compiler/WaitFramePluginOrder.java",
+                "fibers/conformance/compiler/WaitFrameModelControl.java")))
+            self.assertIn(compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+                          compile_call.args)
+            self.assertIn(compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java",
+                          compile_call.args)
+            self.assertEqual(model_call.args[-1], "dev.latent.guest.runtime.compiler.WaitFrameModelControl")
+
+    def test_changed_platform_processor_is_rejected_before_model_loading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            jars[-1].write_bytes(b"changed maintained async processor")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_native_pair_proof_without_actual_platform_order_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
+                "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "shape-and-repeat-negatives;application-identity\n")]
+            with self.assertRaisesRegex(ValueError, "wait frame model control did not complete"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+    def test_async_pair_receipt_without_actual_coroutine_lowering_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
+                "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "actual-platform-order;async-lowered-owned-pairs;platform-first-negative;"
+                "shape-and-repeat-negatives;application-identity\n")]
+            with self.assertRaisesRegex(ValueError, "wait frame model control did not complete"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+
+class CompletableSourceIntegrity(unittest.TestCase):
+    @staticmethod
+    def fixture(root):
+        compiler = SimpleNamespace(sdk=root / "sdk", run=Mock())
+        for name in ("fibers/conformance/compiler", "fibers/dev/latent/guest/runtime/concurrent"):
+            shutil.copytree(fibers.ROOT / "sdk/java-guest" / name, compiler.sdk / name)
+        return compiler
+
+    @staticmethod
+    def complete_receipts():
+        native = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
+        owners = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
+        scenarios = [
+            ("supply-queued-rejection", True, 1, False, 1, "future-not-returned"),
+            ("supply-queued-generic-throw", True, 1, False, 1, "future-not-returned"),
+            ("complete-queued-rejection", True, 1, False, 1, "value-42"),
+            ("complete-queued-generic-throw", True, 1, False, 1, "value-42"),
+            ("dependent-queued-rejection", False, 1, True, 0, "original-executor-failure"),
+            ("synchronous-run-then-rejection", True, 0, True, 1, "value-42"),
+        ]
+        executor = "\n".join(json.dumps(dict(zip(
+            ("scenario", "exceptionPropagated", "queuedBeforeRun", "futureDoneBeforeRun",
+             "supplierCallsAfterRun", "outcomeAfterRun"), values))) for values in scenarios)
+        return ["", native, executor, "", native + "\n" + owners, executor,
+                "COMPLETABLE_FUTURE_EXECUTOR_ACCEPTANCE_OWNER PASS observables=49",
+                "COMPLETABLE_FUTURE_EXECUTOR_UNCERTAIN_OWNER PASS observables=30;"
+                "queued=8;results=8;cleanup-denied;activation-retirement-unqualified"]
+
+    def test_incomplete_standard_observables_stop_before_sdk_control_compilation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            compiler.run.side_effect = ["", "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=1"]
+            with self.assertRaisesRegex(ValueError, "reference control did not complete"):
+                fibers.completable_source_control(compiler, root / "control")
+            self.assertEqual(compiler.run.call_count, 2)
+
+    def test_partial_ownership_receipt_cannot_qualify_source_behavior(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            receipts = self.complete_receipts()
+            receipts[4] = receipts[1] + "\nCOMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=1;raceRounds=1"
+            compiler.run.side_effect = receipts
+            with self.assertRaisesRegex(ValueError, "source ownership controls did not complete"):
+                fibers.completable_source_control(compiler, root / "control")
+
+    def test_source_controls_retain_all_inputs_and_explicitly_exclude_guest_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            compiler.run.side_effect = self.complete_receipts()
+            report = fibers.completable_source_control(compiler, root / "control")
+            self.assertEqual(set(report["sourceInputs"]), {
+                "fibers/conformance/compiler/" + name for name in (
+                    "CompletableFutureNativeControl.java", "CompletableFutureOwnerControl.java",
+                    "CompletableFutureExecutorThrowReferenceControl.java",
+                    "CompletableFutureExecutorAcceptanceOwnerControl.java",
+                    "CompletableFutureExecutorUncertainOwnerControl.java",
+                    "source-control/PrivateSourceRunner.java", "source-control/dev/latent/generated/Bindings.java",
+                    "source-control/dev/latent/guest/runtime/Activation.java",
+                    "source-control/dev/latent/guest/runtime/concurrent/Executors.java")
+            } | {"fibers/dev/latent/guest/runtime/concurrent/" + name + ".java"
+                 for name in ("CompletableFuture", "CompletionStage", "CompletionException")})
+            self.assertEqual((report["referenceObservables"], report["sourceOwnershipObservables"], report["raceRounds"]),
+                             (82, 419, 32))
+            self.assertFalse(report["componentExecutionPerformed"])
+            self.assertFalse(report["actualGuestBindingsUsed"])
+            original = (compiler.sdk / "fibers/conformance/compiler/CompletableFutureNativeControl.java").read_text()
+            private = (root / "control/private/CompletableFutureNativeControl.java").read_text()
+            for name in ("CompletableFuture", "CompletionStage", "CompletionException"):
+                private = private.replace("import dev.latent.guest.runtime.concurrent." + name + ";",
+                                          "import java.util.concurrent." + name + ";")
+            private = private.replace("Executor reject = dev.latent.guest.runtime.concurrent.Executors.rejected();",
+                'Executor reject = command -> { throw new RejectedExecutionException("source-control-denied"); };')
+            self.assertEqual(original, private)
+
+    def test_changed_control_inputs_fail_after_retaining_completed_runner_observations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            receipts = iter(self.complete_receipts())
+            def observe(stage, *_arguments):
+                if stage == "completable-source-run":
+                    path = compiler.sdk / "fibers/dev/latent/guest/runtime/concurrent/CompletableFuture.java"
+                    path.write_bytes(path.read_bytes() + b"\n// changed during observation\n")
+                return next(receipts)
+            compiler.run.side_effect = observe
+            with self.assertRaisesRegex(ValueError, "inputs changed during execution"):
+                fibers.completable_source_control(compiler, root / "control")
+            self.assertEqual(compiler.run.call_count, 8)
+
+    def test_ambiguous_private_import_rewrite_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            path = compiler.sdk / "fibers/conformance/compiler/CompletableFutureNativeControl.java"
+            path.write_bytes(path.read_bytes() + b"\nimport java.util.concurrent.CompletableFuture;\n")
+            compiler.run.side_effect = self.complete_receipts()
+            with self.assertRaisesRegex(ValueError, "import is ambiguous"):
+                fibers.completable_source_control(compiler, root / "control")
+            self.assertEqual(compiler.run.call_count, 3)
+
+    def test_incomplete_executor_reference_receipt_stops_before_port_compilation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            receipts = self.complete_receipts()
+            receipts[2] = "\n".join(receipts[2].splitlines()[:-1])
+            compiler.run.side_effect = receipts
+            with self.assertRaisesRegex(ValueError, "executor reference cases did not complete"):
+                fibers.completable_source_control(compiler, root / "control")
+            self.assertEqual(compiler.run.call_count, 3)
+
+    def test_changed_executor_observation_cannot_qualify_port_behavior(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            receipts = self.complete_receipts()
+            receipts[5] = receipts[5].replace("value-42", "value-43", 1)
+            compiler.run.side_effect = receipts
+            with self.assertRaisesRegex(ValueError, "executor behavior differs from the actual reference JDK"):
+                fibers.completable_source_control(compiler, root / "control")
+            self.assertEqual(compiler.run.call_count, 6)
+
+    def test_uncertain_executor_capacity_requires_complete_physical_boundary_receipt(self):
+        original = self.complete_receipts()[-1]
+        for incomplete in (original.replace("queued=8", "queued=7"),
+                           original.replace("results=8", "results=7"),
+                           original.replace("cleanup-denied;", "")):
+            with self.subTest(observed=incomplete), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                receipts = self.complete_receipts()
+                receipts[-1] = incomplete
+                compiler.run.side_effect = receipts
+                with self.assertRaisesRegex(ValueError, "uncertain executor capacity control did not complete"):
+                    fibers.completable_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, 8)
+
+    def test_unknown_component_fixture_fails_before_output_or_compiler_creation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "output"
+            with patch.object(fibers, "Compiler") as compiler, self.assertRaisesRegex(ValueError, "unknown Java fiber fixture"):
+                fibers.prepare(output, Path(directory), fixture="../outside")
+            compiler.assert_not_called()
+            self.assertFalse(output.exists())
+
+
+class CompletableModelIntegrity(unittest.TestCase):
+    def test_reviewed_executor_model_requires_exact_body_and_original_closure_fingerprints(self):
+        reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
+            "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
+            "actual-coroutine-monitors=24;owned-callback-bodies=25;bodies=181;"
+            "actual-generated-callbacks=23;application-identity")
+        variants = [reviewed, reviewed.replace("bodies=181;", "bodies=180;"),
+            reviewed.replace("bodies=181;", "bodies=182;"),
+            reviewed.replace("actual-coroutine-monitors=24;", "actual-coroutine-monitors=23;"),
+            reviewed.replace("owned-callback-bodies=25;", "owned-callback-bodies=24;"),
+            reviewed.replace("actual-generated-callbacks=23;", "actual-generated-callbacks=24;"),
+            reviewed.replace("actual-generated-callbacks=23;", ""),
+            reviewed.replace("resolved-reference-closure;", ""),
+            reviewed.replace("unsupported-no-fallback;", "")]
+        for observed in variants:
+            with self.subTest(observed=observed), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+                compiler.run.side_effect = ["", observed]
+                if observed == reviewed:
+                    report = fibers.completable_model_control(compiler, root / "model")
+                    self.assertEqual(report["modelFingerprintVersion"], 2)
+                    self.assertEqual(report["modelMethodBodies"], 181)
+                    self.assertEqual(report["coroutineMonitorBodies"], 24)
+                    self.assertEqual(report["ownedCallbackBodies"], 25)
+                    self.assertEqual(report["actualGeneratedCallbacks"], 23)
+                else:
+                    with self.assertRaisesRegex(ValueError, "model control did not complete"):
+                        fibers.completable_model_control(compiler, root / "model")
+                self.assertEqual(compiler.run.call_count, 2)
+
+    def test_changed_locked_tooling_cannot_enter_class_identity_or_coroutine_inspection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            jars[-1].write_bytes(b"changed locked model tooling")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.completable_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_partial_class_identity_receipt_cannot_substitute_for_owned_continuation_proof(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler.run.side_effect = ["", "COMPLETABLE_FUTURE_MODEL_CONTROL PASS canonical-api-and-helper-identities"]
+            with self.assertRaisesRegex(ValueError, "model control did not complete"):
+                fibers.completable_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+    def test_static_model_receipt_cannot_substitute_for_actual_generated_callbacks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            static_receipt = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
+                "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
+                "actual-coroutine-monitors=24;owned-callback-bodies=25;bodies=180;application-identity")
+            compiler.run.side_effect = ["", static_receipt]
+            with self.assertRaisesRegex(ValueError, "model control did not complete"):
+                fibers.completable_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
 
 
 class PackagingTools(unittest.TestCase):
