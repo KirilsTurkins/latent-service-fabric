@@ -11,11 +11,15 @@ packages with 10.7.2, 6.28.1, and 5.0.12 **before executing npm**; ordinary npm 
 cannot replace bundled bytes. This is not an upstream npm release or an advisory
 waiver. The input archives, derived TAR and complete package inventory are pinned;
 no downloaded package code runs during preparation. Outputs stay in `target/`.
+The website and framework locks also consume the exact source-patched
+`braces-3.0.3-lsf-depth-v1` archive. Its authenticated upstream files, bounded
+depth guard, and pinned Node 24.19.0 behavior proof are checked separately.
 
 From this directory in a POSIX shell:
 
 ```sh
 python3 toolchain/prepare.py
+python3 ../tools/security_derivations.py prepare
 npm ci --prefix toolchain --ignore-scripts --no-audit --no-fund
 node scripts/check-package-manager.mjs
 export PATH="$PWD/toolchain/node_modules/.bin:$PATH"

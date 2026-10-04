@@ -139,6 +139,24 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertTrue(any(package.path == "examples/renderer-profile/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "tools/requirements.lock" for package in packages))
 
+    def test_source_repair_classifies_only_the_proved_braces_advisory(self) -> None:
+        from tools import security_derivations as braces
+
+        paths = ("website/package-lock.json", "examples/framework-compatibility/package-lock.json")
+        proof = {"profile": braces.PROFILE, "derived_version": braces.VERSION,
+                 "proof": {"status": "pass", "upstream_stack_overflow_observed": True},
+                 "consumers": [{"path": path} for path in paths]}
+        known = [finding("osv", "GHSA-vfj7-8cjw-p6xm", path, "npm:braces@3.0.3") for path in paths]
+        unrelated = [finding("osv", "GHSA-different", paths[0], "npm:braces@3.0.3"),
+                     finding("osv", "GHSA-vfj7-8cjw-p6xm", "sdk/typescript-client/package-lock.json",
+                             "npm:braces@3.0.3"),
+                     finding("osv", "GHSA-vfj7-8cjw-p6xm", paths[0], "npm:braces@3.0.4")]
+        remaining, remediated = security_advisories.classify_braces_remediation(known + unrelated, proof)
+        self.assertEqual(remediated, known)
+        self.assertEqual(remaining, unrelated)
+        with self.assertRaisesRegex(SecurityError, "braces-remediation-proof-failed"):
+            security_advisories.classify_braces_remediation(known, {**proof, "proof": {"status": "fail"}})
+
     def test_new_manifest_missing_lock_or_unresolved_requirement_cannot_pass(self) -> None:
         self.write("package.json", '{"dependencies":{"fixture":"1.0.0"}}')
         with self.assertRaises(OSError):

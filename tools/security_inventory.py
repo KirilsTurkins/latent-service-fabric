@@ -7,7 +7,7 @@ import re
 import tomllib
 from urllib.parse import urlsplit
 
-from tools.security_common import POLICY, decode_json, digest, read_file, require, tracked_paths
+from tools.security_common import POLICY, ROOT, decode_json, digest, read_file, require, tracked_paths
 from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, legacy_manifest, maven_packages, nuget_packages
 
 MANIFEST_NAMES = frozenset({
@@ -104,6 +104,56 @@ def reviewed_npm_derivation(repo: Path, entry: dict, manifest: dict, owner: dict
     return True
 
 
+def reviewed_braces_derivation(repo: Path, entry: dict, manifest: dict, resolved: dict) -> set[str]:
+    """Authenticate the exact locally repaired source before accepting a file archive.
+
+    OSV still receives the original upstream version. The caller separately
+    proves the correction under the pinned Node runtime before classifying the
+    one reviewed advisory as remediated; every other advisory remains a finding.
+    """
+    from tools import security_derivations as braces
+
+    rows = {path: row for path, row in resolved.items()
+            if path and path.rsplit("node_modules/", 1)[-1] == "braces"}
+    derived = any(row.get("version") == braces.VERSION or row.get("resolved", "").startswith("file:")
+                  for row in rows.values())
+    if not derived:
+        require(entry.get("source_derivation") is None, "missing-braces-source-derivation")
+        return set()
+    policy = entry.get("source_derivation")
+    require(isinstance(policy, dict) and set(policy) == {
+        "profile_sha256", "builder_sha256", "guard_sha256", "proof_sha256", "lock_sha256", "integrity"
+    } and entry["path"] in braces.CONSUMERS and entry["lock"] == str(PurePosixPath(entry["path"]).with_name("package-lock.json")),
+            "unreviewed-braces-source-derivation")
+    for path, expected in (
+        (braces.SOURCE, policy["profile_sha256"]),
+        ("tools/security_derivations.py", policy["builder_sha256"]),
+        (braces.GUARD, policy["guard_sha256"]),
+        (braces.PROOF, policy["proof_sha256"]),
+        (entry["lock"], policy["lock_sha256"]),
+    ):
+        root = ROOT if path == "tools/security_derivations.py" else repo
+        require(digest(read_file(root, path).replace(b"\r\n", b"\n")) == expected,
+                "braces-derivation-input-drift")
+    source_profile = braces.profile(repo)
+    require(source_profile["base"]["name"] == "braces" and source_profile["base"]["version"] == "3.0.3"
+            and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", policy["integrity"]) is not None,
+            "braces-derivation-origin-drift")
+    require(manifest.get("overrides", {}).get("braces") == braces.CONSUMERS[entry["path"]]
+            and set(rows) == {"node_modules/braces"}, "braces-consumer-drift")
+    for row in rows.values():
+        require(row.get("version") == braces.VERSION
+                and row.get("resolved") == braces.CONSUMERS[entry["path"]]
+                and row.get("integrity") == policy["integrity"]
+                and row.get("dependencies") == {"fill-range": "^7.1.1"}
+                and row.get("name", "braces") == "braces" and not row.get("link"),
+                "unlocked-braces-derivation")
+    # This also authenticates both consumers, so the proof cannot cover only
+    # one while another installs unrelated bytes under the same package name.
+    braces.consumer_locks(repo, policy["integrity"])
+    return set(rows)
+
+
 def npm_packages(repo: Path, entry: dict) -> list[Package]:
     manifest = decode_json(read_file(repo, entry["path"]))
     lock = decode_json(read_file(repo, entry["lock"]))
@@ -117,6 +167,7 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
     bundled = entry.get("bundled_package")
     bundled_prefix = None
     derived = False
+    repaired_braces = reviewed_braces_derivation(repo, entry, manifest, resolved)
     require(entry.get("derived_bundle") is None or bundled is not None, "npm-derivation-without-bundle")
     if bundled is not None:
         require(isinstance(bundled, str) and re.fullmatch(r"(?:@[a-z0-9-]+/)?[a-z0-9-]+", bundled),
@@ -143,11 +194,13 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
         bundled_source = (bundled_prefix is not None and path.startswith(bundled_prefix)
                           and dependency.get("inBundle") is True and not dependency.get("resolved"))
         derived_owner = derived and path == f"node_modules/{bundled}"
-        require(bundled_source or derived_owner or (location.scheme == "https" and location.hostname == "registry.npmjs.org"),
+        repaired_source = path in repaired_braces
+        require(bundled_source or derived_owner or repaired_source
+                or (location.scheme == "https" and location.hostname == "registry.npmjs.org"),
                 "unreviewed-npm-registry-or-source")
         require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", version) is not None,
                 "unresolved-npm-version")
-        packages.append(Package("npm", name, version, entry["lock"]))
+        packages.append(Package("npm", name, "3.0.3" if repaired_source else version, entry["lock"]))
     require(bool(packages), "empty-npm-dependency-graph")
     return packages
 

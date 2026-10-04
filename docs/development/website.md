@@ -51,6 +51,7 @@ From the repository checkout in a POSIX shell:
 cd website
 node --version
 python3 toolchain/prepare.py
+python3 ../tools/security_derivations.py prepare
 npm ci --prefix toolchain --ignore-scripts --no-audit --no-fund
 node scripts/check-package-manager.mjs
 export PATH="$PWD/toolchain/node_modules/.bin:$PATH"
