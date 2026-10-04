@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/run_framework_sites.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Extend current real framework node and browser qualification with signed 404 and revoked authority",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c6283ed12c1ca31509dcf8c8af71fbf495a70639265cf700c65ed69da41f0c06"
-}
+{"kind":"owner","path":"tools/run_framework_sites.py","reviewBoundary":"committed-fingerprint","reviewReason":"Extend current real framework node and browser qualification with signed 404 and revoked authority Incoming reviewed obligation: Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced. Exact merged owner bytes reviewed.","schemaVersion":"latent.ci.contracts.v1","sha256":"c6283ed12c1ca31509dcf8c8af71fbf495a70639265cf700c65ed69da41f0c06"}

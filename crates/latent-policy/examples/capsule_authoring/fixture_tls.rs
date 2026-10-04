@@ -3,7 +3,10 @@
 use std::path::Path;
 
 use base64::{engine::general_purpose::STANDARD, Engine};
-use rcgen::{BasicConstraints, CertificateParams, IsCa, Issuer, KeyPair};
+use rcgen::{
+    BasicConstraints, CertificateParams, DnType, ExtendedKeyUsagePurpose, IsCa, Issuer, KeyPair,
+    KeyUsagePurpose,
+};
 
 pub(super) fn create(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     if !output.is_absolute() || output.exists() {
@@ -11,11 +14,23 @@ pub(super) fn create(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
     }
     let ca_key = KeyPair::generate()?;
     let mut params = CertificateParams::new(vec![])?;
-    params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
+    params
+        .distinguished_name
+        .push(DnType::CommonName, "LSF disposable TLS fixture CA");
+    params.is_ca = IsCa::Ca(BasicConstraints::Constrained(0));
+    params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
+    params.use_authority_key_identifier_extension = true;
     let ca = params.self_signed(&ca_key)?;
     let issuer = Issuer::new(params, &ca_key);
     let key = KeyPair::generate()?;
-    let params = CertificateParams::new(vec!["localhost".into()])?;
+    let mut params = CertificateParams::new(vec!["localhost".into()])?;
+    params
+        .distinguished_name
+        .push(DnType::CommonName, "localhost");
+    params.is_ca = IsCa::ExplicitNoCa;
+    params.key_usages = vec![KeyUsagePurpose::DigitalSignature];
+    params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ServerAuth];
+    params.use_authority_key_identifier_extension = true;
     let cert = params.signed_by(&key, &issuer)?;
     super::authoring::directory(output)?;
     super::authoring::write(&output.join("ca.der"), ca.der())?;

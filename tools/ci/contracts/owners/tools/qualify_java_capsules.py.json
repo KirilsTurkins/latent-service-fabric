@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_capsules.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all actual Java SDK/node stages; add pure bounded buffered-web response grammar and authoritative table vectors with source identity capture.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "baf5088b86e8f1463d0ea573fb536a9fa06c847908c34db2e73d883af7ee1559"
-}
+{"kind":"owner","path":"tools/qualify_java_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain all actual Java SDK/node stages; add pure bounded buffered-web response grammar and authoritative table vectors with source identity capture. Incoming reviewed obligation: Retain all standalone, SDK ownership, signed-node and printed-guide checks; add ordinary Java HttpServer projects built outside the checkout, signed only after completed builds and exercised through authenticated route tooling on the normal shared listener, with bounded HTTP/TLS, failure and original-ledger retirement evidence. Exact merged owner bytes reviewed.","schemaVersion":"latent.ci.contracts.v1","sha256":"cafb45d95e0f279d0284611938f863c26701832c36b5bcff11a260e799ac26df"}
