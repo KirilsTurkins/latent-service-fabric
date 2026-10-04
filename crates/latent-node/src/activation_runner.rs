@@ -647,6 +647,7 @@ pub(crate) fn map_execution_outcome(
                 fields,
             }];
             details.extend(diagnostics::currentness_detail(&trap));
+            details.extend(diagnostics::host_failure_detail(&trap));
             failure(
                 PlatformError {
                     code: PlatformErrorCode::GuestTrap,
