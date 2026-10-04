@@ -20,7 +20,8 @@ internal static partial class Program
                 MalformedAndBounds, AuditAndRawStatus, ConnectionOwnership, ZeroLengthReads, FrameFragments, StalledRawPeers,
                 TransactionSixteenOperations, TransactionDurableRejectionThroughAuditFailure, TransactionTransportAbortAndExplicitAttempt,
                 TransactionWireBoundsAndOldPayloads, TransactionOriginalInputsAndCancellation, TransactionProfileAndDeadlineFailBeforeDispatch,
-                TransactionDispatcherReceiptAndAuditAreIndependent, TransactionEffectPlanOriginalCasAndFacts
+                TransactionDispatcherReceiptAndAuditAreIndependent, TransactionEffectPlanOriginalCasAndFacts,
+                DisposalOwnsSocketTeardown
             })
             {
                 await scenario().WaitAsync(TimeSpan.FromSeconds(30));
