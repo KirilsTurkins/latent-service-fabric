@@ -22,7 +22,7 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = "warn"
 [workspace.dependencies]
-wasmtime = {version = "=48.0.3", default-features = false}
+wasmtime = {version = "=48.0.4", default-features = false}
 ''')
         self.write(f"{boundary.CRATE}/Cargo.toml", '''
 [lints.rust]
@@ -90,7 +90,7 @@ all = "warn"
 
     def test_engine_update_requires_review(self) -> None:
         path = self.root / "Cargo.toml"
-        path.write_text(path.read_text().replace("=48.0.3", "=48.0.0"), encoding="utf-8")
+        path.write_text(path.read_text().replace("=48.0.4", "=48.0.0"), encoding="utf-8")
         self.assertTrue(boundary.validate(self.root))
 
     def test_other_workspace_member_cannot_relax_lints(self) -> None:
@@ -115,13 +115,13 @@ all = "warn"
         root = Path(__file__).resolve().parents[2]
         workspace = boundary.tomllib.loads((root / "Cargo.toml").read_text())["workspace"]
         pins = boundary.tomllib.loads((root / "tools/toolchain.toml").read_text())
-        self.assertEqual(workspace["dependencies"]["wasmtime"]["version"], "=48.0.3")
+        self.assertEqual(workspace["dependencies"]["wasmtime"]["version"], "=48.0.4")
         self.assertEqual(workspace["package"]["rust-version"], "1.95.0")
         self.assertEqual(pins["rust"]["msrv"], "1.95.0")
-        self.assertEqual(pins["rust"]["dependencies"]["wasmtime"], "48.0.3")
+        self.assertEqual(pins["rust"]["dependencies"]["wasmtime"], "48.0.4")
         # Only v4 is active. Superseded matrices retain their tested runtime,
         # independently fingerprinted by test_host_abi_profile.
-        for name, version in (("v2", "47.0.4"), ("v3", "47.0.4"), ("v4", "48.0.3")):
+        for name, version in (("v2", "47.0.4"), ("v3", "47.0.4"), ("v4", "48.0.4")):
             with self.subTest(descriptor=name):
                 descriptor = json.loads((root / f"wit/host-abi-phase3-{name}.json").read_text())
                 self.assertEqual(descriptor["wasmtimeVersion"], version)
@@ -134,13 +134,13 @@ all = "warn"
                 packages = boundary.tomllib.loads((root / name).read_text())["package"]
                 family = [p for p in packages if p["name"].startswith(("wasmtime", "pulley-"))]
                 self.assertTrue(any(p["name"] == "wasmtime" for p in family))
-                self.assertTrue(all(p["version"] == "48.0.3" for p in family))
+                self.assertTrue(all(p["version"] == "48.0.4" for p in family))
 
     def test_real_standalone_authoring_lock_remains_in_the_workspace_closure(self) -> None:
         from tools.rust_capsule_project import locked_dependencies
         raw = locked_dependencies("security-regression-template")
         packages = boundary.tomllib.loads(raw.decode())["package"]
-        self.assertEqual([p["version"] for p in packages if p["name"] == "wasmtime"], ["48.0.3"])
+        self.assertEqual([p["version"] for p in packages if p["name"] == "wasmtime"], ["48.0.4"])
 
 
 if __name__ == "__main__":
