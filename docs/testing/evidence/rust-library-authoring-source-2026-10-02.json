@@ -1,0 +1,72 @@
+{
+  "formatVersion": 1,
+  "scope": "Reviewed Cargo input lifecycle and authenticated frontend delegation source controls",
+  "sourceHead": "d74356c17b364d0ceaf657c220dd0b013f6ca240",
+  "sourceRead": "git-objects",
+  "sourceDirty": false,
+  "selectedInputFiles": 2462,
+  "selectedInputBytes": 19788446,
+  "archiveBytes": 6029640,
+  "archiveDigest": "sha256:844e60fb2a897bf2c00e6937057b5f93275018905b288d49f817698050662b42",
+  "sourceRecordDigest": "sha256:3a859e9b22cc43eadf83b8dbb773f9149f97046fa4d28bab652eba0460b95955",
+  "allInputBytesVerifiedBeforeAndAfter": true,
+  "environment": {
+    "image": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+    "python": "3.13.5",
+    "platform": "linux-x86_64",
+    "network": "none",
+    "cpus": 1,
+    "memoryBytes": 1073741824,
+    "temporarySourceBytes": 536870912,
+    "innerDeadlineSeconds": 180,
+    "outerDeadlineSeconds": 210
+  },
+  "modules": [
+    "tools.tests.test_rust_dependency_authoring",
+    "tools.tests.test_rust_application_dependencies",
+    "tools.tests.test_rust_capsule_authoring",
+    "tools.tests.test_rust_frontend_dependencies",
+    "tools.tests.test_guest_authoring_frontend",
+    "tools.tests.test_dev_tools.SelectedRecipeImports"
+  ],
+  "tests": 75,
+  "skips": 0,
+  "testSeconds": 16.5,
+  "container": "6539f827809ac29b5d214d1bdbb5a51e29f1dd46ac13db6801de94660da37de9",
+  "startedAt": "2026-10-02T02:41:24.957485815Z",
+  "finishedAt": "2026-10-02T02:41:43.654835316Z",
+  "exitCode": 0,
+  "oomKilled": false,
+  "stdoutDigest": "sha256:c3b7c531f5f5338ea44bc2485e6f6e08ce36ea33f7eb6d2f5ebb8bc8d6b66a99",
+  "containerInspectionDigest": "sha256:5640e72d8b0e06fdcbc506c16213ecade07df9341145bfee646e8f3d2c0eb604",
+  "qualified": [
+    "real-captured-byte-and-relocated-manifest-verification",
+    "unchanged-sdk-lock-and-vendor-inputs",
+    "reviewed-lock-atomic-replacement-and-old-lock-preservation",
+    "candidate-manifest-native-lock-and-object-tamper-denial",
+    "outer-application-descriptor-binding-and-shadow-denial",
+    "outside-path-executable-cannot-borrow-sdk-coordinate-approval",
+    "selected-feature-and-explicit-credential-environment-boundaries",
+    "secret-redacted-bounded-separate-outcomes",
+    "staged-recipe-resolve-review-status-and-selected-frontend-boundaries",
+    "all-six-selected-recipe-imports-without-checkout-fallback",
+    "unknown-and-interrupted-frontend-results-without-replay"
+  ],
+  "modelledBoundaries": [
+    "native-Cargo-metadata-and-vendor-command-outputs",
+    "frontend-remote-operation-dispatch"
+  ],
+  "pending": [
+    "actual-native-Cargo-library-resolution-and-compiler-qualification",
+    "two-independent-ordinary-application-library-signed-invocations",
+    "actual-private-feed-credential-interoperability",
+    "captured-offline-build-with-original-feeds-deleted",
+    "installed-frontend-local-node-test-and-watch-lifecycle",
+    "full-current-head-GitHub-CI"
+  ],
+  "nativeCompilerExecutionClaimed": false,
+  "signedGuestExecutionClaimed": false,
+  "publisherAuthenticatedInstalledQualificationClaimed": false,
+  "issueCompleteClaimed": false,
+  "automaticReplay": false
+}
