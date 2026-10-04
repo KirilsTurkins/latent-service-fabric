@@ -146,7 +146,12 @@ async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_c
     let child_failures = f.observations.child_failures.snapshot();
     assert!(child_failures.records.is_empty(), "{child_failures:?}");
     assert!(!child_failures.incomplete);
-    assert_eq!(actual, ANSWER);
+    assert_eq!(
+        actual,
+        ANSWER,
+        "original child failures: {:?}",
+        f.observations.child_failures.snapshot()
+    );
     assert_eq!(f.observations.starts.lock().unwrap().len(), 3);
     f.idle().await;
     let mut request = f.request("one-child-grant", 3);
