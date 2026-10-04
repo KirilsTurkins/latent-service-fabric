@@ -1,0 +1,64 @@
+{
+  "LinuxNamespaceQualification": "pending",
+  "acceptanceRemaining": [
+    "actual native resolver and private authenticated proxy negative controls",
+    "two independent ordinary application libraries compiled into signed components with declared grants and recovery",
+    "source-generator executable approval, installed frontend test/watch and full current-head remote CI"
+  ],
+  "actions": {
+    "immutableOrLocalReferences": 270,
+    "workflows": 22
+  },
+  "coverage": {
+    "baselineRequiredBlocks": 88,
+    "currentRequiredBlocks": 228,
+    "delegatedOwners": 128
+  },
+  "development": "b06c473f3b51604ed4618ba2c2a420bb33c88cad",
+  "discoveredCases": 79,
+  "documentation": {
+    "anchors": 158,
+    "applicationCommands": 67,
+    "documents": 1038,
+    "errors": [],
+    "localLinks": 3377,
+    "svgs": 26,
+    "versionedDocuments": 548
+  },
+  "durationSeconds": 163.084919,
+  "errors": [],
+  "failures": [],
+  "issue": "#686 remains open",
+  "localCode": "17caff5b00d961b5d77c5e0e317d0512f8816e3c",
+  "modules": [
+    "tools.tests.test_go_dependency_authoring",
+    "tools.tests.test_go_application_dependencies",
+    "tools.tests.test_go_capsule_authoring",
+    "tools.tests.test_go_frontend_dependencies",
+    "tools.tests.test_application_dependencies",
+    "tools.tests.test_guest_authoring_frontend",
+    "tools.tests.test_dev_tools.SelectedRecipeImports"
+  ],
+  "observedAt": "2026-10-02T04:46:32.913129+00:00",
+  "platform": "win32",
+  "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+  "rawOutputSha256": "c88dfc562d6a8515ebbf2002de39ea4d390b31f0c601590d147c50ba6fdde994",
+  "reportedCases": 79,
+  "reviewedContracts": {
+    "historicalGoModuleBodiesAndGuardsUnchanged": true,
+    "newCases": 21,
+    "qualifierDifference": "Go authoring and selected frontend helper fingerprints only",
+    "workflowHistoricalPolicyAndStepsUnchanged": true
+  },
+  "schemaVersion": "latent.sdk.source-checks.v1",
+  "scope": "Go source/model lifecycle, real CAS review/materialization and actual selected staged recipe imports; resolver commands/frontend results are modeled; no guest/compiler/private-feed/installed qualification",
+  "skipped": [
+    [
+      "tools.tests.test_go_dependency_authoring.GoDependencyAuthoring.test_symbolic_local_replace_is_denied_before_module_fetch",
+      "POSIX symbolic-link fixture; Windows reparse controls are separate"
+    ]
+  ],
+  "stagedTree": "58c26739d26281460cd005bd2fb35a57502f9acb",
+  "stagedTreeUnchanged": true,
+  "successful": true
+}
