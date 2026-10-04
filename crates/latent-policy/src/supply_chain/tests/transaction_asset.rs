@@ -95,7 +95,7 @@ impl Setup {
                 Arc::new(
                     RuntimeCompatibilityProfile::new(
                         "wasmtime",
-                        "48.0.3",
+                        "48.0.4",
                         "x86_64-unknown-linux-gnu",
                         &["x86_64.sse2"],
                         64 * 1024 * 1024,
