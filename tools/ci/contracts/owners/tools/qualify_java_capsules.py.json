@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_capsules.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all Java authoring stages and feature-gated former-profile reproduction; review the added bounded buffered-web response grammar and authoritative table vectors.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "169bd341f815b93c3011ad7e8c828dcd7bf854ecb2bb422440bbedd937addcf4"
-}
+{"kind":"owner","path":"tools/qualify_java_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve the original owner review boundary; review the actual merged captured source inputs, profile and compiler recipe.","schemaVersion":"latent.ci.contracts.v1","sha256":"f7dc3874af3a4e178078afa2226c9e433c2aae08fe8df5fd8616d1a6b7dbca94"}

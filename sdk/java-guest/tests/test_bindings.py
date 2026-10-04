@@ -41,6 +41,18 @@ class Bindings(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "C bridge traversal"):
             c.generate(graph)
 
+    def test_documented_interface_reference_preserves_semantics_and_validates_identity(self):
+        original = document()
+        expected = java.generate(Graph(original, "service", HEADER))
+        annotated = deepcopy(original)
+        reference = annotated["worlds"][0]["exports"]["interface-0"]["interface"]
+        reference["docs"] = {"contents": "Authoritative principal, trace and deadline are host context."}
+        self.assertEqual(java.generate(Graph(annotated, "service", HEADER)), expected)
+        for field, value in (("id", True), ("id", 999), ("docs", {"contents": 7}), ("authority", "public")):
+            changed = deepcopy(annotated)
+            changed["worlds"][0]["exports"]["interface-0"]["interface"][field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError): Graph(changed, "service", HEADER)
+
     def test_shared_imported_resource_alias_uses_one_owner_class(self):
         data = document()
         data["interfaces"].extend([
