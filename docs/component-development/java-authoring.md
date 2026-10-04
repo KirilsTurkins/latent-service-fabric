@@ -83,10 +83,13 @@ files and update the selected world in `capsule-project.json` when renaming
 the contract. Keep the SDK files unchanged. The build rejects SDK drift,
 path escapes and unsupported contract shapes. Put additional `.java` sources beneath `src`.
 Your entry class `dev.latent.app.Capsule` implements the generated
-`dev.latent.generated.Bindings.Exports`. The supported build captures Java source,
-not arbitrary JARs, application Gradle scripts or Maven projects. The compiler's
-70-JAR closure is version-locked and checksum-verified; downloaded application
-dependencies, JNI, reflection-based loading and dynamic class loading are not supported.
+`dev.latent.generated.Bindings.Exports`. The build captures Java source and explicitly
+reviewed [application JARs](java-dependencies.md). The compiler's 70-JAR closure
+is version-locked and checksum-verified. Application JARs have a separate
+captured lock; arbitrary unreviewed JARs, application Gradle scripts and Maven
+projects are rejected. Reachable JNI, reflection-based loading and dynamic class
+loading still require compatible compiler/runtime support and emitted-component
+evidence.
 
 The `word-count` and `shipping` templates provide equivalent Java implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory
@@ -366,3 +369,69 @@ SDK binding drift means the SDK and generator pins disagree; do not edit the loc
 to bypass it. A denied publication commonly means the policy expired, the exact
 source approval differs, or an evidence file is missing. A denied HTTP call
 requires checking the deployment grant, provider binding and allowed destination.
+<!-- Immutable resource compiler and bounded signed application qualification. -->
+
+Captured JAR lookup bytes and declared `capsule-resources.json` bytes select the
+SDK's `java-immutable-classloader-v1` compiler port. It changes the maintained
+`ClassLoader.getResourceAsStream(String)` method and preserves the standard
+class identity, fields and other methods. `Class.getResourceAsStream` keeps the
+class library's package-relative, leading-slash and array-class rules. The
+generated lookup index contains exactly the reviewed bytes, with no directory,
+repository or host-filesystem fallback. Names are case sensitive. A missing name
+returns `null`; a null name follows the standard null-argument failure.
+
+Each successful open owns a fresh byte array and `ByteArrayInputStream`.
+Resources use the existing guest heap and fuel budgets. Capture bounds do not
+guarantee that opening a large resource fits a particular invocation's heap.
+The original class-library JAR, SDK transformation source, generated literal
+sources and resource digests are bound to compiler evidence. Existing projects
+keep their immutable SDK locks; selecting a new SDK port requires a reviewed
+SDK snapshot rather than modifying an old vendored lock.
+
+The original actual two-library build failed at TeaVM's unsupported JavaScript
+resource methods. The [pinned class-library model control](../testing/evidence/java-immutable-resource-model-2026-10-02.json)
+preserved all nine standard ClassLoader method owners and passed fresh-stream,
+exact-byte, missing-name and changed-preimage controls. The subsequent
+[two-library signed node control](../testing/evidence/java-two-library-resource-node-2026-10-02.json)
+captured Commons Text and Commons Codec independently, Text's Commons Lang
+dependency, and a newly compiled developer-owned JAR. Its ordinary library
+calls and `Arithmetic.class.getResourceAsStream("badge.txt")` remained unchanged.
+After the original local JAR was deleted, the full offline recipe compiled,
+validated and packaged the actual component with 135 captured resource names.
+
+The strict signer and enforced node passed ten successful calls, including a
+fresh resource read after grant denial, and two missing or withdrawn clock
+grant controls. Every invocation was reaped; normal deletion, dormant owner
+observations and clean node shutdown passed. These finite checks used the
+recorded source and independently qualified native tools, with explicit
+provenance for both. They are contributor qualification; installed frontend,
+isolated processors and the full hostile-input and runtime matrix still need
+their own actual checks. Issue #682 and issue #681 remain
+open until their full acceptance evidence passes.
+
+A private Maven feed uses the environment pair
+`LSF_REGISTRY_<REPOSITORY_ID>_USERNAME` and
+`LSF_REGISTRY_<REPOSITORY_ID>_PASSWORD` only during explicit resolution. Uppercase
+the declared repository ID and replace hyphens with underscores. Both values
+must be present together; embedded URL credentials are rejected. The resolver
+passes credentials only to its acquisition task and keeps them out of its
+declarations, receipts and compiler input.
+
+For a feed with a private certificate issuer, add the repository using
+`--repository-ca registry/public-ca.pem`. This names a project-owned public PEM
+certificate, relative to the application directory. The resolver imports it
+into a fresh private copy of the pinned JDK truststore and captures both the
+certificate and trust derivation identities. It leaves the JDK and machine
+trust settings unchanged. A changed certificate invalidates the reviewed native
+inputs; resolve and review again. Private keys and uncaptured or transient paths
+are rejected, and the private truststore is destroyed with the resolution stage.
+
+[The measured private Maven fixture](../testing/evidence/java-private-maven-capture-2026-10-02.json)
+used the maintained CLI with a real authenticated HTTPS repository, the pinned
+JDK and Gradle, and a newly selected private JAR. All seven controls passed:
+wrong or missing credentials, an incomplete pair and an untrusted CA fail;
+offline verification succeeds after the peer stops; changed certificate or JAR
+bytes fail and restoring the original bytes restores the captured identity.
+The fixture preserved SDK and JDK inputs and found no credential or private TLS
+key in the captured project. This capture proof does not qualify installed
+frontend test/watch or annotation-processor execution.
