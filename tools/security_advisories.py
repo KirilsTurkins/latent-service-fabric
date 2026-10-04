@@ -139,7 +139,40 @@ def query_osv(packages: list[Package], transport=osv_transport) -> tuple[list[Fi
     return findings, receipts
 
 
-def dependencies(repo: Path) -> tuple[list[Finding], dict]:
+def classify_braces_remediation(findings: list[Finding], proof: dict) -> tuple[list[Finding], list[Finding]]:
+    """Only the exact proved local repair resolves its one upstream advisory."""
+    from tools import security_derivations as braces
+
+    require(proof["profile"] == braces.PROFILE and proof["derived_version"] == braces.VERSION
+            and proof["proof"]["status"] == "pass"
+            and proof["proof"]["upstream_stack_overflow_observed"] is True,
+            "braces-remediation-proof-failed")
+    paths = {str(Path(path).with_name("package-lock.json")).replace("\\", "/")
+             for path in braces.CONSUMERS}
+    require({row["path"] for row in proof["consumers"]} == paths, "incomplete-braces-remediation-proof")
+    remaining, remediated = [], []
+    for item in findings:
+        if (item.scanner == "osv" and item.finding == "GHSA-vfj7-8cjw-p6xm"
+                and item.path in paths and item.package == "npm:braces@3.0.3"):
+            remediated.append(item)
+        else:
+            remaining.append(item)
+    return remaining, remediated
+
+
+def dependencies(repo: Path, scratch: Path) -> tuple[list[Finding], dict]:
     packages, records = inventory(repo)
     findings, observations = query_osv(packages)
-    return findings, {"manifests": records, "packages": len(packages), "osv_observations": observations}
+    report = {"manifests": records, "packages": len(packages), "osv_observations": observations}
+    from tools import security_derivations as braces
+
+    paths = {str(Path(path).with_name("package-lock.json")).replace("\\", "/")
+             for path in braces.CONSUMERS}
+    if any(package.ecosystem == "npm" and package.name == "braces" and package.path in paths
+           for package in packages):
+        proof = braces.prove(repo, scratch)
+        findings, remediated = classify_braces_remediation(findings, proof)
+        report["source_remediation"] = {"profile": proof["profile"], "archive_sha256": proof["archive_sha256"],
+                                         "consumer_locks": proof["consumers"], "proof": proof["proof"],
+                                         "remediated_findings": [item.public() for item in remediated]}
+    return findings, report
