@@ -16,8 +16,7 @@ internal static partial class Program
             SharedVectors();
             foreach (Func<Task> scenario in new Func<Task>[]
             {
-                EightOperations, TargetInspection, CancellationAndQueue, DeadlinesAndShutdown, NoReplay, LostMutation,
-                MalformedAndBounds, AuditAndRawStatus, ConnectionOwnership, ZeroLengthReads, FrameFragments, StalledRawPeers
+                EightOperations, TargetInspection, CancellationAndQueue, DeadlinesAndShutdown, NoReplay, LostMutation, MalformedAndBounds, AuditAndRawStatus, ConnectionOwnership, ZeroLengthReads, FrameFragments, StalledRawPeers, DisposalOwnsSocketTeardown
             })
             {
                 await scenario().WaitAsync(TimeSpan.FromSeconds(30));
