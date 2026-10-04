@@ -29,7 +29,10 @@ def path_name(value: str) -> str:
             or value.startswith("/") or len(value.split("/")) > 32):
         raise DependencyError("dependency-path-invalid")
     for part in value.split("/"):
-        if (not re.fullmatch(r"[A-Za-z0-9_@+.,() \[\]-]{1,128}", part) or part in {".", ".."}
+        # '$' is a literal filename character, including JVM binary names for
+        # nested and anonymous classes. Consumers use file APIs/argument vectors;
+        # archive names never become shell source or substituted templates.
+        if (not re.fullmatch(r"[A-Za-z0-9_$@+.,() \[\]-]{1,128}", part) or part in {".", ".."}
                 or part.endswith((".", " ")) or DEVICE.fullmatch(part)):
             raise DependencyError("dependency-path-invalid")
     return value
@@ -245,6 +248,9 @@ def materialize(files: list[dict], destination: Path, store: Store):
         if set(row) != {"path", "digest", "size"}:
             raise DependencyError("dependency-file-inventory-invalid")
         entries.add(row["path"], store.get(row["digest"], row["size"]))
+    # Empty selections still have an owned physical directory. Its existence and
+    # exact inventory are rechecked just like a nonempty captured input tree.
+    destination.mkdir(parents=True, exist_ok=True)
     for name, data in entries.files.items():
         path = regular_path(destination / name)
         path.parent.mkdir(parents=True, exist_ok=True)
