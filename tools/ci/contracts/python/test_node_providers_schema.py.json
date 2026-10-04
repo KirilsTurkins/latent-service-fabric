@@ -1,5 +1,6 @@
 {
   "cases": [
+    "NodeProvidersSchema.test_core_context_and_log_installations_are_explicit_and_closed",
     "NodeProvidersSchema.test_documented_blob_and_shared_real_workflow_http_configuration",
     "NodeProvidersSchema.test_documented_development_streams_have_closed_bounded_configuration_without_secrets",
     "NodeProvidersSchema.test_guest_secrets_only_accept_bounded_file_references_and_no_plaintext",
@@ -79,10 +80,22 @@
         "module:setup-sha256:2607b9ba0749340f03bf7a215e5e1dd758f03c2ba33ef1982d6e2e342bc09d42",
         "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
       ]
+    },
+    "NodeProvidersSchema.test_core_context_and_log_installations_are_explicit_and_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2607b9ba0749340f03bf7a215e5e1dd758f03c2ba33ef1982d6e2e342bc09d42",
+        "class:setup-sha256:4217b0b000aab6064db6e01e7f649b25af8b4d62db851f8c14b253297ffc6b30"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_node_providers_schema.py",
-  "reviewReason": "Explicit review of local immutable stream-schema Registry/Resource setup: preserve all five original cases, decorators, class setup, assertions and zero skip sites; add one closed bounded TCP configuration case. No source discovery waives an obligation.",
+  "reviewReason": "Retain all parent cases and every existing stream fixture guard; execute the unchanged incoming context/log test under the already reviewed immutable local stream-schema Registry, without decorators or skip changes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
