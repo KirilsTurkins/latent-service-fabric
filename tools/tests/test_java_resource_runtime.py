@@ -166,6 +166,52 @@ class JavaResourceRuntime(unittest.TestCase):
                 stage_sdk_service(service, name, selected)
             self.assertEqual(service.read_bytes(), previous)
 
+    def test_server_and_resource_profiles_preserve_both_trusted_services_before_compilation(self):
+        from tools.java_guest import compiler as java_compiler
+
+        self.put('outside/badge.txt', b'\x00selected\xff')
+        sources = self.root / 'source'; sources.mkdir()
+        (sources / 'Main.java').write_text('final class Main {}\n', encoding='utf-8')
+        wit = self.root / 'wit'; wit.mkdir()
+        (wit / 'world.wit').write_text('package outside:fixture; world service {}\n', encoding='utf-8')
+        owner = java_compiler.Compiler.__new__(java_compiler.Compiler)
+        owner.sdk, owner.platform, owner.offline = self.sdk, ROOT / 'wit/platform', True
+
+        def generated(_run, _wit, _world, destination):
+            destination.mkdir()
+            (destination / 'Bindings.java').write_bytes(b'// controlled binding boundary\n')
+            return {'source': 'controlled-binding'}
+
+        class CompileBoundary(Exception):
+            pass
+
+        invoked = []
+        def stop(stage, tool, *arguments, cwd=None):
+            invoked.append((stage, tool, arguments, cwd))
+            raise CompileBoundary()
+
+        owner.run = stop
+        destination = self.root / 'compiled'
+        with patch.object(java_compiler, 'generate', side_effect=generated):
+            with self.assertRaises(CompileBoundary):
+                owner.compile(sources, wit, 'outside:fixture/service', destination,
+                              application_resources=self.data, server_profile=True)
+        self.assertEqual(len(invoked), 1)
+        self.assertEqual(invoked[0][:2], ('java-to-c', 'gradle'))
+        self.assertIn('--offline', invoked[0][2])
+        project = destination / 'project'
+        self.assertEqual(invoked[0][3], project)
+        for name in ('META-INF/services/org.teavm.vm.spi.TeaVMPlugin',
+                     'META-INF/services/org.teavm.extension.spi.substitution.SubstitutionPolicy'):
+            expected = (self.sdk / 'server/services' / name).read_bytes().splitlines()
+            if name.endswith('TeaVMPlugin'):
+                expected = (self.sdk / 'resources/services' / name).read_bytes().splitlines() + expected
+            self.assertEqual((project / 'src/main/resources' / name).read_bytes().splitlines(), expected)
+        self.assertTrue((project / 'src/main/java/dev/latent/guest/server/http/HttpServer.java').is_file())
+        self.assertTrue((project / 'src/main/java/dev/latent/guest/resources/ImmutableResources.java').is_file())
+        receipt = json.loads((destination / 'resource-profile.json').read_bytes())
+        self.assertEqual(receipt['resourceInputs'], json.loads(inventory(resources.source_inputs(self.data))))
+
 
 if __name__ == '__main__':
     unittest.main()

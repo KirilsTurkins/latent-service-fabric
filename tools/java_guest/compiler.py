@@ -49,6 +49,8 @@ def sdk_snapshot(root: Path) -> dict:
     for folder in ("runtime", "templates", "wit", "resources"):
         if folder == "resources" and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
+    if (root / "server").exists():
+        files.update({"server/" + name: data for name, data in snapshot(root / "server").items()})
     return dict(sorted(files.items()))
 
 
@@ -188,7 +190,10 @@ class Compiler:
             write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
-                application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None) -> tuple[Path, dict]:
+                application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
+                server_profile: bool = False, server_bridge: bytes | None = None) -> tuple[Path, dict]:
+        if type(server_profile) is not bool or server_bridge is not None and not server_profile:
+            raise ValueError("automatic server bridge requires an explicitly selected profile")
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
@@ -223,11 +228,30 @@ class Compiler:
             from tools.java_guest import resources
             resource_profile = resources.stage(self.sdk, application_resources, project)
             write_json(destination / "resource-profile.json", resource_profile)
+        if server_profile:
+            # Only captured SDK extension code executes in the compiler JVM.
+            # Application JAR/service policy stays separate and denied by the
+            # ingestion recipe. No application initialization discovers routes.
+            for folder in ("server/dev", "server/compiler/dev"):
+                for name, data in snapshot(self.sdk / folder).items():
+                    target = java_root / "dev" / name
+                    if target.exists(): raise ValueError("server SDK overrides runtime source")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+            for name, data in snapshot(self.sdk / "server/services").items():
+                stage_sdk_service(project / "src/main/resources" / name, name, data)
+            with (project / "build.gradle").open("a", encoding="utf-8") as build:
+                build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")
             target = java_root / path.relative_to(sources)
             if target.exists(): raise ValueError("application overrides Java SDK source")
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(read_file(path))
+        if server_bridge is not None:
+            target = java_root / "dev/latent/app/Capsule.java"
+            if target.exists(): raise ValueError("application overrides the automatic server invocation bridge")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(server_bridge)
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
         self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)

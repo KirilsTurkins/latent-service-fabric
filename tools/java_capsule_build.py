@@ -7,7 +7,8 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_resources, guest_dependency_inputs, guest_authoring_frontend
+from tools import (guest_compatibility_build, guest_resources, guest_dependency_inputs,
+                   guest_authoring_frontend, java_server_source, server_source)
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.java_guest import resources as java_resources
@@ -34,6 +35,7 @@ RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
+RECIPE += java_server_source.RECIPE
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -93,6 +95,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
                     config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache)
                 (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
+                server_plan, automatic_bridge = None, None
+                if "server" in project:
+                    stage = "server-source-analysis"
+                    server_plan = java_server_source.analyze(compiler, work / "src", project["server"], application_jars, output)
+                    automatic_bridge = java_server_source.bridge(compiler.sdk, project["server"], server_plan)
+                    (output / "server-profile.json").write_bytes(java_server_source.profile(compiler, recipe_inputs))
                 materials = list(compiler.materials)
                 paths = {"contracts-tool": checked_path(contracts_tool)}
                 if packager is not None:
@@ -103,7 +111,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
-                    application_classpath=application_jars, application_resources=application_resources)
+                    application_classpath=application_jars, application_resources=application_resources,
+                    server_profile=server_plan is not None, server_bridge=automatic_bridge)
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
                 write_json(output / "bindings.json", generated)
@@ -128,8 +137,16 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 surface = read_json(derived / "surface.json")
                 stage = "compatibility"
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+                additional_assets = []
+                if server_plan is not None:
+                    actual_web = server_source.inspect(commands, compiler.paths["wasm-tools"], component_path,
+                                                       temporary / "compiled/wit", world=project["world"])
+                    declaration = server_source.emit(files, component, read_file(output / "server-profile.json"), server_plan,
+                                                     actual_web, source_inputs=source_inputs)
+                    additional_assets = [server_source.package(output, declaration),
+                        ("server-profile.json", "asset", "application/vnd.latent.server.source.profile.v1+json")]
                 package_inputs(output, project, surface, package_files, component,
-                               additional_resources=additional_resources)
+                               additional_resources=additional_resources, additional_assets=additional_assets)
                 if packager is not None:
                     stage = "package"
                     commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
