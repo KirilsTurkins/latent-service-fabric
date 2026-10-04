@@ -25,6 +25,7 @@ pub struct ActivationTreeNode {
     pub diagnostic_is_terminal: bool,
     pub principal_kind: latent_core::PrincipalKind,
     pub caller_service: Option<latent_core::ServiceId>,
+    pub target_service: latent_core::ServiceId,
     pub granted_budget: Option<latent_core::ResourceBudget>,
     pub effective_deadline_unix_millis: Option<u64>,
 }
@@ -138,6 +139,7 @@ impl LocalActivationJournal {
                 + id.0.len()
                 + record.root.0.len()
                 + record.parent.as_ref().map_or(0, |parent| parent.0.len())
+                + record.target_service.0.len()
                 + record
                     .caller_service
                     .as_ref()
@@ -147,6 +149,7 @@ impl LocalActivationJournal {
                 break;
             }
             if id.0.len() > MAXIMUM_ID_BYTES
+                || record.target_service.0.len() > MAXIMUM_ID_BYTES
                 || record
                     .caller_service
                     .as_ref()
@@ -179,6 +182,7 @@ impl LocalActivationJournal {
                 diagnostic: terminal_diagnostic.or_else(|| record.observed_diagnostic.clone()),
                 principal_kind: record.principal_kind,
                 caller_service: record.caller_service.clone(),
+                target_service: record.target_service.clone(),
                 granted_budget: record.granted_budget.clone(),
                 effective_deadline_unix_millis: record.effective_deadline_unix_millis,
             });
