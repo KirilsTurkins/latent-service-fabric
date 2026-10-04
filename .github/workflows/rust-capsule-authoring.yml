@@ -99,8 +99,11 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process
       - name: Test captured Rust executable-input approvals and namespace
+        # Native compiler controls below remain independently required.
         run: |
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_rust_application_dependencies tools.tests.test_application_dependency_approval tools.tests.test_captured_compiler_isolation
+      - name: Test reviewed Rust dependency authoring and selected frontend
+        run: python3 -m unittest tools.tests.test_rust_dependency_authoring tools.tests.test_guest_authoring_frontend
       - name: Qualify proposed transaction shapes with the maintained Rust compiler and HTTP preparation
         env:
           LSF_TRANSACTION_PREPARATION_REPORT: ${{ runner.temp }}/transaction-contract-rust/preparation.json
