@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.composition.support.v1",
   "inputVersion": "latent.composition.v1",
-  "sourceRevision": "36a10fc7cee5318d8ceb18efd31864c028c4452f",
+  "sourceRevision": "7bab89eeb0d9aebbd21753e74a450cd4fca2fa33",
   "selectionRule": "first-matching-row-after-closed-input-and-Java-interface-ambiguity-checks",
   "unlistedCombination": "selected-combination-needs-source-matched-owner-evidence",
   "unlistedState": "untested",
@@ -11,13 +11,13 @@
   "sources": {
     "java-authoring": {
       "path": "tools/java_guest/model.py",
-      "digest": "sha256:e5d4ce26796df454b5971c89c96a1560aa95eebe7e4415efa424d186c53ad740",
-      "commit": "36a10fc7cee5318d8ceb18efd31864c028c4452f"
+      "digest": "sha256:9659786c8ae6c021047ede0075980399d3a2cdb773778dbe34b9edaf023bf231",
+      "commit": "94cd489b692ba31c822baca12776f2deb2d24f9b"
     },
     "host-recognition": {
       "path": "crates/latent-core/src/host_profile.rs",
-      "digest": "sha256:a542f6c954c828d38cad2dbb2b6b3141c50225e88b8f199c9e73aaecdfea280b",
-      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+      "digest": "sha256:8d7dda2d98d00b697a82f8b707a237a0e90360e871695774f9456f130be8d5bb",
+      "commit": "dd643b2367e1a94dbf48f6aad0f24b094055d19d"
     },
     "native-surface": {
       "path": "crates/latent-wasmtime/src/surface.rs",
@@ -26,8 +26,8 @@
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
-      "digest": "sha256:efa50c5b60dfbabf367a6d9e5bf7ca09f9be0d5f3a64dc6ec55a90ccda343c25",
-      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+      "digest": "sha256:09ed8fcd91a953bbc3c2cd59241dd90498a538dbcc7cfbeed60af5408a98b4ae",
+      "commit": "39d2b1f868c433984e7b58874d1fa9837f011bce"
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",
@@ -188,7 +188,10 @@
     "minimumWirePayloadBytes": "2097152",
     "maximumRequestBodyBytes": "65536",
     "maximumResponseBodyBytes": "262144",
-    "sources": ["http-ingress-bounds", "node-composition"]
+    "sources": [
+      "http-ingress-bounds",
+      "node-composition"
+    ]
   },
   "resourceBudgetTypes": {
     "u32DecimalStrings": [
