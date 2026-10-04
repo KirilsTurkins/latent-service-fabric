@@ -1,5 +1,6 @@
 """Offline fixtures for the package-manager derivation; no package code executes."""
 import importlib.util
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -37,12 +38,15 @@ class PreparationTests(unittest.TestCase):
                      ('package/node_modules/ip-address/package.json', {'name': 'ip-address', 'version': '10.5.0'}),
                      ('package/node_modules/ip-address/obsolete.js', b'old removed bytes'),
                      ('package/node_modules/undici/package.json', {'name': 'undici', 'version': '6.28.0'}),
+                     ('package/node_modules/http-cache-semantics/package.json', {'name': 'http-cache-semantics', 'version': '4.2.0'}),
+                     ('package/node_modules/http-cache-semantics/obsolete.js', b'old removed cache bytes'),
                      ('package/node_modules/brace-expansion/package.json', {'name': 'brace-expansion', 'version': '5.0.9',
                          'dependencies': {'balanced-match': '^4.0.2'}}),
                      ('package/node_modules/brace-expansion/obsolete.js', b'old removed brace bytes'),
                      ('package/node_modules/balanced-match/package.json', {'name': 'balanced-match', 'version': '4.0.4'})]
         self.patches = []
         for name, old, new in [('ip-address', '10.5.0', '10.7.2'), ('undici', '6.28.0', '6.28.1'),
+                               ('http-cache-semantics', '4.2.0', '4.3.0'),
                                ('brace-expansion', '5.0.9', '5.0.12')]:
             manifest = {'name': name, 'version': new}
             if name == 'brace-expansion':
@@ -61,6 +65,7 @@ class PreparationTests(unittest.TestCase):
         with tarfile.open(fileobj=io.BytesIO(raw), mode='r:') as reader:
             self.assertNotIn('package/node_modules/ip-address/obsolete.js', reader.getnames())
             self.assertNotIn('package/node_modules/brace-expansion/obsolete.js', reader.getnames())
+            self.assertNotIn('package/node_modules/http-cache-semantics/obsolete.js', reader.getnames())
             balanced = json.loads(reader.extractfile('package/node_modules/balanced-match/package.json').read())
             self.assertEqual(balanced['version'], '4.0.4')
             self.assertEqual(reader.extractfile('package/bin/npm-cli.js').read(), b'never executed')
@@ -189,17 +194,52 @@ class PreparationTests(unittest.TestCase):
             (cache / 'npm-11.19.1.tgz').write_bytes(base)
             for pin, raw in self.patches:
                 (cache / f'{pin["name"]}-{pin["version"]}.tgz').write_bytes(raw)
+            repairs = []
+            library = None
+            for name, version, profile, names, dependencies in [
+                ('braces', '3.0.3', 'braces-3.0.3-lsf-depth-v1',
+                 ['lib/utils.js', 'lib/compile.js', 'lib/expand.js', 'lib/stringify.js', 'lib/parse.js'],
+                 {'fill-range': '^7.1.1'}),
+                ('http-cache-semantics', '4.3.0', 'http-cache-semantics-4.3.0-lsf-cache-v1', ['index.js'], {})]:
+                pin, raw = next(((pin, raw) for pin, raw in self.patches if pin['name'] == name), (None, None))
+                if pin is None:
+                    raw = archive([('package/package.json', {'name': name, 'version': version, 'dependencies': dependencies})]
+                                  + [('package/' + path, b'patched bytes') for path in names])
+                    pin = {'name': name, 'version': version, 'integrity': prepare.integrity(raw)}
+                    library = pin
+                    (cache / f'{name}-{version}.tgz').write_bytes(raw)
+                document = {'schema': 1, 'profile': profile, 'name': name, 'version': version,
+                            'upstreamIntegrity': pin['integrity'], 'files': [
+                                {'path': path, 'beforeSha256': hashlib.sha256(b'patched bytes').hexdigest(),
+                                 'afterSha256': hashlib.sha256(b'repaired bytes').hexdigest(),
+                                 'edits': [{'before': 'patched bytes', 'after': 'repaired bytes', 'count': 1}]}
+                                for path in names]}
+                encoded = (json.dumps(document) + '\n').encode()
+                repair_path = root / 'repairs' / (name + '.json')
+                repair_path.parent.mkdir(exist_ok=True)
+                repair_path.write_bytes(encoded)
+                repairs.append({'path': 'repairs/' + name + '.json', 'sha256': hashlib.sha256(encoded).hexdigest()})
             config = {'schema': 1, 'profile': prepare.PROFILE,
                       'base': {'name': 'npm', 'version': '11.19.1', 'integrity': prepare.integrity(base)},
-                      'patches': [pin for pin, _ in self.patches]}
+                      'patches': [pin for pin, _ in self.patches], 'libraries': [library], 'repairs': repairs}
             (root / 'source.json').write_text(json.dumps(config))
             target = root / 'generated.tar'
-            with patch.multiple(prepare, HERE=root, CACHE=cache, OUTPUT=target):
+            with patch.multiple(prepare, ROOT=root, HERE=root, CACHE=cache, OUTPUT=target):
                 actual = prepare.prepare(offline=True, refresh=True)
                 original = target.read_bytes()
                 row = {'resolved': 'file:../../target/website-package-manager/' + prepare.PROFILE + '.tar',
                        'integrity': actual}
                 (root / 'package-lock.json').write_text(json.dumps({'packages': {'node_modules/npm': row}}))
+                for directory, relative in [('website', '../'), ('examples/framework-compatibility', '../../')]:
+                    path = root / directory / 'package-lock.json'
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    rows = {f'node_modules/{document["name"]}': {
+                                'version': document['version'],
+                                'resolved': 'file:' + relative + 'target/website-package-manager/' + document['profile'] + '.tar',
+                                'integrity': prepare.integrity((root / (document['profile'] + '.tar')).read_bytes())}
+                            for repair in repairs
+                            for document in [json.loads((root / repair['path']).read_bytes())]}
+                    path.write_text(json.dumps({'packages': rows}))
                 self.assertEqual(prepare.prepare(offline=True), actual)
                 row['integrity'] = 'invalid'
                 (root / 'package-lock.json').write_text(json.dumps({'packages': {'node_modules/npm': row}}))
