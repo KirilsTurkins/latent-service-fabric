@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_transaction_contracts.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "946d67e50de7f52cc21b727c1147b08ef2f868a0efe295d4f7100a5bd6759db7"
-}
+{"kind":"owner","path":"tools/qualify_transaction_contracts.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.","schemaVersion":"latent.ci.contracts.v1","sha256":"946d67e50de7f52cc21b727c1147b08ef2f868a0efe295d4f7100a5bd6759db7"}
