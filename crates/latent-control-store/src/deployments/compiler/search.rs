@@ -39,6 +39,25 @@ impl CompiledCatalog {
         routing_key: Option<&str>,
         config: DirectoryDeploymentRepositoryConfig,
     ) -> Result<ResolvedRevision, PlatformError> {
+        let record = self.select_record(target, routing_key, config)?;
+        Ok(ResolvedRevision {
+            publication: record.publication.clone(),
+            target: target.clone(),
+            revision: record.revision.clone(),
+            release: record.deployment.release.clone(),
+            route_generation: self.generation,
+            attributes: record.attributes.clone(),
+        })
+    }
+
+    /// Same original weighted selector without copying a whole attribute map.
+    /// The producer keeps its actual publication read fence through this borrow.
+    pub(in crate::deployments) fn select_record(
+        &self,
+        target: &InvocationTarget,
+        routing_key: Option<&str>,
+        config: DirectoryDeploymentRepositoryConfig,
+    ) -> Result<&super::RevisionRecord, PlatformError> {
         let route = target.route.as_deref().unwrap_or("default");
         let key = routing_key.unwrap_or("");
         let identifiers = [
@@ -70,15 +89,7 @@ impl CompiledCatalog {
         let candidates = &self.candidates[endpoint.candidates.clone()];
         let bucket = selection_hash(target, key) % endpoint.total_weight;
         let index = candidates.partition_point(|candidate| candidate.cumulative_weight <= bucket);
-        let record = self.record(candidates[index].record);
-        Ok(ResolvedRevision {
-            publication: record.publication.clone(),
-            target: target.clone(),
-            revision: record.revision.clone(),
-            release: record.deployment.release.clone(),
-            route_generation: self.generation,
-            attributes: record.attributes.clone(),
-        })
+        Ok(self.record(candidates[index].record))
     }
 }
 

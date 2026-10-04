@@ -18,6 +18,7 @@ mod renderer;
 mod rollouts;
 mod runtime;
 mod security;
+pub(crate) mod state;
 mod supply_chain;
 #[cfg(test)]
 mod tests;
@@ -44,12 +45,18 @@ pub use model::{
     SupplyChainConfig, TelemetryConfig, WorkerConfig,
 };
 pub use providers::{
-    BlobInstallation, ConfiguredProviders, HostBinding, HttpInstallation, LocalServiceInstallation,
-    ProviderIdentity, ProviderSecretFile, SecretInstallation,
+    BlobInstallation, ConfiguredProviders, HostBinding, HttpInstallation,
+    HttpStreamingInstallation, LocalServiceInstallation, ProviderIdentity, ProviderSecretFile,
+    SecretInstallation,
 };
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
 pub use security::ExecutionProfileReport;
+pub use state::{
+    DeferredHttpConfig, DispatcherLimitsConfig, NativeLimitsConfig, NativePartitionConfig,
+    StateConfig, StateOperationConfig, StorageLimitsConfig, StorageRecoveryConfig,
+    StorageWorkerConfig, TenantLimitsConfig, TenantQuotaConfig,
+};
 pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
@@ -70,6 +77,8 @@ pub struct NodeSettings {
     pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
     pub(crate) providers: Option<Box<ConfiguredProviders>>,
+    pub(crate) state: Option<state::StateSettings>,
+    pub(crate) manifest_profile: latent_manifest::ManifestValidationProfile,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) budget_profile: latent_core::BudgetProfile,
     pub(crate) delegation_limits: latent_core::DelegationLimits,

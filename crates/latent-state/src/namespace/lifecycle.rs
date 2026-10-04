@@ -6,7 +6,12 @@ use std::sync::{
     Arc, Mutex, RwLock,
 };
 
+use latent_core::native_capacity::{NativeCapacityOwner, NativeReservation};
+
 use super::{catalog::NamespaceRead, NamespaceError, NamespaceRecord, NamespaceStatus};
+
+mod resident;
+use resident::ResidentMetadata;
 
 #[derive(Clone, Copy, Debug)]
 pub struct NamespaceLifecycleLimits {
@@ -26,6 +31,9 @@ struct Owner {
     live: AtomicBool,
     pins: AtomicUsize,
     maximum: usize,
+    // LAST: every registry/handle/completion also drops its stamps before this
+    // owner. The original native charge cannot retire ahead of actual metadata.
+    resident: Option<ResidentMetadata>,
 }
 struct State {
     record: NamespaceRecord,
@@ -35,16 +43,51 @@ struct State {
 struct Stamp {
     state: Mutex<State>,
     pins: AtomicUsize,
+    #[cfg(test)]
+    retirement_observer: Option<Arc<dyn Fn() + Send + Sync>>,
 }
 
 /// No engine Arc, file, background task or provider pool is retained here.
 pub struct NamespaceLifecycleRegistry {
-    owner: Arc<Owner>,
     entries: Mutex<Vec<Arc<Stamp>>>,
     maximum: usize,
+    owner: Arc<Owner>,
 }
 impl NamespaceLifecycleRegistry {
     pub fn new(limits: NamespaceLifecycleLimits) -> Result<Self, NamespaceError> {
+        Self::new_inner(limits, None)
+    }
+
+    /// Prepay resident lifecycle metadata before constructing the registry.
+    /// The original Recovery reservation is retained by every actual handle
+    /// and unresolved completion; it is physical ownership, not permission.
+    pub fn with_retained_capacity(
+        limits: NamespaceLifecycleLimits,
+        native: &NativeCapacityOwner,
+        original: Arc<NativeReservation>,
+    ) -> Result<Self, NamespaceError> {
+        let resident = ResidentMetadata::new(limits, native, original)?;
+        Self::new_inner(limits, Some(resident))
+    }
+
+    /// Finite native Work required by this metadata owner. It does not reserve
+    /// capacity, publish a namespace or create a policy/lifecycle grant.
+    pub fn retained_memory_bytes(limits: NamespaceLifecycleLimits) -> Result<u64, NamespaceError> {
+        resident::memory_bytes(limits)
+    }
+
+    #[must_use]
+    pub fn uses_native_capacity(&self, native: &NativeCapacityOwner) -> bool {
+        self.owner
+            .resident
+            .as_ref()
+            .is_some_and(|resident| resident.uses_native_capacity(native))
+    }
+
+    fn new_inner(
+        limits: NamespaceLifecycleLimits,
+        resident: Option<ResidentMetadata>,
+    ) -> Result<Self, NamespaceError> {
         if limits.namespaces == 0
             || limits.namespaces > 4096
             || limits.owners == 0
@@ -52,16 +95,30 @@ impl NamespaceLifecycleRegistry {
         {
             return Err(NamespaceError::Invalid);
         }
-        Ok(Self {
+        let mut entries = Vec::new();
+        if resident.is_some() {
+            entries
+                .try_reserve_exact(limits.namespaces)
+                .map_err(|_| NamespaceError::Capacity)?;
+            if entries.capacity() > limits.namespaces {
+                return Err(NamespaceError::Capacity);
+            }
+        }
+        let registry = Self {
             owner: Arc::new(Owner {
                 fence: RwLock::new(()),
                 live: AtomicBool::new(true),
                 pins: AtomicUsize::new(0),
                 maximum: limits.owners,
+                resident,
             }),
-            entries: Mutex::new(Vec::new()),
+            entries: Mutex::new(entries),
             maximum: limits.namespaces,
-        })
+        };
+        if let Some(resident) = &registry.owner.resident {
+            resident.check_live()?;
+        }
+        Ok(registry)
     }
     /// The record must be read by the configured protected-store worker. This
     /// owner provides lifecycle currentness only, never policy permission.
@@ -154,6 +211,8 @@ impl NamespaceLifecycleRegistry {
                 pending: Some(after.clone()),
             }),
             pins: AtomicUsize::new(0),
+            #[cfg(test)]
+            retirement_observer: None,
         });
         entries.push(Arc::clone(&stamp));
         drop(accepted);
@@ -295,6 +354,8 @@ impl NamespaceLifecycleRegistry {
                 pending: None,
             }),
             pins: AtomicUsize::new(0),
+            #[cfg(test)]
+            retirement_observer: None,
         });
         entries.push(Arc::clone(&stamp));
         Ok(stamp)
@@ -312,9 +373,9 @@ impl Drop for NamespaceLifecycleRegistry {
 /// Actual activation/query/page ownership. Dropping a transport waiter must not
 /// drop this while guest/accepted storage work still retains namespace resources.
 pub struct NamespaceLifecycleHandle {
-    owner: Arc<Owner>,
     stamp: Arc<Stamp>,
     epoch: u64,
+    owner: Arc<Owner>,
 }
 impl NamespaceLifecycleHandle {
     /// Short no-I/O fence nested inside current policy/publication evaluation.
@@ -358,9 +419,9 @@ impl Drop for NamespaceLifecycleHandle {
 /// No completion means fail closed. Resolve from a fresh native row only after
 /// actual commit/recovery, never by fabricating a successful descriptor.
 pub struct NamespaceLifecycleCompletion {
-    owner: Arc<Owner>,
     stamp: Arc<Stamp>,
     epoch: u64,
+    owner: Arc<Owner>,
 }
 impl NamespaceLifecycleCompletion {
     pub fn resolve(self, actual: &NamespaceRead) -> Result<(), NamespaceError> {
@@ -391,6 +452,17 @@ fn same_lifecycle(a: &NamespaceRecord, b: &NamespaceRecord) -> bool {
         && a.version.incarnation == b.version.incarnation
         && a.state_schema == b.state_schema
         && a.status == b.status
+}
+
+#[cfg(test)]
+impl Drop for Stamp {
+    fn drop(&mut self) {
+        // The deterministic schedule observes actual final stamp destruction,
+        // while its namespace record and pending record are still retained.
+        if let Some(observer) = self.retirement_observer.take() {
+            observer();
+        }
+    }
 }
 
 #[cfg(test)]

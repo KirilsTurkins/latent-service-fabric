@@ -12,6 +12,8 @@ use crate::{
 use latent_core::{StateNamespaceId, TenantId};
 use std::fs::OpenOptions;
 
+mod resident;
+
 struct Fixture {
     store: EmbeddedStore,
     catalog: NamespaceCatalog,

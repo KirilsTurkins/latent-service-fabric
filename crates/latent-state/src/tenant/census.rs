@@ -130,7 +130,7 @@ impl TenantCensus {
         contribution: TenantCensusContribution,
     ) -> Result<(), StoreError> {
         self.checkpoint()?;
-        if key.key.is_empty() || key.key.len() > 1024 || bytes.len() > 2 * 1024 * 1024 {
+        if key.key.is_empty() || key.key.len() > 4096 || bytes.len() > 2 * 1024 * 1024 {
             return Err(StoreError::Capacity);
         }
         if self.previous.as_ref().is_some_and(|prior| {

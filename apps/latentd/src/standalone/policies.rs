@@ -27,6 +27,16 @@ impl PolicyRuntime {
         catalog: LifecycleAuthorityHandle,
         runtime: Option<&tokio::runtime::Handle>,
     ) -> Result<Option<Self>, PlatformError> {
+        Self::open_with_rejection(root, config, catalog, runtime, None)
+    }
+
+    pub(super) fn open_with_rejection(
+        root: &Path,
+        config: Option<CapabilityPolicyConfig>,
+        catalog: LifecycleAuthorityHandle,
+        runtime: Option<&tokio::runtime::Handle>,
+        observer: Option<Arc<dyn latent_core::authority_rejection::AuthorityRejectionObserver>>,
+    ) -> Result<Option<Self>, PlatformError> {
         let Some(config) = config else {
             // Presence, including a damaged path/marker, cannot silently disable
             // an existing policy owner on restart. Privileged whole-root rollback
@@ -48,6 +58,9 @@ impl PolicyRuntime {
             )
         })?;
         let store = Arc::new(PolicyStore::open(root, config.store, catalog)?);
+        if let Some(observer) = observer {
+            store.install_rejection_observer(observer)?;
+        }
         Ok(Some(Self {
             handle: PolicyControlHandle::new(store, runtime.clone(), config.maximum_control_jobs)?,
         }))

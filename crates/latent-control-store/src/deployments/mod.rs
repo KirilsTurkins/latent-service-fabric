@@ -13,6 +13,8 @@ mod publication;
 mod recovery_admission;
 pub(crate) mod rollouts;
 mod scoped_routes;
+mod transaction_selection;
+pub use transaction_selection::{CapturedTransactionSelection, InstalledTransactionSelection};
 #[cfg(test)]
 mod tests;
 

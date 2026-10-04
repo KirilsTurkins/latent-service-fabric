@@ -1,5 +1,6 @@
 //! Closed exact-byte side material, bound by the version-2 completion record.
 pub(super) mod read;
+mod transaction_asset;
 
 use latent_core::PlatformError;
 use serde::{Deserialize, Serialize};
