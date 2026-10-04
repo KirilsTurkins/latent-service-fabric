@@ -98,11 +98,6 @@ def run(payload: Path, supplied: Path, output: Path) -> dict:
                          "source": str(source), "snapshot": record["identity"]})
             built = build.execute(root, source, descriptor, payload, trusted=trust, cli=supplied / "bin/latent")
             runtime = stage_runtime(root, supplied)
-            # Normal supported retention configuration, set before the node's
-            # first start. No host clock, receipt store or node code is replaced.
-            node = decode(paths.read(root / "runtime/config", "node.json"))
-            node.setdefault("retention", {})["terminalTtlMillis"] = TTL_MILLIS
-            state.atomic(root / "runtime/config", "node.json", node)
             connection = backend.Backend({"kind": "linux", "python": str(Path(sys.executable).resolve()),
                 "helper": str(supplied / "helper.pyz"), "helperSha256": runtime["helperSha256"]}, root.name, root)
             connections[side] = connection
@@ -169,6 +164,41 @@ def run(payload: Path, supplied: Path, output: Path) -> dict:
         report["retainedA"] = retained
         report["phase"] = "actual-receipt-expiry"
         root, connection = roots["a"], connections["a"]
+        # The signed secret-fixture profile binds the complete node
+        # configuration before its first deployment. Keep both exercised
+        # profiles unchanged and prepare a fresh disposable A-side workspace
+        # for the deliberate expiry case after the overlap/restart checks.
+        # Select its supported retention setting before fixture preparation;
+        # never rewrite an existing configuration or its identity receipt.
+        report["stopABeforeExpiry"] = clean_stop(connection, root)
+        root = state.workspace(owner, "test-expiry-" + secrets.token_hex(3), create=True)
+        roots["expiry"] = root
+        descriptor, fixtures = author(payload, root / "Author spaces-\u00fc", "a")
+        record, content = snapshot.observe(root / "Author spaces-\u00fc", descriptor["inputRoots"], tuple(descriptor["exclude"]))
+        (root / "snapshots").mkdir(mode=0o700)
+        source = root / "snapshots" / record["identity"][7:]
+        snapshot.materialize(source, record, content)
+        trust = project.trust_identity(descriptor)
+        state.atomic(root, "project.json", {"descriptor": descriptor, "trust": trust,
+                     "source": str(source), "snapshot": record["identity"]})
+        built = build.execute(root, source, descriptor, payload, trusted=trust, cli=supplied / "bin/latent")
+        runtime = stage_runtime(root, supplied)
+        node = decode(paths.read(root / "runtime/config", "node.json"))
+        node.setdefault("retention", {})["terminalTtlMillis"] = TTL_MILLIS
+        state.atomic(root / "runtime/config", "node.json", node)
+        connection = backend.Backend({"kind": "linux", "python": str(Path(sys.executable).resolve()),
+            "helper": str(supplied / "helper.pyz"), "helperSha256": runtime["helperSha256"]}, root.name, root)
+        connections["expiry"] = connection
+        profile = connection.call("prepare-test", {"consent": True, "admission": "signed-fixture",
+                                   "toolRoot": str(payload), "fixtures": fixtures})
+        report["restartAForExpiry"] = connection.call("up", {}, timeout=180)
+        connection.call("deploy", {})
+        configuration = decode(paths.read(root / "runtime/config/client", "client.json"))
+        private_values.extend(secret_fixture.values(root, fixtures["secrets"]))
+        private_values.append(configuration["profiles"][0]["token"].encode())
+        report["expiryWorkspace"] = {"workspace": root.name, "runtime": runtime, "source": record["identity"],
+            "artifacts": built["artifacts"], "profile": profile, "retentionConfiguredBeforeFixturePreparation": True,
+            "overlapWorkspaceConfigurationsChanged": False}
         arguments = {"service": "greeting", "contract": "examples:greeting/api@1.0.0", "function": "read",
                      "mediaType": "application/vnd.latent.wit-values.v1+json",
                      "input": base64.b64encode(encode(["dev-only-a", False])).decode()}
