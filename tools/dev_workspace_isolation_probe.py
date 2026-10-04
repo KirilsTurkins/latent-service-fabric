@@ -98,11 +98,6 @@ def run(payload: Path, supplied: Path, output: Path) -> dict:
                          "source": str(source), "snapshot": record["identity"]})
             built = build.execute(root, source, descriptor, payload, trusted=trust, cli=supplied / "bin/latent")
             runtime = stage_runtime(root, supplied)
-            # Normal supported retention configuration, set before the node's
-            # first start. No host clock, receipt store or node code is replaced.
-            node = decode(paths.read(root / "runtime/config", "node.json"))
-            node.setdefault("retention", {})["terminalTtlMillis"] = TTL_MILLIS
-            state.atomic(root / "runtime/config", "node.json", node)
             connection = backend.Backend({"kind": "linux", "python": str(Path(sys.executable).resolve()),
                 "helper": str(supplied / "helper.pyz"), "helperSha256": runtime["helperSha256"]}, root.name, root)
             connections[side] = connection
@@ -169,6 +164,16 @@ def run(payload: Path, supplied: Path, output: Path) -> dict:
         report["retainedA"] = retained
         report["phase"] = "actual-receipt-expiry"
         root, connection = roots["a"], connections["a"]
+        # The deliberate short receipt lifetime belongs only to this late
+        # expiry case. Ordinary overlap/restart scenarios on both nodes must
+        # finish first, so one workspace's receipts cannot expire while the
+        # other workspace is being exercised. Apply the supported setting
+        # while A is stopped and keep B's ordinary retention unchanged.
+        report["stopABeforeExpiry"] = clean_stop(connection, root)
+        node = decode(paths.read(root / "runtime/config", "node.json"))
+        node.setdefault("retention", {})["terminalTtlMillis"] = TTL_MILLIS
+        state.atomic(root / "runtime/config", "node.json", node)
+        report["restartAForExpiry"] = connection.call("up", {}, timeout=180)
         arguments = {"service": "greeting", "contract": "examples:greeting/api@1.0.0", "function": "read",
                      "mediaType": "application/vnd.latent.wit-values.v1+json",
                      "input": base64.b64encode(encode(["dev-only-a", False])).decode()}
