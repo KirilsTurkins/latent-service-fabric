@@ -108,7 +108,7 @@ fn transaction_owned_signatures_fit_the_existing_http_preparation_profile() {
         .unwrap();
         let report = serde_json::json!({ "schemaVersion": "latent.transaction-contract.preparation.v1",
             "evidenceKind": "engine-type-plan", "preparationQualified": true, "runtimeExecutionQualified": false,
-            "engineVersion": "48.0.3", "profile": profile, "operations": operations, "asynchronous": asynchronous,
+            "engineVersion": "48.0.4", "profile": profile, "operations": operations, "asynchronous": asynchronous,
             "plans": records });
         let bytes = serde_json::to_vec_pretty(&report).unwrap();
         assert!(bytes.len() <= 32 * 1024);

@@ -1,4 +1,30 @@
-# Wasmtime 48.0.3 security baseline
+# Wasmtime 48.0.4 security baseline
+
+## October 3, 2026 update
+
+The current RustSec scan rejects Wasmtime 48.0.3 for
+[RUSTSEC-2026-0325](https://rustsec.org/advisories/RUSTSEC-2026-0325.html),
+[RUSTSEC-2026-0326](https://rustsec.org/advisories/RUSTSEC-2026-0326.html) and
+[RUSTSEC-2026-0327](https://rustsec.org/advisories/RUSTSEC-2026-0327.html).
+The dependency now pins
+[Wasmtime 48.0.4](https://github.com/bytecodealliance/wasmtime/releases/tag/v48.0.4),
+with matching Cranelift 0.135.4 internals. Upstream's wasm-tools requirement is
+`^0.254.1`; Cargo resolves the published 0.254.2 packages. Both Cargo-generated
+locks retain the same reviewed registry package identities.
+
+The published upstream source is
+`d02ffd202850007ea953224f589a569e8830eb6c`. Its root license bytes and digest
+are unchanged. The native license policy advances the donor revision and package
+versions together. The explicit features, minimum Rust 1.95.0, compiler sandbox,
+authenticated copying loader, host WIT bytes and resource limits are unchanged.
+Current v4 and Phase 4 descriptors update only their engine metadata; historical
+v2/v3 descriptors and dated execution receipts retain their original bytes.
+
+Rebuild the node and isolated compiler together, update the approved compiler
+digest, and prepare new native and renderer artifacts. A source update or an old
+48.0.3 execution receipt does not qualify the new engine. Fresh advisory scans,
+minimum-Rust checks, strict Clippy and runtime regressions remain required.
+No advisory exception or reduced security gate accompanies this update.
 
 ## September 29, 2026 update
 

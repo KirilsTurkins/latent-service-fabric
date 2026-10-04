@@ -136,7 +136,7 @@ fn renderer_requirements_are_explicit_immutable_and_separate_from_host_capacity(
     );
     let installed = RuntimeCompatibilityProfile::new(
         "wasmtime",
-        "48.0.3",
+        "48.0.4",
         "x86_64-unknown-linux-gnu",
         &["x86_64.sse2"],
         u64::MAX,
