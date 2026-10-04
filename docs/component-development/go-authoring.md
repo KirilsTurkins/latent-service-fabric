@@ -1,5 +1,8 @@
 # Go compiler and runtime profile
 
+For reviewed module updates and frontend test/watch, use
+[Go application module inputs](go-library-authoring.md).
+
 For application development, use [Creating a capsule](creating-a-capsule.md).
 For normal application module locks, private proxies, local replacements and offline inputs, see [Captured Go modules](go-dependencies.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,
