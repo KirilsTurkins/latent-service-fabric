@@ -267,7 +267,12 @@ fn target_service_projection_preserves_identity_and_original_identifier_and_page
     oversized.target.service = ServiceId("t".repeat(513));
     let owner = journal.begin(&oversized).unwrap();
     let failure = journal
-        .inspect_tree(&oversized.target.tenant, &oversized.activation_id, 128, None)
+        .inspect_tree(
+            &oversized.target.tenant,
+            &oversized.activation_id,
+            128,
+            None,
+        )
         .unwrap_err();
     assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
     assert_eq!(failure.message, "activation-tree-identifier-limit");
