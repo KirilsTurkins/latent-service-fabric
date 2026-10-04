@@ -1,5 +1,5 @@
-// Actual released binaries, newly generated test keys and immutable frontend
-// outputs in a clean Ubuntu frontend container. No Rust toolchain or fixture.
+// Actual native binaries, newly generated test keys and immutable frontend
+// outputs. Released qualification also requires a clean toolchain-free host.
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, realpath, readFile, access} from 'node:fs/promises';
 import path from 'node:path';
@@ -96,8 +96,12 @@ export async function qualify(cli, destination, node, releasedCli = true) {
   }
   const live = node ? JSON.parse((await run(await realpath('/usr/bin/python3'),
     [path.join(path.dirname(fileURLToPath(import.meta.url)), 'qualification_native.py'), '--work', work,
-      '--cli', cli, '--node', node], work, 120)).toString('utf8')) : null;
-  if (node) assert.equal(live?.passed, true, JSON.stringify(live));
+      '--cli', cli, '--node', node, ...(releasedCli ? ['--released-node'] : [])], work, 120)).toString('utf8')) : null;
+  if (node) {
+    assert.equal(live?.passed, true, JSON.stringify(live));
+    assert.equal(live.actualReleasedNode, releasedCli);
+    assert.equal(live.actualCurrentNode, !releasedCli);
+  }
   const receipt = {schemaVersion: 'latent.frontend.release-qualification.v1', passed: true, actualReleasedCli: releasedCli,
     rustToolchainAvailable: releasedCli ? false : null, uid: process.getuid(), node: process.version, examples: rows,
     nativeWorkflow: live, testIdentityOnly: true, cloudQualified: false};
