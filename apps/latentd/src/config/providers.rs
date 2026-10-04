@@ -21,6 +21,9 @@ mod events;
 pub use events::EventInstallation;
 #[path = "providers/http.rs"]
 mod http;
+#[path = "providers/http_streaming.rs"]
+mod http_streaming;
+pub use http_streaming::HttpStreamingInstallation;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -28,6 +31,8 @@ pub struct ConfiguredProviders {
     pub format_version: u32,
     #[serde(default, deserialize_with = "present")]
     pub http: Option<HttpInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub http_streaming: Option<HttpStreamingInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub blob: Option<BlobInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -137,6 +142,9 @@ pub(super) fn derive(
     if let Some(http) = &providers.http {
         http.validate_installation()?;
     }
+    if let Some(http) = &providers.http_streaming {
+        http.validate_installation(providers)?;
+    }
     if let Some(blob) = &providers.blob {
         blob.identity.validate()?;
         if !token(&blob.namespace, 128) {
@@ -154,6 +162,7 @@ pub(super) fn derive(
         secrets.validate()?;
         for identity in [
             providers.http.as_ref().map(|v| &v.identity),
+            providers.http_streaming.as_ref().map(|v| &v.identity),
             providers.blob.as_ref().map(|v| &v.identity),
         ]
         .into_iter()
@@ -210,6 +219,7 @@ impl ProviderIdentity {
 impl ConfiguredProviders {
     fn no_installations(&self) -> bool {
         self.http.is_none()
+            && self.http_streaming.is_none()
             && self.blob.is_none()
             && self.secrets.is_none()
             && self.metrics.is_none()
@@ -236,6 +246,7 @@ impl ConfiguredProviders {
             }
             let installed = match binding.contract.as_str() {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
+                "latent:http/streaming@0.3.0" => self.http_streaming.as_ref().map(|http| &http.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
                 "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
                 "latent:telemetry/custom@0.1.0" => self.metrics.as_ref().map(|v| &v.identity),
@@ -282,6 +293,9 @@ impl ConfiguredProviders {
 }
 
 pub(super) fn anchor(config: &mut ConfiguredProviders, parent: &Path) -> Result<(), PlatformError> {
+    if let Some(http) = &mut config.http_streaming {
+        http.anchor(parent)?;
+    }
     if let Some(events) = &mut config.events {
         events.anchor(parent)?;
     }
@@ -301,6 +315,33 @@ pub(super) fn anchor(config: &mut ConfiguredProviders, parent: &Path) -> Result<
                 .canonicalize()
                 .map_err(|_| invalid("configurationPath"))?
                 .join(&*directory);
+        }
+    }
+    Ok(())
+}
+
+fn validate_http_credentials(
+    configuration: &latent_http::HttpProviderConfig,
+    has_directory: bool,
+    credentials: &Vec<ProviderSecretFile>,
+    field: &'static str,
+) -> Result<(), PlatformError> {
+    if credentials.capacity() > 8 || has_directory == credentials.is_empty() {
+        return Err(invalid(field));
+    }
+    for (index, credential) in credentials.iter().enumerate() {
+        if !token(&credential.reference, 128)
+            || !token(&credential.file, 128)
+            || credential.file.contains(['/', '\\', ':'])
+            || matches!(credential.file.as_str(), "." | "..")
+            || !token(&credential.header, 64)
+            || credential.destination >= configuration.destinations.len()
+            || credentials[..index].iter().any(|previous| {
+                previous.reference == credential.reference
+                    || previous.destination == credential.destination
+            })
+        {
+            return Err(invalid(field));
         }
     }
     Ok(())

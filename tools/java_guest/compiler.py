@@ -4,6 +4,7 @@ import json
 import importlib.util
 import os
 from pathlib import Path
+import re
 import shutil
 import sys
 import time
@@ -46,11 +47,39 @@ def sdk_snapshot(root: Path) -> dict:
         "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
         "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
         "tools/teavm_platform.py", "tools/capture.py")}
-    for folder in ("runtime", "templates", "wit"):
+    for folder in ("runtime", "templates", "wit", "resources"):
+        if folder == "resources" and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
     if (root / "server").exists():
         files.update({"server/" + name: data for name, data in snapshot(root / "server").items()})
     return dict(sorted(files.items()))
+
+
+def stage_sdk_service(target: Path, name: str, data: bytes) -> None:
+    """Merge explicit trusted SDK extensions without replacing another profile."""
+    if (not name.startswith("META-INF/services/org.teavm.") or len(data) > 16384
+            or target.is_symlink()):
+        raise ValueError("invalid Java SDK compiler service")
+    def entries(raw: bytes) -> list[str]:
+        providers = []
+        for line in raw.decode("utf-8").splitlines():
+            provider = line.split("#", 1)[0].strip()
+            if not provider: continue
+            if (len(providers) >= 128 or not re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", provider)
+                    or provider in providers):
+                raise ValueError("invalid Java SDK compiler service provider")
+            providers.append(provider)
+        if not providers: raise ValueError("empty Java SDK compiler service")
+        return providers
+    previous = entries(read_file(target, 16384)) if target.exists() else []
+    selected = entries(data)
+    if set(previous) & set(selected): raise ValueError("duplicate Java SDK compiler service provider")
+    providers = [*previous, *selected]
+    payload = ("\n".join(providers) + "\n").encode("utf-8")
+    if len(providers) > 128 or len(payload) > 16384:
+        raise ValueError("Java SDK compiler service merge limit")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(payload)
 
 
 def tool_inventory(roots: dict[str, Path]) -> bytes:
@@ -187,8 +216,6 @@ class Compiler:
             target = project / "captured-application/jars" / f"{index:04d}.jar"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(read_file(jar, 64 * 1024 * 1024))
-        if application_resources is not None:
-            shutil.copytree(application_resources, project / "captured-application/resources")
         # Never let Gradle silently select or provision an unobserved JDK. This
         # generated private property file is part of this source-bound recipe.
         (project / "gradle.properties").write_text(
@@ -197,6 +224,11 @@ class Compiler:
             "org.gradle.java.installations.fromEnv=JAVA_HOME\n", encoding="utf-8")
         java_root = project / "src/main/java"
         shutil.copytree(self.sdk / "runtime/dev", java_root / "dev")
+        resource_profile = None
+        if application_resources is not None:
+            from tools.java_guest import resources
+            resource_profile = resources.stage(self.sdk, application_resources, project)
+            write_json(destination / "resource-profile.json", resource_profile)
         if server_profile:
             # Only captured SDK extension code executes in the compiler JVM.
             # Application JAR/service policy stays separate and denied by the
@@ -207,7 +239,8 @@ class Compiler:
                     if target.exists(): raise ValueError("server SDK overrides runtime source")
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_bytes(data)
-            shutil.copytree(self.sdk / "server/services", project / "src/main/resources")
+            for name, data in snapshot(self.sdk / "server/services").items():
+                stage_sdk_service(project / "src/main/resources" / name, name, data)
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         for path in sorted(sources.rglob("*.java")):
@@ -248,8 +281,12 @@ class Compiler:
         expected = wit_surface(json.loads(self.run("expected-wit", "wasm-tools", "component", "wit", staged, "--json")), world)
         actual = wit_surface(json.loads(self.run("compiled-wit", "wasm-tools", "component", "wit", component, "--json")))
         if actual != expected: raise ValueError("compiled Java component changed authoritative WIT semantics")
-        return component, {"bindings": bindings, "dependencies": retained, "platform": adaptation,
-                           "semanticSurfaceDigest": digest(canonical(actual))}
+        details = {"bindings": bindings, "dependencies": retained, "platform": adaptation,
+                   "semanticSurfaceDigest": digest(canonical(actual))}
+        if resource_profile is not None:
+            resources.recheck(application_resources, resource_profile)
+            details["immutableResources"] = resource_profile
+        return component, details
 
     def check_unchanged(self):
         if self.original_sdk != sdk_snapshot(self.sdk): raise ValueError("Java SDK changed during build")
