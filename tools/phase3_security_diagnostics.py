@@ -65,6 +65,7 @@ CHILD_REASONS = {
     "ReleaseLifecycleBusy": "release-lifecycle-busy",
     "ReleaseLifecycleUnavailable": "release-lifecycle-unavailable",
     "AdmissionRepositoryRetired": "admission-repository-retired",
+    "FixtureCurrentnessBusy": "fixture-busy",
     "Unclassified": "unclassified",
 }
 CHILD_STAGES = {"Start": "start", "InvocationError": "invocation-error", "ChildFailure": "child-failure"}
