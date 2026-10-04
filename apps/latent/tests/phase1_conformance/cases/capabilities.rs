@@ -12,8 +12,6 @@ pub async fn context(harness: &mut Harness, evidence: &mut Evidence, package: &P
         ("context-third", "third"),
     ] {
         let visible = format!("guest.visible={marker}");
-        let root = format!("root-{marker}");
-        let parent = format!("parent-{marker}");
         let response = harness
             .invoke(
                 package,
@@ -21,10 +19,6 @@ pub async fn context(harness: &mut Harness, evidence: &mut Evidence, package: &P
                 id,
                 &empty,
                 &[
-                    "--root-activation-id",
-                    &root,
-                    "--parent-activation-id",
-                    &parent,
                     "--metadata",
                     &visible,
                     "--metadata",
@@ -41,8 +35,8 @@ pub async fn context(harness: &mut Harness, evidence: &mut Evidence, package: &P
         let output = payload(&response);
         let value = &output[0];
         assert_eq!(value["activation"], id);
-        assert_eq!(value["root"], root);
-        assert_eq!(value["parent"], json!({"some":parent}));
+        assert_eq!(value["root"], id);
+        assert_eq!(value["parent"], json!({"none":null}));
         assert_eq!(value["principal"]["subject"], "tests-operator");
         assert_eq!(value["principal"]["tenant"], json!({"some":"tests"}));
         assert_eq!(value["principal"]["claims"], json!([]));
@@ -74,11 +68,38 @@ pub async fn context(harness: &mut Harness, evidence: &mut Evidence, package: &P
         snapshots[1]["response"]["data"]["metadata"]["cell-id"],
         first_cell
     );
+    // Root ingress cannot assert ancestry. Only the host-owned local-service
+    // broker may attach a child to an existing activation lineage.
+    let forged = harness
+        .invoke(
+            package,
+            "snapshot",
+            "context-forged-lineage",
+            &empty,
+            &[
+                "--root-activation-id",
+                "forged-root",
+                "--parent-activation-id",
+                "forged-parent",
+            ],
+            (4, "platform-error"),
+        )
+        .await;
+    assert_eq!(forged["error"]["code"], "permission-denied");
+    let absent = harness
+        .call(
+            "tests",
+            &["activation", "get", "context-forged-lineage"],
+            6,
+            "not-found",
+        )
+        .await;
     let live = live_budget(harness, package, &empty).await;
     let clocks = clocks(harness, package, &empty).await;
     evidence.passed(
         harness,
-        json!({"snapshots":snapshots,"liveBudget":live,"clocks":clocks}),
+        json!({"snapshots":snapshots,"forgedLineage":{"rejected":forged,"unregistered":absent},
+            "liveBudget":live,"clocks":clocks}),
     );
 }
 
