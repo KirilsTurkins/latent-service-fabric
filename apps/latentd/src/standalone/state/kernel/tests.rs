@@ -172,7 +172,10 @@ async fn fresh_protected_kernel_creates_checkpoint_before_one_paused_same_owner_
         ExternalCheckpoint::decode(&std::fs::read(fixture.checkpoint()).unwrap()).unwrap();
     assert_eq!(checkpoint.identity(), &fixture.settings.store_identity);
     assert!(checkpoint.dispatch_owner_epoch() > 0);
-    assert_eq!(adapter_clock.observe(), kernel.clock.observe());
+    let observed = adapter_clock.observe();
+    let expected = kernel.clock.observe();
+    assert_eq!(observed.unix_millis, expected.unix_millis);
+    assert_eq!(observed.continuity_proven, expected.continuity_proven);
     // The returned clock binds once. A second owner/clock cannot replace it.
     assert!(adapter_clock.bind(Arc::clone(&kernel.clock)).is_err());
     let deadline = fixture.clock.monotonic_now() + Duration::from_secs(20);

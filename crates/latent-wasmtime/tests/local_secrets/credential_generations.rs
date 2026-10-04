@@ -3,6 +3,7 @@ use latent_capabilities::broker::secrets::{
     CredentialScope, ProviderCredential, TlsCredentialDestination, TlsCredentialProtocol,
     TlsCredentialScope, TlsProviderCredential,
 };
+use latent_secrets::config::SecretPurpose;
 
 fn http_scope() -> CredentialScope {
     CredentialScope {
