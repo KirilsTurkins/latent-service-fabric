@@ -115,6 +115,97 @@ impl ProtectedRoot {
         Ok(kind)
     }
 
+    /// Require a physically empty retained root, including no old empty file,
+    /// owner lock, link, directory or interrupted initialization entry. This
+    /// bounded descriptor walk grants no permission to create or replace a
+    /// file; exclusive creation and later exact named-inode fences remain
+    /// mandatory. Run on the admitted fixed control worker.
+    pub fn check_empty(&self) -> Result<(), PlatformError> {
+        self.check_exact_mutable_files(&[])
+    }
+
+    /// Require exactly these at most four actual mutable-file fences in this
+    /// root. Unknown names refuse immediately; every expected file must be
+    /// present once and still pass its original type/owner/link/inode checks.
+    /// A fresh directory descriptor gives each bounded walk its own offset.
+    /// Directory content changes during the walk refuse conservatively.
+    pub fn check_exact_mutable_files(
+        &self,
+        expected: &[&ProtectedMutableFile],
+    ) -> Result<(), PlatformError> {
+        if expected.len() > 4
+            || expected.iter().enumerate().any(|(index, fence)| {
+                fence.root_identity != self.identity()
+                    || expected[..index].iter().any(|old| old.name == fence.name)
+            })
+        {
+            return Err(state_failure());
+        }
+        self.check().map_err(|_| state_failure())?;
+        for fence in expected {
+            self.check_mutable_file(fence)?;
+        }
+        let directory = File::from(
+            fs::openat(
+                &self.chain.last().expect("root anchor").file,
+                ".",
+                platform::directory_flags(),
+                Mode::empty(),
+            )
+            .map_err(|_| state_failure())?,
+        );
+        platform::validate_directory(&directory, self.uid, self.gid)
+            .map_err(|()| state_failure())?;
+        let before = directory.metadata().map_err(|_| state_failure())?;
+        if (before.dev(), before.ino()) != self.identity() {
+            return Err(state_failure());
+        }
+        let mut scratch = [std::mem::MaybeUninit::<u8>::uninit(); 1024];
+        let mut entries = fs::RawDir::new(&directory, &mut scratch);
+        let mut seen = [false; 4];
+        let mut count = 0;
+        while let Some(entry) = entries.next() {
+            let entry = entry.map_err(|_| state_failure())?;
+            count += 1;
+            if count > expected.len() + 2 {
+                return Err(state_failure());
+            }
+            let name = entry.file_name().to_bytes();
+            if name == b"." || name == b".." {
+                continue;
+            }
+            let index = expected
+                .iter()
+                .position(|fence| fence.name.as_bytes() == name)
+                .ok_or_else(state_failure)?;
+            if seen[index] || entry.ino() != expected[index].file_identity.1 {
+                return Err(state_failure());
+            }
+            seen[index] = true;
+        }
+        if seen[..expected.len()].iter().any(|present| !present) {
+            return Err(state_failure());
+        }
+        let after = directory.metadata().map_err(|_| state_failure())?;
+        let contents = |metadata: &std::fs::Metadata| {
+            (
+                metadata.dev(),
+                metadata.ino(),
+                metadata.mtime(),
+                metadata.mtime_nsec(),
+                metadata.ctime(),
+                metadata.ctime_nsec(),
+            )
+        };
+        if contents(&before) != contents(&after) {
+            return Err(state_failure());
+        }
+        for fence in expected {
+            self.check_mutable_file(fence)?;
+        }
+        self.check().map_err(|_| state_failure())
+    }
+
     /// Open an explicitly configured engine file without truncation, following
     /// links or creating parent directories. Initialization is create-new only;
     /// an existing failed database is never replaced by an empty descriptor.

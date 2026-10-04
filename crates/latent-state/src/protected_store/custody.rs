@@ -155,6 +155,25 @@ impl ProtectedStoreOwner {
         })
     }
 
+    /// Closed restore producer needs original physical source fences as well
+    /// as the engine. This remains private to these typed storage wrappers.
+    pub(super) fn with_physical_custody<T: Send + 'static, R: Send + 'static>(
+        &self,
+        custody: ProtectedStoreCustody<T>,
+        bytes: u64,
+        operation: impl FnOnce(&T, &PhysicalStore) -> Result<R, StoreError> + Send + 'static,
+    ) -> Result<ProtectedCustodyJob<T, R>, ProtectedStoreError> {
+        if custody.io.get().is_none() || bytes > custody.maximum_job_bytes {
+            return Err(ProtectedStoreError::InvalidConfiguration);
+        }
+        self.with_custody_io(
+            custody,
+            StoreIoKind::RecoveryWrite,
+            bytes,
+            move |io, store| operation(io.get().expect("initialized custody resource"), store),
+        )
+    }
+
     fn with_custody_io<T: Send + 'static, R: Send + 'static>(
         &self,
         custody: ProtectedStoreCustody<T>,

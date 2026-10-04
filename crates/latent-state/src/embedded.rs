@@ -605,6 +605,33 @@ impl ReadView {
         Ok(value.map(|v| v.value().to_vec()))
     }
 
+    /// Closed recovery readback comparison. The native row stays borrowed from
+    /// this finite view, avoiding a second maximum-size owned value beside the
+    /// authenticated stream row. No transaction/guard/native slice escapes.
+    pub(crate) fn matches_row(&self, key: &RowKey, expected: &[u8]) -> Result<bool, StoreError> {
+        if self.opened.elapsed() > self.limits.maximum_view_age {
+            return Err(StoreError::SnapshotExpired);
+        }
+        if expected.len() > self.limits.maximum_value_bytes {
+            return Err(StoreError::Capacity);
+        }
+        let key = key.encoded(self.limits)?;
+        let table = self
+            .tx
+            .as_ref()
+            .expect("retained view")
+            .open_table(ROWS)
+            .map_err(|_| StoreError::Corrupt)?;
+        let value = table.get(key.as_slice()).map_err(|_| StoreError::Corrupt)?;
+        if value
+            .as_ref()
+            .is_some_and(|row| row.value().len() > self.limits.maximum_value_bytes)
+        {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(value.is_some_and(|row| row.value() == expected))
+    }
+
     /// One indexed existence observation without copying an arbitrary stored
     /// value. Setup uses this to refuse legacy business rows under its fixed
     /// buffer reservation, rather than loading a whole first record.

@@ -37,7 +37,7 @@ pub struct ProtectedSnapshotConfig {
 }
 
 impl ProtectedSnapshotConfig {
-    fn validate(&self) -> Result<u64, ProtectedStoreError> {
+    pub(super) fn validate(&self) -> Result<u64, ProtectedStoreError> {
         if !self.root.is_absolute()
             || self.root.as_os_str().is_empty()
             || self.root.as_os_str().len() > 4096
@@ -78,7 +78,8 @@ impl ProtectedSnapshot {
 
 #[must_use = "waiter loss detaches accepted export; it cannot release physical custody"]
 pub struct ProtectedSnapshotJob {
-    inner: ProtectedCustodyJob<Option<SnapshotFile>, Result<SnapshotReceipt, SnapshotError>>,
+    pub(super) inner:
+        ProtectedCustodyJob<Option<SnapshotFile>, Result<SnapshotReceipt, SnapshotError>>,
 }
 
 impl Future for ProtectedSnapshotJob {

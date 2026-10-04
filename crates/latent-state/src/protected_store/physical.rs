@@ -7,6 +7,8 @@ use crate::embedded::{
 };
 use crate::store_io::{StoreIoError, StoreIoKind};
 
+mod restore;
+
 #[derive(Default)]
 pub(super) struct FailureLatch {
     error: Mutex<Option<ProtectedStoreError>>,
@@ -42,9 +44,12 @@ impl FailureLatch {
 pub(super) struct PhysicalStore {
     engine: Option<EmbeddedStore>,
     pub(super) status: StoreFileStatus,
-    failure: Arc<FailureLatch>,
+    pub(super) failure: Arc<FailureLatch>,
     pub(super) dispatcher: Arc<std::sync::atomic::AtomicBool>,
     pub(super) fresh_identity: Mutex<Option<crate::store_identity::StoreIdentity>>,
+    // Only the strict empty-root/exclusive-leaf restore initializer sets this.
+    // Logical emptiness or ordinary restart never recreates physical Fresh.
+    pub(super) fresh_root: Option<(u64, u64)>,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     root: latent_protected_files::ProtectedRoot,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -132,6 +137,7 @@ impl PhysicalStore {
             // Set only after the real identity apply and both original root
             // fences above succeeded. Reopen equality never grants Fresh.
             fresh_identity: Mutex::new(fresh_identity),
+            fresh_root: None,
             root,
             fence,
             root_lock,
@@ -187,6 +193,12 @@ impl PhysicalStore {
     fn check_root(&self) -> Result<(), ProtectedStoreError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
+            if self.fresh_root.is_some() {
+                return self
+                    .root
+                    .check_exact_mutable_files(&[&self.lock_fence, &self.fence])
+                    .map_err(|_| ProtectedStoreError::UnsafeRoot);
+            }
             self.root
                 .check_mutable_file(&self.lock_fence)
                 .map_err(|_| ProtectedStoreError::UnsafeRoot)?;

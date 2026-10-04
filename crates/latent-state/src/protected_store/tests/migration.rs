@@ -14,6 +14,7 @@ use std::sync::atomic::Ordering;
 
 mod fixture;
 mod restore_response;
+mod restore_stage;
 mod resume;
 
 fn restore_input(

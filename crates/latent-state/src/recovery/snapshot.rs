@@ -503,6 +503,43 @@ fn inspect_stream(
     validate_row: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
     expected: Option<&SnapshotManifest>,
 ) -> Result<SnapshotReceipt, StoreError> {
+    inspect_stream_with_visit(input, deadline, validate_row, expected, &mut |_, _| Ok(()))
+}
+
+/// The caller has already fully inspected this SAME protected input. Rows move
+/// into one bounded private destination transaction without cloning a 4 MiB
+/// value or accumulating an archive-wide batch. Final digest/readback equality
+/// is mandatory; any changed/truncated stream leaves staging unusable.
+pub(crate) fn visit_snapshot_rows(
+    input: &mut (impl Read + Seek),
+    expected: &SnapshotReceipt,
+    deadline: Instant,
+    mut validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+    mut visit: impl FnMut(RowKey, Vec<u8>) -> Result<(), StoreError>,
+) -> Result<(), StoreError> {
+    input
+        .seek(SeekFrom::Start(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    let actual = inspect_stream_with_visit(
+        input,
+        deadline,
+        &mut validate_row,
+        Some(&expected.manifest),
+        &mut visit,
+    )?;
+    if &actual != expected {
+        return Err(StoreError::Corrupt);
+    }
+    Ok(())
+}
+
+fn inspect_stream_with_visit(
+    input: &mut impl Read,
+    deadline: Instant,
+    validate_row: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+    expected: Option<&SnapshotManifest>,
+    visit: &mut impl FnMut(RowKey, Vec<u8>) -> Result<(), StoreError>,
+) -> Result<SnapshotReceipt, StoreError> {
     validate_deadline(deadline)?;
     let mut histories = expected
         .map(|manifest| {
@@ -612,7 +649,8 @@ fn inspect_stream(
         rows_hash.update(&rest);
         rows_hash.update(&key.key);
         rows_hash.update(&value);
-        previous = Some((family, key.key));
+        previous = Some((family, key.key.clone()));
+        visit(key, value)?;
     }
     if histories
         .iter()

@@ -38,11 +38,15 @@ pub(super) struct Setup {
     config: ProtectedStoreConfig,
     clock: Arc<dyn ActivationClock>,
     response_bytes: u64,
+    work_bytes: u64,
     pub owner: ProtectedStoreOwner,
     pub native: NativeCapacityOwner,
     original: Option<Arc<NativeReservation>>,
     pub seed: Arc<Seed>,
 }
+
+mod restore;
+pub(super) use restore::StageOwners;
 
 pub(super) struct Observed {
     pub progress: Option<Vec<u8>>,
@@ -249,13 +253,31 @@ impl Setup {
     }
 
     pub fn with_response(clock: Arc<dyn ActivationClock>, response_bytes: u64) -> Self {
+        Self::with_admission(clock, response_bytes, 9 * 1024 * 1024)
+    }
+
+    /// Selected restore input at ORIGINAL admission, within the unchanged
+    /// 32 MiB Recovery partition. Existing migration fixtures keep 9 MiB work.
+    pub fn with_restore_destination() -> Self {
+        Self::with_admission(
+            Arc::new(SystemActivationClock),
+            RESTORE_INPUT_RESPONSE_BYTES,
+            16 * 1024 * 1024,
+        )
+    }
+
+    fn with_admission(
+        clock: Arc<dyn ActivationClock>,
+        response_bytes: u64,
+        work_bytes: u64,
+    ) -> Self {
         let (root, config) = super::super::fixture();
         let (target, _) = super::super::fixture();
         let owner = start(&config, Arc::clone(&clock));
         let native =
             NativeCapacityOwner::with_clock(Default::default(), Arc::clone(&clock)).unwrap();
         owner.bind_native_capacity(&native).unwrap();
-        let original = reserve(&native, clock.as_ref(), response_bytes);
+        let original = reserve(&native, clock.as_ref(), response_bytes, work_bytes);
         let seed = wait(
             owner
                 .with_store_retaining(
@@ -293,6 +315,7 @@ impl Setup {
             config,
             clock,
             response_bytes,
+            work_bytes,
             owner,
             native,
             original: Some(original),
@@ -497,6 +520,7 @@ impl Setup {
             mut config,
             clock,
             response_bytes,
+            work_bytes,
             native,
             original,
             seed,
@@ -508,13 +532,14 @@ impl Setup {
         config.create_if_missing = false;
         let owner = start(&config, Arc::clone(&clock));
         owner.bind_native_capacity(&native).unwrap();
-        let original = reserve(&native, clock.as_ref(), response_bytes);
+        let original = reserve(&native, clock.as_ref(), response_bytes, work_bytes);
         Self {
             root,
             target,
             config,
             clock,
             response_bytes,
+            work_bytes,
             owner,
             native,
             original: Some(original),
@@ -545,6 +570,7 @@ fn reserve(
     native: &NativeCapacityOwner,
     clock: &dyn ActivationClock,
     response_bytes: u64,
+    work_bytes: u64,
 ) -> Arc<NativeReservation> {
     Arc::new(
         native
@@ -552,7 +578,7 @@ fn reserve(
                 NativeAdmissionClass::Recovery,
                 NativeReservationRequest {
                     request_bytes: 8192,
-                    work_bytes: 9 * 1024 * 1024,
+                    work_bytes,
                     response_bytes,
                 },
                 clock.monotonic_now() + Duration::from_secs(30),

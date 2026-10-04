@@ -23,10 +23,16 @@ pub(in crate::protected_store) struct SnapshotFile {
     fence: ProtectedMutableFile,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     root: ProtectedRoot,
+    // Native staged engine/checkpoint destruction precedes all installed owner
+    // pins and the SAME original permit, including detached accepted work.
+    pub(in crate::protected_store) restore:
+        Mutex<crate::protected_store::restore_stage::RestoreStaging>,
     current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
     migration_owner: Mutex<Option<Arc<dyn crate::protected_store::AggregateMigrationOwners>>>,
     restore_input_owner: Mutex<Option<Arc<dyn crate::protected_store::RestoreInputOwners>>>,
     receipt_owner: Mutex<Option<Arc<dyn super::SnapshotReceiptOwners>>>,
+    pub(in crate::protected_store) restore_owner:
+        Mutex<Option<Arc<dyn crate::protected_store::RestoreStageOwners>>>,
     original: Arc<NativeReservation>,
 }
 
@@ -42,7 +48,7 @@ impl SnapshotFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    pub(super) fn open_existing(
+    pub(in crate::protected_store) fn open_existing(
         store: &PhysicalStore,
         config: ProtectedSnapshotConfig,
         original: Arc<NativeReservation>,
@@ -84,10 +90,12 @@ impl SnapshotFile {
             file,
             fence,
             root,
+            restore: Mutex::new(crate::protected_store::restore_stage::RestoreStaging::default()),
             current,
             migration_owner: Mutex::new(None),
             restore_input_owner: Mutex::new(None),
             receipt_owner: Mutex::new(None),
+            restore_owner: Mutex::new(None),
             original,
         };
         result.check().map_err(|_| SnapshotError::Output)?;
@@ -105,7 +113,7 @@ impl SnapshotFile {
     }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
-    pub(super) fn open_existing(
+    pub(in crate::protected_store) fn open_existing(
         _: &PhysicalStore,
         _: ProtectedSnapshotConfig,
         _: Arc<NativeReservation>,
@@ -149,6 +157,36 @@ impl SnapshotFile {
         &self,
     ) -> Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync> {
         Arc::clone(&self.current)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn is_separate_root(
+        &self,
+        other: &ProtectedRoot,
+    ) -> Result<bool, StoreError> {
+        self.check().map_err(|_| StoreError::Unavailable)?;
+        self.root
+            .is_separate_from(other)
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn is_separate_store(
+        &self,
+        store: &PhysicalStore,
+    ) -> Result<bool, StoreError> {
+        self.check().map_err(|_| StoreError::Unavailable)?;
+        store
+            .is_separate_root(&self.root)
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    pub(in crate::protected_store) fn is_separate_store(
+        &self,
+        _: &PhysicalStore,
+    ) -> Result<bool, StoreError> {
+        Err(StoreError::UnsupportedFormat)
     }
 
     pub(super) fn retain_receipt_owner(

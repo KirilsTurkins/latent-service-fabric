@@ -329,3 +329,42 @@ through the original tenant owner. Its archive receipt and access callbacks are
 controlled metadata fixtures; it does not prove Fresh restore, authenticated
 management or the essential real remote-success/older-Pending campaign. Native
 compilation, execution and strict Clippy remain pending the resource hold.
+
+The closed `open_snapshot_for_restore`/`stage_restore` source path now prepays
+the configured destination cache, private root/checkpoint metadata and the same
+8 MiB scratch on the original Recovery Native and fixed IO ledgers. An admission
+that cannot fit refuses before destination IO. The existing 8 MiB restore reply
+owner, absolute deadline and 16 MiB IO ceiling remain. The successful controlled
+fixture explicitly selects a 4 MiB destination cache and 16 MiB original work at
+initial admission; existing migration fixtures keep their original 9 MiB work.
+This is a selected configuration, never an implicit default-cache reduction or
+late reservation extension.
+
+The private producer proves separate empty protected roots by their retained
+descriptors, rejects every pre-existing entry, creates owner and engine leaves
+exclusively and rechecks the exact finite directory inventory. Only that actual
+identity initializer can consume its private once-only Fresh witness to create
+the separate checkpoint. Existing empty files, ordinary logical initialization
+or a matching persisted identity cannot authorize this restore producer.
+
+The importer rereads the same authenticated snapshot file, applies finite row
+envelopes on the original worker and verifies every retained row again. It
+preserves business IDs and bytes, installs a fresh store identity, advances each
+reviewed recovery history and keeps namespaces paused. Archived mutable tenant,
+retention and dispatcher controls cannot be imported as authority; installed
+current owners must supply their replacements and validate actual linked rows,
+quotas, artifacts and runtime. The durable Staging guard precedes imported rows;
+completed import remains ReconciliationRequired. Every physical writer and the
+final checkpoint require the original role, audit, controls, clock and consumed
+affine native fence. Partial private work has no successful receipt or automatic
+retry. Dropped waiters keep the destination engine, files and original charged
+owners until actual fixed-worker destruction.
+
+Ten additive registered Native source schedules cover exact root inventory,
+actual empty/unknown/link refusal, separate checkpoint freshness, paused import,
+each current owner at import and seal, ignored affine acceptance, initial cache
+pressure and detached physical retirement. They have not yet been compiled or
+executed. Their linked state/quota reviewers are controlled installed fixtures;
+they do not qualify actual host role/audit/clock integration, all effect/result
+families, live-engine adoption, explicit effect reconciliation/resume or the
+essential remote-success/older-Pending campaign. Those remain acceptance work.

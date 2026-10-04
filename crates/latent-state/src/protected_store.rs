@@ -11,6 +11,7 @@ mod operation;
 mod physical;
 mod resource;
 mod restore_input;
+mod restore_stage;
 mod resume;
 mod snapshot;
 mod startup;
@@ -30,6 +31,11 @@ pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStore
 pub use restore_input::{
     ProtectedRestoreInput, ProtectedRestoreInputJob, ProtectedRestoreWindowFrame,
     RestoreInputOwners, RestoreInputPrecondition, RestoreReadFence, RESTORE_INPUT_RESPONSE_BYTES,
+};
+pub use restore_stage::{
+    ProtectedRestoreDestinationConfig, ProtectedRestoreStageJob, RestoreRowDisposition,
+    RestoreStageControls, RestoreStageError, RestoreStageOwners, RestoreStageReceipt,
+    RestoreStageRequest, RestoreWriteFence, RestoreWriteKind,
 };
 pub use resume::{
     MigrationResumeCommitFence, ProtectedMigrationResumeJob, ProtectedMigrationResumeReceipt,
