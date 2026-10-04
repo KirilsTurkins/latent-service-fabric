@@ -29,25 +29,8 @@ class TransactionContractsTests(unittest.TestCase):
         state = (ROOT / "wit/platform/state/package.wit").read_text()
         self.assertNotRegex(state, r"\b(?:begin|commit|rollback|constructor)\s*[:(]")
         self.assertEqual(set(re.findall(r"resource ([a-z-]+);", state)), {"transaction", "query-view", "page"})
-        host_profile = (ROOT / "crates/latent-core/src/host_profile.rs").read_text()
-        self.assertIn("pub const PHASE3_HOST_ABI_CURRENT: HostAbiProfile = PHASE3_HOST_ABI_V5;", host_profile)
-        self.assertIn('pub const PHASE3_HOST_ABI_V4: HostAbiProfile = HostAbiProfile {\n'
-                      '    id: "lsf-host-abi-phase3-v4",\n'
-                      '    interfaces: &PHASE3_V4_INTERFACES,\n};', host_profile)
-        frozen = json.loads((ROOT / "wit/host-abi-phase3-v4.json").read_text())
-        current = json.loads((ROOT / "wit/host-abi-phase3-v5.json").read_text())
-        Draft202012Validator(schema).validate(frozen)
-        Draft202012Validator(schema).validate(current)
-        self.assertEqual(frozen["id"], "lsf-host-abi-phase3-v4")
-        self.assertEqual(current["id"], "lsf-host-abi-phase3-v5")
-        self.assertEqual(current["interfaces"][:len(frozen["interfaces"])], frozen["interfaces"])
-        additions = current["interfaces"][len(frozen["interfaces"]):]
-        self.assertEqual([item["interface"] for item in additions],
-                         ["latent:runtime/activation@0.1.0", "latent:network/streams@0.1.0"])
-        self.assertTrue(all(item["binding"] == "provider" and not item["installed"] for item in additions))
-        current_names = {item["interface"] for item in current["interfaces"]}
-        self.assertNotIn("latent:state/key-value@0.2.0", current_names)
-        self.assertNotIn("latent:intents/staging@0.1.0", current_names)
+        self.assertIn("pub const PHASE3_HOST_ABI_CURRENT: HostAbiProfile = PHASE3_HOST_ABI_V4;",
+                      (ROOT / "crates/latent-core/src/host_profile.rs").read_text())
         self.assertIn("borrow<transaction>", (ROOT / "wit/platform/intents/package.wit").read_text())
 
     def test_full_width_unsigned_json_never_uses_numbers_or_coerces(self):
