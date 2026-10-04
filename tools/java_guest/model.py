@@ -47,9 +47,18 @@ class Graph:
         self.export_ids = set()
         for direction in ("imports", "exports"):
             for key, item in self.world[direction].items():
-                if set(item) != {"interface"} or set(item["interface"]) != {"id"}:
+                if set(item) != {"interface"} or not isinstance(item["interface"], dict):
                     raise ValueError("Java profile requires named interface imports and exports")
-                interface_id = item["interface"]["id"]
+                reference = item["interface"]
+                if not {"id"} <= reference.keys() <= {"id", "docs"}:
+                    raise ValueError("Java profile requires named interface imports and exports")
+                documentation = reference.get("docs")
+                if documentation is not None and (not isinstance(documentation, dict)
+                        or set(documentation) != {"contents"} or not isinstance(documentation["contents"], str)):
+                    raise ValueError("invalid WIT interface documentation")
+                interface_id = reference["id"]
+                if type(interface_id) is not int or not 0 <= interface_id < len(data["interfaces"]):
+                    raise ValueError("invalid WIT interface reference")
                 interface = data["interfaces"][interface_id]
                 if interface.get("package") is None or not interface.get("name"):
                     raise ValueError("Java profile rejects anonymous inline WIT interfaces")
@@ -160,6 +169,25 @@ class Graph:
             prefix = camel(self.data["packages"][item["package"]]["name"].split("@")[0] + "/" + item["name"])
         return prefix + camel(definition["name"])
 
+    def resource_index(self, index: int) -> int:
+        """A use-alias refers to one original imported owner/destructor.
+
+        Never synthesize an alias resource class or normalize a foreign shape.
+        Parser aliases are acyclic, but keep this walk independently bounded.
+        """
+        seen = set()
+        for _ in range(33):
+            if type(index) is not int or not 0 <= index < len(self.types) or index in seen:
+                raise ValueError("invalid or recursive Java resource alias")
+            seen.add(index)
+            kind = self.types[index]["kind"]
+            if kind == "resource":
+                return index
+            if not isinstance(kind, dict) or set(kind) != {"type"}:
+                raise ValueError("Java handle must resolve to a resource")
+            index = kind["type"]
+        raise ValueError("Java resource alias depth limit")
+
     def jtype(self, value) -> str:
         if value is None: return "Unit"
         if isinstance(value, str):
@@ -173,7 +201,7 @@ class Graph:
         if form == "list": return "byte[]" if body == "u8" else "java.util.List<" + self.jtype(body) + ">"
         if form == "option": return "Option<" + self.jtype(body) + ">"
         if form == "result": return "Result<" + self.jtype(body["ok"]) + ", " + self.jtype(body["err"]) + ">"
-        if form == "handle": return self.name(next(iter(body.values())))
+        if form == "handle": return self.name(self.resource_index(next(iter(body.values()))))
         if form == "flags": return "Unsigned64"
         return self.name(value)
 

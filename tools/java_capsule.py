@@ -38,6 +38,9 @@ def parser() -> argparse.ArgumentParser:
     remove = commands.add_parser('remove', help='Remove one exact declaration; retain old reviewed bytes until fresh review')
     remove.add_argument('project', type=Path)
     remove.add_argument('identity')
+    server = commands.add_parser("new-server", help="Create an ordinary HttpServer source project with an automatic finite profile")
+    server.add_argument("directory", type=Path)
+    server.add_argument("--name")
     resolve_ = commands.add_parser("resolve", help="Explicitly resolve Maven/local JAR closure and emit a reviewable lock candidate")
     resolve_.add_argument("project", type=Path)
     resolve_.add_argument("--candidate", type=Path, required=True)
@@ -78,7 +81,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    authoring = args.command not in {'new', 'build'}
+    authoring = args.command not in {'new', 'build', 'new-server'}
     try:
         if authoring:
             from tools import java_dependency_authoring as dependencies
@@ -127,6 +130,9 @@ def main(argv: list[str] | None = None) -> int:
             print(canonical({**result, 'receipt': str(receipt)}).decode())
             return 0
         elif args.command == "new": result = create(args.directory, args.template, args.name)
+        elif args.command == "new-server":
+            from tools.java_server_project import create_server
+            result = create_server(args.directory, args.name)
         else:
             if args.wasi_sdk is None: raise ValueError("provide --wasi-sdk or WASI_SDK_PATH for pinned WASI-SDK 29")
             selection = {}

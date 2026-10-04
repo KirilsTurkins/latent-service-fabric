@@ -6,27 +6,37 @@ import tempfile
 import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_resources
+from tools import guest_compatibility_build, guest_dependency_inputs, guest_resources
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
     read_file, read_json, snapshot, write_json)
 from tools.dotnet_guest.compiler import Compiler
 from tools.dotnet_guest.project import validate
+from tools.application_dependencies import prepare, verify_inputs
+from tools.application_dependency_approval import request as execution_request, approve as approve_execution
+from tools.build_snapshot import canonical
 
 BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
-    "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/runtime.py", "tools/dotnet_guest/composer.py",
+    "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/entropy.py", "tools/dotnet_guest/outputs.py",
+    "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
     "examples/echo-contract/deployment.json")
+RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_store.py', 'tools/application_dependency_tools.py',
+           'tools/application_dependency_approval.py', 'tools/captured_compiler_isolation.py', 'tools/dotnet_compiler_isolation.py',
+           'tools/dotnet_application_dependencies.py')
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
+RECIPE += guest_dependency_inputs.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
-          *, tools: Path, offline: bool = False):
+          *, tools: Path, offline: bool = False, executable_approval: str | None = None):
     project_path, output, tools = map(checked_path, (project_path, output, tools))
+    project_path = guest_dependency_inputs.application_root(project_path, 'dotnet')
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
         raise ValueError("build output must be outside source or beneath its target directory")
@@ -36,7 +46,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     commands, stage = None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
-        files = snapshot(project_path)
+        observed = guest_dependency_inputs.capture_source(project_path, 'dotnet')
+        files = observed.files
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
@@ -67,14 +78,40 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             surface = read_json(derived / "surface.json")
             recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             stage = "compiler-inputs"
-            compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline)
+            verified = verify_inputs(observed.dependency_root, 'dotnet')
+            compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None)
             write_json(output / "compiler-inputs.json", compiler.before)
             materials.extend(compiler.materials)
+            write_json(output / 'compiler-patches-preparation.json', {'formatVersion': 1, 'patches': compiler.compiler_patches})
+            patch_identity = read_file(output / 'compiler-patches-preparation.json')
+            materials.append({'name': 'compiler-patch-preparation', 'digest': digest(patch_identity), 'size': len(patch_identity)})
+            closure, approval = None, None
+            if verified is not None:
+                write_json(output / 'compiler-containment.json', compiler.isolation.receipt)
+                if verified.lock['executableInputs']:
+                    stage = 'executable-input-approval'
+                    executable_recipe = digest(canonical({'recipe': digest(recipe), 'sourceSnapshot': digest(source_inputs)}))
+                    requested = execution_request(verified, compiler.isolation, executable_recipe)
+                    write_json(output / 'executable-input-approval-request.json', {
+                        'formatVersion': 1, 'identity': digest(canonical(requested)), 'specification': requested})
+                    if executable_approval is None:
+                        raise ValueError('captured NuGet targets/analyzers require the exact retained executable-input approval identity')
+                    approval = approve_execution(verified, compiler.isolation, executable_recipe, executable_approval)
+                closure = prepare(observed.dependency_root, work, output, 'dotnet', execution_approval=approval)
+                compiler.application_closure = closure
+                compiler.executable_approval = approval
             stage = "compile"
             write_json(output / "diagnostic-source.json", {
                 "capturedSource": str(temporary / "compiled/project/src"),
                 "requestedSource": str(project_path / "src")})
             component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
+            # Native ports are derived inside the owned compiler workspace.
+            # Bind the completed derivation and real linker observation rather
+            # than the initial composer-only receipt written before approval.
+            write_json(output / 'compiler-patches.json', {'formatVersion': 1, 'patches': compiler.compiler_patches})
+            patch_identity = read_file(output / 'compiler-patches.json')
+            materials.append({'name': 'automatic-compiler-patches', 'digest': digest(patch_identity), 'size': len(patch_identity)})
+            materials.extend(compiler.generated_materials)
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             write_json(output / "bindings.json", generated)
@@ -87,11 +124,24 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                 commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
-            if snapshot(project_path) != files or snapshot(work) != files:
+            observed.check_unchanged()
+            if snapshot(work, exclude=('dependencies', 'application-vendor') if closure else ()) != files:
                 raise ValueError("captured C# project changed during compilation")
             if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe:
                 raise ValueError("C# authoring recipe changed during compilation")
             compiler.check_unchanged()
+            if closure:
+                closure.check_unchanged()
+                write_json(output / 'compiler-namespace-arguments.json', {'formatVersion': 1,
+                    'commands': compiler.isolation.executed_arguments(), 'format': 'nul-separated-bubblewrap-options-v1'})
+                for name in ('application-dependencies.json', 'compiler-containment.json', 'nuget-build-inputs.json', 'compiler-namespace-arguments.json'):
+                    data = read_file(output / name, 32 * 1024 * 1024)
+                    materials.append({'name': name.removesuffix('.json'), 'digest': digest(data), 'size': len(data)})
+                if approval:
+                    from tools.dotnet_guest.outputs import verify as verify_generated
+                    verify_generated(output, approval, source=temporary / 'compiled/generator-outputs')
+                    data = read_file(output / 'executable-input-outputs.json', 32 * 1024 * 1024)
+                    materials.append({'name': 'executable-input-outputs', 'digest': digest(data), 'size': len(data)})
             if any(file_identity(path, name) not in materials for name, path in paths.items()):
                 raise ValueError("packaging binary changed during compilation")
             package_files = {"package-source.json": read_file(output / "package-source.json")}
@@ -102,6 +152,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
                 ("source-snapshot", source_inputs), ("build-recipe", recipe), ("package-inputs", package_inventory),
                 ("compiler-inputs", read_file(output / "compiler-inputs.json", 32 * 1024 * 1024)),
+                ("runtime-profile", read_file(output / "runtime-profile.json", 4 * 1024 * 1024)),
+                ("closed-runtime-coverage", read_file(output / "closed-runtime-coverage.json", 4 * 1024 * 1024)),
                 ("dependency-lock", files["vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json"]),
                 ("toolchain-config", files["global.json"])))
             finished = int(time.time())
@@ -126,4 +178,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": commands.records if commands else []})
         guest_compatibility_build.failure_report(output, "dotnet", stage)
+        try:
+            from tools.dotnet_guest.compatibility import retain_failure
+            retain_failure(output)
+        except Exception:
+            pass  # A failed diagnostic must preserve the original compiler error.
         raise

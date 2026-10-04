@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/stage_runtime_wit.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve current-development Phase 4 type-use selectors and all aggregate runtime world exclusions including V5 activation; no staging overlap guard or historical case removed.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "234ad8fe192e3ebb0c859c69c0b2688828a0cb63f97c7382b28ba5fe6b80063a"
-}
+{"kind":"owner","path":"tools/stage_runtime_wit.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve the exact SemVer tokenizer, both type-use dependency regression schedules and closed source/platform overlap guards; runtime-world prefix exclusion retains all original V5 worlds and the separate Phase4 world.","schemaVersion":"latent.ci.contracts.v1","sha256":"4cd0556eecc99f1a2d06a9220ece2476dba1ab9e586c2872d11da6904e7afaee"}

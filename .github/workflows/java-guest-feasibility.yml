@@ -5,12 +5,14 @@ on:
     branches: [development]
     paths:
       - 'sdk/java-guest/**'
+      - 'sdk/transaction-contract/**'
       - 'tools/**'
       - 'apps/**'
       - 'crates/**'
       - 'schemas/**'
       - 'Cargo.*'
       - 'docs/component-development/java-authoring.md'
+      - 'docs/component-development/java-httpserver.md'
       - '.github/workflows/java-guest-feasibility.yml'
       - 'wit/platform/**'
   workflow_dispatch:
@@ -67,6 +69,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
+      - name: Compare server AST and exchange semantics with the pinned JDK
+        run: python3 tools/qualify_java_server_analysis.py --output "$RUNNER_TEMP/java-server-native"
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -100,6 +104,8 @@ jobs:
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
+      - name: Qualify proposed transaction shapes and shared imported owners with the maintained Java compiler
+        run: python3 tools/qualify_transaction_contracts.py --language java --output "$RUNNER_TEMP/transaction-contract-java" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Compile real Java sources and retain the first incompatible stage
         run: python3 sdk/java-guest/tools/feasibility.py --output "$RUNNER_TEMP/java-guest-feasibility" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Execute Java code, exceptions and GC without claiming node admission
@@ -135,6 +141,21 @@ jobs:
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/transaction-contract-java/report.json
+            ${{ runner.temp }}/transaction-contract-java/source.tar.gz
+            ${{ runner.temp }}/transaction-contract-java/component.wit
+            ${{ runner.temp }}/transaction-contract-java/preparation.json
+            ${{ runner.temp }}/transaction-contract-java/compiler-inputs.json
+            ${{ runner.temp }}/transaction-contract-java/logs/**
+            ${{ runner.temp }}/transaction-contract-java/compiler/*.log
+            ${{ runner.temp }}/transaction-contract-java/compiler/*.command.json
+            ${{ runner.temp }}/transaction-contract-java/compiled/component.wasm
+            ${{ runner.temp }}/transaction-contract-java/compiled/component.wit
+            ${{ runner.temp }}/transaction-contract-java/compiled/bindings/**
+            ${{ runner.temp }}/transaction-contract-java/compiled/generated/**
+            ${{ runner.temp }}/transaction-contract-java/compiled/raw-generated-bindings.json
+            ${{ runner.temp }}/transaction-contract-java/bindings/**
+            ${{ runner.temp }}/transaction-contract-java/component.wasm
             ${{ runner.temp }}/java-guest-feasibility/report.json
             ${{ runner.temp }}/java-guest-feasibility/*.candidate.json
             ${{ runner.temp }}/java-guest-feasibility/*.candidate.xml
@@ -150,6 +171,7 @@ jobs:
             ${{ runner.temp }}/java-guest-bindings/compiler/*.command.json
             ${{ runner.temp }}/java-guest-bindings/compiler-inputs.json
             ${{ runner.temp }}/java-guest-bindings/runtime-probe.log
+            ${{ runner.temp }}/java-server-native/**
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
             ${{ runner.temp }}/java-activation-fibers/FIBERS-COMPILE.json
@@ -172,7 +194,11 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/compiler-logs/**
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/logs/**
             ${{ runner.temp }}/java-capsule-authoring/node/**
+            ${{ runner.temp }}/java-capsule-authoring/node-my-server/**
+            ${{ runner.temp }}/java-capsule-authoring/node-my-server-helper/**
             ${{ runner.temp }}/java-capsule-authoring/releases/**
+            ${{ runner.temp }}/java-capsule-authoring/release-my-server/**
+            ${{ runner.temp }}/java-capsule-authoring/release-my-server-helper/**
             ${{ runner.temp }}/java-capsule-authoring/guide/guide.json
             ${{ runner.temp }}/java-capsule-authoring/guide/guide.sh
             ${{ runner.temp }}/java-capsule-authoring/guide/logs/**

@@ -12,6 +12,62 @@ from unittest.mock import Mock, patch
 from tools.dev_workflow import common, effects, journal, node_cancellation, node_fixtures, node_test_profile, policy_operations, scenarios, state
 
 
+class JournalRpcObservations(unittest.TestCase):
+    def test_closed_rpc_failure_codes_preserve_uncertain_original_operation_without_replay(self):
+        for code in ("cancelled", "unknown", "deadline-exceeded", "unimplemented", "internal",
+                     "unavailable", "data-loss", "out-of-range", "resource-exhausted",
+                     "invalid-argument", "not-found", "already-exists", "permission-denied",
+                     "unauthenticated", "failed-precondition", "aborted"):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                controller = journal.Journal(root, "node", "tenant")
+                response = {"category": "transport-failure", "outcomeKnown": False, "requestDispatched": True,
+                    "error": {"code": "rpc-failed", "grpcCode": code, "message": "private-fixture-value"},
+                    "data": {"secret": "private-fixture-value"}}
+                execute = Mock(return_value=response)
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    controller.execute("release", {"source": "source"}, execute)
+                original = controller.read()["pending"]
+                observed = state.load(root, "last-operation-observation.json")
+                self.assertEqual(observed["grpcCode"], code)
+                self.assertEqual((observed["id"], observed["kind"]), (original["id"], "release"))
+                self.assertFalse(observed["outcomeKnown"])
+                self.assertEqual(set(observed), {"id", "kind", "resultSha256", "outcomeKnown",
+                    "requestDispatched", "category", "code", "grpcCode"})
+                self.assertNotIn(b"private-fixture-value", (root / "last-operation-observation.json").read_bytes())
+                with self.assertRaisesRegex(common.DevError, "recover-original-operation-before-new-mutation"):
+                    controller.execute("release", {"source": "source"}, execute)
+                execute.assert_called_once()
+                self.assertEqual(controller.read()["pending"], original)
+
+    def test_unknown_malformed_and_non_string_rpc_codes_are_not_retained_or_coerced(self):
+        for code in (None, True, 3, {}, [], "ok", "UNAVAILABLE", "deadline_exceeded",
+                     " unavailable", "unavailable\nprivate-fixture-value", "x" * 101):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                controller = journal.Journal(root, "node", "tenant")
+                operation = controller.begin("release", {"source": "source"})
+                response = {"category": "transport-failure", "outcomeKnown": False,
+                    "error": {"code": "rpc-failed", "grpcCode": code}}
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    controller.finish(operation, response)
+                self.assertNotIn("grpcCode", state.load(root, "last-operation-observation.json"))
+                self.assertEqual(controller.read()["pending"], operation)
+
+    def test_rpc_token_requires_transport_failure_and_the_generic_rpc_public_code(self):
+        for category, code in (("platform-failure", "rpc-failed"), ("not-found", "rpc-failed"),
+                               ("success", "rpc-failed"), ("transport-failure", "rpc-timeout")):
+            with self.subTest(category=category, code=code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                controller = journal.Journal(root, "node", "tenant")
+                operation = controller.begin("release", {"source": "source"})
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    controller.finish(operation, {"category": category, "outcomeKnown": False,
+                        "error": {"code": code, "grpcCode": "deadline-exceeded"}})
+                self.assertNotIn("grpcCode", state.load(root, "last-operation-observation.json"))
+                self.assertEqual(controller.read()["pending"], operation)
+
+
 class RunningCancellation(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -781,6 +837,82 @@ class InvocationRecovery(unittest.TestCase):
                 service.wait_for_restart_lease(root, config)
             self.assertGreaterEqual(clock[0], 15)
             self.assertEqual((root / "lifecycle.json").read_bytes(), original)
+
+
+class ScenarioCurrentnessObservations(unittest.TestCase):
+    @staticmethod
+    def result(details, *, category="platform-failure"):
+        return {"category": category, "outcomeKnown": True,
+                "error": {"code": "unavailable", "details": details, "message": "private-remote-message"},
+                "data": {"activationId": "original-operation"}}
+
+    @staticmethod
+    def report(result):
+        case = {"id": "retained", "service": "examples", "contract": "examples:caller/service@1.0.0",
+                "function": "greet", "mediaType": "application/json", "timeoutMillis": 1000,
+                "required": True, "fixtures": [], "expect": {"category": "success"}}
+        adapter = Mock(return_value=result)
+        report = scenarios.run_prepared([(case, b"[]", None)], {}, "node", adapter, {})
+        adapter.assert_called_once()
+        return report
+
+    def test_failed_scenario_retains_each_closed_reason_without_replaying_or_passing(self):
+        for reason in sorted(scenarios.ADMISSION_CURRENTNESS_REASONS):
+            with self.subTest(reason=reason):
+                report = self.report(self.result([{"kind": "admission.currentness",
+                    "fields": {"reason": reason, "credential": "private-fixture-secret"},
+                    "message": "private-provider-body"}]))
+                self.assertFalse(report["passed"])
+                observed = report["results"][0]
+                self.assertEqual(observed["status"], "failed")
+                self.assertEqual(observed["category"], "platform-failure")
+                self.assertEqual(observed["platformCode"], "unavailable")
+                self.assertTrue(observed["outcomeKnown"])
+                self.assertEqual(observed["activationId"], "original-operation")
+                self.assertEqual(observed["timeoutMillis"], 1000)
+                self.assertEqual(observed["admissionReason"], reason)
+                self.assertNotIn("private-", common.encode(report).decode())
+
+    def test_unknown_private_and_non_string_reasons_never_enter_reports(self):
+        class Private:
+            def __str__(self):
+                raise AssertionError("remote object must not be coerced")
+        for reason in ("private-" + "x" * 65536, "unknown", None, 1, True, ["admission-authority-busy"],
+                       {"reason": "admission-authority-busy"}, Private()):
+            with self.subTest(kind=type(reason).__name__):
+                report = self.report(self.result([{"kind": "admission.currentness", "fields": {"reason": reason}}]))
+                self.assertNotIn("admissionReason", report["results"][0])
+                self.assertNotIn("private-", common.encode(report).decode())
+
+    def test_wrong_categories_kinds_and_shapes_do_not_add_currentness_diagnostics(self):
+        valid = {"kind": "admission.currentness", "fields": {"reason": "admission-authority-busy"}}
+        for category in ("success", "declared-error", "transport-failure"):
+            self.assertNotIn("admissionReason", self.report(self.result([valid], category=category))["results"][0])
+        for details in (None, {}, "private-remote-message", [None, 1, "private-body"],
+                        [{"kind": "private-kind", "fields": valid["fields"]}],
+                        [{"kind": "admission.currentness", "fields": "private-fields"}]):
+            self.assertNotIn("admissionReason", self.report(self.result(details))["results"][0])
+
+    def test_examined_detail_count_is_bounded(self):
+        valid = {"kind": "admission.currentness", "fields": {"reason": "admission-authority-busy"}}
+        unknown = {"kind": "private-kind", "fields": {"reason": "private-body"}}
+        beyond = self.report(self.result([unknown] * 16 + [valid]))
+        self.assertNotIn("admissionReason", beyond["results"][0])
+        last = self.report(self.result([unknown] * 15 + [valid]))
+        self.assertEqual(last["results"][0]["admissionReason"], "admission-authority-busy")
+
+    def test_conflicting_public_reasons_are_not_reported_as_one_cause(self):
+        details = [{"kind": "admission.currentness", "fields": {"reason": reason}}
+                   for reason in ("admission-authority-busy", "admission-owner-retired")]
+        self.assertNotIn("admissionReason", self.report(self.result(details))["results"][0])
+        repeated = self.report(self.result([details[0], details[0]]))
+        self.assertEqual(repeated["results"][0]["admissionReason"], "admission-authority-busy")
+
+    def test_diagnostic_vocabulary_matches_authoritative_closed_public_reasons(self):
+        import re
+        source = (Path(__file__).resolve().parents[2] / "crates/latent-core/src/error.rs").read_text()
+        declaration = source.split("pub const ADMISSION_CURRENTNESS_REASONS: &[&str] = &[", 1)[1].split("];", 1)[0]
+        self.assertEqual(scenarios.ADMISSION_CURRENTNESS_REASONS, set(re.findall(r'"([a-z-]+)"', declaration)))
 
 
 if __name__ == "__main__":

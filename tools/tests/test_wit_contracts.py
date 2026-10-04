@@ -195,6 +195,26 @@ class WitContractTests(unittest.TestCase):
                     [("latent:state", version)],
                 )
 
+    def test_same_label_profiles_stage_distinct_exact_worlds_and_dependencies(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            staged = {}
+            for world, count in (("runtime-phase3-activation", 14), ("runtime-phase4", 6)):
+                source = ROOT / "wit/platform" / world
+                destination = root / world
+                stager.stage(destination, source)
+                self.assertEqual((destination / "world.wit").read_bytes(), (source / "world.wit").read_bytes())
+                names = {path.name for path in (destination / "deps").iterdir()}
+                self.assertEqual(len(names), count)
+                self.assertFalse(any(name == "runtime" or name.startswith("runtime-") for name in names))
+                staged[world] = names
+            self.assertTrue({"activation-runtime", "network"} <= staged["runtime-phase3-activation"])
+            self.assertFalse({"state", "intents"} & staged["runtime-phase3-activation"])
+            self.assertTrue({"state", "intents"} <= staged["runtime-phase4"])
+            self.assertFalse({"activation-runtime", "network", "http-v3", "blob-v2"} & staged["runtime-phase4"])
+            self.assertNotEqual((root / "runtime-phase3-activation/world.wit").read_bytes(),
+                                (root / "runtime-phase4/world.wit").read_bytes())
+
     def test_versioned_runtime_worlds_stage_only_their_selected_package_versions(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             for world, http, events, count in [("runtime", "http", "events", 12),
@@ -213,6 +233,26 @@ class WitContractTests(unittest.TestCase):
                 self.assertEqual("blob-v2" in deps, world in {"runtime-phase3-blobs", "runtime-phase3-activation"})
                 self.assertEqual("activation-runtime" in deps, world == "runtime-phase3-activation")
                 self.assertEqual("network" in deps, world == "runtime-phase3-activation")
+
+    def test_versioned_type_uses_stage_exact_transitive_state_dependency(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "intents"
+            stager.stage(destination, ROOT / "wit/platform/intents")
+            self.assertEqual(
+                (destination / "deps/state/package.wit").read_bytes(),
+                (ROOT / "wit/platform/state/package.wit").read_bytes(),
+            )
+            self.assertEqual({path.name for path in (destination / "deps").iterdir()}, {"state"})
+            source = Path(temporary) / "consumer"
+            source.mkdir()
+            (source / "package.wit").write_text(
+                "package fixture:uses@1.0.0;\ninterface api {\n"
+                "use latent:intents/staging@0.1.0.{intent};\n}\n",
+                encoding="utf-8",
+            )
+            stager.stage(Path(temporary) / "transitive", source)
+            deps = Path(temporary) / "transitive/deps"
+            self.assertEqual({path.name for path in deps.iterdir()}, {"intents", "state"})
 
 
 if __name__ == "__main__":
