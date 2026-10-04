@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/stage_runtime_wit.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Stage exact SemVer dependencies for WIT use-type syntax; the dot before the type list is a separator and cannot extend an imported version. Preserve the exact SemVer tokenizer and both type-use dependency regression schedules; the selector separator never extends a package version and closed staging remains enforced. Preserve exact package identities already captured under application-selected dependency directories; retain missing transitive staging and authoritative parser rejection.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828"
-}
+{"kind":"owner","path":"tools/stage_runtime_wit.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve the original owner review boundary; review the actual merged captured source inputs, profile and compiler recipe.","schemaVersion":"latent.ci.contracts.v1","sha256":"a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828"}

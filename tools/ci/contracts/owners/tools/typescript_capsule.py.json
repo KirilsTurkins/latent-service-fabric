@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/typescript_capsule.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Select the captured transaction template explicitly without changing stateless cases",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e2b1bc4d08bc7e94c235f2e7af632261adbda34fc1eb061e826c5be2d4f33ef6"
-}
+{"kind":"owner","path":"tools/typescript_capsule.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve the original owner review boundary; review the actual merged captured source inputs, profile and compiler recipe.","schemaVersion":"latent.ci.contracts.v1","sha256":"e2b1bc4d08bc7e94c235f2e7af632261adbda34fc1eb061e826c5be2d4f33ef6"}
