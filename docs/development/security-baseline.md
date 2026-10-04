@@ -246,17 +246,28 @@ are accepted. Expiry is exclusive at UTC midnight, with a maximum 30-day lifetim
 expired or future entries fail every invocation, including docs-only scope checks.
 An expired unused entry must still be removed or explicitly re-reviewed.
 
-The initial `self-repository` compatibility exception expired on 2026-10-03.
-The coordinator now uses the supported `$/` reusable workflow reference. A fresh
-pinned zizmor scan found no workflow finding, so that obsolete exception was
-removed. The 16 exact noncredential secret-rule occurrences were individually
-re-reviewed on 2026-10-03: one labelled API-journal digest, one synthetic denied
-environment-variable name and fourteen original preparation lookup identities.
-The fresh pinned scanner results, private match comparisons and original producer
-review are recorded in the [evidence ledger](security-baseline-evidence.md).
-These re-reviewed entries expire exclusively on **2026-10-17** and retain their
-original full-content, location and rule fingerprints. All scanner canaries still
-apply. No dependency exception, general digest exemption or path allowlist exists.
+The original compatibility waiver for the job-level local RustSec call expired
+on 2026-10-03. The workflow and pin validator now support the recommended `$/`
+reference; pinned zizmor 1.30.1 reports no workflow findings, so the obsolete
+`self-repository` exception has been removed.
+
+The sixteen content and location bound Gitleaks false positives were each
+re-reviewed on 2026-10-03, using the pinned 8.30.1 scanner and private field
+comparisons. They cover one explicitly labelled historical API-journal SHA256,
+fourteen digest suffixes of the recorded noncredential preparation lookup
+handles, and the synthetic denied environment-variable name. Every complete
+file matches the earlier reviewed historical bytes. The recorded producer hashes
+artifact metadata, engine/target identity and a process-local epoch; the lookup
+handle does not authorize execution. No raw match or credential was retained or
+probed. The [individual review](security-exception-review-2026-10-03.json) records
+the exact fingerprints, locations and file identities.
+
+These sixteen exact exceptions expire at UTC midnight on **2026-10-17**. Changed
+content, locations, rules and other occurrences continue to fail; the original
+30-day maximum, exclusive expiry and future-created guards remain unchanged.
+No dependency exception, general digest exemption or path allowlist exists.
+The independent pinned scanner and original canary review is also retained in
+the [evidence ledger](security-baseline-evidence.md).
 
 ## Settings and operator commands
 

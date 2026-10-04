@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_capsules.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all Java authoring stages and feature-gated former-profile reproduction; review the added bounded buffered-web response grammar and authoritative table vectors.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "169bd341f815b93c3011ad7e8c828dcd7bf854ecb2bb422440bbedd937addcf4"
-}
+{"kind":"owner","path":"tools/qualify_java_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain all Java authoring stages and feature-gated former-profile reproduction; review the added bounded buffered-web response grammar and authoritative table vectors. Incoming development review: Retain all standalone, SDK ownership, signed-node and printed-guide checks; add ordinary Java HttpServer projects built outside the checkout, signed only after completed builds and exercised through authenticated route tooling on the normal shared listener, with bounded HTTP/TLS, failure and original-ledger retirement evidence.","schemaVersion":"latent.ci.contracts.v1","sha256":"0d6827be98d677b1538fb09b275ed59ea087580525a5dfc996288ea9ebf21fad"}

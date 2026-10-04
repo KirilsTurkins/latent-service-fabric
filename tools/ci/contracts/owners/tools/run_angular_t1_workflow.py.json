@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/run_angular_t1_workflow.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain every original Angular/runtime workflow command, limit and acceptance check; hand off the existing bounded currentness timer under the original preparation deadline, and add closed failed-call/physical-owner observations without a success or cleanup inference.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1ff0b3ed7ae37d38f9748372ef51a53142c74e8ed1fdb40e164ed02645760bd1"
-}
+{"kind":"owner","path":"tools/run_angular_t1_workflow.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain every original Angular/runtime workflow command, limit and acceptance check; hand off the existing bounded currentness timer under the original preparation deadline, and add closed failed-call/physical-owner observations without a success or cleanup inference.","schemaVersion":"latent.ci.contracts.v1","sha256":"1ff0b3ed7ae37d38f9748372ef51a53142c74e8ed1fdb40e164ed02645760bd1"}
