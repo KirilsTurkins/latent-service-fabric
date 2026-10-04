@@ -115,9 +115,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
                 profile_selection = {"activation_profile": True} if runtime_profile == ACTIVATION_PROFILE else {}
+                if server_plan is not None:
+                    profile_selection.update(server_profile=True, server_bridge=automatic_bridge)
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
-                    application_classpath=application_jars, server_profile=server_plan is not None,
-                    server_bridge=automatic_bridge, **profile_selection)
+                    application_classpath=application_jars, **profile_selection)
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
                 write_json(output / "bindings.json", generated)
