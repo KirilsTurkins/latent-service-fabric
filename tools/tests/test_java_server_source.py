@@ -27,6 +27,25 @@ class JavaServerSource(unittest.TestCase):
             self.assertIn(b"export latent:web/application@0.1.0", files["wit/world.wit"])
             self.assertNotIn(b"package latent:", files["wit/world.wit"])
 
+    def test_new_server_cli_preserves_ordinary_creation_and_dependency_authoring_dispatch(self):
+        import contextlib
+        import io
+        from tools import java_capsule
+
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / 'outside-server'
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                result = java_capsule.main(['new-server', str(project), '--name', 'independent-cli-server'])
+            self.assertEqual(result, 0, stderr.getvalue())
+            files = snapshot(project)
+            selected, _lock, _pins = validate(files)
+            self.assertEqual(selected['server']['profile'], java.PROFILE_ID)
+            self.assertIn(b'import com.sun.net.httpserver.HttpServer;', files['src/dev/latent/app/Server.java'])
+            self.assertNotIn('src/dev/latent/app/Capsule.java', files)
+            parsed = java_capsule.parser().parse_args(['add', str(project), 'outside:pure:1.0.0'])
+            self.assertEqual((parsed.command, parsed.coordinate), ('add', 'outside:pure:1.0.0'))
+
     def test_selection_rejects_code_expressions_reserved_owners_and_unknown_profiles(self):
         valid = {"profile": java.PROFILE_ID, "entryPoint": "independent.RouterServer"}
         self.assertEqual(java.selection(valid), valid)
