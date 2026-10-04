@@ -199,8 +199,9 @@ class Compiler:
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
         for package in dependencies(wit, self.platform): copy_wit_tree(package, staged / "deps" / package.name)
-        bindings = generate(self.run, staged, world, destination / "bindings", activation_profile=activation_profile)
-        second = generate(self.run, staged, world, destination / "bindings-check", activation_profile=activation_profile)
+        binding_selection = {"activation_profile": True} if activation_profile else {}
+        bindings = generate(self.run, staged, world, destination / "bindings", **binding_selection)
+        second = generate(self.run, staged, world, destination / "bindings-check", **binding_selection)
         if second != bindings: raise ValueError("nondeterministic Java WIT bindings")
         project = destination / "project"
         project.mkdir()
