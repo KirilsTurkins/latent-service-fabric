@@ -7,9 +7,11 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_resources, guest_dependency_inputs, guest_authoring_frontend, java_server_source, server_source
+from tools import (guest_compatibility_build, guest_resources, guest_dependency_inputs,
+                   guest_authoring_frontend, java_server_source, server_source)
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
+from tools.java_guest import resources as java_resources
 from tools.application_dependencies import prepare
 from tools.java_application_dependencies import classpath
 from tools.java_resource_artifacts import packaged_resources
@@ -22,8 +24,9 @@ ACTIVATION_PROFILE = "teavm-activation-fibers-v1"
 RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py",
           "tools/application_dependency_tools.py", "tools/java_application_dependencies.py", "tools/java_dependency_resolution.py",
+          "tools/java_registry_tls.py",
           "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
-          "tools/java_guest/compiler.py", "tools/java_guest/class_origin.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
+          "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/class_origin.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
@@ -92,6 +95,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 application_jars, application_inventory = classpath(closure, temporary / "selected-application-jars")
                 write_json(output / "java-classpath.json", application_inventory)
                 additional_resources, resource_sources = packaged_resources(closure, application_inventory, files)
+                application_resources = java_resources.materialize({**files, **resource_sources}, source_inputs,
+                    additional_resources, temporary / "selected-application-resources")
                 stage = "compiler-inputs"
                 cache_selection = {"read_only_cache": read_only_cache} if read_only_cache is not None else {}
                 compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
@@ -117,6 +122,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 profile_selection = {"activation_profile": True} if runtime_profile == ACTIVATION_PROFILE else {}
                 if server_plan is not None:
                     profile_selection.update(server_profile=True, server_bridge=automatic_bridge)
+                if application_resources is not None:
+                    profile_selection["application_resources"] = application_resources
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
                     application_classpath=application_jars, **profile_selection)
                 component = read_file(component_path, 64 * 1024 * 1024)

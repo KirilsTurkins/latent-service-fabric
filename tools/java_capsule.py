@@ -25,6 +25,7 @@ def parser() -> argparse.ArgumentParser:
     add.add_argument('--exclude', action='append', default=[], help='group:name exclusion')
     add.add_argument('--repository-id')
     add.add_argument('--repository-url')
+    add.add_argument('--repository-ca', help='Project-relative public PEM certificate for the separately captured resolver truststore')
     local = commands.add_parser('add-local', help='Declare an explicit developer-selected local/private JAR')
     local.add_argument('project', type=Path)
     local.add_argument('--id', required=True)
@@ -81,7 +82,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    authoring = args.command not in {'new', 'build', 'new-server'}
+    authoring = args.command not in {'new', 'new-server', 'build'}
     try:
         if authoring:
             from tools import java_dependency_authoring as dependencies
@@ -125,7 +126,8 @@ def main(argv: list[str] | None = None) -> int:
                     coordinate=getattr(args, 'coordinate', None), local_id=getattr(args, 'id', None),
                     jar=getattr(args, 'jar', None), dependencies=tuple(getattr(args, 'depends', [])),
                     scope=getattr(args, 'scope', 'runtime'), exclusions=tuple(getattr(args, 'exclude', [])),
-                    repository=repository, identity=getattr(args, 'identity', None), version=getattr(args, 'version', None))
+                    repository=repository, repository_ca=getattr(args, 'repository_ca', None),
+                    identity=getattr(args, 'identity', None), version=getattr(args, 'version', None))
             receipt = dependencies.record(args.project, result)
             print(canonical({**result, 'receipt': str(receipt)}).decode())
             return 0
