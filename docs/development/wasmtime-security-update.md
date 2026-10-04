@@ -1,6 +1,36 @@
-# Wasmtime 48.0.3 security baseline
+# Wasmtime 48.0.4 security baseline
 
-## September 29, 2026 update
+## October 4, 2026 update
+
+The fresh security baseline on October 4 found
+[RUSTSEC-2026-0325](https://rustsec.org/advisories/RUSTSEC-2026-0325.html),
+[RUSTSEC-2026-0326](https://rustsec.org/advisories/RUSTSEC-2026-0326.html) and
+[RUSTSEC-2026-0327](https://rustsec.org/advisories/RUSTSEC-2026-0327.html)
+in Wasmtime 48.0.3. The first two concern exception tag validation and GC roots
+across exception calls; the third concerns invalid async callback result arity
+that can overwrite the host native stack. All three upstream advisories identify
+[Wasmtime 48.0.4](https://github.com/bytecodealliance/wasmtime/releases/tag/v48.0.4)
+as a patched release in the existing major line. The workspace and standalone
+authoring locks select exactly 48.0.4, matching Cranelift 0.135.4. The supported
+Rust minimum remains 1.95.0 and ordinary CI remains on Rust 1.97.1.
+
+The reviewed upstream release is `d02ffd202850007ea953224f589a569e8830eb6c`.
+`Component::deserialize` still calls the copying `Engine::load_code_bytes`
+path. The license bytes retain SHA-256
+`268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5`.
+LSF retains disabled default features, its exact feature set, closed signature
+admission, private authenticated loader, current authority checks and finite
+execution and process ownership limits. No advisory exception or skipped scan
+is introduced.
+
+Rebuild the runtime and isolated compiler together, approve the newly built
+compiler digest and re-prepare old native images. Current engine/layout and
+renderer compatibility fingerprints advance; historical matrices and receipts
+keep their original identities. Full runtime, compiler containment, minimum-Rust,
+strict Clippy and fresh dependency scans must qualify this source before merge.
+The dated results below do not qualify the October update.
+
+## Historical September 29, 2026 update
 
 PR #700's fresh RustSec scan rejected Wasmtime 47.0.4 for
 [RUSTSEC-2026-0315](https://rustsec.org/advisories/RUSTSEC-2026-0315.html)
