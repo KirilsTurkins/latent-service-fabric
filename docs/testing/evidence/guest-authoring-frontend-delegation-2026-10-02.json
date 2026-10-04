@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "lsf.authoring.frontend.delegation.v1",
+  "date": "2026-10-02",
+  "sourceParent": "8ec326eef4e6256b4466f8fae1106c33505d2a70",
+  "sourceDirty": true,
+  "sourceSubset": {
+    "root": "tools",
+    "files": 1004,
+    "digest": "sha256:3d76e35e7617cf41626ecd460a13739c1407f331482f6723e821b4320d30e5ad"
+  },
+  "host": "windows-x86_64",
+  "python": "3.13.5",
+  "exitCode": 0,
+  "cases": 13,
+  "skips": 0,
+  "stdoutDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrDigest": "sha256:869a79e697f6bbde5fcd9442c2a78d8a2feae877671afb39582f20d1e85b52ee",
+  "qualified": [
+    "same-owned-tree-source-parser",
+    "explicit-executable-preimage",
+    "preserved-uncertain-and-interrupted-exits",
+    "production-token-omission",
+    "original-one-second-wrapper-deadline-with-one-effect",
+    "held-or-rechecked-executable-and-path",
+    "six-staged-recipes-static-denial",
+    "six-owned-recipe-imports"
+  ],
+  "pending": [
+    "installed-language-frontend-consumer",
+    "signed-normal-node-library-invocation",
+    "live-watch-update",
+    "linux-standalone-delegation-controls",
+    "full-exact-head-github-ci"
+  ],
+  "remoteCleanupClaimed": false,
+  "automaticReplay": false,
+  "limits": {
+    "selectedExecutableBytes": 67108864,
+    "combinedOutputBytes": 1048576,
+    "maximumStandaloneWrapperSeconds": 3600,
+    "controlSeconds": 60,
+    "observedDeadlineCaseSeconds": 1
+  }
+}
