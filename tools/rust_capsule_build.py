@@ -14,7 +14,7 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, fresh,
                                         inventory, decode_json, read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
-from tools import guest_compatibility_build, guest_resources
+from tools import guest_authoring_frontend, guest_compatibility_build, guest_resources
 
 BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
@@ -23,6 +23,12 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
           "tools/stage_runtime_wit.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
+RECIPE += ("tools/rust_dependency_authoring.py", "tools/rust_capsule.lock") + guest_authoring_frontend.RECIPE
+RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
+           "tools/dev_workflow/common.py", "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
+           "tools/dev_workflow/resource_inputs.py",
+           "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
+           "tools/dev_workflow/windows.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
@@ -65,6 +71,20 @@ class Commands:
         return result.stdout
 
 
+def validate_sdk_inputs(files: dict[str, bytes]) -> tuple[dict, dict[str, bytes]]:
+    """Check the immutable Rust SDK and toolchain without resolving application code."""
+    pins = decode_json(files["sdk-lock.json"])
+    if (not isinstance(pins, dict) or set(pins) != {"formatVersion", "toolchain", "sdk", "bindings", "template"}
+            or type(pins["formatVersion"]) is not int or pins["formatVersion"] != 1):
+        raise ValueError("unsupported SDK lock format")
+    actual = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
+    if json.loads(inventory(actual)) != pins["sdk"]:
+        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    if files["rust-toolchain.toml"] != actual.get("rust-toolchain.toml"):
+        raise ValueError("Rust toolchain configuration differs from the vendored SDK")
+    return pins, actual
+
+
 def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
     required = {"Cargo.toml", "Cargo.lock", "capsule-project.json", "sdk-lock.json", "src/lib.rs", "rust-toolchain.toml"}
     if not required <= files.keys():
@@ -77,15 +97,7 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
         raise ValueError("invalid Cargo capsule name")
     if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "tenant", "service", "world")):
         raise ValueError("invalid capsule identity")
-    pins = decode_json(files["sdk-lock.json"])
-    if (not isinstance(pins, dict) or set(pins) != {"formatVersion", "toolchain", "sdk", "bindings", "template"}
-            or type(pins["formatVersion"]) is not int or pins["formatVersion"] != 1):
-        raise ValueError("unsupported SDK lock format")
-    actual = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
-    if json.loads(inventory(actual)) != pins["sdk"]:
-        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
-    if files["rust-toolchain.toml"] != actual.get("rust-toolchain.toml"):
-        raise ValueError("Rust toolchain configuration differs from the vendored SDK")
+    pins, actual = validate_sdk_inputs(files)
     if any(Path(path).name in {"config", "config.toml"} and ".cargo" in Path(path).parts for path in files):
         raise ValueError("project Cargo configuration overrides are not supported")
     cargo = tomllib.loads(files["Cargo.toml"].decode())
@@ -221,14 +233,16 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     from tools.application_dependency_approval import approve as approve_execution, request as execution_request
     from tools.rust_application_dependencies import configure as configure_application
     from tools.captured_compiler_isolation import Isolation
+    from tools.guest_dependency_inputs import application_root, capture_source
 
-    project_path, output = checked_path(project_path), checked_path(output)
+    project_path, output = application_root(checked_path(project_path), 'rust'), checked_path(output)
     if output == project_path or output in project_path.parents:
         raise ValueError("build output overlaps source")
     if project_path in output.parents and project_path / "target" not in output.parents:
         raise ValueError("in-project build outputs must be inside target/")
     public_repository(repository)
-    files = snapshot(project_path)
+    observed = capture_source(project_path, 'rust')
+    files = observed.files
     project, pins = validate_project(files)
     source_inputs = inventory(files)
     recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
@@ -272,7 +286,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                CARGO_INCREMENTAL="0", CARGO_TARGET_DIR=str(temporary / "target"))
             commands = Commands(work, output, environment)
             stage = "application-dependencies"
-            verified = verify_inputs(project_path, "rust")
+            verified = verify_inputs(observed.dependency_root, "rust")
             closure, approval = None, None
             isolation, adapted_manifest = None, None
             if verified is not None:
@@ -306,7 +320,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     if executable_approval is None:
                         raise ValueError("captured Cargo build scripts/macros require the exact retained executable-input approval identity")
                     approval = approve_execution(verified, isolation, executable_recipe, executable_approval)
-                closure = prepare(project_path, work, output, "rust", execution_approval=approval)
+                closure = prepare(observed.dependency_root, work, output, "rust", execution_approval=approval)
                 adapted_manifest, cargo_inputs = configure_application(closure, work, Path(environment["CARGO_HOME"]))
                 isolation.protect_inputs(work)
                 write_json(output / "cargo-inputs.json", cargo_inputs)
@@ -376,7 +390,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 captured_files["Cargo.toml"] = files["Cargo.toml"]
                 closure.check_unchanged()
                 isolation.check_unchanged()
-            if snapshot(project_path) != files or captured_files != files:
+            observed.check_unchanged()
+            if captured_files != files:
                 raise ValueError("project changed during the observed build")
             if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe_inputs:
                 raise ValueError("authoring recipe changed during the build")

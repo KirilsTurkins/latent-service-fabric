@@ -81,5 +81,71 @@ class JavaServerSource(unittest.TestCase):
             changed = {**files, "capsule-project.json": canonical(project_value)}
             with self.assertRaisesRegex(ValueError, "authoritative web world"): validate(changed)
 
+    def test_server_and_http_client_profiles_preserve_trusted_services_before_compilation(self):
+        from unittest.mock import patch
+        from tools.java_guest import compiler as java_compiler
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sources = root / 'source'; sources.mkdir()
+            (sources / 'Main.java').write_text('final class Main {}\n', encoding='utf-8')
+            wit = root / 'wit'; wit.mkdir()
+            (wit / 'world.wit').write_text('package outside:fixture; world service {}\n', encoding='utf-8')
+            owner = java_compiler.Compiler.__new__(java_compiler.Compiler)
+            owner.sdk, owner.platform, owner.offline = ROOT / 'sdk/java-guest', ROOT / 'wit/platform', True
+
+            def generated(_run, _wit, _world, destination):
+                destination.mkdir()
+                (destination / 'Bindings.java').write_bytes(b'// controlled binding boundary\n')
+                return {'source': 'controlled-binding'}
+
+            class CompileBoundary(Exception):
+                pass
+
+            invoked = []
+            def stop(stage, tool, *arguments, cwd=None):
+                invoked.append((stage, tool, arguments, cwd))
+                raise CompileBoundary()
+
+            owner.run = stop
+            destination = root / 'compiled'
+            with patch.object(java_compiler, 'generate', side_effect=generated):
+                with self.assertRaises(CompileBoundary):
+                    owner.compile(sources, wit, 'outside:fixture/service', destination,
+                                  server_profile=True, http_client_profile=True)
+            self.assertEqual(len(invoked), 1)
+            self.assertEqual(invoked[0][:2], ('java-to-c', 'gradle'))
+            self.assertIn('--offline', invoked[0][2])
+            project = destination / 'project'
+            self.assertEqual(invoked[0][3], project)
+            names = set(snapshot(owner.sdk / 'server/services')) | set(snapshot(owner.sdk / 'client/services'))
+            for name in names:
+                expected = []
+                for profile in ('server', 'client'):
+                    path = owner.sdk / profile / 'services' / name
+                    if path.is_file(): expected.extend(path.read_bytes().splitlines())
+                self.assertEqual((project / 'src/main/resources' / name).read_bytes().splitlines(), expected)
+            self.assertTrue((project / 'src/main/java/dev/latent/guest/server/http/HttpServer.java').is_file())
+            self.assertTrue((project / 'src/main/java/dev/latent/guest/client/Connection.java').is_file())
+            self.assertEqual((project / 'build.gradle').read_text(encoding='utf-8').count("compileOnly 'org.teavm:teavm-core:0.15.0'"), 1)
+
+    def test_trusted_sdk_service_union_preserves_resources_and_rejects_duplicate_or_unowned_providers(self):
+        from tools.java_guest.compiler import stage_sdk_service
+
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary) / 'org.teavm.vm.spi.TeaVMPlugin'
+            name = 'META-INF/services/org.teavm.vm.spi.TeaVMPlugin'
+            profiles = (b'dev.latent.guest.resources.compiler.ImmutableResourcePlugin\n',
+                        b'dev.latent.guest.server.compiler.ServerPlugin\n',
+                        b'dev.latent.guest.client.compiler.HttpPlugin\n')
+            for selected in profiles: stage_sdk_service(target, name, selected)
+            original = target.read_bytes()
+            self.assertEqual(original, b''.join(profiles))
+            with self.assertRaisesRegex(ValueError, 'duplicate'):
+                stage_sdk_service(target, name, profiles[-1])
+            with self.assertRaisesRegex(ValueError, 'invalid Java SDK'):
+                stage_sdk_service(target, 'META-INF/services/outside.application.Plugin', b'outside.application.Plugin\n')
+            self.assertEqual(target.read_bytes(), original)
+
 
 if __name__ == "__main__": unittest.main()

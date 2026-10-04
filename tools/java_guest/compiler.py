@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import importlib.util
 import os
+import re
 from pathlib import Path
 import shutil
 import sys
@@ -52,6 +53,33 @@ def sdk_snapshot(root: Path) -> dict:
     if (root / "client").exists():
         files.update({"client/" + name: data for name, data in snapshot(root / "client").items()})
     return dict(sorted(files.items()))
+
+
+def stage_sdk_service(target: Path, name: str, data: bytes) -> None:
+    """Merge explicit trusted SDK extensions without replacing another profile."""
+    if (not name.startswith("META-INF/services/org.teavm.") or len(data) > 16384
+            or target.is_symlink()):
+        raise ValueError("invalid Java SDK compiler service")
+    def entries(raw: bytes) -> list[str]:
+        providers = []
+        for line in raw.decode("utf-8").splitlines():
+            provider = line.split("#", 1)[0].strip()
+            if not provider: continue
+            if (len(providers) >= 128 or not re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", provider)
+                    or provider in providers):
+                raise ValueError("invalid Java SDK compiler service provider")
+            providers.append(provider)
+        if not providers: raise ValueError("empty Java SDK compiler service")
+        return providers
+    previous = entries(read_file(target, 16384)) if target.exists() else []
+    selected = entries(data)
+    if set(previous) & set(selected): raise ValueError("duplicate Java SDK compiler service provider")
+    providers = [*previous, *selected]
+    payload = ("\n".join(providers) + "\n").encode("utf-8")
+    if len(providers) > 128 or len(payload) > 16384:
+        raise ValueError("Java SDK compiler service merge limit")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(payload)
 
 
 def tool_inventory(roots: dict[str, Path]) -> bytes:
@@ -211,7 +239,8 @@ class Compiler:
                     if target.exists(): raise ValueError("server SDK overrides runtime source")
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_bytes(data)
-            shutil.copytree(self.sdk / "server/services", project / "src/main/resources")
+            for name, data in snapshot(self.sdk / "server/services").items():
+                stage_sdk_service(project / "src/main/resources" / name, name, data)
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         if http_client_profile:
@@ -225,12 +254,7 @@ class Compiler:
             # profiles. Append distinct SDK providers rather than replacing
             # either service list or accepting an application-owned plugin.
             for relative, data in snapshot(self.sdk / "client/services").items():
-                target = project / "src/main/resources" / relative
-                target.parent.mkdir(parents=True, exist_ok=True)
-                previous = target.read_bytes() if target.exists() else b""
-                rows = previous.splitlines() + data.splitlines()
-                if len(rows) != len(set(rows)): raise ValueError("duplicate SDK compiler provider")
-                target.write_bytes(b"\n".join(rows) + b"\n")
+                stage_sdk_service(project / "src/main/resources" / relative, relative, data)
             if not server_profile:
                 with (project / "build.gradle").open("a", encoding="utf-8") as build:
                     build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
