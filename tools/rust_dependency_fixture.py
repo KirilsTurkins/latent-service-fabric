@@ -25,6 +25,33 @@ DENIAL_CONTROL = r'''
 '''
 
 
+def direct_libraries(graph: dict, artifacts: list[dict], required: dict[tuple[str, str], str]) -> list[dict]:
+    """Bind fixture call sites to native root edges, rather than transitive presence."""
+    root = graph.get('root')
+    nodes = graph.get('nodes', [])
+    roots = [row for row in nodes if row.get('id') == root]
+    selected = graph.get('selectedResolve', {})
+    selected_roots = [row for row in selected.get('nodes', []) if row.get('id') == root]
+    if not root or len(roots) != 1 or selected.get('root') != root or len(selected_roots) != 1:
+        raise ValueError('native Rust qualification application root is ambiguous or missing')
+    direct = {digest(edge['pkg'].encode()) for edge in roots[0].get('dependencies', [])}
+    direct.intersection_update(digest(edge['pkg'].encode()) for edge in selected_roots[0].get('deps', []))
+    result = []
+    for (name, version), ordinary_api in required.items():
+        matches = [row for row in artifacts if row.get('role') == 'application'
+                   and row.get('metadata', {}).get('package') == name
+                   and row['metadata'].get('version') == version]
+        if len(matches) != 1 or matches[0]['metadata'].get('nativeIdDigest') not in direct:
+            raise ValueError('native Rust qualification library is not independently selected by the application')
+        artifact = matches[0]
+        provenance = [row for row in nodes if digest(row['id'].encode()) == artifact['metadata']['nativeIdDigest']]
+        if len(provenance) != 1 or provenance[0].get('artifact') != artifact['id']:
+            raise ValueError('native Rust qualification library artifact does not match its root edge')
+        result.append({'artifact': artifact['id'], 'coordinate': name + '/' + version,
+                       'ordinaryApi': ordinary_api, 'selection': 'application-root-direct'})
+    return result
+
+
 def install(project: Path, outside: Path, cargo: Path) -> dict:
     """Capture a normal external crate, real transitive packages and a macro."""
     # Native Unicode tables enlarge cold component preparation. Keep this
@@ -82,14 +109,20 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
 }
 ''', encoding='utf-8')
     with (project / 'Cargo.toml').open('a', encoding='utf-8') as output:
-        output.write('\n[dependencies]\noutside-qualification-library = {path = ' + json.dumps(str(library).replace('\\', '/')) + '}\n')
+        output.write('\n[dependencies]\nunicode-normalization = "=0.1.24"\n'
+                     'outside-qualification-library = {path = ' + json.dumps(str(library).replace('\\', '/')) + '}\n')
     source = project / 'src/lib.rs'
     before = source.read_bytes()
     after = before.replace(b'pub fn greet(name: String)', b'include!(concat!(env!("OUT_DIR"), "/captured.rs"));\npub fn greet(name: String)')
     after = after.replace(b'Ok(format!("Hello, {name}!"))',
-                          b'assert!(CAPTURED_BUILD_SCRIPT);\n    Ok(format!("{}{name}!", outside_qualification_library::prefix()))')
+                          b'assert!(CAPTURED_BUILD_SCRIPT);\n'
+                          b'    let prefix = "Hello, ".nfc().collect::<String>();\n'
+                          b'    assert_eq!("\\u{212b}".nfc().collect::<String>(), "\\u{00c5}");\n'
+                          b'    assert_eq!(prefix, outside_qualification_library::prefix());\n'
+                          b'    Ok(format!("{prefix}{name}!"))')
     if after == before or b'Ok(format!("Hello, {name}!"))' in after:
         raise ValueError('Rust dependency qualification source hook changed')
+    after = b'use unicode_normalization::UnicodeNormalization;\n' + after
     source.write_bytes(after)
     pins = tomllib.loads((project / 'vendor/lsf/rust-toolchain.toml').read_text())
     # The explicit fetch stage is the sole place the native lock can advance.
@@ -111,6 +144,9 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
         raise ValueError('native Rust qualification graph did not capture the required transitives')
     if len(lock['executableInputs']) < 2:
         raise ValueError('root build script and application macro were not identified as executable inputs')
+    application_libraries = direct_libraries(json.loads((project / 'cargo-resolved.lock.json').read_bytes()),
+        lock['artifacts'], {('unicode-normalization', '0.1.24'): 'UnicodeNormalization::nfc',
+                            ('outside-qualification-library', '0.1.0'): 'prefix'})
     # These roots are owned by this qualification fixture, outside the project.
     # Removing them proves the ordinary builder consumes only reviewed objects.
     for directory in (library, macro):
@@ -119,6 +155,7 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
         shutil.rmtree(directory)
     return {'formatVersion': 1, 'thirdParty': 'unicode-normalization/0.1.24',
             'transitives': ['tinyvec', 'tinyvec_macros'], 'developerOwned': 'outside-qualification-library/0.1.0',
+            'applicationLibraries': application_libraries,
             'resourceDigest': digest(resource), 'sourceDigest': digest(after),
             'coldPreparationBudget': {'originalWallTimeLimitMillis': original_wall_limit,
                                       'wallTimeLimitMillis': recipe['limits']['wallTimeLimitMillis'],
