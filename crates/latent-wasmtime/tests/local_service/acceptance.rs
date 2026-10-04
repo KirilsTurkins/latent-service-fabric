@@ -143,7 +143,12 @@ async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_c
             f.observations.child_failures.snapshot()
         );
     }
-    assert_eq!(actual, ANSWER);
+    assert_eq!(
+        actual,
+        ANSWER,
+        "original child failures: {:?}",
+        f.observations.child_failures.snapshot()
+    );
     assert_eq!(f.observations.starts.lock().unwrap().len(), 3);
     f.idle().await;
     let mut request = f.request("one-child-grant", 3);
