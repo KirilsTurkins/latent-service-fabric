@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_java_fibers.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all prior native pair and ordering obligations; require actual pinned coroutine lowering with original entry-layout negatives for owned waits, join and monitor acquisitions",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b77d041e7c358eb195e5a660ac7ad5450d020ba1ea3075a458345fd7dae42b2d"
-}
+{"kind":"owner","path":"tools/qualify_java_fibers.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain all prior native pair and ordering obligations; require actual pinned coroutine lowering with original entry-layout negatives for owned waits, join and monitor acquisitions","schemaVersion":"latent.ci.contracts.v1","sha256":"b77d041e7c358eb195e5a660ac7ad5450d020ba1ea3075a458345fd7dae42b2d"}
