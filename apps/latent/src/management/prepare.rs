@@ -9,8 +9,8 @@ use latent_wire::management::{deployment_to_proto, proto};
 use serde_json::json;
 
 use crate::args::{
-    Command, DeploymentCommand, NodeCommand, PublishArgs, ReleaseCommand, RouteCommand,
-    ValidateCommand,
+    ActivationTreeArgs, Command, DeploymentCommand, NodeCommand, PublishArgs, ReleaseCommand,
+    RouteCommand, ValidateCommand,
 };
 use crate::config::ResolvedConfig;
 use crate::error::Failure;
@@ -22,15 +22,7 @@ use super::invalid_manifest;
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
-        Command::Activation(crate::args::ActivationCommand::Tree(args)) => {
-            identifier(&args.id)?;
-            Ok(Operation::InspectActivationTree(
-                proto::InspectActivationTreeRequest {
-                    activation_id: args.id.clone(),
-                    page: Some(page(args.page_size, args.page_token.as_deref())?),
-                },
-            ))
-        }
+        Command::Activation(crate::args::ActivationCommand::Tree(args)) => activation_tree(args),
         Command::Web(command) => super::web::prepare(command, config),
         Command::Trigger(command) => super::triggers::prepare(command, config),
         Command::Capability(command) => super::capabilities::prepare(command),
@@ -123,6 +115,16 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
             "This is not a management operation.",
         )),
     }
+}
+
+fn activation_tree(args: &ActivationTreeArgs) -> Result<Operation, Failure> {
+    identifier(&args.id)?;
+    Ok(Operation::InspectActivationTree(
+        proto::InspectActivationTreeRequest {
+            activation_id: args.id.clone(),
+            page: Some(page(args.page_size, args.page_token.as_deref())?),
+        },
+    ))
 }
 
 pub fn validate(command: &ValidateCommand) -> Result<Outcome, Failure> {
