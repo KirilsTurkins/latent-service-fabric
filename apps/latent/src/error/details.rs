@@ -1,5 +1,5 @@
 //! Client-side public diagnostic vocabulary. A peer is not a trusted producer.
-use latent_core::ErrorDetail;
+use latent_core::{ErrorDetail, PlatformErrorCode};
 use serde_json::{json, Map, Value as JsonValue};
 
 const SCOPES: &[&str] = &[
@@ -128,6 +128,7 @@ const RESOURCES: &[&str] = &[
 enum Value {
     Unsigned,
     Known(&'static [&'static str]),
+    PlatformCode,
 }
 
 fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
@@ -158,6 +159,7 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("consumed", Unsigned),
             ("requested", Unsigned),
         ],
+        "activation.guest-host-failure" => &[("code", Value::PlatformCode)],
         "activation.deadline-exceeded" | "budget.deadline-out-of-range" => &[
             ("deadline_unix_millis", Unsigned),
             ("admitted_at_unix_millis", Unsigned),
@@ -250,6 +252,8 @@ pub(super) fn sanitize(details: &[ErrorDetail]) -> Vec<JsonValue> {
                         .filter(|n| n.to_string() == *value)
                         .map(|n| n.to_string()),
                     Value::Known(known) => known.contains(&value.as_str()).then(|| value.clone()),
+                    Value::PlatformCode => PlatformErrorCode::from_wire_code(value)
+                        .map(|code| code.wire_code().to_owned()),
                 };
                 if let Some(value) = accepted {
                     output.insert((*key).to_owned(), json!(value));

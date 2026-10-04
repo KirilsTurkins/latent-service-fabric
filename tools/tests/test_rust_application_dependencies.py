@@ -105,5 +105,51 @@ class CargoDependencies(unittest.TestCase):
                 configure(Closure(), work, root / 'home')
 
 
+class DirectFixtureLibraries(unittest.TestCase):
+    def setUp(self):
+        from tools.rust_dependency_fixture import direct_libraries
+        self.verify = direct_libraries
+        self.required = {('unlisted-pure-crate', '1.2.3'): 'ordinary_pure_api',
+                         ('unlisted-developer-crate', '4.5.6'): 'ordinary_developer_api'}
+        identities = ['native-pure', 'native-developer']
+        self.artifacts = [{'id': name + '/' + version, 'role': 'application',
+                           'metadata': {'package': name, 'version': version, 'nativeIdDigest': digest(identity.encode())}}
+                          for (name, version), identity in zip(self.required, identities)]
+        edges = [{'pkg': identity} for identity in identities]
+        self.graph = {'root': 'native-application',
+                      'nodes': [{'id': 'native-application', 'artifact': None, 'dependencies': edges.copy()}]
+                               + [{'id': identity, 'artifact': artifact['id'], 'dependencies': []}
+                                  for identity, artifact in zip(identities, self.artifacts)],
+                      'selectedResolve': {'root': 'native-application',
+                                          'nodes': [{'id': 'native-application', 'deps': edges.copy()}]}}
+
+    def test_two_ordinary_application_libraries_bind_exact_native_artifacts(self):
+        result = self.verify(self.graph, self.artifacts, self.required)
+        self.assertEqual([row['artifact'] for row in result], [row['id'] for row in self.artifacts])
+        self.assertEqual([row['ordinaryApi'] for row in result], list(self.required.values()))
+        self.assertTrue(all(row['selection'] == 'application-root-direct' for row in result))
+
+    def test_transitive_presence_cannot_replace_independent_application_selection(self):
+        self.graph['nodes'][0]['dependencies'].pop(0)
+        self.graph['nodes'][2]['dependencies'].append({'pkg': 'native-pure'})
+        self.graph['selectedResolve']['nodes'][0]['deps'].pop(0)
+        with self.assertRaisesRegex(ValueError, 'not independently selected'):
+            self.verify(self.graph, self.artifacts, self.required)
+
+    def test_dependency_unselected_for_actual_target_cannot_claim_application_selection(self):
+        self.graph['selectedResolve']['nodes'][0]['deps'].pop()
+        with self.assertRaisesRegex(ValueError, 'not independently selected'):
+            self.verify(self.graph, self.artifacts, self.required)
+
+    def test_ambiguous_root_or_forged_artifact_cannot_claim_native_selection(self):
+        self.graph['selectedResolve']['root'] = 'changed-root'
+        with self.assertRaisesRegex(ValueError, 'ambiguous or missing'):
+            self.verify(self.graph, self.artifacts, self.required)
+        self.graph['selectedResolve']['root'] = self.graph['root']
+        self.graph['nodes'][1]['artifact'] = 'different-artifact'
+        with self.assertRaisesRegex(ValueError, 'does not match'):
+            self.verify(self.graph, self.artifacts, self.required)
+
+
 if __name__ == '__main__':
     unittest.main()
