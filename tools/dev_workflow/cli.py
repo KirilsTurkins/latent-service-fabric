@@ -358,8 +358,8 @@ def emit(result: dict) -> None:
     sys.stdout.buffer.flush()
 
 
-def main() -> int:
-    args = parser().parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = parser().parse_args(argv)
     try:
         result = dispatch(args)
         if args.command == "preflight" and args.output == "human":
