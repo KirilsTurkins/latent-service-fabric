@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "sdk/dotnet/validate.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Qualify the same exact pinned .NET transport owners with additive DispatcherService models and all14 generated outputs; preserve prior12 hashes and every native stateless scenario",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6e615a15ffd0f07f7b0ce04f8411523e1adc717a3839ea8daa34bafa61b75429"
-}
+{"kind":"owner","path":"sdk/dotnet/validate.py","reviewBoundary":"committed-fingerprint","reviewReason":"Qualify the same exact pinned .NET transport owners with additive DispatcherService models and all14 generated outputs; preserve prior12 hashes and every native stateless scenario","schemaVersion":"latent.ci.contracts.v1","sha256":"6e615a15ffd0f07f7b0ce04f8411523e1adc717a3839ea8daa34bafa61b75429"}
