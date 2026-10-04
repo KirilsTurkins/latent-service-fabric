@@ -28,10 +28,7 @@ fn http_configuration_is_opt_in_closed_and_rejects_unsafe_limits_or_identity() {
     let web = settings.wasmtime.buffered_web_value_profile.unwrap();
     assert_eq!(web.limits.max_input_bytes, 2 * 1024 * 1024);
     assert_eq!(web.limits.max_output_bytes, 2 * 1024 * 1024);
-    assert_eq!(
-        web.limits.max_string_bytes,
-        512 * 1024
-    );
+    assert_eq!(web.limits.max_string_bytes, 512 * 1024);
     assert_eq!(web.limits.max_nodes, latent_ingress::http::MAX_JSON_NODES);
     assert_eq!(web.limits.max_lifted_bytes, 64 * 1024 * 1024);
     assert_eq!(web.hostcall_fuel, 2 * 1024 * 1024);
