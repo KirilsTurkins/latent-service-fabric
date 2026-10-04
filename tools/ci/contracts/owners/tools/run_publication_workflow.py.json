@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/run_publication_workflow.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain bounded publication failure receipts only after original cleanup scopes unwind; preserve every original stage, deadline, ownership/error assertion and no-replay decision, including all historical operator controls.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d224b68f35195006ee904aff0a69a1c7ba02fa5f6420176c98242facb0652665"
-}
+{"kind":"owner","path":"tools/run_publication_workflow.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain bounded publication failure receipts only after original cleanup scopes unwind; preserve every original stage, deadline, ownership/error assertion and no-replay decision, including all historical operator controls.","schemaVersion":"latent.ci.contracts.v1","sha256":"d224b68f35195006ee904aff0a69a1c7ba02fa5f6420176c98242facb0652665"}
