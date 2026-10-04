@@ -5,6 +5,7 @@ import importlib.util
 import os
 import re
 from pathlib import Path
+import re
 import shutil
 import sys
 import time
@@ -46,8 +47,8 @@ def sdk_snapshot(root: Path) -> dict:
         "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
         "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
         "tools/teavm_platform.py", "tools/capture.py")}
-    for folder in ("runtime", "templates", "wit", "fibers", "server"):
-        if folder in ("fibers", "server") and not (root / folder).is_dir(): continue
+    for folder in ("runtime", "templates", "wit", "resources", "fibers", "server"):
+        if folder in ("resources", "fibers", "server") and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
     return dict(sorted(files.items()))
 
@@ -71,8 +72,12 @@ def stage_sdk_service(target: Path, name: str, data: bytes) -> None:
     previous = entries(read_file(target, 16384)) if target.exists() else []
     selected = entries(data)
     if set(previous) & set(selected): raise ValueError("duplicate Java SDK compiler service provider")
+    providers = [*previous, *selected]
+    payload = ("\n".join(providers) + "\n").encode("utf-8")
+    if len(providers) > 128 or len(payload) > 16384:
+        raise ValueError("Java SDK compiler service merge limit")
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_bytes(("\n".join([*previous, *selected]) + "\n").encode("utf-8"))
+    target.write_bytes(payload)
 
 
 def tool_inventory(roots: dict[str, Path]) -> bytes:
@@ -195,8 +200,9 @@ class Compiler:
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
         for package in dependencies(wit, self.platform): copy_wit_tree(package, staged / "deps" / package.name)
-        bindings = generate(self.run, staged, world, destination / "bindings", activation_profile=activation_profile)
-        second = generate(self.run, staged, world, destination / "bindings-check", activation_profile=activation_profile)
+        binding_selection = {"activation_profile": True} if activation_profile else {}
+        bindings = generate(self.run, staged, world, destination / "bindings", **binding_selection)
+        second = generate(self.run, staged, world, destination / "bindings-check", **binding_selection)
         if second != bindings: raise ValueError("nondeterministic Java WIT bindings")
         project = destination / "project"
         project.mkdir()
@@ -212,8 +218,6 @@ class Compiler:
             target = project / "captured-application/jars" / f"{index:04d}.jar"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(read_file(jar, 64 * 1024 * 1024))
-        if application_resources is not None:
-            shutil.copytree(application_resources, project / "captured-application/resources")
         # Never let Gradle silently select or provision an unobserved JDK. This
         # generated private property file is part of this source-bound recipe.
         (project / "gradle.properties").write_text(
@@ -222,6 +226,11 @@ class Compiler:
             "org.gradle.java.installations.fromEnv=JAVA_HOME\n", encoding="utf-8")
         java_root = project / "src/main/java"
         shutil.copytree(self.sdk / "runtime/dev", java_root / "dev")
+        resource_profile = None
+        if application_resources is not None:
+            from tools.java_guest import resources
+            resource_profile = resources.stage(self.sdk, application_resources, project)
+            write_json(destination / "resource-profile.json", resource_profile)
         for selected, profile in ((server_profile, "server"), (activation_profile, "fibers")):
             if not selected: continue
             # Both extensions are SDK-owned; application compiler services stay
@@ -287,8 +296,12 @@ class Compiler:
         expected = wit_surface(json.loads(self.run("expected-wit", "wasm-tools", "component", "wit", staged, "--json")), world)
         actual = wit_surface(json.loads(self.run("compiled-wit", "wasm-tools", "component", "wit", component, "--json")))
         if actual != expected: raise ValueError("compiled Java component changed authoritative WIT semantics")
-        return component, {"bindings": bindings, "dependencies": retained, "platform": adaptation,
-                           "semanticSurfaceDigest": digest(canonical(actual))}
+        details = {"bindings": bindings, "dependencies": retained, "platform": adaptation,
+                   "semanticSurfaceDigest": digest(canonical(actual))}
+        if resource_profile is not None:
+            resources.recheck(application_resources, resource_profile)
+            details["immutableResources"] = resource_profile
+        return component, details
 
     def check_unchanged(self):
         if self.original_sdk != sdk_snapshot(self.sdk): raise ValueError("Java SDK changed during build")
