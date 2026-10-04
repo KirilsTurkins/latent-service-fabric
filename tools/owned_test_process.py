@@ -34,6 +34,7 @@ class Result:
     teardown_ms: float = 0
     reaped: int = 0
     cleaned: bool = False
+    stderr: bytes = b""
 
 
 class ProcessFailure(RuntimeError):
@@ -44,17 +45,20 @@ class ProcessFailure(RuntimeError):
 
 def run_owned(command: list[str], *, cwd: Path, env: dict[str, str] | None = None,
               timeout: float = 30, maximum: int = 65536,
-              cancel: threading.Event | None = None) -> Result:
+              cancel: threading.Event | None = None, separate_stderr: bool = False) -> Result:
     """Execute once, bounding combined output and startup/execution/reap together.
 
     There are no retries and no shell. A dedicated subreaper retires this
     command's descendants, including children that change session. Raw output
     stays private; callers must redact it before publishing diagnostics.
+    With separate_stderr, output contains stdout and stderr is captured apart;
+    their combined bytes still consume the same output bound and deadline.
     """
     if sys.platform != "linux":
         raise ProcessFailure("unavailable-environment", "linux-process-owner-required")
     if (not math.isfinite(timeout) or not 0 < timeout <= 86400
             or type(maximum) is not int or not 0 <= maximum <= MAX_OUTPUT
+            or type(separate_stderr) is not bool
             or not command or any(not isinstance(arg, str) or "\0" in arg for arg in command)):
         raise ValueError("invalid owned command limits or arguments")
     started = time.monotonic()
@@ -70,7 +74,7 @@ def run_owned(command: list[str], *, cwd: Path, env: dict[str, str] | None = Non
         raise ProcessFailure("invalid-fixture", "launch-specification-limit")
     read_fd, write_fd = os.pipe()
     process = None
-    capture, statuses = bytearray(), bytearray()
+    capture, errors, statuses = bytearray(), bytearray(), bytearray()
     child_pid, startup_ms, final, problem, original_exception = None, 0.0, None, None, None
     sent, stopped = 0, False
     interrupted = threading.Event()
@@ -102,9 +106,10 @@ def run_owned(command: list[str], *, cwd: Path, env: dict[str, str] | None = Non
             if not chunk:
                 selector.unregister(key.fileobj)
                 continue
-            if key.data == "output":
-                room = maximum - len(capture)
-                capture.extend(chunk[:room])
+            if key.data in {"output", "stderr"}:
+                room = maximum - len(capture) - len(errors)
+                destination = errors if key.data == "stderr" else capture
+                destination.extend(chunk[:room])
                 if len(chunk) > room and problem is None:
                     problem = ("output-overflow", "command-output-limit")
                     stop()
@@ -131,14 +136,19 @@ def run_owned(command: list[str], *, cwd: Path, env: dict[str, str] | None = Non
                 old_signals[sig] = signal.signal(sig, lambda _sig, _frame: interrupted.set())
         worker = Path(__file__).with_name("owned_process_worker.py")
         process = subprocess.Popen([sys.executable, "-I", "-u", str(worker), str(write_fd), nonce],
-                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE if separate_stderr else subprocess.STDOUT,
                                    pass_fds=(write_fd,), start_new_session=True)
         os.close(write_fd)
         write_fd = -1
         assert process.stdin is not None and process.stdout is not None
-        for stream, events, kind in ((process.stdin, selectors.EVENT_WRITE, "input"),
-                                     (process.stdout, selectors.EVENT_READ, "output"),
-                                     (read_fd, selectors.EVENT_READ, "status")):
+        streams = [(process.stdin, selectors.EVENT_WRITE, "input"),
+                   (process.stdout, selectors.EVENT_READ, "output"),
+                   (read_fd, selectors.EVENT_READ, "status")]
+        if separate_stderr:
+            assert process.stderr is not None
+            streams.append((process.stderr, selectors.EVENT_READ, "stderr"))
+        for stream, events, kind in streams:
             os.set_blocking(stream if isinstance(stream, int) else stream.fileno(), False)
             selector.register(stream, events, kind)
         while selector.get_map():
@@ -190,7 +200,7 @@ def run_owned(command: list[str], *, cwd: Path, env: dict[str, str] | None = Non
                 except subprocess.TimeoutExpired:
                     pass  # diagnostic remains unconfirmed, never success
                 problem = problem or ("infrastructure-timeout", "cleanup-timeout")
-            for stream in (process.stdin, process.stdout):
+            for stream in (process.stdin, process.stdout, process.stderr):
                 if stream is not None:
                     stream.close()
         for sig, handler in old_signals.items():
@@ -199,7 +209,8 @@ def run_owned(command: list[str], *, cwd: Path, env: dict[str, str] | None = Non
                     (time.monotonic() - started) * 1000, startup_ms,
                     final.get("teardownMs", 0) if final else 0,
                     final.get("reaped", 0) if final else 0,
-                    bool(final and final.get("cleaned") is True and process and process.returncode == 0))
+                    bool(final and final.get("cleaned") is True and process and process.returncode == 0),
+                    bytes(errors))
     if original_exception is not None:
         if isinstance(original_exception, ProcessFailure):
             original_exception.result = result
