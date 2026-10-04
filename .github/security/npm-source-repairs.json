@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "source_sha256": "6b4c8ec17c7363abaa2e16493f8a21aa6e60c0139d55316750b393abafdba198",
+  "builder_sha256": "dd7ed3c8b23e3d3ea51d956943761c3b0c16ca72ce0be707aa1c5355a6ec1695",
+  "repairs": {
+    "braces": {
+      "version": "3.0.3",
+      "profile": "braces-3.0.3-lsf-depth-v1",
+      "repair_sha256": "18d0f840ab68095416f854968eaf7524f0fe241d0f3130c514323d5e2e69728b",
+      "integrity": "sha512-CIkqEUBCvkYNTPw2CazoGD9KYwYMmR4nrCdhfFx+ChUFj2o8r2X0U46IGbHVu0/YpdYC/dd69dibeJ64RZgwdw==",
+      "advisories": [
+        {
+          "id": "GHSA-vfj7-8cjw-p6xm",
+          "modified": "2026-10-02T22:45:04.328737Z"
+        }
+      ]
+    },
+    "http-cache-semantics": {
+      "version": "4.3.0",
+      "profile": "http-cache-semantics-4.3.0-lsf-cache-v1",
+      "repair_sha256": "c903c8ad20a3c0f21bf217163550cd9c5989384ea1970626688b6cab30d0245a",
+      "integrity": "sha512-QoxZXkxpoKP9VMMA6OnDx1Ps0lIb4tBzw3DDVuH4MgHLaesYSqFBXdRJ0v7jpv2YzhtJ1qI/UzrrEerE9O/K9Q==",
+      "advisories": []
+    }
+  }
+}
