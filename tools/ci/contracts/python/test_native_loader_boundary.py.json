@@ -24,7 +24,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators": {
@@ -36,7 +36,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled": {
@@ -48,7 +48,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact": {
@@ -60,7 +60,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail": {
@@ -72,7 +72,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof": {
@@ -84,7 +84,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function": {
@@ -96,7 +96,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_engine_update_requires_review": {
@@ -108,7 +108,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints": {
@@ -120,7 +120,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe": {
@@ -132,7 +132,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned": {
@@ -144,7 +144,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family": {
@@ -156,7 +156,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     },
     "NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure": {
@@ -168,12 +168,12 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:7b9ba514a673b91eff32685abf9e9b7755983f7e9c302ced6fd77e85d204a133"
+        "class:setup-sha256:189e90d686c1a27a42ff862e4dcd3bc2f32cca2c3fa9d5cf298aea7b986a730a"
       ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_native_loader_boundary.py",
-  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "reviewReason": "Explicitly reviewed current Wasmtime 48.0.4 fixture identities; preserve every existing case and every skip, decorator, execution predicate, historical ABI identity and bound. Setup differs only in the exact engine version.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
