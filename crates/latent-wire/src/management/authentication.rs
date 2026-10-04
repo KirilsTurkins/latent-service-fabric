@@ -4,6 +4,7 @@ use latent_core::{InvocationPrincipal, PlatformError, PlatformErrorCode, Princip
 pub enum ManagementOperation {
     Tenant,
     NodeInventory,
+    NodeControl,
     AuditTenant,
     AuditNode,
 }
@@ -17,7 +18,7 @@ pub trait ManagementPolicy: Send + Sync {
     ) -> Result<(), PlatformError>;
 }
 
-/// Tenant management requires an administrator. Global inventory additionally
+/// Tenant management requires an administrator. Node inventory and control additionally
 /// requires the trusted node-operator claim supplied by the embedding listener.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LocalManagementPolicy;
@@ -31,7 +32,9 @@ impl ManagementPolicy for LocalManagementPolicy {
         if principal.kind != PrincipalKind::Administrator
             || (matches!(
                 operation,
-                ManagementOperation::NodeInventory | ManagementOperation::AuditNode
+                ManagementOperation::NodeInventory
+                    | ManagementOperation::NodeControl
+                    | ManagementOperation::AuditNode
             ) && principal
                 .claims
                 .get("latent.node.operator")
