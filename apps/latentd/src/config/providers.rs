@@ -42,6 +42,10 @@ pub struct ConfiguredProviders {
     pub clock_wall: Option<ScalarInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub random: Option<ScalarInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub context: Option<ScalarInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub log: Option<ScalarInstallation>,
     pub bindings: Vec<HostBinding>,
 }
 
@@ -120,15 +124,7 @@ pub(super) fn derive(
         || config.audit.is_none()
         || config.budget_profile.profile() != BudgetProfile::Phase3
         || providers.format_version != 1
-        || (providers.http.is_none()
-            && providers.blob.is_none()
-            && providers.secrets.is_none()
-            && providers.metrics.is_none()
-            && providers.local_service.is_none()
-            && providers.events.is_none()
-            && providers.clock_monotonic.is_none()
-            && providers.clock_wall.is_none()
-            && providers.random.is_none())
+        || providers.no_installations()
         || providers.bindings.is_empty()
         || providers.bindings.capacity() > 16
     {
@@ -203,6 +199,8 @@ pub(super) fn derive(
         &providers.clock_monotonic,
         &providers.clock_wall,
         &providers.random,
+        &providers.context,
+        &providers.log,
     ]
     .into_iter()
     .flatten()
@@ -229,6 +227,20 @@ impl ProviderIdentity {
 }
 
 impl ConfiguredProviders {
+    fn no_installations(&self) -> bool {
+        self.http.is_none()
+            && self.blob.is_none()
+            && self.secrets.is_none()
+            && self.metrics.is_none()
+            && self.local_service.is_none()
+            && self.events.is_none()
+            && self.clock_monotonic.is_none()
+            && self.clock_wall.is_none()
+            && self.random.is_none()
+            && self.context.is_none()
+            && self.log.is_none()
+    }
+
     pub(crate) fn definitions(&self) -> Result<Vec<BindingDefinition>, PlatformError> {
         self.bindings.iter().enumerate().map(|(index, binding)| {
             if [&binding.name, &binding.tenant, &binding.consumer_service,
@@ -251,6 +263,8 @@ impl ConfiguredProviders {
                 "latent:clock/monotonic@0.1.0" => self.clock_monotonic.as_ref().map(|v| &v.identity),
                 "latent:clock/wall@0.1.0" => self.clock_wall.as_ref().map(|v| &v.identity),
                 "latent:random/random@0.1.0" => self.random.as_ref().map(|v| &v.identity),
+                "latent:context/context@0.1.0" => self.context.as_ref().map(|v| &v.identity),
+                "latent:log/log@0.1.0" => self.log.as_ref().map(|v| &v.identity),
                 _ => None,
             }.ok_or_else(|| invalid("providers.bindings.contract"))?;
             if installed.tenant != binding.tenant || installed.service != binding.provider_service {
