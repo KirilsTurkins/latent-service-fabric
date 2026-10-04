@@ -1,0 +1,237 @@
+{
+  "actualCapture": {
+    "capturedInputIdentity": "sha256:8662dc78294f1f33a670ec563331730b6f776b3cd08ea816abd0835333af16ba",
+    "controls": [
+      {
+        "authorizedRequests": 0,
+        "declarationPreserved": true,
+        "name": "missing-credentials",
+        "outcome": "known-failure",
+        "peerRequests": 1,
+        "reason": "java-maven-resolution-failed-private-diagnostics-discarded",
+        "reviewedLockWritten": false,
+        "sdkLockPreserved": true,
+        "successfulLockWritten": false
+      },
+      {
+        "authorizedRequests": 0,
+        "declarationPreserved": true,
+        "name": "wrong-credentials",
+        "outcome": "known-failure",
+        "peerRequests": 2,
+        "reason": "java-maven-resolution-failed-private-diagnostics-discarded",
+        "reviewedLockWritten": false,
+        "sdkLockPreserved": true,
+        "successfulLockWritten": false
+      },
+      {
+        "authorizedRequests": 0,
+        "declarationPreserved": true,
+        "name": "untrusted-CA",
+        "outcome": "known-failure",
+        "peerRequests": 0,
+        "reason": "java-maven-resolution-failed-private-diagnostics-discarded",
+        "reviewedLockWritten": false,
+        "sdkLockPreserved": true,
+        "successfulLockWritten": false
+      },
+      {
+        "authorizedRequests": 0,
+        "declarationPreserved": true,
+        "name": "incomplete-pair",
+        "outcome": "known-failure",
+        "peerRequests": 0,
+        "reason": "java-registry-credential-pair-invalid",
+        "reviewedLockWritten": false,
+        "sdkLockPreserved": true,
+        "successfulLockWritten": false
+      },
+      {
+        "additionalPeerRequests": 0,
+        "capturedInputIdentity": "sha256:8662dc78294f1f33a670ec563331730b6f776b3cd08ea816abd0835333af16ba",
+        "name": "private-feed-offline-after-peer-reaped",
+        "outcome": "verified",
+        "peerPhysicallyReaped": true
+      },
+      {
+        "name": "captured-certificate-drift",
+        "outcome": "known-failure",
+        "reason": "dependency-native-lock-drift",
+        "restorationReturnsOriginalIdentity": true
+      },
+      {
+        "name": "captured-private-JAR-drift",
+        "outcome": "known-failure",
+        "reason": "dependency-artifact-integrity",
+        "restorationReturnsOriginalIdentity": true
+      }
+    ],
+    "coordinate": "outside.private:arithmetic-proof:2026.10.02",
+    "credentialsInDeclarationsOrCapturedBytes": false,
+    "elapsedSeconds": 37.4784288689998,
+    "librarySourceChanged": false,
+    "nativeGraphDigest": "sha256:f99b02a73deba8e7955c94a99086c9e200f66ff4f1b78d970fd9f60bafcddb67",
+    "originalJdkOrMachineTrustChanged": false,
+    "originalResolverMaximumSeconds": 300,
+    "originalTlsPreparationMaximumSeconds": 30,
+    "peer": {
+      "additionalOfflineRequests": 0,
+      "authorizedRequests": 2,
+      "network": "container network none; independently owned localhost HTTPS fixture",
+      "physicallyReapedBeforeOfflineVerification": true,
+      "requests": 6
+    },
+    "privateTlsKeyCaptured": false,
+    "resolverTrustInputs": {
+      "certificates": [
+        {
+          "digest": "sha256:c7481afcb38ba904469213828c3a9a1f6451105ccf68d309660de4fe184c8b85",
+          "path": "registry/public-ca.pem",
+          "size": 570
+        }
+      ],
+      "defaultTrustStoreDigest": "sha256:98d34a90fca2688ef5674862d2a484e09e5ca25d2f07c5d654aa28f1581f3419",
+      "derivedTrustStoreDigest": "sha256:2c02fc032687df76a97673dca3026ec9d528ef376ff72e06a3d2ad67dd4a1c87",
+      "derivedTrustStoreSize": 153948,
+      "keytoolExecutableDigest": "sha256:e5e8b3a330267b3fd2b14e5e9f36eceafab0e45fb6e497dfeea59a33f1eb928e",
+      "preparationMaximumSeconds": 30,
+      "profile": "java-captured-registry-trust-v1"
+    },
+    "resourceChildren": 1,
+    "reviewedCandidateDigest": "sha256:f0e67441ba04e204c9b57d10d5247469746f155c3776079f695edc7322202c0a",
+    "sdkLockDigest": "sha256:3055d6f61c2ff04eaffe1b30e51edf1084de0e9effcb2318375d105addfa53b2",
+    "sdkLockPreserved": true,
+    "selectedJar": {
+      "digest": "sha256:7691bfe7fbedf689b587fb360c047ec3c8b3bd401eb23d5b8e00ad8e5ce3e2be",
+      "id": "outside.private:arithmetic-proof:2026.10.02",
+      "size": 1351
+    }
+  },
+  "issue": 682,
+  "physicalCompletion": {
+    "container": "latent-sdk-dependencies-java-private-maven-capture-20261002-r1",
+    "exitCode": 0,
+    "oomKilled": false,
+    "originalSourceAndToolInputsVerifiedBeforeAfter": true,
+    "originalWrapperMaximumSeconds": 900,
+    "peerPhysicallyReaped": true,
+    "pid": 0,
+    "wholeElapsedSeconds": 45.639609100006055
+  },
+  "qualificationBoundary": {
+    "componentBuild": false,
+    "dependencyAddResolveReviewAndOfflineStatus": true,
+    "missingWrongAndIncompleteCredentialControls": true,
+    "privateCaAndTamperControls": true,
+    "publisherAuthenticatedInstalledFrontend": false,
+    "signedNodeExecution": false
+  },
+  "recordedDate": "2026-10-02",
+  "remainingAcceptance": [
+    "Actual maintained installed frontend test/watch lifecycle",
+    "Finite approved isolated annotation-processor/build-tool stages",
+    "Remaining malicious JAR, reflection/JNI and runtime quota/cancellation/exception controls",
+    "Full current-head hosted CI and merge gate"
+  ],
+  "retainedReceipts": {
+    "BACKUP-COMPLETE.json": {
+      "bytes": 1075,
+      "sha256": "e2ef98878d2a35b4d4d1898ba8ff93184e58e4854e5c331342eb50cc3621edcf"
+    },
+    "captured-private-project-inputs.json": {
+      "bytes": 12532,
+      "sha256": "67883d6897b26e090d488d367061cd901750108852af66ea1333d6328d9e6593"
+    },
+    "captured-private-project.zip": {
+      "bytes": 80547,
+      "sha256": "6921f63fb0d415ad6b5f30594825a61066c8c84e1821c6eb931995dc6f9111a1"
+    },
+    "container-inspection.json": {
+      "bytes": 8627,
+      "sha256": "e760b9f3c8629a458672a0ae03b13dce6a9c8c03f3fc4e4831625867b609ddb2"
+    },
+    "container.json": {
+      "bytes": 2650,
+      "sha256": "cc19cba38a3a08afac6ef32f33bba900c6317f0ab01113455698e58604fa39b6"
+    },
+    "report.json": {
+      "bytes": 14422,
+      "sha256": "768130ebf2057c48349139c0c0c85e3acec81bc093e4565d8b171d0adee7e558"
+    },
+    "result.json": {
+      "bytes": 422,
+      "sha256": "d6f2453387de3c3d3e2c2960cb309273dd4aea03ee4c38b0be6c0bee3d3351b5"
+    }
+  },
+  "schemaVersion": "lsf.sdk-library.evidence.v1",
+  "scope": "Java private Maven capture with real authenticated HTTPS, project-owned CA, offline verification and drift denials",
+  "source": {
+    "beforeAfterAllSelectedSourceFilesVerified": true,
+    "exactFrozenTreeCommittedAfterQualification": true,
+    "executedSourceHeadBeforeCommit": "10a494f0edf0c1e6a5521ec637c06e6cea699972",
+    "gitObjectTree": "3300a50cc10a174c5d26b4b74d669cab9e37484a",
+    "implementationRevision": "0df4ecaced7b992642c48268669df723fee486fa",
+    "sourceFiles": {
+      "tools/java_capsule.py": {
+        "bytes": 9975,
+        "sha256": "2301ab868007034231658a2334e3ebfde916a256440698bfd3859f301b7de043"
+      },
+      "tools/java_capsule_build.py": {
+        "bytes": 13723,
+        "sha256": "c908bd8ecc1229b83704d9e183b9257eae88dc3221e71e8371351702c838c117"
+      },
+      "tools/java_dependency_authoring.py": {
+        "bytes": 17034,
+        "sha256": "344a95c6d8f6a0f97d8856af3017c692dae4acb2b58b8334320ad1096655527d"
+      },
+      "tools/java_dependency_resolution.py": {
+        "bytes": 19793,
+        "sha256": "1dfebf8ef5c6808b6cf618ee6d6c3e2cc5c7c21d6e659f3720781ab078e82dc8"
+      },
+      "tools/java_registry_tls.py": {
+        "bytes": 6476,
+        "sha256": "d8fa000fda17467271c2c4bbb74a10d6c6f9c675b9c06a2d6c7e3c139b597709"
+      },
+      "tools/tests/test_java_private_resolution.py": {
+        "bytes": 9400,
+        "sha256": "dc371d85fcc69abc0df17b71d4745c4725a7fce1f0d52ff37ae4b664bed015a0"
+      }
+    }
+  },
+  "sourceChecks": {
+    "allSixStagedRecipeImportsPassed": 2,
+    "functionalResult": {
+      "bytes": 417,
+      "sha256": "9b7d14c0660acb7ef4a566e3dc5a9f605eb64adf5348caff8f684cdc01c625e0"
+    },
+    "individualStagedMaximumSeconds": 30,
+    "linuxFunctionalControlsPassed": 78,
+    "linuxOriginalMaximumSeconds": 240,
+    "newPrivateBoundaryControls": 8,
+    "retainedHarnessFailure": {
+      "correction": "two real SelectedRecipeImports controls executed from same exact frozen tree",
+      "functionalControlsPassedBeforeError": 78,
+      "originalExitCode": 1,
+      "productionOrTestSourceChangedForRetry": false,
+      "reason": "private runner selected nonexistent test_dev_tool_distribution module"
+    },
+    "stagedResult": {
+      "bytes": 415,
+      "sha256": "5bf19abe7f401bf6ac3c8e3534d0dc29424065b07a9741b6bd5cfbd0fca9f79f"
+    },
+    "windowsControlsPassed": 63
+  },
+  "ticketComplete": false,
+  "toolchain": {
+    "allPublicToolsVerifiedBeforeAfter": true,
+    "capturedToolFiles": 10857,
+    "fixtureTlsNativeDigest": "sha256:7bddb57cd549eba58bd123306329d38cea3030ae69a6333b5f4e17999d9e73f7",
+    "fixtureTlsNativeRevision": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+    "gradle": "9.1.0",
+    "image": "sha256:4b6db7a7c996a9a3d3fac8481858674a32fb958db6856b046bd5459bf6441e2c",
+    "jdk": "25.0.4.1+1",
+    "python": "3.13.5",
+    "readOnlyToolsVolumeCreatedAt": "2026-10-02T09:00:46Z",
+    "toolchainInputDigest": "sha256:90084065888bd8044720b7c6c4319af94ff429d45976ab38e2730d687beb2250"
+  }
+}
