@@ -235,10 +235,12 @@ fn detached_custody_destructor_keeps_original_global_reservation_and_gate_charge
     );
     gate.release(ticket).unwrap();
     metadata_retired(&owner);
+    // Control counts are released before the worker publishes the retirement
+    // signal. Join that same physical worker before observing its final witness.
+    assert!(finish(&owner).clean);
     assert!(witness.has_retired());
     assert!(weak.upgrade().is_none());
     assert_eq!(native.snapshot().unwrap().recovery.slots, 0);
-    assert!(finish(&owner).clean);
 }
 
 #[test]
