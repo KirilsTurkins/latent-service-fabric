@@ -1,0 +1,281 @@
+{
+  "actualClassLoaderMethodOwners": 9,
+  "assertions": [
+    "all standard fields/method owners/unselected bodies preserved",
+    "original Class package-relative/leading-slash/array methods unchanged",
+    "one narrow immutable lookup invocation",
+    "unknown application class untouched",
+    "missing method and changed method preimage rejected",
+    "fresh stream and byte-array owners per open",
+    "opaque bytes and independent positions preserved",
+    "unknown and case-mismatched names return null without fallback",
+    "null retains standard null-argument exception"
+  ],
+  "classLibraryPreimage": {
+    "path": "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar",
+    "platform": "any",
+    "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+    "size": 17718996
+  },
+  "commands": [
+    {
+      "exitCode": 0,
+      "maximumSeconds": 30,
+      "name": "javac-version",
+      "seconds": 0.21891364499998645,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "e363f8e03b49957921f029b1c2561410f555887c871907e627980343b70e1e28"
+    },
+    {
+      "exitCode": 0,
+      "maximumSeconds": 30,
+      "name": "java-version",
+      "seconds": 0.03470223699997632,
+      "stderrSha256": "26355c87ae9a607a1852964702be1846ff2c75a313f8bcbfb5f2e039a1a543c1",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exitCode": 0,
+      "maximumSeconds": 30,
+      "name": "compile-real-model",
+      "seconds": 1.6760412209999913,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "exitCode": 0,
+      "maximumSeconds": 30,
+      "name": "execute-real-model",
+      "seconds": 0.6129950480000161,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "bd229d50ce5aa8a1ddb9cea11abaaa4592b8e26a333e10eaed1f0bf09a8e544f"
+    }
+  ],
+  "container": {
+    "elapsedSeconds": 12.953156200004742,
+    "exitCode": 0,
+    "oomKilled": false,
+    "physicallyExited": true,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdoutSha256": "f1e1605125f58cb387f915ab9fbf5309659d7366197c6f1014029dda4f8fddb3"
+  },
+  "date": "2026-10-02",
+  "generatedSources": {
+    "Data0000.java": {
+      "bytes": 330,
+      "sha256": "a21f8976721a94ccb9a0e81a7542e1eb03bcc0fba96785757bb6375589d389f9"
+    },
+    "Data0000Part0000.java": {
+      "bytes": 189,
+      "sha256": "bfc44f14491e37220a6bf26b78b8894456c4478a0ea1fc40b03aeca450452162"
+    },
+    "ImmutableResources.java": {
+      "bytes": 362,
+      "sha256": "d68fcc6d4bb8d69cd4068cca8e21f2e6c5e7031c7c2da631e902475ad58838b8"
+    }
+  },
+  "image": "sha256:4b6db7a7c996a9a3d3fac8481858674a32fb958db6856b046bd5459bf6441e2c",
+  "jars": [
+    {
+      "path": "com/jcraft/jzlib/1.1.3/jzlib-1.1.3.jar",
+      "sha256": "89b1360f407381bf61fde411019d8cbd009ebb10cff715f3669017a031027560",
+      "size": 71976
+    },
+    {
+      "path": "joda-time/joda-time/2.12.2/joda-time-2.12.2.jar",
+      "sha256": "8d4d807adc8e92a83913d9ccd61e634b4907c78d88f3016d06b3b3d2b4795a02",
+      "size": 636782
+    },
+    {
+      "path": "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar",
+      "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+      "size": 17718996
+    },
+    {
+      "path": "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar",
+      "sha256": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+      "size": 2956367
+    },
+    {
+      "path": "org/teavm/teavm-devserver-client/0.15.0/teavm-devserver-client-0.15.0.jar",
+      "sha256": "4113d73ac4241935de10dfdff20f8b67957a3253a0127bb6bada04ee5cd009d7",
+      "size": 16198
+    },
+    {
+      "path": "org/teavm/teavm-extension-annotation-processor/0.15.0/teavm-extension-annotation-processor-0.15.0.jar",
+      "sha256": "a801dfbbeef2f11e75b7fc3a6bfe63add003890f8b53679d63adbf92ffac1520",
+      "size": 4433
+    },
+    {
+      "path": "org/teavm/teavm-extension-apis/0.15.0/teavm-extension-apis-0.15.0.jar",
+      "sha256": "9e867f3760b1c8d86cdb18ec70e429c23fd933021c8c3bb0cc0b727eac3202c0",
+      "size": 13264
+    },
+    {
+      "path": "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar",
+      "sha256": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49",
+      "size": 16527
+    },
+    {
+      "path": "org/teavm/teavm-extension-spi-util/0.15.0/teavm-extension-spi-util-0.15.0.jar",
+      "sha256": "d94e8d4478c4186d18b657cb67654851d38b9f51d372dc7e7e54e0f3a24347c9",
+      "size": 1845
+    },
+    {
+      "path": "org/teavm/teavm-gradle-plugin/0.15.0/teavm-gradle-plugin-0.15.0.jar",
+      "sha256": "d68695de71995c16741208223d7ef755cfe7dcbfb436128f6ec6e7c76abd7ceb",
+      "size": 85532
+    },
+    {
+      "path": "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar",
+      "sha256": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f",
+      "size": 12599
+    },
+    {
+      "path": "org/teavm/teavm-jso/0.15.0/teavm-jso-0.15.0.jar",
+      "sha256": "58b337b93924106bf819c45890c7c231a0c740145afe77795f1e0f099f621d71",
+      "size": 8437
+    },
+    {
+      "path": "org/teavm/teavm-jso-apis/0.15.0/teavm-jso-apis-0.15.0.jar",
+      "sha256": "171abaff01d9c029218df911470184ed8e30e6b511be6bb03381a924ec4a8c3c",
+      "size": 177814
+    },
+    {
+      "path": "org/teavm/teavm-jso-impl/0.15.0/teavm-jso-impl-0.15.0.jar",
+      "sha256": "9a8d15205807b70d7efdfbd4c1356304954e20146e464aec3830dbc6616ef57c",
+      "size": 193829
+    },
+    {
+      "path": "org/teavm/teavm-metaprogramming-api/0.15.0/teavm-metaprogramming-api-0.15.0.jar",
+      "sha256": "00f053ad35ff78312e48eebbf4e1c6cf5f7a1e759b2432ba0b60d6f111bb3bdd",
+      "size": 13884
+    },
+    {
+      "path": "org/teavm/teavm-metaprogramming-impl/0.15.0/teavm-metaprogramming-impl-0.15.0.jar",
+      "sha256": "616d30aa28f7b0180a61c2289b11c77bf84c715bd79f255e1e42400edb5b6d70",
+      "size": 126504
+    },
+    {
+      "path": "org/teavm/teavm-platform/0.15.0/teavm-platform-0.15.0.jar",
+      "sha256": "999d369ab15aa83c17987d048ba59560759169891de7e13a5a1c2bd93dd060a8",
+      "size": 101636
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar",
+      "sha256": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018",
+      "size": 126383
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar",
+      "sha256": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c",
+      "size": 34800
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar",
+      "sha256": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140",
+      "size": 73343
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar",
+      "sha256": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b",
+      "size": 51412
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-asm-util/0.15.0/teavm-relocated-libs-asm-util-0.15.0.jar",
+      "sha256": "a41247ca7f023959712be0e713d3f2f5687b4dfeda6b112b2d976494d52cdc57",
+      "size": 94715
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar",
+      "sha256": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6",
+      "size": 1509391
+    },
+    {
+      "path": "org/teavm/teavm-relocated-libs-rhino/0.15.0/teavm-relocated-libs-rhino-0.15.0.jar",
+      "sha256": "49cedc9bfcdd44d30b8bc8d1d46d78fb7f8f2044b8c85c9c3f1ece33e94ee7e9",
+      "size": 1426826
+    },
+    {
+      "path": "org/teavm/teavm-tooling/0.15.0/teavm-tooling-0.15.0.jar",
+      "sha256": "51123d78dc48404aa2e7cb0c04a0a6d75309decf604ffafda1c64564e7c9c6f3",
+      "size": 68279
+    },
+    {
+      "path": "org/teavm/teavm-wasm-gc-deobfuscator/0.15.0/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+      "sha256": "875532a32d0c328f33f830ff5a75df752773229c71ae1d5a85bdeac497050376",
+      "size": 19793
+    }
+  ],
+  "jdk": "Temurin25.0.4.1+1",
+  "modelElapsedSeconds": 11.778960799999993,
+  "observedSourceHead": "a9142fcbc9634d87b25f633d6c7f5105c50f98f5",
+  "observedSourceTree": "9df5f3321912e7ea5519c797bd60988a0f525dca",
+  "qualification": {
+    "emittedResourceComponent": "pending",
+    "installedTestAndWatch": "pending",
+    "issue681": "open",
+    "issue682": "open",
+    "model": "passed",
+    "normalNodeResourceInvocation": "pending",
+    "strictSigning": "pending"
+  },
+  "rawReportSha256": "1d0a7252e86f9a94efccfb43c80a3279622da5cc84b9c3817634ee420e8f6ba8",
+  "retainedOriginalLibraryAttempt": {
+    "actualOfflineCompilerStage": "java-to-c",
+    "captureReportSha256": "0f7b6b2da4b1758723a30d5416d9f42beb62586877d9ce45a2a5547ded6de2ce",
+    "developerLibrary": "outside.owner:arithmetic-proof:2026.10.02",
+    "failedCompilerReportSha256": "c16ac81dada90e9b97e4df2b23925ec295a5f12c4f5000e108c98b1726c1e362",
+    "independentLibraries": [
+      "org.apache.commons:commons-text:1.12.0",
+      "commons-codec:commons-codec:1.17.1"
+    ],
+    "originalDeveloperJarDeletedBeforeOfflineVerification": true,
+    "outcome": "failed",
+    "retainedCause": [
+      "standard ClassLoader.supplyResources is JavaScript native without a C import",
+      "standard ClassLoader.resourceToString is JavaScript native without a C import"
+    ],
+    "source": "a9142fcbc9634d87b25f633d6c7f5105c50f98f5",
+    "transitive": "org.apache.commons:commons-lang3:3.14.0",
+    "unchangedApplicationSourceDigest": "sha256:bf90e50f9c2130f45f3062340c80fac505ecb758dc9c2938c9675cb057d0f6c5"
+  },
+  "schemaVersion": "lsf.java.immutable-resource-model-evidence.v1",
+  "scope": "Source-owned model qualification; actual emitted resource component, strict signing and node invocation pending",
+  "sourceArchiveSha256": "50594808eadd2b17b0c27c3365fee008e7fff1d029e8ff7a05a10e770ec82fb2",
+  "sourceMaterials": [
+    {
+      "bytes": 7851,
+      "path": "tools/java_guest/resources.py",
+      "sha256": "89ddbd21475232c3562242009825506693f417cbdc17882692615a7dfbf9c666"
+    },
+    {
+      "bytes": 16657,
+      "path": "tools/java_guest/compiler.py",
+      "sha256": "a35fa1a5e11684304063957a9cd75b44a674269bc6fdb6c553ee1398e44af2f8"
+    },
+    {
+      "bytes": 13683,
+      "path": "tools/java_capsule_build.py",
+      "sha256": "2c079418a1b2250c18529cc4b72f850f14457591fe60fc50057bf726e03a44fe"
+    },
+    {
+      "bytes": 2877,
+      "path": "sdk/java-guest/resources/compiler/dev/latent/guest/resources/compiler/ImmutableResourcePlugin.java",
+      "sha256": "73dff0e6ff259f800ce1fc1658a5cb4512893c3d4cdbd30e8e612401678fa98c"
+    },
+    {
+      "bytes": 60,
+      "path": "sdk/java-guest/resources/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin",
+      "sha256": "32e9032d90ce3ef988d35aa3c11a087ab867a8e977824b56c92a32a3d035ba6d"
+    },
+    {
+      "bytes": 6413,
+      "path": "sdk/java-guest/resources/conformance/ImmutableResourceModelControl.java",
+      "sha256": "09951194e7172b32c4f9a2226ca63985618d341942a5826ed62a1ece5730b59b"
+    }
+  ],
+  "sourceToolAndJarBytesVerifiedBeforeAfter": true,
+  "teavm": "0.15.0",
+  "toolchainInputIdentity": "sha256:90084065888bd8044720b7c6c4319af94ff429d45976ab38e2730d687beb2250"
+}
