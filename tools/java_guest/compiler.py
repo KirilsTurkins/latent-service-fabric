@@ -229,8 +229,9 @@ class Compiler:
             required_imports = {"latent:runtime/activation@0.1.0", "latent:clock/monotonic@0.1.0"}
             if not required_imports <= set(declared["imports"]):
                 raise ValueError("Java activation profile requires explicit runtime and monotonic clock WIT imports")
-        bindings = generate(self.run, staged, world, destination / "bindings", activation_profile=activation_profile)
-        second = generate(self.run, staged, world, destination / "bindings-check", activation_profile=activation_profile)
+        binding_selection = {"activation_profile": True} if activation_profile else {}
+        bindings = generate(self.run, staged, world, destination / "bindings", **binding_selection)
+        second = generate(self.run, staged, world, destination / "bindings-check", **binding_selection)
         if second != bindings: raise ValueError("nondeterministic Java WIT bindings")
         project = destination / "project"
         project.mkdir()
