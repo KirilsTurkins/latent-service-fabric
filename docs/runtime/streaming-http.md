@@ -13,9 +13,10 @@ GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS are supported. A 4xx/5xx status 
 a response. No ambient network authority, WebSocket, CONNECT, protocol upgrade,
 automatic replay or automatic redirect is provided.
 
-Install this provider through the trusted Rust embedding API. The current
-[standalone provider configuration](../reference/standalone-providers.md)
-has no streaming HTTP installation field.
+Install this provider through the trusted Rust embedding API or the explicit
+`httpStreaming` entry in the protected
+[standalone provider configuration](../reference/standalone-providers.md#streaming-http-installation).
+Both use the same provider, profile, digest, epoch and exact guest grants.
 
 ```rust,ignore
 let provider = StreamingHttpProvider::install(pools.clone(), "streaming", 1, 0,
