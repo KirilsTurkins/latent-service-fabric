@@ -12,7 +12,7 @@ from tools.go_capsule_project import ROOT, TEMPLATES, create
 from tools.go_capsule_build import build
 
 
-def main() -> int:
+def parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     new = commands.add_parser("new", help="Create an independent Go project")
@@ -25,24 +25,100 @@ def main() -> int:
     resolve_.add_argument("--go", type=Path)
     resolve_.add_argument("--tag", action="append", default=[])
     resolve_.add_argument("--proxy-config", type=Path)
+    review = commands.add_parser("review-lock", help="Accept an exact reviewed immutable Go module closure")
+    review.add_argument("project", type=Path)
+    review.add_argument("--candidate", type=Path, required=True)
+    review.add_argument("--expect", required=True, help="Exact sha256:<64 hex> of reviewed candidate bytes")
+    status = commands.add_parser("dependencies", help="Verify captured Go inputs offline")
+    status.add_argument("project", type=Path)
+    for operation in ("test", "watch"):
+        command = commands.add_parser(operation, help="Delegate reviewed inputs to the maintained frontend")
+        command.add_argument("project", type=Path)
+        command.add_argument("--workspace", required=True)
+        command.add_argument("--state-root", type=Path)
+        command.add_argument("--select", action="append", default=[])
+        command.add_argument("--frontend", type=Path)
+        command.add_argument("--frontend-sha256")
+        command.add_argument("--frontend-timeout", type=int, default=600)
+        if operation == "test":
+            command.add_argument("--environment", choices=("node", "portable"), default="node")
+        else:
+            command.add_argument("--tool-root")
     compile_ = commands.add_parser("build", help="Compile, validate and package captured Go sources")
     compile_.add_argument("project", type=Path)
     compile_.add_argument("--output", type=Path, required=True)
     compile_.add_argument("--repository", required=True, help="Public operator-asserted source label")
     compile_.add_argument("--contracts-tool", type=Path, default=ROOT / "target/debug/examples/capsule_contracts")
     compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parser().parse_args(argv)
+    authoring = args.command in {'resolve', 'review-lock', 'dependencies', 'test', 'watch'}
     try:
-        if args.command == "resolve":
-            from tools.go_application_dependencies import resolve
-            resolve(args.project, args.candidate, go=args.go, selected={"tags": args.tag}, proxy_config=args.proxy_config)
-            result = args.candidate
+        if authoring:
+            from tools import go_dependency_authoring as dependencies
+            from tools.build_snapshot import canonical
+            from tools.dev_workflow import paths
+            if args.command in {'test', 'watch'}:
+                from tools import guest_authoring_frontend
+                from tools.guest_dependency_inputs import layout
+                owner, _app, _descriptor = layout(args.project, 'go')
+                delegated = dependencies.frontend(owner, args.command, workspace=args.workspace,
+                    state_root=args.state_root, tool_root=getattr(args, 'tool_root', None),
+                    selections=tuple(args.select), environment=getattr(args, 'environment', 'node'))
+                outcome = guest_authoring_frontend.execute(owner, args.command, delegated,
+                    frontend=args.frontend, expected=args.frontend_sha256, timeout_seconds=args.frontend_timeout)
+                guest_authoring_frontend.emit(outcome)
+                try:
+                    dependencies.record(owner, {**outcome.evidence, 'stage': 'go-dependency-' + args.command,
+                        'compilerExecution': 'maintained-frontend'})
+                except (ValueError, OSError):
+                    print('Go dependency frontend receipt unavailable; inspect workspace status.', file=sys.stderr)
+                return outcome.exit_code
+            if args.command == 'resolve':
+                import os
+                from tools.application_dependency_store import DependencyError
+                from tools.go_application_dependencies import resolve
+                candidate = dependencies.candidate_location(args.project, args.candidate)
+                if any(os.path.lexists(candidate.with_name(candidate.name + suffix)) for suffix in ('.receipt.json', '.failed.json')):
+                    raise DependencyError('go-dependency-candidate-use-fresh-attempt')
+                lock = resolve(args.project, candidate, go=args.go, selected={'tags': args.tag}, proxy_config=args.proxy_config)
+                result = dependencies.resolved(args.project, candidate, lock)
+                paths.write_new(candidate.with_name(candidate.name + '.receipt.json'), canonical(result) + b'\n')
+            elif args.command == 'review-lock':
+                result = dependencies.review(args.project, args.candidate, args.expect)
+            else:
+                result = dependencies.status(args.project)
+            receipt = dependencies.record(args.project, result)
+            print(canonical({**result, 'receipt': str(receipt)}).decode())
+            return 0
         else:
             result = (create(args.directory, args.template, args.name) if args.command == "new" else
                       build(args.project, args.output, args.contracts_tool, args.packager, args.repository))
         print(result)
         return 0
-    except (ValueError, OSError, RuntimeError) as error:
+    except (ValueError, OSError, RuntimeError, KeyError, TypeError) as error:
+        if authoring:
+            from tools import go_dependency_authoring as dependencies
+            from tools.build_snapshot import canonical
+            from tools.dev_workflow import paths
+            result = dependencies.failure(args.command, error)
+            try:
+                dependencies.record(args.project, result)
+                if args.command == 'resolve' and result['reason'] not in {
+                        'dependency-candidate-exists', 'go-dependency-candidate-use-fresh-attempt',
+                        'go-candidate-cannot-overwrite-reviewed-input', 'go-candidate-inside-captured-source'}:
+                    import os
+                    candidate = dependencies.candidate_location(args.project, args.candidate)
+                    failed = candidate.with_name(candidate.name + '.failed.json')
+                    if not os.path.lexists(failed):
+                        paths.write_new(failed, canonical(result) + b'\n')
+            except (ValueError, OSError):
+                pass
+            print(canonical(result).decode(), file=sys.stderr)
+            return 1
         print(f"Go capsule authoring failed: {error}", file=sys.stderr)
         return 1
 
