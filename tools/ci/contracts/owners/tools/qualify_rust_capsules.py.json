@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/qualify_rust_capsules.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain every TypeScript dependency fixture and authoring helper fingerprint, all Rust authoring and direct-library checks, and current Go and .NET qualification with explicit noncrypto entropy grants and exact executable approval receipts.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0aeb53670a406b05c3168ec42da7efcc73eceff6bd9b5790055452429a336f0b"
-}
+{"kind":"owner","path":"tools/qualify_rust_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain every TypeScript dependency fixture and authoring helper fingerprint, all Rust authoring and direct-library checks, and current Go and .NET qualification with explicit noncrypto entropy grants and exact executable approval receipts.","schemaVersion":"latent.ci.contracts.v1","sha256":"0aeb53670a406b05c3168ec42da7efcc73eceff6bd9b5790055452429a336f0b"}

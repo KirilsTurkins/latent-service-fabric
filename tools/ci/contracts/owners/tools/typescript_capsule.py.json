@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/typescript_capsule.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve install-tools/new/build behavior while adding exact reviewed npm lock status and bounded authenticated maintained test/watch delegates with static redacted failures",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "055ddb7db5865a2587965e9b0e8492bbaa02c613118c0a6833142310d56654f8"
-}
+{"kind":"owner","path":"tools/typescript_capsule.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve install-tools/new/build behavior while adding exact reviewed npm lock status and bounded authenticated maintained test/watch delegates with static redacted failures","schemaVersion":"latent.ci.contracts.v1","sha256":"055ddb7db5865a2587965e9b0e8492bbaa02c613118c0a6833142310d56654f8"}

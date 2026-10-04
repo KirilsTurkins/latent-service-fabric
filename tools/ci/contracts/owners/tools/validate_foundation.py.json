@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/validate_foundation.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all foundation recipe scopes and rejection guards; recognize only the complete failure-propagating matrix including the required separate metadata/security qualification lane.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9639f4cd0d05e39cb035f19f89e4e6a075dc4a7f36d39bf412139219e5574ec4"
-}
+{"kind":"owner","path":"tools/validate_foundation.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain all foundation recipe scopes and rejection guards; recognize only the complete failure-propagating matrix including the required separate metadata/security qualification lane.","schemaVersion":"latent.ci.contracts.v1","sha256":"9639f4cd0d05e39cb035f19f89e4e6a075dc4a7f36d39bf412139219e5574ec4"}
