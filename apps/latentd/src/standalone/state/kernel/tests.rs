@@ -183,6 +183,7 @@ async fn fresh_protected_kernel_creates_checkpoint_before_one_paused_same_owner_
     assert!(report.clean && report.physically_retired);
     drop(source);
     drop(effects);
+    drop(early);
     let report = kernel.shutdown(deadline).await.unwrap();
     assert!(report.clean);
     assert!(report.store.snapshot.physically_retired());

@@ -84,6 +84,10 @@ async fn actual_namespace_catalog_reuses_retired_initializer_work_until_its_last
     let remaining = settings.startup_work_bytes
         - settings.store.io.resident_bytes
         - crate::config::state::STARTUP_APPLICATION_BYTES
+        - latent_effects::authority::EffectAuthorityOwner::retained_memory_bytes(
+            crate::config::state::EFFECT_AUTHORITY_MAXIMUM_RULES,
+        )
+        .unwrap()
         - metadata;
     let original = bootstrap.original();
     assert!(original
