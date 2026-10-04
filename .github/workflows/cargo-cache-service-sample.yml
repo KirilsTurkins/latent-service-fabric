@@ -1,0 +1,94 @@
+name: Cargo cache service sample
+
+on:
+  workflow_call:
+    inputs:
+      kind:
+        required: true
+        type: string
+      state:
+        required: true
+        type: string
+      experiment:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sample:
+    name: Cache sample (${{ inputs.kind }} / ${{ inputs.state }})
+    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      RUSTUP_TOOLCHAIN: 1.97.1
+      LSF_REQUIRE_NATIVE_PROCESS_TESTS: "1"
+      CARGO_BUILD_JOBS: "2"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: ${{ inputs.kind == 'recipe' && '1' || '0' }}
+      CARGO_PROFILE_TEST_DEBUG: ${{ inputs.kind == 'recipe' && '1' || '0' }}
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "true"
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: "true"
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install pinned prerequisites
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes fish
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Identify isolated experimental namespace
+        id: identity
+        env:
+          KIND: ${{ inputs.kind }}
+          EXPERIMENT: ${{ inputs.experiment }}
+        run: python3 tools/ci_cargo_service.py identity --kind "$KIND" --experiment "$EXPERIMENT" --output "$RUNNER_TEMP/cargo-service/identity.json" --github-output "$GITHUB_OUTPUT"
+      - name: Restore dependency cache
+        id: dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: ${{ steps.identity.outputs.prefix }}
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-provider: github
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && inputs.state == 'cold' }}
+      - name: Execute every reviewed Cargo invocation
+        env:
+          CONFIGURATION: ${{ steps.identity.outputs.configuration }}
+          SAMPLE_STATE: ${{ inputs.state }}
+          CACHE_HIT: ${{ steps.dependencies.outputs.cache-hit || 'false' }}
+        run: python3 tools/ci_cargo_evaluate.py --disposable-checkout --configuration "$CONFIGURATION" --service-state "$SAMPLE_STATE" --service-hit "$CACHE_HIT" --output "$RUNNER_TEMP/cargo-service/recipes"
+      - name: Seal completed single sample
+        run: python3 tools/ci_cargo_service.py sample-report --identity "$RUNNER_TEMP/cargo-service/identity.json" --evaluation "$RUNNER_TEMP/cargo-service/recipes/evaluation.json" --output "$RUNNER_TEMP/cargo-service/service-sample.json"
+      - name: Retain original recipe observations including failed attempts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cargo-service-${{ inputs.kind }}-${{ inputs.state }}-recipes-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/cargo-service/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain completed sample for read-only comparison
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cargo-service-${{ inputs.kind }}-${{ inputs.state }}-sample-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/cargo-service/service-sample.json
+          if-no-files-found: error
+          retention-days: 7

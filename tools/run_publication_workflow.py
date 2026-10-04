@@ -199,95 +199,113 @@ def wait_restart_floor(client):
 
 
 def run(args):
-    fixture = args.fixture_root.resolve(strict=True)
-    metadata = read_json(fixture / "fixture.json")
-    require(metadata.get("publicationWorkflow") is True, "wrong-fixture-profile")
-    original = inventory(fixture)
-    # Prove the correction affects only the embedded inventory input.
-    require((fixture / "blue/inputs/component.wasm").read_bytes() == (fixture / "green/inputs/component.wasm").read_bytes(), "fixture-wasm-differs")
-    require((fixture / "blue/inputs/capsule.json").read_bytes() == (fixture / "green/inputs/capsule.json").read_bytes(), "fixture-metadata-differs")
-    require(read_json(fixture / "blue/sbom-inputs.json") != read_json(fixture / "green/sbom-inputs.json"), "fixture-sbom-unchanged")
-    with owned_cancellation() as cancellation:
-        with tempfile.TemporaryDirectory(prefix="lsf-publication-workflow-") as temporary:
-            work = Path(temporary)
-            node_dir = work / "node"
-            node_dir.mkdir(mode=0o700)
-            deadline = time.monotonic() + 180
-            client, other = [Client(args.cli.resolve(strict=True), work, cancellation, deadline) for _ in range(2)]
-            identities = build_identity(args, cancellation, deadline)
-            config = read_json(configure_node(node_dir, fixture, "tests"))
-            config["credentials"].append({"token": TOKEN + "-OTHER", "tenant": "other", "subject": "other-operator", "role": "operator"})
-            config_path = node_dir / "publication-node.json"
-            write_json(config_path, config)
-            input_path = work / "input.json"
-            write_json(input_path, metadata["input"])
-            node, shutdown = None, []
-            try:
-                node = connect(client, args.node.resolve(strict=True), node_dir, config_path, "tests", 1)
-                other_connection(other, client, 1)
-                all_rows, history, pins = {}, {}, []
-                for active, tenant in ((client, "tests"), (other, "other")):
-                    rows = publish(active, fixture, tenant)
-                    all_rows[tenant], history[tenant] = rows, []
-                    # Exercise both exact publications, then retain blue as the rollback base.
-                    for index, name in enumerate(("blue", "green", "blue")):
-                        path = manifest(fixture, work, tenant, name, rows[name]["reference"], index)
-                        saved = apply(active, path, "apply-" + str(index))
-                        require(saved[1]["publication"] == rows[name]["reference"], "apply-publication")
-                        history[tenant].append(saved)
-                        pins.append(check_pin(active, metadata, input_path, tenant + "-" + str(index),
-                                              rows[name]["reference"], rows[name]["component"]))
-                require(len({row["reference"]["id"] for rows in all_rows.values() for row in rows.values()}) == 4, "tenant-publications-must-differ")
-                for name in ("blue", "green"):
-                    require(all_rows["tests"][name]["package"] == all_rows["other"][name]["package"], "tenant-package-dedup")
-                foreign = client.call("release", "get", "--publication", all_rows["other"]["blue"]["reference"]["id"], codes=(4, 6))
-                missing = client.call("release", "get", "--publication", "publication:sha256:" + "0" * 64, codes=(4, 6))
-                require(foreign["category"] == missing["category"] and foreign.get("error") == missing.get("error"), "foreign-existence-leak")
-                stop(client, node)
-                other.node = None
-                shutdown.append(stopped_record(node))
-                wait_restart_floor(client)
-                node = connect(client, args.node.resolve(strict=True), node_dir, config_path, "tests", 2)
-                other_connection(other, client, 2)
-                for active, tenant in ((client, "tests"), (other, "other")):
-                    replay_history(active, all_rows[tenant], history[tenant])
-                rows, other_rows = all_rows["tests"], all_rows["other"]
-                started, rolled, revoked = rollout(client, other, rows, other_rows, fixture, work)
-                pins.append(check_pin(client, metadata, input_path, "restored-blue", rows["blue"]["reference"], rows["blue"]["component"]))
-                renewed = renew(other, other_rows, fixture)
-                require(record(client, rows["green"]["reference"])["state"].endswith("REVOKED"), "renewal-must-not-unrevoke-other-publication")
-                # Restart after independent lifecycle changes and inspect original operations again.
-                stop(client, node)
-                other.node = None
-                shutdown.append(stopped_record(node))
-                wait_restart_floor(client)
-                node = connect(client, args.node.resolve(strict=True), node_dir, config_path, "tests", 3)
-                other_connection(other, client, 3)
-                require(client.call("rollout", "operation", "coexist", "rollout-start")["data"]["receipt"] == started, "restart-rollout-history")
-                require(client.call("release", "operation", "revoke-candidate")["data"]["receipt"] == revoked, "restart-revocation-history")
-                require(other.call("release", "operation", "renew-green")["data"]["receipt"] == renewed, "restart-renewal-history")
-                pins.append(check_pin(client, metadata, input_path, "restart-blue", rows["blue"]["reference"], rows["blue"]["component"]))
-                require(record(client, rows["green"]["reference"])["state"].endswith("REVOKED"), "restart-lost-revocation")
-                audit_pages = check_audit(client, rows)
-                stop(client, node)
-                other.node = None
-                shutdown.append(stopped_record(node))
-                node = None
-                require(client.calls + other.calls <= 160 and time.monotonic() < deadline, "workflow-bound")
-                require(inventory(fixture) == original, "fixture-mutated")
-                result = {"schemaVersion": "latent.publication.workflow.v1", "passed": True,
-                          "identities": identities, "publications": {tenant: {name: {key: row[key] for key in ("reference", "component", "package")}
-                            for name, row in rows.items()} for tenant, rows in all_rows.items()},
-                          "successfulInvocations": len(pins), "deniedInvocations": 1,
-                          "cliProcesses": client.calls + other.calls, "auditPages": audit_pages, "shutdown": shutdown,
-                          "temporaryOutputsRemoved": True, "syntheticTestEvidence": True,
-                          "rollback": rolled, "renewal": renewed, "revocation": revoked}
-            finally:
-                client.node = other.node = None
-                if node is not None:
-                    node.close()
-        cancellation.check()
-    return bounded_receipt(result)
+    client = other = None
+    identities = None
+    try:
+        fixture = args.fixture_root.resolve(strict=True)
+        metadata = read_json(fixture / "fixture.json")
+        require(metadata.get("publicationWorkflow") is True, "wrong-fixture-profile")
+        original = inventory(fixture)
+        # Prove the correction affects only the embedded inventory input.
+        require((fixture / "blue/inputs/component.wasm").read_bytes() == (fixture / "green/inputs/component.wasm").read_bytes(), "fixture-wasm-differs")
+        require((fixture / "blue/inputs/capsule.json").read_bytes() == (fixture / "green/inputs/capsule.json").read_bytes(), "fixture-metadata-differs")
+        require(read_json(fixture / "blue/sbom-inputs.json") != read_json(fixture / "green/sbom-inputs.json"), "fixture-sbom-unchanged")
+        with owned_cancellation() as cancellation:
+            with tempfile.TemporaryDirectory(prefix="lsf-publication-workflow-") as temporary:
+                work = Path(temporary)
+                node_dir = work / "node"
+                node_dir.mkdir(mode=0o700)
+                deadline = time.monotonic() + 180
+                client, other = [Client(args.cli.resolve(strict=True), work, cancellation, deadline) for _ in range(2)]
+                identities = build_identity(args, cancellation, deadline)
+                config = read_json(configure_node(node_dir, fixture, "tests"))
+                config["credentials"].append({"token": TOKEN + "-OTHER", "tenant": "other", "subject": "other-operator", "role": "operator"})
+                config_path = node_dir / "publication-node.json"
+                write_json(config_path, config)
+                input_path = work / "input.json"
+                write_json(input_path, metadata["input"])
+                node, shutdown = None, []
+                try:
+                    node = connect(client, args.node.resolve(strict=True), node_dir, config_path, "tests", 1)
+                    other_connection(other, client, 1)
+                    all_rows, history, pins = {}, {}, []
+                    for active, tenant in ((client, "tests"), (other, "other")):
+                        rows = publish(active, fixture, tenant)
+                        all_rows[tenant], history[tenant] = rows, []
+                        # Exercise both exact publications, then retain blue as the rollback base.
+                        for index, name in enumerate(("blue", "green", "blue")):
+                            path = manifest(fixture, work, tenant, name, rows[name]["reference"], index)
+                            saved = apply(active, path, "apply-" + str(index))
+                            require(saved[1]["publication"] == rows[name]["reference"], "apply-publication")
+                            history[tenant].append(saved)
+                            pins.append(check_pin(active, metadata, input_path, tenant + "-" + str(index),
+                                                  rows[name]["reference"], rows[name]["component"]))
+                    require(len({row["reference"]["id"] for rows in all_rows.values() for row in rows.values()}) == 4, "tenant-publications-must-differ")
+                    for name in ("blue", "green"):
+                        require(all_rows["tests"][name]["package"] == all_rows["other"][name]["package"], "tenant-package-dedup")
+                    foreign = client.call("release", "get", "--publication", all_rows["other"]["blue"]["reference"]["id"], codes=(4, 6))
+                    missing = client.call("release", "get", "--publication", "publication:sha256:" + "0" * 64, codes=(4, 6))
+                    require(foreign["category"] == missing["category"] and foreign.get("error") == missing.get("error"), "foreign-existence-leak")
+                    stop(client, node)
+                    other.node = None
+                    shutdown.append(stopped_record(node))
+                    wait_restart_floor(client)
+                    node = connect(client, args.node.resolve(strict=True), node_dir, config_path, "tests", 2)
+                    other_connection(other, client, 2)
+                    for active, tenant in ((client, "tests"), (other, "other")):
+                        replay_history(active, all_rows[tenant], history[tenant])
+                    rows, other_rows = all_rows["tests"], all_rows["other"]
+                    started, rolled, revoked = rollout(client, other, rows, other_rows, fixture, work)
+                    pins.append(check_pin(client, metadata, input_path, "restored-blue", rows["blue"]["reference"], rows["blue"]["component"]))
+                    renewed = renew(other, other_rows, fixture)
+                    require(record(client, rows["green"]["reference"])["state"].endswith("REVOKED"), "renewal-must-not-unrevoke-other-publication")
+                    # Restart after independent lifecycle changes and inspect original operations again.
+                    stop(client, node)
+                    other.node = None
+                    shutdown.append(stopped_record(node))
+                    wait_restart_floor(client)
+                    node = connect(client, args.node.resolve(strict=True), node_dir, config_path, "tests", 3)
+                    other_connection(other, client, 3)
+                    require(client.call("rollout", "operation", "coexist", "rollout-start")["data"]["receipt"] == started, "restart-rollout-history")
+                    require(client.call("release", "operation", "revoke-candidate")["data"]["receipt"] == revoked, "restart-revocation-history")
+                    require(other.call("release", "operation", "renew-green")["data"]["receipt"] == renewed, "restart-renewal-history")
+                    pins.append(check_pin(client, metadata, input_path, "restart-blue", rows["blue"]["reference"], rows["blue"]["component"]))
+                    require(record(client, rows["green"]["reference"])["state"].endswith("REVOKED"), "restart-lost-revocation")
+                    audit_pages = check_audit(client, rows)
+                    stop(client, node)
+                    other.node = None
+                    shutdown.append(stopped_record(node))
+                    node = None
+                    require(client.calls + other.calls <= 160 and time.monotonic() < deadline, "workflow-bound")
+                    require(inventory(fixture) == original, "fixture-mutated")
+                    result = {"schemaVersion": "latent.publication.workflow.v1", "passed": True,
+                              "identities": identities, "publications": {tenant: {name: {key: row[key] for key in ("reference", "component", "package")}
+                                for name, row in rows.items()} for tenant, rows in all_rows.items()},
+                              "successfulInvocations": len(pins), "deniedInvocations": 1,
+                              "cliProcesses": client.calls + other.calls, "auditPages": audit_pages, "shutdown": shutdown,
+                              "temporaryOutputsRemoved": True, "syntheticTestEvidence": True,
+                              "rollback": rolled, "renewal": renewed, "revocation": revoked}
+                finally:
+                    client.node = other.node = None
+                    if node is not None:
+                        node.close()
+            cancellation.check()
+        return bounded_receipt(result)
+    except BaseException:
+        # Existing process, node and temporary-directory owners have unwound.
+        # This observes their original failure; it proves no successful cleanup.
+        try:
+            failure = {"schemaVersion": "latent.publication.workflow.v1", "passed": False,
+                       "identities": identities,
+                       "failedCalls": [owner.failed_call for owner in (client, other)
+                                       if owner is not None and owner.failed_call is not None],
+                       "identityRechecked": False, "nodeShutdown": "unverified",
+                       "temporaryOutputsRemoved": "unverified", "syntheticTestEvidence": True}
+            print(bounded_receipt(failure))
+        except Exception:
+            # A failed diagnostic sink cannot replace the original exception.
+            pass
+        raise
 
 
 def main():
