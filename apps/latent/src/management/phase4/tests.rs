@@ -307,7 +307,9 @@ fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_associatio
         "tenant",
     )
     .failure(&mut failure);
-    assert_eq!(failure.data["recovery"], context);
+    let mut expected_context = context.clone();
+    expected_context["tenant"] = json!("tenant");
+    assert_eq!(failure.data["recovery"], expected_context);
     assert!(!failure.outcome_known);
 
     let receipt = c::DispatcherOperationReceipt {
