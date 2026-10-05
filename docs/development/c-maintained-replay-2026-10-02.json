@@ -1,0 +1,288 @@
+{
+  "commandLimits": {
+    "overallSeconds": 900,
+    "perCommandSeconds": 600
+  },
+  "dateUtc": "2026-10-02",
+  "maintainedCommands": [
+    {
+      "exitCode": 0,
+      "seconds": 0.564409,
+      "stage": "host-build"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 34.926995,
+      "stage": "c-scope-compile"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 0.011986,
+      "stage": "c-scope-runtime"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 55.012445,
+      "stage": "build-sdk-guests"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 99.208455,
+      "stage": "sdk-runtime-tests"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 1.335998,
+      "stage": "sign-demo"
+    },
+    {
+      "exitCode": 0,
+      "seconds": 1.999121,
+      "stage": "static-library-sign-demo"
+    }
+  ],
+  "nativeControls": {
+    "controls": [
+      {
+        "expectedDenial": "c-static-archive-duplicate-strong-symbol",
+        "id": "actual-unused-duplicate-strong-member",
+        "status": "passed"
+      },
+      {
+        "expectedDenial": "c-static-archive-host-native-member",
+        "id": "actual-host-native-member",
+        "status": "passed"
+      },
+      {
+        "expectedDenial": "c-wasm-object-requires-unqualified-runtime-profile",
+        "id": "actual-wasm64-target-member",
+        "status": "passed"
+      },
+      {
+        "expectedDenial": "c-static-archive-member-collision-or-limit",
+        "id": "actual-1025-member-archive-overflow",
+        "status": "passed"
+      },
+      {
+        "expectedDenial": "wasm-tools failed",
+        "id": "actual-unused-invalid-core-validation",
+        "status": "passed"
+      },
+      {
+        "commandCount": 3,
+        "expectedDenial": "c-static-archive-duplicate-strong-symbol",
+        "failureReceiptDigest": "sha256:b197ae6f24d33701d17e231b6ea23c713311133de66f60138514c99153204bfd",
+        "failureStage": "captured-compiler-isolation",
+        "id": "actual-duplicate-across-captured-archives",
+        "status": "passed"
+      },
+      {
+        "commandCount": 3,
+        "expectedDenial": "c-static-archive-needs-current-observed-abi-profile-or-source-rebuild",
+        "failureReceiptDigest": "sha256:df6b486a818d78ebed12a4f2219dd4ae12fe3f94fab82d3593960329c0f673bc",
+        "failureStage": "captured-compiler-isolation",
+        "id": "actual-stale-runtime-checkpoint-profile",
+        "status": "passed"
+      },
+      {
+        "commandCount": 0,
+        "expectedDenial": "dependency-artifact-missing-resolve-explicitly",
+        "failureReceiptDigest": "sha256:5ce54e04d2bd29c90db8c8df15a3b337d5005f09c7c565b0382c67aeb3e81f33",
+        "failureStage": "application-dependencies",
+        "id": "actual-missing-transitive",
+        "status": "passed"
+      },
+      {
+        "commandCount": 0,
+        "expectedDenial": "dependency-artifact-integrity",
+        "failureReceiptDigest": "sha256:b95de19433c65e40ee9fb50e61e36bdb31a04a99ce36bbe036619b97ba3f1bd8",
+        "failureStage": "application-dependencies",
+        "id": "actual-tampered-transitive",
+        "status": "passed"
+      },
+      {
+        "expectedDenial": "dependency-generator-approval-mismatch",
+        "id": "generator-incorrect-approval-before-execution",
+        "status": "passed"
+      },
+      {
+        "cleanup": "reaped",
+        "headerDigest": "sha256:7341d6e496deb87f24da51be6cb40c584417560b033a4f8488eef1bac4c94dc7",
+        "id": "actual-approved-isolated-header-and-private-credential-absence",
+        "identity": "sha256:28a23f9ed5668088929afcb6291f7028d13f85d3ffa1e4fa880f9dad1921ae52",
+        "receiptDigest": "sha256:b36dafa6aaaa6941a9d2c096ebf29bad77b56b66e94020d1a5f8815bdc9ac2ac",
+        "status": "passed"
+      },
+      {
+        "expectedDenial": "dependency-generator-approval-mismatch",
+        "id": "generator-changed-input-invalidates-original-approval",
+        "status": "passed"
+      },
+      {
+        "expectedDenial": "dependency-generator-environment-denied",
+        "id": "generator-private-environment-declaration-denied",
+        "status": "passed"
+      },
+      {
+        "archiveDigest": "sha256:4f5070b99a60f2104df9c070e09a55031393c66663d4a840eccd548dec8e257d",
+        "id": "actual-generated-header-offline-c-archive-and-public-closure-redaction",
+        "originalSourcesAvailable": false,
+        "profileDigest": "sha256:09a4f7962534e1a5bc9eeb556938cb860b6e3a21d87fde90ce456da79f210683",
+        "receiptDigest": "sha256:538eda64d90302fba217160dc38cd669e8ac64581a50b1711be28d5f40e25432",
+        "status": "passed"
+      },
+      {
+        "commandCount": 0,
+        "expectedDenial": "dependency-artifact-integrity",
+        "failureReceiptDigest": "sha256:b95de19433c65e40ee9fb50e61e36bdb31a04a99ce36bbe036619b97ba3f1bd8",
+        "failureStage": "application-dependencies",
+        "id": "actual-captured-generated-header-tamper",
+        "status": "passed"
+      },
+      {
+        "commandCount": 0,
+        "expectedDenial": "dependency-lock-drift",
+        "failureReceiptDigest": "sha256:c0b4d1f1ea0923b757a253eff0cc1ced69cae2e8f7a5ac7013df6678560b3b19",
+        "failureStage": "application-dependencies",
+        "id": "actual-changed-generator-selection-lock-denial",
+        "status": "passed"
+      },
+      {
+        "commandCount": 4,
+        "expectedDenial": "zig failed",
+        "failureReceiptDigest": "sha256:c37cdfd7774ebf4cc17145890473fa9166f5ffe90113cc1308533ced06c05153",
+        "failureStage": "compile-static-archive",
+        "id": "actual-absolute-include-outside-captured-namespace",
+        "status": "passed"
+      },
+      {
+        "diagnosticsDigest": "sha256:4ddcce06ff06d3aea53540a9a60053934d76d630846551e7cfb3bf250cc38563",
+        "exitCode": 1,
+        "id": "actual-c-cli-private-credential-rejection-and-redaction",
+        "receiptDigest": "sha256:4ddcce06ff06d3aea53540a9a60053934d76d630846551e7cfb3bf250cc38563",
+        "status": "passed"
+      },
+      {
+        "expectedDenial": "dependency-graph-not-closed",
+        "id": "actual-capture-unclosed-transitive-graph",
+        "status": "passed"
+      },
+      {
+        "expectedDenial": "command-deadline",
+        "id": "actual-generator-deadline-terminates-descendants",
+        "progressStable": true,
+        "receiptDigest": "sha256:91f9c81ef1b31ab87ad923955868fc10bf9765005427017fbe8ca2274f26e21b",
+        "retainedCleanupClaim": "reaped",
+        "status": "passed"
+      },
+      {
+        "cleanup": "reaped",
+        "id": "actual-fresh-generated-header-stage-after-deadline",
+        "receiptDigest": "sha256:77158c4df1957f940cac23371c273670474d45480b856124b90c186a8023254d",
+        "status": "passed"
+      }
+    ],
+    "passed": 21,
+    "receiptSha256": "392ef82fe56acb13b0e53f953147d095ef9a450b7bd8cec57b1e66f8ab5af8c8"
+  },
+  "originalDirectSdkCases": {
+    "failed": 0,
+    "filteredOut": 0,
+    "ignored": 0,
+    "passed": 10,
+    "stdoutSha256": "5a9c7f2a8b4bb77d5900c16282c88568a65b06273e94cddabc13bbbee21e1a7a"
+  },
+  "preservedEarlierAttempt": {
+    "cause": "Qualification container incorrectly had no network for its explicit HTTPS source acquisition; compiler and generator isolation was unchanged",
+    "originalGuestTestsRun": false,
+    "stage": "explicit upstream source capture",
+    "status": "failed"
+  },
+  "printedGuide": {
+    "bashSteps": 6,
+    "commands": [
+      {
+        "exitCode": 0,
+        "seconds": 53.223744,
+        "stage": "printed-guide"
+      }
+    ],
+    "sourceDigest": "sha256:75adb605b2f094837deaddfe13d0b28b5a3b452351c1397e7a2d735e4d7eda00",
+    "status": "passed"
+  },
+  "producer": {
+    "cargo": "offline",
+    "compilerNamespaceNetwork": "none",
+    "cpus": 2,
+    "explicitSourceAcquisitionNetwork": "bridge",
+    "imageDigest": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+    "memoryBytes": 4294967296,
+    "nativeCache": "owned and explicitly rebuilt at the recorded source"
+  },
+  "qualificationReceiptSha256": "9dfd496e551f24f81599b022879f21a9d02a07a65f2b186cca2f317cd0afd277",
+  "qualificationSeconds": 699.352445,
+  "releasePublication": false,
+  "remaining": [
+    "Authenticated installed frontend dependency edit/build/test/update/remove/watch and private capture workflow",
+    "Complete issue684 acceptance reconciliation and current exact-source hosted CI"
+  ],
+  "retainedRawEvidence": {
+    "archiveBytes": 318689280,
+    "archiveSha256": "cfd2e39116e1d92fffabff3a80338f5d5a23cc6c409d732394e865e548acbd64",
+    "files": 3407,
+    "location": "owned SDK delivery evidence outside Docker and source worktrees"
+  },
+  "schemaVersion": "latent.c-maintained-replay-observation.v1",
+  "signedNodes": {
+    "source": {
+      "categories": {
+        "declared-error": 4,
+        "platform-failure": 5,
+        "success": 18
+      },
+      "cliCalls": 111,
+      "invocations": 27,
+      "limits": {
+        "controlMillis": 15000,
+        "controlProcessSeconds": 25,
+        "invocationMillis": 5000,
+        "overallSeconds": 180,
+        "peerSeconds": 180
+      },
+      "nodeProcessReaped": true,
+      "providerIdleChecks": 6,
+      "receiptSha256": "05d9c3412acda468527ffa97c0059a4fb0d7af04576a981c38ed1b0d30b26465",
+      "samples": 24,
+      "status": "passed"
+    },
+    "static": {
+      "categories": {
+        "declared-error": 4,
+        "platform-failure": 5,
+        "success": 18
+      },
+      "cliCalls": 111,
+      "invocations": 27,
+      "limits": {
+        "controlMillis": 15000,
+        "controlProcessSeconds": 25,
+        "invocationMillis": 5000,
+        "overallSeconds": 180,
+        "peerSeconds": 180
+      },
+      "nodeProcessReaped": true,
+      "providerIdleChecks": 6,
+      "receiptSha256": "4cc2164eafd428ba25ca3808a75d813fa6eb13faf9e6915fee2115df4382cc91",
+      "samples": 24,
+      "status": "passed"
+    }
+  },
+  "source": "088a555195e713eb2812b2dc282fc3fb32fc1f6c",
+  "sourceCapture": {
+    "archiveBytes": 551741440,
+    "archiveSha256": "907450fa01eeddb82707e968fce75144793e2c71d706abf4461a2e5602987e33",
+    "cleanTrackedSource": true,
+    "trackedFilesCheckedBeforeAndAfter": 7307
+  },
+  "status": "passed-at-recorded-inputs"
+}
