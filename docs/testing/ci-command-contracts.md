@@ -8,7 +8,7 @@ compares them with the source under test. It never writes expected records.
 
 ## What is reviewed, and where
 
-Every fragment declares `latent.ci.contracts.v1`, its kind and a review reason.
+Every semantic fragment declares `latent.ci.contracts.v1`, its kind and a review reason.
 The reader discovers fragments in deterministic path order without a global
 fragment index or aggregate checksum. Workflow filenames retain their `.yml` or
 `.yaml` extension so equal stems cannot collide.
@@ -27,6 +27,21 @@ timeouts, concurrency, ordered prerequisites, action inputs, reusable-workflow
 inputs/secrets, and aggregation. Unknown fields cannot disappear during
 comparison. JSON unknown envelope fields, duplicate identities, duplicate/merge
 YAML keys, aliases/tags, unsafe paths, symlinks and unsupported schemas fail closed.
+
+Current Python fragments may use `latent.ci.contracts.v2` physical storage: each
+case's `guards` value names a SHA-256-keyed flat guard in `guardDefinitions`.
+The digest covers canonical UTF-8 guard JSON. The reader checks closed fields,
+exact case/reference coverage, matching definition digests and full definition
+use, then restores the same ordered v1 record before validation or hashing.
+Each resolved case owns independent guard lists. Both physical JSON and the
+decoded compact UTF-8 v1 record retain the original 2 MiB limit; decoded size is
+checked before expansion. Other kinds and historical records retain v1.
+
+`shared_python_record` prepares explicit storage proposals without changing
+reviewed cases or guards. Storage conversion requires a complete tracked Git
+audit of raw SHA-256, SHA-1 and blob references; raw-pinned current fragments and
+frozen history/evidence stay byte-preserved. Initial migration and new records
+default to v1. A scoped Python proposal preserves an existing reviewed v2 format.
 
 Step lists are never sorted. Use an explicit step `id` for new commands. Existing
 name-based run identities are retained during this migration so their historical

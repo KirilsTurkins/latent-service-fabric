@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -22,6 +23,7 @@ if __package__ in {None, ""}:
 from tools import ci_lane_inventory as lanes, ci_suite_inventory as registry
 
 SCHEMA = "latent.ci.contracts.v1"
+PYTHON_STORAGE_SCHEMA = "latent.ci.contracts.v2"
 DIRECTORY = "tools/ci/contracts"
 MAX_FRAGMENTS = 2048
 COMMON = {"schemaVersion", "kind", "reviewReason"}
@@ -33,6 +35,7 @@ KINDS = {
 }
 RECORD_FIELDS = {"workflow", "job", "name", "jobIf", "stepIf", "workingDirectory", "shell", "run"}
 DISPOSITIONS = {"unchanged", "extended", "conditional-host-replacement"}
+GUARD_FIELDS = {"bases", "classDecorators", "decorators", "skipSites", "fixtureGuards"}
 
 
 def require(condition: Any, reason: str) -> None:
@@ -177,7 +180,85 @@ def workflow_name(value: Any) -> str:
     return value.rsplit("/", 1)[1]
 
 
+def python_case_inventory(record: dict) -> None:
+    require(isinstance(record["cases"], list) and record["cases"]
+            and all(isinstance(case, str) for case in record["cases"])
+            and record["cases"] == sorted(set(record["cases"])), "empty-or-duplicate-python-cases")
+    require(isinstance(record["guards"], dict) and set(record["guards"]) == set(record["cases"]), "python-guard-inventory")
+
+
+def python_guard(guard: Any) -> None:
+    require(isinstance(guard, dict) and set(guard) == GUARD_FIELDS, "python-guard-fields")
+    require(all(isinstance(value, list) and all(isinstance(item, str) for item in value)
+                for value in guard.values()), "python-guard-types")
+
+
+def semantic_record(record: dict) -> dict:
+    """Resolve only current Python v2 storage into the reviewed, ordered v1 model.
+
+    Definitions are flat guards, not another reference language. Count the exact
+    compact UTF-8 v1 size before making any expanded copies; physical JSON keeps
+    the same independent MAX_BYTES bound in read_json.
+    """
+    if record.get("schemaVersion") != PYTHON_STORAGE_SCHEMA:
+        return record
+    require(record.get("kind") == "python"
+            and set(record) == COMMON | KINDS["python"] | {"guardDefinitions"}, "contract-fields-or-kind")
+    python_case_inventory(record)
+    definitions = record["guardDefinitions"]
+    require(isinstance(definitions, dict) and definitions, "python-guard-definitions")
+    sizes = {}
+    for identity, guard in definitions.items():
+        require(isinstance(identity, str) and re.fullmatch(r"[0-9a-f]{64}", identity), "python-guard-definition-digest")
+        python_guard(guard)
+        encoded = canonical(guard).encode("utf-8")
+        require(hashlib.sha256(encoded).hexdigest() == identity, "python-guard-definition-digest")
+        sizes[identity] = len(encoded)
+    references = record["guards"]
+    require(all(isinstance(identity, str) and identity in definitions for identity in references.values()),
+            "python-guard-reference")
+    require(set(references.values()) == set(definitions), "unused-python-guard-definition")
+    shell = {key: value for key, value in record.items() if key != "guardDefinitions"}
+    shell["schemaVersion"], shell["guards"] = SCHEMA, {}
+    expanded_bytes = len(canonical(shell).encode("utf-8")) + len(references) - 1
+    for case, identity in references.items():
+        expanded_bytes += len(canonical(case).encode("utf-8")) + 1 + sizes[identity]
+        require(expanded_bytes <= registry.MAX_BYTES, "decoded-contract-byte-limit")
+    # Preserve field, case-map, guard-field and list order; each case owns its
+    # own lists, even when its physical definition is shared with another case.
+    resolved = {}
+    for key, value in record.items():
+        if key == "guardDefinitions":
+            continue
+        if key == "guards":
+            resolved[key] = {case: copy.deepcopy(definitions[identity]) for case, identity in references.items()}
+        else:
+            resolved[key] = SCHEMA if key == "schemaVersion" else copy.deepcopy(value)
+    return resolved
+
+
+def shared_python_record(record: dict) -> dict:
+    """Prepare explicit lossless v2 storage; record/migrate still default to v1."""
+    value = semantic_record(record)
+    fragment_path(value)
+    require(value["kind"] == "python", "shared-storage-requires-python-contract")
+    definitions, references = {}, {}
+    for case, guard in value["guards"].items():
+        identity = hashlib.sha256(canonical(guard).encode("utf-8")).hexdigest()
+        if identity in definitions:
+            require(list(definitions[identity]) == list(guard), "python-guard-definition-order-conflict")
+        else:
+            definitions[identity] = copy.deepcopy(guard)
+        references[case] = identity
+    stored = copy.deepcopy(value)
+    stored["schemaVersion"], stored["guards"] = PYTHON_STORAGE_SCHEMA, references
+    stored["guardDefinitions"] = definitions
+    fragment_path(stored)
+    return stored
+
+
 def fragment_path(record: dict) -> str:
+    record = semantic_record(record)
     kind = record.get("kind")
     require(isinstance(kind, str) and kind in KINDS and set(record) == COMMON | KINDS[kind], "contract-fields-or-kind")
     require(record["schemaVersion"] == SCHEMA, "unsupported-contract-schema")
@@ -198,14 +279,9 @@ def fragment_path(record: dict) -> str:
         return f"owners/{name}.json"
     name = record["module"]
     require(isinstance(name, str) and re.fullmatch(r"tools/tests/test_[A-Za-z0-9_]+\.py", name), "invalid-python-contract-path")
-    require(isinstance(record["cases"], list) and record["cases"]
-            and all(isinstance(case, str) for case in record["cases"])
-            and record["cases"] == sorted(set(record["cases"])), "empty-or-duplicate-python-cases")
-    require(isinstance(record["guards"], dict) and set(record["guards"]) == set(record["cases"]), "python-guard-inventory")
+    python_case_inventory(record)
     for guard in record["guards"].values():
-        require(isinstance(guard, dict) and set(guard) == {"bases", "classDecorators", "decorators", "skipSites", "fixtureGuards"}, "python-guard-fields")
-        require(all(isinstance(value, list) and all(isinstance(item, str) for item in value)
-                    for value in guard.values()), "python-guard-types")
+        python_guard(guard)
     return f"python/{Path(name).name}.json"
 
 
@@ -225,7 +301,7 @@ def fragments(root: Path, directory: Path | None = None) -> dict[str, dict]:
             continue
         require(path.suffix == ".json", "unexpected-contract-fragment:" + relative)
         safe_path(root, path.relative_to(root).as_posix())
-        record = read_json(path)
+        record = semantic_record(read_json(path))
         expected = fragment_path(record)
         require(relative == expected, "misplaced-or-duplicate-contract:" + relative)
         require(expected not in records, "duplicate-contract-identity")
@@ -241,7 +317,8 @@ def assemble(records: dict[str, dict]) -> dict:
     data = {"schemaVersion": SCHEMA, "before": {}, "after": {}, "coverage": {},
             "delegatedOwners": {}, "pythonCases": {}, "pythonGuards": {}, "workflowContracts": {}}
     policies, jobs, revisions = {}, {}, set()
-    for record in records.values():
+    for stored in records.values():
+        record = semantic_record(stored)
         kind = record["kind"]
         if kind == "workflow":
             name = record["workflow"]
@@ -320,7 +397,10 @@ def write_records(directory: Path, records: list[dict]) -> None:
         require(not path.exists(), "refuse-overwrite-contract-proposal")
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("x", encoding="utf-8") as output:
-            output.write(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n")
+            if value["schemaVersion"] == PYTHON_STORAGE_SCHEMA:
+                output.write(json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n")
+            else:
+                output.write(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 def migrate(root: Path, legacy: Path, output: Path) -> dict:
@@ -411,6 +491,11 @@ def propose(root: Path, kind: str, source: str, job: str | None, output: Path, r
         require(all(assembled["pythonGuards"][source][case] == actual["guards"][case] for case in old),
                 "proposal-needs-explicit-python-skip-review")
         value = record(kind, reason, module=source, **actual)
+        path = fragment_path(value)
+        if path in existing:
+            physical = read_json(safe_path(root, DIRECTORY + "/" + path))
+            if physical["schemaVersion"] == PYTHON_STORAGE_SCHEMA:
+                value = shared_python_record(value)
     write_records(output, [value])
     return output / fragment_path(value)
 
