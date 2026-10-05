@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "npm-11.19.1-lsf-bundle-v1",
+  "profile": "npm-11.19.1-lsf-bundle-v2",
   "base": {
     "name": "npm",
     "version": "11.19.1",
@@ -18,6 +18,12 @@
       "from": "6.28.0",
       "version": "6.28.1",
       "integrity": "sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA=="
+    },
+    {
+      "name": "http-cache-semantics",
+      "from": "4.2.0",
+      "version": "4.3.0",
+      "integrity": "sha512-M5t5LlJpS1UHMjvwRQVdFHvPISGeLAxNcrWuJkeGh0KxsqCHZ1O3NXZU/8x7cD0BDcGW8kapxMKTvwlqrNkHkA=="
     },
     {
       "name": "brace-expansion",

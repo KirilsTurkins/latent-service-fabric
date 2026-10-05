@@ -44,12 +44,15 @@ class PreparationTests(unittest.TestCase):
                      ('package/node_modules/ip-address/package.json', {'name': 'ip-address', 'version': '10.5.0'}),
                      ('package/node_modules/ip-address/obsolete.js', b'old removed bytes'),
                      ('package/node_modules/undici/package.json', {'name': 'undici', 'version': '6.28.0'}),
+                     ('package/node_modules/http-cache-semantics/package.json', {'name': 'http-cache-semantics', 'version': '4.2.0'}),
+                     ('package/node_modules/http-cache-semantics/obsolete.js', b'old removed cache bytes'),
                      ('package/node_modules/brace-expansion/package.json', {'name': 'brace-expansion', 'version': '5.0.9',
                          'dependencies': {'balanced-match': '^4.0.2'}}),
                      ('package/node_modules/brace-expansion/obsolete.js', b'old removed brace bytes'),
                      ('package/node_modules/balanced-match/package.json', {'name': 'balanced-match', 'version': '4.0.4'})]
         self.patches = []
         for name, old, new in [('ip-address', '10.5.0', '10.7.2'), ('undici', '6.28.0', '6.28.1'),
+                               ('http-cache-semantics', '4.2.0', '4.3.0'),
                                ('brace-expansion', '5.0.9', '5.0.12')]:
             manifest = {'name': name, 'version': new}
             if name == 'brace-expansion':
@@ -68,6 +71,7 @@ class PreparationTests(unittest.TestCase):
         with tarfile.open(fileobj=io.BytesIO(raw), mode='r:') as reader:
             self.assertNotIn('package/node_modules/ip-address/obsolete.js', reader.getnames())
             self.assertNotIn('package/node_modules/brace-expansion/obsolete.js', reader.getnames())
+            self.assertNotIn('package/node_modules/http-cache-semantics/obsolete.js', reader.getnames())
             balanced = json.loads(reader.extractfile('package/node_modules/balanced-match/package.json').read())
             self.assertEqual(balanced['version'], '4.0.4')
             self.assertEqual(reader.extractfile('package/bin/npm-cli.js').read(), b'never executed')
