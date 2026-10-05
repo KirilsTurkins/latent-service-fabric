@@ -46,7 +46,12 @@ async fn detached_control_waiter_keeps_actual_writer_and_original_receipt_on_sha
             match owner.lookup_control(request.clone()) {
                 Ok(job) => {
                     if let Some(receipt) = job.await.unwrap().unwrap() {
-                        break receipt;
+                        // Durable lookup can finish before the retained writer
+                        // publishes its local control state. Observe both under
+                        // the original watchdog; lookup never drives a replay.
+                        if !owner.snapshot().unwrap().control.pending {
+                            break receipt;
+                        }
                     }
                 }
                 Err(DispatcherControlError::PhysicalOwner(ProtectedStoreError::Io(
