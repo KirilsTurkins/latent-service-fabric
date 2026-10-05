@@ -3,30 +3,30 @@
   "sources": [
     {
       "repository": "https://github.com/bytecodealliance/wasmtime",
-      "sourceCommit": "ebf20ab7cbf35fa3fbd8202562017fda6a541021",
+      "sourceCommit": "d02ffd202850007ea953224f589a569e8830eb6c",
       "license": "Apache-2.0 WITH LLVM-exception",
-      "sourceUrl": "https://github.com/bytecodealliance/wasmtime/blob/ebf20ab7cbf35fa3fbd8202562017fda6a541021/LICENSE",
+      "sourceUrl": "https://github.com/bytecodealliance/wasmtime/blob/d02ffd202850007ea953224f589a569e8830eb6c/LICENSE",
       "donor": {
         "name": "wasmtime",
-        "version": "48.0.3",
+        "version": "48.0.4",
         "file": "LICENSE"
       },
       "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
       "packages": {
-        "cranelift-assembler-x64": "0.135.3",
-        "cranelift-assembler-x64-meta": "0.135.3",
-        "cranelift-bitset": "0.135.3",
-        "cranelift-isle": "0.135.3",
-        "cranelift-srcgen": "0.135.3",
-        "pulley-interpreter": "48.0.3",
-        "pulley-macros": "48.0.3",
-        "wasmtime-internal-component-macro": "48.0.3",
-        "wasmtime-internal-component-util": "48.0.3",
-        "wasmtime-internal-core": "48.0.3",
-        "wasmtime-internal-jit-debug": "48.0.3",
-        "wasmtime-internal-jit-icache-coherence": "48.0.3",
-        "wasmtime-internal-versioned-export-macros": "48.0.3",
-        "wasmtime-internal-wit-bindgen": "48.0.3"
+        "cranelift-assembler-x64": "0.135.4",
+        "cranelift-assembler-x64-meta": "0.135.4",
+        "cranelift-bitset": "0.135.4",
+        "cranelift-isle": "0.135.4",
+        "cranelift-srcgen": "0.135.4",
+        "pulley-interpreter": "48.0.4",
+        "pulley-macros": "48.0.4",
+        "wasmtime-internal-component-macro": "48.0.4",
+        "wasmtime-internal-component-util": "48.0.4",
+        "wasmtime-internal-core": "48.0.4",
+        "wasmtime-internal-jit-debug": "48.0.4",
+        "wasmtime-internal-jit-icache-coherence": "48.0.4",
+        "wasmtime-internal-versioned-export-macros": "48.0.4",
+        "wasmtime-internal-wit-bindgen": "48.0.4"
       }
     },
     {
