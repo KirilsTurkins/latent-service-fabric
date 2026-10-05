@@ -437,6 +437,14 @@ impl Setup {
 
     pub fn retire(&self, mut snapshot: ProtectedSnapshot) {
         let witness = snapshot.retirement_witness().unwrap();
+        self.retire_with_witness(snapshot, &witness);
+    }
+
+    pub fn retire_with_witness(
+        &self,
+        snapshot: ProtectedSnapshot,
+        witness: &crate::store_io::StoreIoRetirementWitness,
+    ) {
         wait(snapshot.retire());
         self.owner
             .ready

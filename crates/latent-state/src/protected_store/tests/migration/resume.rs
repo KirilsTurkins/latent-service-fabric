@@ -230,7 +230,7 @@ fn corrupt_resume_checkpoint_refuses_healthy_source_but_source_uncertainty_quara
     let witness = snapshot.retirement_witness().unwrap();
     assert!(!witness.has_retired());
     assert_eq!(setup.native.snapshot().unwrap().recovery.slots, 1);
-    setup.retire(snapshot);
+    setup.retire_with_witness(snapshot, &witness);
     assert!(witness.has_retired());
     let report = finish(&setup.owner);
     assert!(!report.clean);

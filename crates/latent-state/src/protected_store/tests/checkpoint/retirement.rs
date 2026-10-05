@@ -33,7 +33,7 @@ impl OrdinaryPressure {
             );
             tickets.push(receiver.recv_timeout(WATCHDOG).unwrap());
         }
-        let queued = owner.with_store(StoreIoKind::Write, 0, |_| Ok(())).unwrap();
+        let queued = owner.with_store(StoreIoKind::Read, 0, |_| Ok(())).unwrap();
         assert!(matches!(
             owner.with_store(StoreIoKind::Read, 0, |_| Ok(())),
             Err(ProtectedStoreError::Io(StoreIoError::QueueFull))
@@ -44,6 +44,11 @@ impl OrdinaryPressure {
             jobs,
             queued,
         }
+    }
+
+    fn release_writer(&mut self) {
+        self.gates.release(self.tickets.pop().unwrap()).unwrap();
+        wait(self.jobs.pop().unwrap()).unwrap().unwrap();
     }
 
     fn release(self) {
@@ -105,7 +110,7 @@ fn detached_checkpoint_write_keeps_original_global_owner_through_actual_recovery
     assert!(checkpoint.retirement_witness().is_none());
     seed_owner(&owner, 3, 4000);
 
-    let ordinary = OrdinaryPressure::enter(&owner);
+    let mut ordinary = OrdinaryPressure::enter(&owner);
     let gates = Rendezvous::new(1);
     let worker_gates = gates.clone();
     let (notice, receiver) = mpsc::channel();
@@ -123,6 +128,14 @@ fn detached_checkpoint_write_keeps_original_global_owner_through_actual_recovery
             Ok(actual)
         })
         .unwrap();
+    let mut job = Box::pin(job);
+    PollProbe::default().pending(job.as_mut());
+    assert_eq!(owner.snapshot().unwrap().active_writes, 1);
+    assert_eq!(owner.snapshot().unwrap().active_recovery_writes, 0);
+    assert_eq!(owner.snapshot().unwrap().recovery_queued, 1);
+    // Recovery preserves the single-writer gate. Free the original writer,
+    // retaining both ordinary reads and their full queue during checkpoint I/O.
+    ordinary.release_writer();
     let ticket = receiver.recv_timeout(WATCHDOG).unwrap();
     drop(job);
     clock.advance(std::time::Duration::from_secs(2));

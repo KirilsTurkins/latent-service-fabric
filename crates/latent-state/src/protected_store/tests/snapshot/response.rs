@@ -292,14 +292,13 @@ fn detached_receipt_waiter_retains_original_response_and_file_until_worker_clean
     assert!(owner.snapshot().unwrap().custody_active);
     assert_eq!(native.snapshot().unwrap().recovery.slots, 1);
     gates.release(ticket).unwrap();
-    owner
-        .ready
-        .wait_test_metadata_retirement(Instant::now() + WATCHDOG);
+    let report = finish(&owner);
+    assert!(report.clean);
+    assert!(report.snapshot.physically_retired());
     assert!(witness.has_retired());
     assert!(weak.upgrade().is_none());
     assert_eq!(native.snapshot().unwrap().recovery.slots, 0);
     assert_eq!(owner.failure(), None);
-    assert!(finish(&owner).clean);
 }
 
 #[test]

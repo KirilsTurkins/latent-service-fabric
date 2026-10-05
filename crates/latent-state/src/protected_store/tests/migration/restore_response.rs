@@ -176,5 +176,13 @@ fn expired_original_frame_cannot_gain_time_from_a_current_replacement_request() 
     drop(replacement);
     drop(frame);
     assert_eq!(setup.native.snapshot().unwrap().recovery.slots, 0);
-    assert!(finish(&setup.owner).clean);
+    assert!(
+        wait(
+            setup
+                .owner
+                .drain_async(clock.monotonic_now() + WATCHDOG, std::future::pending())
+                .unwrap(),
+        )
+        .clean
+    );
 }

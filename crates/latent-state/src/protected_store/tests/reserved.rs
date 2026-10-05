@@ -100,9 +100,13 @@ fn recovery_snapshot_reads_and_retires_on_reserved_worker_under_ordinary_pressur
         tickets.push(receiver.recv_timeout(WATCHDOG).unwrap());
     }
     let queued = owner.with_store(StoreIoKind::Write, 0, |_| Ok(())).unwrap();
+    let pressure = owner.snapshot().unwrap();
+    assert_eq!(pressure.accepted, 4);
+    assert_eq!(pressure.recovery_accepted, 0);
+    assert_eq!(pressure.queued, 1);
     assert!(matches!(
         owner.open_view(),
-        Err(ProtectedStoreError::Io(StoreIoError::AcceptedFull))
+        Err(ProtectedStoreError::Io(StoreIoError::QueueFull))
     ));
     let original = Arc::new(
         global
