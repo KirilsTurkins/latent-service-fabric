@@ -1,1 +1,29 @@
-{"cases":["CatalogFixtureTests.test_case_inputs_keep_misses_on_existing_scope_and_named_route_index","CatalogFixtureTests.test_route_frame_preserves_utf8_lengths_and_absent_empty_key_equivalence","CatalogFixtureTests.test_variant_is_exact_original_component_plus_one_index_section","CatalogFixtureTests.test_weight_changes_owned_attributes_but_not_revision_identity","CatalogModelTests.test_all_model_plans_validate_and_schema_rejects_open_selection","CatalogModelTests.test_exact_selection_rejects_boolean_ordinal_and_crossed_stage","CatalogModelTests.test_full_has_four_initial_and_four_adjacent_reopen_owners","CatalogModelTests.test_populations_count_pin_reopen_preflight_and_warmup"],"guards":{"CatalogFixtureTests.test_case_inputs_keep_misses_on_existing_scope_and_named_route_index":"cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb","CatalogFixtureTests.test_route_frame_preserves_utf8_lengths_and_absent_empty_key_equivalence":"cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb","CatalogFixtureTests.test_variant_is_exact_original_component_plus_one_index_section":"cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb","CatalogFixtureTests.test_weight_changes_owned_attributes_but_not_revision_identity":"cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb","CatalogModelTests.test_all_model_plans_validate_and_schema_rejects_open_selection":"a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1","CatalogModelTests.test_exact_selection_rejects_boolean_ordinal_and_crossed_stage":"a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1","CatalogModelTests.test_full_has_four_initial_and_four_adjacent_reopen_owners":"a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1","CatalogModelTests.test_populations_count_pin_reopen_preflight_and_warmup":"a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1"},"kind":"python","module":"tools/tests/test_optimization_catalog.py","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6e1a1cf0ffc79c86f3a82e345808ff25ff2f60643d2febce08eae7338d4c1dd3","class:setup-sha256:d46fd1b45fc00ec8ae3a66c13a9cb23fe86a7bc855022165cf644171e4061b37"],"skipSites":[]},"a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6e1a1cf0ffc79c86f3a82e345808ff25ff2f60643d2febce08eae7338d4c1dd3","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "cases":["CatalogFixtureTests.test_case_inputs_keep_misses_on_existing_scope_and_named_route_index","CatalogFixtureTests.test_route_frame_preserves_utf8_lengths_and_absent_empty_key_equivalence","CatalogFixtureTests.test_variant_is_exact_original_component_plus_one_index_section","CatalogFixtureTests.test_weight_changes_owned_attributes_but_not_revision_identity","CatalogModelTests.test_all_model_plans_validate_and_schema_rejects_open_selection","CatalogModelTests.test_exact_selection_rejects_boolean_ordinal_and_crossed_stage","CatalogModelTests.test_full_has_four_initial_and_four_adjacent_reopen_owners","CatalogModelTests.test_populations_count_pin_reopen_preflight_and_warmup"],
+  "guards":{
+    "CatalogFixtureTests.test_case_inputs_keep_misses_on_existing_scope_and_named_route_index":
+      "cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb",
+    "CatalogFixtureTests.test_route_frame_preserves_utf8_lengths_and_absent_empty_key_equivalence":
+      "cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb",
+    "CatalogFixtureTests.test_variant_is_exact_original_component_plus_one_index_section":
+      "cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb",
+    "CatalogFixtureTests.test_weight_changes_owned_attributes_but_not_revision_identity":
+      "cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb",
+    "CatalogModelTests.test_all_model_plans_validate_and_schema_rejects_open_selection":
+      "a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1",
+    "CatalogModelTests.test_exact_selection_rejects_boolean_ordinal_and_crossed_stage":
+      "a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1",
+    "CatalogModelTests.test_full_has_four_initial_and_four_adjacent_reopen_owners":
+      "a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1",
+    "CatalogModelTests.test_populations_count_pin_reopen_preflight_and_warmup":
+      "a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_optimization_catalog.py",
+  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "cf20b90a5136958d5731b58777631dcd6aaa6a73262efb90c4772f0289e32ddb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6e1a1cf0ffc79c86f3a82e345808ff25ff2f60643d2febce08eae7338d4c1dd3","class:setup-sha256:d46fd1b45fc00ec8ae3a66c13a9cb23fe86a7bc855022165cf644171e4061b37"],"skipSites":[]},
+    "a7c59821b40f965550cd7d4cf2c711d0db9a5966c8a15f29f50503cc3da020b1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:6e1a1cf0ffc79c86f3a82e345808ff25ff2f60643d2febce08eae7338d4c1dd3","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}
