@@ -125,13 +125,12 @@ impl StateKernel {
         // recreate a missing persisted mode marker.
         let marker =
             store.ensure_state_mode_marker(settings.store_identity.clone(), bootstrap.original());
-        let marker = match marker {
-            Ok(marker) => tokio::time::timeout_at(bootstrap.deadline.into(), marker).await,
-            Err(_) => {
-                drop(namespaces);
-                retire_failed_bootstrap(bootstrap).await;
-                return Err(super::unavailable());
-            }
+        let marker = if let Ok(marker) = marker {
+            tokio::time::timeout_at(bootstrap.deadline.into(), marker).await
+        } else {
+            drop(namespaces);
+            retire_failed_bootstrap(bootstrap).await;
+            return Err(super::unavailable());
         };
         if !matches!(marker, Ok(Ok(Ok(_)))) {
             drop(namespaces);

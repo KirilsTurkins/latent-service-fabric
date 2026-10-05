@@ -91,15 +91,15 @@ fn recovery_limits_cannot_be_consumed_by_ordinary_work_or_below_actual_frame_bou
 #[test]
 fn native_reservations_include_full_wire_copies_and_original_startup_lifetime() {
     let mut config: NativeLimitsConfig = serde_json::from_value(input()["native"].clone()).unwrap();
-    let limits = config.derive(Duration::from_secs(60)).unwrap();
+    let limits = config.derive(Duration::from_mins(1)).unwrap();
     assert_eq!(limits.recovery.maximum_reservation_bytes, 32 * MIB);
     config.recovery.maximum_reservation_bytes = 32 * MIB - 1;
-    assert!(config.derive(Duration::from_secs(60)).is_err());
+    assert!(config.derive(Duration::from_mins(1)).is_err());
     config.recovery.maximum_reservation_bytes = 32 * MIB;
     config.maximum_lifetime_millis = 59_999;
-    assert!(config.derive(Duration::from_secs(60)).is_err());
+    assert!(config.derive(Duration::from_mins(1)).is_err());
     config.maximum_lifetime_millis = u64::MAX;
-    assert!(config.derive(Duration::from_secs(60)).is_err());
+    assert!(config.derive(Duration::from_mins(1)).is_err());
 }
 
 #[test]
@@ -138,7 +138,7 @@ fn reviewed_explicit_native_profile_is_finite_and_large_cache_startup_requires_i
     let mut storage: StorageLimitsConfig =
         serde_json::from_value(declared["store"].clone()).unwrap();
     let native = NativeLimitsConfig::default()
-        .derive(Duration::from_secs(60))
+        .derive(Duration::from_mins(1))
         .unwrap();
     assert_eq!(native.recovery.bytes, 96 * MIB);
     assert_eq!(native.recovery.maximum_reservation_bytes, 32 * MIB);

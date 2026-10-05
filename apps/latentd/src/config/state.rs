@@ -197,8 +197,27 @@ pub(crate) fn derive(value: &StateConfig, data: &Path) -> Result<StateSettings, 
     let startup_work_bytes = owners::startup_footprint(&store, native)?;
     let dispatcher = value.dispatcher.derive()?;
     let tenant_quotas = tenant::derive(&value.tenant_quotas, &value.operations)?;
-    let mut operations = Vec::with_capacity(value.operations.len());
-    for input in &value.operations {
+    let operations = derive_operations(&value.operations)?;
+    Ok(StateSettings {
+        create_if_missing: value.create_if_missing,
+        configuration_epoch: value.configuration_epoch,
+        store_identity,
+        store,
+        native,
+        dispatcher,
+        checkpoint_root: value.checkpoint_root.clone(),
+        startup_timeout: Duration::from_millis(value.startup_timeout_millis),
+        startup_work_bytes,
+        operations,
+        tenant_quotas,
+    })
+}
+
+fn derive_operations(
+    inputs: &[StateOperationConfig],
+) -> Result<Vec<OperationSettings>, PlatformError> {
+    let mut operations = Vec::with_capacity(inputs.len());
+    for input in inputs {
         for text in [
             &input.tenant,
             &input.contract,
@@ -259,19 +278,7 @@ pub(crate) fn derive(value: &StateConfig, data: &Path) -> Result<StateSettings, 
             deferred_http: input.deferred_http.clone(),
         });
     }
-    Ok(StateSettings {
-        create_if_missing: value.create_if_missing,
-        configuration_epoch: value.configuration_epoch,
-        store_identity,
-        store,
-        native,
-        dispatcher,
-        checkpoint_root: value.checkpoint_root.clone(),
-        startup_timeout: Duration::from_millis(value.startup_timeout_millis),
-        startup_work_bytes,
-        operations,
-        tenant_quotas,
-    })
+    Ok(operations)
 }
 
 fn checked_identity(text: &str) -> Result<(), PlatformError> {

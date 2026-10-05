@@ -36,7 +36,7 @@ pub(in crate::standalone::state) struct Fixture {
     pub(in crate::standalone::state) settings: StateSettings,
     pub(in crate::standalone::state) clock: Arc<Clock>,
     pub(in crate::standalone::state) authority: Arc<SupplyChainAuthority>,
-    _root: tempfile::TempDir,
+    root: tempfile::TempDir,
 }
 impl Fixture {
     pub(in crate::standalone::state) fn new() -> Self {
@@ -64,7 +64,7 @@ impl Fixture {
             settings,
             clock,
             authority,
-            _root: root,
+            root,
         }
     }
     pub(in crate::standalone::state) fn bootstrap(&self) -> StateBootstrap {
@@ -77,7 +77,7 @@ impl Fixture {
             .join("transaction-checkpoint.v1")
     }
     pub(in crate::standalone::state) fn root(&self) -> &std::path::Path {
-        self._root.path()
+        self.root.path()
     }
     fn persisted_dispatch(&self) -> Option<(u64, u64)> {
         // Test-only inspection AFTER positive physical engine retirement.

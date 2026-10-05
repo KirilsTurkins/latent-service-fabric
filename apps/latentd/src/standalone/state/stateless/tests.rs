@@ -100,7 +100,7 @@ async fn persisted_state_entries_require_configuration_without_reading_or_modify
 #[test]
 fn unbounded_relative_and_parent_paths_refuse_before_starting_a_native_owner() {
     let root = tempfile::tempdir().unwrap();
-    let too_deep = (0..MAXIMUM_COMPONENTS + 1).fold(root.path().to_path_buf(), |path, _| {
+    let too_deep = (0..=MAXIMUM_COMPONENTS).fold(root.path().to_path_buf(), |path, _| {
         path.join("bounded-component")
     });
     let too_long = root.path().join("x".repeat(MAXIMUM_PATH_BYTES));

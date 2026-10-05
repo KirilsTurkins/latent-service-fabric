@@ -115,6 +115,10 @@ async fn actual_standalone_caller_reaches_ready_once_with_same_factory_capacity_
     drop(effects);
     let report = state.shutdown(deadline).await.unwrap();
     assert!(report.clean && report.store_physically_retired && report.native_physically_retired);
+    let public = serde_json::to_value(report).unwrap();
+    assert_eq!(public["storePhysicallyRetired"], true);
+    assert_eq!(public["nativePhysicallyRetired"], true);
+    assert!(public.get("physical").is_none());
     assert_eq!(report.namespace_owners, 0);
     assert_eq!(report.storage_retained_bytes, 0);
     assert_eq!(

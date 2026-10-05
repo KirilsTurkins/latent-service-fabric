@@ -25,9 +25,9 @@ mod tests;
 #[serde(rename_all = "camelCase")]
 pub struct StateRetirementReport {
     pub clean: bool,
-    pub store_physically_retired: bool,
-    pub native_physically_retired: bool,
     pub quarantined: bool,
+    #[serde(flatten)]
+    pub physical: StatePhysicalRetirement,
     pub live_storage_workers: usize,
     pub live_storage_owners: usize,
     pub queued_storage_retirements: usize,
@@ -40,14 +40,32 @@ pub struct StateRetirementReport {
     pub namespace_owners: usize,
 }
 
+/// Independent retirement witnesses from the original storage and native owners.
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StatePhysicalRetirement {
+    pub store_physically_retired: bool,
+    pub native_physically_retired: bool,
+}
+
+impl std::ops::Deref for StateRetirementReport {
+    type Target = StatePhysicalRetirement;
+
+    fn deref(&self) -> &Self::Target {
+        &self.physical
+    }
+}
+
 impl From<StateShutdownReport> for StateRetirementReport {
     fn from(report: StateShutdownReport) -> Self {
         let store = report.store.snapshot;
         let native = report.native.snapshot;
         Self {
             clean: report.clean,
-            store_physically_retired: store.physically_retired(),
-            native_physically_retired: native.physically_retired(),
+            physical: StatePhysicalRetirement {
+                store_physically_retired: store.physically_retired(),
+                native_physically_retired: native.physically_retired(),
+            },
             quarantined: store.quarantined || native.quarantined,
             live_storage_workers: store.live_workers,
             live_storage_owners: store.physical_owners,

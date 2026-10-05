@@ -78,15 +78,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,
         artifacts,
-        deployments: DirectoryDeploymentRepositoryConfig {
-            manifest_profile,
-            max_deployments: config.catalogs.deployments,
-            max_state_bytes: config.catalogs.deployment_state_bytes,
-            max_identifier_bytes: IDENTIFIER_BYTES,
-            max_page_size: management.max_page_size,
-            max_page_bytes: MIB,
-            ..DirectoryDeploymentRepositoryConfig::default()
-        },
+        deployments: deployment_limits(config, management.max_page_size, manifest_profile),
         admission,
         budget_profile: config.budget_profile.profile(),
         delegation_limits,
@@ -120,6 +112,22 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         shutdown_grace: Duration::from_millis(config.shutdown_grace_millis),
         load_sample_interval: Duration::from_millis(250),
     })
+}
+
+fn deployment_limits(
+    config: &NodeConfig,
+    page_size: u32,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
+) -> DirectoryDeploymentRepositoryConfig {
+    DirectoryDeploymentRepositoryConfig {
+        manifest_profile,
+        max_deployments: config.catalogs.deployments,
+        max_state_bytes: config.catalogs.deployment_state_bytes,
+        max_identifier_bytes: IDENTIFIER_BYTES,
+        max_page_size: page_size,
+        max_page_bytes: MIB,
+        ..DirectoryDeploymentRepositoryConfig::default()
+    }
 }
 
 fn artifact_limits(config: &NodeConfig, page_size: u32) -> DirectoryArtifactRepositoryConfig {

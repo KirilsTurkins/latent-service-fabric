@@ -21,15 +21,6 @@ impl PolicyShutdownReport {
     }
 }
 impl PolicyRuntime {
-    pub(super) fn open(
-        root: &Path,
-        config: Option<CapabilityPolicyConfig>,
-        catalog: LifecycleAuthorityHandle,
-        runtime: Option<&tokio::runtime::Handle>,
-    ) -> Result<Option<Self>, PlatformError> {
-        Self::open_with_rejection(root, config, catalog, runtime, None)
-    }
-
     pub(super) fn open_with_rejection(
         root: &Path,
         config: Option<CapabilityPolicyConfig>,
