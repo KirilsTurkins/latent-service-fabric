@@ -112,9 +112,24 @@ async fn manager_assigns_identity_and_preserves_opaque_lineage_and_uninterpreted
         input
             .metadata
             .insert("retry_attempt".to_owned(), "99".to_owned());
+        let begun = harness.manager.journal().snapshot().begun;
+        let entered = harness.backend.entered.load(Ordering::Relaxed);
+        let prepared = harness.artifacts.entered.load(Ordering::Relaxed);
+        assert_eq!(
+            finish(adapter.invoke(authenticated(input.clone())))
+                .await
+                .expect_err("untrusted public lineage is rejected")
+                .code(),
+            Code::PermissionDenied,
+        );
+        assert_eq!(harness.manager.journal().snapshot().begun, begun);
+        assert_eq!(harness.backend.entered.load(Ordering::Relaxed), entered);
+        assert_eq!(harness.artifacts.entered.load(Ordering::Relaxed), prepared);
+        input.root_activation_id = None;
+        input.parent_activation_id = None;
         finish(adapter.invoke(authenticated(input)))
             .await
-            .expect("opaque lineage");
+            .expect("same payload and metadata with host-owned root lineage");
     }
     let observed = harness.backend.requests.lock().expect("requests");
     let first = &observed[0].activation;
@@ -132,21 +147,15 @@ async fn manager_assigns_identity_and_preserves_opaque_lineage_and_uninterpreted
         assert!(activation.trace.baggage.is_empty());
         assert_ne!(activation.trace.trace_id.0, "guest-spoof");
         if index > 0 {
-            assert_eq!(activation.root_activation_id.0, "unknown-root");
+            assert_eq!(activation.root_activation_id, activation.activation_id);
             assert_ne!(activation.trace.trace_id, first.trace.trace_id);
             assert_ne!(activation.trace.span_id, first.trace.span_id);
             assert_eq!(activation.metadata["retry_attempt"], "99");
         }
     }
-    assert_eq!(
-        observed[1]
-            .activation
-            .parent_activation_id
-            .as_ref()
-            .expect("parent")
-            .0,
-        "unknown-parent"
-    );
+    assert_eq!(observed[1].activation.activation_id.0, "child");
+    assert_eq!(observed[1].activation.parent_activation_id, None);
+    assert_eq!(observed[2].activation.activation_id.0, "root-only");
     assert_eq!(observed[2].activation.parent_activation_id, None);
     drop(observed);
     assert_eq!(harness.ids.0.load(Ordering::Relaxed), 1);
