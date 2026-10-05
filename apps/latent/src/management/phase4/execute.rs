@@ -1,7 +1,10 @@
 use super::{invalid, projection};
 use crate::{client::Session, error::Failure, output::Outcome};
 use latent_rpc::{
-    control::v1::{self as c, state_service_client::StateServiceClient},
+    control::v1::{
+        self as c, dispatcher_service_client::DispatcherServiceClient,
+        state_service_client::StateServiceClient,
+    },
     phase4::{self, Request, Response},
     transaction::v1::{self as t, transaction_service_client::TransactionServiceClient},
 };
@@ -37,6 +40,27 @@ pub async fn execute(request: Request, session: &Session) -> Result<Outcome, Fai
 }
 async fn dispatch(request: Request, session: &Session) -> Result<Response, Failure> {
     Ok(match request {
+        Request::InspectDispatcher(value) => call!(
+            session,
+            DispatcherServiceClient,
+            inspect_dispatcher,
+            value,
+            InspectDispatcher
+        ),
+        Request::ControlDispatcher(value) => call!(
+            session,
+            DispatcherServiceClient,
+            control_dispatcher,
+            value,
+            ControlDispatcher
+        ),
+        Request::GetDispatcherOperation(value) => call!(
+            session,
+            DispatcherServiceClient,
+            get_dispatcher_operation,
+            value,
+            GetDispatcherOperation
+        ),
         Request::InspectNamespace(value) => call!(
             session,
             StateServiceClient,
@@ -64,6 +88,13 @@ async fn dispatch(request: Request, session: &Session) -> Result<Response, Failu
             mutate_state,
             value,
             MutateState
+        ),
+        Request::PlanEffectMutation(value) => call!(
+            session,
+            StateServiceClient,
+            plan_effect_mutation,
+            value,
+            PlanEffectMutation
         ),
         Request::GetStateOperationReceipt(value) => call!(
             session,
@@ -117,7 +148,7 @@ async fn dispatch(request: Request, session: &Session) -> Result<Response, Failu
         ),
     })
 }
-fn project_outcome(response: &Response) -> Outcome {
+pub(super) fn project_outcome(response: &Response) -> Outcome {
     let data = projection::response(response);
     let mut outcome = match response {
         Response::LookupCommand(value) => {
@@ -130,6 +161,22 @@ fn project_outcome(response: &Response) -> Outcome {
             command_outcome(value.command.as_ref().expect("validated command"), data)
         }
         Response::MutateNamespace(value) => state_outcome(
+            value
+                .receipt
+                .as_ref()
+                .expect("validated receipt")
+                .disposition,
+            data,
+        ),
+        Response::ControlDispatcher(value) => state_outcome(
+            value
+                .receipt
+                .as_ref()
+                .expect("validated receipt")
+                .disposition,
+            data,
+        ),
+        Response::GetDispatcherOperation(value) => state_outcome(
             value
                 .receipt
                 .as_ref()
@@ -158,7 +205,14 @@ fn project_outcome(response: &Response) -> Outcome {
             ),
             data,
         ),
-        _ => Outcome::success(data),
+        Response::InspectDispatcher(_)
+        | Response::InspectNamespace(_)
+        | Response::SelectEntity(_)
+        | Response::PlanEffectMutation(_)
+        | Response::Query(_)
+        | Response::GetEffect(_)
+        | Response::ListEffectHistory(_)
+        | Response::CancelCommand(_) => Outcome::success(data),
     };
     if let Response::CancelCommand(value) = response {
         outcome.outcome_known = matches!(
