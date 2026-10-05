@@ -57,7 +57,7 @@ fn explicit_requirements_need_profile_and_check_each_independent_dimension() {
         .runtime
         .as_mut()
         .unwrap()
-        .minimum_version = "48.0.3".into();
+        .minimum_version = "48.0.4".into();
     assert!(profile.check_capsule(&manifest).is_err());
     manifest
         .runtime_requirements

@@ -34,9 +34,9 @@ Angular qualification profiles. [The private package](../../website/package.json
 root Cargo and SDK manifests. Docusaurus 3.10.2, React 19.3.0 and TypeScript 5.9.3
 are exact pins, not floating recommendations. There is no root npm workspace.
 
-The explicit `npm-11.19.1-lsf-bundle-v1` derivation replaces npm's bundled
-`ip-address`/`undici`/`brace-expansion` with 10.7.2/6.28.1/5.0.12 before executing the package manager.
-Preparation authenticates four registry archives, executes no package code and
+The explicit `npm-11.19.1-lsf-bundle-v2` derivation replaces npm's bundled
+`ip-address`/`undici`/`brace-expansion`/`http-cache-semantics` with 10.7.2/6.28.1/5.0.12/4.3.0 before executing the package manager.
+Preparation authenticates five registry archives, executes no package code and
 writes a deterministic TAR under ignored `target/`; the toolchain lock checks
 that TAR's exact integrity. All bundled packages remain in advisory scanning.
 The brace-expansion replacement retains only its reviewed `balanced-match` requirement
