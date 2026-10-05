@@ -67,12 +67,20 @@ def author_expiry(payload: Path, destination: Path) -> dict:
 
 def clean_stop(connection, root: Path) -> dict:
     stopped = connection.call("down", {}, timeout=30)
-    counters = stopped.get("providerShutdown", {})
-    require(stopped.get("reaped") is True and stopped.get("cleanShutdown") is True
-            and counters.get("clean") is True
-            and all(type(counters.get(key)) is int and counters[key] == 0
-                    for key in (*PROVIDER_COUNTERS, "secretGenerations", "secretReferences")),
+    require(stopped.get("reaped") is True and stopped.get("cleanShutdown") is True,
             "overlapping-workspace-cleanup-unconfirmed")
+    configuration = state.load(root / "runtime/config", "node.json")
+    if configuration.get("providers") is None:
+        # Native ShutdownReport omits its optional provider owner when this
+        # protected configuration installed none. Absence is not zero counters.
+        require(stopped.get("providers") == [] and "providerShutdown" not in stopped,
+                "overlapping-workspace-cleanup-unconfirmed")
+    else:
+        counters = stopped.get("providerShutdown", {})
+        require(counters.get("clean") is True
+                and all(type(counters.get(key)) is int and counters[key] == 0
+                        for key in (*PROVIDER_COUNTERS, "secretGenerations", "secretReferences")),
+                "overlapping-workspace-cleanup-unconfirmed")
     require(state.load(root, "lifecycle.json")["state"] == "stopped", "stopped-workspace-not-durable")
     return stopped
 
