@@ -102,7 +102,8 @@ def qualify(output: Path, wasi_sdk: Path):
         classes.mkdir()
         runtime = ROOT / "sdk/java-guest/runtime/dev/latent/guest"
         commands.run("ownership-compile", "javac", "-d", classes, ROOT / "sdk/java-guest/tests/Ownership.java",
-            *(runtime / (name + ".java") for name in ("Handle", "SensitiveBytes", "Unsigned64")))
+            ROOT / "sdk/java-guest/tests/ResponseValidation.java",
+            *(runtime / (name + ".java") for name in ("Handle", "SensitiveBytes", "Unsigned64", "BufferedWebResponseValidator")))
         commands.run(stage, "java", "-cp", classes, "dev.latent.guest.Ownership")
         stage = "sdk-runtime-ownership"
         commands.run("build-sdk-guests", sys.executable, ROOT / "tools/build_java_guest_capsules.py",
