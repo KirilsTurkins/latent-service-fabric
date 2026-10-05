@@ -59,7 +59,7 @@
         "builder_sha256": "4626282596c61b0b54b1b35c0f2cc01a55a7b445f32e327073769596efbefd90",
         "guard_sha256": "6588722a9e50177ade1f51acc5151b97e8940744ed6ed8e76ce1be72c202ecb7",
         "proof_sha256": "233fb3c482e4fb2581238bca162e2a95b93abb24d04e2599de6744e1b745dddc",
-        "lock_sha256": "f76125f904223b69e9eedb7328cdce614429f9045d2a22993804c6f218bc353d",
+        "lock_sha256": "5d0b3b2f7376d94298740b8933136d61dd63f0adb77708bcb4f0991576dc8e24",
         "integrity": "sha512-znve/VMZBA/Oqd8mWJk0ClTbviBVqWQ6OD/6Apnt0N5123KfuypnCscBDU88aAjNNwNhjKj56Bd6qv+7/rq5Tw=="
       }
     },
