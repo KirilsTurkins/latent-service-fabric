@@ -712,7 +712,14 @@ class SourceNodeProbe(unittest.TestCase):
                 (destination / 'app').mkdir()
                 (destination / 'app/lib.rs').write_bytes(('// selected ' + side).encode())
                 selected = descriptor()
-                selected.update(inputRoots=['app'], exclude=['.env'])
+                selected.update(inputRoots=['app', 'tests'], exclude=['.env'], scenarios=['tests/scenarios.json'])
+                (destination / 'tests').mkdir(mode=0o700)
+                (destination / 'tests/input.json').write_bytes(b'[]')
+                state.atomic(destination / 'tests', 'scenarios.json', {'scenarios': [{
+                    'service': selected['service'], 'contract': 'examples:greeting/api@1.0.0',
+                    'function': 'greet', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
+                    'input': 'tests/input.json', 'expect': {'category': 'success'},
+                    'fixtures': [], 'execution': {'grants': []}}]})
                 return selected, {'secrets': {'references': []}}
 
             def stage(root, _supplied):
@@ -735,6 +742,8 @@ class SourceNodeProbe(unittest.TestCase):
 
                 def call(self, operation, _arguments, **_options):
                     if operation == 'prepare-test':
+                        if self.root.name.split('-')[1] == 'expiry':
+                            self_test.assertNotIn('fixtures', _arguments)
                         raw = paths.read(self.root / 'runtime/config', 'node.json')
                         prepared[self.root.name] = common.digest(raw)
                         state.atomic(self.root, 'test-profile.json', {'configurationSha256': prepared[self.root.name]})
@@ -795,6 +804,8 @@ class SourceNodeProbe(unittest.TestCase):
                     self.assertEqual(common.digest(paths.read(selected_root / 'runtime/config', 'node.json')),
                                      prepared[selected_root.name])
                 self.assertEqual((options['timeout'], options['maximum']), (60, 262144))
+                self.assertEqual(common.decode(options['stdin'])['input'], 'W10=')
+                self.assertEqual(common.decode(options['stdin'])['function'], 'greet')
                 raise ExpiryBoundary()
 
             self_test = self
@@ -802,6 +813,7 @@ class SourceNodeProbe(unittest.TestCase):
             host.geteuid.return_value = os.geteuid() or 23001
             with patch.object(probe, 'os', host), patch.object(probe.helper, 'root_directory', return_value=owner), \
                     patch.object(probe, 'author', side_effect=author), patch.object(probe, 'stage_runtime', side_effect=stage), \
+                    patch.object(probe, 'author_expiry', side_effect=lambda payload, destination: author(payload, destination, 'expiry')[0]), \
                     patch.object(probe.build, 'execute', side_effect=build), patch.object(probe.backend, 'Backend', Backend), \
                     patch.object(probe.secret_fixture, 'values', return_value=[]), \
                     patch.object(probe.helper, 'client', side_effect=lambda root, **_options: (OwnClient(root), None)), \
