@@ -1,0 +1,89 @@
+{
+  "baselineCommit": "4fb800e2f0ce4a2cf2bd12be0e23494cd7c1df23",
+  "environment": {
+    "cpuLimit": 1,
+    "glibc": "2.39",
+    "image": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+    "memoryBytes": 1073741824,
+    "network": "none; test-owned loopback HTTPS fixture only",
+    "os": "Ubuntu 24.04",
+    "python": "3.13.5",
+    "testDeadlineSeconds": 180
+  },
+  "formatVersion": 1,
+  "issue": 684,
+  "observed": [
+    "Actual C new/add/update/remove preserve SDK and previous reviewed locks",
+    "Exact-digest candidate review verifies captured originals/transitives/native locks offline after original sources are deleted",
+    "Actual private TLS feed authenticated capture succeeds; invalid/missing credentials deny; public outcomes contain no credentials or private feed URL",
+    "Nested authenticated app layout component/archive builders consume exact outer reviewed closure up to an explicitly stopped compiler boundary",
+    "Actual trust and watch snapshot identities change after reviewed updates; stale trust fails before any build dispatch",
+    "Actual frontend CLI argument parsing retains uncertain outcomes and never replays, including receipt I/O failure",
+    "Atomic replacement, graph closure, ambiguous lock, stale candidate, source/profile options and missing/tampered capture controls fail closed"
+  ],
+  "preservedFailure": {
+    "cause": "Private source runner archive omitted the V4 ABI manifest and public TLS fixture",
+    "errors": 3,
+    "resolution": "Add missing tracked fixture inputs to the runner archive; caps and all historical cases retained. Add one private configuration-location rejection case.",
+    "sourceArchiveDigest": "sha256:85717b815c74a372720abfd84aa9356f9f16b65cb0e63a83298f4187f6ff5ed2",
+    "tests": 65
+  },
+  "remaining": [
+    "Exact new-source managed C compilation and signed/admitted library execution",
+    "Authenticated packaged frontend build/test/update/remove/watch and physical cancellation/node qualification",
+    "Complete issue acceptance and exact-head hosted CI; no issue closure or compiler success is inferred from these source controls"
+  ],
+  "result": {
+    "driverSeconds": 5.956245773999399,
+    "exitCode": 0,
+    "finishedAt": "2026-10-01T22:13:03.771607616Z",
+    "historicalTests": 47,
+    "newTests": 19,
+    "oomKilled": false,
+    "passed": true,
+    "skips": 0,
+    "startedAt": "2026-10-01T22:12:56.281190034Z",
+    "tests": 66,
+    "unittestSeconds": 4.517
+  },
+  "scope": "C declaration/capture/review and frontend trust/source controls",
+  "sourceCapture": {
+    "beforeAndAfterAllInputDigestsVerified": true,
+    "fileCount": 1979,
+    "scope": "selected tools, SDK, WIT, templates, schemas and public TLS fixture; not a full CI checkout",
+    "sourceArchiveDigest": "sha256:0de393d5da60de715f3f95c26016945f6a2f9a53df9419bbfa8fc34046bd05c8"
+  },
+  "testedSourceDirty": true,
+  "testedSourceInputs": [
+    {
+      "path": "tools/c_capsule.py",
+      "sha256": "sha256:adcbc8f67004b9b1ef1036c6a176df4a2b4b9bedc2a9549c044ba1e65e95dca4",
+      "size": 8735
+    },
+    {
+      "path": "tools/c_dependency_authoring.py",
+      "sha256": "sha256:821e3abcdd672520aefe8d6af2d72c8fa7998e63af06f7cac4a46f8f1cd3fc38",
+      "size": 15720
+    },
+    {
+      "path": "tools/c_capsule_build.py",
+      "sha256": "sha256:ad24d7cea86dc99e37d3cc3c10e633bf5d5232d8f37e97754d012ebbc21132a3",
+      "size": 11995
+    },
+    {
+      "path": "tools/c_static_archive_build.py",
+      "sha256": "sha256:0972e4fad0fb686a9609da30046560cc29455c361c30a0f394ca75fc5de026fc",
+      "size": 5437
+    },
+    {
+      "path": "tools/dev_workflow/cli.py",
+      "sha256": "sha256:93bae0e442bccef5e0c575b44047c10b83e7449846fbfb3c363bc039d1cac7c9",
+      "size": 20523
+    },
+    {
+      "path": "tools/tests/test_c_dependency_authoring.py",
+      "sha256": "sha256:7682ec01f975f15d56fc67d08d061c318902653e5c4401e7dc7373793d73b65e",
+      "size": 29609
+    }
+  ]
+}
