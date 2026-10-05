@@ -341,7 +341,7 @@ pub(super) fn open(root: &TempRoot, releases: &Arc<DirectoryArtifactRepository>)
         Arc::new(
             latent_manifest::RuntimeCompatibilityProfile::new(
                 "wasmtime",
-                "48.0.3",
+                "48.0.4",
                 "x86_64-unknown-linux-gnu",
                 &["x86_64.sse2"],
                 64 * 1024 * 1024,
