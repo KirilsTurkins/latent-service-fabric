@@ -68,21 +68,20 @@ impl StateBootstrap {
             delivered: false,
         };
         let result = tokio::time::timeout_at(self.deadline.into(), &mut guard.startup).await;
-        let store = match result {
-            Ok(Ok(store)) => Arc::new(store),
-            Ok(Err(_)) | Err(_) => {
-                // Observation timeout is never abort or physical retirement.
-                // The original absolute cutoff remains unchanged for cleanup;
-                // accepted work keeps its original memory if it cannot finish.
-                guard.startup.quarantine();
-                if let Ok(drain) = guard.startup.drain_async(
-                    self.deadline,
-                    tokio::time::sleep_until(self.deadline.into()),
-                ) {
-                    let _report = drain.await;
-                }
-                return Err(super::unavailable());
+        let store = if let Ok(Ok(store)) = result {
+            Arc::new(store)
+        } else {
+            // Observation timeout is never abort or physical retirement.
+            // The original absolute cutoff remains unchanged for cleanup;
+            // accepted work keeps its original memory if it cannot finish.
+            guard.startup.quarantine();
+            if let Ok(drain) = guard.startup.drain_async(
+                self.deadline,
+                tokio::time::sleep_until(self.deadline.into()),
+            ) {
+                let _report = drain.await;
             }
+            return Err(super::unavailable());
         };
         if !store.uses_native_capacity(&self.native) || self.check_live().is_err() {
             store.quarantine();
