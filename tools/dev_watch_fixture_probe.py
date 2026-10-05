@@ -88,7 +88,16 @@ def run(payload: Path, supplied: Path, output: Path) -> dict:
             require(time.monotonic() < deadline, "watch-probe-deadline")
             if stage != "slow":
                 return
-            active = build_control.status(root)
+            try:
+                active = build_control.status(root)
+            except DevError as error:
+                # The helper atomically replaces its live status while the
+                # fixture observes it. Resample that observation on the next
+                # tick within the same deadline; source-read failures elsewhere
+                # retain their original rejection and cleanup behavior.
+                if error.code != "source-changed-during-read":
+                    raise
+                return
             if active.get("state") != "running" or active.get("attempt") is None:
                 return
             ready = root / "builds" / active["attempt"] / "source/build-cache/qualification-ready.txt"
