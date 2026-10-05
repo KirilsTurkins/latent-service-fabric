@@ -11,8 +11,8 @@
   "sources": {
     "java-authoring": {
       "path": "tools/java_guest/model.py",
-      "digest": "sha256:368e9b28d1db5aed9ad3728108990833968abd6f9d93ab76f76e4d2ac7c29d01",
-      "commit": "00624a46691cf4373d5e3cafb3e1f960a34ad21e"
+      "digest": "sha256:9659786c8ae6c021047ede0075980399d3a2cdb773778dbe34b9edaf023bf231",
+      "commit": "2f56a3f5f0b3d30bef6b8793f3bf7034c50ed78d"
     },
     "host-recognition": {
       "path": "crates/latent-core/src/host_profile.rs",
@@ -26,8 +26,8 @@
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
-      "digest": "sha256:efa50c5b60dfbabf367a6d9e5bf7ca09f9be0d5f3a64dc6ec55a90ccda343c25",
-      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+      "digest": "sha256:1c3b5774dc2e3e950a77167794aca4f550537eed2816b7b12a6da9be3baf51a8",
+      "commit": "2f56a3f5f0b3d30bef6b8793f3bf7034c50ed78d"
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",
@@ -188,7 +188,10 @@
     "minimumWirePayloadBytes": "2097152",
     "maximumRequestBodyBytes": "65536",
     "maximumResponseBodyBytes": "262144",
-    "sources": ["http-ingress-bounds", "node-composition"]
+    "sources": [
+      "http-ingress-bounds",
+      "node-composition"
+    ]
   },
   "resourceBudgetTypes": {
     "u32DecimalStrings": [
