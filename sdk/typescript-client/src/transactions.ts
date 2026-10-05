@@ -583,6 +583,6 @@ export function currentProfile(): TransactionProfile {
   return {
     profile: "lsf-transaction-v1",
     hostAbiDigest: "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
-    preparationProfileDigest: "sha256:6acd7a248633dd01c9cdcbf8a1ed33fc5e6aa1d2edb09b7d89e53fda594b5507",
+    preparationProfileDigest: "sha256:bdbee56b5dcf47e878cdb0af97239a6c15afa6b4e880512117b7c275aa79309f",
   };
 }
