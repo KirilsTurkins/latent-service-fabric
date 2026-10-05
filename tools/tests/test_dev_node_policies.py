@@ -602,7 +602,7 @@ class NodePortableComparison(unittest.TestCase):
             "cleanup": "invocation-results-received-node-retained", "pendingOperation": None,
             "identity": {"hostAbi": common.HOST_ABI, "os": "linux", "profile": "local-experimental-v1",
                 "admission": "enforced", "artifacts": artifacts, "expectedRevision": revision,
-                "runtime": {"engine": {"wasmtimeVersion": "48.0.3"}},
+                "runtime": {"engine": {"wasmtimeVersion": "48.0.4"}},
                 "package": {"componentDigest": component}, "deployment": {"componentDigest": component}}}
         portable = {**node, "environment": "portable", "results": [{**row, "resolvedRevision": None}],
             "cleanup": "owned-native-host-reaped", "excludedChecks": sorted(scenarios.NODE_ONLY),
@@ -610,7 +610,7 @@ class NodePortableComparison(unittest.TestCase):
                 "runtime": {"execution": "actual-component-production-wasmtime", "runs": [{
                     "schemaVersion": "latent.dev.portable-result.v1", "environment": "portable",
                     "productionNode": False, "os": "windows", "architecture": "x86_64", "component": component,
-                    "wasmtime": "48.0.3"}]}}}
+                    "wasmtime": "48.0.4"}]}}}
         return node, portable
 
     def test_exact_values_match_with_explicit_node_only_exclusions(self):
