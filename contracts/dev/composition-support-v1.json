@@ -26,8 +26,8 @@
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
-      "digest": "sha256:09ed8fcd91a953bbc3c2cd59241dd90498a538dbcc7cfbeed60af5408a98b4ae",
-      "commit": "39d2b1f868c433984e7b58874d1fa9837f011bce"
+      "digest": "sha256:1c3b5774dc2e3e950a77167794aca4f550537eed2816b7b12a6da9be3baf51a8",
+      "commit": "e31911c105c3050348c44a1487d843d00d250e9c"
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",
