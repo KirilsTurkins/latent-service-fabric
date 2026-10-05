@@ -19,6 +19,7 @@ mod retained;
 mod retirement;
 mod startup;
 mod state;
+mod thread;
 mod types;
 mod worker;
 
@@ -35,12 +36,12 @@ pub use types::{
 
 use std::future::Future;
 use std::sync::{Arc, Condvar, Mutex};
-use std::thread::JoinHandle;
 use std::time::Instant;
 
 use job::{Completion, Reservation, TypedWork};
 use latent_core::{ActivationClock, SystemActivationClock};
 use state::{Bootstrap, Control, QueuedWork, State};
+use thread::StoreThread;
 
 /// One engine, fixed node workers and bounded accepted ownership.
 pub struct StoreIoOwner<S> {
@@ -49,7 +50,7 @@ pub struct StoreIoOwner<S> {
 
 struct Owner<S> {
     control: Arc<Control<S>>,
-    threads: Mutex<Vec<JoinHandle<()>>>,
+    threads: Mutex<Vec<StoreThread>>,
 }
 
 impl<S> Clone for StoreIoOwner<S> {
@@ -117,11 +118,12 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             } else {
                 format!("latent-store-io-{index}")
             };
-            if let Ok(thread) = std::thread::Builder::new()
-                .name(name)
-                .stack_size(1024 * 1024)
-                .spawn(move || worker::run(worker_control, worker_engine, recovery))
-            {
+            if let Ok(thread) = StoreThread::spawn(
+                std::thread::Builder::new()
+                    .name(name)
+                    .stack_size(1024 * 1024),
+                move || worker::run(worker_control, worker_engine, recovery),
+            ) {
                 owner
                     .inner
                     .threads
@@ -269,7 +271,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         let mut retired = 0;
         let mut index = 0;
         while index < threads.len() {
-            if threads[index].is_finished() {
+            if threads[index].has_exited() {
                 let thread = threads.swap_remove(index);
                 if thread.join().is_err() {
                     return Err(StoreIoError::RecoveryRequired);
