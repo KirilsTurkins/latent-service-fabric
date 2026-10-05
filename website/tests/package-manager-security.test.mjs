@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import http from 'node:http';
+import os from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {spawnSync} from 'node:child_process';
@@ -10,6 +12,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const npmRequire = createRequire(path.join(root, 'toolchain/node_modules/npm/package.json'));
 const socksRequire = createRequire(npmRequire.resolve('socks'));
 const minimatchRequire = createRequire(npmRequire.resolve('minimatch'));
+const fetchRequire = createRequire(npmRequire.resolve('make-fetch-happen'));
 const {Address4, Address6} = socksRequire('ip-address');
 
 function child(args) {
@@ -20,12 +23,12 @@ function child(args) {
   return result.stdout;
 }
 
-test('npm consumes the exact prepared ip-address, Undici and brace-expansion bundles', () => {
+test('npm consumes the exact prepared ip-address, Undici, brace-expansion and HTTP cache bundles', () => {
   const source = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/source.json')));
   const lock = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/package-lock.json')));
-  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v1');
+  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v2');
   assert.deepEqual(Object.fromEntries(source.patches.map(pin => [pin.name, pin.version])), {
-    'ip-address': '10.7.2', undici: '6.28.1', 'brace-expansion': '5.0.12',
+    'ip-address': '10.7.2', undici: '6.28.1', 'brace-expansion': '5.0.12', 'http-cache-semantics': '4.3.0',
   });
   for (const pin of source.patches) {
     const location = `node_modules/npm/node_modules/${pin.name}`;
@@ -37,7 +40,41 @@ test('npm consumes the exact prepared ip-address, Undici and brace-expansion bun
   }
   assert.equal(fs.realpathSync(socksRequire.resolve('ip-address')), fs.realpathSync(npmRequire.resolve('ip-address')));
   assert.equal(fs.realpathSync(minimatchRequire.resolve('brace-expansion')), fs.realpathSync(npmRequire.resolve('brace-expansion')));
+  assert.equal(fs.realpathSync(fetchRequire.resolve('http-cache-semantics')), fs.realpathSync(npmRequire.resolve('http-cache-semantics')));
   assert.equal(npmRequire('balanced-match/package.json').version, '4.0.4');
+});
+
+test('npm cache honors no-store and must-revalidate with max-stale', {timeout: 5000}, async () => {
+  const fetch = npmRequire('make-fetch-happen');
+  const counts = new Map();
+  const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'lsf-npm-cache-policy-'));
+  const server = http.createServer((request, response) => {
+    const count = (counts.get(request.url) ?? 0) + 1;
+    counts.set(request.url, count);
+    response.setHeader('cache-control', request.url === '/public'
+      ? 'public, max-age=3600' : request.url === '/must-revalidate'
+        ? 'max-age=0, must-revalidate' : 'no-store');
+    response.end(String(count));
+  });
+  try {
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    for (const route of ['/no-store', '/must-revalidate', '/public']) {
+      const options = {cachePath: cache, retry: {retries: 0}, timeout: 1000};
+      const first = await fetch(origin + route, options);
+      assert.equal(first.status, 200);
+      assert.equal(await first.text(), '1');
+      const second = await fetch(origin + route, {...options,
+        headers: {'cache-control': 'max-stale=999999'}});
+      assert.equal(second.status, 200);
+      assert.equal(await second.text(), route === '/public' ? '1' : '2', route);
+      assert.equal(counts.get(route), route === '/public' ? 1 : 2, route);
+    }
+  } finally {
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(cache, {recursive: true, force: true});
+  }
 });
 
 test('local-use NAT64 remains private without guessing its embedded IPv4 prefix', () => {
