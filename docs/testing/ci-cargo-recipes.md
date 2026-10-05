@@ -5,16 +5,15 @@
 Planning/implementation baseline: `development` at
 `50f003dd006e0786494936c49e55dc683cf26fd6`, pinned Rust 1.97.1 and MSRV 1.94.1.
 The reviewed Cargo recipes and opt-in cache configuration are implemented.
-[Issue #432](https://github.com/KirilsTurkins/latent-service-fabric/issues/432)
-continues to track the measured cache/profile comparison and selection of a
-faster default. Passing recipe CI does not complete those performance criteria.
+The completed six-sample GitHub cache-service comparison and reviewed selection
+for [issue #432](https://github.com/KirilsTurkins/latent-service-fabric/issues/432)
+are retained below, together with the earlier negative and mechanism observations.
 
-**The existing dependency cache and ordinary dev/test profiles remain the
-selected defaults. No compile/check invocation has been removed.** There are
-no completed, equivalent end-to-end cache-service comparisons for the new
-candidates yet; choosing a faster default or calling an invocation redundant
-would be unsupported. The real-compiler mechanism observations below are not
-a substitute for that comparison.
+**Retain the existing dependency cache and ordinary dev/test profiles as the
+selected defaults. No compile/check invocation is removed.** The candidate has
+no consistent warm-job advantage in this bounded comparison, uses a 43.9% larger
+cache, and has higher observed maximum-child RSS. This is a decision to retain
+the supported baseline; it does not claim a CI speedup or redundant coverage.
 
 The ordinary CI workflow invokes reviewed recipes instead of duplicating Cargo
 argument lists in shell blocks. Existing job selection, required checks,
@@ -205,14 +204,17 @@ as separate Cargo unit graphs. Do not infer duplication from duration alone or
 sum overlapping process peaks. Account for any cross-lane artifact transfer and
 cold compilation rather than moving that cost out of the reported interval.
 
-| Configuration | Cold | Warm 1 / warm 2 | Complete-suite parity | Decision |
-| --- | --- | --- | --- | --- |
-| Existing cache / ordinary profiles | Not collected for this comparison | Not collected | Not measured | Retain existing default; no speed claim |
-| Recipe cache / ordinary profiles | Not collected | Not collected | Not measured | Opt-in only |
-| Recipe cache / correctness config | Not collected | Not collected | Not measured | Local opt-in only; no qualification reuse |
+| Configuration | Cold job / warm 1 / warm 2 | Complete Rust-recipe parity | Decision |
+| --- | --- | --- | --- |
+| Existing cache / current CI profiles | 1,072 / 668 / 628 s | 21 invocations and 3,184 active case identities in every sample | Retain default |
+| Recipe cache / correctness config | 1,027 / 660 / 647 s | Same 21 invocations and 3,184 active case identities | Opt-in only; no demonstrated consistent warm advantage |
+| Recipe cache / ordinary profiles | Not independently collected | Not independently measured | Opt-in only; no attribution to cache keys alone |
 
-The comparison currently has **zero samples per configuration**. Its uncertainty
-is not quantified; no speedup estimate or confidence interval is claimed.
+These are observed whole-job intervals from the completed October 4 service
+trial, with one cold and two serial warm samples per measured configuration.
+Queue time is excluded. The detailed suite/cache-action observations and scope
+are below. Separate hosted runners and nonrandomized order limit the conclusion;
+no confidence interval or statistically supported speedup is claimed.
 
 No failed, cancelled, incomplete or differently selected run is eligible as a
 favorable sample. A cache hit with no successful downstream validation is not a
@@ -440,6 +442,73 @@ The exporter also closes its temporary JSON file before atomic replacement.
 Actual Windows controls cover replacement and failure preserving the previous
 evidence; Linux collector controls retain all earlier process, stream, archive
 and failure assertions. No exporter success waives failed recipe execution.
+
+### Completed October 4 service comparison and reviewed decision
+
+[Run 37206419966](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37206419966)
+completed all six sample jobs and reconciliation on exact development source
+`6de8dc93f867c90cef59f347a51cc82847e44290`. The retained
+[unmodified collector report](evidence/cargo-cache-service-2026-10-04.json)
+comes from artifact `11305359301`, ZIP SHA-256
+`4e09d1dd8a6b4b22cabf129939599a4a9402be9e01a76e25ec7d4761f9b3fea5`.
+The downloaded ZIP and its seven JSON files were checked against the
+authenticated artifact digest; all six original service samples accompany the
+collector report. Full native recipe diagnostics remain separate artifacts in
+the same completed run. Every sample completed
+all 21 reviewed invocations, exact discovery, authenticated AOT handoff, both
+Clippy policies, workspace tests, doctests and signing compatibility. Each had
+the same 3,184 active case identities and digest
+`5b8ff29a675cd60e3a675cbe96ac291ee86cccf641bd593d1ab573964311a803`.
+Warm jobs required exact service-cache hits and remained read-only; their
+successful results were freshly executed rather than restored positive tests.
+
+Both configurations used pinned Rust 1.97.1, two compiler jobs, no incremental
+compilation, and Ubuntu 24.04 runner image `20260927.320.1`. The effective
+baseline CI debug level was 0; the correctness candidate used 1. Assertions and
+overflow checks remained enabled in both. The trial varies the cache identity
+and correctness profile together, so its observations cannot be attributed to
+the key choice alone or described as reducing the baseline's debug information.
+
+| Configuration / sample | Completed recipe suite (s) | Restore / save-or-read-only-post action (s) | Built / fresh artifact records | Maximum child RSS (KiB) |
+| --- | --- | --- | --- | --- |
+| baseline / cold | 1000.28 | 2 / 15 | 1,804 / 3,178 | 1,863,276 |
+| baseline / warm-1 | 594.78 | 14 / 0 | 928 / 4,054 | 1,581,632 |
+| baseline / warm-2 | 553.47 | 13 / 0 | 928 / 4,054 | 1,586,616 |
+| recipe / cold | 945.27 | 2 / 16 | 1,911 / 3,071 | 2,330,836 |
+| recipe / warm-1 | 574.60 | 26 / 0 | 930 / 4,052 | 1,962,440 |
+| recipe / warm-2 | 561.83 | 25 / 1 | 930 / 4,052 | 1,964,316 |
+
+The baseline cache was 752,478,345 bytes; the candidate was 1,082,821,333 bytes
+(43.9% larger). Restore took 14/13 seconds for baseline warm jobs and 26/25
+seconds for candidate warm jobs. Those action intervals include service lookup,
+pruning/compression or extraction, and transfer. Separate network/extraction
+times remain unavailable, not zero. Cargo built/fresh artifact records are not
+compiler invocation counts, and maximum-child RSS is not simultaneous process
+tree or total job peak memory.
+
+The candidate's cold job was 45 seconds shorter. Its first warm job was 8 seconds
+shorter and its second was 19 seconds longer. The two warm whole-job means were
+648.0 seconds for baseline and 653.5 seconds for candidate. With only two serial
+warm samples on separate hosted runners, this supports **retaining baseline**;
+it does not establish a consistent net improvement. Preserve the candidate's
+larger cache, higher observed child RSS, and slower second warm result as
+negative evidence. Keep the recipe-key and correctness-profile alternatives
+explicitly opt-in, retain all independent commands, and use the rollback below.
+
+The observed Rust-recipe scope excludes independent MSRV, downstream renderer
+and provider qualification, release builds and resource calibration. They remain
+in ordinary CI. On this same exact source, the ordinary
+[CI run 37206419832](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37206419832),
+[security run 37206419821](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37206419821),
+[C authoring run 37206419769](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37206419769)
+and [Rust authoring run 37206419635](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37206419635)
+all completed successfully. This confirms the end-to-end CI outcome rather than
+reclassifying those independent lanes as service-trial measurements.
+
+The collector's original `defaultDecision` deliberately remains a pending-review
+statement and its automatic-promotion flags remain false. The reviewed decision
+in this document completes that manual reconciliation without altering the raw
+receipt, production cache identity, release profiles, or earlier evidence.
 
 ## Rollback
 
