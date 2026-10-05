@@ -266,10 +266,6 @@ fn initialize_namespace(store: &EmbeddedStore, namespace: &NamespaceRecord, key:
     store.apply(initial).unwrap();
 }
 
-fn initialize_count(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>) {
-    initialize_key(store, scope, count, AggregateMigrationRecipe::Count.key());
-}
-
 fn initialize_key(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>, key: &[u8]) {
     let view = store.snapshot().unwrap();
     let mut session =
