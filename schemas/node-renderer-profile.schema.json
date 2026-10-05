@@ -1,7 +1,1 @@
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://latent.dev/schemas/node-renderer-profile.schema.json",
-  "title": "Standalone optional rendererProfile selector",
-  "description": "An explicit engine profile, separate from the securityProfile and resource grants. Omit to leave Angular uninstalled; null and ambient Node profiles are invalid.",
-  "const": "angular-ssr-component-v1"
-}
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://latent.dev/schemas/node-renderer-profile.schema.json","title":"Standalone optional rendererProfile selector","description":"An explicit engine profile, separate from the securityProfile and resource grants. Omit to leave Angular uninstalled; null and ambient Node profiles are invalid.","const":"angular-ssr-component-v1"}
