@@ -156,16 +156,6 @@ pub fn validate(command: &ValidateCommand) -> Result<Outcome, Failure> {
     Ok(Outcome::success(json!({"kind":kind,"valid":true})))
 }
 
-fn activation_tree(args: &crate::args::ActivationTreeArgs) -> Result<Operation, Failure> {
-    identifier(&args.id)?;
-    Ok(Operation::InspectActivationTree(
-        proto::InspectActivationTreeRequest {
-            activation_id: args.id.clone(),
-            page: Some(page(args.page_size, args.page_token.as_deref())?),
-        },
-    ))
-}
-
 fn publish(args: &PublishArgs, config: &ResolvedConfig) -> Result<Operation, Failure> {
     input::single_stdin(&[&args.manifest, &args.component, &args.contracts])?;
     let capsule_manifest_json = input::read(&args.manifest, MAXIMUM_MANIFEST_BYTES, "manifest")?;
