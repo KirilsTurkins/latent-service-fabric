@@ -1,5 +1,6 @@
 use super::*;
 use crate::embedded::format::{self as disk_format, Checkpoint, State};
+use redb::ReadableTableMetadata;
 
 fn native_builder() -> redb::Builder {
     let mut builder = Database::builder();
@@ -262,14 +263,13 @@ async fn interrupted_first_creation_refuses_unseeded_engine_and_recovers_durable
             assert!(description(&store.db)
                 .iter()
                 .all(|(key, _)| key != "upgrade"));
-            assert_eq!(
-                store
-                    .snapshot()
-                    .unwrap()
-                    .scan_prefix(Family::State, b"", 8, 1024)
-                    .unwrap(),
-                vec![]
-            );
+            let page = store
+                .snapshot()
+                .unwrap()
+                .scan_after(Family::State, b"", None, 8, 1024)
+                .unwrap();
+            assert!(page.rows.is_empty());
+            assert!(page.resume.is_none());
         }
     }
 }
