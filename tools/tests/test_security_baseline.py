@@ -259,10 +259,12 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertIn(("brace-expansion", "5.0.12"), values)
         self.assertIn(("balanced-match", "4.0.4"), values)
         self.assertIn(("undici", "6.28.1"), values)
+        self.assertIn(("http-cache-semantics", "4.3.0"), values)
         self.assertNotIn(("ip-address", "10.5.0"), values)
         self.assertNotIn(("ip-address", "10.5.1"), values)
         self.assertNotIn(("brace-expansion", "5.0.9"), values)
         self.assertNotIn(("undici", "6.28.0"), values)
+        self.assertNotIn(("http-cache-semantics", "4.2.0"), values)
 
     def test_derived_npm_rejects_omissions_and_changed_inputs(self):
         entry = self.derived_npm_fixture()

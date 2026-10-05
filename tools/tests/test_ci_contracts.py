@@ -668,6 +668,11 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
         reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
+        reviewed_browser_derivations = {
+            ".github/workflows/docs-pages.yml:browser:Install the reviewed browser tools in an unprivileged job",
+            ".github/workflows/docs-site.yml:website:Install the reviewed website dependency graph without lifecycle scripts",
+        }
+        reviewed_framework_derivation = ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -718,6 +723,17 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "assert selection.fast_packages\n"
                     "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
                 )
+                self.assertEqual(data["after"][key], expected, key)
+            elif key in reviewed_browser_derivations:
+                expected = dict(value)
+                prepare = "python3 website/toolchain/prepare.py\n"
+                self.assertEqual(value["run"].count(prepare), 1)
+                expected["run"] = value["run"].replace(
+                    prepare, prepare + "python3 tools/security_derivations.py prepare\n")
+                self.assertEqual(data["after"][key], expected, key)
+            elif key == reviewed_framework_derivation:
+                expected = dict(value)
+                expected["run"] = "python3 tools/security_derivations.py prepare\n" + value["run"]
                 self.assertEqual(data["after"][key], expected, key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)

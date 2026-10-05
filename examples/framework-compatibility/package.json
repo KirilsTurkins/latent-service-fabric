@@ -36,6 +36,7 @@
     "sockjs": {
       "uuid": "11.1.1"
     },
-    "braces": "file:../../target/website-package-manager/braces-3.0.3-lsf-depth-v1.tar"
+    "braces": "file:../../target/website-package-manager/braces-3.0.3-lsf-depth-v1.tar",
+    "http-cache-semantics": "4.3.0"
   }
 }

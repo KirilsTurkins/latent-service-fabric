@@ -14,7 +14,8 @@
       "uuid": "11.1.1"
     },
     "dompurify": "3.4.16",
-    "braces": "file:../target/website-package-manager/braces-3.0.3-lsf-depth-v1.tar"
+    "braces": "file:../target/website-package-manager/braces-3.0.3-lsf-depth-v1.tar",
+    "http-cache-semantics": "4.3.0"
   },
   "scripts": {
     "start": "node scripts/site.mjs start",

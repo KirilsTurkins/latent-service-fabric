@@ -10,6 +10,7 @@ import {repositoryRoot, websiteRoot} from '../lib/repository.mjs';
 test('website pins and lock agree without a root workspace or dependency lifecycle scripts', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(websiteRoot, 'package.json'), 'utf8'));
   const lock = JSON.parse(fs.readFileSync(path.join(websiteRoot, 'package-lock.json'), 'utf8'));
+  const bracesProfile = JSON.parse(fs.readFileSync(path.join(websiteRoot, 'toolchain/braces-source.json'), 'utf8'));
   assert.equal(manifest.private, true);
   assert.equal(manifest.engines.node, '24.19.0');
   assert.equal(manifest.engines.npm, '11.19.1');
@@ -20,8 +21,14 @@ test('website pins and lock agree without a root workspace or dependency lifecyc
   assert.equal(lock.lockfileVersion, 3);
   for (const [location, dependency] of Object.entries(lock.packages)) {
     if (location === '') continue;
-    assert.match(dependency.version, /^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/);
-    assert.equal(new URL(dependency.resolved).origin, 'https://registry.npmjs.org');
+    if (location === 'node_modules/braces') {
+      assert.equal(dependency.version, bracesProfile.version);
+      assert.equal(dependency.resolved, manifest.overrides.braces);
+      assert.equal(dependency.resolved, 'file:../target/website-package-manager/braces-3.0.3-lsf-depth-v1.tar');
+    } else {
+      assert.match(dependency.version, /^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/);
+      assert.equal(new URL(dependency.resolved).origin, 'https://registry.npmjs.org');
+    }
     assert.match(dependency.integrity, /^sha512-[A-Za-z0-9+/]+={0,2}$/);
     assert.equal(dependency.link, undefined);
   }
