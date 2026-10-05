@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare a locked npm bundle without running downloaded package code.
 
-npm overrides do not replace bundled dependencies. Replace the complete three
+npm overrides do not replace bundled dependencies. Replace the complete four
 reviewed packages before npm executes, then authenticate the deterministic TAR
 against package-lock.json. This is a derived distribution, not an upstream npm
 release. All intermediate archives stay under ignored target/.
@@ -23,7 +23,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 LIMIT = 16 * 1024 * 1024
 EXPANDED_LIMIT = 64 * 1024 * 1024
-PROFILE = "npm-11.19.1-lsf-bundle-v1"
+PROFILE = "npm-11.19.1-lsf-bundle-v2"
 OUTPUT = ROOT / "target/website-package-manager" / (PROFILE + ".tar")
 CACHE = OUTPUT.parent / "inputs"
 
@@ -110,7 +110,7 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]]) -> bytes:
     names: set[str] = set()
     for pin, raw in patches:
         name = pin["name"]
-        if name not in {"ip-address", "undici", "brace-expansion"} or name in names:
+        if name not in {"ip-address", "undici", "brace-expansion", "http-cache-semantics"} or name in names:
             raise ValueError("unexpected bundle replacement")
         names.add(name)
         prefix = "package/node_modules/" + name + "/"
@@ -140,7 +140,7 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]]) -> bytes:
         files = {key: value for key, value in files.items() if not key.startswith(prefix)}
         for key, value in replacement.items():
             files[prefix + key.removeprefix("package/")] = value
-    if names != {"ip-address", "undici", "brace-expansion"}:
+    if names != {"ip-address", "undici", "brace-expansion", "http-cache-semantics"}:
         raise ValueError("incomplete bundle replacement")
     # An uncompressed USTAR has stable bytes across zlib/platform versions.
     output = io.BytesIO()
