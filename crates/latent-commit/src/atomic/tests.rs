@@ -17,6 +17,8 @@ use latent_state::{
 use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
 mod captured;
+#[cfg(target_os = "linux")]
+mod io_faults;
 mod process;
 
 fn time(now: u64) -> CommandTime {
