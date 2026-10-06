@@ -273,9 +273,33 @@ fn command_name_and_offline_preflight_do_not_contact_a_node() {
 
 #[test]
 fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_association_losslessly() {
-    use base64::{engine::general_purpose::STANDARD, Engine};
-    use latent_rpc::phase4::{current_profile, Response};
-    use prost::Message;
+    let audit = Some(c::AuditAck {
+        status: c::AuditAckStatus::Durable as i32,
+        attempt_sequence: Some(u64::MAX),
+    });
+    let (original, request) = dispatcher_recovery_request();
+    assert_dispatcher_operation_projection(original, &request, audit);
+    assert_effect_plan_projection(audit);
+
+    let Operation::Phase4(request) = prepare_state(
+        &StateCommand::Operation(NamespaceOperationArgs {
+            target: target(),
+            operation_id: "original-namespace".into(),
+        }),
+        &config(),
+    )
+    .unwrap() else {
+        panic!("namespace lookup")
+    };
+    let Request::GetStateOperationReceipt(value) = *request else {
+        panic!("typed lookup")
+    };
+    assert_eq!(value.operation_id, "original-namespace");
+    assert!(value.original_effect_plan.is_none());
+}
+
+fn dispatcher_recovery_request() -> (c::ControlDispatcherRequest, Request) {
+    use latent_rpc::phase4::current_profile;
 
     let original = c::ControlDispatcherRequest {
         profile: Some(current_profile()),
@@ -311,6 +335,15 @@ fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_associatio
     expected_context["tenant"] = json!("tenant");
     assert_eq!(failure.data["recovery"], expected_context);
     assert!(!failure.outcome_known);
+    (original, request)
+}
+
+fn assert_dispatcher_operation_projection(
+    original: c::ControlDispatcherRequest,
+    request: &Request,
+    audit: Option<c::AuditAck>,
+) {
+    use latent_rpc::phase4::{current_profile, Response};
 
     let receipt = c::DispatcherOperationReceipt {
         operation_id: original.operation_id.clone(),
@@ -318,7 +351,7 @@ fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_associatio
         action: original.action,
         authenticated_operator: "host-derived-stable-actor".into(),
         actor_tenant: "tenant".into(),
-        before_generation: original.expected_generation.clone(),
+        before_generation: original.expected_generation,
         after_generation: Some(c::DispatcherGeneration {
             owner_epoch: 9_007_199_254_740_993,
             revision: u64::MAX,
@@ -328,18 +361,14 @@ fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_associatio
         restore_review_required: false,
         disposition: c::StateOperationDisposition::Committed as i32,
     };
-    let audit = Some(c::AuditAck {
-        status: c::AuditAckStatus::Durable as i32,
-        attempt_sequence: Some(u64::MAX),
-    });
     let response = Response::from(c::ControlDispatcherResponse {
         receipt: Some(receipt.clone()),
         replayed: true,
         published: false,
         paused: true,
-        audit_ack: audit.clone(),
+        audit_ack: audit,
     });
-    response.validate_for(&request).unwrap();
+    response.validate_for(request).unwrap();
     let outcome = execute::project_outcome(&response);
     assert_eq!(outcome.category, Category::Success);
     assert!(outcome.outcome_known);
@@ -354,7 +383,7 @@ fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_associatio
     });
     let response = Response::from(c::GetDispatcherOperationResponse {
         receipt: Some(receipt.clone()),
-        audit_ack: audit.clone(),
+        audit_ack: audit,
     });
     response.validate_for(&lookup).unwrap();
     assert_eq!(
@@ -382,13 +411,19 @@ fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_associatio
             failure: c::DispatcherFailure::None as i32,
             ..Default::default()
         }),
-        audit_ack: audit.clone(),
+        audit_ack: audit,
     });
     response.validate_for(&inspect).unwrap();
     assert_eq!(
         projection::response(&response)["dispatcher"]["retainedAttemptBytes"],
         u64::MAX.to_string()
     );
+}
+
+fn assert_effect_plan_projection(audit: Option<c::AuditAck>) {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    use latent_rpc::phase4::Response;
+    use prost::Message;
 
     let Operation::Phase4(effect) = prepare_transaction(
         &TransactionCommand::Effect(EffectArgs {
@@ -447,20 +482,4 @@ fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_associatio
     let mut changed = original_plan;
     changed.operation_id = "replacement-stop".into();
     assert!(response.validate_for(&Request::from(changed)).is_err());
-
-    let Operation::Phase4(request) = prepare_state(
-        &StateCommand::Operation(NamespaceOperationArgs {
-            target: target(),
-            operation_id: "original-namespace".into(),
-        }),
-        &config(),
-    )
-    .unwrap() else {
-        panic!("namespace lookup")
-    };
-    let Request::GetStateOperationReceipt(value) = *request else {
-        panic!("typed lookup")
-    };
-    assert_eq!(value.operation_id, "original-namespace");
-    assert!(value.original_effect_plan.is_none());
 }
