@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "ReviewedEnvironment.test_changed_guest_or_compiler_identity_cannot_borrow_reviewed_publication_authority",
+    "ReviewedEnvironment.test_default_selection_has_no_review_or_fixed_environment",
+    "ReviewedEnvironment.test_exact_review_pins_ports_incarnation_and_rejects_manifest_byte_drift",
+    "ReviewedEnvironment.test_host_tool_and_policy_programme_drift_refuse_before_mutation",
+    "ReviewedEnvironment.test_selected_environment_cannot_widen_bounds_alias_ports_or_supply_bool_counters"
+  ],
+  "guards": {
+    "ReviewedEnvironment.test_changed_guest_or_compiler_identity_cannot_borrow_reviewed_publication_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e88f05d7331990dc1fc39368075c738d70677219d84e441b0ca6174fbbe685a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReviewedEnvironment.test_default_selection_has_no_review_or_fixed_environment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e88f05d7331990dc1fc39368075c738d70677219d84e441b0ca6174fbbe685a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReviewedEnvironment.test_exact_review_pins_ports_incarnation_and_rejects_manifest_byte_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e88f05d7331990dc1fc39368075c738d70677219d84e441b0ca6174fbbe685a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReviewedEnvironment.test_host_tool_and_policy_programme_drift_refuse_before_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e88f05d7331990dc1fc39368075c738d70677219d84e441b0ca6174fbbe685a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReviewedEnvironment.test_selected_environment_cannot_widen_bounds_alias_ports_or_supply_bool_counters": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e88f05d7331990dc1fc39368075c738d70677219d84e441b0ca6174fbbe685a6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_fixed_environment.py",
+  "reviewReason": "Add paired fixed fixture and exact policy/native-host/component refusal cases; preserve all original campaign bounds and default selectors.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

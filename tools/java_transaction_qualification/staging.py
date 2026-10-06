@@ -192,6 +192,10 @@ def sources(args):
         result["diagnostic"] = selected
     if getattr(args, "pending_restore_only", False):
         result["programme"] = "signed-java-unresolved-effect-restore-v3"
+    from .fixed_environment import identity
+    reviewed = identity(args)
+    if reviewed is not None:
+        result["reviewedPolicyEnvironment"] = reviewed
     return result
 
 

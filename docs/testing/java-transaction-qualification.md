@@ -1,5 +1,17 @@
 # Signed Java transaction qualification
 
+An optional paired `--reviewed-policy-environment <absolute-review.json>` and
+`--reviewed-policy-environment-digest sha256:<exact-reviewed-bytes>` selects the
+separately reviewed recipient port/incarnation and ingress port. It retains the
+default random selection when absent. The immutable review pins the original
+native tools, compiled inputs, ten raw policy documents and original host
+reference. Current native host observations and every generated mutation/file
+must match before policy application; TLS, caller, publication or document drift
+refuses the attempt. Ports and review bytes grant no native authority. Both
+prepare/resume source pins include this selection, with the original twelve
+actions, six node sessions and nonrenewable 1,200-second deadline unchanged.
+Reading and validating the review starts no signing or preparation clock.
+
 The separate `--pending-restore-only` selection uses the installed native V3
 close owner. It requires a new candidate whose source selection and collector
 digests include that programme. It retains the original twelve native-action,

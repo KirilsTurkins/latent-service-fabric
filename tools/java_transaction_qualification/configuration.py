@@ -67,9 +67,11 @@ class Configuration:
 
 
 def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
-              checkpoint: Path, recipient_port: int, credential: Path) -> Configuration:
+              checkpoint: Path, recipient_port: int, credential: Path, *, ingress_port=0) -> Configuration:
     require(type(recipient_port) is int and 1 <= recipient_port <= 65535,
             "actual-recipient-listener-port")
+    require(type(ingress_port) is int and 0 <= ingress_port <= 65535,
+            "bounded-selected-ingress-port")
     require(checkpoint.is_file() and not checkpoint.is_symlink()
             and compiler.is_file() and not compiler.is_symlink(), "native-owned-configuration-inputs")
     original = configure_node(directory, signed, TENANT)
@@ -80,7 +82,7 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
     data.mkdir(mode=0o700)
     (data / "state").mkdir(mode=0o700)
     with socket.socket() as reservation:
-        reservation.bind(("127.0.0.1", 0))
+        reservation.bind(("127.0.0.1", ingress_port))
         port = reservation.getsockname()[1]
     authority = f"localhost:{port}"
     origin = {"scheme": "https", "host": "localhost", "port": recipient_port}

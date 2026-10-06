@@ -21,6 +21,7 @@ from tools.build_observation import file_identity
 from tools.build_process_signals import owned_cancellation
 from tools.java_transaction_qualification import configuration as cfg, inputs, lifecycle, packaging, policies, staging
 from tools.java_transaction_qualification import diagnostic_inputs
+from tools.java_transaction_qualification import fixed_environment
 from tools.java_transaction_qualification.campaign import Campaign
 from tools.java_transaction_qualification.evidence import Evidence, RecordingClient, native
 from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
@@ -38,7 +39,8 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/staging.py", "tools/java_transaction_qualification/native_store.py",
     "tools/java_transaction_qualification/diagnostic_inputs.py",
     "tools/java_transaction_qualification/diagnostic_campaign.py",
-    "tools/java_transaction_qualification/pending_restore.py")
+    "tools/java_transaction_qualification/pending_restore.py",
+    "tools/java_transaction_qualification/fixed_environment.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
@@ -58,6 +60,10 @@ def parse():
     parser.add_argument("--prepare-authority-only", action="store_true", help="Stop before candidate policy mutations")
     parser.add_argument("--resume-candidate", type=Path, help="Consume the exact stopped original candidate once")
     parser.add_argument("--candidate-digest", help="Exact retained candidate digest supplied after review")
+    parser.add_argument("--reviewed-policy-environment", type=Path,
+                        help="Optional original exact unsigned policy/environment review")
+    parser.add_argument("--reviewed-policy-environment-digest",
+                        help="Exact sha256 digest of the separately reviewed unsigned document")
     for name in diagnostic_inputs.ARGUMENTS:
         parser.add_argument("--" + name.replace("_", "-"), type=Path if name in
                             {"diagnostic_capture", "diagnostic_receipt"} else str,
@@ -77,6 +83,8 @@ def parse():
     recovery_input(args)
     diagnostic_inputs.selection(args)
     staging.mode(args)
+    fixed_environment.load(args)
+    fixed_environment.check_tools(args, tool_identity(args))
     return args
 
 
@@ -103,6 +111,7 @@ def collector_identity():
 
 
 def prepare_environment(client, args, work, signed):
+    reviewed = fixed_environment.load(args)
     native(client, args.signer, "fixture-tls", "fixture-tls", work / "tls")
     native(client, args.signer, "fixture-clock", "fixture-state-clock", work / "clock", lifecycle.NODE_ID)
     clock = read_json(work / "clock/clock-bootstrap.json")
@@ -124,10 +133,14 @@ def prepare_environment(client, args, work, signed):
     recipient_root, node_root = work / "recipient", work / "node"
     recipient_root.mkdir(mode=0o700)
     node_root.mkdir(mode=0o700)
-    peer = lifecycle.Peer(client, recipient_root, work / "tls", peer_token, os.urandom(32).hex())
+    selection = {} if reviewed is None else reviewed["recipient"]
+    incarnation = selection.get("providerIncarnation") or os.urandom(32).hex()
+    peer = lifecycle.Peer(client, recipient_root, work / "tls", peer_token, incarnation,
+                          port=selection.get("port", 0))
     try:
         configuration = cfg.configure(node_root, signed, args.aot_compiler, work / "tls", checkpoint,
-                                      peer.port, credential)
+                                      peer.port, credential,
+                                      ingress_port=0 if reviewed is None else int(selection["ingressAuthority"].split(":")[1]))
         client.evidence.record("bootstrap-configuration", configuration.value)
         return peer, configuration, lifecycle.Node(client, args.node, node_root)
     except BaseException:
@@ -148,7 +161,8 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     proposals = policies.documents(hosts, publications, diagnostic=diagnostic)
     client.evidence.record("actual-native-hosts", hosts.value)
     client.evidence.record("reviewed-policy-proposals", proposals)
-    mutations = policies.prepare_mutations(client, proposals) if retained else None
+    mutations = policies.prepare_mutations(client, proposals) if retained or fixed_environment.load(args) is not None else None
+    fixed_environment.check_authority(args, client, hosts.value, mutations)
     if retained:
         client.evidence.record("reviewed-policy-mutations", mutations)
     return full_path, publications, proposals, catalog, hosts.value, mutations
@@ -178,6 +192,7 @@ def resume_authority(client, args, configuration, node, full_path, prepared):
     hosts = lifecycle.inspect(client, args.node, full_path, read_json(full_path)["state"]["operations"],
                               stage="transaction-host-recheck")
     inputs.require(hosts.value == prepared["hosts"], "original-native-profile-drift")
+    fixed_environment.check_authority(args, client, hosts.value, prepared["mutations"])
     node.start(configuration.path)
     inputs.require(staging.catalog(client, prepared["publications"]) == prepared["catalog"],
                    "original-current-catalog-drift")
@@ -234,7 +249,9 @@ def loaded_inputs(args, work):
                        and diagnostic.item.requirements_digest == legacy.requirements_digest
                        and diagnostic.item.host_abi_digest == legacy.host_abi_digest,
                        "same-original-diagnostic-companion-requirements-and-abi")
-    return original + ((diagnostic.item,) if diagnostic is not None else ()), diagnostic
+    selected = original + ((diagnostic.item,) if diagnostic is not None else ())
+    fixed_environment.check_inputs(args, selected)
+    return selected, diagnostic
 
 
 def input_identity(record, items, diagnostic):
