@@ -1833,6 +1833,7 @@ dependencies = [
  "latent-scheduler",
  "latent-state",
  "latent-telemetry",
+ "sha2 0.11.0",
  "tokio",
 ]
 

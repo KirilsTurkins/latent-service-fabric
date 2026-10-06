@@ -247,7 +247,23 @@ impl Operation {
             return Err(cancelled());
         }
         if Instant::now() >= self.deadline {
-            return Err(expired());
+            use latent_core::diagnostic::{
+                ActivationDiagnostic as D, DiagnosticReason as R, DiagnosticStage as S,
+            };
+            let running = {
+                let state = self
+                    .execution
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                matches!(state.authority, Authority::Running(_))
+            };
+            let diagnostic = if running {
+                D::new(S::Provider, R::ProviderTimeout)
+            } else {
+                D::new(S::Queue, R::DeadlineExceeded)
+            };
+            self.with_session(|session| session.core.observe_diagnostic(diagnostic.clone()));
+            return Err(diagnostic.attach(expired()));
         }
         let state = self
             .execution
@@ -486,6 +502,18 @@ impl IoLease {
     }
 }
 impl IoCall {
+    pub fn recheck_authority(&self) -> Result<(), PlatformError> {
+        self.checkpoint()?;
+        let mut state = self
+            .operation
+            .execution
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let Authority::Running(call) = &mut state.authority else {
+            return Err(denied());
+        };
+        call.recheck_authority()
+    }
     #[must_use]
     pub fn job_waiter(&self) -> IoJobWaiter {
         IoJobWaiter {

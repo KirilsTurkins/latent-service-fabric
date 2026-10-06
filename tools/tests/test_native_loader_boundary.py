@@ -121,9 +121,9 @@ all = "warn"
         self.assertEqual(pins["rust"]["dependencies"]["wasmtime"], "48.0.4")
         self.assertEqual(json.loads((root / "examples/renderer-profile/profile.json").read_text())["wasmtime"], "48.0.4")
         self.assertEqual(json.loads((root / "wit/host-abi-phase4-v1.json").read_text())["wasmtimeVersion"], "48.0.4")
-        # Only v4 is active. Superseded matrices retain their tested runtime,
+        # Only v5 is active. Superseded matrices retain their tested runtime,
         # independently fingerprinted by test_host_abi_profile.
-        for name, version in (("v2", "47.0.4"), ("v3", "47.0.4"), ("v4", "48.0.4")):
+        for name, version in (("v2", "47.0.4"), ("v3", "47.0.4"), ("v4", "48.0.3"), ("v5", "48.0.4")):
             with self.subTest(descriptor=name):
                 descriptor = json.loads((root / f"wit/host-abi-phase3-{name}.json").read_text())
                 self.assertEqual(descriptor["wasmtimeVersion"], version)
