@@ -278,7 +278,7 @@ fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_associatio
         attempt_sequence: Some(u64::MAX),
     });
     let (original, request) = dispatcher_recovery_request();
-    assert_dispatcher_operation_projection(original, &request, audit);
+    assert_dispatcher_operation_projection(&original, &request, audit);
     assert_effect_plan_projection(audit);
 
     let Operation::Phase4(request) = prepare_state(
@@ -339,7 +339,7 @@ fn dispatcher_recovery_request() -> (c::ControlDispatcherRequest, Request) {
 }
 
 fn assert_dispatcher_operation_projection(
-    original: c::ControlDispatcherRequest,
+    original: &c::ControlDispatcherRequest,
     request: &Request,
     audit: Option<c::AuditAck>,
 ) {
