@@ -5,9 +5,9 @@ The authoritative operator/author instructions are in
 decision in [ADR-0041](../adr/0041-publish-single-source-version-bound-documentation.md).
 
 Use Node 24.19.0 and Python 3.11 or newer. The separately locked `toolchain/`
-selects npm 11.19.1 with the explicitly named `npm-11.19.1-lsf-bundle-v1`
-security derivation. It replaces the complete bundled `ip-address`, `undici`, and `brace-expansion`
-packages with 10.7.2, 6.28.1, and 5.0.12 **before executing npm**; ordinary npm overrides
+selects npm 11.19.1 with the explicitly named `npm-11.19.1-lsf-bundle-v2`
+security derivation. It replaces the complete bundled `ip-address`, `undici`, `brace-expansion`,
+and `http-cache-semantics` packages with 10.7.2, 6.28.1, 5.0.12, and 4.3.0 **before executing npm**; ordinary npm overrides
 cannot replace bundled bytes. This is not an upstream npm release or an advisory
 waiver. The input archives, derived TAR and complete package inventory are pinned;
 no downloaded package code runs during preparation. Outputs stay in `target/`.
