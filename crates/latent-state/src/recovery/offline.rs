@@ -5,6 +5,7 @@
 mod file;
 mod migration;
 mod operation;
+mod retained;
 mod review;
 mod startup;
 
@@ -25,7 +26,7 @@ use super::{
     RecoveryGuard,
 };
 use crate::{
-    embedded::{ReadView, RowKey, StoreError},
+    embedded::{AtomicBatch, ReadView, RowKey, StoreError},
     namespace::compatibility::{RetainedFormat, ReviewedSchema},
     protected_store::{
         ProtectedStoreConfig, ProtectedStoreDrain, ProtectedStoreError, ProtectedStoreOwner,
@@ -98,6 +99,31 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
     }
     /// Short no-I/O currentness check at the actual irreversible writer fence.
     fn accept_reconciliation(&self, _request: &RecoveryReviewRequest) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+    /// Read-only installed domain plan. Opaque request bytes grant no access;
+    /// the default exposes neither a plan nor mutable retained work.
+    fn inspect_retained_reconciliation(
+        &self,
+        _view: &ReadView,
+        _request: &RetainedReconciliationRequest,
+    ) -> Result<Vec<u8>, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+    /// A closed installed owner supplies exact old row expectations and its
+    /// immutable receipt. Ordinary business, inbox and result rows cannot be
+    /// mutated by this port; the complete-store guard stays paused.
+    fn prepare_retained_reconciliation(
+        &self,
+        _view: &ReadView,
+        _request: &RetainedReconciliationRequest,
+    ) -> Result<PreparedRetainedReconciliation, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+    fn accept_retained_reconciliation(
+        &self,
+        _request: &RetainedReconciliationRequest,
+    ) -> Result<(), StoreError> {
         Err(StoreError::Unavailable)
     }
     fn review_namespace_resume(
@@ -178,6 +204,19 @@ pub struct RecoveryReviewRequest {
 }
 
 #[derive(Debug, Clone)]
+pub struct RetainedReconciliationRequest {
+    pub operator_id: String,
+    pub operation_id: String,
+    /// Installed domain decoder owns this finite data, never a request plugin.
+    pub payload: Vec<u8>,
+}
+pub struct PreparedRetainedReconciliation {
+    pub batch: AtomicBatch,
+    pub receipt: Vec<u8>,
+    pub replay: bool,
+}
+
+#[derive(Debug, Clone)]
 pub struct SnapshotFile {
     /// Explicit pre-existing protected directory, never a guest path.
     pub root: PathBuf,
@@ -228,6 +267,20 @@ pub struct OfflineRecoverySource {
 }
 
 impl OfflineRecoverySource {
+    pub fn inspect_retained_reconciliation(
+        &self,
+        request: RetainedReconciliationRequest,
+        deadline: Instant,
+    ) -> Result<OfflineOperation<Vec<u8>>, OfflineRecoveryError> {
+        retained::inspect(self, request, deadline)
+    }
+    pub fn reconcile_retained(
+        &self,
+        request: RetainedReconciliationRequest,
+        deadline: Instant,
+    ) -> Result<OfflineOperation<Vec<u8>>, OfflineRecoveryError> {
+        retained::apply(self, request, deadline)
+    }
     /// Persist reviewed paused progress; leave data/schema unchanged. A dropped
     /// waiter does not refund accepted physical work. Restart never completes it
     /// automatically; the same attributable operation must explicitly finish.

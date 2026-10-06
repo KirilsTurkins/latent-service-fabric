@@ -256,8 +256,37 @@ impl Catalog {
                 self.scope().tenant_row(bytes)?;
                 observe(inventory, RetainedKind::MigrationCheckpoint, LINKED, count)
             }
+            Family::Maintenance
+                if key
+                    .key
+                    .starts_with(latent_effects::recovery_close::RECEIPT_PREFIX) =>
+            {
+                self.close_receipt(key, bytes, inventory, count)
+            }
             _ => observe(inventory, RetainedKind::MigrationCheckpoint, LINKED, count),
         }
+    }
+    fn close_receipt(
+        &self,
+        key: &RowKey,
+        bytes: &[u8],
+        inventory: &mut RetainedInventory,
+        count: RetainedCount,
+    ) -> Result<(), StoreError> {
+        let receipt = latent_effects::recovery_close::CloseReceipt::validate_row(key, bytes)?;
+        if !self.scope().contains(
+            &receipt.plan.scope.tenant,
+            &receipt.plan.scope.namespace,
+            receipt.plan.scope.incarnation,
+        ) {
+            return Err(StoreError::UnsupportedFormat);
+        }
+        observe(
+            inventory,
+            RetainedKind::MigrationCheckpoint,
+            latent_effects::recovery_close::FORMAT,
+            count,
+        )
     }
     fn command(
         &self,
@@ -314,7 +343,11 @@ impl Catalog {
         observe(
             inventory,
             RetainedKind::EffectEnvelope,
-            "lsf.effect-record.v1",
+            if effect.recovery_close_digest().is_some() {
+                "lsf.effect-record.v2"
+            } else {
+                "lsf.effect-record.v1"
+            },
             RetainedCount {
                 unresolved: u64::from(!effect.disposition().terminal()),
                 ..count
@@ -393,6 +426,11 @@ fn observe(
 fn formats() -> Vec<RetainedFormat> {
     [
         (RetainedKind::EffectEnvelope, "lsf.effect-record.v1"),
+        (RetainedKind::EffectEnvelope, "lsf.effect-record.v2"),
+        (
+            RetainedKind::MigrationCheckpoint,
+            latent_effects::recovery_close::FORMAT,
+        ),
         (RetainedKind::SuccessResult, VALUES),
         (RetainedKind::RejectionResult, VALUES),
         (RetainedKind::CommandFingerprint, VALUES),

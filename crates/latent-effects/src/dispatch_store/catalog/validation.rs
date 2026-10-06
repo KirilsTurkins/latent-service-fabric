@@ -26,6 +26,20 @@ impl DispatchCatalog {
     ) -> Result<latent_state::tenant::TenantCensusContribution, StoreError> {
         use latent_state::tenant::TenantCensusContribution;
         validate_row(key, bytes)?;
+        if key.family == Family::Maintenance
+            && key.key.starts_with(crate::recovery_close::RECEIPT_PREFIX)
+        {
+            let receipt = crate::recovery_close::CloseReceipt::validate_row(key, bytes)?;
+            crate::recovery_close::validate_receipt_links(view, &receipt)?;
+            return Ok(TenantCensusContribution::Usage {
+                tenant: latent_core::TenantId(receipt.plan.scope.tenant),
+                usage: latent_state::tenant::TenantUsage {
+                    metadata_rows: 1,
+                    metadata_bytes: latent_state::tenant::row_charge(key, bytes)?,
+                    ..latent_state::tenant::TenantUsage::default()
+                },
+            });
+        }
         if *key == OwnerRecord::key()
             || (key.family == Family::Maintenance
                 && (key.key.as_slice() == crate::dispatch_store::control::CONTROL_STATE_KEY
@@ -104,6 +118,12 @@ impl DispatchCatalog {
         let key = effect_row_key(effect)?;
         let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
         let record = EffectRecord::decode(&bytes).map_err(storage_error)?;
+        // The V2 explicit close receipt is a separate retained recovery link.
+        // Automatic reclamation must not drop that operator decision or leave
+        // another selected effect without its shared decoder/receipt closure.
+        if record.recovery_close_digest().is_some() {
+            return Err(StoreError::UnsupportedFormat);
+        }
         if record.disposition() == Disposition::Dispatching {
             return Err(StoreError::Capacity);
         }
@@ -188,6 +208,15 @@ impl DispatchCatalog {
         })?;
         walk(
             view,
+            Family::Maintenance,
+            crate::recovery_close::RECEIPT_PREFIX,
+            |key, bytes| {
+                let receipt = crate::recovery_close::CloseReceipt::validate_row(key, bytes)?;
+                crate::recovery_close::validate_receipt_links(view, &receipt)
+            },
+        )?;
+        walk(
+            view,
             Family::PayloadReference,
             PAYLOAD_PREFIX,
             |key, bytes| {
@@ -260,6 +289,7 @@ fn validate_effect(
     validate_row(key, bytes)?;
     let effect = effect_from_key(key, EFFECT_PREFIX)?;
     let record = EffectRecord::decode(bytes).map_err(storage_error)?;
+    crate::recovery_close::validate_record_link(view, &record)?;
     let authority = record.authority().map_err(storage_error)?;
     if record.attempts() != 0
         && owner.is_none_or(|owner| {

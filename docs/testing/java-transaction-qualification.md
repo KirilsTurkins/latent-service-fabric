@@ -349,7 +349,7 @@ one bounded offline action through the normal native catalog owners. It is
 mutually exclusive with startup diagnosis. The request is at most 16 KiB and
 contains an exact installed publication plus a closed action: snapshot,
 inspect-namespace, inspect-restore, restore, stage-migration,
-complete-migration, review, or resume. Original operation IDs, checkpoint
+complete-migration, inspect-close-effects, close-effects, review, or resume. Original operation IDs, checkpoint
 digests, restore-window acknowledgement and 67-byte view tokens remain data;
 the request has no approval, grant, plugin or deadline fields.
 
@@ -398,6 +398,46 @@ physical worker retirement and `catalogsRetired`. Cleanup failure preserves the
 original operation disposition. The example bounds serialized output to 4 MiB.
 These source interfaces and native codec/request cases still require compiled
 native and actual signed-Java schema/restore campaign evidence before acceptance.
+
+For restored pending or uncertain work, `inspect-close-effects` takes an original
+operation ID, at most sixteen original effect IDs and a reason of at most 128
+bytes. It requires the selected namespace and global recovery guard to remain
+paused. Its read-only plan binds the actual namespace view, restore guard and
+loss-window digest to every selected original envelope, payload and complete
+attempt history. The authenticated operator remains independently authorized;
+plan bytes cannot grant permission.
+
+To abandon that selected work, submit `close-effects` with the same operation ID,
+the typed plan object and its exact `sha256:` plan digest as `acknowledgement`.
+The original fixed native recovery worker checks current authority and time at
+the physical writer fence and applies one bounded exclusive batch. Changed
+rows, view, guard, operation inputs or exhausted receipt quota refuse the batch.
+The stable receipt reports `closed-without-redrive`. This neither contacts a
+provider nor establishes provider acknowledgement, and leaves recovery paused.
+Separate recovery review and namespace resume remain explicit operations.
+
+The close retains original effect and business IDs, captured authority, attempt
+count, latest receipt, attempt history, payload and historical result meaning.
+Only the selected scheduling index is removed. A separately charged retained
+`lsf.effect-recovery-close.v1` receipt links each new `lsf.effect-record.v2`
+envelope to its exact original V1 record. V1 decoding and retry-exhaustion rules
+remain unchanged. Existing V1 backups continue through their original installed
+runtime and artifact closure; a snapshot from another runtime digest requires
+separately installed, tested compatibility and otherwise refuses an upgrade or
+downgrade. Removing either new decoder refuses the retained inventory;
+automatic reclamation cannot orphan the close receipt or its original payload
+and history. A lost response replays the original receipt without another quota
+charge or counter generation.
+
+The maintained Linux TLS restore test captures a real common state/result/inbox
+and pending outbox before remote application. After an actual applied request
+with a lost reply, it restores that backup, rejects unapproved and revoked close
+requests, explicitly closes the original pending effect and resumes separately.
+The real dispatcher must observe no pending candidate and the recipient's PUT,
+GET and mutation counters must remain unchanged through close and resume.
+This test is separate from the twelve-call signed-Java terminal-history campaign;
+its source receipt cannot substitute for an actual signed-Java pending backup
+campaign from the same compiled native and guest bytes.
 
 Deliberate staged-restore activation can select the fresh protected destination
 with the optional `state.stateRoot` configuration field. It must be an absolute,

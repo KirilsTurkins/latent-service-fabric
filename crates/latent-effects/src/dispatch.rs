@@ -110,6 +110,10 @@ pub struct EffectRecord {
     last_clock_millis: u64,
     history_sequence: u64,
     latest: Option<AttemptReceipt>,
+    /// V2 only: exact immutable operator reconciliation receipt, never a
+    /// provider acknowledgement or another delivery attempt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    recovery_close: Option<[u8; 32]>,
 }
 
 impl EffectRecord {
@@ -133,6 +137,7 @@ impl EffectRecord {
             last_clock_millis: authority.committed_at_millis(),
             history_sequence: 0,
             latest: None,
+            recovery_close: None,
         })
     }
 
@@ -196,6 +201,51 @@ impl EffectRecord {
     #[must_use]
     pub fn latest(&self) -> Option<&AttemptReceipt> {
         self.latest.as_ref()
+    }
+
+    #[must_use]
+    pub const fn recovery_close_digest(&self) -> Option<[u8; 32]> {
+        self.recovery_close
+    }
+
+    pub(crate) const fn clock_floor(&self) -> u64 {
+        self.last_clock_millis
+    }
+
+    pub(crate) fn recovery_original_digest(
+        &self,
+        disposition: Disposition,
+        clock: u64,
+    ) -> Result<[u8; 32], AuthorityError> {
+        use sha2::{Digest, Sha256};
+        if self.recovery_close.is_none() {
+            return Err(AuthorityError::Invalid);
+        }
+        let mut original = self.clone();
+        original.recovery_close = None;
+        original.disposition = disposition;
+        original.last_clock_millis = clock;
+        Ok(Sha256::digest(original.encode()?).into())
+    }
+
+    /// The installed exclusive offline reconciler persists the matching
+    /// reviewed receipt in the SAME transaction. No send or retry is granted.
+    pub(crate) fn close_without_redrive(
+        &mut self,
+        receipt: [u8; 32],
+        time: EffectTime,
+    ) -> Result<(), AuthorityError> {
+        if receipt == [0; 32]
+            || self.recovery_close.is_some()
+            || self.disposition.terminal()
+            || self.disposition == Disposition::Dispatching
+        {
+            return Err(AuthorityError::Stale);
+        }
+        self.check_clock(time)?;
+        self.disposition = Disposition::DeadLettered;
+        self.recovery_close = Some(receipt);
+        self.validate()
     }
 
     /// Host-audited retention may stop unresolved work only after the original
@@ -437,7 +487,11 @@ impl EffectRecord {
         if body.len() > 65_536 || body.len() > initial.len().saturating_add(4096) {
             return Err(AuthorityError::Capacity);
         }
-        let mut bytes = b"LER\0\x01".to_vec();
+        let mut bytes = if self.recovery_close.is_some() {
+            b"LER\0\x02".to_vec()
+        } else {
+            b"LER\0\x01".to_vec()
+        };
         bytes.extend(body);
         Ok(bytes)
     }
@@ -446,17 +500,29 @@ impl EffectRecord {
         if bytes.len() > 65_541 {
             return Err(AuthorityError::Capacity);
         }
-        if !bytes.starts_with(b"LER\0\x01") {
+        let version = if bytes.starts_with(b"LER\0\x01") {
+            1
+        } else if bytes.starts_with(b"LER\0\x02") {
+            2
+        } else {
             return Err(AuthorityError::UnsupportedFormat);
-        }
+        };
         let record: Self =
             serde_json::from_slice(&bytes[5..]).map_err(|_| AuthorityError::Invalid)?;
+        if (version == 2) != record.recovery_close.is_some() {
+            return Err(AuthorityError::UnsupportedFormat);
+        }
         record.validate()?;
         Ok(record)
     }
 
     fn validate(&self) -> Result<(), AuthorityError> {
         let authority = self.authority()?;
+        if self.recovery_close.is_some_and(|digest| {
+            digest == [0; 32] || self.disposition != Disposition::DeadLettered
+        }) {
+            return Err(AuthorityError::Invalid);
+        }
         if self.attempt > authority.ceiling().maximum_attempts
             || self.last_clock_millis < authority.committed_at_millis()
             || self.history_sequence > u64::from(self.attempt)
@@ -490,9 +556,10 @@ impl EffectRecord {
                         || has_receipt(Disposition::Uncertain))
             }
             Disposition::DeadLettered => {
-                self.attempt == authority.ceiling().maximum_attempts
-                    && (has_receipt(Disposition::KnownFailed)
-                        || has_receipt(Disposition::Uncertain))
+                self.recovery_close.is_some()
+                    || (self.attempt == authority.ceiling().maximum_attempts
+                        && (has_receipt(Disposition::KnownFailed)
+                            || has_receipt(Disposition::Uncertain)))
             }
             Disposition::PolicyBlocked | Disposition::Expired => true,
         };

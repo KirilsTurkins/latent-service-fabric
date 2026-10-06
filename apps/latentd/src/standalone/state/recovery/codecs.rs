@@ -9,8 +9,9 @@ use latent_state::{
     recovery::{
         migration::{AggregateMigrationObservation, AggregateMigrationRecipe, MigrationAction},
         offline::{
-            OfflineAggregateMigrationRequest, OfflineRestoreRequest, RecoveryCodecs,
-            RecoveryReviewRequest, RestoreFence, SnapshotFile,
+            OfflineAggregateMigrationRequest, OfflineRestoreRequest,
+            PreparedRetainedReconciliation, RecoveryCodecs, RecoveryReviewRequest, RestoreFence,
+            RetainedReconciliationRequest, SnapshotFile,
         },
         restore::RestoreWindow,
         resume::{NamespaceRecoveryView, NamespaceResumeObservation, NamespaceResumeRequest},
@@ -234,6 +235,26 @@ impl RecoveryCodecs for Codecs {
         }
         self.authority.check("namespace-review-recovery")?;
         self.catalog.current()
+    }
+    fn inspect_retained_reconciliation(
+        &self,
+        view: &ReadView,
+        request: &RetainedReconciliationRequest,
+    ) -> Result<Vec<u8>, StoreError> {
+        super::reconciliation::inspect(self, view, request)
+    }
+    fn prepare_retained_reconciliation(
+        &self,
+        view: &ReadView,
+        request: &RetainedReconciliationRequest,
+    ) -> Result<PreparedRetainedReconciliation, StoreError> {
+        super::reconciliation::prepare(self, view, request)
+    }
+    fn accept_retained_reconciliation(
+        &self,
+        request: &RetainedReconciliationRequest,
+    ) -> Result<(), StoreError> {
+        super::reconciliation::accept(self, request)
     }
     fn review_namespace_resume(
         &self,
