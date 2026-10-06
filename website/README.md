@@ -5,15 +5,27 @@ The authoritative operator/author instructions are in
 decision in [ADR-0041](../adr/0041-publish-single-source-version-bound-documentation.md).
 
 Use Node 24.19.0 and Python 3.11 or newer. The separately locked `toolchain/`
-selects npm 11.19.1 with the explicitly named `npm-11.19.1-lsf-bundle-v2`
-security derivation. It replaces the complete bundled `ip-address`, `undici`, `brace-expansion`,
-and `http-cache-semantics` packages with 10.7.2, 6.28.1, 5.0.12, and 4.3.0 **before executing npm**; ordinary npm overrides
+selects npm 11.19.1 with the explicitly named `npm-11.19.1-lsf-bundle-v4`
+security derivation. It replaces the complete bundled `ip-address`, `undici`,
+`brace-expansion`, `http-cache-semantics` and `postcss-selector-parser` packages
+with authenticated 10.7.2, 6.28.1, 5.0.12, 4.3.0 and 7.1.6 inputs **before executing npm**; ordinary npm overrides
 cannot replace bundled bytes. This is not an upstream npm release or an advisory
 waiver. The input archives, derived TAR and complete package inventory are pinned;
 no downloaded package code runs during preparation. Outputs stay in `target/`.
 The website and framework locks also consume the exact source-patched
 `braces-3.0.3-lsf-depth-v1` archive. Its authenticated upstream files, bounded
 depth guard, and pinned Node 24.19.0 behavior proof are checked separately.
+
+The cache input also receives a SHA-bound source repair that prevents private,
+non-storable and proxy-revalidated entries from becoming reusable through
+`max-stale`. The website and framework locks select this same repaired cache and
+a maintained braces 3.0.3 distribution with finite parser and AST walker limits.
+Names, upstream versions, dependency graphs and licenses remain unchanged.
+The [independent security verifier](../tools/security_npm_sources.py) reconstructs
+these archives from authenticated upstream data without importing the builder or
+executing package code. Every upstream identity remains in OSV queries; a source
+repair resolves only its exact reviewed advisory revision and lock. Changed or
+unknown advisories and any source, patch, archive or lock drift still fail.
 
 From this directory in a POSIX shell:
 

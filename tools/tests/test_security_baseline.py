@@ -140,22 +140,28 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertTrue(any(package.path == "tools/requirements.lock" for package in packages))
 
     def test_source_repair_classifies_only_the_proved_braces_advisory(self) -> None:
-        from tools import security_derivations as braces
+        from tools.security_npm_sources import resolve_findings
 
         paths = ("website/package-lock.json", "examples/framework-compatibility/package-lock.json")
-        proof = {"profile": braces.PROFILE, "derived_version": braces.VERSION,
-                 "proof": {"status": "pass", "upstream_stack_overflow_observed": True},
-                 "consumers": [{"path": path} for path in paths]}
+        revision = "2026-10-02T22:45:04.328737Z"
+        advisory = {"id": "GHSA-vfj7-8cjw-p6xm", "modified": revision}
+        receipts = [{"name": "braces", "version": "3.0.3", "locks": list(paths), "advisories": [advisory]}]
+        observations = [{"advisories": [{"package": {"name": "braces", "version": "3.0.3", "path": path},
+                                          **advisory} for path in paths]}]
         known = [finding("osv", "GHSA-vfj7-8cjw-p6xm", path, "npm:braces@3.0.3") for path in paths]
         unrelated = [finding("osv", "GHSA-different", paths[0], "npm:braces@3.0.3"),
                      finding("osv", "GHSA-vfj7-8cjw-p6xm", "sdk/typescript-client/package-lock.json",
                              "npm:braces@3.0.3"),
                      finding("osv", "GHSA-vfj7-8cjw-p6xm", paths[0], "npm:braces@3.0.4")]
-        remaining, remediated = security_advisories.classify_braces_remediation(known + unrelated, proof)
+        remaining, remediated = resolve_findings(known + unrelated, observations, receipts)
         self.assertEqual(remediated, known)
         self.assertEqual(remaining, unrelated)
-        with self.assertRaisesRegex(SecurityError, "braces-remediation-proof-failed"):
-            security_advisories.classify_braces_remediation(known, {**proof, "proof": {"status": "fail"}})
+        with self.assertRaisesRegex(SecurityError, "npm-repair-advisory-policy"):
+            resolve_findings(known, observations, [{**receipts[0], "advisories": [{"id": advisory["id"]}]}])
+        # A different upstream advisory revision never inherits the old repair.
+        changed = [{"advisories": [{**row, "modified": "2026-10-03T00:00:00Z"}
+                                    for row in observations[0]["advisories"]]}]
+        self.assertEqual(resolve_findings(known, changed, receipts), (known, []))
 
     def test_new_manifest_missing_lock_or_unresolved_requirement_cannot_pass(self) -> None:
         self.write("package.json", '{"dependencies":{"fixture":"1.0.0"}}')
@@ -244,7 +250,7 @@ class SecurityFixtureTests(unittest.TestCase):
         policy = decode_json(read_file(POLICY, "inventory.json"))
         entry = next(row for row in policy["manifests"] if row["path"] == "website/toolchain/package.json")
         for path in (entry["path"], entry["lock"], "website/toolchain/source.json", "website/toolchain/prepare.py"):
-            self.write(path, read_file(ROOT, path).decode())
+            self.write(path, read_file(ROOT, path).decode().replace("\r\n", "\n"))
         return entry
 
     def test_derived_npm_bundle_keeps_complete_advisory_coverage(self):
@@ -260,11 +266,11 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertIn(("balanced-match", "4.0.4"), values)
         self.assertIn(("undici", "6.28.1"), values)
         self.assertIn(("http-cache-semantics", "4.3.0"), values)
+        self.assertNotIn(("http-cache-semantics", "4.2.0"), values)
         self.assertNotIn(("ip-address", "10.5.0"), values)
         self.assertNotIn(("ip-address", "10.5.1"), values)
         self.assertNotIn(("brace-expansion", "5.0.9"), values)
         self.assertNotIn(("undici", "6.28.0"), values)
-        self.assertNotIn(("http-cache-semantics", "4.2.0"), values)
 
     def test_derived_npm_rejects_omissions_and_changed_inputs(self):
         entry = self.derived_npm_fixture()

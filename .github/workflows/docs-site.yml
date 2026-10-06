@@ -36,7 +36,6 @@ jobs:
         run: |
           python3 -m unittest discover -s website/toolchain/tests -v
           python3 website/toolchain/prepare.py
-          python3 tools/security_derivations.py prepare
           npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
           echo "$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin" >> "$GITHUB_PATH"
           node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund

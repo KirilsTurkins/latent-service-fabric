@@ -497,6 +497,35 @@ does not by itself enable Angular T1, additional renderer imports or providers.
 The [management reference](../reference/management-services.md#web-publication-and-preparation)
 defines the trust fence, finite ownership and uncertainty boundary.
 
+### Phase 4 transaction definitions and State capability audit (#382, #397)
+
+The descriptor baseline adds `latent/control/v1/state.proto` and
+`latent/transaction/v1/transaction.proto`. Their four `StateService` and seven
+`TransactionService` methods describe bounded namespace/entity selection,
+explicit management operations, commands, fresh queries and outcome/effect
+recovery. The golden preserves all earlier field numbers, types, oneofs,
+existing enum values and service signatures.
+
+`AuditCapabilityResourceClass` appends `STATE` at value 11 for the typed State
+capability decision already emitted by this delivery. Values 0 through 10 and
+the rest of the earlier audit descriptor remain unchanged. The other twelve
+earlier file descriptors are unchanged in full. The strict descriptor validator
+continues to reject any unreviewed semantic change.
+
+This record freezes transport definitions. The companion
+[transaction contract](transactions.md) defines host authority, durable formats
+and recovery identities; these definitions grant no access and do not install a
+transactional runtime. Later methods or fields require another reviewed baseline
+update.
+recovery. The golden retains all thirteen earlier file descriptors with their
+field numbers, types, enum values, oneofs and service signatures unchanged.
+
+This record freezes transport definitions. The companion
+[transaction contract](transactions.md) defines host authority,
+durable formats and recovery identities; adding a descriptor grants no access
+and does not install a transactional runtime. Later management deliveries append
+their methods and fields through separately reviewed descriptor updates.
+
 ## Alpha removal of component-only release selectors
 
 Release get, lifecycle inspection, revoke/retire and evidence renewal now require
@@ -511,6 +540,39 @@ mutation preconditions, tenant isolation and current authority checks remain
 explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
+
+## Additive privileged activation-tree inspection
+
+Issue #709 adds `NodeService.InspectActivationTree` and its four messages and
+three closed diagnostic enums. Every earlier declaration, field number and RPC
+is preserved. Producer details use `activation.diagnostic.v1` internally;
+public invocation and browser errors continue to discard that detail.
+Unknown enum numbers and optional zero values survive all six common models
+and native transports. See [activation inspection](../reference/activation-inspection.md).
+
+Caller-supplied root/parent IDs now reject before an external activation is
+accepted. These IDs cannot authorize a tree edge. Trusted local service brokers
+derive lineage from the actual parent owner and authenticated tenant.
+
+## Additive immutable target inspection
+
+Issue #716 adds the unary `NodeService.InspectHttpTarget` method, eight bounded
+inspection messages and three observation enums. The descriptor contract
+preserves every existing file, message, field number, enum value and RPC. The
+node descriptor additionally imports the existing release descriptor for exact
+publication identities.
+
+The authenticated tenant administrator receives coherent, stale or unavailable
+observations of the selected catalog and policy owners. Optional preparation
+inspects the same admitted readiness owner without materialization or guest and
+provider execution. The reply reports actual provider imports and validated
+structural type imports separately, and preserves numeric option presence and
+future enum values. See [target inspection](../reference/target-inspection.md).
+
+Engine configuration digests and internal sealed metadata fingerprints retain
+their separate meanings. Live grant checks are explicitly absent; an inspection
+does not grant execution or mutation authority. Public invocation and browser
+error projections retain their existing disclosure rules.
 
 ## Additive Phase 4 transaction definitions
 

@@ -83,7 +83,7 @@ manifests without running package managers, builds, setup scripts or SDK code.
 | Surface | Advisory coverage and boundary |
 | --- | --- |
 | Root workspace and reviewed isolated native-VM fixture | RustSec scans every tracked `Cargo.lock`, with separate lock hashes and findings; every workspace member and isolated fixture must appear in its lock |
-| TypeScript SDK, renderer example and isolated documentation website npm manifests/locks | OSV for every resolved direct/transitive/dev entry; registry.npmjs.org HTTPS sources only |
+| TypeScript SDK, renderer example and isolated documentation website npm manifests/locks | OSV for every resolved direct/transitive/dev entry; registry.npmjs.org HTTPS inputs and the exact independently verified source derivations described below |
 | `tools/requirements.lock`, source scanner requirements, and caller scanner requirements | OSV exact PyPI versions; unresolved ranges/options fail |
 | Go client and generator modules | OSV for the complete recorded `go list -m -json all` graph and its exact Go standard-library version; normalized manifest/sum hashes, per-module checksums and generator bindings must agree |
 | Java client and generators | OSV Maven coordinates for every pinned runtime/generator archive, including supported platforms; the reviewed Gradle manifest hash binds the data-only graph to its build logic |
@@ -105,6 +105,37 @@ without a new lock. The legacy C interface allowance binds every C-tree path and
 normalized file digest to one of two reviewed historical trees; adding transport
 code cannot silently preserve that allowance. NuGet source configuration files
 and custom `dependencies.lock.json` files participate in manifest discovery.
+
+The documentation package manager's `npm-11.19.1-lsf-bundle-v4` distribution and
+the two application locks select explicit maintained source repairs for
+`http-cache-semantics` 4.3.0 and `braces` 3.0.3. The
+[repair policy](../../.github/security/npm-source-repairs.json) pins the upstream
+integrities, complete-file preimages/postimages, repair documents and resulting
+deterministic archives. The [independent verifier](../../tools/security_npm_sources.py)
+reads fresh authenticated registry archives as bounded data; it imports neither
+the source builder nor downloaded package code. It checks both complete library
+archives and the complete npm bundle against all three reviewed locks.
+
+The v4 bundle additionally replaces the complete selector parser with upstream
+7.1.6 while retaining its exact existing dependency graph. Current frontend
+locks pin tinypool 2.1.2, source-map-js 1.2.2 and KaTeX 0.18.2 alongside the
+selector update. Every resolved upstream package remains visible to OSV.
+
+The cache repair retains legitimate public freshness and permitted stale reuse,
+while preventing security-zeroed private, non-storable, cookie-bearing or
+proxy-revalidated responses from becoming reusable through `max-stale`. The
+braces repair bounds parser nesting and each of compile, expand and stringify
+before recursive traversal, including supplied ASTs. Names, upstream versions,
+dependency graphs, licenses and all unchanged file bytes remain intact.
+
+OSV still receives every original package/version identity. Reports retain the
+raw advisory observation hashes, total OSV finding count and exact
+`source_remediated_findings`. Only the verified fixed braces distribution resolves
+[GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) at its
+reviewed OSV modification timestamp. A changed revision, a new advisory, an
+unverified lock or any source/repair/distribution drift remains blocking. This
+resolution is proof of changed source bytes; no advisory exception or scanner
+ignore is added. It does not assert that upstream braces 3.0.3 is fixed.
 
 [The SDK readers](../../tools/security_sdk_graphs.py) execute no Go, Gradle,
 MSBuild, C compiler, Python package or project code. Ordinary SDK CI must separately
@@ -265,7 +296,7 @@ the exact fingerprints, locations and file identities.
 These sixteen exact exceptions expire at UTC midnight on **2026-10-17**. Changed
 content, locations, rules and other occurrences continue to fail; the original
 30-day maximum, exclusive expiry and future-created guards remain unchanged.
-No dependency exception, general digest exemption or path allowlist exists.
+No dependency exception, general digest exemption or path allowlist exists. The independently retained [evidence ledger](security-baseline-evidence.md) also records the original producer review and private match comparisons.
 
 ## Settings and operator commands
 

@@ -18,7 +18,6 @@ open your WSL2 terminal and run the commands inside that workspace. From the
 repository root, install the pinned build dependencies:
 
 ```sh
-python3 tools/security_derivations.py prepare
 npm ci --prefix examples/framework-compatibility --ignore-scripts
 ```
 

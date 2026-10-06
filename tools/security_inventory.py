@@ -7,7 +7,7 @@ import re
 import tomllib
 from urllib.parse import urlsplit
 
-from tools.security_common import POLICY, ROOT, decode_json, digest, read_file, require, tracked_paths
+from tools.security_common import POLICY, decode_json, digest, read_file, require, tracked_paths
 from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, legacy_manifest, maven_packages, nuget_packages
 
 MANIFEST_NAMES = frozenset({
@@ -93,65 +93,15 @@ def reviewed_npm_derivation(repo: Path, entry: dict, manifest: dict, owner: dict
         require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == profile[field],
                 "npm-derivation-input-drift")
     source = decode_json(read_file(repo, "website/toolchain/source.json"))
-    require(source.get("schema") == 1 and source.get("profile") == "npm-11.19.1-lsf-bundle-v2"
+    require(source.get("schema") == 1 and source.get("profile") == "npm-11.19.1-lsf-bundle-v4"
             and source["base"]["name"] == "npm" and source["base"]["version"] == owner.get("version"),
             "npm-derivation-identity-drift")
-    archive = "file:../../target/website-package-manager/npm-11.19.1-lsf-bundle-v2.tar"
+    archive = "file:../../target/website-package-manager/npm-11.19.1-lsf-bundle-v4.tar"
     require(manifest.get("dependencies", {}).get("npm") == archive
             and owner.get("resolved") == archive and owner.get("integrity") == profile["integrity"]
             and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", profile["integrity"]),
             "unlocked-npm-derivation")
     return True
-
-
-def reviewed_braces_derivation(repo: Path, entry: dict, manifest: dict, resolved: dict) -> set[str]:
-    """Authenticate the exact locally repaired source before accepting a file archive.
-
-    OSV still receives the original upstream version. The caller separately
-    proves the correction under the pinned Node runtime before classifying the
-    one reviewed advisory as remediated; every other advisory remains a finding.
-    """
-    from tools import security_derivations as braces
-
-    rows = {path: row for path, row in resolved.items()
-            if path and path.rsplit("node_modules/", 1)[-1] == "braces"}
-    derived = any(row.get("version") == braces.VERSION or row.get("resolved", "").startswith("file:")
-                  for row in rows.values())
-    if not derived:
-        require(entry.get("source_derivation") is None, "missing-braces-source-derivation")
-        return set()
-    policy = entry.get("source_derivation")
-    require(isinstance(policy, dict) and set(policy) == {
-        "profile_sha256", "builder_sha256", "guard_sha256", "proof_sha256", "lock_sha256", "integrity"
-    } and entry["path"] in braces.CONSUMERS and entry["lock"] == str(PurePosixPath(entry["path"]).with_name("package-lock.json")),
-            "unreviewed-braces-source-derivation")
-    for path, expected in (
-        (braces.SOURCE, policy["profile_sha256"]),
-        ("tools/security_derivations.py", policy["builder_sha256"]),
-        (braces.GUARD, policy["guard_sha256"]),
-        (braces.PROOF, policy["proof_sha256"]),
-        (entry["lock"], policy["lock_sha256"]),
-    ):
-        root = ROOT if path == "tools/security_derivations.py" else repo
-        require(digest(read_file(root, path).replace(b"\r\n", b"\n")) == expected,
-                "braces-derivation-input-drift")
-    source_profile = braces.profile(repo)
-    require(source_profile["base"]["name"] == "braces" and source_profile["base"]["version"] == "3.0.3"
-            and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", policy["integrity"]) is not None,
-            "braces-derivation-origin-drift")
-    require(manifest.get("overrides", {}).get("braces") == braces.CONSUMERS[entry["path"]]
-            and set(rows) == {"node_modules/braces"}, "braces-consumer-drift")
-    for row in rows.values():
-        require(row.get("version") == braces.VERSION
-                and row.get("resolved") == braces.CONSUMERS[entry["path"]]
-                and row.get("integrity") == policy["integrity"]
-                and row.get("dependencies") == {"fill-range": "^7.1.1"}
-                and row.get("name", "braces") == "braces" and not row.get("link"),
-                "unlocked-braces-derivation")
-    # This also authenticates both consumers, so the proof cannot cover only
-    # one while another installs unrelated bytes under the same package name.
-    braces.consumer_locks(repo, policy["integrity"])
-    return set(rows)
 
 
 def npm_packages(repo: Path, entry: dict) -> list[Package]:
@@ -167,7 +117,7 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
     bundled = entry.get("bundled_package")
     bundled_prefix = None
     derived = False
-    repaired_braces = reviewed_braces_derivation(repo, entry, manifest, resolved)
+    libraries = reviewed_npm_libraries(repo, entry, manifest, lock)
     require(entry.get("derived_bundle") is None or bundled is not None, "npm-derivation-without-bundle")
     if bundled is not None:
         require(isinstance(bundled, str) and re.fullmatch(r"(?:@[a-z0-9-]+/)?[a-z0-9-]+", bundled),
@@ -194,15 +144,60 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
         bundled_source = (bundled_prefix is not None and path.startswith(bundled_prefix)
                           and dependency.get("inBundle") is True and not dependency.get("resolved"))
         derived_owner = derived and path == f"node_modules/{bundled}"
-        repaired_source = path in repaired_braces
-        require(bundled_source or derived_owner or repaired_source
-                or (location.scheme == "https" and location.hostname == "registry.npmjs.org"),
+        derived_library = (name in libraries and path.rsplit("node_modules/", 1)[-1] == name
+                           and version == libraries[name]["version"]
+                           and dependency.get("resolved") == libraries[name]["resolved"]
+                           and dependency.get("integrity") == libraries[name]["integrity"])
+        require(bundled_source or derived_owner or derived_library or (location.scheme == "https" and location.hostname == "registry.npmjs.org"),
                 "unreviewed-npm-registry-or-source")
         require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", version) is not None,
                 "unresolved-npm-version")
-        packages.append(Package("npm", name, "3.0.3" if repaired_source else version, entry["lock"]))
+        packages.append(Package("npm", name, version, entry["lock"]))
     require(bool(packages), "empty-npm-dependency-graph")
     return packages
+
+
+def reviewed_npm_libraries(repo: Path, entry: dict, manifest: dict, lock: dict) -> dict:
+    """Admit only complete byte-pinned locks for the two maintained libraries.
+
+    Package names and upstream versions remain in the advisory inventory. A
+    separate verifier authenticates the upstream bytes and reconstructs each
+    repair before a known advisory can be reported as source-remediated.
+    """
+    profile = entry.get("derived_libraries")
+    if profile is None:
+        return {}
+    require(entry["path"] in {"website/package.json", "examples/framework-compatibility/package.json"}
+            and entry["lock"] == entry["path"].replace("package.json", "package-lock.json")
+            and isinstance(profile, dict) and set(profile) == {
+                "source_sha256", "builder_sha256", "lock_sha256", "libraries"
+            }, "invalid-npm-library-derivation-policy")
+    for path, field in (("website/toolchain/source.json", "source_sha256"),
+                        ("website/toolchain/prepare.py", "builder_sha256"),
+                        (entry["lock"], "lock_sha256")):
+        require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == profile[field],
+                "npm-library-derivation-input-drift")
+    rows = profile["libraries"]
+    require(isinstance(rows, dict) and set(rows) == {"braces", "http-cache-semantics"},
+            "incomplete-npm-library-derivation")
+    versions = {"braces": ("3.0.3", "braces-3.0.3-lsf-depth-v1"),
+                "http-cache-semantics": ("4.3.0", "http-cache-semantics-4.3.0-lsf-cache-v1")}
+    relative = "../" if entry["path"] == "website/package.json" else "../../"
+    result = {}
+    for name, row in rows.items():
+        require(isinstance(row, dict) and set(row) == {"version", "profile", "integrity"}
+                and (row["version"], row["profile"]) == versions[name]
+                and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", row["integrity"]) is not None,
+                "unreviewed-npm-library-identity")
+        archive = "file:" + relative + "target/website-package-manager/" + row["profile"] + ".tar"
+        require(manifest.get("overrides", {}).get(name) == archive, "unlocked-npm-library-override")
+        selected = [value for path, value in lock["packages"].items()
+                    if path.rsplit("node_modules/", 1)[-1] == name]
+        require(bool(selected) and all(value.get("version") == row["version"]
+                and value.get("resolved") == archive and value.get("integrity") == row["integrity"]
+                and not value.get("link") for value in selected), "unlocked-npm-library-derivation")
+        result[name] = {**row, "resolved": archive}
+    return result
 
 
 def pypi_packages(repo: Path, path: str) -> list[Package]:

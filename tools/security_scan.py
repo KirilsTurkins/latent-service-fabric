@@ -30,7 +30,7 @@ def scan(mode: str, repo: Path, scratch: Path, tools: Path, base: str = "") -> t
     if mode == "rustsec":
         findings, observation = security_advisories.rustsec(repo, scratch, tools)
     elif mode == "dependencies":
-        findings, observation = security_advisories.dependencies(repo, scratch)
+        findings, observation = security_advisories.dependencies(repo)
     elif mode == "secrets":
         findings, observation = security_content.secrets(repo, scratch, tools, base)
     else:
@@ -48,7 +48,7 @@ def scan(mode: str, repo: Path, scratch: Path, tools: Path, base: str = "") -> t
               "findings": [item.public() for item in remaining[:50]],
               "excepted_findings": [item.public() for item in waived[:50]]}
     if mode == "dependencies":
-        report["remediated_count"] = len(observation.get("source_remediation", {}).get("remediated_findings", []))
+        report["remediated_count"] = len(observation.get("source_remediated_findings", []))
     return int(bool(remaining)), report
 
 

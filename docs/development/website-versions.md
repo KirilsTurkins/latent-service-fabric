@@ -109,8 +109,7 @@ missing regions, altered copies and interrupted publication. Synthetic examples
 remain labelled as rendering fixtures and provide no SDK qualification.
 
 After committing the reviewed sources, install the separately locked package
-manager by running `python3 website/toolchain/prepare.py` and
-`python3 tools/security_derivations.py prepare`, then
+manager by running `python3 website/toolchain/prepare.py`, then
 `npm ci --prefix website/toolchain --ignore-scripts` and
 `node website/scripts/check-package-manager.mjs` before using that npm. Build both
 base paths, install the pinned browser and run `npm run test:versions` from
