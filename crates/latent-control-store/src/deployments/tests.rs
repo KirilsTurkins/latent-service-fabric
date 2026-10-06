@@ -19,6 +19,7 @@ mod root_identity;
 mod runtime_compatibility;
 mod scoped_routes;
 mod supply_chain;
+mod target_inspection;
 mod transaction_profile;
 mod verified_metadata;
 mod versioned;

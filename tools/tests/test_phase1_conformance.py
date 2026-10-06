@@ -127,10 +127,10 @@ def remaining(fuel=99_999_900, memory=67_000_000, logs=16384) -> dict:
 
 
 def telemetry_fixture(tenant: str, identifier: str, log_count: int, ordinal: int) -> dict:
-    root, parent = ("parity-root", "parity-parent") if tenant == "examples" else ("capability-root", "capability-parent")
+    root, parent = identifier, None
     release = sha256(b"echo" if tenant == "examples" else b"capabilities")
     trace = {"trace_id": f"{ordinal:032x}", "span_id": f"{ordinal:016x}", "trace_flags": 0, "baggage": {}}
-    attrs = {"activation_id": identifier, "root_activation_id": root, "parent_activation_id": parent,
+    attrs = {"activation_id": identifier, "root_activation_id": root,
              "tenant": tenant, "service": "shared", "release": release, "revision": "revision-synthetic", "route_generation": "1"}
     attrs.update(contract="examples:echo/api@0.1.0" if tenant == "examples" else "tests:capabilities/api@0.1.0",
                  function="echo" if tenant == "examples" else identifier.split("-cap-", 1)[-1])
@@ -160,7 +160,7 @@ def capability_fixture(name: str, direct: bool, ordinal: int) -> dict:
                                                 wall_time_micros=used["wall_time_micros"], log_bytes=used["log_bytes"])
     if name == "snapshot":
         trace = call["completion_span"]["trace"]
-        decoded = {"activation": identifier, "root": "capability-root", "parent": {"some": "capability-parent"},
+        decoded = {"activation": identifier, "root": identifier, "parent": {"none": None},
                    "principal": {"subject": "parity-tests", "kind": "administrator", "tenant": {"some": "tests"}, "service": {"none": None}, "claims": []},
                    "trace": {"trace-id": trace["trace_id"], "span-id": trace["span_id"], "trace-flags": 0, "baggage": []},
                    "deadline": {"some": "5000"}, "metadata": [["guest.visible", "paired"]], "remaining": remaining()}
@@ -519,7 +519,12 @@ class ConformanceValidatorTests(unittest.TestCase):
         changes = [lambda value: value["capability_pairs"].pop(),
                    lambda value: value["capability_pairs"][0].update(name="clocks"),
                    lambda value: value["capability_pairs"][0]["rpc"].update(cell_id="other-cell"),
+                   lambda value: value["capability_pairs"][0]["rpc"].update(root_activation_id="capability-root"),
+                   lambda value: value["capability_pairs"][0]["rpc"].update(parent_activation_id="capability-parent"),
+                   lambda value: value["capability_pairs"][0]["rpc"]["completion_span"]["attributes"].update(parent_activation_id=None),
                    lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0].update(activation="direct-cap-snapshot"),
+                   lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0].update(root="capability-root"),
+                   lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0].update(parent={"some": "capability-parent"}),
                    lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0]["principal"].update(tenant={"some": "examples"}),
                    lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0]["principal"].update(kind="user"),
                    lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0]["trace"].update({"trace-id": "f" * 32}),

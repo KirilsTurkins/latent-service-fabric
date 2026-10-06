@@ -11,6 +11,7 @@ mod scoped_routes;
 
 pub use scoped_routes::{RouteReadLimits, ScopedRouteRequest, ScopedRouteSnapshot};
 
+pub use deployments::target_inspection;
 pub use deployments::{
     deployment_revision_id, deployment_revision_id_with_profile, DeploymentPage,
     DeploymentPageRequest, DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig,

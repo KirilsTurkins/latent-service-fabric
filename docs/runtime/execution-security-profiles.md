@@ -2,7 +2,7 @@
 
 The current security baseline selects **Wasmtime 48.0.4**. References below to
 47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [September security update](../development/wasmtime-security-update.md)
+See the [security update](../development/wasmtime-security-update.md)
 for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
 
 The node supports the execution selectors defined by
@@ -12,7 +12,7 @@ The node supports the execution selectors defined by
 | Selection | Trust assumption | Required controls |
 | --- | --- | --- |
 | `local-experimental-v1` (default) | T0: operator-controlled workloads and preparation | Existing standalone validation; admission and isolated AOT remain explicit independent options. |
-| `external-capsule-v1` | T1: hostile component bytes/inputs, trusted node, Wasmtime, host bindings, native loader and OS | Enforced package admission, protected credentials/trust policy/native key, exact host ABI and reviewed Wasmtime 48.0.3 baseline, supported Linux x86_64 isolated compilation. |
+| `external-capsule-v1` | T1: hostile component bytes/inputs, trusted node, Wasmtime, host bindings, native loader and OS | Enforced package admission, protected credentials/trust policy/native key, exact host ABI and reviewed Wasmtime 48.0.4 baseline, supported Linux x86_64 isolated compilation. |
 
 The compiler and authenticated native-loading subprofiles are observations of
 these controls, not additional node selectors. Unknown, null, future, provider,

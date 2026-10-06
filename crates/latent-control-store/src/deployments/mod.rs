@@ -15,6 +15,7 @@ pub(crate) mod rollouts;
 mod scoped_routes;
 mod transaction_selection;
 pub use transaction_selection::{CapturedTransactionSelection, InstalledTransactionSelection};
+pub mod target_inspection;
 #[cfg(test)]
 mod tests;
 

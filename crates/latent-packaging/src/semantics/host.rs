@@ -22,9 +22,18 @@ pub(super) fn validate(
 ) -> Result<(), PlatformError> {
     let mut trusted = Resolve::default();
     let mut loaded = BTreeSet::new();
-    for name in imports.keys() {
-        let specification =
-            specification(name).ok_or_else(|| incompatible("unsupported-host-import"))?;
+    // One shared structural work allowance for non-callable type interfaces.
+    // Self-comparison rejects resources, handles, futures and unknown shapes;
+    // no provider binding or capability is created by these value definitions.
+    let mut values = Comparison::new(resolve, resolve, limits);
+    for (name, id) in imports {
+        let Some(specification) = specification(name) else {
+            if !resolve.interfaces[*id].functions.is_empty() {
+                return Err(incompatible("unsupported-host-import"));
+            }
+            values.interface(*id, *id)?;
+            continue;
+        };
         if name == "latent:intents/staging@0.1.0" {
             // Its borrowed transaction is the exact resource in state@0.2.0,
             // including when the source world imports only staging.
@@ -52,8 +61,9 @@ pub(super) fn validate(
     // visits. A caller cannot reset the comparison budget by adding interfaces.
     let mut comparison = Comparison::new(resolve, &trusted, limits);
     for (name, id) in imports {
-        let specification =
-            specification(name).ok_or_else(|| incompatible("unsupported-host-import"))?;
+        let Some(specification) = specification(name) else {
+            continue;
+        };
         let interface = trusted
             .interfaces
             .iter()

@@ -1,8 +1,11 @@
 //! One bounded record per activation, with writes held by its lifecycle owner.
 
 mod bytes;
+mod lineage;
 mod owner;
 mod state;
+mod tree;
+pub use tree::{ActivationTreeNode, ActivationTreePage};
 #[cfg(test)]
 mod tests;
 
@@ -68,6 +71,7 @@ struct Inner {
     config: LocalActivationJournalConfig,
     clock: Arc<dyn ActivationClock>,
     state: Mutex<State>,
+    cursor_epoch: [u8; 32],
 }
 
 impl LocalActivationJournal {
@@ -90,8 +94,10 @@ impl LocalActivationJournal {
             inner: Arc::new(Inner {
                 config,
                 clock,
+                cursor_epoch: tree::epoch(),
                 state: Mutex::new(State {
                     records: BTreeMap::new(),
+                    lineage_order: BTreeMap::new(),
                     terminal_order: BTreeMap::new(),
                     next_serial: 1,
                     snapshot: ActivationJournalSnapshot::default(),
@@ -116,6 +122,28 @@ impl LocalActivationJournal {
         envelope: &ActivationEnvelope,
         register: impl FnOnce() -> Result<T, PlatformError>,
     ) -> Result<(JournalOwner, T), PlatformError> {
+        self.begin_registered(envelope, lineage::RegistrationScope::SameTenant, register)
+    }
+
+    /// Only the trusted local-service adapter may register foreign-tenant
+    /// lineage, using the original live broker call and parent budget owner.
+    pub(crate) fn begin_broker_child<T>(
+        &self,
+        envelope: &ActivationEnvelope,
+        call: &latent_capabilities::broker::ProviderCall,
+        register: impl FnOnce() -> Result<T, PlatformError>,
+    ) -> Result<(JournalOwner, T), PlatformError> {
+        self.begin_registered(envelope, lineage::RegistrationScope::Broker(call), register)
+    }
+
+    // Registration and lineage validation publish one atomic owned transition.
+    #[allow(clippy::too_many_lines)]
+    fn begin_registered<T>(
+        &self,
+        envelope: &ActivationEnvelope,
+        scope: lineage::RegistrationScope<'_>,
+        register: impl FnOnce() -> Result<T, PlatformError>,
+    ) -> Result<(JournalOwner, T), PlatformError> {
         let tenant = envelope
             .principal
             .tenant
@@ -128,7 +156,37 @@ impl LocalActivationJournal {
                 )
             })?;
         self.validate_query(tenant, &envelope.activation_id)?;
-        let record_bytes = bytes::base(&envelope.activation_id, tenant)?;
+        let record_bytes = bytes::base(&envelope.activation_id, tenant)?
+            .checked_add(
+                envelope
+                    .root_activation_id
+                    .0
+                    .len()
+                    .checked_mul(2)
+                    .ok_or_else(capacity)?,
+            )
+            .and_then(|bytes| {
+                bytes.checked_add(
+                    envelope
+                        .parent_activation_id
+                        .as_ref()
+                        .map_or(0, |id| id.0.len()),
+                )
+            })
+            // Base already reserves all three bounded sparse indexes. Charge
+            // this index's additional tenant allocation explicitly.
+            .and_then(|bytes| bytes.checked_add(tenant.0.len()))
+            .and_then(|bytes| bytes.checked_add(envelope.target.service.0.len()))
+            .and_then(|bytes| {
+                bytes.checked_add(
+                    envelope
+                        .principal
+                        .service
+                        .as_ref()
+                        .map_or(0, |id| id.0.len()),
+                )
+            })
+            .ok_or_else(capacity)?;
         if record_bytes > self.inner.config.maximum_record_bytes - TERMINAL_RESERVE_BYTES {
             return Err(capacity());
         }
@@ -138,14 +196,25 @@ impl LocalActivationJournal {
         state.reserve(&envelope.activation_id, self.inner.config)?;
         let serial = state.next_serial;
         let next_serial = serial.checked_add(1).ok_or_else(capacity)?;
+        let root_serial = scope.root_serial(&state, envelope, tenant, serial)?;
         let registration = register()?;
         state.next_serial = next_serial;
-        let record = Record::new(
+        let mut record = Record::new(
             tenant.clone(),
             &envelope.activation_id,
             serial,
             sample.unix_millis(),
             record_bytes,
+        );
+        record.parent = envelope.parent_activation_id.clone();
+        record.principal_kind = envelope.principal.kind;
+        record.caller_service = envelope.principal.service.clone();
+        record.target_service = envelope.target.service.clone();
+        record.root = envelope.root_activation_id.clone();
+        record.root_serial = root_serial;
+        state.lineage_order.insert(
+            (tenant.clone(), root_serial, serial),
+            envelope.activation_id.clone(),
         );
         state
             .records
