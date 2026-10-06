@@ -26,6 +26,10 @@ pub(super) fn validate_head(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError
     }
     Ok(())
 }
+pub(super) fn head_tenant(key: &RowKey, bytes: &[u8]) -> Result<String, StoreError> {
+    validate_head(key, bytes)?;
+    Ok(decode(bytes)?.payload.tenant)
+}
 pub fn physical_owner_count(
     view: &ReadView,
     payload: &LocalPayloadIdentity,

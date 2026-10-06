@@ -1616,11 +1616,22 @@ dependencies = [
 name = "latent-commit"
 version = "0.1.0-alpha.5"
 dependencies = [
+ "latent-activation",
+ "latent-artifacts",
+ "latent-audit",
+ "latent-blobs",
+ "latent-capabilities",
  "latent-core",
  "latent-effects",
+ "latent-executor",
+ "latent-manifest",
+ "latent-policy",
+ "latent-routing",
  "latent-state",
+ "serde_json",
  "sha2 0.11.0",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]

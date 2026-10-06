@@ -34,6 +34,13 @@ pub fn census_contribution(
         })?;
         return metadata(tenant, key, bytes);
     }
+    if crate::payload_references::owns_row(key) {
+        crate::payload_references::validate_row(view, key, bytes)?;
+        return Ok(TenantCensusContribution::Usage {
+            tenant: TenantId(crate::payload_references::row_tenant(key, bytes)?),
+            usage: crate::payload_references::census_usage(key, bytes)?,
+        });
+    }
     if key.family == Family::Maintenance
         && key
             .key

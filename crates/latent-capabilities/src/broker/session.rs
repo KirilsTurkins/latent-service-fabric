@@ -457,6 +457,18 @@ impl SessionCore {
     }
 }
 impl CapabilitySession {
+    /// Alias identity of the original host session, not a caller or grant DTO.
+    /// A matching alias still requires the current final acceptance fence.
+    #[must_use]
+    pub fn is_same_session(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.core, &other.core)
+    }
+    /// Compare the selected immutable publication without minting a grant.
+    /// The installed host still supplies its current acceptance fence.
+    #[must_use]
+    pub fn uses_publication(&self, publication: &str) -> bool {
+        self.core.plan.publication.publication().as_str() == publication
+    }
     /// Verified web projections expose their own invocation context as core ABI.
     /// This does not authorize a provider or another activation's context.
     pub fn uses_core_web_context(&self, output_bytes: usize) -> Result<bool, PlatformError> {

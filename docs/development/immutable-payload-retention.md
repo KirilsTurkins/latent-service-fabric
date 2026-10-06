@@ -39,10 +39,30 @@ zero-owner head and empty physical index before writing the existing durable
 release marker. Existing readers retain their real file pins until destruction;
 the bounded existing maintenance turn cannot reclaim their bytes early.
 
-The current library stage covers physical pins, independently committed
-ownership, restart retention and conservative corruption handling. Complete
-envelope attachment, lifecycle-specific quota/release ports, bounded review of
-sealed orphans that have no owner head, and ordinary installed runtime
-composition remain required for #396. Such an orphan currently refuses release
-instead of inventing a zero-owner count. This stage does not qualify external S3
-retention, complete #396, or establish hosted CI or installed-node evidence.
+`CompleteEnvelope::attach_verified_payloads` accepts those actual captured pins
+for result and effect owners. It compares the original session, publication,
+tenant and selected store, and verifies exact existing inline body bytes and
+media type. The new durable attachment closure and independent reference rows
+share the original command/result/outbox/inbox transaction and namespace and
+tenant quotas. Descriptors never become provider request bytes. The existing
+publish method refuses attached pins; `publish_with_payloads` requires the
+installed coordinator's explicit current command/effect/provider acceptance
+fence. This initial port attaches to matching inline values and does not add
+out-of-line state or effect decoding.
+
+Startup validates each attachment closure against its command attempt, format,
+result or effect, reciprocal primary/index rows and exact payload digest/media/
+length. Missing required owners are visible corruption. The original bounded
+result-maintenance owner removes only the expiring response's reference and
+updates its durable closure, count head, namespace pin and tenant quota in the
+same generation-checked transaction. Pending effects keep their own references
+and original command/commit/format linkage. A real reader still prevents physical
+release after the last durable response reference disappears.
+
+State replacement/deletion, terminal-effect release, migration/snapshot adapters,
+bounded review of sealed orphans that have no owner head, and ordinary installed
+runtime composition remain required for #396. Such an orphan currently refuses
+release instead of inventing a zero-owner count. These library ports do not
+qualify external S3 retention, complete #396, or establish hosted CI or
+installed-node evidence. Native execution qualification is recorded separately
+for each immutable candidate; source checks alone do not qualify the schedules.

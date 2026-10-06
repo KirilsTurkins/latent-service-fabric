@@ -4,6 +4,7 @@
 use super::{
     codec::Decoder,
     record::{attempt_row_key, command_row_key, result_row_key},
+    retention::{ExpiredResult, MaintenanceProgress, PROGRESS_KEY},
     AtomicError, CommandRecord, DurableResult, Identity, Outcome, ReplayPolicy,
 };
 use latent_state::{
@@ -45,6 +46,11 @@ fn validate_local(key: &RowKey, bytes: &[u8]) -> Result<(), AtomicError> {
                 if command != id || attempt != generation {
                     return Err(AtomicError::Corrupt);
                 }
+            } else if bytes.starts_with(b"LCE\0") {
+                let result = ExpiredResult::decode(bytes)?;
+                if command != result.command || attempt != result.attempt {
+                    return Err(AtomicError::Corrupt);
+                }
             } else {
                 let result = DurableResult::decode(bytes)?;
                 if command != result.command || attempt != result.attempt {
@@ -55,6 +61,9 @@ fn validate_local(key: &RowKey, bytes: &[u8]) -> Result<(), AtomicError> {
         Family::Inbox if key.key.starts_with(INBOX) => {
             identity(key, INBOX)?;
             inbox(bytes)?;
+        }
+        Family::Maintenance if key.key == PROGRESS_KEY => {
+            MaintenanceProgress::decode(bytes)?;
         }
         Family::Maintenance if key.key.starts_with(USAGE) => {
             namespace_usage_key(&key.key[USAGE.len()..])?;
@@ -114,6 +123,9 @@ pub fn validate_linked_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Resul
 }
 
 fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), AtomicError> {
+    if latent_state::payload_references::owns_row(key) {
+        return super::payload_links::validate_linked(view, key, bytes);
+    }
     validate_local(key, bytes)?;
     match key.family {
         Family::Command => {
@@ -195,6 +207,9 @@ fn same_original(one: &CommandRecord, two: &CommandRecord) -> bool {
 }
 
 fn validate_disposition(view: &ReadView, record: &CommandRecord) -> Result<(), AtomicError> {
+    if let Some(links) = super::payload_links::read(view, record)? {
+        super::payload_links::verify(view, record, &links)?;
+    }
     verify_result(
         &required(view, &result_row_key(record.id, record.attempt))?,
         record,
@@ -257,6 +272,8 @@ fn verify_result(bytes: &[u8], record: &CommandRecord) -> Result<(), AtomicError
             return Err(AtomicError::Corrupt);
         }
         Ok(())
+    } else if bytes.starts_with(b"LCE\0") {
+        ExpiredResult::decode(bytes)?.verify(record)
     } else {
         DurableResult::decode(bytes)?.verify(record)
     }
@@ -363,7 +380,7 @@ fn validate_effect_link(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(
     Ok(())
 }
 
-fn parse_identity(text: &str) -> Result<Identity, AtomicError> {
+pub(super) fn parse_identity(text: &str) -> Result<Identity, AtomicError> {
     if text.len() != 64 {
         return Err(AtomicError::Corrupt);
     }

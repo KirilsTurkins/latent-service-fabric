@@ -8,7 +8,9 @@ use crate::embedded::{
 use sha2::{Digest, Sha256};
 
 mod codec;
+mod links;
 mod physical;
+pub use links::{PayloadLinks, LINKS_PREFIX, MAX_LINK_BYTES};
 pub use physical::physical_owner_count;
 #[cfg(test)]
 mod tests;
@@ -54,6 +56,27 @@ pub struct PayloadOwner {
     pub generation: u64,
     pub format: String,
 }
+impl PayloadOwner {
+    pub fn row_key(&self) -> Result<RowKey, StoreError> {
+        for text in [&self.tenant, &self.namespace, &self.format] {
+            checked_text(text)?;
+        }
+        if self.incarnation == 0 || self.generation == 0 {
+            return Err(StoreError::Invalid);
+        }
+        let mut hash = Sha256::new();
+        hash.update(b"LSF immutable payload owner v1\0");
+        for text in [&self.tenant, &self.namespace] {
+            hash.update((text.len() as u64).to_le_bytes());
+            hash.update(text.as_bytes());
+        }
+        hash.update(self.incarnation.to_le_bytes());
+        hash.update([codec::kind(self.kind)]);
+        hash.update(self.identity);
+        hash.update(self.generation.to_le_bytes());
+        Ok(key(OWNER_PREFIX, &hash.finalize()))
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PayloadReference {
@@ -93,17 +116,7 @@ impl PayloadReference {
     }
     pub fn owner_key(&self) -> Result<RowKey, StoreError> {
         self.validate()?;
-        let mut hash = Sha256::new();
-        hash.update(b"LSF immutable payload owner v1\0");
-        for text in [&self.owner.tenant, &self.owner.namespace] {
-            hash.update((text.len() as u64).to_le_bytes());
-            hash.update(text.as_bytes());
-        }
-        hash.update(self.owner.incarnation.to_le_bytes());
-        hash.update([codec::kind(self.owner.kind)]);
-        hash.update(self.owner.identity);
-        hash.update(self.owner.generation.to_le_bytes());
-        Ok(key(OWNER_PREFIX, &hash.finalize()))
+        self.owner.row_key()
     }
     pub fn object_key(&self) -> Result<RowKey, StoreError> {
         self.validate()?;
@@ -266,6 +279,54 @@ impl PreparedPayloadReferences {
     pub fn encoded_metadata_bytes(&self) -> usize {
         self.encoded_bytes
     }
+    /// Exact original/new metadata contributions and full payload size join the
+    /// existing tenant quota CAS. Guest counts cannot supply these deltas.
+    pub fn tenant_delta(
+        &self,
+        tenant: &latent_core::TenantId,
+    ) -> Result<crate::tenant::TenantDelta, StoreError> {
+        let mut delta = crate::tenant::TenantDelta::default();
+        for (index, row) in self.batch.mutations.iter().enumerate() {
+            if self.batch.mutations[..index]
+                .iter()
+                .any(|old| old.key == row.key)
+            {
+                return Err(StoreError::Corrupt);
+            }
+            let original = self
+                .batch
+                .expectations
+                .iter()
+                .find(|old| old.key == row.key)
+                .ok_or(StoreError::Corrupt)?;
+            for (bytes, usage) in [
+                (original.value.as_deref(), &mut delta.removed),
+                (row.value.as_deref(), &mut delta.added),
+            ] {
+                if let Some(bytes) = bytes {
+                    if row_tenant(&row.key, bytes)? != tenant.0 {
+                        return Err(StoreError::Invalid);
+                    }
+                    usage.metadata_rows = usage
+                        .metadata_rows
+                        .checked_add(1)
+                        .ok_or(StoreError::Capacity)?;
+                    usage.metadata_bytes = usage
+                        .metadata_bytes
+                        .checked_add(crate::tenant::row_charge(&row.key, bytes)?)
+                        .ok_or(StoreError::Capacity)?;
+                }
+            }
+        }
+        if self.live_payload_bytes >= 0 {
+            delta.added.payload_bytes =
+                u64::try_from(self.live_payload_bytes).map_err(|_| StoreError::Capacity)?;
+        } else {
+            delta.removed.payload_bytes =
+                u64::try_from(-self.live_payload_bytes).map_err(|_| StoreError::Capacity)?;
+        }
+        Ok(delta)
+    }
     /// Move this plan into the complete envelope, retaining its provider pin
     /// separately until the actual physical commit and any uncertainty retire.
     pub fn append_to(self, batch: &mut AtomicBatch) -> Result<(), StoreError> {
@@ -284,6 +345,38 @@ impl PreparedPayloadReferences {
         }
         batch.expectations.extend(self.batch.expectations);
         batch.mutations.extend(self.batch.mutations);
+        Ok(())
+    }
+
+    /// Join this attempt's reciprocal attachment closure to the SAME plan.
+    /// This is data-only; the complete coordinator retains physical authority.
+    pub fn replace_links(
+        &mut self,
+        view: &ReadView,
+        before: Option<&PayloadLinks>,
+        after: Option<&PayloadLinks>,
+    ) -> Result<(), StoreError> {
+        let links = after.or(before).ok_or(StoreError::Invalid)?;
+        if before
+            .zip(after)
+            .is_some_and(|(old, new)| old.anchor != new.anchor)
+        {
+            return Err(StoreError::Conflict);
+        }
+        let key = links.row_key()?;
+        let old = before.map(PayloadLinks::encode).transpose()?;
+        let new = after.map(PayloadLinks::encode).transpose()?;
+        if view.get_bounded(&key, MAX_LINK_BYTES)? != old {
+            return Err(StoreError::Conflict);
+        }
+        for bytes in [&old, &new].into_iter().flatten() {
+            self.encoded_bytes = self
+                .encoded_bytes
+                .checked_add(key.key.len())
+                .and_then(|size| size.checked_add(bytes.len()))
+                .ok_or(StoreError::Capacity)?;
+        }
+        append(&mut self.batch, key, old, new)?;
         Ok(())
     }
 }
@@ -378,6 +471,13 @@ pub fn required_physical_page(
     })
 }
 pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+    if key.family == Family::PayloadReference && key.key.starts_with(LINKS_PREFIX) {
+        let links = PayloadLinks::decode(bytes)?;
+        if links.row_key()? != *key {
+            return Err(StoreError::Corrupt);
+        }
+        return links.verify_rows(view);
+    }
     if physical::is_head(key) {
         return physical::validate_head(key, bytes);
     }
@@ -399,6 +499,60 @@ pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
         }
     }
     Ok(())
+}
+/// Closed ownership descriptor for tenant startup census. Reciprocal indexes
+/// are validated separately against that same coherent engine view.
+pub fn row_tenant(key: &RowKey, bytes: &[u8]) -> Result<String, StoreError> {
+    if key.family == Family::PayloadReference && key.key.starts_with(LINKS_PREFIX) {
+        let links = PayloadLinks::decode(bytes)?;
+        if links.row_key()? != *key {
+            return Err(StoreError::Corrupt);
+        }
+        return Ok(links.anchor.tenant);
+    }
+    if physical::is_head(key) {
+        return physical::head_tenant(key, bytes);
+    }
+    let reference = PayloadReference::decode(bytes)?;
+    if ![
+        reference.owner_key()?,
+        reference.object_key()?,
+        reference.physical_key()?,
+    ]
+    .contains(key)
+    {
+        return Err(StoreError::Corrupt);
+    }
+    Ok(reference.owner.tenant)
+}
+pub fn owner_reference(key: &RowKey, bytes: &[u8]) -> Result<Option<PayloadReference>, StoreError> {
+    row_tenant(key, bytes)?;
+    if physical::is_head(key) || key.key.starts_with(LINKS_PREFIX) {
+        return Ok(None);
+    }
+    PayloadReference::decode(bytes).map(Some)
+}
+pub fn census_usage(key: &RowKey, bytes: &[u8]) -> Result<crate::tenant::TenantUsage, StoreError> {
+    row_tenant(key, bytes)?;
+    let payload_bytes = if key.key.starts_with(OWNER_PREFIX) {
+        PayloadReference::decode(bytes)?.payload.size
+    } else {
+        0
+    };
+    Ok(crate::tenant::TenantUsage {
+        payload_bytes,
+        metadata_rows: 1,
+        metadata_bytes: crate::tenant::row_charge(key, bytes)?,
+        ..crate::tenant::TenantUsage::default()
+    })
+}
+#[must_use]
+pub fn owns_row(key: &RowKey) -> bool {
+    key.family == Family::PayloadReference
+        && [OWNER_PREFIX, OBJECT_PREFIX, PHYSICAL_PREFIX, LINKS_PREFIX]
+            .iter()
+            .any(|prefix| key.key.starts_with(prefix))
+        || physical::is_head(key)
 }
 fn checked_text(value: &str) -> Result<(), StoreError> {
     if value.is_empty() || value.len() > 128 || value.chars().any(char::is_control) {

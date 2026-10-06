@@ -18,6 +18,10 @@ use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
 mod captured;
 
+#[cfg(target_os = "linux")]
+mod payloads;
+mod retention_cases;
+
 fn time(now: u64) -> CommandTime {
     CommandTime {
         unix_millis: now,

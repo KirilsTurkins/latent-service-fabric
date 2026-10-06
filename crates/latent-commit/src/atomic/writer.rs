@@ -20,6 +20,10 @@ use latent_state::{
     reservation::{reservation_key, LogicalReservation},
     session::StatePlan,
 };
+#[cfg(target_os = "linux")]
+mod payloads;
+#[cfg(target_os = "linux")]
+pub use payloads::{PayloadAttachment, PayloadAttachmentTarget};
 
 pub enum AdmissionDecision {
     New(PreparedAdmission),
@@ -42,6 +46,8 @@ pub struct CompleteEnvelope {
     result: DurableResult,
     batch: AtomicBatch,
     authorities: Vec<DurableEffectAuthority>,
+    #[cfg(target_os = "linux")]
+    payloads: Vec<latent_blobs::provider::CapturedLocalPayload>,
 }
 pub enum PreparedDisposition {
     Confirmed {
@@ -580,10 +586,23 @@ impl CompleteEnvelope {
         store: &EmbeddedStore,
         final_accept: impl FnOnce(&[DurableEffectAuthority]) -> Result<(), AtomicError>,
     ) -> PreparedDisposition {
+        self.publish_fenced(store, |envelope| {
+            #[cfg(target_os = "linux")]
+            if !envelope.payloads.is_empty() {
+                return Err(AtomicError::Invalid);
+            }
+            final_accept(&envelope.authorities)
+        })
+    }
+    fn publish_fenced(
+        mut self,
+        store: &EmbeddedStore,
+        final_accept: impl FnOnce(&Self) -> Result<(), AtomicError>,
+    ) -> PreparedDisposition {
         use super::ownership::{ACCEPTED, TERMINAL, UNKNOWN};
         use std::sync::atomic::Ordering;
-        match store.apply_fenced(self.batch, || {
-            final_accept(&self.authorities)?;
+        match store.apply_fenced(std::mem::take(&mut self.batch), || {
+            final_accept(&self)?;
             self.claim.physical.phase.store(ACCEPTED, Ordering::Release);
             Ok(())
         }) {
@@ -827,6 +846,8 @@ impl CompleteEnvelope {
             result,
             batch,
             authorities,
+            #[cfg(target_os = "linux")]
+            payloads: Vec::new(),
         })
     }
 }
@@ -872,7 +893,7 @@ pub fn inspect(
     clippy::needless_pass_by_value,
     reason = "Result::map_err transfers the closed engine/fence error into the host error"
 )]
-fn fenced_error(error: FencedStoreError<AtomicError>) -> AtomicError {
+pub(super) fn fenced_error(error: FencedStoreError<AtomicError>) -> AtomicError {
     match error {
         FencedStoreError::Store(error) => error.into(),
         FencedStoreError::Fence(error) => error,
@@ -902,17 +923,31 @@ fn namespace(
     Ok((record, row, bytes))
 }
 #[derive(Default)]
-struct Usage {
+pub(super) struct Usage {
     results: u64,
-    result_bytes: u64,
+    pub(super) result_bytes: u64,
     effects: u64,
     effect_bytes: u64,
-    payload_bytes: u64,
+    pub(super) payload_bytes: u64,
     reserved: u64,
     recovery_reserved: u64,
 }
 impl Usage {
-    fn read(
+    fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
+        let mut input = Decoder::new(bytes, b"LCU\0\x01", 61)?;
+        let usage = Self {
+            results: input.number()?,
+            result_bytes: input.number()?,
+            effects: input.number()?,
+            effect_bytes: input.number()?,
+            payload_bytes: input.number()?,
+            reserved: input.number()?,
+            recovery_reserved: input.number()?,
+        };
+        input.finish()?;
+        Ok(usage)
+    }
+    pub(super) fn read(
         view: &ReadView,
         key: &latent_core::transaction_contract::CommandKey,
     ) -> Result<(Self, RowKey, Option<Vec<u8>>), AtomicError> {
@@ -931,24 +966,13 @@ impl Usage {
         };
         let bytes = view.get(&row)?;
         let usage = if let Some(bytes) = &bytes {
-            let mut input = Decoder::new(bytes, b"LCU\0\x01", 61)?;
-            let usage = Self {
-                results: input.number()?,
-                result_bytes: input.number()?,
-                effects: input.number()?,
-                effect_bytes: input.number()?,
-                payload_bytes: input.number()?,
-                reserved: input.number()?,
-                recovery_reserved: input.number()?,
-            };
-            input.finish()?;
-            usage
+            Self::decode(bytes)?
         } else {
             Self::default()
         };
         Ok((usage, row, bytes))
     }
-    fn encode(&self) -> Vec<u8> {
+    pub(super) fn encode(&self) -> Vec<u8> {
         let mut out = Encoder::new(b"LCU\0\x01");
         for number in [
             self.results,

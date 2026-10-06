@@ -15,6 +15,30 @@ pub struct CapturedLocalPayload {
     identity: LocalPayloadIdentity,
 }
 impl CapturedLocalPayload {
+    /// Compare the actual original session owner without reconstructing it from
+    /// tenant, principal or publication strings supplied in a reference.
+    #[must_use]
+    pub fn uses_session(&self, session: &CapabilitySession) -> bool {
+        self.binding
+            .with_session(|original| original.is_same_session(session))
+    }
+    /// An attached inline value must describe these exact verified bytes. This
+    /// does not reinterpret a serialized descriptor as provider request bytes.
+    pub fn verify_inline_value(
+        &self,
+        value: &latent_core::transaction_contract::Value,
+    ) -> Result<(), BlobError> {
+        use sha2::{Digest, Sha256};
+        value.validate().map_err(|_| BlobError::InvalidRange)?;
+        let digest: [u8; 32] = Sha256::digest(&value.bytes).into();
+        if self.identity.size != value.bytes.len() as u64
+            || self.identity.digest != digest
+            || self.identity.media_type != value.media_type
+        {
+            return Err(BlobError::ChecksumMismatch);
+        }
+        Ok(())
+    }
     #[must_use]
     pub fn identity(&self) -> &LocalPayloadIdentity {
         &self.identity

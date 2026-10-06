@@ -18,3 +18,16 @@ sha2.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+latent-activation = { path = "../latent-activation" }
+latent-artifacts = { path = "../latent-artifacts" }
+latent-audit = { path = "../latent-audit" }
+latent-executor = { path = "../latent-executor" }
+latent-manifest = { path = "../latent-manifest" }
+latent-policy = { path = "../latent-policy" }
+latent-routing = { path = "../latent-routing" }
+serde_json.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+latent-blobs = { path = "../latent-blobs" }
+latent-capabilities = { path = "../latent-capabilities" }
