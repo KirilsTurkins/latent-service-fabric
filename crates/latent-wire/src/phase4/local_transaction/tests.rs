@@ -38,7 +38,8 @@ async fn actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_c
     assert_eq!(f.executions(), 1);
     assert_eq!(f.backend.real.resource_snapshot().stores_created, 1);
     assert_eq!(f.rows(Family::Command).await, 1);
-    assert_eq!(f.rows(Family::Result).await, 0);
+    assert_eq!(f.terminal_result_rows().await, 0);
+    assert_eq!(f.pending_result_rows().await, 1);
     assert_eq!(f.rows(Family::State).await, 0);
     assert_eq!(f.rows(Family::Outbox).await, 0);
     f.drop_duplicate_during_native_lookup().await;
@@ -91,7 +92,7 @@ async fn actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_c
     assert_eq!(aggregate(&body.payload), 1);
     assert_eq!(body.effect_ids.len(), 1);
     assert_eq!(f.rows(Family::State).await, 1);
-    assert_eq!(f.rows(Family::Result).await, 1);
+    assert_eq!(f.terminal_result_rows().await, 1);
     assert_eq!(f.rows(Family::Outbox).await, 1);
     assert_eq!(f.rows(Family::Attempt).await, 1);
     let receipt = original.command.as_ref().unwrap().commit.clone().unwrap();
@@ -155,7 +156,7 @@ async fn actual_guest_retained_rejection_survives_later_business_mutation_and_ow
     );
     assert_eq!(f.rows(Family::State).await, 1);
     assert_eq!(f.rows(Family::Outbox).await, 1);
-    assert_eq!(f.rows(Family::Result).await, 2);
+    assert_eq!(f.terminal_result_rows().await, 2);
     drop(replay);
     f.shutdown().await;
 }
@@ -208,7 +209,7 @@ async fn actual_guest_replay_rechecks_tenant_subject_token_rotation_and_revoked_
     );
     assert_eq!(f.executions(), 1);
     assert_eq!(f.rows(Family::Command).await, 1);
-    assert_eq!(f.rows(Family::Result).await, 1);
+    assert_eq!(f.terminal_result_rows().await, 1);
     assert_eq!(f.rows(Family::Outbox).await, 1);
     f.shutdown().await;
 }

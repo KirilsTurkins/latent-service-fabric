@@ -44,7 +44,8 @@ async fn actual_guest_pending_restart_never_implicitly_reexecutes_the_interrupte
     drop(pending);
     assert_eq!(f.rows(Family::State).await, 0);
     assert_eq!(f.rows(Family::Outbox).await, 0);
-    assert_eq!(f.rows(Family::Result).await, 0);
+    assert_eq!(f.terminal_result_rows().await, 0);
+    assert_eq!(f.pending_result_rows().await, 1);
     f.restart().await;
     let replay = invoke(&f, "interrupted", 1, false).await;
     assert!(replay.replayed);
@@ -112,7 +113,7 @@ async fn actual_guest_retention_capacity_rejects_new_work_and_preserves_guarante
     assert_eq!(success(&replay), body);
     assert!(replay.replayed);
     assert_eq!(f.rows(Family::Command).await, 1);
-    assert_eq!(f.rows(Family::Result).await, 1);
+    assert_eq!(f.terminal_result_rows().await, 1);
     assert_eq!(f.rows(Family::Outbox).await, 1);
     drop(replay);
     f.shutdown().await;

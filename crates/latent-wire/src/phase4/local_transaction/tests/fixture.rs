@@ -1,4 +1,6 @@
 use super::*;
+mod records;
+mod store;
 use crate::invocation::{
     ActivationCleanupOwner, InvocationLimits, LocalPrincipalPolicy, SystemInvocationTraceSource,
 };
@@ -138,12 +140,7 @@ impl Fixture {
         fs::create_dir(&config.root).unwrap();
         fs::set_permissions(&config.root, fs::Permissions::from_mode(0o700)).unwrap();
         config.create_if_missing = true;
-        let store = Arc::new(
-            ProtectedStoreOwner::start(config.clone())
-                .unwrap()
-                .await
-                .unwrap(),
-        );
+        let store = Arc::new(start_store(config.clone()).unwrap().await.unwrap());
         let native =
             latent_core::native_capacity::NativeCapacityOwner::new(Default::default()).unwrap();
         store.bind_native_capacity(&native).unwrap();
@@ -431,14 +428,15 @@ impl Fixture {
             .unwrap()
             .unwrap()
     }
+    pub async fn terminal_result_rows(&self) -> usize {
+        records::results(&self.store).await.0
+    }
+    pub async fn pending_result_rows(&self) -> usize {
+        records::results(&self.store).await.1
+    }
     pub async fn restart(&mut self) {
         self.retire().await;
-        self.store = Arc::new(
-            ProtectedStoreOwner::start(self.config.clone())
-                .unwrap()
-                .await
-                .unwrap(),
-        );
+        self.store = Arc::new(start_store(self.config.clone()).unwrap().await.unwrap());
         self.store.bind_native_capacity(&self.native).unwrap();
         self.manager = manager(&self.routes, &self.catalog, &self.backend, &self.quotas);
         self.wire().await;
@@ -525,6 +523,15 @@ impl Fixture {
         );
         eprintln!("actual-guest command-executions={} query-executions={} stores-created={} live-stores={}",self.executions(),self.backend.imports.queries.load(Ordering::SeqCst),runtime.stores_created,runtime.live_stores);
     }
+}
+
+pub(super) fn start_store(
+    config: ProtectedStoreConfig,
+) -> Result<
+    latent_state::protected_store::ProtectedStoreStartup,
+    latent_state::protected_store::ProtectedStoreError,
+> {
+    store::start(config)
 }
 
 fn manager(
