@@ -65,17 +65,20 @@ pub(super) fn worlds(
     let mut compare = Comparison::new(source, actual, limits);
     // Compilers may prune unused host interfaces or members. Every retained
     // import must still match the complete, independently pinned source world.
-    for (name, actual) in &compiled.imports {
+    for (name, actual_id) in &compiled.imports {
         let expected = declared
             .imports
             .get(name)
             .ok_or_else(|| incompatible("component-world-identity-mismatch"))?;
-        let profile = latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(name)
-            .ok_or_else(|| incompatible("unsupported-host-import"))?;
-        compare.asynchronous = profile.asynchronous;
-        compare.resources = profile.resource_types();
-        compare.import_subset(*expected, *actual)?;
+        if let Some(profile) = latent_core::PHASE3_HOST_ABI_CURRENT.interface(name) {
+            compare.asynchronous = profile.asynchronous;
+            compare.resources = profile.resource_types();
+        } else if !source.interfaces[*expected].functions.is_empty()
+            || !actual.interfaces[*actual_id].functions.is_empty()
+        {
+            return Err(incompatible("unsupported-host-import"));
+        }
+        compare.import_subset(*expected, *actual_id)?;
         compare.asynchronous = false;
         compare.resources = &[];
     }

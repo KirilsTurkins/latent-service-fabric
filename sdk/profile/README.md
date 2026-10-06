@@ -45,11 +45,11 @@ Network clients may expose generated protobuf objects and lossless conversions
 instead of duplicating storage. The conversion must retain every profile field.
 
 Rust exports `pub mod management;` from `sdk/rust/src/lib.rs`; ordinary crate
-tests use that public API. All portable models and the eight-operation trait
+tests use that public API. All portable models and the ten-operation trait
 live in this namespace; `network::RpcClient` implements that trait using its
 shared bounded transport.
 
-## The eight required operations
+## The ten required operations
 
 Every operation is unary, cancellable locally, single-attempt and bounded.
 Each takes its protobuf-named request and local `CallOptions`; it returns
@@ -58,14 +58,16 @@ request/response names are machine-readable in `client-profile.json`.
 
 | Operation | Request and response | Required behavior |
 | --- | --- | --- |
-| Invoke | `InvokeRequest` / `InvokeResponse` | Keep caller activation/lineage IDs, budget, absolute invocation deadline, priority, media type and opaque payload. Preserve exactly one success/declared-error/platform-failure result and the common receipt even for failure. |
+| Invoke | `InvokeRequest` / `InvokeResponse` | Keep activation IDs, budget, absolute invocation deadline, priority, media type and opaque payload. Preserve optional lineage fields in models; external lineage rejects and trusted brokers derive child ancestry. Preserve exactly one success/declared-error/platform-failure result and the common receipt even for failure. |
 | Cancel | `CancelRequest` / `CancelResponse` | Uses the known activation ID. Accepted is advisory, already-terminal retains its state, and not-found is not proof of nonexecution. RPC errors are never dispositions. |
 | GetActivation | `GetActivationRequest` / `ActivationStatus` | Recover by the original activation ID; retain terminal outcome, time and final consumption independently. Bounded status retention makes missing status inconclusive. |
+| InspectActivationTree | `InspectActivationTreeRequest` / `InspectActivationTreeResponse` | Tenant administrator read of retained root/parent/child links, trusted caller class/service and admitted budget, plus closed numeric diagnostics. Maximum 128 nodes and 64 KiB; zero/absent page selects 32. Opaque cursor membership is fixed while node outcomes may progress. No result or cancellation authority is conveyed. |
 | GetPolicy | `GetPolicyRequest` / `GetPolicyResponse` | Both `POLICY` and `PROVIDER_BINDING` record kinds; absence is retained, not an invented zero-generation record. |
 | ListPolicies | `ListPoliciesRequest` / `ListPoliciesResponse` | Both record kinds; explicit positive page size, exact opaque cursor, catalog generation and next-token presence. Never auto-drain pages. |
 | ListCapabilities | `ListCapabilitiesRequest` / `ListCapabilitiesResponse` | Explicit selected deployment, optional filters and bounded page; redacted binding/provider identity, revisions, configuration epoch, sampled state and unavailable resource owners. |
 | ApplyPolicy | `ApplyPolicyRequest` / `ApplyPolicyResponse` | Both record kinds; explicit `expected_generation` and caller-known nonempty `operation_id` before dispatch. Zero is create-only, not absence. Preserve the exact record and operation receipt. |
 | GetPolicyOperation | `GetPolicyOperationRequest` / `GetPolicyOperationResponse` | Recover by the original operation ID before deciding whether to replay. Missing receipt is unknown/not retained, never proof that the mutation did not run. |
+| InspectHttpTarget | `InspectHttpTargetRequest` / `InspectHttpTargetResponse` | Tenant administrator read of exact service/contract/function candidates on the existing immutable catalog. Optional exact publication/revision and supported routing key; at most 32 candidates, 8 KiB request and 64 KiB response. Optional preparation consumes the original readiness pin without creating a guest Store. Actual callable imports and validated type-only imports remain distinct. No invocation, provider call, binding mutation, receipt, grant or automatic refresh is created. |
 
 `ApplyPolicy.policy` follows the server's closed document profile. Input
 generation is zero, digest is empty, revoked is false, metadata name matches ID,
