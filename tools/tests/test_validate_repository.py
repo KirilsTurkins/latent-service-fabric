@@ -21,6 +21,84 @@ foundation = importlib.util.module_from_spec(FOUNDATION_SPEC)
 FOUNDATION_SPEC.loader.exec_module(foundation)
 
 
+class WitPackageProfileTests(unittest.TestCase):
+    def setUp(self) -> None:
+        validator.ERRORS.clear()
+        validator.WARNINGS.clear()
+
+    def tearDown(self) -> None:
+        validator.ERRORS.clear()
+        validator.WARNINGS.clear()
+
+    @staticmethod
+    def fixture(root: Path) -> list[Path]:
+        files = []
+        for name in ("runtime-phase3-activation", "runtime-phase4"):
+            relative = Path(f"wit/platform/{name}/world.wit")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            path.write_bytes((MODULE_PATH.parents[1] / relative).read_bytes())
+            files.append(path)
+        return files
+
+    def test_exact_alternative_worlds_keep_their_distinct_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            files = self.fixture(root)
+            before = [path.read_bytes() for path in files]
+            self.assertNotEqual(*before)
+            for order in (files, files[::-1]):
+                with patch.object(validator, "ROOT", root), patch.object(validator, "files_with_suffix", return_value=order):
+                    validator.validate_wit()
+                self.assertEqual(validator.ERRORS, [])
+            self.assertEqual([path.read_bytes() for path in files], before)
+
+    def test_third_profile_and_ordinary_duplicate_packages_remain_rejected(self) -> None:
+        for relative in ("wit/platform/runtime-extra/world.wit", "examples/other/world.wit"):
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                files = self.fixture(root)
+                extra = root / relative
+                extra.parent.mkdir(parents=True)
+                extra.write_bytes(files[0].read_bytes())
+                for order in ([extra, *files], [files[0], extra, files[1]], [*files, extra]):
+                    validator.ERRORS.clear()
+                    with patch.object(validator, "ROOT", root), patch.object(validator, "files_with_suffix", return_value=order):
+                        validator.validate_wit()
+                    self.assertTrue(validator.ERRORS)
+                    self.assertTrue(all("duplicate WIT package" in error for error in validator.ERRORS))
+
+    def test_profile_location_filename_or_package_version_cannot_expand_the_exception(self) -> None:
+        for change in ("directory", "filename", "version"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                validator.ERRORS.clear()
+                root = Path(temporary)
+                files = self.fixture(root)
+                if change == "directory":
+                    destination = root / "wit/platform/runtime-phase4-other/world.wit"
+                    destination.parent.mkdir(parents=True)
+                    files[1].rename(destination)
+                elif change == "filename":
+                    files[1].rename(files[1].with_name("other.wit"))
+                else:
+                    for path in files:
+                        path.write_bytes(path.read_bytes().replace(b"latent:platform@0.5.0", b"latent:platform@0.6.0"))
+                with patch.object(validator, "ROOT", root):
+                    validator.validate_wit()
+                self.assertEqual(len(validator.ERRORS), 1)
+                self.assertIn("duplicate WIT package", validator.ERRORS[0])
+
+    def test_alternative_worlds_still_require_a_definition(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            files = self.fixture(root)
+            files[1].write_text("package latent:platform@0.5.0;\n", encoding="utf-8")
+            with patch.object(validator, "ROOT", root):
+                validator.validate_wit()
+            self.assertEqual(len(validator.ERRORS), 1)
+            self.assertIn("neither interface nor world", validator.ERRORS[0])
+
+
 class SourceTraversalTests(unittest.TestCase):
     def setUp(self) -> None:
         validator.ERRORS.clear()

@@ -947,5 +947,290 @@
         "sha256:0000000000000000000000000000000000000000000000000000000000000000"
       ]
     }
+  },
+  {
+    "name": "signed-error-document",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "errorDocument": {
+          "profile": "html-not-found-v1",
+          "document": "/index.html"
+        }
+      }
+    }
+  },
+  {
+    "name": "error-null",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "errorDocument": null
+      }
+    }
+  },
+  {
+    "name": "error-unknown-profile",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "errorDocument": {
+          "profile": "other-v1",
+          "document": "/index.html"
+        }
+      }
+    }
+  },
+  {
+    "name": "error-missing-profile",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "errorDocument": {
+          "document": "/index.html"
+        }
+      }
+    }
+  },
+  {
+    "name": "error-unknown-field",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "errorDocument": {
+          "profile": "html-not-found-v1",
+          "document": "/index.html",
+          "status": 200
+        }
+      }
+    }
+  },
+  {
+    "name": "error-reserved-reference",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "errorDocument": {
+          "profile": "html-not-found-v1",
+          "document": "/_LSF/index.html"
+        }
+      }
+    }
+  },
+  {
+    "name": "error-private-reference",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "errorDocument": {
+          "profile": "html-not-found-v1",
+          "document": "/private/index.html"
+        }
+      }
+    }
+  },
+  {
+    "name": "error-hidden-reference",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "errorDocument": {
+          "profile": "html-not-found-v1",
+          "document": "/.private.html"
+        }
+      }
+    }
+  },
+  {
+    "name": "error-foreign-reference",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "errorDocument": {
+          "profile": "html-not-found-v1",
+          "document": "https://foreign.test/404.html"
+        }
+      }
+    }
   }
 ]
