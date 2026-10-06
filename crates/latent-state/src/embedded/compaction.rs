@@ -1,5 +1,5 @@
 //! Finite physical compaction on the original engine and file backend.
-use super::{EmbeddedStore, ExpectedRow, FencedStoreError, StoreError, META, ROWS};
+use super::{EmbeddedStore, ExpectedRow, FencedStoreError, StoreError, ROWS};
 use redb::{Database, ReadableDatabase};
 use std::sync::{atomic::Ordering, TryLockError};
 use std::time::{Duration, Instant};
@@ -168,17 +168,8 @@ fn compaction_rows(
     limits: super::StoreLimits,
     expectations: &[ExpectedRow],
 ) -> Result<(), StoreError> {
+    super::format::inspect(database)?;
     let transaction = database.begin_read().map_err(|_| StoreError::Unavailable)?;
-    let meta = transaction
-        .open_table(META)
-        .map_err(|_| StoreError::Corrupt)?;
-    if meta
-        .get("schema")
-        .map_err(|_| StoreError::Corrupt)?
-        .is_none_or(|row| row.value() != super::FORMAT)
-    {
-        return Err(StoreError::UnsupportedFormat);
-    }
     let table = transaction
         .open_table(ROWS)
         .map_err(|_| StoreError::Corrupt)?;

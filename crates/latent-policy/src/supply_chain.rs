@@ -1,7 +1,8 @@
 //! Node-owned package admission and durable policy/time floors.
 //!
 //! Uploaded bytes and historical receipts never construct executable authority.
-//! All verifiers are private to the same nonblocking currentness fence.
+//! Immutable authority epochs share read checkpoints. Final commits have one
+//! independent, nonblocking fence; policy changes still exclusively replace an epoch.
 
 mod clock;
 mod config;
@@ -19,7 +20,7 @@ pub use verification::{
     PackageVerificationRequest, WebPackageVerificationReport,
 };
 
-pub use clock::{CoveredClock, CoveredClockSource, SupplyChainClock, SystemSupplyChainClock};
+pub use clock::{SupplyChainClock, SystemSupplyChainClock};
 pub use config::SupplyChainPolicy;
 
 use latent_artifacts::{
@@ -27,9 +28,10 @@ use latent_artifacts::{
 };
 use latent_core::{PlatformError, PlatformErrorCode, TenantId};
 use latent_signing::{BuilderVerifier, PublisherVerifier};
+use std::ops::{Deref, DerefMut};
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use ledger::{DurableFloor, Ledger};
 
@@ -44,17 +46,88 @@ struct Inner {
     clock: Arc<dyn SupplyChainClock>,
     runtime: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     manifest_profile: latent_manifest::ManifestValidationProfile,
-    state: Mutex<State>,
     clock_metadata: clock::Metadata,
+    state: RwLock<State>,
+    // Immutable readers do not exclude final publication. The separate fence
+    // preserves exclusive commits and rejects nested entry without a wait queue.
+    commit_fence: Mutex<()>,
+    committing: AtomicBool,
     // Durable control operations acquire ledger before state. Grant checkpoints
     // acquire only state and never wait for the filesystem owner.
     ledger: Mutex<Ledger>,
     halted: AtomicBool,
+    reader_poisoned: AtomicBool,
     retired: AtomicBool,
     verifying: AtomicBool,
 }
 
 struct VerificationPermit<'owner>(&'owner AtomicBool);
+
+struct CommitFence<'owner> {
+    committing: &'owner AtomicBool,
+    _guard: MutexGuard<'owner, ()>,
+}
+
+impl Drop for CommitFence<'_> {
+    fn drop(&mut self) {
+        self.committing.store(false, Ordering::Release);
+    }
+}
+
+struct CurrentnessWrite<'owner> {
+    state: RwLockWriteGuard<'owner, State>,
+    _commit: CommitFence<'owner>,
+}
+
+impl Deref for CurrentnessWrite<'_> {
+    type Target = State;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
+    }
+}
+
+impl DerefMut for CurrentnessWrite<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.state
+    }
+}
+
+struct CurrentnessCommit<'owner> {
+    state: CurrentnessRead<'owner>,
+    _commit: CommitFence<'owner>,
+}
+
+impl Deref for CurrentnessCommit<'_> {
+    type Target = State;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
+    }
+}
+
+struct CurrentnessRead<'owner> {
+    owner: &'owner Inner,
+    state: RwLockReadGuard<'owner, State>,
+}
+
+impl Deref for CurrentnessRead<'_> {
+    type Target = State;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
+    }
+}
+
+impl Drop for CurrentnessRead<'_> {
+    fn drop(&mut self) {
+        // RwLock does not poison after a reader panics. Keep the original
+        // authority's fail-closed behavior, including trusted clock failures.
+        if std::thread::panicking() {
+            self.owner.reader_poisoned.store(true, Ordering::Release);
+        }
+    }
+}
 
 impl Drop for VerificationPermit<'_> {
     fn drop(&mut self) {
@@ -65,7 +138,7 @@ struct State {
     policy: SupplyChainPolicy,
     verifiers: Option<(PublisherVerifier, BuilderVerifier)>,
     floor: DurableFloor,
-    observed_at: u64,
+    observed_at: AtomicU64,
     lease_seconds: u64,
 }
 
@@ -172,7 +245,7 @@ impl SupplyChainAuthority {
             policy,
             verifiers,
             floor,
-            observed_at: after,
+            observed_at: AtomicU64::new(after),
             lease_seconds,
         };
         Ok(Self {
@@ -184,8 +257,11 @@ impl SupplyChainAuthority {
                 verifying: AtomicBool::new(false),
                 ledger: Mutex::new(ledger),
                 halted: AtomicBool::new(false),
+                reader_poisoned: AtomicBool::new(false),
+                commit_fence: Mutex::new(()),
+                committing: AtomicBool::new(false),
                 clock_metadata: clock::Metadata::new(&state),
-                state: Mutex::new(state),
+                state: RwLock::new(state),
             }),
         })
     }
@@ -207,7 +283,7 @@ impl SupplyChainAuthority {
         let _state = self
             .inner
             .state
-            .lock()
+            .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         ledger.retire();
     }
@@ -224,22 +300,21 @@ impl SupplyChainAuthority {
     }
     fn renewal(
         &self,
-        state: &mut State,
+        state: &State,
         full_window: bool,
     ) -> Result<Option<DurableFloor>, PlatformError> {
-        if self.inner.retired.load(Ordering::Acquire) {
-            return Err(unavailable("admission-owner-retired"));
-        }
-        if self.inner.halted.load(Ordering::Acquire) {
-            return Err(unavailable("admission-durability-uncertain"));
-        }
-        let previous = state
+        self.inner.currentness()?;
+        let before = state
             .observed_at
+            .load(Ordering::Acquire)
             .max(self.inner.clock_metadata.observed_at());
         let now = self.inner.clock.now()?;
-        if now < previous {
+        self.inner.currentness()?;
+        if now < before {
             return Err(unavailable("admission-clock-regression"));
         }
+        let now = state.observed_at.fetch_max(now, Ordering::AcqRel).max(now);
+        self.inner.clock_metadata.record(now);
         // Keep at least two seconds of margin with the default lease, avoiding
         // filesystem work on every control tick. Short leases renew each second.
         let margin = state.lease_seconds.min(2);
@@ -248,8 +323,6 @@ impl SupplyChainAuthority {
                 .checked_add(margin)
                 .is_some_and(|until| until < state.floor.restart_not_before)
         {
-            state.observed_at = now;
-            self.inner.clock_metadata.record(now);
             return Ok(None);
         }
         let ceiling = now
@@ -257,25 +330,32 @@ impl SupplyChainAuthority {
             .ok_or_else(|| invalid("admission-clock-overflow"))?;
         let mut next = state.floor.clone();
         next.restart_not_before = ceiling;
-        // Keep this observation even if persistence or a later sample fails.
-        state.observed_at = now;
-        self.inner.clock_metadata.record(now);
+        // The atomic observation remains even if persistence or a later sample fails.
         Ok(Some(next))
     }
     fn finish_renewal(&self, state: &mut State, next: DurableFloor) -> Result<(), PlatformError> {
-        let ceiling = next.restart_not_before;
         state.floor = next;
-        if self.inner.retired.load(Ordering::Acquire) {
-            return Err(unavailable("admission-owner-retired"));
-        }
-        let previous = state
+        self.finish_renewal_sample(state)
+    }
+    fn finish_renewal_sample(&self, state: &State) -> Result<(), PlatformError> {
+        let ceiling = state.floor.restart_not_before;
+        self.inner.currentness()?;
+        let before = state
             .observed_at
+            .load(Ordering::Acquire)
             .max(self.inner.clock_metadata.observed_at());
         let after = self.inner.clock.now()?;
-        if after < previous || after >= ceiling {
+        self.inner.currentness()?;
+        if after < before || after >= ceiling {
             return Err(unavailable("admission-clock-lease-uncovered"));
         }
-        state.observed_at = after;
+        let after = state
+            .observed_at
+            .fetch_max(after, Ordering::AcqRel)
+            .max(after);
+        if after >= ceiling {
+            return Err(unavailable("admission-clock-lease-uncovered"));
+        }
         self.inner.clock_metadata.record(after);
         self.inner.publish_clock_metadata(state)?;
         Ok(())
@@ -288,7 +368,7 @@ impl SupplyChainAuthority {
         Ok(())
     }
     fn renew_unfenced(&self, ledger: &Ledger, full_window: bool) -> Result<(), PlatformError> {
-        let next = self.renewal(&mut *self.inner.lock()?, full_window)?;
+        let next = self.renewal(&*self.inner.read()?, full_window)?;
         let Some(next) = next else {
             return Ok(());
         };
@@ -296,12 +376,25 @@ impl SupplyChainAuthority {
         // Existing grants keep their old durable ceiling while this append does
         // filesystem I/O. No future ceiling is visible before persistence ends.
         self.inner.persist(ledger, &next)?;
-        let mut state = self
+        {
+            let mut state = self
+                .inner
+                .state
+                .write()
+                .map_err(|_| unavailable("admission-authority-poisoned"))?;
+            state.floor = next;
+        }
+        // Publishing a persisted floor is the only exclusive sampler operation.
+        // Its trusted clock sample shares the now immutable authority epoch.
+        let state = self
             .inner
             .state
-            .lock()
+            .read()
             .map_err(|_| unavailable("admission-authority-poisoned"))?;
-        self.finish_renewal(&mut state, next)
+        self.finish_renewal_sample(&CurrentnessRead {
+            owner: &self.inner,
+            state,
+        })
     }
 
     /// Replaces one complete approved snapshot bundle. All component generation
@@ -313,7 +406,7 @@ impl SupplyChainAuthority {
             .try_lock()
             .map_err(|_| unavailable("admission-control-busy"))?;
         let mut state = self.inner.lock()?;
-        let now = self.inner.sample_clock(&mut state)?;
+        let now = self.inner.sample_clock(&state)?;
         state.floor.check_policy(&next.identity)?;
         next.verifiers(now)?;
         if state.policy.identity == next.identity && state.verifiers.is_some() {
@@ -338,7 +431,7 @@ impl SupplyChainAuthority {
         let verifiers = next.verifiers(after)?;
         state.policy = next;
         state.verifiers = Some(verifiers);
-        state.observed_at = after;
+        state.observed_at.store(after, Ordering::Release);
         self.inner.clock_metadata.record(after);
         self.inner.publish_clock_metadata(&state)?;
         self.inner.halted.store(false, Ordering::Release);
@@ -356,7 +449,7 @@ impl AdmissionAuthority for SupplyChainAuthority {
     fn renew_control_lease(&self) -> Result<(), PlatformError> {
         // Detect a nested currentness fence before waiting for a ledger owner
         // which may itself be finishing against that fence.
-        drop(self.inner.lock()?);
+        drop(self.inner.read()?);
         let ledger = self
             .inner
             .ledger
@@ -377,8 +470,8 @@ impl AdmissionAuthority for SupplyChainAuthority {
     ) -> Result<latent_artifacts::web::VerifiedWebAdmission, PlatformError> {
         let _verification = self.inner.verification()?;
         {
-            let mut state = self.inner.lock()?;
-            self.inner.sample(&mut state)?;
+            let state = self.inner.read()?;
+            self.inner.sample(&state)?;
             web::check_tenant(tenant, &state)?;
         }
         let prepared = web::prepare(upload)?;
@@ -408,7 +501,7 @@ impl AdmissionAuthority for SupplyChainAuthority {
         let mut state = self
             .inner
             .state
-            .lock()
+            .write()
             .map_err(|_| unavailable("admission-authority-poisoned"))?;
         self.renew(&mut state, &ledger)?;
         web::with_state(
@@ -452,7 +545,7 @@ impl AdmissionAuthority for SupplyChainAuthority {
         let mut state = self
             .inner
             .state
-            .lock()
+            .write()
             .map_err(|_| unavailable("admission-authority-poisoned"))?;
         self.renew(&mut state, &ledger)?;
         verify::with_state(
@@ -476,41 +569,102 @@ impl Inner {
         Ok(VerificationPermit(&self.verifying))
     }
 
-    fn lock(&self) -> Result<MutexGuard<'_, State>, PlatformError> {
+    fn commit_fence(&self) -> Result<CommitFence<'_>, PlatformError> {
         if self.retired.load(Ordering::Acquire) {
             return Err(unavailable("admission-owner-retired"));
         }
-        match self.state.try_lock() {
-            Ok(state) => Ok(state),
-            Err(std::sync::TryLockError::WouldBlock) => {
-                Err(unavailable("admission-authority-busy"))
-            }
-            Err(std::sync::TryLockError::Poisoned(_)) => {
-                Err(unavailable("admission-authority-poisoned"))
-            }
+        if self.reader_poisoned.load(Ordering::Acquire) {
+            return Err(unavailable("admission-authority-poisoned"));
         }
+        let guard = self.commit_fence.try_lock().map_err(|error| match error {
+            std::sync::TryLockError::WouldBlock => unavailable("admission-authority-busy"),
+            std::sync::TryLockError::Poisoned(_) => unavailable("admission-authority-poisoned"),
+        })?;
+        self.committing.store(true, Ordering::Release);
+        Ok(CommitFence {
+            committing: &self.committing,
+            _guard: guard,
+        })
     }
-    fn sample(&self, state: &mut State) -> Result<u64, PlatformError> {
+    fn lock(&self) -> Result<CurrentnessWrite<'_>, PlatformError> {
+        let commit = self.commit_fence()?;
+        let state = self.state.try_write().map_err(|error| match error {
+            std::sync::TryLockError::WouldBlock => unavailable("admission-authority-busy"),
+            std::sync::TryLockError::Poisoned(_) => unavailable("admission-authority-poisoned"),
+        })?;
+        Ok(CurrentnessWrite {
+            state,
+            _commit: commit,
+        })
+    }
+    fn commit(&self) -> Result<CurrentnessCommit<'_>, PlatformError> {
+        let commit = self.commit_fence()?;
+        let state = self.state.try_read().map_err(|error| match error {
+            std::sync::TryLockError::WouldBlock => unavailable("admission-authority-busy"),
+            std::sync::TryLockError::Poisoned(_) => unavailable("admission-authority-poisoned"),
+        })?;
+        Ok(CurrentnessCommit {
+            state: CurrentnessRead { owner: self, state },
+            _commit: commit,
+        })
+    }
+    fn read(&self) -> Result<CurrentnessRead<'_>, PlatformError> {
+        if self.retired.load(Ordering::Acquire) {
+            return Err(unavailable("admission-owner-retired"));
+        }
+        if self.reader_poisoned.load(Ordering::Acquire) {
+            return Err(unavailable("admission-authority-poisoned"));
+        }
+        if self.commit_fence.is_poisoned() {
+            return Err(unavailable("admission-authority-poisoned"));
+        }
+        if self.committing.load(Ordering::Acquire) {
+            return Err(unavailable("admission-authority-busy"));
+        }
+        let state = self.state.try_read().map_err(|error| match error {
+            std::sync::TryLockError::WouldBlock => unavailable("admission-authority-busy"),
+            std::sync::TryLockError::Poisoned(_) => unavailable("admission-authority-poisoned"),
+        })?;
+        Ok(CurrentnessRead { owner: self, state })
+    }
+    fn sample(&self, state: &State) -> Result<u64, PlatformError> {
         let now = self.sample_clock(state)?;
         state.policy.fresh(now)?;
         Ok(now)
     }
-    fn sample_clock(&self, state: &mut State) -> Result<u64, PlatformError> {
+    fn currentness(&self) -> Result<(), PlatformError> {
         if self.retired.load(Ordering::Acquire) {
             return Err(unavailable("admission-owner-retired"));
         }
         if self.halted.load(Ordering::Acquire) {
             return Err(unavailable("admission-durability-uncertain"));
         }
-        let previous = state.observed_at.max(self.clock_metadata.observed_at());
+        if self.reader_poisoned.load(Ordering::Acquire) {
+            return Err(unavailable("admission-authority-poisoned"));
+        }
+        Ok(())
+    }
+    fn sample_clock(&self, state: &State) -> Result<u64, PlatformError> {
+        self.currentness()?;
+        let before = state
+            .observed_at
+            .load(Ordering::Acquire)
+            .max(self.clock_metadata.observed_at());
         let now = self.clock.now()?;
-        if now < previous {
+        self.currentness()?;
+        if now < before {
             return Err(unavailable("admission-clock-regression"));
         }
         if now >= state.floor.restart_not_before {
             return Err(unavailable("admission-clock-lease-uncovered"));
         }
-        state.observed_at = now;
+        // Concurrent readers may complete out of sample order. Never move their
+        // high-water mark backwards or misclassify their ordering as rollback;
+        // check expiry using the latest covered observation instead.
+        let now = state.observed_at.fetch_max(now, Ordering::AcqRel).max(now);
+        if now >= state.floor.restart_not_before {
+            return Err(unavailable("admission-clock-lease-uncovered"));
+        }
         self.clock_metadata.record(now);
         Ok(now)
     }

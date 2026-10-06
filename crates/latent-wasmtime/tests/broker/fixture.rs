@@ -233,7 +233,8 @@ impl Fixture {
                 Instant::now() + Duration::from_secs(10),
             )
             .unwrap();
-        let plan_hook = Arc::new(Mutex::new(None));
+        let plan_lookup_hook = Arc::new(Mutex::new(None));
+        let plan_hook = Arc::clone(&plan_lookup_hook);
         let runtime = Arc::new(ActivationCapabilityRuntime::new(
             broker.clone(),
             Arc::new(Plans(plan, plan_hook.clone())),
@@ -269,8 +270,8 @@ impl Fixture {
             broker,
             runtime,
             clock,
-            plan_lookup_hook: Arc::clone(&plan_hook),
             plan_hook,
+            plan_lookup_hook,
             revision,
             _provider: provider,
             _directory: directory,

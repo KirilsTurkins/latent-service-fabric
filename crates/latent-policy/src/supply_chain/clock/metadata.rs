@@ -30,7 +30,7 @@ impl Metadata {
             covered_until: AtomicU64::new(state.floor.restart_not_before),
             valid_from: AtomicU64::new(state.policy.identity.valid_from),
             valid_until: AtomicU64::new(state.policy.identity.valid_until),
-            observed_at: AtomicU64::new(state.observed_at),
+            observed_at: AtomicU64::new(state.observed_at.load(Ordering::Acquire)),
         }
     }
 

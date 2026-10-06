@@ -69,7 +69,10 @@ fn check_owner(owner: &Inner) -> Result<(), PlatformError> {
     if owner.halted.load(Ordering::Acquire) {
         return Err(unavailable("admission-durability-uncertain"));
     }
-    if owner.state.is_poisoned() {
+    if owner.state.is_poisoned()
+        || owner.reader_poisoned.load(Ordering::Acquire)
+        || owner.commit_fence.is_poisoned()
+    {
         return Err(unavailable("admission-authority-poisoned"));
     }
     Ok(())

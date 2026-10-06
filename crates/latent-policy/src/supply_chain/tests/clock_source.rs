@@ -393,7 +393,7 @@ fn completed_concurrent_observation_is_transient_but_poisoned_original_owner_is_
     source.sample().unwrap();
     let inner = Arc::clone(&authority.inner);
     assert!(std::thread::spawn(move || {
-        let _state = inner.state.lock().unwrap();
+        let _state = inner.state.write().unwrap();
         panic!("intentional original owner poison");
     })
     .join()

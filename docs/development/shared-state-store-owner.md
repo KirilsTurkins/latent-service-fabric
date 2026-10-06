@@ -37,11 +37,40 @@ The default `start` accepts an empty logical store only. Namespace, state,
 command, result, outbox, inbox, payload and maintenance codecs belong to their
 contract owners and must be registered by the node. Opaque rows never establish
 production readiness. Malformed rows, unsupported schemas and engine corruption
-fail closed without replacing existing bytes. The first supported engine format
-is `latent.transaction-store.v1`; no earlier-format migration pair is supported.
-Unknown formats require an explicit operator migration/restore plan. Startup
-does not invent a migration, reset state or silently publish an intermediate
-format.
+fail closed without replacing existing data. Startup supports the original
+`latent.transaction-store.v1` and one explicit metadata transition to
+`latent.transaction-store.v2`. Both use the same `records-v1` table, closed ten
+family tags and existing bounded host codecs. Application schema, WIT, command,
+effect and publication identities do not change. Existing coherent readers keep
+their original rows across this metadata-only transition.
+
+The v2 metadata records the exact redb 4.3/immediate-sync/records-v1 decoder
+contract. Operator-tunable cache, row, value, queue and view ceilings retain their
+existing validation and are checked against the original rows before upgrading.
+No row is copied, transformed, dropped or reinterpreted. On the same fixed
+initialization worker under the exclusive root/database lock, startup first
+commits one finite `upgrade` intent alongside the original v1 schema with
+`Durability::Immediate`. A second immediate transaction atomically publishes the
+v2 schema and record-layout contract and removes that intent. Readiness follows
+the completed transition, logical codec validation and protected file fences.
+
+Reopening a valid v1 seed or the exact retained upgrade intent completes this
+same transition. A published v2 database is checked without downgrading it.
+Unsupported schemas, unknown decoder contracts, malformed or inconsistent
+progress, and metadata outside the closed three-field/128-byte limits refuse
+readiness without rewriting business rows. Decode borrows those bounded native
+metadata fields before any allocation. A failed or uncertain metadata sync gates
+startup and requires exact reopen/recovery; it does not claim that the attempted
+write was aborted.
+
+New creation first commits the original v1 schema and empty records together,
+then uses this same transition. Interruption after that durable seed or either
+upgrade phase is resumable. A real engine header interrupted before its first
+trusted schema commit remains unsupported/recovery-required: reopening never
+mistakes it for a fresh empty file or silently initializes over it. Unknown
+formats and unseeded failed databases require an explicit operator migration or
+restore plan. This is an engine-format transition, separate from application
+namespace schema migration and business-data downgrade.
 
 ## Finite ownership
 
@@ -198,6 +227,16 @@ malformed/unsupported records and formats, 300-row validation continuation,
 permission and path substitution, real backend sync failure, physical file quota,
 atomic original-command recovery and clean-versus-live/quarantined drain.
 
+The additive v1-to-v2 source cases retain original rows and actual read-view
+counts, reject malformed/inconsistent/oversized progress and unchanged row
+ceilings before promotion, and terminate owned native child processes at first
+header creation, the durable v1 seed, durable upgrade intent and final v2
+publication. They also exercise an actual backend sync failure during metadata
+publication. Process termination proves only the observed process/reopen
+behavior, not power-loss durability. These new cases and the current discovered
+inventory still require exact-source Native execution; the earlier measurements
+below do not qualify them.
+
 Measured on 2026-10-01: all 66 `latent-state` tests passed on the pinned Linux
 Rust 1.97.1 image, and all 18 `latent-protected-files` cases passed, including the
 explicit privileged ownership case. Strict all-target/all-feature Clippy passed
@@ -228,6 +267,15 @@ The shared owner is implemented here; standalone activation readiness, complete
 command envelopes, retention/restore and six-language runtime conformance remain
 their Phase 4 integration tickets. This document makes no packaged-node or
 power-loss qualification claim.
+
+The current-development CI follow-up preserves the SDK dependency and compiler
+cache gates. The real concurrent child-import acceptance case that failed in
+the remote Rust job passed on pinned Linux after the reviewed session
+currentness fix. All nine signed clock/session-currentness cases also passed,
+with no ignored or filtered cases. That fix waits only before admission on the
+original currentness fence; it preserves cancellation and the original lease
+and creates the guest once. Existing child-failure diagnostics remain bounded
+and are reported only if the unchanged acceptance assertion fails.
 
 The dispatcher obtains one `ProtectedStoreDispatcher` registration from this
 same physical store. Cloned readiness handles cannot advance a new dispatch

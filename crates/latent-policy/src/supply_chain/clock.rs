@@ -42,8 +42,8 @@ impl super::SupplyChainAuthority {
     /// Reads the original covered clock under the same bounded currentness
     /// owner. No filesystem operation, lease renewal or new owner is performed.
     pub fn covered_clock(&self) -> Result<CoveredClock, PlatformError> {
-        let mut state = self.inner.lock()?;
-        let now_seconds = self.inner.sample(&mut state)?;
+        let state = self.inner.read()?;
+        let now_seconds = self.inner.sample(&state)?;
         Ok(CoveredClock {
             now_seconds,
             authority_epoch: state.floor.epoch,
