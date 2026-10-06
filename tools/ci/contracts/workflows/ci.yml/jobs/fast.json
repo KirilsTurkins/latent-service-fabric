@@ -3,13 +3,14 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "name": "Fast host correctness",
     "env": {
       "RUSTUP_TOOLCHAIN": "1.97.1"
     },
-    "if": "needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'",
-    "name": "Fast host correctness",
     "needs": "profile",
+    "if": "needs.profile.outputs.fast_packages != '' && needs.profile.outputs.fast_packages != '[]'",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -30,34 +31,33 @@
         }
       },
       {
+        "name": "Run the selected dependency-bounded correctness suites",
         "env": {
           "CI_FAST_PACKAGES": "${{ needs.profile.outputs.fast_packages }}"
         },
-        "name": "Run the selected dependency-bounded correctness suites",
         "run": "python3 tools/ci_fast.py --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast/affected\""
       },
       {
-        "if": "needs.profile.outputs.profile == 'full'",
         "name": "Qualify the genuinely narrow reverse-dependent fixture",
+        "if": "needs.profile.outputs.profile == 'full'",
         "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nfrom tools import ci_suite_inventory as registry\nstate = classify_paths(['crates/latent-state/src/lib.rs'])\nassert state.profile == 'full'\nselection = classify_paths(['crates/latent-workflows/src/lib.rs'])\nassert selection.profile == 'fast'\nassert selection.fast_packages\nassert set(selection.fast_packages) < set(registry.load()['fastPackages'])\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain exact host dependency, discovery and timing receipts",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "ci-host-correctness-${{ github.sha }}",
           "path": "${{ runner.temp }}/ci-fast/",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 20
+    ]
   },
   "jobId": "fast",
   "kind": "job",
-  "reviewReason": "Preserve all original linked result/payload retention and reserved recovery cases, every authored transaction and captured dependency compiler obligation, actual SDK source recipes, exact guards and both evidence paths while reconciling current development and the reviewed complete sixteen-method client contract. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
+  "reviewReason": "Preserve all original linked result/payload retention and reserved recovery cases, every authored transaction and captured dependency compiler obligation, actual SDK source recipes, exact guards and both evidence paths while reconciling current development and the reviewed complete sixteen-method client contract. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve the incoming narrow command byte-for-byte after its five added State/full-profile and genuinely-narrow selection assertions; no job condition, shell, package execution, timeout or artifact path is removed.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

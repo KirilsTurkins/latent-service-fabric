@@ -13,12 +13,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-const FORMAT: &[u8] = b"latent.transaction-store.v1";
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
 static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
 
 mod bounded_file;
+mod format;
 pub use bounded_file::StoreFileStatus;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -187,19 +187,19 @@ impl EmbeddedStore {
         limits: StoreLimits,
         was_empty: bool,
     ) -> Result<Self, StoreError> {
+        Self::open_database_with_checkpoint(db, limits, was_empty, |_| {})
+    }
+
+    fn open_database_with_checkpoint(
+        db: Database,
+        limits: StoreLimits,
+        was_empty: bool,
+        mut checkpoint: impl FnMut(format::Checkpoint),
+    ) -> Result<Self, StoreError> {
         if was_empty {
-            let mut tx = db.begin_write().map_err(|_| StoreError::Unavailable)?;
-            tx.set_durability(Durability::Immediate)
-                .map_err(|_| StoreError::Unavailable)?;
-            {
-                let mut meta = tx.open_table(META).map_err(|_| StoreError::Corrupt)?;
-                meta.insert("schema", FORMAT)
-                    .map_err(|_| StoreError::Unavailable)?;
-            }
-            {
-                tx.open_table(ROWS).map_err(|_| StoreError::Corrupt)?;
-            }
-            tx.commit().map_err(|_| StoreError::CommitUncertain)?;
+            checkpoint(format::Checkpoint::NewEngineOpened);
+            format::initialize(&db)?;
+            checkpoint(format::Checkpoint::InitialSchemaDurable);
         }
         let store = Self {
             db,
@@ -207,23 +207,16 @@ impl EmbeddedStore {
             views: Arc::new(AtomicUsize::new(0)),
             quarantined: AtomicBool::new(false),
         };
+        // Validate the original row framing and configured limits before any
+        // metadata promotion. No business row is transformed or recopied.
+        store.verify()?;
+        format::upgrade(&store.db, &mut checkpoint)?;
         store.verify()?;
         Ok(store)
     }
     fn verify(&self) -> Result<(), StoreError> {
+        format::inspect(&self.db)?;
         let tx = self.db.begin_read().map_err(|_| StoreError::Unavailable)?;
-        let meta = tx
-            .open_table(META)
-            .map_err(|_| StoreError::UnsupportedFormat)?;
-        if meta
-            .get("schema")
-            .map_err(|_| StoreError::Corrupt)?
-            .map(|v| v.value().to_vec())
-            .as_deref()
-            != Some(FORMAT)
-        {
-            return Err(StoreError::UnsupportedFormat);
-        }
         let table = tx.open_table(ROWS).map_err(|_| StoreError::Corrupt)?;
         self.charge_table(&table)?;
         Ok(())
