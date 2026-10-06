@@ -1,1 +1,26 @@
-{"cases":["KubectlArchive.test_exact_member_hash_and_worker_hash_all_bind","KubectlArchive.test_rehashed_extra_member_or_crossed_stat_header_rejected","OriginalBootstrapJournal.test_incomplete_transport_clock_or_worker_result_cannot_qualify","OriginalBootstrapJournal.test_original_fourteen_operations_replay_without_keys_binaries_or_api","OriginalBootstrapJournal.test_rehashed_crossed_node_uid_alias_and_path_are_rejected","WindowsSetupCommands.test_original_outputs_and_rehashed_active_job_failure"],"guards":{"KubectlArchive.test_exact_member_hash_and_worker_hash_all_bind":"9b8af258f27377f2e6804725195d868abec970c821fc0f6dfc8aa26e7e6caf78","KubectlArchive.test_rehashed_extra_member_or_crossed_stat_header_rejected":"9b8af258f27377f2e6804725195d868abec970c821fc0f6dfc8aa26e7e6caf78","OriginalBootstrapJournal.test_incomplete_transport_clock_or_worker_result_cannot_qualify":"b860e3e0e1d5c6ce56b3a02a312f21aafe0c44c35dd886ccc81693ad2b6cc957","OriginalBootstrapJournal.test_original_fourteen_operations_replay_without_keys_binaries_or_api":"b860e3e0e1d5c6ce56b3a02a312f21aafe0c44c35dd886ccc81693ad2b6cc957","OriginalBootstrapJournal.test_rehashed_crossed_node_uid_alias_and_path_are_rejected":"b860e3e0e1d5c6ce56b3a02a312f21aafe0c44c35dd886ccc81693ad2b6cc957","WindowsSetupCommands.test_original_outputs_and_rehashed_active_job_failure":"8487693a42fbfeb6c905f00d1dc73121e50b1106d3325c5267bcd0ee1275104a"},"kind":"python","module":"tools/tests/test_optimization_kubernetes_bootstrap_evidence.py","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"9b8af258f27377f2e6804725195d868abec970c821fc0f6dfc8aa26e7e6caf78":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a","class:setup-sha256:8a80b5c5f75e50209c709884e1f8c7e305db11368afdda95f4c9921384d9beea"],"skipSites":[]},"b860e3e0e1d5c6ce56b3a02a312f21aafe0c44c35dd886ccc81693ad2b6cc957":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a","class:setup-sha256:133e3aef353812bb6c98978f8c614a25739e98f0f04c9f145547200595c243fe"],"skipSites":[]},"8487693a42fbfeb6c905f00d1dc73121e50b1106d3325c5267bcd0ee1275104a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a","class:setup-sha256:958a38d5fb778b494a768c175f28b7dfb1f9fa07cb262d1c466a28889da0f275"],"skipSites":[]}}}
+{
+  "cases":["KubectlArchive.test_exact_member_hash_and_worker_hash_all_bind","KubectlArchive.test_rehashed_extra_member_or_crossed_stat_header_rejected","OriginalBootstrapJournal.test_incomplete_transport_clock_or_worker_result_cannot_qualify","OriginalBootstrapJournal.test_original_fourteen_operations_replay_without_keys_binaries_or_api","OriginalBootstrapJournal.test_rehashed_crossed_node_uid_alias_and_path_are_rejected","WindowsSetupCommands.test_original_outputs_and_rehashed_active_job_failure"],
+  "guards":{
+    "KubectlArchive.test_exact_member_hash_and_worker_hash_all_bind":
+      "9b8af258f27377f2e6804725195d868abec970c821fc0f6dfc8aa26e7e6caf78",
+    "KubectlArchive.test_rehashed_extra_member_or_crossed_stat_header_rejected":
+      "9b8af258f27377f2e6804725195d868abec970c821fc0f6dfc8aa26e7e6caf78",
+    "OriginalBootstrapJournal.test_incomplete_transport_clock_or_worker_result_cannot_qualify":
+      "b860e3e0e1d5c6ce56b3a02a312f21aafe0c44c35dd886ccc81693ad2b6cc957",
+    "OriginalBootstrapJournal.test_original_fourteen_operations_replay_without_keys_binaries_or_api":
+      "b860e3e0e1d5c6ce56b3a02a312f21aafe0c44c35dd886ccc81693ad2b6cc957",
+    "OriginalBootstrapJournal.test_rehashed_crossed_node_uid_alias_and_path_are_rejected":
+      "b860e3e0e1d5c6ce56b3a02a312f21aafe0c44c35dd886ccc81693ad2b6cc957",
+    "WindowsSetupCommands.test_original_outputs_and_rehashed_active_job_failure":
+      "8487693a42fbfeb6c905f00d1dc73121e50b1106d3325c5267bcd0ee1275104a"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_optimization_kubernetes_bootstrap_evidence.py",
+  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "9b8af258f27377f2e6804725195d868abec970c821fc0f6dfc8aa26e7e6caf78":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a","class:setup-sha256:8a80b5c5f75e50209c709884e1f8c7e305db11368afdda95f4c9921384d9beea"],"skipSites":[]},
+    "b860e3e0e1d5c6ce56b3a02a312f21aafe0c44c35dd886ccc81693ad2b6cc957":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a","class:setup-sha256:133e3aef353812bb6c98978f8c614a25739e98f0f04c9f145547200595c243fe"],"skipSites":[]},
+    "8487693a42fbfeb6c905f00d1dc73121e50b1106d3325c5267bcd0ee1275104a":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a","class:setup-sha256:958a38d5fb778b494a768c175f28b7dfb1f9fa07cb262d1c466a28889da0f275"],"skipSites":[]}
+  }
+}

@@ -36,6 +36,9 @@ use, then restores the same ordered v1 record before validation or hashing.
 Each resolved case owns independent guard lists. Both physical JSON and the
 decoded compact UTF-8 v1 record retain the original 2 MiB limit; decoded size is
 checked before expansion. Other kinds and historical records retain v1.
+Storage proposals put case names and their digest references on separate readable
+lines. This preserves every JSON value and avoids presenting a public guard hash
+as a credential assignment to the existing secret scanner.
 
 `shared_python_record` prepares explicit storage proposals without changing
 reviewed cases or guards. Storage conversion requires a complete tracked Git

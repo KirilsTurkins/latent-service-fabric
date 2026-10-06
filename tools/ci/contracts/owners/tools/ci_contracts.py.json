@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Review strict Python-only v2 physical storage normalization, flat digest/reference checks and the original decoded-byte bound without changing semantic v1 contracts or proposal review requirements.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "aa28a02e1ff7beab0fbaa93c80b0b5238b8faec4715e337a3ed965bcef88ddf4"
+  "sha256": "3904e8c00c63a36f3f2b958a0d44781f39fa472ce8e747fd1cdd75b8c910da88"
 }

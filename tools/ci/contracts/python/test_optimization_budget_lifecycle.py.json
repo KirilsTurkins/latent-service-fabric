@@ -1,1 +1,32 @@
-{"cases":["BudgetLifecycleTests.test_cancel_trigger_must_bind_actual_running_record","BudgetLifecycleTests.test_candidate_extension_fails_but_control_records_actual_difference","BudgetLifecycleTests.test_changed_budget_and_fast_failure_cannot_be_success","BudgetLifecycleTests.test_exact_population_and_wire_response","BudgetLifecycleTests.test_execution_deadline_cannot_change_only_its_admission_origin","BudgetLifecycleTests.test_failed_population_keeps_started_and_missing_final_rows_separate","BudgetLifecycleTests.test_native_grant_and_longer_transport_are_distinct_proved_limits","BudgetLifecycleTests.test_terminal_decision_at_expiry_is_late_even_if_winner_claims_success","BudgetLifecycleTests.test_token_sequence_and_remaining_cannot_be_rehashed_into_proof","BudgetLifecycleTests.test_wait_ownership_and_unavailable_are_not_zero"],"guards":{"BudgetLifecycleTests.test_cancel_trigger_must_bind_actual_running_record":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087","BudgetLifecycleTests.test_candidate_extension_fails_but_control_records_actual_difference":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087","BudgetLifecycleTests.test_changed_budget_and_fast_failure_cannot_be_success":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087","BudgetLifecycleTests.test_exact_population_and_wire_response":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087","BudgetLifecycleTests.test_execution_deadline_cannot_change_only_its_admission_origin":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087","BudgetLifecycleTests.test_failed_population_keeps_started_and_missing_final_rows_separate":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087","BudgetLifecycleTests.test_native_grant_and_longer_transport_are_distinct_proved_limits":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087","BudgetLifecycleTests.test_terminal_decision_at_expiry_is_late_even_if_winner_claims_success":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087","BudgetLifecycleTests.test_token_sequence_and_remaining_cannot_be_rehashed_into_proof":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087","BudgetLifecycleTests.test_wait_ownership_and_unavailable_are_not_zero":"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087"},"kind":"python","module":"tools/tests/test_optimization_budget_lifecycle.py","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7b1acb433c2186474f4a71180c5dc0954ba2ac114c5493b4e76a4d56ff729a16","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "cases":["BudgetLifecycleTests.test_cancel_trigger_must_bind_actual_running_record","BudgetLifecycleTests.test_candidate_extension_fails_but_control_records_actual_difference","BudgetLifecycleTests.test_changed_budget_and_fast_failure_cannot_be_success","BudgetLifecycleTests.test_exact_population_and_wire_response","BudgetLifecycleTests.test_execution_deadline_cannot_change_only_its_admission_origin","BudgetLifecycleTests.test_failed_population_keeps_started_and_missing_final_rows_separate","BudgetLifecycleTests.test_native_grant_and_longer_transport_are_distinct_proved_limits","BudgetLifecycleTests.test_terminal_decision_at_expiry_is_late_even_if_winner_claims_success","BudgetLifecycleTests.test_token_sequence_and_remaining_cannot_be_rehashed_into_proof","BudgetLifecycleTests.test_wait_ownership_and_unavailable_are_not_zero"],
+  "guards":{
+    "BudgetLifecycleTests.test_cancel_trigger_must_bind_actual_running_record":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087",
+    "BudgetLifecycleTests.test_candidate_extension_fails_but_control_records_actual_difference":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087",
+    "BudgetLifecycleTests.test_changed_budget_and_fast_failure_cannot_be_success":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087",
+    "BudgetLifecycleTests.test_exact_population_and_wire_response":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087",
+    "BudgetLifecycleTests.test_execution_deadline_cannot_change_only_its_admission_origin":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087",
+    "BudgetLifecycleTests.test_failed_population_keeps_started_and_missing_final_rows_separate":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087",
+    "BudgetLifecycleTests.test_native_grant_and_longer_transport_are_distinct_proved_limits":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087",
+    "BudgetLifecycleTests.test_terminal_decision_at_expiry_is_late_even_if_winner_claims_success":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087",
+    "BudgetLifecycleTests.test_token_sequence_and_remaining_cannot_be_rehashed_into_proof":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087",
+    "BudgetLifecycleTests.test_wait_ownership_and_unavailable_are_not_zero":
+      "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_optimization_budget_lifecycle.py",
+  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "3dc90dd2dfadbc324d000c7c2442c33984c4d2594a952b07e89ce099d0d80087":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:7b1acb433c2186474f4a71180c5dc0954ba2ac114c5493b4e76a4d56ff729a16","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}

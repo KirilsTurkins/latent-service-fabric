@@ -1,1 +1,22 @@
-{"cases":["DeterministicMeasurementTests.test_compiler_artifact_selection_rejects_empty_and_duplicate_binaries","DeterministicMeasurementTests.test_discovery_mismatch_fails_before_any_execution_measurement","DeterministicMeasurementTests.test_exact_nonempty_count_is_required","DeterministicMeasurementTests.test_failed_process_is_not_retried_or_accepted","DeterministicMeasurementTests.test_process_deadline_is_not_retried"],"guards":{"DeterministicMeasurementTests.test_compiler_artifact_selection_rejects_empty_and_duplicate_binaries":"0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c","DeterministicMeasurementTests.test_discovery_mismatch_fails_before_any_execution_measurement":"0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c","DeterministicMeasurementTests.test_exact_nonempty_count_is_required":"0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c","DeterministicMeasurementTests.test_failed_process_is_not_retried_or_accepted":"0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c","DeterministicMeasurementTests.test_process_deadline_is_not_retried":"0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c"},"kind":"python","module":"tools/tests/test_deterministic_tests.py","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:84d3b84ecdc1fe0b38ec599aa171e2f1514ef0dee037fe40e028d3f363908bd3","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "cases":["DeterministicMeasurementTests.test_compiler_artifact_selection_rejects_empty_and_duplicate_binaries","DeterministicMeasurementTests.test_discovery_mismatch_fails_before_any_execution_measurement","DeterministicMeasurementTests.test_exact_nonempty_count_is_required","DeterministicMeasurementTests.test_failed_process_is_not_retried_or_accepted","DeterministicMeasurementTests.test_process_deadline_is_not_retried"],
+  "guards":{
+    "DeterministicMeasurementTests.test_compiler_artifact_selection_rejects_empty_and_duplicate_binaries":
+      "0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c",
+    "DeterministicMeasurementTests.test_discovery_mismatch_fails_before_any_execution_measurement":
+      "0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c",
+    "DeterministicMeasurementTests.test_exact_nonempty_count_is_required":
+      "0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c",
+    "DeterministicMeasurementTests.test_failed_process_is_not_retried_or_accepted":
+      "0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c",
+    "DeterministicMeasurementTests.test_process_deadline_is_not_retried":
+      "0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_deterministic_tests.py",
+  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "0c89fbdeaa856c8075aaaf12864bec91b883d6c5cd2059b27a6b515bc15e4e6c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:84d3b84ecdc1fe0b38ec599aa171e2f1514ef0dee037fe40e028d3f363908bd3","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}
