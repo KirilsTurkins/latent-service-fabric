@@ -128,6 +128,7 @@ const RESOURCES: &[&str] = &[
 enum Value {
     Unsigned,
     Known(&'static [&'static str]),
+    GuestTrapKind,
     PlatformCode,
 }
 
@@ -149,6 +150,7 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("reason", Known(ADMISSION_REASONS)),
         ],
         "scheduler.limit" => &[("reason", Known(SCHEDULER_REASONS))],
+        "activation.guest-trap-kind" => &[("kind", Value::GuestTrapKind)],
         "admission.currentness" => &[(
             "reason",
             Known(latent_core::error::ADMISSION_CURRENTNESS_REASONS),
@@ -252,6 +254,10 @@ pub(super) fn sanitize(details: &[ErrorDetail]) -> Vec<JsonValue> {
                         .filter(|n| n.to_string() == *value)
                         .map(|n| n.to_string()),
                     Value::Known(known) => known.contains(&value.as_str()).then(|| value.clone()),
+                    Value::GuestTrapKind => {
+                        latent_core::error::GuestTrapKind::from_wire_name(value)
+                            .map(|kind| kind.wire_name().to_owned())
+                    }
                     Value::PlatformCode => PlatformErrorCode::from_wire_code(value)
                         .map(|code| code.wire_code().to_owned()),
                 };
