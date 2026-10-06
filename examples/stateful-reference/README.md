@@ -62,6 +62,16 @@ effect authority. Neither credential is exposed to Angular or the browser.
 The renderer returns no cookie or cache-policy header; shared ingress owns
 the final authenticated document, immutable asset and publication behavior.
 
+After the ordinary language package has been signed, admitted and deployed,
+`tools/stateful_reference_deployment.py` derives the four purpose-specific
+HTTP triggers and two installed state-operation constraints from its exact
+transaction companion bytes and actual publication/revision/generation inputs.
+The shared trigger schema describes commands, queries and original-result
+lookup, retaining both existing buffered and static profiles. These declarations
+confer no namespace, result-read or effect grants. Their policy identities,
+provider installations and current-user access must be applied independently
+through the maintained operator workflow.
+
 `tools/check_stateful_reference.mjs` drives one frontend against the selected
 actual node backend. It checks SSR DOM reuse, the captured immutable client
 asset, submit/query freshness, stale-edit rejection, original lost-result
