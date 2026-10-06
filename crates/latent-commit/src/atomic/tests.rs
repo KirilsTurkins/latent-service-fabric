@@ -17,6 +17,7 @@ use latent_state::{
 use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
 mod captured;
+mod process;
 
 fn time(now: u64) -> CommandTime {
     CommandTime {
@@ -129,6 +130,10 @@ fn open_limited(path: &std::path::Path, limits: StoreLimits) -> EmbeddedStore {
 fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
     let dir = tempfile::tempdir().unwrap();
     let store = open(&dir.path().join("state.redb"));
+    let effects = seed(&store);
+    (dir, store, effects)
+}
+fn seed(store: &EmbeddedStore) -> EffectAuthorityOwner {
     let namespace = NamespaceRecord {
         tenant: TenantId("tenant".into()),
         id: StateNamespaceId("aggregate".into()),
@@ -182,7 +187,7 @@ fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
             enabled: true,
         })
         .unwrap();
-    (dir, store, effects)
+    effects
 }
 fn claim(store: &EmbeddedStore, input: AdmissionInput) -> AdmittedCommand {
     let view = store.snapshot().unwrap();
