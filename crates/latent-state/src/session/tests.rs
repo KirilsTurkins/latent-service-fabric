@@ -358,11 +358,18 @@ fn byte_limited_pages_require_continuation_and_never_omit_an_entry() {
     let fixture = Fixture::new();
     fixture.write(&[(b"a", Some(b"1")), (b"b", Some(b"2")), (b"c", Some(b"3"))]);
     let (view, mut session) = fixture.session();
+    // The same unchanged row now carries both original 8-byte history epochs.
+    // The old SV1 framing allowance must still refuse; session/API ceilings stay
+    // unchanged and the original qualified SV2 fixture allowance is 136 bytes.
+    assert_eq!(
+        session.scan(&view, b"", None, 128, 120, allow),
+        Err(StateError::Limit)
+    );
     let mut cursor = None;
     let mut keys = vec![];
     loop {
         let page = session
-            .scan(&view, b"", cursor.as_ref(), 128, 120, allow)
+            .scan(&view, b"", cursor.as_ref(), 128, 136, allow)
             .unwrap();
         assert_eq!(page.entries.len(), 1);
         keys.extend(page.entries.into_iter().map(|entry| entry.key));
