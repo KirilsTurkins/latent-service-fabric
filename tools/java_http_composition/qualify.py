@@ -228,7 +228,7 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     (evidence / "generated-client.stderr.log").write_bytes(generated_client.stderr)
                     require(generated_client.returncode == 0, "java-http-normal-generated-client-failed")
                     result["generatedClient"] = json.loads(generated_client.stdout)
-                    result["context"] = context.qualify(client, targets, host, evidence)
+                    result["context"] = context.qualify(client, targets, releases, publications, host, evidence)
                     result["ordinaryContextImport"] = context.ordinary_import(client, targets, releases, publications, host)
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
