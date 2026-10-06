@@ -167,7 +167,40 @@ async fn lost_rejection_reply_reopen_and_paused_real_reader_survive_response_ref
     let reader = fixture
         .provider
         .store()
+        .capture_durable_reference(&TenantId("a".into()), &fixture.blob, &|| Ok(()))
+        .unwrap();
+    let ordinary = fixture
+        .provider
+        .store()
         .open_read(&TenantId("a".into()), &fixture.blob, &|| Ok(()))
+        .unwrap();
+    let (entered, observed) = std::sync::mpsc::channel();
+    let (release, blocked) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        let checkpoints = std::sync::atomic::AtomicUsize::new(0);
+        let mut bytes = [0; 4];
+        let result = reader.reader().read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut bytes,
+            &|| {
+                if checkpoints.fetch_add(1, std::sync::atomic::Ordering::AcqRel) == 1 {
+                    // The original native work and affine publication pin stay
+                    // owned after the real FD read, before physical retirement.
+                    entered.send(()).unwrap();
+                    blocked
+                        .recv_timeout(std::time::Duration::from_secs(5))
+                        .unwrap();
+                }
+                Ok(())
+            },
+        );
+        (reader, result, bytes)
+    });
+    observed
+        .recv_timeout(std::time::Duration::from_secs(5))
         .unwrap();
     let old = std::mem::replace(
         &mut fixture.state,
@@ -203,17 +236,9 @@ async fn lost_rejection_reply_reopen_and_paused_real_reader_survive_response_ref
         ),
         Err(latent_blobs::local::LocalBlobError::Busy)
     );
-    let mut bytes = [0; 4];
-    reader
-        .read(
-            &latent_blobs::BlobRange {
-                offset: 0,
-                length: 4,
-            },
-            &mut bytes,
-            &|| Ok(()),
-        )
-        .unwrap();
+    release.send(()).unwrap();
+    let (reader, result, mut bytes) = worker.join().unwrap();
+    assert_eq!(result.unwrap(), 4);
     assert_eq!(&bytes, b"body");
     drop(reader);
     fixture
@@ -226,6 +251,45 @@ async fn lost_rejection_reply_reopen_and_paused_real_reader_survive_response_ref
             &|| Ok(()),
         )
         .unwrap();
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(4, &|| Ok(()))
+            .unwrap()
+            .objects,
+        0
+    );
+    ordinary
+        .read(
+            &latent_blobs::BlobRange {
+                offset: 0,
+                length: 4,
+            },
+            &mut bytes,
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(&bytes, b"body");
+    drop(ordinary);
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .reclaim(4, &|| Ok(()))
+            .unwrap()
+            .objects,
+        1
+    );
+    assert_eq!(
+        fixture
+            .provider
+            .store()
+            .snapshot()
+            .unwrap()
+            .resident_disk_bytes,
+        0
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
