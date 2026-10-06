@@ -440,10 +440,9 @@ impl Fixture {
         self.wire().await;
     }
     pub async fn deploy_compatible_revision(&mut self) -> latent_routing::ResolvedRevision {
-        self.deployment
-            .metadata
-            .labels
-            .insert("rollout".into(), "second".into());
+        // A transport ceiling is mutable and changes the actual deployment
+        // revision while preserving the command's immutable business inputs.
+        self.deployment.resources.cpu_fuel -= 1;
         self.routes.apply(self.deployment.clone()).await.unwrap();
         use latent_routing::RouteResolver;
         let resolved = self

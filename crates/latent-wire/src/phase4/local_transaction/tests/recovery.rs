@@ -27,17 +27,21 @@ async fn actual_guest_pending_restart_never_implicitly_reexecutes_the_interrupte
         latent_core::CancelDisposition::Accepted
     );
     f.backend.imports.release.notify_one();
-    let response = tokio::time::timeout(Duration::from_secs(5), owner)
+    let denied = tokio::time::timeout(Duration::from_secs(5), owner)
         .await
         .unwrap()
         .unwrap()
-        .unwrap()
-        .into_inner();
+        .unwrap_err();
+    // Explicit cancellation revokes the original response authority as well
+    // as commitment. Status recovery below uses a fresh authenticated caller.
+    assert_eq!(denied.code(), tonic::Code::PermissionDenied);
+    let pending = invoke(&f, "interrupted", 1, false).await;
     assert_eq!(
-        response.command.as_ref().unwrap().outcome,
-        t::CommandOutcome::RecoveryRequired as i32
+        pending.command.as_ref().unwrap().outcome,
+        t::CommandOutcome::InProgress as i32
     );
-    drop(response);
+    assert!(pending.replayed);
+    drop(pending);
     assert_eq!(f.rows(Family::State).await, 0);
     assert_eq!(f.rows(Family::Outbox).await, 0);
     assert_eq!(f.rows(Family::Result).await, 0);
