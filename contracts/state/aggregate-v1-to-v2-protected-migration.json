@@ -1,0 +1,16 @@
+{
+  "schema": "latent.offline-migration-recipe.v2",
+  "identity": "lsf.aggregate-migration.v2",
+  "sourceSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+  "targetSchema": "sha256:5465983620116dc20476955ea815d665e2868421f6bed705760f12225bada6eb",
+  "source": {"key": "count", "bytes": 8, "mediaType": "application/vnd.lsf.aggregate-v1"},
+  "target": {"key": "count", "bytes": 12, "mediaType": "application/vnd.lsf.aggregate-v2", "prefixHex": "41470200"},
+  "profile": "same-owner-exclusive-quiesced-single-aggregate",
+  "checkpoint": "latent.offline-snapshot.v2",
+  "stateRows": 1,
+  "maximumOperationBytes": 8388608,
+  "tenantAccounting": "exact-original-category-delta",
+  "externalEffects": false,
+  "automaticResume": false,
+  "automaticDowngrade": false
+}

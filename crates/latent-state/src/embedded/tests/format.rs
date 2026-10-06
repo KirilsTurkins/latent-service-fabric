@@ -44,10 +44,12 @@ fn v1_upgrade_preserves_original_rows_and_existing_read_views() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("store.redb");
     let store = EmbeddedStore {
-        db: legacy(&path),
+        db: RwLock::new(legacy(&path)),
+        file_status: None,
         limits: StoreLimits::default(),
         views: Arc::new(AtomicUsize::new(0)),
         quarantined: AtomicBool::new(false),
+        reclamation: AtomicBool::new(false),
     };
     assert_eq!(
         disk_format::inspect(&store.database().unwrap()),
