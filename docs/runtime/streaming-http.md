@@ -2,7 +2,7 @@
 
 The current security baseline selects **Wasmtime 48.0.4**. References below to
 47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [September security update](../development/wasmtime-security-update.md)
+See the [security update](../development/wasmtime-security-update.md)
 for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
 
 `latent-http::StreamingHttpProvider` implements the canonical async
@@ -147,7 +147,7 @@ implicit future/stream, changed own/borrow, wrong version and wrong async shapes
 are rejected. The V3 digest enters prepared/native identity; rebuild the node and
 AOT compiler together and regenerate incompatible cached artifacts.
 
-The baseline is Wasmtime 48.0.3. On 2026-09-14 the upstream patched ranges for
+The baseline is Wasmtime 48.0.4. On 2026-09-14 the upstream patched ranges for
 [RUSTSEC-2026-0268](https://rustsec.org/advisories/RUSTSEC-2026-0268.html) and
 [RUSTSEC-2026-0269](https://rustsec.org/advisories/RUSTSEC-2026-0269.html) include
 47.0.4. The actual installed extension uses explicit resources and bounded byte

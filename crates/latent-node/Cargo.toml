@@ -21,6 +21,7 @@ latent-routing = { path = "../latent-routing" }
 latent-scheduler = { path = "../latent-scheduler" }
 latent-telemetry = { path = "../latent-telemetry" }
 tokio.workspace = true
+sha2.workspace = true
 
 [dev-dependencies]
 latent-manifest = { path = "../latent-manifest" }
