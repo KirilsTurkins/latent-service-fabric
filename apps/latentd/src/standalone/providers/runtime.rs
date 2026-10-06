@@ -286,10 +286,10 @@ impl ProviderRuntime {
             return Err(unavailable());
         }
         let publisher = self.events.as_ref().ok_or_else(unavailable)?;
-        installation
+        let adapters = installation
             .deferred
             .iter()
-            .map(move |deferred| {
+            .map(|deferred| {
                 publisher
                     .deferred_adapter(
                         &installation.identity.tenant,
@@ -302,7 +302,10 @@ impl ProviderRuntime {
                     })
                     .map_err(|_| unavailable())
             })
-            .collect()
+            .collect();
+        // Each adapter retains the same original clock owner.
+        drop(time);
+        adapters
     }
 
     pub fn descriptors(&self) -> &[ProviderDescriptor] {
