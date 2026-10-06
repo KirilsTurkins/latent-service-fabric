@@ -386,21 +386,45 @@ def record(kind: str, reason: str, **fields: Any) -> dict:
     return value
 
 
+def shared_python_text(value: dict) -> str:
+    """Write reviewed digest references on distinct lines, retaining JSON order."""
+    require(value.get("schemaVersion") == PYTHON_STORAGE_SCHEMA, "shared-storage-schema-required")
+    fragment_path(value)
+
+    def compact(item: Any) -> str:
+        return json.dumps(item, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+
+    fields = []
+    for name, item in value.items():
+        if name in {"guards", "guardDefinitions"}:
+            entries = []
+            for key, child in item.items():
+                separator = "\n      " if name == "guards" else ""
+                entries.append("    " + compact(key) + ":" + separator + compact(child))
+            content = "{\n" + ",\n".join(entries) + "\n  }"
+        else:
+            content = compact(item)
+        fields.append("  " + compact(name) + ":" + content)
+    text = "{\n" + ",\n".join(fields) + "\n}\n"
+    require(len(text.encode("utf-8")) <= registry.MAX_BYTES, "contract-byte-limit")
+    return text
+
+
 def write_records(directory: Path, records: list[dict]) -> None:
     directory = directory.absolute()
     for value in records:
         path = directory / fragment_path(value)
+        shared = value["schemaVersion"] == PYTHON_STORAGE_SCHEMA
+        text = shared_python_text(value) if shared else json.dumps(
+            value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
         # Check the complete destination chain, not just the output directory.
         # Otherwise a pre-existing nested proposal symlink could escape it.
         for parent in (path, *path.parents):
             require(not parent.is_symlink(), "symlink-contract-proposal-path")
         require(not path.exists(), "refuse-overwrite-contract-proposal")
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("x", encoding="utf-8") as output:
-            if value["schemaVersion"] == PYTHON_STORAGE_SCHEMA:
-                output.write(json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n")
-            else:
-                output.write(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n")
+        with path.open("x", encoding="utf-8", newline="\n" if shared else None) as output:
+            output.write(text)
 
 
 def migrate(root: Path, legacy: Path, output: Path) -> dict:

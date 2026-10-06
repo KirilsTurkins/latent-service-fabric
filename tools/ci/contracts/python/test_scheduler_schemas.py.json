@@ -1,1 +1,20 @@
-{"cases":["SchedulerSchemaTests.test_all_contracts_are_valid_and_have_distinct_identifiers","SchedulerSchemaTests.test_every_fixed_selector_and_suite_plan_matches_its_contract","SchedulerSchemaTests.test_qualified_aggregate_requires_full_exact_population","SchedulerSchemaTests.test_structural_plan_rejects_crossed_allocation_case_and_extra_fields"],"guards":{"SchedulerSchemaTests.test_all_contracts_are_valid_and_have_distinct_identifiers":"86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb","SchedulerSchemaTests.test_every_fixed_selector_and_suite_plan_matches_its_contract":"86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb","SchedulerSchemaTests.test_qualified_aggregate_requires_full_exact_population":"86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb","SchedulerSchemaTests.test_structural_plan_rejects_crossed_allocation_case_and_extra_fields":"86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb"},"kind":"python","module":"tools/tests/test_scheduler_schemas.py","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f20f2bdfa3a2d59dc676964d0293def2e9bc8e247ea6954a0cc58fef53856bea","class:setup-sha256:5e0dfbaebd105c388ed3859a4dc87be577e806fd0bd119edaf22d574828a7c8c"],"skipSites":[]}}}
+{
+  "cases":["SchedulerSchemaTests.test_all_contracts_are_valid_and_have_distinct_identifiers","SchedulerSchemaTests.test_every_fixed_selector_and_suite_plan_matches_its_contract","SchedulerSchemaTests.test_qualified_aggregate_requires_full_exact_population","SchedulerSchemaTests.test_structural_plan_rejects_crossed_allocation_case_and_extra_fields"],
+  "guards":{
+    "SchedulerSchemaTests.test_all_contracts_are_valid_and_have_distinct_identifiers":
+      "86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb",
+    "SchedulerSchemaTests.test_every_fixed_selector_and_suite_plan_matches_its_contract":
+      "86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb",
+    "SchedulerSchemaTests.test_qualified_aggregate_requires_full_exact_population":
+      "86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb",
+    "SchedulerSchemaTests.test_structural_plan_rejects_crossed_allocation_case_and_extra_fields":
+      "86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_scheduler_schemas.py",
+  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "86ba01aa5476ee09c194cf1a26aaae29f461ee945317458344c8e6f69f2e4cbb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f20f2bdfa3a2d59dc676964d0293def2e9bc8e247ea6954a0cc58fef53856bea","class:setup-sha256:5e0dfbaebd105c388ed3859a4dc87be577e806fd0bd119edaf22d574828a7c8c"],"skipSites":[]}
+  }
+}

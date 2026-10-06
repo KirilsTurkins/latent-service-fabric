@@ -137,6 +137,21 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(coverage._value_digest(restored), coverage._value_digest(value))
         self.assertEqual(contracts.fragment_path(stored), contracts.fragment_path(value))
         self.assertEqual(contracts.shared_python_record(stored), stored)
+        destination = self.root / "readable-shared-proposal"
+        contracts.write_records(destination, [stored])
+        written = destination / contracts.fragment_path(stored)
+        physical = contracts.read_json(written)
+        self.assertEqual(physical, stored)
+        self.assertEqual(list(physical), list(stored))
+        self.assertEqual(list(physical["guards"]), list(stored["guards"]))
+        self.assertEqual(list(next(iter(physical["guardDefinitions"].values()))), list(guard))
+        self.assertEqual(contracts.semantic_record(physical), value)
+        lines = written.read_text(encoding="utf-8").splitlines()
+        for case, identity in stored["guards"].items():
+            key = json.dumps(case, ensure_ascii=False) + ":"
+            index = next(index for index, line in enumerate(lines) if line.strip() == key)
+            self.assertEqual(json.loads(lines[index + 1].strip().rstrip(",")), identity)
+        self.assertNotIn(b"\r", written.read_bytes())
 
     def test_shared_storage_is_normalized_before_assembly_and_validation(self):
         before = contracts.fragments(self.root)

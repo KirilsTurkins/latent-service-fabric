@@ -1,1 +1,25 @@
-{"cases":["AllocationTests.test_repeated_free_rejects_even_after_the_frame_is_gone","AllocationTests.test_union_counts_once_and_frees_after_frame_exit_refund_origin","AllocationTests.test_unresolved_origin_is_never_proved_zero","PopulationTests.test_all_explicit_populations_include_proofs_and_profile_warmup","PopulationTests.test_external_cases_are_exact_original_frames_and_no_hidden_prewarm","PopulationTests.test_invalid_shape_repetition_or_mode_cannot_expand_profile"],"guards":{"AllocationTests.test_repeated_free_rejects_even_after_the_frame_is_gone":"c66f29b248a1f23e4cd3e6e322bbd4a877ae9be54a580f40b72757e462a04c50","AllocationTests.test_union_counts_once_and_frees_after_frame_exit_refund_origin":"c66f29b248a1f23e4cd3e6e322bbd4a877ae9be54a580f40b72757e462a04c50","AllocationTests.test_unresolved_origin_is_never_proved_zero":"c66f29b248a1f23e4cd3e6e322bbd4a877ae9be54a580f40b72757e462a04c50","PopulationTests.test_all_explicit_populations_include_proofs_and_profile_warmup":"e4d12d94bbe3cfb13359bd0bc4e5eb075d490f197c98716b211bc6b743074377","PopulationTests.test_external_cases_are_exact_original_frames_and_no_hidden_prewarm":"e4d12d94bbe3cfb13359bd0bc4e5eb075d490f197c98716b211bc6b743074377","PopulationTests.test_invalid_shape_repetition_or_mode_cannot_expand_profile":"e4d12d94bbe3cfb13359bd0bc4e5eb075d490f197c98716b211bc6b743074377"},"kind":"python","module":"tools/tests/test_optimization_ownership.py","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"c66f29b248a1f23e4cd3e6e322bbd4a877ae9be54a580f40b72757e462a04c50":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f74bf1c3e0631df93fbaf68846f552e1b11261479397894e134aca043b721cbd","class:setup-sha256:9b1334ab6dc120c09c8724987a8c5c7524c1d9557bdff56c46a19cb35d499895"],"skipSites":[]},"e4d12d94bbe3cfb13359bd0bc4e5eb075d490f197c98716b211bc6b743074377":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f74bf1c3e0631df93fbaf68846f552e1b11261479397894e134aca043b721cbd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "cases":["AllocationTests.test_repeated_free_rejects_even_after_the_frame_is_gone","AllocationTests.test_union_counts_once_and_frees_after_frame_exit_refund_origin","AllocationTests.test_unresolved_origin_is_never_proved_zero","PopulationTests.test_all_explicit_populations_include_proofs_and_profile_warmup","PopulationTests.test_external_cases_are_exact_original_frames_and_no_hidden_prewarm","PopulationTests.test_invalid_shape_repetition_or_mode_cannot_expand_profile"],
+  "guards":{
+    "AllocationTests.test_repeated_free_rejects_even_after_the_frame_is_gone":
+      "c66f29b248a1f23e4cd3e6e322bbd4a877ae9be54a580f40b72757e462a04c50",
+    "AllocationTests.test_union_counts_once_and_frees_after_frame_exit_refund_origin":
+      "c66f29b248a1f23e4cd3e6e322bbd4a877ae9be54a580f40b72757e462a04c50",
+    "AllocationTests.test_unresolved_origin_is_never_proved_zero":
+      "c66f29b248a1f23e4cd3e6e322bbd4a877ae9be54a580f40b72757e462a04c50",
+    "PopulationTests.test_all_explicit_populations_include_proofs_and_profile_warmup":
+      "e4d12d94bbe3cfb13359bd0bc4e5eb075d490f197c98716b211bc6b743074377",
+    "PopulationTests.test_external_cases_are_exact_original_frames_and_no_hidden_prewarm":
+      "e4d12d94bbe3cfb13359bd0bc4e5eb075d490f197c98716b211bc6b743074377",
+    "PopulationTests.test_invalid_shape_repetition_or_mode_cannot_expand_profile":
+      "e4d12d94bbe3cfb13359bd0bc4e5eb075d490f197c98716b211bc6b743074377"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_optimization_ownership.py",
+  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "c66f29b248a1f23e4cd3e6e322bbd4a877ae9be54a580f40b72757e462a04c50":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f74bf1c3e0631df93fbaf68846f552e1b11261479397894e134aca043b721cbd","class:setup-sha256:9b1334ab6dc120c09c8724987a8c5c7524c1d9557bdff56c46a19cb35d499895"],"skipSites":[]},
+    "e4d12d94bbe3cfb13359bd0bc4e5eb075d490f197c98716b211bc6b743074377":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f74bf1c3e0631df93fbaf68846f552e1b11261479397894e134aca043b721cbd","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}
