@@ -386,6 +386,41 @@ class JavaDiagnosticMaterialTests(unittest.TestCase):
 
 
 class JavaDiagnosticReviewTests(unittest.TestCase):
+    def test_current_program_calls_original_context_owner_and_preserves_service_admission_order(self):
+        from contextlib import ExitStack
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            client, node = object(), object()
+            targets = {"adapter": {"generation": "1", "grants": []}}
+            prepared = {"publications": {"adapter": "original-adapter", "domain": "original-domain"}}
+            missing = {"tree": {"nodes": [{"diagnostic": {"stage": 4, "reason": 8}}]}}
+            with ExitStack() as stack:
+                route = stack.enter_context(patch.object(program, "route"))
+                stack.enter_context(patch.object(program.context, "capture_http", return_value=missing))
+                service = stack.enter_context(patch.object(program, "service_grant", return_value="1"))
+                stack.enter_context(patch.object(program, "deploy", return_value=targets["adapter"]))
+                stack.enter_context(patch.object(program, "fresh_status", return_value={"status": "passed"}))
+                stack.enter_context(patch.object(program.inspection, "authority", return_value={}))
+                owner = stack.enter_context(patch.object(program.context, "qualify", autospec=True,
+                                                         return_value={"status": "passed"}))
+                stack.enter_context(patch.object(program.resource_diagnostics, "fuel", return_value={"status": "passed"}))
+                stack.enter_context(patch.object(program.resource_diagnostics, "queue", return_value={"status": "passed"}))
+                stack.enter_context(patch.object(provider_timeout, "qualify", return_value={"status": "passed"}))
+                stack.enter_context(patch("tools.static_api.node.policy", return_value={"generation": "2"}))
+                stack.enter_context(patch.object(program, "rebind", return_value={}))
+                stack.enter_context(patch.object(history, "qualify", return_value={"status": "passed"}))
+                result = program._current(client, node, targets, prepared, Path("releases"), "localhost:23456",
+                                          12345, Path("peer"), output, None)
+                self.assertEqual(result["status"], "passed")
+                owner.assert_called_once_with(client, targets, "localhost:23456", output)
+                self.assertIs(result["initialMissingGrant"], missing)
+                self.assertEqual(service.call_count, 2)
+                self.assertEqual(route.call_count, 3)
+                with self.assertRaisesRegex(WorkflowError, "service-admission-order"):
+                    program._current(client, node, targets, prepared, Path("releases"), "localhost:23456",
+                                     12345, Path("peer"), output, "unexpected-existing-grant")
+                self.assertEqual(service.call_count, 2)
+
     def test_prepared_execution_creates_each_session_output_once_and_retires_both_owners(self):
         from contextlib import ExitStack
         from unittest.mock import Mock

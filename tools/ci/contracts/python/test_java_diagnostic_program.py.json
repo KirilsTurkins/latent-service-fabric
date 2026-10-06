@@ -17,11 +17,24 @@
     "JavaDiagnosticPolicyTests.test_review_hash_is_exact_original_policy_owner_file_bytes",
     "JavaDiagnosticPolicyTests.test_wrong_clock_changes_only_original_service_principal_and_restore_is_original_document",
     "JavaDiagnosticReviewTests.test_current_policy_absence_is_authoritative_known_and_scoped_before_any_mutation",
+    "JavaDiagnosticReviewTests.test_current_program_calls_original_context_owner_and_preserves_service_admission_order",
     "JavaDiagnosticReviewTests.test_original_boot_and_deadline_cannot_be_extended_or_expired",
     "JavaDiagnosticReviewTests.test_prepared_execution_creates_each_session_output_once_and_retires_both_owners",
     "JavaDiagnosticReviewTests.test_review_refuses_changed_bytes_nonzero_activity_and_unknown_physical_retirement"
   ],
   "guards": {
+    "JavaDiagnosticReviewTests.test_current_program_calls_original_context_owner_and_preserves_service_admission_order": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaDiagnosticMaterialTests.test_explicit_ingress_port_preserves_config_bytes_and_rejects_invalid_selection": {
       "bases": [
         "unittest.TestCase"
