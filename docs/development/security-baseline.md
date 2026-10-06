@@ -297,8 +297,9 @@ These sixteen exact exceptions expire at UTC midnight on **2026-10-17**. Changed
 content, locations, rules and other occurrences continue to fail; the original
 30-day maximum, exclusive expiry and future-created guards remain unchanged.
 No dependency exception, general digest exemption or path allowlist exists.
-The independent pinned scanner and original canary review is also retained in
-the [evidence ledger](security-baseline-evidence.md).
+The [evidence ledger](security-baseline-evidence.md) retains the independent
+pinned scanner, original producer and canary reviews, and private match
+comparisons.
 
 ## Settings and operator commands
 

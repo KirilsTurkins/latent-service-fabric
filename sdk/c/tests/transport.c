@@ -141,6 +141,29 @@ static void status(const latent_profile_get_activation_result *result, const lat
     if (record->terminal) assert(result->value.terminal_at_unix_millis == UINT64_MAX);
 }
 
+static void tree(const latent_profile_inspect_activation_tree_result *result, const latent_profile_client_failure *error, void *data) {
+    observed *record = data;
+    assert((result == NULL) != (error == NULL));
+    if (failure(record, error)) return;
+    assert(result->value.schema_version == 1 && result->value.retained_history_only);
+    assert(result->value.has_page && result->value.nodes_count == 1);
+    const latent_profile_activation_tree_node *node = &result->value.nodes[0];
+    if (record->variant == 2) {
+        assert(!node->has_parent_activation_id && node->received_at_unix_millis == UINT64_MAX);
+        assert(node->target_service.length == 12 && memcmp(node->target_service.data, "http-adapter", 12) == 0);
+        record->count = 1;
+        return;
+    }
+    assert(node->has_parent_activation_id && node->has_diagnostic);
+    assert(!node->diagnostic_is_terminal && !node->has_granted_budget);
+    assert(node->diagnostic.stage == 777 && node->diagnostic.reason == 778);
+    assert(node->diagnostic.has_profile && node->diagnostic.profile == 779);
+    assert(node->diagnostic.has_configured_bound && node->diagnostic.configured_bound == 0);
+    assert(node->diagnostic.has_calculated_requirement && node->diagnostic.calculated_requirement == UINT64_MAX);
+    assert(!node->diagnostic.has_fixed_bytes);
+    record->count = result->value.nodes_count;
+}
+
 static void policy(const latent_profile_get_policy_result *result, const latent_profile_client_failure *error, void *data) {
     observed *record = data;
     assert((result == NULL) != (error == NULL));
@@ -148,6 +171,17 @@ static void policy(const latent_profile_get_policy_result *result, const latent_
     metadata(record, &result->metadata);
     record->policy = result->value.has_policy;
     record->generation = result->value.policy.generation;
+}
+
+static void target(const latent_profile_inspect_http_target_result *result, const latent_profile_client_failure *error, void *data) {
+    observed *record = data;
+    assert((result == NULL) != (error == NULL));
+    if (failure(record,error)) return;
+    metadata(record,&result->metadata);
+    assert(result->value.catalog_transaction == UINT64_MAX && result->value.candidates_count == 1);
+    assert(result->value.candidates[0].reasons_count == 1 && result->value.candidates[0].reasons[0] == 777);
+    assert(!result->value.live_grants_checked && !result->value.has_selected_revision_id);
+    record->count = result->value.candidates_count;
 }
 
 static void policies(const latent_profile_list_policies_result *result, const latent_profile_client_failure *error, void *data) {
@@ -376,6 +410,51 @@ static latent_profile_apply_policy_request mutation(latent_string identity) {
 static void management(void) {
     latent_transport *owner = create(configuration());
     latent_profile_client *client = latent_transport_profile(owner);
+    latent_profile_inspect_activation_tree_request tree_request = {.activation_id = TEXT("operator-root")};
+    observed tree_record = {0};
+    latent_profile_call *tree_call = api->inspect_activation_tree(client, &tree_request, NULL, tree, &tree_record);
+    assert(tree_call != NULL);
+    wait_for(owner, &tree_record);
+    assert(!tree_record.failed && tree_record.count == 1);
+    api->release_call(tree_call);
+    char roots_service[] = "http-adapter";
+    tree_request = (latent_profile_inspect_activation_tree_request){.has_service = true,
+        .service = {roots_service, strlen(roots_service)}, .has_from_unix_millis = true, .from_unix_millis = UINT64_MAX};
+    tree_record = (observed){.variant = 2};
+    tree_call = api->inspect_activation_tree(client, &tree_request, NULL, tree, &tree_record);
+    assert(tree_call != NULL);
+    memset(roots_service, 'x', strlen(roots_service));
+    wait_for(owner, &tree_record);
+    assert(!tree_record.failed && tree_record.count == 1);
+    api->release_call(tree_call);
+    tree_request = (latent_profile_inspect_activation_tree_request){.activation_id = TEXT("operator-root")};
+    tree_request.has_page = true;
+    tree_request.page.page_size = 129;
+    tree_record = (observed){0};
+    assert(api->inspect_activation_tree(client, &tree_request, NULL, tree, &tree_record) == NULL);
+    assert(tree_record.failed && !tree_record.dispatched);
+    char target_service[] = "service-a";
+    latent_profile_inspect_http_target_request target_request = {.service={target_service,strlen(target_service)}, .contract=TEXT("domain:api/contract@1.0.0"),
+        .function=TEXT("get"), .has_revision_id=true, .revision_id=TEXT("revision-a"), .include_preparation=true};
+    observed target_record={0};
+    latent_profile_call *target_call=api->inspect_http_target(client,&target_request,NULL,target,&target_record);
+    assert(target_call != NULL);
+    memset(target_service,'x',strlen(target_service));
+    wait_for(owner,&target_record);
+    assert(!target_record.failed && target_record.count==1);
+    api->release_call(target_call);
+    target_request.service=TEXT("service-a");
+    const latent_string invalid_target_functions[]={TEXT("foreign"),TEXT("drift")};
+    for (size_t index=0; index<2; ++index) {
+        target_request.function=invalid_target_functions[index]; target_record=(observed){0};
+        target_call=api->inspect_http_target(client,&target_request,NULL,target,&target_record);
+        wait_for(owner,&target_record);
+        assert(target_record.failed && target_record.dispatched && target_record.category==LATENT_PROFILE_FAILURE_CATEGORY_DECODE);
+        api->release_call(target_call);
+    }
+    target_request.maximum_wait_millis=30001; target_record=(observed){0};
+    assert(api->inspect_http_target(client,&target_request,NULL,target,&target_record)==NULL);
+    assert(target_record.failed && !target_record.dispatched);
     latent_profile_list_policies_request page = {.record_kind = 1, .has_page = true, .page = {.page_size = 1}};
     observed record = {0};
     latent_profile_call *call = api->list_policies(client, &page, NULL, policies, &record);
@@ -679,6 +758,6 @@ int main(int argc, char **argv) {
     completion_and_allocation_bounds();
     allocation_failures();
     assert(file_descriptors() == descriptors);
-    puts("C HTTP/2/protobuf: eight RPCs, ownership, exact u64, audit absence/future, recovery, limits, deadlines, no retry, shutdown races passed");
+    puts("C HTTP/2/protobuf: ten RPCs, bounded target/tree inspection, future diagnostic enums, ownership, exact u64, audit absence/future, recovery, limits, deadlines, no retry, shutdown races passed");
     return 0;
 }
