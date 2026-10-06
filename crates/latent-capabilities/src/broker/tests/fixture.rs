@@ -33,6 +33,30 @@ use std::{
 use tempfile::TempDir;
 
 pub const CAP: &str = "latent:secrets/reader@0.1.0";
+
+fn install_fixture_document(
+    policies: &PolicyStore,
+    id: &str,
+    kind: RecordKind,
+    value: &serde_json::Value,
+) {
+    let bytes = serde_json::to_vec(value).unwrap();
+    policies
+        .mutate(
+            MutationRequest {
+                tenant: "a",
+                actor: "operator",
+                id,
+                kind,
+                operation_id: id,
+                expected_revision: 0,
+                document: Some(&bytes),
+            },
+            Instant::now() + Duration::from_secs(10),
+            |_| Ok(()),
+        )
+        .unwrap();
+}
 pub fn resource() -> ResourceTarget<'static> {
     ResourceTarget::Secrets {
         reference: "test-key",
@@ -185,22 +209,7 @@ impl Fixture {
                 "configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
             ),
         ] {
-            let bytes = serde_json::to_vec(&value).unwrap();
-            policies
-                .mutate(
-                    MutationRequest {
-                        tenant: "a",
-                        actor: "operator",
-                        id,
-                        kind,
-                        operation_id: id,
-                        expected_revision: 0,
-                        document: Some(&bytes),
-                    },
-                    Instant::now() + Duration::from_secs(10),
-                    |_| Ok(()),
-                )
-                .unwrap();
+            install_fixture_document(&policies, id, kind, &value);
         }
         let broker = ActivationCapabilityBroker::new(
             catalog.lifecycle_authority(),
