@@ -31,6 +31,19 @@ pub(super) async fn publish(
     assert_eq!(report["compiled"], true);
     assert_eq!(report["language"], "rust");
     assert_eq!(report["variant"], "aggregate");
+    for capability in [
+        latent_capabilities::namespace::STATE_CONTRACT,
+        latent_capabilities::namespace::INTENT_CONTRACT,
+    ] {
+        assert!(
+            report["actualImports"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|name| name.as_str() == Some(capability)),
+            "compiler did not retain required transactional import"
+        );
+    }
     let component = fs::read(root.join("component.wasm")).unwrap();
     assert!(
         component.len() > 8,
@@ -135,6 +148,10 @@ pub(super) async fn publish(
     document["spec"]["service"] = SERVICE.into();
     document["spec"]["release"] = digest.0.into();
     document["spec"]["publication"] = publication.publication().as_str().into();
+    document["spec"]["grants"] = json!([
+        {"capability":latent_capabilities::namespace::STATE_CONTRACT,"policy":"state"},
+        {"capability":latent_capabilities::namespace::INTENT_CONTRACT,"policy":"intents"}
+    ]);
     document["spec"]["resources"] = json!({"cpuFuel":100_000_000,"memoryBytes":64*1024*1024,"wallTimeLimitMillis":10_000,"childCalls":0,"outboundRequests":0,"stateReadBytes":4*1024*1024,"stateWriteBytes":2*1024*1024,"blobReadBytes":0,"blobWriteBytes":0,"logBytes":0,"effectCount":32});
     document["spec"]["placement"] =
         json!({"trustClass":"sandbox","architectures":[std::env::consts::ARCH]});
