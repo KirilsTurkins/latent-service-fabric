@@ -23,6 +23,17 @@ impl LocalBlobStore {
         tenant(scope)?;
         let _work = self.inner.work()?;
         let _publication = self.inner.publication()?;
+        if self.inner.durable.is_some() {
+            return Err(LocalBlobError::Busy);
+        }
+        self.release_reference_checked(scope, reference, checkpoint)
+    }
+    pub(super) fn release_reference_checked(
+        &self,
+        scope: &TenantId,
+        reference: &BlobReference,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<bool> {
         checkpoint()?;
         let record = ReferenceRecord::requested(
             &self.inner.namespace,

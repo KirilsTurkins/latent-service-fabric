@@ -6,6 +6,8 @@ pub mod embedded;
 pub mod entity_lanes;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
+/// Independent durable owners for qualified immutable local payloads.
+pub mod payload_references;
 pub mod protected_store;
 /// Original restored history remains paused until an authorized review.
 pub mod recovery;

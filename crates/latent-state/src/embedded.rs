@@ -582,18 +582,18 @@ impl ReadView {
         self.get_bounded(key, self.limits.maximum_value_bytes)
     }
 
-    /// Refuse a hostile oversized value before copying it into the caller's
-    /// finite typed buffer. This does not acquire another physical read view.
+    /// Check the selected value ceiling while the engine still owns the bytes,
+    /// before allocating the caller's copy. The store ceiling remains strict.
     pub fn get_bounded(
         &self,
         key: &RowKey,
         maximum_bytes: usize,
     ) -> Result<Option<Vec<u8>>, StoreError> {
-        if maximum_bytes == 0 || maximum_bytes > self.limits.maximum_value_bytes {
-            return Err(StoreError::Invalid);
-        }
         if self.opened.elapsed() > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);
+        }
+        if maximum_bytes == 0 || maximum_bytes > self.limits.maximum_value_bytes {
+            return Err(StoreError::Invalid);
         }
         let key = key.encoded(self.limits)?;
         let table = self
@@ -603,65 +603,19 @@ impl ReadView {
             .open_table(ROWS)
             .map_err(|_| StoreError::Corrupt)?;
         let value = table.get(key.as_slice()).map_err(|_| StoreError::Corrupt)?;
+        if value
+            .as_ref()
+            .is_some_and(|v| v.value().len() > self.limits.maximum_value_bytes)
+        {
+            return Err(StoreError::Corrupt);
+        }
         if value
             .as_ref()
             .is_some_and(|v| v.value().len() > maximum_bytes)
         {
-            return Err(StoreError::Corrupt);
-        }
-        Ok(value.map(|v| v.value().to_vec()))
-    }
-
-    /// Closed recovery readback comparison. The native row stays borrowed from
-    /// this finite view, avoiding a second maximum-size owned value beside the
-    /// authenticated stream row. No transaction/guard/native slice escapes.
-    pub(crate) fn matches_row(&self, key: &RowKey, expected: &[u8]) -> Result<bool, StoreError> {
-        if self.opened.elapsed() > self.limits.maximum_view_age {
-            return Err(StoreError::SnapshotExpired);
-        }
-        if expected.len() > self.limits.maximum_value_bytes {
             return Err(StoreError::Capacity);
         }
-        let key = key.encoded(self.limits)?;
-        let table = self
-            .tx
-            .as_ref()
-            .expect("retained view")
-            .open_table(ROWS)
-            .map_err(|_| StoreError::Corrupt)?;
-        let value = table.get(key.as_slice()).map_err(|_| StoreError::Corrupt)?;
-        if value
-            .as_ref()
-            .is_some_and(|row| row.value().len() > self.limits.maximum_value_bytes)
-        {
-            return Err(StoreError::Corrupt);
-        }
-        Ok(value.is_some_and(|row| row.value() == expected))
-    }
-
-    /// One indexed existence observation without copying an arbitrary stored
-    /// value. Setup uses this to refuse legacy business rows under its fixed
-    /// buffer reservation, rather than loading a whole first record.
-    pub fn contains_prefix(&self, family: Family, prefix: &[u8]) -> Result<bool, StoreError> {
-        if self.opened.elapsed() > self.limits.maximum_view_age {
-            return Err(StoreError::SnapshotExpired);
-        }
-        if prefix.len() > self.limits.maximum_key_bytes {
-            return Err(StoreError::Invalid);
-        }
-        let mut start = vec![family as u8];
-        start.extend_from_slice(prefix);
-        let table = self
-            .tx
-            .as_ref()
-            .expect("retained view")
-            .open_table(ROWS)
-            .map_err(|_| StoreError::Corrupt)?;
-        let mut range = table
-            .range::<&[u8]>(start.as_slice()..)
-            .map_err(|_| StoreError::Corrupt)?;
-        let first = range.next().transpose().map_err(|_| StoreError::Corrupt)?;
-        Ok(first.is_some_and(|(key, _)| key.value().starts_with(&start)))
+        Ok(value.map(|v| v.value().to_vec()))
     }
     pub fn scan(
         &self,

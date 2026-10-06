@@ -1574,6 +1574,7 @@ dependencies = [
  "latent-core",
  "latent-http",
  "latent-policy",
+ "latent-state",
  "quick-xml",
  "ring",
  "rustix",
