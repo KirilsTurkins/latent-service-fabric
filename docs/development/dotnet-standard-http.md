@@ -5,7 +5,8 @@ identities to the existing typed LSF streaming HTTP capability. It is developmen
 work for [#693](https://github.com/KirilsTurkins/latent-service-fabric/issues/693)
 and the shared runtime work in
 [#680](https://github.com/KirilsTurkins/latent-service-fabric/issues/680).
-Actual NativeAOT composition, ordinary default-client execution and complete
+One ordinary `new HttpClient()` control now passes actual NativeAOT reference
+binding and composition. Signed default-client execution and complete
 acceptance qualification remain pending. The source does not establish a
 supported `HttpClient` or default ThreadPool release profile.
 
@@ -81,12 +82,43 @@ protocol faults after a started import keep conservative uncertainty and abort
 that exact owner. The WASI error
 enum distinguishes denied requests, DNS failure and incomplete response and
 carries `latent-http-*` markers in `internal-error` for the remaining typed
-categories, including uncertainty. The pinned BCL's `ErrorCodeToString` discards
-that payload in the
-[pinned handler source](https://github.com/dotnet/runtime/blob/v10.0.0/src/libraries/System.Net.Http/src/System/Net/Http/WasiHttpHandler/WasiHttpHandler.cs).
-A source-bound BCL change and actual ordinary
-`HttpRequestException` evidence are required before claiming end-to-end
-uncertainty preservation. Guest enum markers alone do not meet that criterion.
+categories, including uncertainty. The original pinned BCL's `ErrorCodeToString`
+discards that payload. The captured compiler now derives a private copy of its
+exact WASI `System.Net.Http.dll` using the already locked ILLink Mono.Cecil
+assembly. The tool preserves only ten finite adapter-owned categories as
+`INTERNAL_ERROR:latent-http-*`; arbitrary, malformed or sensitive payloads retain
+`INTERNAL_ERROR`. All other variants keep their original conversion.
+
+The original conversion is described by the
+[upstream WASI interop source](https://github.com/dotnet/runtime/blob/v10.0.0/src/libraries/System.Net.Http/src/System/Net/Http/WasiHttpHandler/WasiHttpInterop.cs);
+the rewriter also requires the exact captured RC assembly preimage rather than
+assuming the release-tag source matches it.
+The source capture includes the rewriter and trusted MSBuild target. The
+installation retains and rechecks their source, compiler binary and Cecil
+identity. Only the explicitly declared clock/activation/typed-HTTP candidate
+imports that target into its private compiler project. The target accepts only
+the two exact framework reference locations and replaces them with the private
+derived assembly. The compiler requires its actual NativeAOT response-file
+reference before recording a successful binding. Shared NuGet inputs stay
+unchanged. Unknown preimages, changed tool/source/target/derived bytes or
+ambiguous references deny the build.
+
+The security inventory binds both SDK HTTP-error project manifests to their
+exact reviewed bytes. Neither project restores an additional NuGet package
+graph. The compiler helper's `Mono.Cecil` assembly comes from the independently
+scanned `Microsoft.NET.ILLink.Tasks` 10.0.0 package in the existing NativeAOT
+lock; the compiler retains its additional assembly-digest checks. A project
+change, new sibling manifest or partly present legacy directory still fails
+the original inventory guard. The
+[inventory source controls](../testing/evidence/dotnet-http-helper-security-inventory-2026-10-02.json)
+retain the original two-manifest rejection and the repaired source-only boundary.
+
+`http-error-port-preparation.json` retains original framework, tool, source,
+target and derived identities even if later compilation fails.
+`http-error-port.json` adds observed reference binding after successful
+compilation. Build materials include the derived assembly. These receipts are
+compiler evidence; actual default-client uncertainty still requires the signed
+component, genuinely pending runtime and lost-response POST controls.
 
 The selected BCL emits an opaque `future-trailers` resource without observation
 methods. The bridge retains its original body through that resource and never
@@ -106,6 +138,29 @@ fixes alone do not establish their successful execution.
 
 ## Evidence available for this slice
 
+The maintained `tools/probe_dotnet_http_errors.py` executed 79 assertions against
+the actual original and derived captured BCL assemblies using .NET SDK
+10.0.100. All 38 non-internal variants and an unknown tag stayed unchanged; ten
+finite categories reached the actual captured `HttpRequestException.Message`;
+null, arbitrary, oversized, mismatched and non-string payloads stayed redacted.
+Repeated rewriting produced the same derived bytes. Five actual CLI controls
+rejected a changed preimage, a derived input presented as an original, existing
+outputs/receipts and an in-place rewrite without changing those inputs. The
+original assembly remains
+`sha256:3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587`;
+the derived assembly is
+`sha256:645ffa33c7062b94511f4394f27e4ae3a5c3631e0abd51937abc00f277808d52`.
+These are host assembly controls. The separately retained actual NativeAOT
+binding is described below; default-client execution, CoreLib/task integration
+and sibling progress remain pending. No quota or grant changed.
+
+Four controlled executions of the actual trusted MSBuild target also pass:
+known reference replacement, literal paths with spaces/Unicode/property/item
+metacharacters, explicit unknown-reference rejection and no rewrite outside
+`wasi-wasm`. Those small projects isolate MSBuild ordering and escaping. Their
+response files are controlled fixture outputs and are not actual NativeAOT or
+guest qualification receipts.
+
 The focused authoring suite passes 27 Python cases, including seven added
 authority/version/capture controls. The pinned WIT generator parses all adapter
 worlds and emits their exact traits. Rust formatting and source checks establish
@@ -124,8 +179,36 @@ not a default-client or successful composition receipt.
 The distribution now retains every adapter named by the same profile table,
 alongside its runtime source inventory. Two actual pack/private-unpack and
 missing-adapter controls pass without changing any existing execution/skip
-guard or compiler budget. Fresh exact-source NativeAOT, composition and node
-results still require review before delivery or issue closure.
+guard or compiler budget. The exact compiler result below does not establish
+signed node execution or issue completion.
+
+After the disk-capacity pause, a fresh Linux control at source
+`fe448a66b4c3f8b153c50a9e451c863c020b0ebf` compiled ordinary `new HttpClient()`
+construction, `GetAsync` with `ResponseHeadersRead`, content reading, standard
+awaiter consumption, disposal and `HttpRequestException` handling. It used the
+unchanged maintained compiler, independently verified private tool copies, exact
+captured runtime inputs and locked offline restore. NativeAOT completed in
+22.79 seconds. Its actual 70,458-byte ILC response file refers to the private
+derived `System.Net.Http.dll` exactly once; the original framework reference is
+absent. Component composition, validation and all source/input rechecks passed.
+
+The resulting 6,270,883-byte component has digest
+`sha256:52a730258fe942ddb97fcf4e0de5fc4d8abc283c47cd33478f85740a565b7cbc`.
+Its final imports are exactly the declared clock, activation-runtime and typed
+streaming HTTP interfaces. All 20 original WASI imports are supplied by the
+selected captured adapter. The
+[compiler observation](dotnet-http-compiler-observation.json) binds the raw and
+composed component, adapter, original/derived BCL, compiler inputs, recipe,
+reference response and scope. The original attempt failed before compilation
+because a private temporary mount denied the trusted binding wrapper; its
+receipt remains separate. The corrected control used the same source, 2 CPU /
+4 GiB isolation, finite temporary storage and normal compiler deadlines.
+
+This control compiled the ordinary BCL calls; it did not invoke them inside a
+signed/admitted guest. Genuine pending tasks, default ThreadPool behavior,
+unchanged client libraries, cancellation, uncertain POST and physical retirement
+remain unqualified. No custom handler, scheduler or application task pump was
+introduced for the compilation.
 
 The separate retained
 [NativeAOT job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36816029585/job/110221158309)
