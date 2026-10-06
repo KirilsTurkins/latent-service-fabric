@@ -15,7 +15,6 @@ use std::{
 };
 
 pub const STORE_FORMAT: &str = "latent.transaction-store.v1";
-const FORMAT: &[u8] = STORE_FORMAT.as_bytes();
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
 static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
