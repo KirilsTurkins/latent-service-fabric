@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "npm-11.19.1-lsf-bundle-v2",
+  "profile": "npm-11.19.1-lsf-bundle-v4",
   "base": {
     "name": "npm",
     "version": "11.19.1",
@@ -30,6 +30,29 @@
       "from": "5.0.9",
       "version": "5.0.12",
       "integrity": "sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ=="
+    },
+    {
+      "name": "postcss-selector-parser",
+      "from": "7.1.4",
+      "version": "7.1.6",
+      "integrity": "sha512-7qASPzhKF2l2KLboRZux8CCTRMdGiV08vWmyKzPz22qZ7ZjQBOeY7rNzNoCLSUiftJ7HUq0GERHmxw/t0dCdMw=="
+    }
+  ],
+  "libraries": [
+    {
+      "name": "braces",
+      "version": "3.0.3",
+      "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA=="
+    }
+  ],
+  "repairs": [
+    {
+      "path": "repairs/braces.json",
+      "sha256": "18d0f840ab68095416f854968eaf7524f0fe241d0f3130c514323d5e2e69728b"
+    },
+    {
+      "path": "repairs/http-cache-semantics.json",
+      "sha256": "c903c8ad20a3c0f21bf217163550cd9c5989384ea1970626688b6cab30d0245a"
     }
   ]
 }
