@@ -517,9 +517,6 @@ This record freezes transport definitions. The companion
 and recovery identities; these definitions grant no access and do not install a
 transactional runtime. Later methods or fields require another reviewed baseline
 update.
-recovery. The golden retains all thirteen earlier file descriptors with their
-field numbers, types, enum values, oneofs and service signatures unchanged.
-
 This record freezes transport definitions. The companion
 [transaction contract](transactions.md) defines host authority,
 durable formats and recovery identities; adding a descriptor grants no access
@@ -527,6 +524,13 @@ and does not install a transactional runtime. Later management deliveries append
 their methods and fields through separately reviewed descriptor updates.
 
 ## Alpha removal of component-only release selectors
+
+The SDK stream substrate adds `AUDIT_CAPABILITY_RESOURCE_CLASS_STREAM = 11`
+to the capability audit enum. Values 0 through 10 and all message fields keep
+their existing wire numbers. Stream evidence remains distinct from an HTTP
+response or protocol acknowledgement; `HOST_COMPLETED` records only the
+local host operation. The descriptor baseline deliberately includes this
+additive enum value.
 
 Release get, lifecycle inspection, revoke/retire and evidence renewal now require
 an exact authenticated-tenant `PublicationRef`. Their obsolete request `digest`

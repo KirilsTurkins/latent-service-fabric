@@ -13,6 +13,7 @@ from tools import build_process, qualify_rust_capsules, wait_capsule_audit_idle 
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.project import create, validate
 from tools.dotnet_guest.compiler import packages
+from tools.dotnet_guest import runtime
 from tools.build_dotnet_guest_capsules import NAMES, project
 from tools.rust_capsule_project import TEMPLATES, snapshot
 from tools.tests.test_build_process import _alive
