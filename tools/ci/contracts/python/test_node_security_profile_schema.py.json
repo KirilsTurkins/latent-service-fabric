@@ -18,4 +18,3 @@
     "c4b35cfaa82c62eab6763354e900ba04e07195794f74725f074ef3eaf5aea9e1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:2ab428976030d302210e274fd2d9c9fe862331f1300c6e30cd081ba49599d84d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
   }
 }
-
