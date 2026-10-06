@@ -4,7 +4,7 @@ use super::{
     PackageComparisonLimits, Walker,
 };
 use crate::PackageBundle;
-use latent_core::{ArtifactBlobDigest, PlatformError, PHASE3_HOST_ABI_CURRENT};
+use latent_core::{ArtifactBlobDigest, PlatformError};
 use std::collections::BTreeMap;
 
 /// Sealed immutable ABI facts. A control compiler must separately establish
@@ -55,18 +55,18 @@ pub fn compile_host_binding(
     let mut analysis = Analysis::new(limits.comparison)?;
     analysis.name(interface)?;
     let lock = lock(consumer)?;
-    preflight(consumer, &lock, limits, &mut 0, &mut 0, &mut analysis)?;
+    preflight(consumer, &lock, &limits, &mut 0, &mut 0, &mut analysis)?;
     let (source, surface) = resolved(consumer, &lock, limits.semantics)?;
     let imported = *surface.imports.get(interface).ok_or_else(incompatible)?;
-    let spec = PHASE3_HOST_ABI_CURRENT
-        .interface(interface)
-        .ok_or_else(incompatible)?;
+    let profile = consumer.surface().ok_or_else(incompatible)?.host_profile();
+    let spec = profile.interface(interface).ok_or_else(incompatible)?;
     // validate_capsule already checks this association. Rechecking the selected
     // bounded source keeps this proof independent of projection/digest labels.
-    crate::semantics::host::validate(
+    crate::semantics::host::validate_for_profile(
         &source,
         &BTreeMap::from([(interface.to_owned(), imported)]),
         limits.semantics,
+        profile,
     )?;
     let operations = source.interfaces[imported]
         .functions
@@ -108,7 +108,7 @@ pub fn compile_local_binding(
         preflight(
             bundle,
             lock,
-            limits,
+            &limits,
             &mut bytes,
             &mut packages,
             &mut analysis,
@@ -173,6 +173,7 @@ fn exact_interface(
         right,
         analysis,
         resources: false,
+        host_profile: latent_core::PHASE3_HOST_ABI_CURRENT,
     }
     .interface(imported, exported, interface, false)
 }

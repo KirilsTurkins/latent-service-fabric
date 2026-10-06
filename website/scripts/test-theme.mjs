@@ -69,6 +69,11 @@ try {
           assert.equal(firstFrame.theme, mode, 'System theme must initialize before first contentful paint, with hydration held');
           assertColorPair(firstFrame.color, firstFrame.background);
           assert.equal(cssHex(firstFrame.background), palette.modes[mode].canvas);
+          assertTextContrast(await textSamples(page, '.theme-code-block'));
+          const firstLineNumber = await page.locator('[class*="codeLineNumber"]').first().evaluate(element => ({color: getComputedStyle(element, '::before').color, opacity: getComputedStyle(element, '::before').opacity, background: getComputedStyle(element).backgroundColor}));
+          assert.equal(firstLineNumber.opacity, '1');
+          assertColorPair(firstLineNumber.color, firstLineNumber.background);
+          assert.equal(cssHex(firstLineNumber.background), palette.modes[mode].codeSurface);
           allowHydration = true;
           for (const resume of hydrationRequests.splice(0)) resume();
           await page.waitForLoadState('networkidle', {timeout: 15000});

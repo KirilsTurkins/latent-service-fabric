@@ -14,7 +14,7 @@ pub struct SemanticLimits {
     pub max_type_nodes: usize,
     /// Conservative reference expansion before validation. Whole-instance alias
     /// summaries may revisit private members; actual type visits and allocations
-    /// still use max_type_nodes independently.
+    /// still use `max_type_nodes` independently.
     pub max_reference_work: usize,
     pub max_type_depth: usize,
     pub max_type_members: usize,

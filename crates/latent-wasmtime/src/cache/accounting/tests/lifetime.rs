@@ -32,7 +32,7 @@ fn clones_eviction_recompilation_and_deferred_drop_count_actual_runtime_once() {
     admission.track_runtime(&replacement).unwrap();
     drop(new);
     let evicted = admission
-        .publish_deferred(replacement, COST.compiled_image_bytes, COST.metadata_bytes)
+        .publish_deferred(replacement, COST.compiled_image, COST.metadata)
         .unwrap();
     assert_eq!(evicted.len(), 1);
     assert_eq!(new_drops.load(Ordering::SeqCst), 0);

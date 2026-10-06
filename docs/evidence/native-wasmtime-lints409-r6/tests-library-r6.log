@@ -1,0 +1,395 @@
+   Compiling latent-core v0.1.0-alpha.5 (/work/crates/latent-core)
+   Compiling wasmparser v0.259.0
+   Compiling wasmparser v0.254.0
+   Compiling regalloc2 v0.15.2
+   Compiling latent-network v0.1.0-alpha.5 (/work/crates/latent-network)
+   Compiling latent-component-bindings v0.1.0-alpha.5 (/work/crates/latent-component-bindings)
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/work/crates/latent-wasmtime)
+   Compiling latent-manifest v0.1.0-alpha.5 (/work/crates/latent-manifest)
+   Compiling latent-contracts v0.1.0-alpha.5 (/work/crates/latent-contracts)
+   Compiling latent-audit v0.1.0-alpha.5 (/work/crates/latent-audit)
+   Compiling latent-protected-files v0.1.0-alpha.5 (/work/crates/latent-protected-files)
+   Compiling latent-identity v0.1.0-alpha.5 (/work/crates/latent-identity)
+   Compiling latent-state v0.1.0-alpha.5 (/work/crates/latent-state)
+   Compiling cranelift-codegen v0.135.3
+   Compiling latent-routing v0.1.0-alpha.5 (/work/crates/latent-routing)
+   Compiling latent-artifacts v0.1.0-alpha.5 (/work/crates/latent-artifacts)
+   Compiling latent-activation v0.1.0-alpha.5 (/work/crates/latent-activation)
+   Compiling latent-admission v0.1.0-alpha.5 (/work/crates/latent-admission)
+   Compiling latent-telemetry v0.1.0-alpha.5 (/work/crates/latent-telemetry)
+   Compiling latent-triggers v0.1.0-alpha.5 (/work/crates/latent-triggers)
+   Compiling latent-ingress v0.1.0-alpha.5 (/work/crates/latent-ingress)
+   Compiling latent-scheduler v0.1.0-alpha.5 (/work/crates/latent-scheduler)
+   Compiling latent-effects v0.1.0-alpha.5 (/work/crates/latent-effects)
+   Compiling wasmprinter v0.254.0
+   Compiling wit-parser v0.254.0
+   Compiling wit-parser v0.259.0
+   Compiling latent-commit v0.1.0-alpha.5 (/work/crates/latent-commit)
+   Compiling wasmtime-environ v48.0.3
+   Compiling latent-signing v0.1.0-alpha.5 (/work/crates/latent-signing)
+   Compiling latent-packaging v0.1.0-alpha.5 (/work/crates/latent-packaging)
+   Compiling latent-executor v0.1.0-alpha.5 (/work/crates/latent-executor)
+   Compiling latent-policy v0.1.0-alpha.5 (/work/crates/latent-policy)
+   Compiling wasmtime-internal-fiber v48.0.3
+   Compiling latent-capabilities v0.1.0-alpha.5 (/work/crates/latent-capabilities)
+   Compiling latent-http v0.1.0-alpha.5 (/work/crates/latent-http)
+   Compiling latent-node v0.1.0-alpha.5 (/work/crates/latent-node)
+   Compiling latent-secrets v0.1.0-alpha.5 (/work/crates/latent-secrets)
+   Compiling latent-vault v0.1.0-alpha.5 (/work/crates/latent-vault)
+   Compiling latent-blobs v0.1.0-alpha.5 (/work/crates/latent-blobs)
+   Compiling wasmtime-internal-unwinder v48.0.3
+   Compiling cranelift-frontend v0.135.3
+   Compiling cranelift-native v0.135.3
+   Compiling latent-nats v0.1.0-alpha.5 (/work/crates/latent-nats)
+   Compiling latent-control-store v0.1.0-alpha.5 (/work/crates/latent-control-store)
+   Compiling wasmtime-internal-cranelift v48.0.3
+   Compiling wasmtime v48.0.3
+    Finished `test` profile [unoptimized] target(s) in 1m 25s
+     Running unittests src/lib.rs (/target/debug/deps/latent_wasmtime-daa6e6527eb19a79)
+
+running 342 tests
+test aot::cache::model::tests::raw_payload_capacity_does_not_falsely_charge_separate_entry_headers ... ok
+test aot::cache::model::tests::settings_reject_unfunded_mapping_tail_before_any_resource_is_opened ... ok
+test aot::cache::observation::tests::native_observations_use_exact_sealed_source_identities_and_fixed_outcomes ... ok
+test aot::cache::observation::tests::unscoped_local_source_stays_node_scoped_without_a_package_claim ... ok
+test aot::cache::paths::tests::ancestor_alias_cannot_hide_overlap_with_catalog ... ok
+test aot::cache::paths::tests::disjoint_future_roots_are_resolved_without_creating_storage ... ok
+test aot::cache::paths::tests::equal_and_ancestor_roots_cannot_share_catalog_or_storage ... ok
+test aot::cache::paths::tests::invalid_path_or_excessive_missing_depth_fails_before_mutation ... ok
+test aot::cache::persistence::tests::an_independent_pin_prevents_corrupt_file_replacement_until_released ... ok
+test aot::cache::persistence::tests::deduplication_read_pressure_does_not_delete_or_claim_success ... ok
+test aot::cache::persistence::tests::missing_existing_native_file_is_repaired_without_trusting_its_pin ... ok
+test aot::cache::persistence::tests::one_entry_cache_reclaims_with_its_small_configured_recovery_bound ... ok
+test aot::cache::persistence::tests::same_size_and_truncated_existing_native_bytes_are_replaced_exactly_once ... ok
+test aot::cache::persistence::tests::verified_deduplication_returns_a_pin_and_refunds_read_bytes ... ok
+test aot::cache::receipts::tests::exact_bytes_reopen_and_affine_read_lifetime ... ok
+test aot::cache::receipts::tests::missing_and_changed_indexed_files_keep_charges_until_synced_cleanup ... ok
+test aot::cache::receipts::tests::persistence::abandoned_stage_recovery_is_bounded_and_never_adopts_bytes ... ok
+test aot::cache::receipts::tests::persistence::each_failed_stage_retains_one_reservation_until_reclaimed ... ok
+test aot::cache::receipts::tests::persistence::initialization_cutpoints_recover_only_registered_prefixes ... ok
+test aot::cache::receipts::tests::persistence::replacement_rename_sync_failure_never_claims_rollback_or_refunds ... ok
+test aot::cache::receipts::tests::persistence::root_links_and_unowned_final_rows_are_rejected_without_adoption ... ok
+test aot::cache::receipts::tests::persistence::unknown_files_and_symlinks_are_preserved_on_open_and_delete ... ok
+test aot::cache::receipts::tests::persistence::unlink_and_parent_sync_failures_retain_exact_deletion_charge ... ok
+test aot::cache::receipts::tests::quotas::exact_entry_metadata_and_recovery_boundaries_do_not_evict_implicitly ... ok
+test aot::cache::receipts::tests::quotas::impossible_owner_limits_and_path_bounds_reject_before_creation ... ok
+test aot::cache::receipts::tests::quotas::read_owners_and_bytes_remain_charged_after_invalidation ... ok
+test aot::cache::receipts::tests::quotas::recovery_counts_stage_bytes_and_fixed_inventory_files_before_cleanup ... ok
+test aot::cache::receipts::tests::quotas::replacement_reserves_old_plus_new_and_oversize_never_reclaims ... ok
+test aot::cache::receipts::tests::reclamation_is_bounded_and_follows_access_recency ... ok
+test aot::cache::receipts::tests::storage_does_not_parse_or_authenticate_receipts ... ok
+test aot::cache::receipts::tests::work_gate_is_nonblocking_and_snapshot_is_independent ... ok
+test aot::cache::tests::authenticated_receipt_with_deleted_raw_blob_becomes_cache_local_refill ... ok
+test aot::cache::tests::authoritative_not_found_and_cache_read_pressure_are_not_refill_errors ... ok
+test aot::identity::tests::real_optional_package_and_metadata_scope_are_bound_without_retained_spare_capacity ... ok
+test aot::image_budget::tests::failed_loading_refunds_after_its_actual_owner_finishes ... ok
+test aot::image_budget::tests::fixed_limits_are_lowerable_and_reject_zero_or_inconsistent_totals ... ok
+test aot::image_budget::tests::loader_attempt_counter_saturates ... ok
+test aot::image_budget::tests::page_rounding_charges_tail_padding_and_checks_overflow ... ok
+test aot::image_budget::tests::real_page_size_is_reserved_before_native_load ... ok
+test aot::image_budget::tests::rejected_reservations_do_not_change_usage_or_loader_attempts ... ok
+test aot::image_budget::tests::successful_load_changes_only_loading_subset_and_retains_full_charge ... ok
+test aot::loader::tests::actual_engine_mismatch_is_rejected_before_mapping_and_loading ... ok
+test aot::loader::tests::authenticated_cache_bytes_load_after_receipt_and_cache_root_owners_drop ... ok
+test aot::loader::tests::proof_cannot_move_to_an_equal_key_from_another_checked_input ... ok
+test aot::loader::tests::real_copied_component_retains_full_mapping_until_last_pre_owner_is_retired ... ok
+test aot::loader::tests::revoked_proof_and_capacity_failure_do_not_enter_the_native_loader ... ok
+test aot::ownership::tests::failed_reservations_are_atomic ... ok
+test aot::ownership::tests::retained_output_and_metadata_outlive_completed_work_and_cap_tiny_outputs ... ok
+test aot::profile::tests::host_abi_identity_is_bound_to_prepared_and_native_compatibility ... ok
+test aot::profile::tests::previous_patch_version_and_layout_cannot_alias_the_current_aot_policy ... ok
+test aot::profile::tests::typed_function_references_are_explicit_in_native_policy_identity ... ok
+test aot::protocol::tests::arguments_are_exact_bounded_canonical_numbers ... ok
+test aot::protocol::tests::frame_limits_reject_before_body_allocation_and_require_one_complete_job ... ok
+test aot::protocol::tests::readiness_binds_actual_engine_and_exact_sandbox_profile ... ok
+test aot::sandbox::tests::configuration_is_closed_and_cannot_encode_enforcement ... ok
+test aot::sandbox::tests::filter::ambient_authority_and_alternative_abis_are_denied ... ok
+test aot::sandbox::tests::filter::descriptor_operations_are_scoped_to_the_directional_pipes ... ok
+test aot::sandbox::tests::filter::memory_requires_anonymous_private_nonexecutable_mappings ... ok
+test aot::sandbox::tests::filter::random_and_synchronization_permissions_are_bounded ... ok
+test aot::sandbox::tests::finite_limits_reject_zero_excess_and_inconsistent_budgets ... ok
+test aot::seal::restore::tests::closed_receipt_rejects_duplicate_null_unknown_and_invalid_numeric_shapes ... ok
+test aot::seal::restore::tests::every_compatibility_field_is_checked_before_claims_are_exposed ... ok
+test aot::seal::restore::tests::forged_output_claims_and_other_host_key_fail_mac_before_any_raw_read ... ok
+test aot::seal::restore::tests::receipt_read_buffer_can_drop_before_exact_byte_verification ... ok
+test aot::seal::restore::tests::structural_and_byte_bounds_fail_before_typed_retention ... ok
+test aot::seal::tests::exact_output_and_recomputed_digest_remain_bound_to_the_host_key ... ok
+test aot::seal::tests::rejected_output_length_and_capacity_refund_the_complete_permit ... ok
+test aot::seal::tests::verification_rejects_tampered_bytes_even_with_a_recomputed_digest ... ok
+test aot::seal::tests::verification_requires_the_same_host_key_and_expected_engine_profile ... ok
+test aot::supervisor::input::tests::checked_input_is_retained_after_one_fetch_without_a_second_disk_read ... ok
+test aot::supervisor::input::tests::failed_compile_is_one_shot_and_refunds_native_allowance_without_dropping_input ... ok
+test aot::supervisor::input::tests::native_proofs_cannot_cross_publications_of_the_same_component ... ok
+test aot::supervisor::input::tests::retained_input_does_not_keep_a_retired_producer_authorizing ... ok
+test aot::tests::bootstrap_rejects_closed_shape_and_actual_engine_mismatch_before_compilation ... ok
+test aot::tests::child_bootstrap_preserves_real_native_engine_identity_without_runtime_workers ... ok
+test aot::tests::compiler_only_hash_matches_actual_runtime_pooling_and_codegen_settings ... ok
+test aot::tests::engine_policy_and_host_security_change_identity_while_cpu_labels_grant_no_features ... ok
+test aot::tests::every_lowered_profile_bound_and_hard_limit_is_checked ... ok
+test backend::admission::tests::checked_fallback_without_optimization_stamp_retains_eligibility_on_reuse ... ok
+test backend::admission::tests::declared_host_requirements_change_metadata_identity_without_changing_component ... ok
+test backend::admission::tests::explicit_host_requirements_reject_before_component_compilation ... ok
+test backend::admission::tests::lifecycle_revocation_rechecks_queued_work_for_local_and_enforced_catalogs ... ok
+test backend::admission::tests::queued_source_is_rechecked_before_compilation_and_all_waiters_release ... ok
+test backend::dispatch_tests::duplicate_missing_extra_foreign_and_empty_bindings_keep_the_same_error ... ok
+test backend::dispatch_tests::every_order_of_the_four_actual_imports_is_accepted_without_an_order_contract ... ok
+test backend::input::tests::actual_owned_field_is_destroyed_before_its_raw_guard_refunds ... ok
+test backend::input::tests::completion_abandonment_and_poll_unwind_retire_after_actual_future_destruction ... ok
+test backend::input::tests::error_before_guest_dispatch_releases_input_without_inventing_guest_start ... ok
+test backend::readiness::tests::expiry_during_real_fence_wait_is_not_retried_or_renewed ... ok
+test backend::readiness::tests::invocation::activation_start_busy_window_expires_without_renewing_or_reexecuting ... ok
+test backend::readiness::tests::invocation::activation_start_wait_keeps_original_grant_after_reverification_and_expiry ... ok
+test backend::readiness::tests::invocation::activation_start_wait_observes_original_cancellation_and_deadline_before_guest_execution ... ok
+test backend::readiness::tests::invocation::busy_activation_start_retains_original_owner_and_executes_guest_once ... ok
+test backend::readiness::tests::invocation::foreign_or_mismatched_invocation_owner_is_rejected_before_waiting ... ok
+test backend::readiness::tests::invocation::timerless_activation_start_remains_immediate_and_fail_closed ... ok
+test backend::readiness::tests::invocation::unpolled_and_busy_invocation_drop_reclaims_the_materialized_owner_without_guest_work ... ok
+test backend::readiness::tests::later_source_read_wait_cannot_upgrade_original_grant_after_catalog_reverification ... ok
+test backend::readiness::tests::materialization::busy_materialization_retains_exact_readiness_and_materializes_once_after_release ... ok
+test backend::readiness::tests::materialization::dropping_unpolled_or_busy_materialization_reclaims_original_ready_pin ... ok
+test backend::readiness::tests::materialization::foreign_readiness_is_rejected_before_any_currentness_wait ... ok
+test backend::readiness::tests::materialization::materialization_busy_window_expires_without_instances_or_renewal ... ok
+test backend::readiness::tests::materialization::materialization_clock_expiry_is_terminal_without_renewing_or_waiting_again ... ok
+test backend::readiness::tests::materialization::materialization_does_not_upgrade_original_grant_after_policy_reverification ... ok
+test backend::readiness::tests::materialization::synchronous_materialization_remains_immediate_and_fail_closed_on_busy ... ok
+test backend::readiness::tests::owners::dropping_final_currentness_wait_releases_exact_warm_ready_pin ... ok
+test backend::readiness::tests::owners::dropping_post_acquire_source_wait_releases_unstarted_job_and_document_capacity ... ok
+test backend::readiness::tests::real_fence_pending_readiness_drops_cleanly_and_original_entry_still_fails_closed ... ok
+test backend::readiness::tests::real_fence_warm_readiness_waits_without_fetching_or_starting_another_job ... ok
+test backend::readiness::tests::worker::busy_compiler_worker_fails_once_without_replaying_owned_preparation ... ok
+test backend::readiness::tests::worker::dropping_fenced_worker_wait_retires_job_and_source_before_fence_release ... ok
+test backend::readiness::tests::worker::queued_worker_cannot_upgrade_original_grant_after_catalog_reverification ... ok
+test backend::readiness::tests::worker::real_fence_opt_in_worker_waits_then_compiles_and_fetches_exactly_once ... ok
+test backend::readiness::tests::worker::worker_real_fence_wait_rejects_expiry_without_fetch ... ok
+test backend::readiness::tests::worker::worker_window_consumed_in_queue_does_not_restart_at_first_busy_read ... ok
+test backend::readiness::wait::tests::checkpoints_share_one_window_and_never_retry_after_its_expiry ... ok
+test backend::readiness::wait::tests::dropping_pending_read_wait_releases_owner_without_another_read ... ok
+test backend::readiness::wait::tests::only_exact_busy_reads_wait_and_other_failures_forward_unchanged ... ok
+test backend::readiness::wait::tests::original_entry_needs_no_executor_and_returns_busy_without_waiting ... ok
+test backend::readiness::wait::tests::retry_repeats_only_the_failed_read_and_forwards_one_success_owner ... ok
+test backend::readiness::worker_wait::tests::stopped_or_legacy_worker_never_replays_a_failed_currentness_read ... ok
+test backend::readiness::worker_wait::tests::worker_window_is_shared_across_checks_and_never_refreshes_after_expiry ... ok
+test backend::readiness::worker_wait::tests::worker_window_retries_only_exact_busy_and_preserves_other_error_allocations ... ok
+test backend::result_lifetime_tests::native_errors_release_while_the_actual_cleanup_helper_still_owns_runtime_and_permit ... ok
+test backend::result_lifetime_tests::successful_classification_and_unwind_keep_the_same_final_drop_order ... ok
+test bindings::compatibility_tests::blob_preparation_requires_exact_owned_chunk_and_async_shapes ... ok
+test bindings::compatibility_tests::frozen_schema_matrix_matches_host_shapes_identity_and_generated_sdk_baseline ... ok
+test bindings::compatibility_tests::generated_async_provider_binding_accepts_only_its_exact_interface ... ok
+test bindings::compatibility_tests::generated_builtin_linker_matches_every_exact_pinned_shape ... ok
+test bindings::compatibility_tests::streaming_preparation_accepts_only_exact_resource_types_ownership_and_async_shapes ... ok
+test bindings::compatibility_tests::transaction_preparation_requires_exact_mixed_async_and_affine_resource_shapes ... ok
+test bindings::compatibility_tests::transaction_support_changes_prepared_and_native_identity_without_mutating_stateless_abi ... ok
+test bindings::tests::declared_linker_registrations_match_active_profile_exactly ... ok
+test cache::accounting::tests::failures::image_and_metadata_gate_errors_preserve_residents_and_refund_pending_state ... ok
+test cache::accounting::tests::failures::registration_overflow_does_not_partially_change_any_population ... ok
+test cache::accounting::tests::failures::substituted_runtime_missing_attachment_and_wrong_cost_fail_before_eviction ... ok
+test cache::accounting::tests::failures::wrong_ledger_double_attachment_and_republication_are_rejected ... ok
+test cache::accounting::tests::lifetime::clones_eviction_recompilation_and_deferred_drop_count_actual_runtime_once ... ok
+test cache::accounting::tests::lifetime::dropping_cache_reclassifies_held_runtime_and_observer_does_not_retain_cache ... ok
+test cache::accounting::tests::lifetime::invalidation_cannot_remove_a_replacement_installed_by_reentrant_predicate ... ok
+test cache::accounting::tests::lifetime::unfinished_token_cannot_keep_runtime_charge_alive_and_unwind_refunds_reservation ... ok
+test cache::accounting::tests::untracked_cache_exposes_actual_residency_without_inventing_unique_costs ... ok
+test cache::measurement::cache_lookup_collector ... ignored, explicit finite paired Linux cache lookup measurement only
+test cache::recency::tests::non_power_of_two_limits_bound_allocated_capacity_and_reuse_vacant_slots ... ok
+test cache::recency_tests::mru_middle_and_lru_promotions_preserve_exact_victims_at_all_capacities ... ok
+test cache::recency_tests::seeded_hits_misses_invalidation_and_arena_reuse_match_reference ... ok
+test cache::tests::an_active_pin_survives_eviction_and_release_until_its_owner_drops_it ... ok
+test cache::tests::cached_hits_do_not_need_another_compilation_slot_and_bad_limits_are_rejected ... ok
+test cache::tests::discovered_metadata_charges_actual_bytes_without_exceeding_its_reservation ... ok
+test cache::tests::each_byte_budget_independently_evicts_without_exceeding_capacity ... ok
+test cache::tests::impossible_entries_fail_without_evicting_existing_state_or_leaking_reservations ... ok
+test cache::tests::instance_permits_are_shared_affine_and_reclaimed_on_drop_and_unwind ... ok
+test cache::tests::panic_and_dropped_work_refund_compilation_capacity ... ok
+test cache::tests::preparation_capacity_and_duplicate_identity_have_no_waiter_queue ... ok
+test cache::tests::shared_hits_refresh_lru_and_release_requires_matching_runtime ... ok
+test cache::tests::simultaneous_preparations_reserve_the_single_available_slot_atomically ... ok
+test compiler::tests::callbacks::queue_window_is_associated_with_the_worker_job_without_claiming_thread_cpu ... ok
+test compiler::tests::callbacks::stopping_drops_already_delivered_ready_result_outside_waiter_and_registry_locks ... ok
+test compiler::tests::deadline::abandoned_native_job_finishing_after_cutoff_remains_late_when_observed_later ... ok
+test compiler::tests::deadline::completion_observation_uses_the_latest_job_time_even_if_updates_reorder ... ok
+test compiler::tests::deadline::idle_retirement_after_cutoff_does_not_claim_late_native_work ... ok
+test compiler::tests::deadline::native_work_within_original_grace_stays_timely_through_idle_retirement ... ok
+test compiler::tests::native_control::cancelling_one_coalesced_waiter_preserves_native_input_and_surviving_result ... ok
+test compiler::tests::native_control::last_coalesced_waiter_cancellation_signals_but_retains_running_reservations ... ok
+test compiler::tests::native_control::pool_stop_signals_native_control_before_actual_task_retirement ... ok
+test compiler::tests::ownership::cancelled_running_job_retains_source_lock_and_reservations_then_discards_late_result ... ok
+test compiler::tests::ownership::queued_last_waiter_drop_destroys_input_without_running_it ... ok
+test compiler::tests::ownership::unexpected_finish_panic_fails_waiters_closes_admission_and_releases_dead_worker ... ok
+test compiler::tests::payload::a_second_panic_during_payload_cleanup_aborts_and_is_reaped ... ok
+test compiler::tests::payload::unexpected_panic_completion_waits_for_payload_cleanup_past_cutoff ... ok
+test compiler::tests::population::coalesced_results_respect_ready_image_bytes_even_after_cache_eviction ... ok
+test compiler::tests::population::failed_creator_setup_promptly_fails_followers_without_starting_a_worker ... ok
+test compiler::tests::population::ordinary_job_errors_and_panics_fan_out_then_unrelated_work_recovers ... ok
+test compiler::tests::population::same_key_waiters_share_one_owned_compilation_and_survive_creator_cancellation_after_start ... ok
+test compiler::tests::population::workers_queue_and_waiter_limit_leave_existing_warm_entries_available ... ok
+test compiler::tests::read_control::last_waiter_stop_retains_worker_source_and_all_reservations_until_retirement ... ok
+test compiler::tests::read_control::one_cancelled_waiter_keeps_shared_worker_control_and_original_window_live ... ok
+test compiler::tests::read_control::pool_shutdown_signals_worker_before_releasing_owned_source_and_capacity ... ok
+test compiler::tests::read_control::worker_control_population_is_bounded_by_jobs_and_reclaimed_on_unstarted_drop ... ok
+test compiler::tests::teardown::dropped_quiesce_future_keeps_stopping_owner_until_actual_join ... ok
+test compiler::tests::teardown::reentrant_final_owner_abort_is_supervised ... ok
+test config::isolation::tests::a_required_execution_profile_changes_the_prepared_and_native_policy_identity ... ok
+test config::isolation::tests::only_exact_node_profiles_decode_and_round_trip ... ok
+test config::isolation::tests::requested_external_profile_cannot_construct_an_unmanaged_or_phase_zero_backend ... ok
+test config::java::tests::java_exception_profile_is_explicit_fixed_and_cache_distinct ... ok
+test config::java::tests::ordinary_profile_preserves_typed_function_references_without_enabling_gc ... ok
+test config::renderer::tests::external_renderer_keeps_enforced_admission_and_isolated_compiler_requirements ... ok
+test config::renderer::tests::renderer_installation_preserves_operator_budgets_and_checks_the_selected_engine ... ok
+test config::runtime_compatibility::tests::native_facts_ignore_the_callers_cpu_label ... ok
+test config::tests::applying_policy_enables_required_containment_and_caps_pool_concurrency ... ok
+test config::tests::changes_to_execution_and_preparation_bounds_change_compatibility ... ok
+test config::tests::context_policy_compatibility_is_order_independent_and_namespace_framed ... ok
+test config::tests::engine_policy::explicit_default_matches_the_pinned_engine_layout_and_optimization ... ok
+test config::tests::engine_policy::four_profiles_bind_actual_engine_policy_and_remain_distinct ... ok
+test config::tests::engine_policy::pooling_rejects_host_sized_products_before_mutating_engine_configuration ... ok
+test config::tests::generic_and_legacy_payload_adapters_have_distinct_compatibility ... ok
+test config::tests::invalid_and_overflowing_policy_is_rejected_before_engine_construction ... ok
+test config::tests::legacy_alias_preserves_the_existing_default_policy ... ok
+test config::tests::security_advisories::call_ref_retains_callee_fuel_in_the_ordinary_engine ... ok
+test config::tests::security_advisories::dynamic_record_lifting_charges_host_allocations_before_acceptance ... ok
+test config::tests::security_advisories::exception_return_retains_callee_fuel_in_the_java_engine ... ok
+test config::tests::security_advisories::fixed_length_lists_remain_outside_the_closed_engine_profile ... ok
+test containment::currentness_tests::currentness_diagnostics_never_override_memory_deadline_or_untyped_errors ... ok
+test containment::currentness_tests::validated_currentness_keeps_the_existing_runtime_trap_and_consumption ... ok
+test containment::tests::bounded_text_preserves_utf8_boundaries ... ok
+test containment::tests::cancellation_and_deadline_precede_fuel_exhaustion ... ok
+test containment::tests::cancellation_wins_when_cancellation_and_deadline_are_first_visible_together ... ok
+test containment::tests::first_stop_cause_is_sticky_across_repeated_epoch_observations ... ok
+test containment::tests::fuel_exhaustion_precedes_generic_guest_trap_classification ... ok
+test containment::tests::injected_monotonic_clock_controls_deadline_without_wall_clock_or_sleep ... ok
+test containment::tests::memory_precedes_fuel_and_guest_trap_classification ... ok
+test containment::tests::typed_capability_failure_retains_only_its_closed_code ... ok
+test factory::tests::busy_shutdown_preserves_backend_epoch_progress_until_last_owner_drop ... ok
+test factory::tests::explicit_ticker_stop_wakes_a_long_interval_and_is_idempotent ... ok
+test factory::tests::input_observer_is_shared_without_retaining_factory_or_workers ... ok
+test factory::tests::ordinary_factory_drop_retains_worker_for_a_surviving_runtime_owner ... ok
+test factory::tests::repeated_ticker_drop_joins_every_worker ... ok
+test factory::tests::unique_factory_shutdown_joins_with_an_engine_reference_still_alive ... ok
+test host::accounting::tests::deadlines::legacy_precise_token_is_validated_without_extending_its_unix_projection ... ok
+test host::accounting::tests::deadlines::relative_ceiling_after_a_wall_jump_preserves_the_managers_grant_projection ... ok
+test host::accounting::tests::deadlines::shared_ledger_keeps_submillisecond_deadline_without_a_second_deadline_token ... ok
+test host::accounting::tests::deadlines::token_only_deadline_survives_a_forward_wall_jump ... ok
+test host::accounting::tests::diagnostic::execution_hook_records_the_precise_deadline_and_the_actual_expiry_check_sample ... ok
+test host::accounting::tests::failed_growth_does_not_charge_a_provisional_memory_peak ... ok
+test host::accounting::tests::fallback_is_one_local_ledger_per_invocation_and_uses_one_sample ... ok
+test host::accounting::tests::invalid_owners_grants_and_runtime_counter_increases_fail_closed ... ok
+test host::accounting::tests::legacy_deadline_token_is_used_without_renewing_its_relative_grant ... ok
+test host::accounting::tests::log_reservations_refund_and_terminal_reports_cannot_overwrite_host_charges ... ok
+test host::accounting::tests::original_clock_sample_and_tighter_request_deadline_survive_wall_adjustment ... ok
+test host::accounting::tests::phase3_managed_execution_keeps_original_ledger_and_rejects_unmanaged_opt_in ... ok
+test host::accounting::tests::runtime_observation::competing_fuel_charge_cannot_publish_the_failed_observations_memory_peak ... ok
+test host::accounting::tests::runtime_observation::finalized_ledger_cannot_advance_either_local_watermark_even_for_zero_fuel ... ok
+test host::accounting::tests::runtime_observation::invalid_native_observations_leave_both_watermarks_and_ledger_unchanged ... ok
+test host::accounting::tests::runtime_observation::native_fuel_adjustments_do_not_double_charge_child_work_or_refunds ... ok
+test host::accounting::tests::runtime_observation::repeated_lower_memory_observations_keep_the_confirmed_peak_and_log_reservation ... ok
+test host::accounting::tests::shares_the_original_ledger_and_charges_only_new_fuel_deltas ... ok
+test host::accounting::tests::stricter_cancellation_monotonic_deadline_is_retained_with_a_supplied_ledger ... ok
+test host::blob::table::tests::finite_capacity_and_store_drop_retain_busy_physical_owners ... ok
+test host::blob::table::tests::forged_foreign_wrong_kind_busy_and_stale_numbers_never_create_authority ... ok
+test host::capabilities::failure::tests::absent_unknown_and_malformed_details_never_preserve_a_reason ... ok
+test host::capabilities::failure::tests::every_currentness_reason_requires_its_exact_constructor_code_and_retryability ... ok
+test host::capabilities::failure::tests::wrapped_error_keeps_existing_display_and_only_static_closed_diagnostics ... ok
+test host::clock::tests::monotonic_observations_clamp_regressions_and_reset_only_for_a_new_activation ... ok
+test host::clock::tests::wall_adjustments_do_not_change_elapsed_monotonic_time ... ok
+test host::logging::tests::capture_eviction_and_clear_do_not_refund_accepted_logs_or_cross_activation_counters ... ok
+test host::logging::tests::entry_ceiling_and_unavailable_capture_never_consume_an_unaccepted_record ... ok
+test host::logging::tests::exact_canonical_json_bytes_include_utf8_escaping_fields_and_trusted_correlation ... ok
+test host::logging::tests::invalid_and_reserved_guest_fields_are_rejected_without_budget_changes ... ok
+test host::logging::tests::one_byte_under_grant_or_local_limit_rejects_without_capture_or_consumption ... ok
+test host::logging::tests::target_runs_without_capture_lock_and_rejection_refunds_before_retry ... ok
+test host::owned_context::tests::capacity_threshold_is_inclusive_and_excess_has_a_hard_postcondition ... ok
+test host::owned_context::tests::excessive_keys_rebuild_only_their_map_and_preserve_values_and_order ... ok
+test host::owned_context::tests::excessive_values_keep_map_nodes_and_ordinary_keys_in_place ... ok
+test host::owned_context::tests::spare_capacity_does_not_change_the_existing_logical_admission_boundary ... ok
+test host::owned_context::tests::unselected_or_mismatched_execution_cannot_spoof_the_reserved_web_identity ... ok
+test host::owned_context::tests::validated_context_moves_every_field_and_ordinary_backing_buffer ... ok
+test host::owned_context::tests::web_asset_identity_comes_from_the_prepared_revision_not_caller_metadata ... ok
+test host::owned_context::tests::web_identity_map_entry_is_charged_before_context_ownership_transfer ... ok
+test host::policy::tests::context_preflight_covers_observed_vector_and_string_capacities ... ok
+test host::policy::tests::default_discloses_only_guest_namespaced_metadata_without_renaming ... ok
+test host::policy::tests::exact_claim_and_baggage_allowlists_are_independent_of_metadata_namespaces ... ok
+test host::policy::tests::malformed_or_oversized_lists_fail_before_policy_is_shared ... ok
+test host::request_context::tests::diagnostic_charge_matches_the_existing_validator_at_its_exact_boundary ... ok
+test host::request_context::tests::empty_metadata_values_still_consume_structural_budget_and_input_is_separate ... ok
+test host::request_context::tests::rejects_each_context_owner_without_copying_or_exposing_oversized_text ... ok
+test host::streaming_http::table::tests::finite_table_drops_actual_resources_even_with_busy_entries ... ok
+test host::streaming_http::table::tests::foreign_wrong_kind_stale_and_busy_handles_fail_closed ... ok
+test host::tests::aggregate_memory_budget_counts_all_linear_memories ... ok
+test host::tests::configured_store_counts_and_table_growth_override_legacy_defaults ... ok
+test host::tests::java_exception_reservation_and_linear_memories_share_one_budget ... ok
+test invocation_input_observer::tests::disabled_begin_does_not_lock_clone_identity_or_record ... ok
+test invocation_input_observer::tests::invalid_stage_order_marks_coverage_and_retirement_still_refunds ... ok
+test invocation_input_observer::tests::raw_counts_preserve_capacity_and_zero_length_owner_until_its_drop ... ok
+test invocation_input_observer::tests::records_are_never_overwritten_when_diagnostic_storage_is_exhausted ... ok
+test invocation_input_observer::tests::registration_is_atomic_bounded_and_cannot_reset_a_live_session ... ok
+test invocation_input_observer::tests::reused_unknown_and_duplicate_stage_fail_coverage_without_stealing_owners ... ok
+test phase0::tests::dynamic_results_preserve_legacy_success_domain_errors_and_consumption ... ok
+test phase0::tests::legacy_input_preserves_text_and_bounds_the_escaped_parameter_buffer ... ok
+test phase0::tests::profiles_explicit_bounded_allocator_and_cow_experiments ... ok
+test phase0::tests::rejects_an_unbounded_pooling_experiment ... ok
+test phase0::tests::traps_interruptions_and_platform_failures_preserve_shared_backend_reports ... ok
+test phase0::tests::typed_echo_error_keeps_code_payload_and_media_type_out_of_success ... ok
+test phase0::tests::wrong_result_framing_never_becomes_success_or_overrides_cleanup ... ok
+test preparation_observer::tests::consumer_wake_panic_cannot_abort_preparation_accounting ... ok
+test preparation_observer::tests::cpu_intervals_reject_task_migration_reuse_and_regressing_counters ... ok
+test preparation_observer::tests::disabled_observation_records_nothing_even_if_enabled_during_that_job ... ok
+test preparation_observer::tests::dropping_a_woken_waiter_cannot_remove_a_later_registration ... ok
+test preparation_observer::tests::exhausted_observation_ids_do_not_alias_existing_jobs_or_records ... ok
+test preparation_observer::tests::generic_async_cpu_suppression_keeps_synchronous_stage_observations_independent ... ok
+test preparation_observer::tests::linux_task_stat_parser_handles_comm_parentheses_and_exact_cpu_field_positions ... ok
+test preparation_observer::tests::malformed_truncated_oversized_or_overflowing_cpu_records_are_unavailable ... ok
+test preparation_observer::tests::observation_notifications_can_reenter_without_holding_the_state_mutex ... ok
+test preparation_observer::tests::only_one_pending_waiter_is_retained_and_drop_releases_its_slot ... ok
+test preparation_observer::tests::replaced_and_deregistered_wakers_drop_outside_the_state_mutex ... ok
+test preparation_observer::tests::running_entry_overflow_does_not_hide_live_job_count_or_corrupt_other_entries ... ok
+test preparation_observer::tests::stage_ring_evicts_only_old_observations_and_keeps_complete_totals ... ok
+test preparation_observer::tests::success_failure_and_unwind_publish_balanced_stage_and_job_outcomes ... ok
+test surface::tests::borrowed_lookup_preserves_exact_contract_and_function_identity_order ... ok
+test surface::tests::selected_async_signature_planning_keeps_exact_kind_and_type_work_bounds ... ok
+test telemetry::tests::explicit_observer_error_becomes_host_unavailable_and_refunds_reservation ... ok
+test telemetry::tests::observer_panic_is_counted_without_changing_accepted_log_or_budget ... ok
+test timing::timing_tests::timing_store_snapshot_reports_bounded_occupancy ... ok
+test values::tests::bounds::decoded_values_have_a_separate_allocation_budget ... ok
+test values::tests::bounds::input_bytes_depth_nodes_strings_and_collections_are_independently_bounded ... ok
+test values::tests::bounds::output_writer_checks_escaped_bytes_and_structure_during_emission ... ok
+test values::tests::bounds::schema_walk_limits_and_unsupported_types_fail_before_values_exist ... ok
+test values::tests::bounds::signature_plan_accounts_for_nested_inline_list_amplification ... ok
+test values::tests::bounds::wrong_framing_media_and_host_result_types_are_rejected ... ok
+test values::tests::canonical::canonical_parameters_retain_changed_values_presence_and_original_codec_limits ... ok
+test values::tests::canonical::prepared_parameter_types_define_canonical_record_and_tagged_business_input ... ok
+test values::tests::composites::all_composites_encode_with_explicit_tags_and_declaration_order ... ok
+test values::tests::composites::declared_error_is_only_the_single_top_level_result_branch ... ok
+test values::tests::composites::malformed_composites_do_not_gain_defaults_or_drop_fields ... ok
+test values::tests::differential::corpus::fixed_seed_scalar_record_tagged_and_nested_corpus_has_an_exact_finite_population ... ok
+test values::tests::differential::limits::actual_record_and_flag_scratch_slots_fit_the_existing_node_allowance ... ok
+test values::tests::differential::limits::lexical_and_typed_limits_are_independent_and_inclusive ... ok
+test values::tests::differential::limits::near_input_string_and_collection_limits_remain_bounded_without_hidden_capacity_credit ... ok
+test values::tests::differential::limits::retained_charges_include_names_and_transient_numeric_text_at_exact_boundaries ... ok
+test values::tests::differential::ownership::all_retained_text_is_owned_after_input_overwrite_and_destruction ... ok
+test values::tests::differential::ownership::repeated_late_rejections_do_not_reuse_scratch_or_the_next_calls_budget ... ok
+test values::tests::differential::ownership::the_public_return_does_not_retain_a_large_unescaped_payload ... ok
+test values::tests::differential::precedence::complete_grammar_collection_and_arity_checks_precede_typed_children ... ok
+test values::tests::differential::precedence::duplicate_key_at_collection_capacity_keeps_the_collection_error ... ok
+test values::tests::differential::precedence::limits_media_and_full_lexical_preflight_keep_their_original_priority ... ok
+test values::tests::differential::precedence::reordered_record_errors_follow_declaration_order_and_transient_text_charges ... ok
+test values::tests::differential::scalars::escaped_unicode_keys_and_values_preserve_decoded_utf8_limits ... ok
+test values::tests::differential::scalars::exact_numeric_framing_and_unicode_share_the_legacy_contract ... ok
+test values::tests::differential::scalars::finite_float_rounding_and_specials_are_compared_without_nan_equality ... ok
+test values::tests::differential::tagged::deferred_record_payloads_decode_in_either_order_and_reject_real_nested_duplicates ... ok
+test values::tests::differential::tagged::deferred_values_share_original_depth_nodes_collections_and_retained_ledger ... ok
+test values::tests::differential::tagged::every_prefix_of_a_deferred_escaped_record_is_rejected_without_accepting_a_partial_value ... ok
+test values::tests::differential::tagged::tagged_null_empty_and_nested_states_never_gain_defaults ... ok
+test values::tests::measurement::codec_collector ... ignored, explicit finite paired Linux codec measurement only
+test values::tests::measurement::fixed_fixtures_preserve_independent_bytes_and_canonical_semantics ... ok
+test values::tests::scalars::decimal64_strings_have_a_single_integer_spelling ... ok
+test values::tests::scalars::every_small_integer_width_rejects_overflow_and_noninteger_tokens ... ok
+test values::tests::scalars::floating_point_round_trips_preserve_finite_bits_and_signed_zero ... ok
+test values::tests::scalars::floats_accept_explicit_special_values_and_reject_accidental_overflow ... ok
+test values::tests::scalars::scalar_widths_unicode_and_lossless_decimal64 ... ok
+test values::tests::transactions::transaction_owned_signatures_fit_the_existing_http_preparation_profile ... ok
+test values::tests::transactions::transaction_resources_need_an_explicit_allowlist_and_nested_pages_reject ... ok
+test values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan ... ok
+test values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults ... ok
+
+test result: ok. 340 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 18.88s
+

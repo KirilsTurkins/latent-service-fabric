@@ -74,10 +74,10 @@ impl WasmtimeComponentEngineFactory {
     /// Independent counters remain available after the factory is consumed.
     #[must_use]
     pub fn compiler_observer(&self) -> crate::CompilerObserver {
-        self.shared
-            .compiler
-            .as_ref()
-            .map_or_else(crate::CompilerObserver::disabled, |pool| pool.observer())
+        self.shared.compiler.as_ref().map_or_else(
+            crate::CompilerObserver::disabled,
+            crate::compiler::CompilerPool::observer,
+        )
     }
 
     /// Closes compiler admission now, then waits for worker-owned work to end.
@@ -232,7 +232,7 @@ impl WasmtimeComponentEngineFactory {
             services,
             epoch_ticker,
             engine.clone(),
-            profile.clone(),
+            &profile,
             admission,
             lifecycle,
             Arc::clone(&runtime_profile),

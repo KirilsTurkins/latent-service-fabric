@@ -1,6 +1,7 @@
 use latent_state::embedded::{
     AtomicBatch, EmbeddedStore, ExpectedRow, Family, ReadView, RowMutation, StoreError,
 };
+use latent_state::protected_store::FreshStoreInitialization;
 
 use crate::authority::{AuthorityError, DurableEffectAuthority, EffectTime};
 use crate::dispatch::{AttemptIdentity, AttemptReceipt, Disposition, EffectRecord, RetryProof};
@@ -50,6 +51,15 @@ pub struct HistoryPage {
     pub resume: Option<Vec<u8>>,
 }
 
+/// Exact bounded dependencies captured from the same native view. These bytes
+/// confer no terminalization, payload-release or provider authority.
+pub struct RetainedEffectRows {
+    pub record: EffectRecord,
+    pub expectations: Vec<ExpectedRow>,
+    pub due: Option<latent_state::embedded::RowKey>,
+    pub reclaim: Vec<latent_state::embedded::RowKey>,
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
 pub struct DispatchCounts {
     pub pending: u64,
@@ -70,6 +80,26 @@ pub struct DispatchCounts {
 pub struct DispatchCatalog;
 
 impl DispatchCatalog {
+    /// Namespace admission charge for the declared finite retained closure.
+    /// Include closed codec maxima and encoded row-key bytes, rather than
+    /// pretending the initial pending record bounds later receipt/history growth.
+    /// The protected engine independently enforces actual disk/index high-water.
+    pub fn retention_charge(authority: &DurableEffectAuthority) -> Result<u64, StoreError> {
+        let attempts = u64::from(authority.ceiling().maximum_attempts);
+        let history = attempts
+            .checked_mul(
+                (super::codec::MAXIMUM_HISTORY_BYTES + super::codec::HISTORY_PREFIX.len() + 40 + 64)
+                    as u64,
+            )
+            .ok_or(StoreError::Capacity)?;
+        EffectRecord::retained_bound(authority)
+            .map_err(storage_error)?
+            .checked_add((EFFECT_PREFIX.len() + 32 + 64) as u64)
+            .and_then(|bytes| bytes.checked_add(history))
+            .and_then(|bytes| bytes.checked_add(256))
+            .ok_or(StoreError::Capacity)
+    }
+
     /// Only the fresh exclusive node startup owner may advance this fence.
     /// The protected root must prove the previous process physically retired.
     /// An admitted external restore checkpoint rejects epoch/clock rollback;
@@ -79,12 +109,34 @@ impl DispatchCatalog {
         time: EffectTime,
         minimum_checkpoint: Option<(u64, u64)>,
     ) -> Result<DispatchEpoch, DispatchStoreError> {
+        Self::begin_initializing_epoch(store, time, minimum_checkpoint, None)
+    }
+
+    /// The production protected worker may supply its one affine initialization
+    /// witness. This checks the original checkpoint against actual continuous
+    /// time for a wholly empty new store; it never relaxes a reopened owner floor.
+    pub fn begin_initializing_epoch(
+        store: &EmbeddedStore,
+        time: EffectTime,
+        minimum_checkpoint: Option<(u64, u64)>,
+        initialization: Option<FreshStoreInitialization<'_>>,
+    ) -> Result<DispatchEpoch, DispatchStoreError> {
         let view = store.snapshot()?;
         let key = OwnerRecord::key();
         let previous = view.get(&key)?;
         let old = previous.as_deref().map(OwnerRecord::decode).transpose()?;
         if let Some((minimum_epoch, minimum_clock)) = minimum_checkpoint {
-            if old.is_none_or(|old| old.epoch < minimum_epoch || old.clock_floor < minimum_clock) {
+            let accepted = match old {
+                None => {
+                    initialization.is_some_and(|proof| proof.matches_store(store))
+                        && minimum_epoch == 1
+                        && time.continuity_proven
+                        && time.unix_millis >= minimum_clock
+                        && view.is_empty()?
+                }
+                Some(old) => old.epoch >= minimum_epoch && old.clock_floor >= minimum_clock,
+            };
+            if !accepted {
                 return Err(DispatchStoreError::StaleEpoch);
             }
         }
@@ -117,6 +169,7 @@ impl DispatchCatalog {
         maximum_rows: usize,
         maximum_bytes: usize,
     ) -> Result<DuePage, StoreError> {
+        latent_state::recovery::require_ready(view)?;
         let page = view.scan_after(
             Family::Maintenance,
             DUE_PREFIX,
@@ -132,7 +185,24 @@ impl DispatchCatalog {
                 next_due_millis = Some(row.due_millis);
                 break;
             }
-            rows.push(row);
+            let loaded = write::Loaded::read(view, &row.effect).map_err(|error| match error {
+                DispatchStoreError::Storage(error) => error,
+                _ => StoreError::Corrupt,
+            })?;
+            let authority = loaded.record.authority().map_err(storage_error)?;
+            let scope = authority.scope();
+            match latent_state::recovery::require_namespace_ready(
+                view,
+                &latent_core::TenantId(scope.tenant.clone()),
+                &latent_core::StateNamespaceId(scope.namespace.clone()),
+                scope.incarnation,
+            ) {
+                Ok(()) => rows.push(row),
+                // Preserve paused/original-incarnation work for review while
+                // allowing the same bounded page to serve ready namespaces.
+                Err(StoreError::Unavailable | StoreError::Conflict) => {}
+                Err(error) => return Err(error),
+            }
         }
         Ok(DuePage {
             rows,
@@ -174,6 +244,7 @@ impl DispatchCatalog {
         let payload_bytes = view.get(&payload_key)?.ok_or(StoreError::Corrupt)?;
         let payload = PayloadRecord::decode(&payload_bytes).map_err(storage_error)?;
         let authority = loaded.record.authority().map_err(storage_error)?;
+        writer.expect_ready_namespace(&view, authority.scope())?;
         payload.verify(&authority).map_err(storage_error)?;
         let attempt = match loaded.record.claim(epoch.0, time) {
             Ok(attempt) => attempt,
@@ -224,6 +295,10 @@ impl DispatchCatalog {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, claim.effect())?;
+        writer.expect_ready_namespace(
+            &view,
+            loaded.record.authority().map_err(storage_error)?.scope(),
+        )?;
         loaded.record.check_claim(claim)?;
         writer.verify_attempt(&view, &loaded.record)?;
         loaded.record.begin_send(claim)?;

@@ -21,7 +21,16 @@ def graph(imports=(), exports=()):
         base, version = value.split("@")
         package, name = base.rsplit("/", 1)
         packages.append({"name": package + "@" + version})
-        interfaces.append({"name": name, "package": len(packages) - 1, "functions": {}, "types": {}})
+        # Named composition edges consume callable members, not type-only imports.
+        # This member-name fixture does not establish signature conformance.
+        symbol = {
+            "latent:clock/monotonic": "now-nanos",
+            "latent:random/random": "u64-value",
+            "wasi:random/random": "get-random-bytes",
+            "wasi:random/insecure": "get-insecure-random-u64",
+        }[base]
+        interfaces.append({"name": name, "package": len(packages) - 1,
+                           "functions": {symbol: {"name": symbol}}, "types": {}})
     return {"worlds": [{"name": "service", "package": 0,
         "imports": {str(index): {"interface": {"id": index}} for index in range(len(imports))},
         "exports": {str(index): {"interface": {"id": index}}

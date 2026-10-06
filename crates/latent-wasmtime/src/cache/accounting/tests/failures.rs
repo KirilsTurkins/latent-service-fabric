@@ -22,16 +22,13 @@ fn substituted_runtime_missing_attachment_and_wrong_cost_fail_before_eviction() 
         .publish_with_metadata(Arc::clone(&attached), 13, 5)
         .is_err());
     for altered in [
+        PreparedRuntimeCost { source: 8, ..COST },
         PreparedRuntimeCost {
-            source_bytes: 8,
+            metadata: 6,
             ..COST
         },
         PreparedRuntimeCost {
-            metadata_bytes: 6,
-            ..COST
-        },
-        PreparedRuntimeCost {
-            compiled_image_bytes: 14,
+            compiled_image: 14,
             ..COST
         },
     ] {
@@ -40,8 +37,8 @@ fn substituted_runtime_missing_attachment_and_wrong_cost_fail_before_eviction() 
         assert!(pending
             .publish_with_metadata(
                 Arc::clone(&attached),
-                altered.compiled_image_bytes,
-                altered.metadata_bytes
+                altered.compiled_image,
+                altered.metadata
             )
             .is_err());
     }

@@ -113,6 +113,15 @@ pub fn prepare_state(
                 cursor: args.cursor.as_deref().map(decode).transpose()?,
             }),
         }),
+        StateCommand::ReleaseExpiredCommandFloor(args) => Request::from(c::MutateStateRequest {
+            namespace: Some(target(&args.target, config)),
+            operation_id: args.operation_id.clone(),
+            mutation: c::StateMutationKind::ReleaseExpiredCommandFloor as i32,
+            record_id: Some(args.command_id.clone()),
+            expected_version: decode(&args.expected_version)?,
+            expected_policy_digest: args.expected_policy_digest.clone(),
+            reason: args.reason.clone(),
+        }),
     };
     finish(request)
 }

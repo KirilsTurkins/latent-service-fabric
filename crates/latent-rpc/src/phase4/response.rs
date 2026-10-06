@@ -150,6 +150,18 @@ fn state_receipt(
             | c::StateMutationKind::PurgeExpiredPayload
             | c::StateMutationKind::CheckpointNamespace,
         ) => Ok(()),
+        Ok(c::StateMutationKind::ReleaseExpiredCommandFloor) => {
+            let before = request::namespace_view_generation(&value.before_version, namespace)?;
+            let after = request::namespace_view_generation(&value.after_version, namespace)?;
+            if value.disposition != c::StateOperationDisposition::Committed as i32
+                || value.before_version[..43] != value.after_version[..43]
+                || value.before_version[51..] != value.after_version[51..]
+                || before.checked_add(1) != Some(after)
+            {
+                return Err(ValidationError::Association);
+            }
+            Ok(())
+        }
         _ => Err(ValidationError::Shape),
     }
 }
@@ -472,6 +484,10 @@ fn validate_inspect_namespace(
         required(original.namespace.as_ref())?,
     )?;
     namespace_status(value.status)?;
+    if let Some(policy) = &value.policy_digest {
+        b.string(policy, 71)?;
+        digest(policy)?;
+    }
     if value.generation == 0 {
         return Err(ValidationError::Shape);
     }

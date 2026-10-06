@@ -105,6 +105,7 @@ impl PreparationObserver {
 
     /// Registers at most one concurrent observation waiter. Drop deregisters it;
     /// it never blocks, pauses or cancels the measured preparation itself.
+    #[must_use]
     pub fn wait_for_change(
         &self,
         after_revision: u64,

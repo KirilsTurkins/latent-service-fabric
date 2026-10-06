@@ -79,6 +79,7 @@ impl DispatcherOwner {
         {
             return Err(DispatcherError::InvalidAdapter);
         }
+        let native_capacity = store.native_capacity_if_bound()?;
         let role = store.reserve_dispatcher()?.await??;
         let startup_time = time.observe();
         let epoch = match store::startup(&store, startup_time, minimum_checkpoint).await {
@@ -112,9 +113,10 @@ impl DispatcherOwner {
             epoch,
             runtime: runtime.clone(),
             shared,
-            native_capacity: std::sync::Mutex::new(
-                super::admission::NativeCapacityBinding::default(),
-            ),
+            native_capacity: std::sync::Mutex::new(super::admission::NativeCapacityBinding {
+                owner: native_capacity,
+                admissions_started: false,
+            }),
             receipts,
         });
         let jobs =

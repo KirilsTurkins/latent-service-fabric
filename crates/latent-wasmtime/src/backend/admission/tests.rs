@@ -227,7 +227,7 @@ async fn queued_source_case(enforced: bool, lifecycle: bool) {
         .poll(&mut Context::from_waker(Waker::noop()))
         .is_pending());
     if lifecycle {
-        revoke_lifecycle(&repository, &key.release).await;
+        revoke_lifecycle(&repository, &key.release);
     } else {
         authority.state.active.store(false, Ordering::SeqCst);
     }
@@ -255,7 +255,7 @@ async fn queued_source_case(enforced: bool, lifecycle: bool) {
     assert_eq!(backend.cache_snapshot().preparing, 0);
 }
 
-async fn revoke_lifecycle(
+fn revoke_lifecycle(
     repository: &DirectoryArtifactRepository,
     release: &latent_core::ReleaseDigest,
 ) {

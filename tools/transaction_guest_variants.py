@@ -115,12 +115,11 @@ def forbidden_http(source: str, language: str) -> str:
         '            lsf_require(frame->http_result.is_err &&\n'
         '                frame->http_result.val.err.tag == LATENT_HTTP_CLIENT_HTTP_ERROR_PERMISSION_DENIED);\n'
         '            return aggregate_return(frame, true,\n'
-        '                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_REJECTED, (probe_list_u8_t){0});\n')
+        '                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_REJECTED);\n')
     return replace_once(source,
         '            if (frame->reject) return aggregate_return(frame, true,\n'
-        '                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_REJECTED, (probe_list_u8_t){0});\n'
-        '            frame->phase = READ_STAGED;\n'
-        '            status = lsf_state_get(&frame->call, &frame->command, key(), &frame->read);',
+        '                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_REJECTED);\n'
+        '            return aggregate_return(frame, false, 0);',
         '            frame->phase = FORBIDDEN_HTTP;\n'
         '            frame->http_request = (latent_http_client_request_t){\n'
         f'                .method = LATENT_HTTP_CLIENT_METHOD_GET, .url = LSF_LITERAL("{URL}"),\n'

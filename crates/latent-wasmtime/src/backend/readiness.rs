@@ -22,6 +22,44 @@ use super::WasmtimeBackend;
 use crate::compiler::{Acquisition, Admission, CoalescingKey};
 use crate::containment::platform_error;
 
+struct ReadySourceLimits {
+    handle: String,
+    source_bytes: usize,
+    metadata_bytes: usize,
+    bounds: Option<ArtifactPreparationReadBounds>,
+}
+
+impl ReadySourceLimits {
+    fn admission(
+        &self,
+        key: &PreparationKey,
+        identity: Option<&latent_artifacts::ArtifactPreparationIdentity>,
+        eligibility: Option<&latent_artifacts::ReleaseUseEligibility>,
+    ) -> Admission {
+        Admission {
+            identity: identity.map(|source| CoalescingKey {
+                key: key.clone(),
+                source: source.clone(),
+                eligibility: eligibility.cloned(),
+            }),
+            handle: self.handle.clone(),
+            source_bytes: self.source_bytes,
+            metadata_bytes: self.metadata_bytes,
+            document_bytes: 0,
+        }
+    }
+}
+
+struct ReadyCompilation {
+    key: PreparationKey,
+    handle: String,
+    source: Option<latent_artifacts::OwnedArtifactPreparationSource>,
+    source_bytes: usize,
+    bounds: Option<ArtifactPreparationReadBounds>,
+    authority: SourceAuthority,
+    wait_enabled: bool,
+}
+
 impl WasmtimeBackend {
     pub(super) async fn prepare_ready_repository(
         &self,
@@ -43,98 +81,24 @@ impl WasmtimeBackend {
         counters::add(&context.preparation.repository_acquisitions, 1);
         context.validate_engine_key(&key)?;
         let source = Arc::clone(&repository).owned_preparation_source();
-        let eligibility = if let Some(source) = &source {
-            window
-                .check(|| {
-                    source.execution_eligibility_selected(&key.release, key.publication.as_ref())
-                })
-                .await?
-        } else {
-            if repository
-                .execution_eligibility_selected(&key.release, key.publication.as_ref())?
-                .is_some()
-            {
-                return Err(super::admission_association_error());
-            }
-            None
-        };
-        window
-            .check(|| {
-                context.check_eligibility(
-                    eligibility.as_ref(),
-                    &key.release,
-                    key.publication.as_ref(),
-                )
-            })
+        let SourceAuthority {
+            authentication: identity,
+            eligibility,
+        } = self
+            .read_ready_authority(repository.as_ref(), &key, source.as_ref(), &window)
             .await?;
-        let identity = if let Some(source) = &source {
-            window
-                .check(|| source.identity_selected(&key.release, key.publication.as_ref()))
-                .await?
-        } else {
-            None
-        };
-        let mut bounds = None;
-        let (handle, source_bytes, metadata_bytes) = if let Some(identity) = &identity {
-            context.validate_identity(identity, &key)?;
-            (
-                authenticated_handle(&key, identity, eligibility.as_ref()),
-                usize::try_from(identity.component_bytes())
-                    .map_err(|_| invalid("component-byte-overflow"))?,
-                context.reserved_metadata(retained_metadata_bytes(
-                    identity.metadata().charged_bytes(),
-                    Some(identity),
-                    eligibility.as_ref(),
-                    key.publication.as_ref(),
-                )?)?,
+        let source_limits = self
+            .ready_source_limits(
+                &key,
+                source.as_ref(),
+                &SourceAuthority {
+                    authentication: identity.clone(),
+                    eligibility: eligibility.clone(),
+                },
+                &window,
             )
-        } else {
-            if let Some(source) = &source {
-                bounds = Some(
-                    window
-                        .check(|| {
-                            source.read_bounds_selected(&key.release, key.publication.as_ref())
-                        })
-                        .await?,
-                );
-            }
-            let bytes = bounds.map_or(self.config.maximum_component_bytes as u64, |bounds| {
-                bounds.component_bytes
-            });
-            if bytes == 0 {
-                return Err(super::preparation::empty_component());
-            }
-            if bytes > self.config.maximum_component_bytes as u64 {
-                return Err(invalid("component-byte-limit"));
-            }
-            let generation = context
-                .next_untrusted
-                .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
-                    value.checked_add(1)
-                })
-                .map_err(|_| invalid("preparation-generation-exhausted"))?;
-            (
-                format!("wasmtime-readiness-pending:{generation}"),
-                bytes as usize,
-                context.reserved_metadata(retained_metadata_bytes(
-                    self.config.maximum_artifact_metadata_bytes,
-                    None,
-                    eligibility.as_ref(),
-                    key.publication.as_ref(),
-                )?)?,
-            )
-        };
-        let admission = Admission {
-            identity: identity.clone().map(|source| CoalescingKey {
-                key: key.clone(),
-                source,
-                eligibility: eligibility.clone(),
-            }),
-            handle: handle.clone(),
-            source_bytes,
-            metadata_bytes,
-            document_bytes: 0,
-        };
+            .await?;
+        let admission = source_limits.admission(&key, identity.as_ref(), eligibility.as_ref());
         // A later source snapshot may see refreshed catalog evidence. It must
         // never upgrade the original grant captured by this preparation.
         window
@@ -162,88 +126,24 @@ impl WasmtimeBackend {
                         u64::from(identity.is_some()),
                     );
                     counters::add(&context.preparation.repository_fetches, 1);
-                    let input = if let Some(native) = &context.native_aot {
-                        let native_source = source
-                            .as_ref()
-                            .ok_or_else(super::admission_association_error)?;
-                        let bounds = window
-                            .check(|| {
-                                native_source
-                                    .read_bounds_selected(&key.release, key.publication.as_ref())
-                            })
-                            .await?;
-                        future.reserve_documents(document_bytes(bounds)?)?;
-                        let job = native.reserve(&key.release, key.publication.as_ref())?;
-                        drop(source);
-                        input::ArtifactInput::Native(Some(job))
-                    } else if let Some(source) = source {
-                        let bounds = if let Some(bounds) = bounds {
-                            bounds
-                        } else {
-                            window
-                                .check(|| {
-                                    source.read_bounds_selected(
-                                        &key.release,
-                                        key.publication.as_ref(),
-                                    )
-                                })
-                                .await?
-                        };
-                        if bounds.component_bytes != source_bytes as u64 {
-                            return Err(invalid("preparation-read-size-changed"));
-                        }
-                        future.reserve_documents(document_bytes(bounds)?)?;
-                        input::ArtifactInput::Source {
+                    self.start_ready_compilation(
+                        repository.as_ref(),
+                        &future,
+                        &window,
+                        ReadyCompilation {
+                            key: key.clone(),
+                            handle: source_limits.handle,
                             source,
-                            limits: bounds.into_limits(source_bytes),
-                        }
-                    } else {
-                        // The caller owns this arbitrary async future. It is never
-                        // polled by a compiler worker or mistaken for a sync read.
-                        let artifact = repository.fetch(&key.release).await?;
-                        if artifact.component_bytes.capacity() > self.config.maximum_component_bytes
-                        {
-                            return Err(invalid("component-owned-byte-limit"));
-                        }
-                        let metadata = context.metadata_identity(&artifact)?;
-                        input::ArtifactInput::Fetched { artifact, metadata }
-                    };
-                    let context = Arc::clone(context);
-                    let key = key.clone();
-                    let authority = SourceAuthority {
-                        authentication: identity.clone(),
-                        eligibility: eligibility.clone(),
-                    };
-                    let native_control = match &input {
-                        input::ArtifactInput::Native(Some(job)) => Some(job.control()),
-                        _ => None,
-                    };
-                    let worker_wait = if read_wait.is_some()
-                        && matches!(&input, input::ArtifactInput::Source { .. })
-                    {
-                        Some(worker_wait::WorkerWindow::new(future.control()?))
-                    } else {
-                        None
-                    };
-                    let build =
-                        move |reservation| -> crate::compiler::Task<super::PreparedRuntime> {
-                            Box::new(move |queue| {
-                                context.compile_input(
-                                    input,
-                                    key,
-                                    handle,
-                                    authority,
-                                    reservation,
-                                    queue,
-                                    worker_wait,
-                                )
-                            })
-                        };
-                    if let Some(control) = native_control {
-                        future.start_with_control(Some(control), build)?;
-                    } else {
-                        future.start(build)?;
-                    }
+                            source_bytes: source_limits.source_bytes,
+                            bounds: source_limits.bounds,
+                            authority: SourceAuthority {
+                                authentication: identity.clone(),
+                                eligibility: eligibility.clone(),
+                            },
+                            wait_enabled: read_wait.is_some(),
+                        },
+                    )
+                    .await?;
                 } else {
                     // Only the distinct job owns the directory/root lock.
                     drop(source);
@@ -260,6 +160,226 @@ impl WasmtimeBackend {
         }
         window.check(|| context.check_runtime(&pin.runtime)).await?;
         Ok(self.ready_owner(pin))
+    }
+    async fn read_ready_authority(
+        &self,
+        repository: &dyn ArtifactRepository,
+        key: &PreparationKey,
+        source: Option<&latent_artifacts::OwnedArtifactPreparationSource>,
+        window: &wait::Window<'_>,
+    ) -> Result<SourceAuthority, PlatformError> {
+        let context = &self.shared.preparation_context;
+        let eligibility = if let Some(source) = source {
+            window
+                .check(|| {
+                    source.execution_eligibility_selected(&key.release, key.publication.as_ref())
+                })
+                .await?
+        } else {
+            if repository
+                .execution_eligibility_selected(&key.release, key.publication.as_ref())?
+                .is_some()
+            {
+                return Err(super::admission_association_error());
+            }
+            None
+        };
+        window
+            .check(|| {
+                context.check_eligibility(
+                    eligibility.as_ref(),
+                    &key.release,
+                    key.publication.as_ref(),
+                )
+            })
+            .await?;
+        let identity = if let Some(source) = source {
+            window
+                .check(|| source.identity_selected(&key.release, key.publication.as_ref()))
+                .await?
+        } else {
+            None
+        };
+        Ok(SourceAuthority {
+            authentication: identity,
+            eligibility,
+        })
+    }
+
+    async fn ready_source_limits(
+        &self,
+        key: &PreparationKey,
+        source: Option<&latent_artifacts::OwnedArtifactPreparationSource>,
+        authority: &SourceAuthority,
+        window: &wait::Window<'_>,
+    ) -> Result<ReadySourceLimits, PlatformError> {
+        let context = &self.shared.preparation_context;
+        let identity = &authority.authentication;
+        let eligibility = &authority.eligibility;
+        let mut bounds = None;
+        let (handle, source_bytes, metadata_bytes) = if let Some(identity) = &identity {
+            context.validate_identity(identity, key)?;
+            (
+                authenticated_handle(key, identity, eligibility.as_ref()),
+                usize::try_from(identity.component_bytes())
+                    .map_err(|_| invalid("component-byte-overflow"))?,
+                context.reserved_metadata(retained_metadata_bytes(
+                    identity.metadata().charged_bytes(),
+                    Some(identity),
+                    eligibility.as_ref(),
+                    key.publication.as_ref(),
+                )?)?,
+            )
+        } else {
+            if let Some(source) = source {
+                bounds = Some(
+                    window
+                        .check(|| {
+                            source.read_bounds_selected(&key.release, key.publication.as_ref())
+                        })
+                        .await?,
+                );
+            }
+            let bytes = bounds.map_or(self.config.maximum_component_bytes as u64, |bounds| {
+                bounds.component_bytes
+            });
+            if bytes == 0 {
+                return Err(super::preparation::empty_component());
+            }
+            if bytes > self.config.maximum_component_bytes as u64 {
+                return Err(invalid("component-byte-limit"));
+            }
+            let generation = context
+                .next_untrusted
+                .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
+                    value.checked_add(1)
+                })
+                .map_err(|_| invalid("preparation-generation-exhausted"))?;
+            (
+                format!("wasmtime-readiness-pending:{generation}"),
+                usize::try_from(bytes).map_err(|_| invalid("component-byte-overflow"))?,
+                context.reserved_metadata(retained_metadata_bytes(
+                    self.config.maximum_artifact_metadata_bytes,
+                    None,
+                    eligibility.as_ref(),
+                    key.publication.as_ref(),
+                )?)?,
+            )
+        };
+        Ok(ReadySourceLimits {
+            handle,
+            source_bytes,
+            metadata_bytes,
+            bounds,
+        })
+    }
+
+    async fn start_ready_compilation(
+        &self,
+        repository: &dyn ArtifactRepository,
+        future: &crate::compiler::PreparationWait<super::PreparedRuntime>,
+        window: &wait::Window<'_>,
+        mut request: ReadyCompilation,
+    ) -> Result<(), PlatformError> {
+        let context = &self.shared.preparation_context;
+        let input = request
+            .read_input(context, repository, future, window)
+            .await?;
+        let context = Arc::clone(context);
+        let ReadyCompilation {
+            key,
+            handle,
+            authority,
+            wait_enabled,
+            ..
+        } = request;
+        let native_control = match &input {
+            input::ArtifactInput::Native(Some(job)) => Some(job.control()),
+            _ => None,
+        };
+        let worker_wait = if wait_enabled && matches!(&input, input::ArtifactInput::Source { .. }) {
+            Some(worker_wait::WorkerWindow::new(future.control()?))
+        } else {
+            None
+        };
+        let build = move |reservation| -> crate::compiler::Task<super::PreparedRuntime> {
+            Box::new(move |queue| {
+                context.compile_input(input::CompileInput {
+                    input,
+                    key: &key,
+                    handle,
+                    authority,
+                    reservation,
+                    queue,
+                    worker_wait: worker_wait.as_ref(),
+                })
+            })
+        };
+        if let Some(control) = native_control {
+            future.start_with_control(Some(control), build)?;
+        } else {
+            future.start(build)?;
+        }
+        Ok(())
+    }
+}
+
+impl ReadyCompilation {
+    async fn read_input(
+        &mut self,
+        context: &super::PreparationContext,
+        repository: &dyn ArtifactRepository,
+        future: &crate::compiler::PreparationWait<super::PreparedRuntime>,
+        window: &wait::Window<'_>,
+    ) -> Result<input::ArtifactInput, PlatformError> {
+        let input = if let Some(native) = &context.native_aot {
+            let source = self.source.take();
+            let native_source = source
+                .as_ref()
+                .ok_or_else(super::admission_association_error)?;
+            let bounds = window
+                .check(|| {
+                    native_source
+                        .read_bounds_selected(&self.key.release, self.key.publication.as_ref())
+                })
+                .await?;
+            future.reserve_documents(document_bytes(bounds)?)?;
+            let job = native.reserve(&self.key.release, self.key.publication.as_ref())?;
+            drop(source);
+            input::ArtifactInput::Native(Some(job))
+        } else if let Some(source) = self.source.take() {
+            let bounds = if let Some(bounds) = self.bounds {
+                bounds
+            } else {
+                window
+                    .check(|| {
+                        source
+                            .read_bounds_selected(&self.key.release, self.key.publication.as_ref())
+                    })
+                    .await?
+            };
+            if bounds.component_bytes != self.source_bytes as u64 {
+                return Err(invalid("preparation-read-size-changed"));
+            }
+            future.reserve_documents(document_bytes(bounds)?)?;
+            input::ArtifactInput::Source {
+                source,
+                limits: bounds.into_limits(self.source_bytes),
+            }
+        } else {
+            // The caller owns this arbitrary async future. It is never
+            // polled by a compiler worker or mistaken for a sync read.
+            let artifact = repository.fetch(&self.key.release).await?;
+            if artifact.component_bytes.capacity() > context.config.maximum_component_bytes {
+                return Err(invalid("component-owned-byte-limit"));
+            }
+            let metadata = context.metadata_identity(&artifact)?;
+            input::ArtifactInput::Fetched {
+                artifact: Box::new(artifact),
+                metadata,
+            }
+        };
+        Ok(input)
     }
 }
 

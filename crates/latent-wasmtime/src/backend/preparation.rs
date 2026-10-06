@@ -72,15 +72,9 @@ impl WasmtimeBackend {
             // Validate the borrowed caller's sealed source first, then use the
             // same owned readiness queue. Recheck the ORIGINAL capability after
             // the await so renewal cannot silently upgrade this request.
-            let ready = self
-                .prepare_ready_repository(native.catalog(), key.clone(), None)
-                .await?;
-            self.shared.preparation_context.check_eligibility(
-                eligibility.as_ref(),
-                &key.release,
-                key.publication.as_ref(),
-            )?;
-            return self.materialize_readiness(ready);
+            return self
+                .prepare_native_repository(native, key, eligibility.as_ref())
+                .await;
         }
         let identity = source
             .as_ref()
@@ -89,38 +83,9 @@ impl WasmtimeBackend {
             .flatten();
         let permit = self.shared.instances.try_acquire()?;
         let Some(identity) = identity.filter(|_| self.config.prepared_cache_enabled) else {
-            counters::add(&self.shared.preparation.repository_fetches, 1);
-            let mut job = self.shared.preparation_observer.begin(&key.release);
-            let mut fetch = job.stage(PreparationStage::RepositoryFetchVerified);
-            if source.is_none() {
-                // An arbitrary asynchronous fetch may share this task thread
-                // with unrelated work even when it resumes on the same thread.
-                job.suppress_thread_cpu();
-                fetch.suppress_thread_cpu();
-            }
-            // Even a stamp-ineligible source owns its fallback read; an outer
-            // repository adapter cannot redirect it to another repository.
-            let (artifact, integrity) = match source {
-                Some(source) => (
-                    source
-                        .fetch_selected(&key.release, key.publication.as_ref())
-                        .await?,
-                    ComponentIntegrity::VerifiedBySource,
-                ),
-                None => (
-                    repository.fetch(&key.release).await?,
-                    ComponentIntegrity::Verify,
-                ),
-            };
-            fetch.complete();
-            self.shared
-                .preparation_context
-                .validate_repository_manifest(&artifact)?;
-            let runtime =
-                self.prepare_runtime_with_integrity(&artifact, key, integrity, eligibility, &job)?;
-            self.shared.preparation_context.check_runtime(&runtime)?;
-            job.complete();
-            return Ok(self.activation_use(runtime, permit));
+            return self
+                .prepare_unstamped_repository(repository, key, source, eligibility, permit)
+                .await;
         };
         self.shared
             .preparation_context
@@ -165,28 +130,8 @@ impl WasmtimeBackend {
             .fetch_selected(&key.release, key.publication.as_ref())
             .await?;
         fetch.complete();
-        let validation = job.stage(PreparationStage::MetadataValidation);
-        self.shared
-            .preparation_context
-            .validate_repository_manifest(&artifact)?;
-        counters::add(&self.shared.preparation.metadata_fingerprints, 1);
-        identity.verify_metadata(
-            &artifact,
-            self.config.maximum_artifact_metadata_bytes,
-            self.config.value_codec_limits.max_depth,
-        )?;
-        self.shared
-            .preparation_context
-            .validate_key(&artifact, key)?;
-        self.shared
-            .preparation_context
-            .validate_manifest(&artifact)?;
-        let component_digest = self.shared.preparation_context.component_identity(
-            &artifact,
-            key,
-            ComponentIntegrity::VerifiedBySource,
-        )?;
-        validation.complete();
+        let component_digest =
+            self.validate_authenticated_artifact(&artifact, key, &identity, &job)?;
         let runtime = self.shared.preparation_context.compile_runtime(
             &artifact,
             key,
@@ -203,6 +148,97 @@ impl WasmtimeBackend {
         job.complete();
         self.shared.preparation_context.check_runtime(&runtime)?;
         Ok(self.activation_use(runtime, permit))
+    }
+
+    async fn prepare_native_repository(
+        &self,
+        native: &crate::aot::cache::NativeAotService,
+        key: &PreparationKey,
+        eligibility: Option<&ReleaseUseEligibility>,
+    ) -> Result<PreparedActivation, PlatformError> {
+        let ready = self
+            .prepare_ready_repository(native.catalog(), key.clone(), None)
+            .await?;
+        self.shared.preparation_context.check_eligibility(
+            eligibility,
+            &key.release,
+            key.publication.as_ref(),
+        )?;
+        self.materialize_readiness(ready)
+    }
+
+    async fn prepare_unstamped_repository(
+        &self,
+        repository: &dyn ArtifactRepository,
+        key: &PreparationKey,
+        source: Option<latent_artifacts::ArtifactPreparationSource<'_>>,
+        eligibility: Option<ReleaseUseEligibility>,
+        permit: crate::cache::ActiveInstancePermit,
+    ) -> Result<PreparedActivation, PlatformError> {
+        counters::add(&self.shared.preparation.repository_fetches, 1);
+        let mut job = self.shared.preparation_observer.begin(&key.release);
+        let mut fetch = job.stage(PreparationStage::RepositoryFetchVerified);
+        if source.is_none() {
+            // An arbitrary asynchronous fetch may share this task thread
+            // with unrelated work even when it resumes on the same thread.
+            job.suppress_thread_cpu();
+            fetch.suppress_thread_cpu();
+        }
+        // Even a stamp-ineligible source owns its fallback read; an outer
+        // repository adapter cannot redirect it to another repository.
+        let (artifact, integrity) = match source {
+            Some(source) => (
+                source
+                    .fetch_selected(&key.release, key.publication.as_ref())
+                    .await?,
+                ComponentIntegrity::VerifiedBySource,
+            ),
+            None => (
+                repository.fetch(&key.release).await?,
+                ComponentIntegrity::Verify,
+            ),
+        };
+        fetch.complete();
+        self.shared
+            .preparation_context
+            .validate_repository_manifest(&artifact)?;
+        let runtime =
+            self.prepare_runtime_with_integrity(&artifact, key, integrity, eligibility, &job)?;
+        self.shared.preparation_context.check_runtime(&runtime)?;
+        job.complete();
+        Ok(self.activation_use(runtime, permit))
+    }
+
+    fn validate_authenticated_artifact(
+        &self,
+        artifact: &latent_artifacts::CapsuleArtifact,
+        key: &PreparationKey,
+        identity: &ArtifactPreparationIdentity,
+        job: &crate::preparation_observer::PreparationJob,
+    ) -> Result<String, PlatformError> {
+        let validation = job.stage(PreparationStage::MetadataValidation);
+        self.shared
+            .preparation_context
+            .validate_repository_manifest(artifact)?;
+        counters::add(&self.shared.preparation.metadata_fingerprints, 1);
+        identity.verify_metadata(
+            artifact,
+            self.config.maximum_artifact_metadata_bytes,
+            self.config.value_codec_limits.max_depth,
+        )?;
+        self.shared
+            .preparation_context
+            .validate_key(artifact, key)?;
+        self.shared
+            .preparation_context
+            .validate_manifest(artifact)?;
+        let component_digest = self.shared.preparation_context.component_identity(
+            artifact,
+            key,
+            ComponentIntegrity::VerifiedBySource,
+        )?;
+        validation.complete();
+        Ok(component_digest)
     }
 }
 

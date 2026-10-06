@@ -1,0 +1,72 @@
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+    Checking once_cell v1.21.4
+    Checking ipnet v2.12.2
+    Checking futures-core v0.3.34
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/work/crates/latent-wasmtime)
+    Checking futures-channel v0.3.34
+    Checking rustix-linux-procfs v0.1.1
+    Checking cap-primitives v4.0.3
+    Checking futures-util v0.3.34
+    Checking cap-std v4.0.3
+    Checking cap-fs-ext v4.0.3
+    Checking futures v0.3.34
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling tokio-macros v2.7.2
+   Compiling async-trait v0.1.92
+    Checking tokio v1.53.1
+   Compiling pulley-macros v48.0.3
+   Compiling wasmtime-internal-versioned-export-macros v48.0.3
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling enumflags2_derive v0.7.12
+   Compiling pulley-interpreter v48.0.3
+   Compiling wasmtime-internal-fiber v48.0.3
+   Compiling wasmtime v48.0.3
+    Checking thiserror v2.0.20
+    Checking cobs v0.3.0
+    Checking curve25519-dalek v5.0.0
+    Checking enumflags2 v0.7.12
+    Checking landlock v0.4.7
+    Checking ed25519-dalek v3.0.0
+    Checking serde v1.0.229
+   Compiling wit-parser v0.254.0
+   Compiling cranelift-codegen-meta v0.135.3
+    Checking wasmtime-internal-core v48.0.3
+    Checking smallvec v1.15.2
+    Checking latent-manifest v0.1.0-alpha.5 (/work/crates/latent-manifest)
+    Checking postcard v1.1.3
+    Checking wasmparser v0.254.0
+    Checking latent-audit v0.1.0-alpha.5 (/work/crates/latent-audit)
+    Checking wasmparser v0.259.0
+    Checking latent-state v0.1.0-alpha.5 (/work/crates/latent-state)
+    Checking regalloc2 v0.15.2
+    Checking spdx v0.13.5
+    Checking cranelift-bitset v0.135.3
+    Checking wasmtime-internal-jit-icache-coherence v48.0.3
+    Checking cranelift-entity v0.135.3
+    Checking cranelift-bforest v0.135.3
+    Checking latent-routing v0.1.0-alpha.5 (/work/crates/latent-routing)
+    Checking latent-activation v0.1.0-alpha.5 (/work/crates/latent-activation)
+    Checking latent-artifacts v0.1.0-alpha.5 (/work/crates/latent-artifacts)
+    Checking latent-telemetry v0.1.0-alpha.5 (/work/crates/latent-telemetry)
+   Compiling cranelift-codegen v0.135.3
+    Checking latent-effects v0.1.0-alpha.5 (/work/crates/latent-effects)
+   Compiling wit-component v0.254.0
+    Checking latent-commit v0.1.0-alpha.5 (/work/crates/latent-commit)
+   Compiling wasmtime-internal-wit-bindgen v48.0.3
+    Checking wasmprinter v0.254.0
+    Checking wit-parser v0.259.0
+   Compiling wasmtime-internal-component-macro v48.0.3
+    Checking wasmtime-environ v48.0.3
+    Checking latent-signing v0.1.0-alpha.5 (/work/crates/latent-signing)
+    Checking latent-packaging v0.1.0-alpha.5 (/work/crates/latent-packaging)
+    Checking latent-executor v0.1.0-alpha.5 (/work/crates/latent-executor)
+    Checking latent-policy v0.1.0-alpha.5 (/work/crates/latent-policy)
+    Checking latent-capabilities v0.1.0-alpha.5 (/work/crates/latent-capabilities)
+    Checking cranelift-native v0.135.3
+    Checking cranelift-frontend v0.135.3
+    Checking wasmtime-internal-unwinder v48.0.3
+    Checking wasmtime-internal-cranelift v48.0.3
+    Checking latent-component-bindings v0.1.0-alpha.5 (/work/crates/latent-component-bindings)
+    Finished `dev` profile [unoptimized] target(s) in 54.74s

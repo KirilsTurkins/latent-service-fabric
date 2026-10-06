@@ -21,36 +21,7 @@ impl<T: Send + Sync + 'static> CompilerPool<T> {
             })
         });
         if let Some(index) = existing {
-            if state.waiters >= limits.maximum_waiters
-                || state.jobs[index].waiters.len() >= limits.maximum_waiters_per_job
-            {
-                self.core
-                    .metrics
-                    .update(|s| s.waiter_rejected = s.waiter_rejected.saturating_add(1));
-                return Err(capacity_error("compiler-waiter-capacity"));
-            }
-            if state.jobs[index].abandoned {
-                return Err(capacity_error("compiler-generation-abandoned"));
-            }
-            let next = state
-                .next_waiter
-                .checked_add(1)
-                .ok_or_else(|| capacity_error("compiler-waiter-generation-exhausted"))?;
-            let waiter = new_waiter(state.next_waiter, permit);
-            state.next_waiter = next;
-            let job_id = state.jobs[index].id;
-            state.jobs[index].waiters.push(Arc::clone(&waiter));
-            state.waiters += 1;
-            self.core
-                .metrics
-                .update(|s| s.coalesced_waiters = s.coalesced_waiters.saturating_add(1));
-            self.core.record(&state);
-            drop(state);
-            self.core.metrics.notify();
-            return Ok(Acquisition::Waiting {
-                future: PreparationWait::new(Arc::clone(&self.core), job_id, waiter),
-                owner: false,
-            });
+            return self.coalesce_waiter(state, index, permit, &limits);
         }
         let reservation =
             match self
@@ -133,6 +104,44 @@ impl<T: Send + Sync + 'static> CompilerPool<T> {
         Ok(Acquisition::Waiting {
             future: PreparationWait::new(Arc::clone(&self.core), job_id, waiter),
             owner: true,
+        })
+    }
+    fn coalesce_waiter(
+        &self,
+        mut state: std::sync::MutexGuard<'_, super::state::State<T>>,
+        index: usize,
+        permit: super::ReadyPermit,
+        limits: &crate::PreparationCompilerSnapshot,
+    ) -> Result<Acquisition<T>, PlatformError> {
+        if state.waiters >= limits.maximum_waiters
+            || state.jobs[index].waiters.len() >= limits.maximum_waiters_per_job
+        {
+            self.core
+                .metrics
+                .update(|s| s.waiter_rejected = s.waiter_rejected.saturating_add(1));
+            return Err(capacity_error("compiler-waiter-capacity"));
+        }
+        if state.jobs[index].abandoned {
+            return Err(capacity_error("compiler-generation-abandoned"));
+        }
+        let next = state
+            .next_waiter
+            .checked_add(1)
+            .ok_or_else(|| capacity_error("compiler-waiter-generation-exhausted"))?;
+        let waiter = new_waiter(state.next_waiter, permit);
+        state.next_waiter = next;
+        let job_id = state.jobs[index].id;
+        state.jobs[index].waiters.push(Arc::clone(&waiter));
+        state.waiters += 1;
+        self.core
+            .metrics
+            .update(|s| s.coalesced_waiters = s.coalesced_waiters.saturating_add(1));
+        self.core.record(&state);
+        drop(state);
+        self.core.metrics.notify();
+        Ok(Acquisition::Waiting {
+            future: PreparationWait::new(Arc::clone(&self.core), job_id, waiter),
+            owner: false,
         })
     }
 }

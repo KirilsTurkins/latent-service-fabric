@@ -87,6 +87,19 @@ pub(crate) fn decode_params(
     decode_params_dispatch(types, payload, media_type, limits).0
 }
 
+/// Uses exactly the same typed decoder and encoder as guest invocation. Record
+/// field order, numeric representation and option/result presence follow the
+/// prepared component types, not an arbitrary JSON object serializer.
+pub(crate) fn canonical_params(
+    types: &[Type],
+    payload: &[u8],
+    media_type: &str,
+    limits: ValueCodecLimits,
+) -> Result<Vec<u8>, PlatformError> {
+    let values = decode_params(types, payload, media_type, limits)?;
+    encode::results(types, &values, limits)
+}
+
 // Local diagnostic metadata lets the explicit codec probe identify the path
 // without a global observer or any per-call synchronization.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

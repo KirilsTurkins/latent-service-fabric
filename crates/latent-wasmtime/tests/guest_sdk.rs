@@ -88,7 +88,7 @@ fn assert_cancelled(report: latent_executor::ExecutionReport) {
     assert_eq!(report.cleanup, latent_executor::ExecutionCleanup::Reusable);
     match report.outcome {
         Ok(latent_executor::GuestOutcome::Interrupted { kind, .. }) => {
-            assert_eq!(kind, latent_executor::GuestInterruptionKind::Cancelled)
+            assert_eq!(kind, latent_executor::GuestInterruptionKind::Cancelled);
         }
         Err(error) => assert_eq!(error.code, latent_core::PlatformErrorCode::Cancelled),
         other => panic!("cancellation must remain explicit: {other:?}"),

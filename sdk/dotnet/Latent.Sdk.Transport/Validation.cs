@@ -88,6 +88,14 @@ public sealed partial class BoundedClient
                         && Text(node.Phase, 64, true) && Text(node.PrincipalKind, 64, true) && OptionalText(node.TerminalState, 64));
                     if (node.Diagnostic is { } diagnostic)
                         Require(diagnostic.SchemaVersion == 1 && (diagnostic.ProfileDigest is null || diagnostic.ProfileDigest.Length == 64 && diagnostic.ProfileDigest.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f')));
+                    if (node.TransactionStaging is { } witness)
+                        Require(witness.SchemaVersion == 1 && witness.ActivationSerial != 0 && StagingHex(witness.CommandId)
+                            && StagingHex(witness.AttemptId) && StagingHex(witness.TransactionId)
+                            && witness.PublicationId.StartsWith("publication:sha256:", StringComparison.Ordinal)
+                            && StagingHex(witness.PublicationId[19..]) && witness.StagedMutations <= 128
+                            && witness.CapturedIntents is > 0 and <= 128 && node.GrantedBudget is { } grant
+                            && witness.CapturedIntents <= grant.EffectCount && witness.StateWriteBytes > 0
+                            && witness.StateWriteBytes <= grant.StateWriteBytes && witness.ObservedAtUnixMillis >= node.ReceivedAtUnixMillis);
                 }
                 break;
             case Profile.ListCapabilitiesResponse capabilities:
@@ -107,4 +115,5 @@ public sealed partial class BoundedClient
     }
 
     private static int Count(object? first, object? second, object? third) => (first is null ? 0 : 1) + (second is null ? 0 : 1) + (third is null ? 0 : 1);
+    private static bool StagingHex(string value) => value.Length == 64 && value.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
 }

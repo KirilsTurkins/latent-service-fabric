@@ -142,6 +142,16 @@ are rejected. A typed explanation resource file contains actual descriptive fiel
 {"kind": "secrets", "reference": "application-key"}
 ```
 
+Transactional intents distinguish the guest's `stage` operation from the native
+`dispatch` purpose under `latent:intents/staging@0.1.0`. Dispatch is a policy
+purpose only; it adds no guest WIT operation or immediate HTTP capability.
+Production dispatch derives the principal from the retained source service and
+requires an explicit service-integration state scope, exact publication and
+installed native provider binding. It rechecks the actual policy owner before
+the one native acceptance callback. Caller staging authority is retained through
+effect-bearing command commit; service dispatch authority cannot replace it.
+Configuration and signed input declarations confer neither permission.
+
 ## Durable owner and finite retention
 
 Enable the store explicitly under `capabilityPolicies` in the node configuration:

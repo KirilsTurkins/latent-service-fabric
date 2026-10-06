@@ -201,8 +201,17 @@ fn operation(contract: &str, name: &str) -> bool {
             "namespace-retire",
             "namespace-destroy",
             "namespace-recreate",
+            // Native offline purposes stay separate from invocation, lifecycle
+            // and result reads. They add no guest function or automatic resume.
+            "namespace-snapshot",
+            "namespace-inspect-restore",
+            "namespace-restore",
+            "namespace-schema-migrate",
+            "namespace-review-recovery",
+            "namespace-resume",
         ],
-        "latent:intents/staging@0.1.0" => &["stage"],
+        // Dispatch is a native current-purpose operation, not a guest import.
+        "latent:intents/staging@0.1.0" => &["stage", "dispatch"],
         _ => return false,
     };
     operations.contains(&name)

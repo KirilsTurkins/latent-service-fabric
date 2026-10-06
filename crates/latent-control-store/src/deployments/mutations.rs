@@ -6,8 +6,7 @@ use latent_core::{
     RouteGeneration, TenantId,
 };
 use latent_manifest::{
-    DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidator,
-    Phase1ManifestValidator,
+    validate_deployment_document, DeploymentManifest, JsonManifestCodec, ManifestCodec,
 };
 
 use super::observation::{count, CatalogWorkOperation as WorkOperation, Work};
@@ -406,9 +405,7 @@ impl DeploymentStore for DirectoryDeploymentRepository {
 
     fn apply(&self, deployment: DeploymentManifest) -> BoxFuture<'_, Result<(), PlatformError>> {
         Box::pin(async move {
-            Phase1ManifestValidator
-                .validate_deployment(&deployment)
-                .map_err(manifest_error)?;
+            validate_deployment_document(&deployment).map_err(manifest_error)?;
             let tenant = deployment
                 .metadata
                 .tenant
@@ -461,9 +458,7 @@ pub(super) fn normalize(
     mut deployment: DeploymentManifest,
     work: &mut Work,
 ) -> Result<DeploymentManifest, PlatformError> {
-    Phase1ManifestValidator
-        .validate_deployment(&deployment)
-        .map_err(manifest_error)?;
+    validate_deployment_document(&deployment).map_err(manifest_error)?;
     if deployment.id.0 == "default" {
         return Err(error(
             PlatformErrorCode::AlreadyExists,

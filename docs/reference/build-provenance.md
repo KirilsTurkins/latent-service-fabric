@@ -210,15 +210,16 @@ binding. A builder signature cannot replace that local native-output authority.
 | Keys / source requirements | 64 / 256 each |
 | Revoked keys / revoked builders | 256 / 256; 64 / 256 |
 | Committed echo snapshot files / explicit archive directories | 8192 / 4096 |
-| Per-file / total source / archive | 4 MiB / 48 MiB / 56 MiB |
+| Per-file / total source / archive | 4 MiB / 40 MiB / 48 MiB |
 
 The committed echo source capture and its Cargo attribution reader share the
 same fixed 8,192-file ceiling, including ownership-local CI contracts and their
-historical migration evidence. The total-source and archive ceilings are
-48 MiB and 56 MiB: the maintained selection grew beyond 32 MiB when the
-transaction implementation and its ownership tests were added. Per-file bytes,
-file count and directory count retain their independent ceilings. The explicit
-worktree guest profiles described above retain their separate 4,096-file limit. A repository regression
+historical migration evidence. The Phase 4 committed selection contains 4,827
+files and 35,719,675 source bytes; its Git archive contains 39,925,760 bytes.
+The fixed 40 MiB source and 48 MiB archive envelopes retain that full selection
+and the existing 8 MiB archive-overhead allowance. The 4 MiB per-file limit,
+source allowlist and downstream attribution checks still apply. The explicit worktree guest profiles
+described above retain their separate 4,096-file limit. A repository regression
 checks the actual committed selection through capture and attribution before
 compiler work; exceeding a ceiling fails rather than dropping source inputs.
 

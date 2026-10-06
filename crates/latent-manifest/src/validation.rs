@@ -21,6 +21,67 @@ const MAX_METADATA_VALUE_BYTES: usize = 4096;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Phase1ManifestValidator;
 
+#[derive(Clone, Copy)]
+enum ResourceProfile {
+    Stateless,
+    Transaction,
+}
+
+/// Closed transaction data validation, selected only after the signed companion
+/// association is checked. Guest heaps remain stateless. Passing validation
+/// grants no namespace, provider, invocation, command, or dispatch authority.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Phase4TransactionManifestValidator;
+
+/// Validate a deployment document before an artifact is available. This accepts
+/// the original Phase 1 data shape or the closed transaction data shape. It does
+/// not select an execution profile or grant any authority. Final admission must
+/// validate the pair with the validator selected by the actual sealed artifact.
+pub fn validate_deployment_document(manifest: &DeploymentManifest) -> ManifestResult<()> {
+    Phase1ManifestValidator
+        .validate_deployment(manifest)
+        .or_else(|_| Phase4TransactionManifestValidator.validate_deployment(manifest))
+}
+
+impl ManifestValidator for Phase4TransactionManifestValidator {
+    fn validate_capsule(&self, manifest: &CapsuleManifest) -> ManifestResult<()> {
+        Phase1ManifestValidator::validate_capsule_scope_profile(
+            manifest,
+            false,
+            ResourceProfile::Transaction,
+        )
+    }
+
+    fn validate_deployment(&self, manifest: &DeploymentManifest) -> ManifestResult<()> {
+        validate_deployment_profile(manifest, ResourceProfile::Transaction)
+    }
+
+    fn validate_deployment_against_capsule(
+        &self,
+        deployment: &DeploymentManifest,
+        capsule: &CapsuleManifest,
+    ) -> ManifestResult<()> {
+        Phase1ManifestValidator.validate_deployment_pair(
+            deployment,
+            capsule,
+            false,
+            ResourceProfile::Transaction,
+        )
+    }
+
+    fn validate_binding(&self, manifest: &BindingManifest) -> ManifestResult<()> {
+        Phase1ManifestValidator.validate_binding(manifest)
+    }
+
+    fn validate_trigger(&self, manifest: &TriggerManifest) -> ManifestResult<()> {
+        Phase1ManifestValidator.validate_trigger(manifest)
+    }
+
+    fn validate_policy(&self, manifest: &PolicyManifest) -> ManifestResult<()> {
+        Phase1ManifestValidator.validate_policy(manifest)
+    }
+}
+
 impl Phase1ManifestValidator {
     #[must_use]
     pub const fn new() -> Self {
@@ -59,7 +120,7 @@ impl Phase1ManifestValidator {
                 "web execution projections require the exact public world, imports and renderer profile",
             )]);
         }
-        self.validate_deployment_pair(deployment, projection, true)
+        self.validate_deployment_pair(deployment, projection, true, ResourceProfile::Stateless)
     }
 }
 
@@ -67,6 +128,7 @@ impl Phase1ManifestValidator {
     fn validate_capsule_scope_profile(
         manifest: &CapsuleManifest,
         web_projection: bool,
+        resources: ResourceProfile,
     ) -> ManifestResult<()> {
         let mut violations = Vec::new();
         validate_api_version(&manifest.api_version, &mut violations);
@@ -150,9 +212,10 @@ impl Phase1ManifestValidator {
                 "component call depth must be at least one",
             ));
         }
-        validate_stateless_budget(
+        validate_profile_budget(
             &manifest.execution.resource_budget_ceiling,
             "$.execution.limits",
+            resources,
             &mut violations,
         );
         validate_minimum_fabric_version(&manifest.minimum_fabric_version, &mut violations);
@@ -163,6 +226,15 @@ impl Phase1ManifestValidator {
                 "runtime requirements exceed their closed profile or bounds",
             ));
         }
+        if matches!(resources, ResourceProfile::Transaction)
+            && manifest.runtime_requirements.renderer.is_some()
+        {
+            violations.push(ManifestViolation::new(
+                "$.compatibility.renderer",
+                "transaction-renderer-unsupported",
+                "transaction capsules require direct application execution",
+            ));
+        }
         validate_capsule_scope(manifest, web_projection, &mut violations);
 
         finish_violations(violations)
@@ -171,132 +243,11 @@ impl Phase1ManifestValidator {
 
 impl ManifestValidator for Phase1ManifestValidator {
     fn validate_capsule(&self, manifest: &CapsuleManifest) -> ManifestResult<()> {
-        Self::validate_capsule_scope_profile(manifest, false)
+        Self::validate_capsule_scope_profile(manifest, false, ResourceProfile::Stateless)
     }
 
     fn validate_deployment(&self, manifest: &DeploymentManifest) -> ManifestResult<()> {
-        let mut violations = Vec::new();
-        validate_api_version(&manifest.api_version, &mut violations);
-        validate_metadata(&manifest.metadata, &mut violations);
-        validate_wire_identity(&manifest.id.0, &manifest.metadata.name, &mut violations);
-        validate_resource_identifier(
-            &manifest.id.0,
-            "$.metadata.name",
-            "deployment name",
-            &mut violations,
-        );
-        validate_resource_identifier(
-            &manifest.service.0,
-            "$.spec.service",
-            "service ID",
-            &mut violations,
-        );
-        validate_digest(&manifest.release.0, "$.spec.release", &mut violations);
-
-        if !(1..=10_000).contains(&manifest.route_weight) {
-            violations.push(ManifestViolation::new(
-                "$.spec.route.weight",
-                "invalid-route-weight",
-                "a Phase 1 deployment route weight must be between 1 and 10000",
-            ));
-        }
-
-        let mut grants = BTreeSet::new();
-        for (index, grant) in manifest.grants.iter().enumerate() {
-            validate_contract_id(
-                &grant.capability.0,
-                &format!("$.spec.grants[{index}].capability"),
-                &mut violations,
-            );
-            validate_resource_identifier(
-                &grant.policy.0,
-                &format!("$.spec.grants[{index}].policy"),
-                "policy ID",
-                &mut violations,
-            );
-            let key = (&grant.capability.0, &grant.policy.0);
-            if !grants.insert(key) {
-                violations.push(ManifestViolation::new(
-                    format!("$.spec.grants[{index}]"),
-                    "duplicate-grant",
-                    "the same capability and policy pair may be granted only once",
-                ));
-            }
-
-            let mut operations = BTreeSet::new();
-            for (operation_index, operation) in grant.operations.iter().enumerate() {
-                validate_token(
-                    operation,
-                    &format!("$.spec.grants[{index}].operations[{operation_index}]"),
-                    "operation",
-                    &mut violations,
-                );
-                if !operations.insert(operation.as_str()) {
-                    violations.push(ManifestViolation::new(
-                        format!("$.spec.grants[{index}].operations[{operation_index}]"),
-                        "duplicate-operation",
-                        "grant operations must be unique",
-                    ));
-                }
-            }
-            validate_metadata_map(
-                &grant.constraints,
-                &format!("$.spec.grants[{index}].constraints"),
-                &mut violations,
-            );
-        }
-
-        validate_stateless_budget(&manifest.resources, "$.spec.resources", &mut violations);
-        if manifest.availability.minimum_zones > manifest.availability.minimum_cached_copies {
-            violations.push(ManifestViolation::new(
-                "$.spec.availability.minimumZones",
-                "invalid-availability",
-                "minimumZones cannot exceed minimumCachedCopies",
-            ));
-        }
-        validate_token(
-            &manifest.placement.trust_class,
-            "$.spec.placement.trustClass",
-            "trust class",
-            &mut violations,
-        );
-        validate_unique_tokens(
-            &manifest.placement.architectures,
-            "$.spec.placement.architectures",
-            "architecture",
-            &mut violations,
-        );
-        validate_unique_tokens(
-            &manifest.placement.regions,
-            "$.spec.placement.regions",
-            "region",
-            &mut violations,
-        );
-        validate_unique_tokens(
-            &manifest.placement.zones,
-            "$.spec.placement.zones",
-            "zone",
-            &mut violations,
-        );
-        validate_unique_tokens(
-            &manifest.placement.required_features,
-            "$.spec.placement.requiredFeatures",
-            "required feature",
-            &mut violations,
-        );
-        validate_required_tenant(&manifest.metadata, &mut violations);
-        validate_scoped_value(
-            &manifest.service.0,
-            manifest
-                .metadata
-                .tenant
-                .as_ref()
-                .map(|tenant| tenant.0.as_str()),
-            "$.spec.service",
-            &mut violations,
-        );
-
-        finish_violations(violations)
+        validate_deployment_profile(manifest, ResourceProfile::Stateless)
     }
 
     fn validate_binding(&self, manifest: &BindingManifest) -> ManifestResult<()> {
@@ -458,7 +409,7 @@ impl ManifestValidator for Phase1ManifestValidator {
         deployment: &DeploymentManifest,
         capsule: &CapsuleManifest,
     ) -> ManifestResult<()> {
-        self.validate_deployment_pair(deployment, capsule, false)
+        self.validate_deployment_pair(deployment, capsule, false, ResourceProfile::Stateless)
     }
 }
 
@@ -468,12 +419,15 @@ impl Phase1ManifestValidator {
         deployment: &DeploymentManifest,
         capsule: &CapsuleManifest,
         web_projection: bool,
+        resources: ResourceProfile,
     ) -> ManifestResult<()> {
         let mut violations = Vec::new();
-        if let Err(mut invalid) = self.validate_deployment(deployment) {
+        if let Err(mut invalid) = validate_deployment_profile(deployment, resources) {
             violations.append(&mut invalid);
         }
-        if let Err(mut invalid) = Self::validate_capsule_scope_profile(capsule, web_projection) {
+        if let Err(mut invalid) =
+            Self::validate_capsule_scope_profile(capsule, web_projection, resources)
+        {
             violations.append(&mut invalid);
         }
 
@@ -538,6 +492,139 @@ impl Phase1ManifestValidator {
 
         finish_violations(violations)
     }
+}
+
+fn validate_deployment_profile(
+    manifest: &DeploymentManifest,
+    resources: ResourceProfile,
+) -> ManifestResult<()> {
+    let mut violations = Vec::new();
+    validate_api_version(&manifest.api_version, &mut violations);
+    validate_metadata(&manifest.metadata, &mut violations);
+    validate_wire_identity(&manifest.id.0, &manifest.metadata.name, &mut violations);
+    validate_resource_identifier(
+        &manifest.id.0,
+        "$.metadata.name",
+        "deployment name",
+        &mut violations,
+    );
+    validate_resource_identifier(
+        &manifest.service.0,
+        "$.spec.service",
+        "service ID",
+        &mut violations,
+    );
+    validate_digest(&manifest.release.0, "$.spec.release", &mut violations);
+
+    if !(1..=10_000).contains(&manifest.route_weight) {
+        violations.push(ManifestViolation::new(
+            "$.spec.route.weight",
+            "invalid-route-weight",
+            "a Phase 1 deployment route weight must be between 1 and 10000",
+        ));
+    }
+
+    let mut grants = BTreeSet::new();
+    for (index, grant) in manifest.grants.iter().enumerate() {
+        validate_contract_id(
+            &grant.capability.0,
+            &format!("$.spec.grants[{index}].capability"),
+            &mut violations,
+        );
+        validate_resource_identifier(
+            &grant.policy.0,
+            &format!("$.spec.grants[{index}].policy"),
+            "policy ID",
+            &mut violations,
+        );
+        let key = (&grant.capability.0, &grant.policy.0);
+        if !grants.insert(key) {
+            violations.push(ManifestViolation::new(
+                format!("$.spec.grants[{index}]"),
+                "duplicate-grant",
+                "the same capability and policy pair may be granted only once",
+            ));
+        }
+
+        let mut operations = BTreeSet::new();
+        for (operation_index, operation) in grant.operations.iter().enumerate() {
+            validate_token(
+                operation,
+                &format!("$.spec.grants[{index}].operations[{operation_index}]"),
+                "operation",
+                &mut violations,
+            );
+            if !operations.insert(operation.as_str()) {
+                violations.push(ManifestViolation::new(
+                    format!("$.spec.grants[{index}].operations[{operation_index}]"),
+                    "duplicate-operation",
+                    "grant operations must be unique",
+                ));
+            }
+        }
+        validate_metadata_map(
+            &grant.constraints,
+            &format!("$.spec.grants[{index}].constraints"),
+            &mut violations,
+        );
+    }
+
+    validate_profile_budget(
+        &manifest.resources,
+        "$.spec.resources",
+        resources,
+        &mut violations,
+    );
+    if manifest.availability.minimum_zones > manifest.availability.minimum_cached_copies {
+        violations.push(ManifestViolation::new(
+            "$.spec.availability.minimumZones",
+            "invalid-availability",
+            "minimumZones cannot exceed minimumCachedCopies",
+        ));
+    }
+    validate_token(
+        &manifest.placement.trust_class,
+        "$.spec.placement.trustClass",
+        "trust class",
+        &mut violations,
+    );
+    validate_unique_tokens(
+        &manifest.placement.architectures,
+        "$.spec.placement.architectures",
+        "architecture",
+        &mut violations,
+    );
+    validate_unique_tokens(
+        &manifest.placement.regions,
+        "$.spec.placement.regions",
+        "region",
+        &mut violations,
+    );
+    validate_unique_tokens(
+        &manifest.placement.zones,
+        "$.spec.placement.zones",
+        "zone",
+        &mut violations,
+    );
+    validate_unique_tokens(
+        &manifest.placement.required_features,
+        "$.spec.placement.requiredFeatures",
+        "required feature",
+        &mut violations,
+    );
+    validate_required_tenant(&manifest.metadata, &mut violations);
+    validate_scoped_value(
+        &manifest.service.0,
+        manifest
+            .metadata
+            .tenant
+            .as_ref()
+            .map(|tenant| tenant.0.as_str()),
+        "$.spec.service",
+        &mut violations,
+    );
+
+    finish_violations(violations)
 }
 
 fn validate_api_version(value: &str, violations: &mut Vec<ManifestViolation>) {
@@ -690,6 +777,37 @@ fn validate_stateless_budget(
             format!("{path}.stateWriteBytes"),
             "invalid-stateless-budget",
             "stateless Phase 1 resources cannot grant state writes",
+        ));
+    }
+}
+
+fn validate_profile_budget(
+    budget: &ResourceBudget,
+    path: &str,
+    profile: ResourceProfile,
+    violations: &mut Vec<ManifestViolation>,
+) {
+    if matches!(profile, ResourceProfile::Stateless) {
+        return validate_stateless_budget(budget, path, violations);
+    }
+    if latent_core::BudgetProfile::Phase4
+        .validate_request(budget)
+        .is_err()
+        || budget.cpu_fuel == 0
+        || budget.memory_bytes == 0
+        || budget.wall_time_limit_millis == Some(0)
+        || budget.child_calls != 0
+        || budget.outbound_requests != 0
+        || budget.blob_read_bytes != 0
+        || budget.blob_write_bytes != 0
+        || budget.state_read_bytes > 4 * 1024 * 1024
+        || budget.state_write_bytes > 8 * 1024 * 1024
+        || budget.effect_count > 128
+    {
+        violations.push(ManifestViolation::new(
+            path,
+            "invalid-transaction-budget",
+            "transaction ceilings require bounded state/intents and zero immediate effects or children",
         ));
     }
 }

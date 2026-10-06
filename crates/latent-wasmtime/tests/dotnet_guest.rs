@@ -1,4 +1,4 @@
-//! Execute the real NativeAOT output; raw WASI is never admitted by LSF.
+//! Execute the real `NativeAOT` output; raw WASI is never admitted by LSF.
 #![cfg(target_os = "linux")]
 #[path = "generic_backend/support.rs"]
 #[allow(dead_code)]
@@ -78,54 +78,7 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
     assert!(support::run(&backend, request, &denied).await.is_err());
     assert_eq!(backend.resource_snapshot().stores_created, 0);
     support::idle(&backend);
-    let populated = serde_json::json!({
-        "text": "Hello\0世界 🚚", "unsigned": "18446744073709551615", "signed": "-9223372036854775808",
-        "maybe": {"some": "9007199254740993"},
-        "items": [{"text": "", "amount": "0"}, {"text": "nested\0🚚", "amount": "18446744073709551615"}]
-    });
-    let empty = serde_json::json!({
-        "text": "empty-list", "unsigned": "0", "signed": "9223372036854775807",
-        "maybe": {"none": null}, "items": []
-    });
-    let rejected = serde_json::json!({
-        "text": "", "unsigned": "9007199254740993", "signed": "-9007199254740993",
-        "maybe": {"some": "0"}, "items": []
-    });
-    for (index, (function, input, expected)) in [
-        ("echo", serde_json::json!([""]), serde_json::json!([""])),
-        (
-            "echo",
-            serde_json::json!(["Hello, 世界!\0🚚"]),
-            serde_json::json!(["Hello, 世界!\0🚚"]),
-        ),
-        (
-            "wide",
-            serde_json::json!(["18446744073709551615"]),
-            serde_json::json!(["18446744073709551615"]),
-        ),
-        (
-            "mirror",
-            serde_json::json!([populated.clone()]),
-            serde_json::json!([{"ok": populated}]),
-        ),
-        (
-            "mirror",
-            serde_json::json!([empty.clone()]),
-            serde_json::json!([{"ok": empty}]),
-        ),
-        (
-            "mirror",
-            serde_json::json!([rejected]),
-            serde_json::json!([{"err": "empty\0text 世界"}]),
-        ),
-        ("profile", serde_json::json!([]), serde_json::json!([17])),
-        ("reflection", serde_json::json!([]), serde_json::Value::Null),
-        ("next", serde_json::json!([]), serde_json::json!([1])),
-        ("next", serde_json::json!([]), serde_json::json!([1])),
-    ]
-    .into_iter()
-    .enumerate()
-    {
+    for (index, (function, input, expected)) in dotnet_cases().into_iter().enumerate() {
         let control = support::Cancellation::new(&format!("dotnet-{index}"));
         let mut request = support::request(
             prepared.clone(),
@@ -143,31 +96,7 @@ async fn admitted_dotnet_component_preserves_values_and_drops_every_activation_h
         let started = std::time::Instant::now();
         let outcome = support::run(&backend, request, &control).await.unwrap();
         println!("dotnet {function}: {:?}; {outcome:?}", started.elapsed());
-        if function == "reflection" {
-            let GuestOutcome::Trapped { trap, .. } = outcome else {
-                panic!("unsupported member lookup acquired ambient authority: {outcome:?}");
-            };
-            assert_eq!(trap.code, "guest-trap");
-            assert_eq!(
-                trap.metadata.get("trap").map(String::as_str),
-                Some("unreachable-code")
-            );
-        } else if expected[0].get("err").is_some() {
-            let GuestOutcome::DeclaredError { error, .. } = outcome else {
-                panic!("expected declared application error, got {outcome:?}");
-            };
-            assert_eq!(error.code, "declared-error");
-            assert_eq!(
-                error.media_type,
-                "application/vnd.latent.wit-values.v1+json"
-            );
-            assert_eq!(
-                serde_json::from_slice::<serde_json::Value>(&error.payload).unwrap(),
-                expected
-            );
-        } else {
-            assert_eq!(support::returned(outcome), expected);
-        }
+        assert_dotnet_outcome(function, outcome, &expected);
         support::idle(&backend);
     }
 }
@@ -202,7 +131,7 @@ async fn diagnostic_dotnet_component_requires_only_the_declared_clock() {
         })
         .unwrap();
     let limits = StoreLimitsBuilder::new()
-        .memory_size(MEMORY as usize)
+        .memory_size(usize::try_from(MEMORY).unwrap())
         .build();
     let mut store = Store::new(&engine, limits);
     store.limiter(|limits| limits);
@@ -230,5 +159,81 @@ async fn diagnostic_dotnet_component_requires_only_the_declared_clock() {
             .await;
         assert!(result.is_ok(), "NativeAOT {name} failed: {result:?}");
         assert_eq!(output, [expected]);
+    }
+}
+
+fn dotnet_cases() -> [(&'static str, serde_json::Value, serde_json::Value); 10] {
+    let populated = serde_json::json!({
+        "text": "Hello\0世界 🚚", "unsigned": "18446744073709551615", "signed": "-9223372036854775808",
+        "maybe": {"some": "9007199254740993"},
+        "items": [{"text": "", "amount": "0"}, {"text": "nested\0🚚", "amount": "18446744073709551615"}]
+    });
+    let empty = serde_json::json!({
+        "text": "empty-list", "unsigned": "0", "signed": "9223372036854775807",
+        "maybe": {"none": null}, "items": []
+    });
+    let rejected = serde_json::json!({
+        "text": "", "unsigned": "9007199254740993", "signed": "-9007199254740993",
+        "maybe": {"some": "0"}, "items": []
+    });
+    [
+        ("echo", serde_json::json!([""]), serde_json::json!([""])),
+        (
+            "echo",
+            serde_json::json!(["Hello, 世界!\0🚚"]),
+            serde_json::json!(["Hello, 世界!\0🚚"]),
+        ),
+        (
+            "wide",
+            serde_json::json!(["18446744073709551615"]),
+            serde_json::json!(["18446744073709551615"]),
+        ),
+        (
+            "mirror",
+            serde_json::json!([populated.clone()]),
+            serde_json::json!([{"ok": populated}]),
+        ),
+        (
+            "mirror",
+            serde_json::json!([empty.clone()]),
+            serde_json::json!([{"ok": empty}]),
+        ),
+        (
+            "mirror",
+            serde_json::json!([rejected]),
+            serde_json::json!([{"err": "empty\0text 世界"}]),
+        ),
+        ("profile", serde_json::json!([]), serde_json::json!([17])),
+        ("reflection", serde_json::json!([]), serde_json::Value::Null),
+        ("next", serde_json::json!([]), serde_json::json!([1])),
+        ("next", serde_json::json!([]), serde_json::json!([1])),
+    ]
+}
+
+fn assert_dotnet_outcome(function: &str, outcome: GuestOutcome, expected: &serde_json::Value) {
+    if function == "reflection" {
+        let GuestOutcome::Trapped { trap, .. } = outcome else {
+            panic!("unsupported member lookup acquired ambient authority: {outcome:?}");
+        };
+        assert_eq!(trap.code, "guest-trap");
+        assert_eq!(
+            trap.metadata.get("trap").map(String::as_str),
+            Some("unreachable-code")
+        );
+    } else if expected[0].get("err").is_some() {
+        let GuestOutcome::DeclaredError { error, .. } = outcome else {
+            panic!("expected declared application error, got {outcome:?}");
+        };
+        assert_eq!(error.code, "declared-error");
+        assert_eq!(
+            error.media_type,
+            "application/vnd.latent.wit-values.v1+json"
+        );
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&error.payload).unwrap(),
+            *expected
+        );
+    } else {
+        assert_eq!(&support::returned(outcome), expected);
     }
 }

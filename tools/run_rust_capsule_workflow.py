@@ -125,7 +125,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     result["samples"].append(sample(client, probe, "after-tutorials", len(names)))
                     faults(client, targets["recovery"], probe, result, len(names), language=language)
                     http_cases(client, node, fixture, targets["http-status"], publications["http-status"],
-                               port, work / "peer", probe, result, len(names))
+                               port, work / "peer", probe, result, len(names), peer=peer)
                     delete_all(client, names)
                     result["samples"].append(sample(client, probe, "after-delete", 0))
                     stop(client, node)

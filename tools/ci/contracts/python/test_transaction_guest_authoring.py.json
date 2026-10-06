@@ -1,59 +1,36 @@
 {
   "cases": [
     "TransactionGuestAuthoringTests.test_controlled_variant_rejects_unknown_inputs_and_source_drift",
+    "TransactionGuestAuthoringTests.test_java_authored_wit_captures_runtime_clocks_before_compiler_staging",
     "TransactionGuestAuthoringTests.test_java_transaction_capture_closes_its_declared_runtime_clock_dependencies",
     "TransactionGuestAuthoringTests.test_packaging_rejects_mismatched_duplicate_and_unbounded_companions",
     "TransactionGuestAuthoringTests.test_six_creators_capture_one_exact_profile_and_linked_companion",
     "TransactionGuestAuthoringTests.test_six_forbidden_http_variants_keep_profile_companion_and_sdk_capture"
   ],
   "guards": {
-    "TransactionGuestAuthoringTests.test_controlled_variant_rejects_unknown_inputs_and_source_drift": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1c8a464e3f30158fffef5facf29da52468d51ffab92c21bd88065390b00174ef",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
     "TransactionGuestAuthoringTests.test_java_transaction_capture_closes_its_declared_runtime_clock_dependencies": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:1c8a464e3f30158fffef5facf29da52468d51ffab92c21bd88065390b00174ef",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
+      ]
     },
-    "TransactionGuestAuthoringTests.test_packaging_rejects_mismatched_duplicate_and_unbounded_companions": {
+    "TransactionGuestAuthoringTests.test_java_authored_wit_captures_runtime_clocks_before_compiler_staging": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:1c8a464e3f30158fffef5facf29da52468d51ffab92c21bd88065390b00174ef",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "TransactionGuestAuthoringTests.test_six_creators_capture_one_exact_profile_and_linked_companion": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:1c8a464e3f30158fffef5facf29da52468d51ffab92c21bd88065390b00174ef",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
+      ]
     },
     "TransactionGuestAuthoringTests.test_six_forbidden_http_variants_keep_profile_companion_and_sdk_capture": {
       "bases": [
@@ -61,15 +38,51 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:1c8a464e3f30158fffef5facf29da52468d51ffab92c21bd88065390b00174ef",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TransactionGuestAuthoringTests.test_controlled_variant_rejects_unknown_inputs_and_source_drift": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1c8a464e3f30158fffef5facf29da52468d51ffab92c21bd88065390b00174ef",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TransactionGuestAuthoringTests.test_six_creators_capture_one_exact_profile_and_linked_companion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1c8a464e3f30158fffef5facf29da52468d51ffab92c21bd88065390b00174ef",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TransactionGuestAuthoringTests.test_packaging_rejects_mismatched_duplicate_and_unbounded_companions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1c8a464e3f30158fffef5facf29da52468d51ffab92c21bd88065390b00174ef",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_transaction_guest_authoring.py",
-  "reviewReason": "Preserve real write and intent staging before exact typed HTTP denial in all six witnesses and original affine cleanup checks",
+  "reviewReason": "Preserve real write and intent staging before exact typed HTTP denial in all six witnesses and original affine cleanup checks Retain integrated HTTP parent obligation: Retain all six-language authoring/negative/profile guards; add Java raw captured clock dependency closure before compiler staging and unchanged SDK/source checks. Reviewed #402 union with immutable #828: preserve activation-v5 and stream resources, explicit transaction recovery/dispatch host operations, both clock/dependency test sets, exact typed denial after staging, all existing cases, skip/decorator guards, historical command mappings and unchanged deadline bounds. The installed state runtime makes the workflow dependency closure full; its selected fast subset remains nonempty and strictly narrower than the host-only registry.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
