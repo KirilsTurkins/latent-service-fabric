@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "profile": "angular-ssr-component-v1",
+  "backendProfile": "scoped-http-get-v1",
+  "name": "stateful-reference",
+  "version": "1.0.0",
+  "serverEntry": "server/main.ts",
+  "clientEntry": "client/main.ts",
+  "sources": ["client/main.ts", "server/main.ts", "shared/app.ts", "shared/read-plan.ts", "shared/transaction-client.ts"],
+  "assets": [],
+  "routes": [
+    {"path": "/drafts/alice", "mode": "server"},
+    {"path": "/drafts/bob", "mode": "server"}
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "StatefulReferenceProject.test_application_world_refuses_unreviewed_auxiliary_and_immediate_authority",
+    "StatefulReferenceProject.test_draft_identity_is_bounded_before_the_language_creator_can_write",
+    "StatefulReferenceProject.test_six_real_creators_keep_exact_sdk_closures_and_language_runtime_worlds"
+  ],
+  "guards": {
+    "StatefulReferenceProject.test_application_world_refuses_unreviewed_auxiliary_and_immediate_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:408a63c576ff16488ef6e224fbe1b1b9485581c13291fcdf385c3456f051997e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StatefulReferenceProject.test_draft_identity_is_bounded_before_the_language_creator_can_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:408a63c576ff16488ef6e224fbe1b1b9485581c13291fcdf385c3456f051997e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StatefulReferenceProject.test_six_real_creators_keep_exact_sdk_closures_and_language_runtime_worlds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:408a63c576ff16488ef6e224fbe1b1b9485581c13291fcdf385c3456f051997e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_stateful_reference_project.py",
+  "reviewReason": "Reviewed real six-language SDK byte preservation, bounded per-draft namespace creation and closed runtime declarations; adds three source cases without node qualification claims.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,24 @@
+{
+  "format": "lsf.order-draft-v1",
+  "version": 1,
+  "namespacePattern": "order-drafts-<draft-id>",
+  "scope": "One host-authorized namespace per draft; the sealed namespace must match the requested draft before any read or staging.",
+  "draftId": {"pattern": "^[a-z0-9][a-z0-9-]{0,31}$", "maximumBytes": 32},
+  "keys": [
+    {"suffix": "/draft", "purpose": "business state and explicit screen revision"},
+    {"suffix": "/summary", "purpose": "related atomically updated read projection"}
+  ],
+  "keyPrefix": "drafts/",
+  "value": {
+    "mediaType": "application/vnd.lsf.order-draft-v1",
+    "encoding": "unsigned-u64-little-endian revision followed by unsigned-u32-little-endian units",
+    "bytes": 12,
+    "maximumUnits": 10000,
+    "metadata": []
+  },
+  "effects": [
+    {"binding": "draft-change", "kind": "event", "body": "draft-id UTF-8, zero byte, exact 12-byte value"},
+    {"binding": "draft-http", "kind": "put-once", "body": "draft-id UTF-8, zero byte, exact 12-byte value"}
+  ],
+  "stateSchemaCompatibility": "Both related keys and the exact value format are one schema; incompatible decode changes require explicit migration."
+}
