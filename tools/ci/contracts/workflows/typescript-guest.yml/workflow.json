@@ -18,6 +18,13 @@
           "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
           "tools/typescript_guest/**",
           "tools/typescript_capsule.py",
+          "tools/typescript*dependencies.py",
+          "tools/typescript_dependency_authoring.py",
+          "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/guest_authoring_frontend.py",
+          "tools/typescript_dependency_fixture.py",
+          "tools/application_dependenc*.py",
+          "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
           "tools/qualify_typescript_capsules.py",
           "tools/*rust_capsule*.py",
@@ -52,6 +59,13 @@
           "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
           "tools/typescript_guest/**",
           "tools/typescript_capsule.py",
+          "tools/typescript*dependencies.py",
+          "tools/typescript_dependency_authoring.py",
+          "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/guest_authoring_frontend.py",
+          "tools/typescript_dependency_fixture.py",
+          "tools/application_dependenc*.py",
+          "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
           "tools/qualify_typescript_capsules.py",
           "tools/*rust_capsule*.py",
@@ -91,7 +105,7 @@
   "requiredJobs": [
     "boundary"
   ],
-  "reviewReason": "Keep all exact historical baseline/before/coverage and case/guard obligations while reconciling current actual compiler/dependency/transaction/native owners. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
+  "reviewReason": "Keep all exact historical baseline/before/coverage and case/guard obligations while reconciling current actual compiler/dependency/transaction/native owners. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

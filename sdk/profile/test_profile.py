@@ -11,11 +11,11 @@ class ProfileTests(unittest.TestCase):
         cls.profile, cls.messages, cls.enums = read_contract()
 
     def test_shared_contract_is_current(self):
-        self.assertEqual(validate(), (68, 16))
+        self.assertEqual(validate(), (77, 16))
 
     def test_exact_operation_profile(self):
         self.assertEqual([operation["name"] for operation in self.profile["operations"]], [
-            "Invoke", "Cancel", "GetActivation", "GetPolicy", "ListPolicies", "ListCapabilities", "ApplyPolicy", "GetPolicyOperation",
+            "Invoke", "Cancel", "GetActivation", "InspectActivationTree", "GetPolicy", "ListPolicies", "ListCapabilities", "ApplyPolicy", "GetPolicyOperation", "InspectHttpTarget",
         ])
 
     def test_unsigned_inputs_are_not_json_numbers(self):
