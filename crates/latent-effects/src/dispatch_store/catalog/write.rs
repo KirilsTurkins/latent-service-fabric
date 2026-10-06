@@ -242,6 +242,19 @@ impl WriteSet {
     pub fn apply(self, store: &EmbeddedStore) -> Result<(), DispatchStoreError> {
         store.apply(self.batch).map_err(Into::into)
     }
+
+    pub fn apply_fenced(
+        self,
+        store: &EmbeddedStore,
+        accept: impl FnOnce() -> Result<(), crate::authority::AuthorityError>,
+    ) -> Result<(), DispatchStoreError> {
+        store
+            .apply_fenced(self.batch, accept)
+            .map_err(|error| match error {
+                latent_state::embedded::FencedStoreError::Store(error) => error.into(),
+                latent_state::embedded::FencedStoreError::Fence(error) => error.into(),
+            })
+    }
 }
 
 pub(super) fn recover_one(

@@ -222,6 +222,95 @@ The common authenticated RPC/CLI composition and #397 reserved recovery lane
 consume these ports. This domain implementation does not by itself qualify the
 public management workflow, ordinary-queue saturation or backup/restore review.
 
+## Original command role and clock
+
+The same protected node role also supplies commands when no effect adapters are
+configured. `command_admission_source()` returns a cloneable sealed metadata
+source, with no worker or scheduling handle. `capture()` reserves a non-clone
+`CommandAdmission` from a finite node slot table (128 by default, hard ceiling
+1024). Captured guards expose their actual protected owner epoch and positively
+qualified time; descriptions and client counters cannot reconstruct them.
+
+`with_current` is the short outer native-writer acceptance fence. It checks the
+same epoch/control generation, pending control, restore review, current store
+failure/close/quarantine and nonrewinding original clock before invoking the
+host's namespace, policy/effect and cancellation acceptance. It performs no I/O
+and releases before flush. Initial startup time still needs the admitted
+external checkpoint and retained command registry's maximum clock floor; this
+port does not synthesize continuity from wall time.
+
+The actual physical command owner must retain its guard through guest/native
+cleanup and invoke `retire(self)` only after positive retirement. Lost waiters,
+logical cancellation, expired leases and a finalized activation ledger are not
+retirement proof. Unexpected guard Drop quarantines the shared store and keeps
+the bounded guard/root role. Driver shutdown cannot retire that role or allow a
+new epoch while any original command guard remains. A plain effect pause allows
+fresh commands to accumulate paused intents; stale control generations and
+restore review fail writer acceptance. Diagnostic epoch/time getters reserve no
+command slot and grant no writer permission. The sealed source exposes the exact
+installed effect registry and checks registry owner identity; it does not create
+a second authority. Its clock getter fails closed after physical role close.
+
+Pinned Rust1.97.1 Linux: all70 effect cases and strict all-target/all-feature
+Clippy passed, including four real protected-store command schedules: zero
+adapters with bounded sources and clock rollback, control/restore fences, sticky
+deadline with exclusive role retention, and detached native writer/buffer
+retirement before rejecting an old command fence. The earlier adapter factory
+passed all-feature standalone compilation. Checking the newly added command
+wrapper was interrupted by Docker becoming read-only (SIGBUS and filesystem
+error 30), so that full application check remains pending. Full guest admission
+and response/recovery capacity remain their integration owners.
+
+## Shared native capacity for ordinary attempts
+
+The trusted composition root installs the same `NativeCapacityOwner` into the
+protected store and dispatcher before ordinary dispatch. An unbound dispatcher
+leaves due work pending; a foreign store/global binding fails closed. No attempt
+constructs another capacity owner. The first accepted native reservation seals
+the dispatcher binding, including after every earlier attempt retires.
+
+Admission reserves the ordinary partition before fixed provider-job submission,
+durable claim, payload decoding or adapter allocation. Its conservative work
+allowance is 14 MiB: the 4 MiB attempt envelope, 8 MiB native preparation bound
+and 2 MiB receipt bound, plus the native owner's 2,048-byte metadata allowance.
+This prepays possible buffers rather than allocating a 14 MiB buffer. Full
+ordinary slots or aggregate bytes leave the exact due row and payload unclaimed.
+The independent recovery partition and protected-store recovery workers remain
+available within their finite limits. Native configuration too small for one
+reviewed attempt fails visibly instead of undercharging or borrowing recovery.
+
+One monotonic deadline is captured before queueing from the immutable attempt
+timeout. The actual effect context can only narrow it; starting a queued worker
+cannot refresh it. Original node/role and native-capacity checks run at the
+engine's final claim and send-marker acceptance, after OCC/capacity preparation
+and before flush. Provider admission also checks the same original native
+reservation inside the Effects -> Native fence. No I/O runs under these locks.
+
+The same keeper remains with the provider context/grant, operation pin, native
+closure and unclaimed result, and bounded durable receipt. Provider cleanup does
+not refund it while receipt recording or reserved native retirement is paused.
+Logical shutdown, deadline expiry and dropped result waiters do not prove
+physical retirement. Unexpected physical-owner loss preserves the original
+bounded global reservation with quarantine; positive retirement releases it
+only after the actual retained buffers and operation pin destruct.
+
+Pinned Rust 1.97.1 Linux validation passed all 110 effects and 128 state library
+cases, without ignored or filtered cases, and strict all-target/all-feature
+Clippy for both crates. Nine new required cases cover original deadline
+narrowing, final claim/send rejection, unbound and foreign owners, ordinary
+slot and byte pressure, queued expiry, and paused native retirement. The slot
+pressure schedule also fills all three ordinary engine workers and their queue
+while an actual recovery read and recovery operation retirement still complete
+on the same protected owner. These tests use the actual embedded engine and
+fixed workers; the provider itself is a controlled physical-cleanup fixture.
+
+This port composes the actual dispatcher worker and protected engine. Ordinary
+Standalone/verified-guest installation and authenticated management qualification
+remain recorded by their owning integration tickets; this focused capacity
+change does not close all of #391 or the durable quota/retention work in #397.
+
+## Historical first-storage milestone
+
 The following retained first-storage milestone records its original scope.
 
 The focused initial tests prove canonical identity/tamper rejection, bounded
