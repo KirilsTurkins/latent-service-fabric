@@ -1,0 +1,8 @@
+{
+  "schema": "latent.application-state-schema.v1",
+  "application": "transactional-aggregate",
+  "key": "count",
+  "format": "aggregate-count-tagged-le-v2",
+  "mediaType": "application/vnd.lsf.aggregate-v2",
+  "encoding": {"kind": "tagged-unsigned-little-endian", "prefixHex": "41470200", "bits": 64, "length": 12}
+}

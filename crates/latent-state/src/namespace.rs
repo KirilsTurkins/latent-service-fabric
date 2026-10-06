@@ -14,6 +14,8 @@ pub const IDENTITY_BYTES: usize = 256;
 const RECORD_MAGIC: &[u8] = b"lsf-namespace-v1\0";
 
 pub mod catalog;
+pub mod compatibility;
+pub mod history;
 pub mod lifecycle;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -371,7 +373,7 @@ pub fn namespace_operation_key(
     Ok(key)
 }
 
-fn identity(value: &str) -> Result<(), NamespaceError> {
+pub(crate) fn identity(value: &str) -> Result<(), NamespaceError> {
     if value.is_empty() || value.len() > IDENTITY_BYTES || value.chars().any(char::is_control) {
         return Err(NamespaceError::Invalid);
     }

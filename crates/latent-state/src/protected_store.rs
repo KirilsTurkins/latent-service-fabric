@@ -1,18 +1,32 @@
 //! One protected, bounded node database. All native work, initialization and
 //! affine view retirement belongs to the same fixed storage workers.
 
+mod checkpoint;
 mod config;
+mod custody;
 mod dispatcher;
+mod mode;
 mod native_capacity;
 mod operation;
 mod physical;
+mod resource;
+mod snapshot;
 mod startup;
+mod startup_memory;
 mod view;
 
+pub use checkpoint::{
+    CheckpointInspection, ProtectedCheckpoint, ProtectedCheckpointConfig, ProtectedCheckpointJob,
+    StoreInitializationWitness,
+};
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
+pub use mode::{StateModeObservation, STATE_MODE_FILE, STATE_MODE_NATIVE_BYTES};
 pub use operation::ProtectedStoreOperation;
+pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
+pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
+pub use startup_memory::ProtectedStoreStartupMemory;
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
 
 use std::future::Future;
@@ -68,6 +82,29 @@ impl ProtectedStoreOwner {
     #[must_use]
     pub fn is_same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.failure, &other.failure)
+    }
+
+    /// Describes this actual selected engine/configuration. The digest binds
+    /// native limits and the current format; it is not a qualification receipt.
+    #[must_use]
+    pub fn inspection_profile(&self) -> (&'static str, [u8; 32]) {
+        use sha2::{Digest, Sha256};
+        let mut digest = Sha256::new();
+        digest.update(b"lsf-protected-redb-4.3.0-immediate-ext4-v1\0");
+        digest.update(b"latent.transaction-store.v1\0");
+        for value in [
+            self.limits.cache_bytes,
+            self.limits.maximum_rows,
+            self.limits.maximum_logical_bytes,
+            self.limits.maximum_key_bytes,
+            self.limits.maximum_value_bytes,
+            self.limits.maximum_batch_rows,
+            self.limits.maximum_read_views,
+        ] {
+            digest.update((value as u64).to_le_bytes());
+        }
+        digest.update(self.limits.maximum_view_age.as_nanos().to_le_bytes());
+        ("protected-redb-immediate-ext4-v1", digest.finalize().into())
     }
 
     /// Trusted namespace/command control operations use this same physical

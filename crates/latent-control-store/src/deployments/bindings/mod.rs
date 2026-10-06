@@ -20,6 +20,7 @@ pub(super) struct CompilerOwner {
     providers: Box<[ConfiguredBindingProvider]>,
     current: Weak<RwLock<PublishedCatalog>>,
     limits: BindingLimits,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
 }
 impl CompilerOwner {
     fn retained_bytes(&self) -> usize {

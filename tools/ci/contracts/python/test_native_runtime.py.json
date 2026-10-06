@@ -74,7 +74,7 @@
   },
   "kind":"python",
   "module":"tools/tests/test_native_runtime.py",
-  "reviewReason":"Reviewed Wasmtime48.0.4 security pin with the complete V5 source and all existing cases; V4 remains byte-identical historical evidence. Existing skip/execution guards are unchanged; setup digests reflect only the reviewed version/profile fixture changes.",
+  "reviewReason":"Reviewed Wasmtime48.0.4 security pin with the complete V5 source and all existing cases; V4 remains byte-identical historical evidence. Existing skip/execution guards are unchanged; setup digests reflect only the reviewed version/profile fixture changes. Incoming reviewed obligations: Preserve all reviewed case identities and unchanged execution guards from both transaction and current development sources. Integration preserves unchanged current guard definitions; adds only actual Phase4 case under the same exact current fixture guards.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "6f0b854244a1a99a2847f54247478ca0f2286aa3c472c95068f15f82ba189dcc":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(LINUX, 'Linux protected trust files; gh is mocked, real crypto runs in the VM gate')"],"decorators":[],"fixtureGuards":["module:setup-sha256:fbcb5b42ba573a41f1bf9fef62fc10df507e6327245aa802880ae413b6ca39da","class:setup-sha256:dcf06aca56abaf9c533acadbc731f5cb441b0a2894a5fc3a9bc6553448f6702f"],"skipSites":[]},

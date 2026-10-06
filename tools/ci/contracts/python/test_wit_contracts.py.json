@@ -20,7 +20,7 @@
   },
   "kind":"python",
   "module":"tools/tests/test_wit_contracts.py",
-  "reviewReason":"Retain every original case body and execution guard; add closed alternative-world package rejection and independent exact staging controls.",
+  "reviewReason":"Retain every original case body and execution guard; add closed alternative-world package rejection and independent exact staging controls. Incoming reviewed obligations: Reconcile the earlier squashed dependency stack with the retained kernel: preserve frozen16/native owner and all historical case/skip/command obligations, plus current target action pins and diagnostic coverage. Preserve the exact union of both source case inventories and unchanged reviewed guards; retain original deadlines, atomic compiler readiness, all reaping assertions, and exact WIT package closure. Preserve both parent inventories while storing exact merged-source guards in reviewed shared v2 form. Integration preserves unchanged current guard definitions; adds only actual Phase4 case under the same exact current fixture guards.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:13db9647c538b30255e3abf158bab7456f3e054547d4ac65e06c2fe76b41bb41","class:setup-sha256:e5947d82f663d2200b2be4ceec9653519360a794b744f8bef4d64fc7834f159f"],"skipSites":[]}

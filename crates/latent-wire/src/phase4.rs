@@ -6,7 +6,15 @@
 //! result-read authority. No default permissive runtime is supplied.
 
 mod lease;
+mod local_transaction;
 mod public_error;
+mod state_management;
+pub use local_transaction::{LocalTransactionRuntime, LocalTransactionServices};
+pub use state_management::{
+    StateManagementAdmission, StateManagementBackend, StateManagementBinding,
+    StateManagementRecoveryAdmission, StateManagementRecoveryBinding, StateManagementReservation,
+    StateManagementServices,
+};
 #[cfg(test)]
 mod tests;
 
@@ -154,15 +162,43 @@ impl Phase4ServiceAdapter {
                 .max_encoding_message_size(output),
         )
     }
-    fn context<T>(
+    #[must_use]
+    pub fn dispatcher_server(
+        self,
+    ) -> Phase4ResponseService<c::dispatcher_service_server::DispatcherServiceServer<Self>> {
+        let input = self
+            .limits
+            .max_request_bytes
+            .min(contract::MAX_REQUEST_BYTES);
+        let output = self
+            .limits
+            .max_response_bytes
+            .min(contract::MAX_RESPONSE_BYTES);
+        Phase4ResponseService::new(
+            c::dispatcher_service_server::DispatcherServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
+    }
+    fn context<T: ArrivingCall>(
         &self,
         request: &mut Request<T>,
     ) -> Result<AuthenticatedInvocationContext, Status> {
-        take_context(
+        let context = take_context(
             request,
             &self.limits.auth,
             self.services.principals.as_ref(),
-        )
+        )?;
+        match request.get_ref().invocation() {
+            Some(invocation) => crate::invocation::pin_transaction_arrival(
+                request,
+                invocation,
+                context,
+                self.services.clock.as_ref(),
+                &self.limits.auth,
+            ),
+            None => Ok(context),
+        }
     }
     async fn execute(
         &self,
@@ -173,20 +209,27 @@ impl Phase4ServiceAdapter {
         if request.encoded_len() > self.limits.max_request_bytes {
             return Err(validation_status(contract::ValidationError::Capacity));
         }
-        self.services
-            .principals
-            .authorize_target(
-                context.principal(),
-                request
-                    .tenant()
-                    .ok_or_else(|| validation_status(contract::ValidationError::Shape))?,
-            )
-            .map_err(crate::invocation::platform_status)?;
-        if request.is_management() {
+        if request.is_node_management() {
             self.services
                 .management
-                .authorize(context.principal(), ManagementOperation::Tenant)
+                .authorize(context.principal(), ManagementOperation::NodeControl)
                 .map_err(crate::invocation::platform_status)?;
+        } else {
+            self.services
+                .principals
+                .authorize_target(
+                    context.principal(),
+                    request
+                        .tenant()
+                        .ok_or_else(|| validation_status(contract::ValidationError::Shape))?,
+                )
+                .map_err(crate::invocation::platform_status)?;
+            if request.is_management() {
+                self.services
+                    .management
+                    .authorize(context.principal(), ManagementOperation::Tenant)
+                    .map_err(crate::invocation::platform_status)?;
+            }
         }
         if context
             .transport_expires_at()
@@ -250,6 +293,41 @@ fn fence_error() -> PlatformError {
     }
 }
 
+trait ArrivingCall {
+    fn invocation(&self) -> Option<&latent_rpc::invocation::v1::InvokeRequest> {
+        None
+    }
+}
+impl ArrivingCall for t::InvokeCommandRequest {
+    fn invocation(&self) -> Option<&latent_rpc::invocation::v1::InvokeRequest> {
+        self.invocation.as_ref()
+    }
+}
+impl ArrivingCall for t::QueryRequest {
+    fn invocation(&self) -> Option<&latent_rpc::invocation::v1::InvokeRequest> {
+        self.invocation.as_ref()
+    }
+}
+macro_rules! management_arrival {
+    ($($request:ty),+ $(,)?) => { $(impl ArrivingCall for $request {})+ };
+}
+management_arrival!(
+    c::InspectNamespaceRequest,
+    c::MutateNamespaceRequest,
+    c::SelectEntityRequest,
+    c::MutateStateRequest,
+    c::PlanEffectMutationRequest,
+    c::GetStateOperationReceiptRequest,
+    c::InspectDispatcherRequest,
+    c::ControlDispatcherRequest,
+    c::GetDispatcherOperationRequest,
+    t::LookupCommandRequest,
+    t::LookupCommitRequest,
+    t::GetEffectRequest,
+    t::ListEffectHistoryRequest,
+    t::CancelCommandRequest,
+);
+
 macro_rules! service {
     ($service:path; $(($name:ident,$request:ty,$response:ty,$variant:ident)),+ $(,)?) => {
         #[tonic::async_trait]
@@ -272,7 +350,12 @@ service!(c::state_service_server::StateService;
     (mutate_namespace,c::MutateNamespaceRequest,c::MutateNamespaceResponse,MutateNamespace),
     (select_entity,c::SelectEntityRequest,c::SelectEntityResponse,SelectEntity),
     (mutate_state,c::MutateStateRequest,c::MutateStateResponse,MutateState),
+    (plan_effect_mutation,c::PlanEffectMutationRequest,c::PlanEffectMutationResponse,PlanEffectMutation),
     (get_state_operation_receipt,c::GetStateOperationReceiptRequest,c::GetStateOperationReceiptResponse,GetStateOperationReceipt));
+service!(c::dispatcher_service_server::DispatcherService;
+    (inspect_dispatcher,c::InspectDispatcherRequest,c::InspectDispatcherResponse,InspectDispatcher),
+    (control_dispatcher,c::ControlDispatcherRequest,c::ControlDispatcherResponse,ControlDispatcher),
+    (get_dispatcher_operation,c::GetDispatcherOperationRequest,c::GetDispatcherOperationResponse,GetDispatcherOperation));
 service!(t::transaction_service_server::TransactionService;
     (invoke_command,t::InvokeCommandRequest,t::InvokeCommandResponse,InvokeCommand),
     (query,t::QueryRequest,t::QueryResponse,Query),

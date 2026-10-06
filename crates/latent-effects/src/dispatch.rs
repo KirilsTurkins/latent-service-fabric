@@ -118,6 +118,23 @@ pub struct EffectRecord {
 }
 
 impl EffectRecord {
+    /// Actual supported decoded envelope format, independent from its payload,
+    /// adapter profile and application schema. This metadata is never a grant.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        (
+            "latent.effect-record.v1",
+            if self.management.is_some() { 2 } else { 1 },
+        )
+    }
+
+    /// Prepay every currently supported record shape, including the original
+    /// bounded management stamp. Optional management rows are charged when
+    /// their exact original batches are prepared, not invented at commit.
+    pub fn retained_bound(authority: &DurableEffectAuthority) -> Result<u64, AuthorityError> {
+        Self::committed(authority)?.encode()?;
+        Ok(65_541)
+    }
     pub fn committed(authority: &DurableEffectAuthority) -> Result<Self, AuthorityError> {
         Ok(Self {
             authority_record: authority.encode()?,
@@ -200,6 +217,23 @@ impl EffectRecord {
     #[must_use]
     pub fn management(&self) -> Option<&EffectManagementStamp> {
         self.management.as_ref()
+    }
+
+    /// Original audited retention may stop unresolved work only beyond its
+    /// delivery horizon and after the caller proves actual attempt retirement.
+    /// Keep measured provider/administrator facts and the original last receipt.
+    pub fn expire_retired(&mut self, time: EffectTime) -> Result<(), AuthorityError> {
+        self.check_clock(time)?;
+        if self.disposition == Disposition::Dispatching {
+            return Err(AuthorityError::Unavailable);
+        }
+        if time.unix_millis < self.authority()?.expires_at_millis() {
+            return Err(AuthorityError::Expired);
+        }
+        if !self.disposition.terminal() {
+            self.disposition = Disposition::Expired;
+        }
+        Ok(())
     }
 
     pub(crate) fn active_attempt(&self) -> Result<AttemptIdentity, AuthorityError> {

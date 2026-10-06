@@ -27,8 +27,8 @@ pub use store::{
     PolicySnapshot, PolicySnapshotState, SealedPolicyDecision,
 };
 pub use store::{
-    MutationRequest, OperationReceipt, PolicyPage, PolicyPageRequest, PolicyRead, PolicyReadLease,
-    PolicyStore, PolicyStoreLimits, RecordKind, RecordView,
+    MutationRequest, OperationReceipt, PolicyControlGeneration, PolicyPage, PolicyPageRequest,
+    PolicyRead, PolicyReadLease, PolicyStore, PolicyStoreLimits, RecordKind, RecordView,
 };
 
 use latent_core::{PlatformError, PlatformErrorCode};
@@ -201,6 +201,12 @@ fn operation(contract: &str, name: &str) -> bool {
             "namespace-retire",
             "namespace-destroy",
             "namespace-recreate",
+            "effect-plan",
+            "effect-reconcile",
+            "effect-redrive",
+            "effect-terminate",
+            "state-checkpoint",
+            "purge-expired-payload",
         ],
         "latent:intents/staging@0.1.0" => &["stage"],
         _ => return false,

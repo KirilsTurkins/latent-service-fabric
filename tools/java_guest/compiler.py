@@ -14,6 +14,7 @@ from tools.build_observation import build_environment, file_identity
 from tools.build_process import BuildProcessError, run_bounded_result
 from tools.java_guest.bindings import generate
 from tools.java_guest.surface import surface as wit_surface
+from tools.java_guest.sdk import install as install_sdk
 from tools.rust_capsule_project import ROOT, canonical, digest, inventory, read_file, snapshot, write_json
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
@@ -259,6 +260,7 @@ class Compiler:
             target.write_bytes(server_bridge)
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
+        install_sdk(self.sdk, destination / "bindings", java_root)
         if activation_profile:
             from tools.java_guest.class_origin import checkpoint_index
             origins = json.loads(self.run("java-source-origins", "java",

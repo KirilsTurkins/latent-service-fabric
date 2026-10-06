@@ -85,6 +85,7 @@ impl DirectoryDeploymentRepository {
             providers: providers.into_boxed_slice(),
             current: Arc::downgrade(&self.current),
             limits,
+            manifest_profile: self.config.manifest_profile,
         });
         let mut work = Work::default();
         if let Some(authority) = &self.admission {

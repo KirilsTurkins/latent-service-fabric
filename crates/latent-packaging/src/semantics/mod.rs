@@ -26,7 +26,7 @@ pub use compatibility::{
 use latent_artifacts::package::{artifact_blob_digest, WitLock};
 use latent_contracts::ContractDescriptor;
 use latent_core::{ArtifactBlobDigest, PlatformError, PlatformErrorCode};
-use latent_manifest::{CapsuleManifest, ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::{CapsuleManifest, ManifestValidationProfile, ManifestValidator};
 pub use limits::SemanticLimits;
 use std::collections::{BTreeMap, BTreeSet};
 use wit_parser::decoding::DecodedWasm;
@@ -96,12 +96,34 @@ pub fn validate_capsule(
     sources: &BTreeMap<String, &[u8]>,
     limits: SemanticLimits,
 ) -> Result<CheckedSurface, PlatformError> {
+    validate_capsule_with_profile(
+        component,
+        manifest,
+        contracts,
+        lock,
+        sources,
+        limits,
+        ManifestValidationProfile::default(),
+    )
+}
+
+/// Checks the same component/source/descriptor bytes with an explicitly selected
+/// host compatibility profile. Package assets and guest exports cannot select it.
+pub fn validate_capsule_with_profile(
+    component: &[u8],
+    manifest: &CapsuleManifest,
+    contracts: &[ContractDescriptor],
+    lock: &WitLock,
+    sources: &BTreeMap<String, &[u8]>,
+    limits: SemanticLimits,
+    profile: ManifestValidationProfile,
+) -> Result<CheckedSurface, PlatformError> {
     limits.validate()?;
     owned::manifest(manifest, limits)?;
     if manifest.world.0 != lock.world {
         return Err(incompatible("capsule-wit-world-mismatch"));
     }
-    Phase1ManifestValidator
+    profile
         .validate_capsule(manifest)
         .map_err(|_| invalid("invalid-capsule-manifest"))?;
     if let Some(renderer) = &manifest.runtime_requirements.renderer {

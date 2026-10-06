@@ -5,7 +5,9 @@ use latent_core::{PlatformErrorCode, TenantId};
 use std::{fs, sync::atomic::Ordering, time::Duration};
 use tempfile::TempDir;
 mod authority;
+mod control_generation;
 mod perimeter;
+mod rejection;
 
 fn deadline() -> Instant {
     Instant::now() + Duration::from_secs(10)

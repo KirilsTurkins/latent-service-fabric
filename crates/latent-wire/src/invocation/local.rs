@@ -102,7 +102,7 @@ impl InvocationRuntime for LocalInvocationRuntime {
         Box::pin(std::future::ready(result))
     }
 }
-fn activation_request(command: InvocationCommand) -> ActivationRequest {
+pub(super) fn activation_request(command: InvocationCommand) -> ActivationRequest {
     let request = command.request;
     ActivationRequest {
         activation_id: request.requested_activation_id,
