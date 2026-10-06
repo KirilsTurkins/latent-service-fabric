@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use latent_core::native_capacity::{NativeCapacityLimits, NativeCapacityOwner};
 use latent_core::test_support::coordination::{
     with_watchdog, PauseTicket, PollProbe, Registration, Rendezvous, Stage, WATCHDOG,
 };
@@ -28,6 +29,8 @@ use crate::payload::{payload_digest, PayloadRecord};
 
 use super::*;
 
+mod admission;
+mod capacity;
 mod control;
 mod ownership;
 mod pressure;
@@ -55,10 +58,28 @@ struct Fixture {
     store: Arc<ProtectedStoreOwner>,
     authority: EffectAuthorityOwner,
     clock: Arc<Clock>,
+    capacity: NativeCapacityOwner,
 }
 
 impl Fixture {
     async fn new() -> Self {
+        Self::with_capacity(NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap())
+            .await
+    }
+
+    async fn with_capacity(capacity: NativeCapacityOwner) -> Self {
+        Self::with_store_binding(capacity, true).await
+    }
+
+    async fn unbound() -> Self {
+        Self::with_store_binding(
+            NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap(),
+            false,
+        )
+        .await
+    }
+
+    async fn with_store_binding(capacity: NativeCapacityOwner, bind_store: bool) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
@@ -66,6 +87,9 @@ impl Fixture {
         let mut config = ProtectedStoreConfig::bounded_linux(root.path().to_path_buf());
         config.create_if_missing = true;
         let store = Arc::new(Self::open(config.clone()).await);
+        if bind_store {
+            store.bind_native_capacity(&capacity).unwrap();
+        }
         Self {
             _root: root,
             config,
@@ -75,6 +99,7 @@ impl Fixture {
                 millis: AtomicU64::new(100),
                 continuous: AtomicBool::new(true),
             }),
+            capacity,
         }
     }
 
@@ -141,6 +166,20 @@ impl Fixture {
     }
 
     async fn start(
+        &self,
+        config: DispatcherConfig,
+        adapters: Vec<Arc<dyn DeferredEffectAdapter>>,
+        checkpoint: Option<(u64, u64)>,
+    ) -> Result<DispatcherOwner, DispatcherError> {
+        let owner = self.start_unbound(config, adapters, checkpoint).await?;
+        if !owner.snapshot()?.control.restore_review_required {
+            owner.bind_native_capacity(&self.capacity)?;
+        }
+        owner.wake();
+        Ok(owner)
+    }
+
+    async fn start_unbound(
         &self,
         config: DispatcherConfig,
         adapters: Vec<Arc<dyn DeferredEffectAdapter>>,

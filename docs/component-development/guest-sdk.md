@@ -1,6 +1,6 @@
 # Guest SDK capability reference
 
-The current security baseline selects **Wasmtime 48.0.3**. References below to
+The current security baseline selects **Wasmtime 48.0.4**. References below to
 47.0.4 describe the earlier qualification, not the current supported dependency.
 See the [September security update](../development/wasmtime-security-update.md)
 for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.

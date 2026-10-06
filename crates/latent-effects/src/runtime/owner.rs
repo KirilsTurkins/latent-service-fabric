@@ -16,7 +16,7 @@ use super::{
 /// accepted physical work remains in fixed workers and the scheduling owner.
 pub struct DispatcherOwner {
     pub(super) services: Arc<Services>,
-    jobs: StoreIoOwner<Arc<Services>>,
+    pub(super) jobs: StoreIoOwner<Arc<Services>>,
     driver: Option<tokio::task::JoinHandle<()>>,
     workers: usize,
     joined_workers: usize,
@@ -79,8 +79,10 @@ impl DispatcherOwner {
         {
             return Err(DispatcherError::InvalidAdapter);
         }
+        let native_capacity = store.native_capacity_if_bound()?;
         let role = store.reserve_dispatcher()?.await??;
-        let epoch = match store::startup(&store, time.observe(), minimum_checkpoint).await {
+        let startup_time = time.observe();
+        let epoch = match store::startup(&store, startup_time, minimum_checkpoint).await {
             Ok(epoch) => epoch,
             Err(error) => {
                 role.retire().await;
@@ -99,6 +101,8 @@ impl DispatcherOwner {
             config.start_paused || was_paused,
             epoch,
             config.start_in_restore_review || review,
+            config.maximum_command_owners,
+            startup_time.unix_millis,
         ));
         let (receipts, receiver) = tokio::sync::mpsc::channel(config.accepted_jobs);
         let services = Arc::new(Services {
@@ -109,6 +113,10 @@ impl DispatcherOwner {
             epoch,
             runtime: runtime.clone(),
             shared,
+            native_capacity: std::sync::Mutex::new(super::admission::NativeCapacityBinding {
+                owner: native_capacity,
+                admissions_started: false,
+            }),
             receipts,
         });
         let jobs =
@@ -273,6 +281,7 @@ impl DispatcherOwner {
         let physically_retired = report.snapshot.physically_retired()
             && snapshot.physical_owners == 0
             && snapshot.accepted_effects == 0
+            && snapshot.command_owners == 0
             && scheduling_owner_retired
             && self.joined_workers == self.workers;
         Ok(DispatcherShutdown {
