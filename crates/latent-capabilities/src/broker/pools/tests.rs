@@ -10,6 +10,7 @@ use std::{
     time::Duration,
 };
 mod control_admission;
+mod deferred;
 pub(super) mod fixture;
 mod ingress;
 mod lifecycle;
