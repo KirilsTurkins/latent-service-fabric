@@ -42,6 +42,33 @@ fn explanations_use_current_compiled_policy_and_cannot_admit_a_call() {
 }
 
 #[test]
+fn bounded_binding_projection_reserves_no_call_and_rejects_before_copying() {
+    let fixture = Fixture::new(CapabilityBrokerLimits::default());
+    let tenant = TenantId("a".into());
+    let before = fixture.broker.snapshot();
+    let bindings = fixture
+        .plan
+        .inspect_bindings_bounded(&tenant, 32, 32, 65536)
+        .unwrap();
+    assert_eq!(bindings.len(), 1);
+    assert_eq!(bindings[0].state, BindingState::Current);
+    assert!(fixture
+        .plan
+        .inspect_bindings_bounded(&TenantId("other".into()), 32, 32, 65536)
+        .is_err());
+    assert!(fixture
+        .plan
+        .inspect_bindings_bounded(&tenant, 0, 32, 65536)
+        .is_err());
+    assert!(fixture
+        .plan
+        .inspect_bindings_bounded(&tenant, 32, 32, 1)
+        .is_err());
+    assert_eq!(fixture.broker.snapshot().calls, before.calls);
+    assert_eq!(fixture.broker.snapshot().sessions, before.sessions);
+}
+
+#[test]
 fn scoped_usage_tracks_cancelled_calls_and_retained_output_until_actual_drop() {
     let f = Fixture::new(CapabilityBrokerLimits::default());
     let tenant = TenantId("a".into());

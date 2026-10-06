@@ -43,6 +43,50 @@ pub(in crate::deployments) struct HttpTable {
     _charge: Charge,
 }
 impl HttpTable {
+    /// Bounded metadata scan of the existing maximum-256 table, under its
+    /// catalog publication pin. Never clones request matchers or configuration.
+    pub(in crate::deployments) fn inspection_bindings(
+        &self,
+        tenant: &latent_core::TenantId,
+        candidate: &super::super::target_inspection::TargetCandidate,
+        maximum: usize,
+    ) -> Result<Vec<super::super::target_inspection::TargetHttpBinding>, PlatformError> {
+        let mut output = Vec::new();
+        for (index, row) in self.rows.iter().enumerate() {
+            if row.manifest.metadata.tenant.as_ref() != Some(tenant) {
+                continue;
+            }
+            let TriggerTargetIdentity::Application {
+                publication,
+                component,
+                deployment_id,
+                deployment_generation,
+                revision,
+            } = &row.target
+            else {
+                continue;
+            };
+            if candidate.publication.as_ref() != Some(&publication.id)
+                || component != &candidate.component
+                || deployment_id != &candidate.deployment.0
+                || revision != &candidate.revision.0
+            {
+                continue;
+            }
+            if output.len() == maximum
+                || row.manifest.id.0.len() > super::super::target_inspection::MAXIMUM_ID_BYTES
+            {
+                return Err(crate::http_routes::capacity());
+            }
+            output.push(super::super::target_inspection::TargetHttpBinding {
+                id: row.manifest.id.clone(),
+                generation: self.data.records[index].generation,
+                selected_deployment_generation: *deployment_generation,
+                current: *deployment_generation == candidate.deployment_generation,
+            });
+        }
+        Ok(output)
+    }
     pub fn empty(budget: &Arc<Budget>) -> Result<Arc<Self>, PlatformError> {
         Self::new(
             TableData {
