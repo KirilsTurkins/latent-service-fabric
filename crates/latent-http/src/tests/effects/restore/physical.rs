@@ -54,6 +54,7 @@ pub(super) async fn reopen(store: &mut Store) {
         .await
         .unwrap(),
     );
+    store.owner.bind_native_capacity(&store.capacity).unwrap();
 }
 
 pub(super) async fn open_restored(root: tempfile::TempDir) -> Store {
@@ -68,10 +69,16 @@ pub(super) async fn open_restored(root: tempfile::TempDir) -> Store {
     )
     .await
     .unwrap();
+    let capacity = latent_core::native_capacity::NativeCapacityOwner::new(
+        latent_core::native_capacity::NativeCapacityLimits::default(),
+    )
+    .unwrap();
+    owner.bind_native_capacity(&capacity).unwrap();
     Store {
         _root: root,
         config,
         owner: Arc::new(owner),
+        capacity,
     }
 }
 
@@ -190,6 +197,9 @@ pub(super) async fn deliver(
     )
     .await
     .unwrap();
+    assert!(dispatcher
+        .command_admission_source()
+        .uses_native_capacity(&store.capacity));
     let receipt = watched(async {
         loop {
             let record = store.record(authority).await;
