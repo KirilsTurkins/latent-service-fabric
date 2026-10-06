@@ -43,6 +43,7 @@ pub(super) struct PhysicalStore {
     engine: Option<EmbeddedStore>,
     pub(super) status: StoreFileStatus,
     failure: Arc<FailureLatch>,
+    pub(super) dispatcher: Arc<std::sync::atomic::AtomicBool>,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     root: latent_protected_files::ProtectedRoot,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -100,6 +101,7 @@ impl PhysicalStore {
             engine: Some(engine),
             status,
             failure,
+            dispatcher: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             root,
             fence,
             root_lock,
@@ -182,7 +184,7 @@ impl PhysicalStore {
         self.check()?;
         let result = self.classify(operation(self.engine()));
         if self.check_root().is_err() {
-            let error = if kind == StoreIoKind::Write && result.is_ok() {
+            let error = if kind.is_write() && result.is_ok() {
                 ProtectedStoreError::CommitUncertain
             } else {
                 ProtectedStoreError::UnsafeRoot
