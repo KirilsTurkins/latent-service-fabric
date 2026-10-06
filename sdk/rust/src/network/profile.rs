@@ -2,6 +2,7 @@ mod conversions;
 mod metadata;
 mod requests;
 mod responses;
+mod target_inspection;
 
 #[cfg(test)]
 mod vectors;
@@ -47,6 +48,14 @@ macro_rules! operation {
 }
 
 impl model::ClientProfile for RpcClient {
+    operation!(
+        inspect_http_target,
+        InspectHttpTargetRequest,
+        InspectHttpTargetResponse,
+        control,
+        node_service_client,
+        NodeServiceClient
+    );
     operation!(
         invoke,
         InvokeRequest,

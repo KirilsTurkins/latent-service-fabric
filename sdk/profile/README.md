@@ -45,11 +45,11 @@ Network clients may expose generated protobuf objects and lossless conversions
 instead of duplicating storage. The conversion must retain every profile field.
 
 Rust exports `pub mod management;` from `sdk/rust/src/lib.rs`; ordinary crate
-tests use that public API. All portable models and the eight-operation trait
+tests use that public API. All portable models and the ten-operation trait
 live in this namespace; `network::RpcClient` implements that trait using its
 shared bounded transport.
 
-## The eight required operations
+## The ten required operations
 
 Every operation is unary, cancellable locally, single-attempt and bounded.
 Each takes its protobuf-named request and local `CallOptions`; it returns
@@ -67,6 +67,7 @@ request/response names are machine-readable in `client-profile.json`.
 | ListCapabilities | `ListCapabilitiesRequest` / `ListCapabilitiesResponse` | Explicit selected deployment, optional filters and bounded page; redacted binding/provider identity, revisions, configuration epoch, sampled state and unavailable resource owners. |
 | ApplyPolicy | `ApplyPolicyRequest` / `ApplyPolicyResponse` | Both record kinds; explicit `expected_generation` and caller-known nonempty `operation_id` before dispatch. Zero is create-only, not absence. Preserve the exact record and operation receipt. |
 | GetPolicyOperation | `GetPolicyOperationRequest` / `GetPolicyOperationResponse` | Recover by the original operation ID before deciding whether to replay. Missing receipt is unknown/not retained, never proof that the mutation did not run. |
+| InspectHttpTarget | `InspectHttpTargetRequest` / `InspectHttpTargetResponse` | Tenant administrator read of exact service/contract/function candidates on the existing immutable catalog. Optional exact publication/revision and supported routing key; at most 32 candidates, 8 KiB request and 64 KiB response. Optional preparation consumes the original readiness pin without creating a guest Store. Actual callable imports and validated type-only imports remain distinct. No invocation, provider call, binding mutation, receipt, grant or automatic refresh is created. |
 
 `ApplyPolicy.policy` follows the server's closed document profile. Input
 generation is zero, digest is empty, revoked is false, metadata name matches ID,

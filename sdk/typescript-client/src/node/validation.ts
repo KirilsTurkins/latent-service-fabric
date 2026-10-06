@@ -1,6 +1,7 @@
 import * as profile from "../management.js";
 import { type Operation } from "./protocol/schema.js";
 import { ShapeError } from "./protocol/preflight.js";
+import { validateTargetRequest, validateTargetResponse } from "./target-inspection.js";
 
 type RecordValue = Record<string, unknown>;
 
@@ -34,6 +35,7 @@ function pageLimit(operation: Operation, value: unknown): number {
 
 export function validateRequest(operation: Operation, value: unknown, tenant: string): void {
   const request = object(value);
+  if (operation === "inspectHttpTarget") validateTargetRequest(request, tenant);
   for (const key of ["activationId", "rootActivationId", "parentActivationId", "operationId", "id", "deploymentId"]) bounded(request[key], operation === "inspectActivationTree" ? 512 : 256);
   if (operation === "inspectActivationTree") {
     const selected = request.service === undefined ? request.activationId : request.service;
@@ -65,6 +67,7 @@ export function validateRequest(operation: Operation, value: unknown, tenant: st
 
 export function validateResponse(operation: Operation, request: unknown, raw: RecordValue, tenant: string): void {
   const input = object(request);
+  if (operation === "inspectHttpTarget") validateTargetResponse(raw, input, tenant);
   if (operation === "inspectActivationTree") {
     const page = object(raw.page);
     bounded(page.nextPageToken, 160);

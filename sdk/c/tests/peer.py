@@ -117,7 +117,7 @@ class Peer:
         if not timeout.endswith("m") or not 0 < int(timeout[:-1]) <= 300000:
             raise ValueError("absolute deadline header")
         service, operation = headers[":path"].rsplit("/", 1)
-        module = invocation_pb2 if operation in {"Invoke", "Cancel", "GetActivation"} else node_pb2 if operation == "InspectActivationTree" else capability_pb2 if operation == "ListCapabilities" else policy_pb2
+        module = invocation_pb2 if operation in {"Invoke", "Cancel", "GetActivation"} else node_pb2 if operation in {"InspectActivationTree", "InspectHttpTarget"} else capability_pb2 if operation == "ListCapabilities" else policy_pb2
         expected = "/latent.invocation.v1.InvocationService" if module is invocation_pb2 else "/latent.control.v1.NodeService" if module is node_pb2 else "/latent.control.v1.CapabilityService" if module is capability_pb2 else "/latent.control.v1.PolicyService"
         if service != expected:
             raise ValueError("authoritative RPC path")
@@ -197,6 +197,15 @@ class Peer:
                 self.reply(connection, stream, value)
             else:
                 self.reply(connection, stream, value)
+        elif operation == "InspectHttpTarget":
+            value = node_pb2.InspectHttpTargetResponse(schema_version=1, tenant="tests", service=request.service, contract=request.contract,
+                function=request.function, route=request.route if request.HasField("route") else "default", state=1, catalog_transaction=MAXIMUM,
+                route_generation=MAXIMUM, binding_generation=MAXIMUM)
+            candidate = value.candidates.add(deployment_id="deployment-a", revision_id="revision-a", component_digest="sha256:"+"a"*64, reasons=[777])
+            candidate.preparation.state = 3 if request.include_preparation else 4
+            if request.function == "foreign": value.tenant = "foreign"
+            if request.function == "drift": candidate.revision_id = "revision-b"
+            self.reply(connection, stream, value)
         elif operation == "InspectActivationTree":
             value = node_pb2.InspectActivationTreeResponse(schema_version=1, history_available=True, retained_history_only=True)
             value.page.SetInParent()

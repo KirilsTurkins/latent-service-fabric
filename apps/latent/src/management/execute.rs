@@ -118,6 +118,12 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
         Operation::InspectActivationTree(request) => {
             inspect_activation_tree(request, session).await
         }
+        Operation::InspectHttpTarget(request) => {
+            let expected = request.clone();
+            let value = call!(session, NodeServiceClient, inspect_http_target, request);
+            super::target_inspection::associate(&value, &expected, session.tenant())?;
+            Ok(super::target_inspection::response(value))
+        }
         Operation::ListNodes(request) => list_nodes(request, session).await,
         _ => Err(Failure::local(
             "invalid-operation",

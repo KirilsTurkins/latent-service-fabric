@@ -28,6 +28,7 @@ static bool page_request(const latent_profile_page_request *page, uint32_t maxim
 bool lsf_request_valid(latent_profile_call *call, const void *request) {
     latent_string tenant = call->owner->config.tenant;
     switch (call->operation) {
+        case LSF_INSPECT_HTTP_TARGET: return lsf_target_request_valid(call, request);
         case LSF_INVOKE: {
             const latent_profile_invoke_request *value = request;
             return value->has_target && value->has_budget && lsf_text_equal(value->target.tenant, tenant)
@@ -185,6 +186,7 @@ static bool receipt_valid(latent_profile_call *call, const latent_profile_capabi
 
 bool lsf_response_valid(latent_profile_call *call) {
     switch (call->operation) {
+        case LSF_INSPECT_HTTP_TARGET: return lsf_target_response_valid(call, &call->result.inspect_http_target.value);
         case LSF_INVOKE: {
             const latent_profile_invoke_response *value = &call->result.invoke.value;
             if (!activation_identity(call, value->activation_id)) return false;
@@ -327,6 +329,7 @@ static void metadata_result(latent_profile_call *call) {
         case LSF_LIST_CAPABILITIES: call->result.list_capabilities.metadata = call->metadata; break;
         case LSF_APPLY_POLICY: call->result.apply_policy.metadata = call->metadata; break;
         case LSF_GET_POLICY_OPERATION: call->result.get_policy_operation.metadata = call->metadata; break;
+        case LSF_INSPECT_HTTP_TARGET: call->result.inspect_http_target.metadata = call->metadata; break;
     }
 }
 

@@ -773,6 +773,226 @@ public final class Wire {
                 value.getRetainedHistoryOnly());
     }
 
+    public static latent.control.v1.Node.InspectHttpTargetRequest toWire(Management.InspectHttpTargetRequest value) {
+        var result = latent.control.v1.Node.InspectHttpTargetRequest.newBuilder();
+        result.setService(value.service());
+        result.setContract(value.contract());
+        result.setFunction(value.function());
+        if (value.route().isPresent()) result.setRoute(value.route().get());
+        if (value.revisionId().isPresent()) result.setRevisionId(value.revisionId().get());
+        if (value.publication().isPresent()) result.setPublication(toWire(value.publication().get()));
+        if (value.routingKey().isPresent()) result.setRoutingKey(value.routingKey().get());
+        result.setIncludePreparation(value.includePreparation());
+        result.setMaximumWaitMillis(value.maximumWaitMillis());
+        return result.build();
+    }
+
+    public static Management.InspectHttpTargetRequest fromWire(latent.control.v1.Node.InspectHttpTargetRequest value) {
+        return new Management.InspectHttpTargetRequest(
+                value.getService(),
+                value.getContract(),
+                value.getFunction(),
+                value.hasRoute() ? Optional.of(value.getRoute()) : Optional.empty(),
+                value.hasRevisionId() ? Optional.of(value.getRevisionId()) : Optional.empty(),
+                value.hasPublication() ? Optional.of(fromWire(value.getPublication())) : Optional.empty(),
+                value.hasRoutingKey() ? Optional.of(value.getRoutingKey()) : Optional.empty(),
+                value.getIncludePreparation(),
+                value.getMaximumWaitMillis());
+    }
+
+    public static latent.control.v1.Node.TargetDependency toWire(Management.TargetDependency value) {
+        var result = latent.control.v1.Node.TargetDependency.newBuilder();
+        result.setCapability(value.capability());
+        result.setState(value.state());
+        result.setPolicyIdentityDigest(value.policyIdentityDigest());
+        result.setProviderConfigurationEpoch(value.providerConfigurationEpoch());
+        if (value.binding().isPresent()) result.setBinding(toWire(value.binding().get()));
+        for (var item : value.policies()) result.addPolicies(toWire(item));
+        result.setProviderProfile(value.providerProfile());
+        result.setConfigurationDigest(value.configurationDigest());
+        return result.build();
+    }
+
+    public static Management.TargetDependency fromWire(latent.control.v1.Node.TargetDependency value) {
+        return new Management.TargetDependency(
+                value.getCapability(),
+                value.getState(),
+                value.getPolicyIdentityDigest(),
+                value.getProviderConfigurationEpoch(),
+                value.hasBinding() ? Optional.of(fromWire(value.getBinding())) : Optional.empty(),
+                value.getPoliciesList().stream().map(item -> fromWire(item)).toList(),
+                value.getProviderProfile(),
+                value.getConfigurationDigest());
+    }
+
+    public static latent.control.v1.Node.TargetDependencyRevision toWire(Management.TargetDependencyRevision value) {
+        var result = latent.control.v1.Node.TargetDependencyRevision.newBuilder();
+        result.setId(value.id());
+        result.setDigest(value.digest());
+        result.setRevision(value.revision());
+        return result.build();
+    }
+
+    public static Management.TargetDependencyRevision fromWire(latent.control.v1.Node.TargetDependencyRevision value) {
+        return new Management.TargetDependencyRevision(
+                value.getId(),
+                value.getDigest(),
+                value.getRevision());
+    }
+
+    public static latent.control.v1.Node.PreparedTargetExport toWire(Management.PreparedTargetExport value) {
+        var result = latent.control.v1.Node.PreparedTargetExport.newBuilder();
+        result.setContract(value.contract());
+        result.setFunction(value.function());
+        return result.build();
+    }
+
+    public static Management.PreparedTargetExport fromWire(latent.control.v1.Node.PreparedTargetExport value) {
+        return new Management.PreparedTargetExport(
+                value.getContract(),
+                value.getFunction());
+    }
+
+    public static latent.control.v1.Node.TargetPreparation toWire(Management.TargetPreparation value) {
+        var result = latent.control.v1.Node.TargetPreparation.newBuilder();
+        result.setStateValue(value.state().value());
+        if (value.diagnostic().isPresent()) result.setDiagnostic(toWire(value.diagnostic().get()));
+        if (value.profile().isPresent()) result.setProfileValue(value.profile().get().value());
+        if (value.engineVersion().isPresent()) result.setEngineVersion(value.engineVersion().get());
+        if (value.engineConfigurationDigest().isPresent()) result.setEngineConfigurationDigest(value.engineConfigurationDigest().get());
+        if (value.targetTriple().isPresent()) result.setTargetTriple(value.targetTriple().get());
+        if (value.cpuFeatureSet().isPresent()) result.setCpuFeatureSet(value.cpuFeatureSet().get());
+        if (value.sealedMetadataFingerprint().isPresent()) result.setSealedMetadataFingerprint(value.sealedMetadataFingerprint().get());
+        if (value.importCount().isPresent()) result.setImportCount(value.importCount().get());
+        if (value.functionCount().isPresent()) result.setFunctionCount(value.functionCount().get());
+        if (value.hostcallFuel().isPresent()) result.setHostcallFuel(value.hostcallFuel().get());
+        if (value.maximumLiftedBytes().isPresent()) result.setMaximumLiftedBytes(value.maximumLiftedBytes().get());
+        if (value.maximumTypeNodes().isPresent()) result.setMaximumTypeNodes(value.maximumTypeNodes().get());
+        if (value.declaredBudget().isPresent()) result.setDeclaredBudget(toWire(value.declaredBudget().get()));
+        for (var item : value.imports()) result.addImports(item);
+        for (var item : value.exports()) result.addExports(toWire(item));
+        for (var item : value.typeImports()) result.addTypeImports(item);
+        return result.build();
+    }
+
+    public static Management.TargetPreparation fromWire(latent.control.v1.Node.TargetPreparation value) {
+        return new Management.TargetPreparation(
+                new Management.TargetPreparationState(value.getStateValue()),
+                value.hasDiagnostic() ? Optional.of(fromWire(value.getDiagnostic())) : Optional.empty(),
+                value.hasProfile() ? Optional.of(new Management.DiagnosticProfile(value.getProfileValue())) : Optional.empty(),
+                value.hasEngineVersion() ? Optional.of(value.getEngineVersion()) : Optional.empty(),
+                value.hasEngineConfigurationDigest() ? Optional.of(value.getEngineConfigurationDigest()) : Optional.empty(),
+                value.hasTargetTriple() ? Optional.of(value.getTargetTriple()) : Optional.empty(),
+                value.hasCpuFeatureSet() ? Optional.of(value.getCpuFeatureSet()) : Optional.empty(),
+                value.hasSealedMetadataFingerprint() ? Optional.of(value.getSealedMetadataFingerprint()) : Optional.empty(),
+                value.hasImportCount() ? Optional.of(value.getImportCount()) : Optional.empty(),
+                value.hasFunctionCount() ? Optional.of(value.getFunctionCount()) : Optional.empty(),
+                value.hasHostcallFuel() ? Optional.of(value.getHostcallFuel()) : Optional.empty(),
+                value.hasMaximumLiftedBytes() ? Optional.of(value.getMaximumLiftedBytes()) : Optional.empty(),
+                value.hasMaximumTypeNodes() ? Optional.of(value.getMaximumTypeNodes()) : Optional.empty(),
+                value.hasDeclaredBudget() ? Optional.of(fromWire(value.getDeclaredBudget())) : Optional.empty(),
+                value.getImportsList().stream().map(item -> item).toList(),
+                value.getExportsList().stream().map(item -> fromWire(item)).toList(),
+                value.getTypeImportsList().stream().map(item -> item).toList());
+    }
+
+    public static latent.control.v1.Node.TargetCandidate toWire(Management.TargetCandidate value) {
+        var result = latent.control.v1.Node.TargetCandidate.newBuilder();
+        result.setDeploymentId(value.deploymentId());
+        result.setDeploymentGeneration(value.deploymentGeneration());
+        result.setRevisionId(value.revisionId());
+        result.setComponentDigest(value.componentDigest());
+        if (value.publication().isPresent()) result.setPublication(toWire(value.publication().get()));
+        if (value.requestedPublication().isPresent()) result.setRequestedPublication(toWire(value.requestedPublication().get()));
+        if (value.packageDigest().isPresent()) result.setPackageDigest(value.packageDigest().get());
+        if (value.publicationGeneration().isPresent()) result.setPublicationGeneration(value.publicationGeneration().get());
+        result.setRoutingWeight(value.routingWeight());
+        result.setExportCompatible(value.exportCompatible());
+        result.setHttpCompatible(value.httpCompatible());
+        result.setEligible(value.eligible());
+        for (var item : value.reasons()) result.addReasonsValue(item.value());
+        for (var item : value.dependencies()) result.addDependencies(toWire(item));
+        if (value.preparation().isPresent()) result.setPreparation(toWire(value.preparation().get()));
+        if (value.publicationKind().isPresent()) result.setPublicationKind(value.publicationKind().get());
+        for (var item : value.httpBindings()) result.addHttpBindings(toWire(item));
+        return result.build();
+    }
+
+    public static Management.TargetCandidate fromWire(latent.control.v1.Node.TargetCandidate value) {
+        return new Management.TargetCandidate(
+                value.getDeploymentId(),
+                value.getDeploymentGeneration(),
+                value.getRevisionId(),
+                value.getComponentDigest(),
+                value.hasPublication() ? Optional.of(fromWire(value.getPublication())) : Optional.empty(),
+                value.hasRequestedPublication() ? Optional.of(fromWire(value.getRequestedPublication())) : Optional.empty(),
+                value.hasPackageDigest() ? Optional.of(value.getPackageDigest()) : Optional.empty(),
+                value.hasPublicationGeneration() ? Optional.of(value.getPublicationGeneration()) : Optional.empty(),
+                value.getRoutingWeight(),
+                value.getExportCompatible(),
+                value.getHttpCompatible(),
+                value.getEligible(),
+                value.getReasonsValueList().stream().map(item -> new Management.TargetReason(item)).toList(),
+                value.getDependenciesList().stream().map(item -> fromWire(item)).toList(),
+                value.hasPreparation() ? Optional.of(fromWire(value.getPreparation())) : Optional.empty(),
+                value.hasPublicationKind() ? Optional.of(value.getPublicationKind()) : Optional.empty(),
+                value.getHttpBindingsList().stream().map(item -> fromWire(item)).toList());
+    }
+
+    public static latent.control.v1.Node.InspectedHttpBinding toWire(Management.InspectedHttpBinding value) {
+        var result = latent.control.v1.Node.InspectedHttpBinding.newBuilder();
+        result.setId(value.id());
+        result.setGeneration(value.generation());
+        result.setSelectedDeploymentGeneration(value.selectedDeploymentGeneration());
+        result.setState(value.state());
+        return result.build();
+    }
+
+    public static Management.InspectedHttpBinding fromWire(latent.control.v1.Node.InspectedHttpBinding value) {
+        return new Management.InspectedHttpBinding(
+                value.getId(),
+                value.getGeneration(),
+                value.getSelectedDeploymentGeneration(),
+                value.getState());
+    }
+
+    public static latent.control.v1.Node.InspectHttpTargetResponse toWire(Management.InspectHttpTargetResponse value) {
+        var result = latent.control.v1.Node.InspectHttpTargetResponse.newBuilder();
+        result.setSchemaVersion(value.schemaVersion());
+        result.setTenant(value.tenant());
+        result.setService(value.service());
+        result.setContract(value.contract());
+        result.setFunction(value.function());
+        result.setRoute(value.route());
+        result.setStateValue(value.state().value());
+        result.setCatalogTransaction(value.catalogTransaction());
+        result.setRouteGeneration(value.routeGeneration());
+        result.setBindingGeneration(value.bindingGeneration());
+        if (value.policyStoreGeneration().isPresent()) result.setPolicyStoreGeneration(value.policyStoreGeneration().get());
+        for (var item : value.candidates()) result.addCandidates(toWire(item));
+        if (value.selectedRevisionId().isPresent()) result.setSelectedRevisionId(value.selectedRevisionId().get());
+        result.setLiveGrantsChecked(value.liveGrantsChecked());
+        return result.build();
+    }
+
+    public static Management.InspectHttpTargetResponse fromWire(latent.control.v1.Node.InspectHttpTargetResponse value) {
+        return new Management.InspectHttpTargetResponse(
+                value.getSchemaVersion(),
+                value.getTenant(),
+                value.getService(),
+                value.getContract(),
+                value.getFunction(),
+                value.getRoute(),
+                new Management.TargetObservationState(value.getStateValue()),
+                value.getCatalogTransaction(),
+                value.getRouteGeneration(),
+                value.getBindingGeneration(),
+                value.hasPolicyStoreGeneration() ? Optional.of(value.getPolicyStoreGeneration()) : Optional.empty(),
+                value.getCandidatesList().stream().map(item -> fromWire(item)).toList(),
+                value.hasSelectedRevisionId() ? Optional.of(value.getSelectedRevisionId()) : Optional.empty(),
+                value.getLiveGrantsChecked());
+    }
+
     public static latent.invocation.v1.Invocation.ResourceBudget toInvocationResourceBudget(Management.ResourceBudget value) {
         var result = latent.invocation.v1.Invocation.ResourceBudget.newBuilder();
         result.setCpuFuel(value.cpuFuel());

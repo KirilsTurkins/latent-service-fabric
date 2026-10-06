@@ -120,6 +120,64 @@ public readonly record struct DiagnosticProfile(int Value)
     public static readonly DiagnosticProfile WasmtimeBufferedWebValuesV1 = new(2);
 }
 
+/// <summary>Open numeric TargetObservationState value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct TargetObservationState(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly TargetObservationState Unspecified = new(0);
+    /// <summary>The coherent value.</summary>
+    public static readonly TargetObservationState Coherent = new(1);
+    /// <summary>The stale value.</summary>
+    public static readonly TargetObservationState Stale = new(2);
+    /// <summary>The unavailable value.</summary>
+    public static readonly TargetObservationState Unavailable = new(3);
+}
+
+/// <summary>Open numeric TargetReason value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct TargetReason(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly TargetReason Unspecified = new(0);
+    /// <summary>The current value.</summary>
+    public static readonly TargetReason Current = new(1);
+    /// <summary>The export absent value.</summary>
+    public static readonly TargetReason ExportAbsent = new(2);
+    /// <summary>The zero routing weight value.</summary>
+    public static readonly TargetReason ZeroRoutingWeight = new(3);
+    /// <summary>The publication unavailable value.</summary>
+    public static readonly TargetReason PublicationUnavailable = new(4);
+    /// <summary>The binding plan unavailable value.</summary>
+    public static readonly TargetReason BindingPlanUnavailable = new(5);
+    /// <summary>The policy changed value.</summary>
+    public static readonly TargetReason PolicyChanged = new(6);
+    /// <summary>The provider unavailable value.</summary>
+    public static readonly TargetReason ProviderUnavailable = new(7);
+    /// <summary>The inspection unavailable value.</summary>
+    public static readonly TargetReason InspectionUnavailable = new(8);
+    /// <summary>The unmanaged publication value.</summary>
+    public static readonly TargetReason UnmanagedPublication = new(9);
+    /// <summary>The http incompatible value.</summary>
+    public static readonly TargetReason HttpIncompatible = new(10);
+}
+
+/// <summary>Open numeric TargetPreparationState value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct TargetPreparationState(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly TargetPreparationState Unspecified = new(0);
+    /// <summary>The ready value.</summary>
+    public static readonly TargetPreparationState Ready = new(1);
+    /// <summary>The rejected value.</summary>
+    public static readonly TargetPreparationState Rejected = new(2);
+    /// <summary>The unavailable value.</summary>
+    public static readonly TargetPreparationState Unavailable = new(3);
+    /// <summary>The not requested value.</summary>
+    public static readonly TargetPreparationState NotRequested = new(4);
+}
+
 /// <summary>Open numeric FailureCategory value; unknown integers are retained.</summary>
 /// <param name="Value">The exact signed protobuf enum value.</param>
 public readonly record struct FailureCategory(int Value)
@@ -673,6 +731,178 @@ public sealed record InspectActivationTreeResponse(
     bool CursorExpired,
     bool RetainedHistoryOnly);
 
+/// <summary>Transport-neutral InspectHttpTargetRequest; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Service">The exact service value with preserved presence.</param>
+/// <param name="Contract">The exact contract value with preserved presence.</param>
+/// <param name="Function">The exact function value with preserved presence.</param>
+/// <param name="Route">The exact route value with preserved presence.</param>
+/// <param name="RevisionId">The exact revision_id value with preserved presence.</param>
+/// <param name="Publication">The exact publication value with preserved presence.</param>
+/// <param name="RoutingKey">The exact routing_key value with preserved presence.</param>
+/// <param name="IncludePreparation">The exact include_preparation value with preserved presence.</param>
+/// <param name="MaximumWaitMillis">The exact maximum_wait_millis value with preserved presence.</param>
+public sealed record InspectHttpTargetRequest(
+    string Service,
+    string Contract,
+    string Function,
+    string? Route,
+    string? RevisionId,
+    PublicationRef? Publication,
+    string? RoutingKey,
+    bool IncludePreparation,
+    ulong MaximumWaitMillis);
+
+/// <summary>Transport-neutral TargetDependencyRevision; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Id">The exact id value with preserved presence.</param>
+/// <param name="Digest">The exact digest value with preserved presence.</param>
+/// <param name="Revision">The exact revision value with preserved presence.</param>
+public sealed record TargetDependencyRevision(
+    string Id,
+    string Digest,
+    ulong Revision);
+
+/// <summary>Transport-neutral TargetDependency; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Capability">The exact capability value with preserved presence.</param>
+/// <param name="State">The exact state value with preserved presence.</param>
+/// <param name="PolicyIdentityDigest">The exact policy_identity_digest value with preserved presence.</param>
+/// <param name="ProviderConfigurationEpoch">The exact provider_configuration_epoch value with preserved presence.</param>
+/// <param name="Binding">The exact binding value with preserved presence.</param>
+/// <param name="Policies">The exact policies value with preserved presence.</param>
+/// <param name="ProviderProfile">The exact provider_profile value with preserved presence.</param>
+/// <param name="ConfigurationDigest">The exact configuration_digest value with preserved presence.</param>
+public sealed record TargetDependency(
+    string Capability,
+    string State,
+    string PolicyIdentityDigest,
+    ulong ProviderConfigurationEpoch,
+    TargetDependencyRevision? Binding,
+    IReadOnlyList<TargetDependencyRevision> Policies,
+    string ProviderProfile,
+    string ConfigurationDigest);
+
+/// <summary>Transport-neutral PreparedTargetExport; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Contract">The exact contract value with preserved presence.</param>
+/// <param name="Function">The exact function value with preserved presence.</param>
+public sealed record PreparedTargetExport(
+    string Contract,
+    string Function);
+
+/// <summary>Transport-neutral TargetPreparation; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="State">The exact state value with preserved presence.</param>
+/// <param name="Diagnostic">The exact diagnostic value with preserved presence.</param>
+/// <param name="Profile">The exact profile value with preserved presence.</param>
+/// <param name="EngineVersion">The exact engine_version value with preserved presence.</param>
+/// <param name="EngineConfigurationDigest">The exact engine_configuration_digest value with preserved presence.</param>
+/// <param name="TargetTriple">The exact target_triple value with preserved presence.</param>
+/// <param name="CpuFeatureSet">The exact cpu_feature_set value with preserved presence.</param>
+/// <param name="SealedMetadataFingerprint">The exact sealed_metadata_fingerprint value with preserved presence.</param>
+/// <param name="ImportCount">The exact import_count value with preserved presence.</param>
+/// <param name="FunctionCount">The exact function_count value with preserved presence.</param>
+/// <param name="HostcallFuel">The exact hostcall_fuel value with preserved presence.</param>
+/// <param name="MaximumLiftedBytes">The exact maximum_lifted_bytes value with preserved presence.</param>
+/// <param name="MaximumTypeNodes">The exact maximum_type_nodes value with preserved presence.</param>
+/// <param name="DeclaredBudget">The exact declared_budget value with preserved presence.</param>
+/// <param name="Imports">The exact imports value with preserved presence.</param>
+/// <param name="Exports">The exact exports value with preserved presence.</param>
+/// <param name="TypeImports">The exact type_imports value with preserved presence.</param>
+public sealed record TargetPreparation(
+    TargetPreparationState State,
+    ActivationDiagnostic? Diagnostic,
+    DiagnosticProfile? Profile,
+    string? EngineVersion,
+    string? EngineConfigurationDigest,
+    string? TargetTriple,
+    string? CpuFeatureSet,
+    string? SealedMetadataFingerprint,
+    ulong? ImportCount,
+    ulong? FunctionCount,
+    ulong? HostcallFuel,
+    ulong? MaximumLiftedBytes,
+    ulong? MaximumTypeNodes,
+    ResourceBudget? DeclaredBudget,
+    IReadOnlyList<string> Imports,
+    IReadOnlyList<PreparedTargetExport> Exports,
+    IReadOnlyList<string> TypeImports);
+
+/// <summary>Transport-neutral InspectedHttpBinding; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Id">The exact id value with preserved presence.</param>
+/// <param name="Generation">The exact generation value with preserved presence.</param>
+/// <param name="SelectedDeploymentGeneration">The exact selected_deployment_generation value with preserved presence.</param>
+/// <param name="State">The exact state value with preserved presence.</param>
+public sealed record InspectedHttpBinding(
+    string Id,
+    ulong Generation,
+    ulong SelectedDeploymentGeneration,
+    string State);
+
+/// <summary>Transport-neutral TargetCandidate; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="DeploymentId">The exact deployment_id value with preserved presence.</param>
+/// <param name="DeploymentGeneration">The exact deployment_generation value with preserved presence.</param>
+/// <param name="RevisionId">The exact revision_id value with preserved presence.</param>
+/// <param name="ComponentDigest">The exact component_digest value with preserved presence.</param>
+/// <param name="Publication">The exact publication value with preserved presence.</param>
+/// <param name="RequestedPublication">The exact requested_publication value with preserved presence.</param>
+/// <param name="PackageDigest">The exact package_digest value with preserved presence.</param>
+/// <param name="PublicationGeneration">The exact publication_generation value with preserved presence.</param>
+/// <param name="RoutingWeight">The exact routing_weight value with preserved presence.</param>
+/// <param name="ExportCompatible">The exact export_compatible value with preserved presence.</param>
+/// <param name="HttpCompatible">The exact http_compatible value with preserved presence.</param>
+/// <param name="Eligible">The exact eligible value with preserved presence.</param>
+/// <param name="Reasons">The exact reasons value with preserved presence.</param>
+/// <param name="Dependencies">The exact dependencies value with preserved presence.</param>
+/// <param name="Preparation">The exact preparation value with preserved presence.</param>
+/// <param name="PublicationKind">The exact publication_kind value with preserved presence.</param>
+/// <param name="HttpBindings">The exact http_bindings value with preserved presence.</param>
+public sealed record TargetCandidate(
+    string DeploymentId,
+    ulong DeploymentGeneration,
+    string RevisionId,
+    string ComponentDigest,
+    PublicationRef? Publication,
+    PublicationRef? RequestedPublication,
+    string? PackageDigest,
+    ulong? PublicationGeneration,
+    uint RoutingWeight,
+    bool ExportCompatible,
+    bool HttpCompatible,
+    bool Eligible,
+    IReadOnlyList<TargetReason> Reasons,
+    IReadOnlyList<TargetDependency> Dependencies,
+    TargetPreparation? Preparation,
+    string? PublicationKind,
+    IReadOnlyList<InspectedHttpBinding> HttpBindings);
+
+/// <summary>Transport-neutral InspectHttpTargetResponse; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="SchemaVersion">The exact schema_version value with preserved presence.</param>
+/// <param name="Tenant">The exact tenant value with preserved presence.</param>
+/// <param name="Service">The exact service value with preserved presence.</param>
+/// <param name="Contract">The exact contract value with preserved presence.</param>
+/// <param name="Function">The exact function value with preserved presence.</param>
+/// <param name="Route">The exact route value with preserved presence.</param>
+/// <param name="State">The exact state value with preserved presence.</param>
+/// <param name="CatalogTransaction">The exact catalog_transaction value with preserved presence.</param>
+/// <param name="RouteGeneration">The exact route_generation value with preserved presence.</param>
+/// <param name="BindingGeneration">The exact binding_generation value with preserved presence.</param>
+/// <param name="PolicyStoreGeneration">The exact policy_store_generation value with preserved presence.</param>
+/// <param name="Candidates">The exact candidates value with preserved presence.</param>
+/// <param name="SelectedRevisionId">The exact selected_revision_id value with preserved presence.</param>
+/// <param name="LiveGrantsChecked">The exact live_grants_checked value with preserved presence.</param>
+public sealed record InspectHttpTargetResponse(
+    uint SchemaVersion,
+    string Tenant,
+    string Service,
+    string Contract,
+    string Function,
+    string Route,
+    TargetObservationState State,
+    ulong CatalogTransaction,
+    ulong RouteGeneration,
+    ulong BindingGeneration,
+    ulong? PolicyStoreGeneration,
+    IReadOnlyList<TargetCandidate> Candidates,
+    string? SelectedRevisionId,
+    bool LiveGrantsChecked);
+
 /// <summary>Transport-neutral PublicationIdentity; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Publication">The exact publication value with preserved presence.</param>
 /// <param name="ComponentDigest">The exact component_digest value with preserved presence.</param>
@@ -799,6 +1029,12 @@ public interface IClientProfile
     /// <summary>Calls GetPolicyOperation once within a bounded local deadline.</summary>
     ValueTask<ClientResponse<GetPolicyOperationResponse>> GetPolicyOperationAsync(
         GetPolicyOperationRequest request,
+        CallOptions options,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Calls InspectHttpTarget once within a bounded local deadline.</summary>
+    ValueTask<ClientResponse<InspectHttpTargetResponse>> InspectHttpTargetAsync(
+        InspectHttpTargetRequest request,
         CallOptions options,
         CancellationToken cancellationToken = default);
 
