@@ -119,6 +119,8 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
         raise ValueError("dependency patches and replacements cannot override the pinned SDK")
     expected = {"wit-bindgen": "=" + pins["toolchain"]["rust"]["dependencies"]["wit-bindgen"],
                 "latent-guest": {"path": "vendor/lsf/sdk/rust-guest"}}
+    if pins["template"]["name"] == "transactional-aggregate":
+        expected["latent-guest"]["features"] = ["transaction"]
     maintained = cargo.get("target", {}).get('cfg(target_arch = "wasm32")', {}).get("dependencies", {})
     if (not isinstance(maintained, dict) or any(maintained.get(name) != value for name, value in expected.items())
             or not captured and maintained != expected):

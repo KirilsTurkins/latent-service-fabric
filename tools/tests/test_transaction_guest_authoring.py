@@ -10,6 +10,29 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_rust_authored_projects_select_and_pin_their_guest_binding_profile(self):
+        import tomllib
+        from tools.rust_capsule_project import create
+        from tools.rust_capsule_build import validate_project
+        with tempfile.TemporaryDirectory() as temporary:
+            for template in (*TEMPLATES, TEMPLATE):
+                with self.subTest(template=template):
+                    project = create(Path(temporary) / template, template)
+                    files = snapshot(project)
+                    validate_project(files)
+                    cargo = tomllib.loads(files["Cargo.toml"].decode())
+                    guest = cargo["target"]['cfg(target_arch = "wasm32")']["dependencies"]["latent-guest"]
+                    self.assertEqual(guest.get("features", []), ["transaction"] if template == TEMPLATE else [])
+                    raw = files["Cargo.toml"]
+                    if template == TEMPLATE:
+                        changed = raw.replace(b', features = ["transaction"]', b"")
+                    else:
+                        changed = raw.replace(b'latent-guest = { path = "vendor/lsf/sdk/rust-guest" }',
+                            b'latent-guest = { path = "vendor/lsf/sdk/rust-guest", features = ["transaction"] }')
+                    self.assertNotEqual(changed, raw)
+                    with self.assertRaisesRegex(ValueError, "pinned authoring recipe"):
+                        validate_project({**files, "Cargo.toml": changed})
+
     def test_java_transaction_capture_closes_its_declared_runtime_clock_dependencies(self):
         from tools.java_capsule_project import create, validate
         from tools.stage_runtime_wit import REFERENCE
