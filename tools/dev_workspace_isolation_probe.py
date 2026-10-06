@@ -56,14 +56,31 @@ def author(payload: Path, destination: Path, side: str) -> tuple[dict, dict]:
     return descriptor, fixtures
 
 
+def author_expiry(payload: Path, destination: Path) -> dict:
+    entry = decode(paths.read(payload, "templates.json"))["templates"]["greeting"]
+    template = payload / entry["path"]
+    manifest = decode(paths.read(template, "template.json"))
+    require(manifest["project"]["language"] == "rust", "rust-expiry-template-required")
+    project.scaffold(template, destination, manifest, entry["identity"])
+    return copy.deepcopy(manifest["project"])
+
+
 def clean_stop(connection, root: Path) -> dict:
     stopped = connection.call("down", {}, timeout=30)
-    counters = stopped.get("providerShutdown", {})
-    require(stopped.get("reaped") is True and stopped.get("cleanShutdown") is True
-            and counters.get("clean") is True
-            and all(type(counters.get(key)) is int and counters[key] == 0
-                    for key in (*PROVIDER_COUNTERS, "secretGenerations", "secretReferences")),
+    require(stopped.get("reaped") is True and stopped.get("cleanShutdown") is True,
             "overlapping-workspace-cleanup-unconfirmed")
+    configuration = state.load(root / "runtime/config", "node.json")
+    if configuration.get("providers") is None:
+        # Native ShutdownReport omits its optional provider owner when this
+        # protected configuration installed none. Absence is not zero counters.
+        require(stopped.get("providers") == [] and "providerShutdown" not in stopped,
+                "overlapping-workspace-cleanup-unconfirmed")
+    else:
+        counters = stopped.get("providerShutdown", {})
+        require(counters.get("clean") is True
+                and all(type(counters.get(key)) is int and counters[key] == 0
+                        for key in (*PROVIDER_COUNTERS, "secretGenerations", "secretReferences")),
+                "overlapping-workspace-cleanup-unconfirmed")
     require(state.load(root, "lifecycle.json")["state"] == "stopped", "stopped-workspace-not-durable")
     return stopped
 
@@ -173,7 +190,10 @@ def run(payload: Path, supplied: Path, output: Path) -> dict:
         report["stopABeforeExpiry"] = clean_stop(connection, root)
         root = state.workspace(owner, "test-expiry-" + secrets.token_hex(3), create=True)
         roots["expiry"] = root
-        descriptor, fixtures = author(payload, root / "Author spaces-\u00fc", "a")
+        # The normal Invoke fault probe uses the ordinary invocation profile.
+        # The two secret scenarios retain their explicit capability budgets;
+        # receipt expiry needs only a real successful pure-library invocation.
+        descriptor = author_expiry(payload, root / "Author spaces-\u00fc")
         record, content = snapshot.observe(root / "Author spaces-\u00fc", descriptor["inputRoots"], tuple(descriptor["exclude"]))
         (root / "snapshots").mkdir(mode=0o700)
         source = root / "snapshots" / record["identity"][7:]
@@ -190,19 +210,19 @@ def run(payload: Path, supplied: Path, output: Path) -> dict:
             "helper": str(supplied / "helper.pyz"), "helperSha256": runtime["helperSha256"]}, root.name, root)
         connections["expiry"] = connection
         profile = connection.call("prepare-test", {"consent": True, "admission": "signed-fixture",
-                                   "toolRoot": str(payload), "fixtures": fixtures})
+                                   "toolRoot": str(payload)})
         report["restartAForExpiry"] = connection.call("up", {}, timeout=180)
         connection.call("deploy", {})
         configuration = decode(paths.read(root / "runtime/config/client", "client.json"))
-        private_values.extend(secret_fixture.values(root, fixtures["secrets"]))
         private_values.append(configuration["profiles"][0]["token"].encode())
         report["expiryWorkspace"] = {"workspace": root.name, "runtime": runtime, "source": record["identity"],
             "artifacts": built["artifacts"], "profile": profile, "retentionConfiguredBeforeFixturePreparation": True,
             "overlapWorkspaceConfigurationsChanged": False}
-        arguments = {"service": "greeting", "contract": "examples:greeting/api@1.0.0", "function": "read",
-                     "mediaType": "application/vnd.latent.wit-values.v1+json",
-                     "input": base64.b64encode(encode(["dev-only-a", False])).decode()}
-        arguments["service"] = state.load(root, "project.json")["descriptor"]["service"]
+        case = decode(paths.read(source, descriptor["scenarios"][0]))["scenarios"][0]
+        require(case["expect"]["category"] == "success" and not case.get("fixtures")
+                and not case.get("execution", {}).get("grants"), "pure-successful-expiry-case-required")
+        arguments = {key: case[key] for key in ("service", "contract", "function", "mediaType")}
+        arguments["input"] = base64.b64encode(paths.read(source, case["input"])).decode()
         fault = process.run([sys.executable, "-B", str(Path(__file__).with_name("dev_node_fault_probe.py")),
             "--helper", str(supplied / "helper.pyz"), "--helper-sha256", runtime["helperSha256"],
             "--workspace", root.name, "--kind", "invoke"], root, timeout=60, maximum=262144, stdin=encode(arguments))

@@ -712,7 +712,14 @@ class SourceNodeProbe(unittest.TestCase):
                 (destination / 'app').mkdir()
                 (destination / 'app/lib.rs').write_bytes(('// selected ' + side).encode())
                 selected = descriptor()
-                selected.update(inputRoots=['app'], exclude=['.env'])
+                selected.update(inputRoots=['app', 'tests'], exclude=['.env'], scenarios=['tests/scenarios.json'])
+                (destination / 'tests').mkdir(mode=0o700)
+                (destination / 'tests/input.json').write_bytes(b'[]')
+                state.atomic(destination / 'tests', 'scenarios.json', {'scenarios': [{
+                    'service': selected['service'], 'contract': 'examples:greeting/api@1.0.0',
+                    'function': 'greet', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
+                    'input': 'tests/input.json', 'expect': {'category': 'success'},
+                    'fixtures': [], 'execution': {'grants': []}}]})
                 return selected, {'secrets': {'references': []}}
 
             def stage(root, _supplied):
@@ -735,6 +742,12 @@ class SourceNodeProbe(unittest.TestCase):
 
                 def call(self, operation, _arguments, **_options):
                     if operation == 'prepare-test':
+                        if self.root.name.split('-')[1] == 'expiry':
+                            self_test.assertNotIn('fixtures', _arguments)
+                        else:
+                            configuration = state.load(self.root / 'runtime/config', 'node.json')
+                            configuration['providers'] = {'secrets': {'fixture': True}}
+                            state.atomic(self.root / 'runtime/config', 'node.json', configuration)
                         raw = paths.read(self.root / 'runtime/config', 'node.json')
                         prepared[self.root.name] = common.digest(raw)
                         state.atomic(self.root, 'test-profile.json', {'configurationSha256': prepared[self.root.name]})
@@ -759,7 +772,10 @@ class SourceNodeProbe(unittest.TestCase):
                                             for index in range(9 if not _arguments['selection'] else 1)]}
                     if operation == 'down':
                         state.atomic(self.root, 'lifecycle.json', {'state': 'stopped'})
-                        return {'reaped': True, 'cleanShutdown': True, 'providerShutdown': {'clean': True,
+                        if self.root.name.split('-')[1] == 'expiry':
+                            return {'reaped': True, 'cleanShutdown': True, 'providers': []}
+                        return {'reaped': True, 'cleanShutdown': True, 'providers': [{'id': 'secrets'}],
+                            'providerShutdown': {'clean': True,
                             **{name: 0 for name in (*probe.PROVIDER_COUNTERS, 'secretGenerations', 'secretReferences')}}}
                     raise AssertionError('unexpected probe RPC boundary ' + operation)
 
@@ -795,6 +811,8 @@ class SourceNodeProbe(unittest.TestCase):
                     self.assertEqual(common.digest(paths.read(selected_root / 'runtime/config', 'node.json')),
                                      prepared[selected_root.name])
                 self.assertEqual((options['timeout'], options['maximum']), (60, 262144))
+                self.assertEqual(common.decode(options['stdin'])['input'], 'W10=')
+                self.assertEqual(common.decode(options['stdin'])['function'], 'greet')
                 raise ExpiryBoundary()
 
             self_test = self
@@ -802,6 +820,7 @@ class SourceNodeProbe(unittest.TestCase):
             host.geteuid.return_value = os.geteuid() or 23001
             with patch.object(probe, 'os', host), patch.object(probe.helper, 'root_directory', return_value=owner), \
                     patch.object(probe, 'author', side_effect=author), patch.object(probe, 'stage_runtime', side_effect=stage), \
+                    patch.object(probe, 'author_expiry', side_effect=lambda payload, destination: author(payload, destination, 'expiry')[0]), \
                     patch.object(probe.build, 'execute', side_effect=build), patch.object(probe.backend, 'Backend', Backend), \
                     patch.object(probe.secret_fixture, 'values', return_value=[]), \
                     patch.object(probe.helper, 'client', side_effect=lambda root, **_options: (OwnClient(root), None)), \
@@ -810,6 +829,45 @@ class SourceNodeProbe(unittest.TestCase):
                 probe.run(payload, supplied, parent / 'output')
             self.assertEqual(tested[:2], [('a', []), ('b', [])])
             self.assertEqual(state.load(parent / 'output', 'observation.json')['maximumSeconds'], 900)
+            observation = state.load(parent / 'output', 'observation.json')
+            self.assertEqual(set(observation['shutdown']), {'a', 'b', 'expiry'})
+            self.assertNotIn('cleanupFailure', observation)
+            self.assertEqual(observation['shutdown']['expiry']['providers'], [])
+            self.assertNotIn('providerShutdown', observation['shutdown']['expiry'])
+            # Configured provider ownership still requires every actual counter;
+            # an absent report never stands in for eighteen zero values.
+            configured = configuration_roots['b']
+            pure = configuration_roots['expiry']
+            base = {'reaped': True, 'cleanShutdown': True, 'providers': []}
+            stopped = Mock()
+            for response in ({**base, 'reaped': False}, {**base, 'cleanShutdown': False},
+                             {**base, 'providers': [{'id': 'secrets'}]},
+                             {**base, 'providerShutdown': {'clean': True}}):
+                stopped.call.return_value = response
+                with self.assertRaisesRegex(common.DevError, 'overlapping-workspace-cleanup-unconfirmed'):
+                    probe.clean_stop(stopped, pure)
+            stopped.call.return_value = base
+            with self.assertRaisesRegex(common.DevError, 'overlapping-workspace-cleanup-unconfirmed'):
+                probe.clean_stop(stopped, configured)
+            complete = {'clean': True, **dict.fromkeys((*probe.PROVIDER_COUNTERS,
+                'secretGenerations', 'secretReferences'), 0)}
+            for name in complete:
+                for failure in ('missing', 'nonzero', 'bool'):
+                    counters = dict(complete)
+                    if failure == 'missing':
+                        del counters[name]
+                    elif name == 'clean':
+                        counters[name] = False if failure == 'nonzero' else 1
+                    else:
+                        counters[name] = 1 if failure == 'nonzero' else False
+                    stopped.call.return_value = {**base, 'providerShutdown': counters}
+                    with self.assertRaisesRegex(common.DevError, 'overlapping-workspace-cleanup-unconfirmed'):
+                        probe.clean_stop(stopped, configured)
+            stopped.call.return_value = base
+            self.assertEqual(probe.clean_stop(stopped, pure), base)
+            state.atomic(pure, 'lifecycle.json', {'state': 'ready'})
+            with self.assertRaisesRegex(common.DevError, 'stopped-workspace-not-durable'):
+                probe.clean_stop(stopped, pure)
 
     def test_uncertain_staging_keeps_an_explicit_private_cleanup_record(self):
         from tools import dev_node_application_probe as probe
