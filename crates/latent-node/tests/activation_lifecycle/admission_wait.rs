@@ -126,7 +126,8 @@ async fn unavailable_poisoned_revoked_and_uncovered_authority_are_not_retried() 
                     PlatformErrorCode::AdmissionRejected
                 } else {
                     code
-                }
+                },
+                "policy={policy}, original={code:?}, retained={failure:?}"
             );
             assert_eq!(attempts.load(Ordering::Relaxed), 1);
             assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 0);

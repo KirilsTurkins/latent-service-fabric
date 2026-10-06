@@ -10,8 +10,6 @@ pub async fn observe(
     node: &StandaloneNode,
     response: &proto::InvokeResponse,
     tenant: &str,
-    root: &str,
-    parent: &str,
     expected_logs: usize,
 ) -> Value {
     tokio::time::timeout(std::time::Duration::from_secs(2), node.telemetry.flush())
@@ -28,14 +26,7 @@ pub async fn observe(
                 assert_eq!(span.name, "latent.activation");
                 assert_eq!(span.status, "ok");
                 assert!(span.ended_at_unix_nanos >= span.started_at_unix_nanos);
-                correlation(
-                    &span.attributes,
-                    &span.trace,
-                    response,
-                    tenant,
-                    root,
-                    parent,
-                );
+                correlation(&span.attributes, &span.trace, response, tenant);
                 spans.push(json!({"name":span.name,"status":span.status,"attributes":span.attributes,
                     "trace":trace(&span.trace),"started_at_unix_nanos":span.started_at_unix_nanos.to_string(),
                     "ended_at_unix_nanos":span.ended_at_unix_nanos.to_string()}));
@@ -46,14 +37,7 @@ pub async fn observe(
             {
                 assert_eq!(log.body, "[REDACTED]");
                 let observed_trace = log.trace.as_ref().expect("guest log trace");
-                correlation(
-                    &log.attributes,
-                    observed_trace,
-                    response,
-                    tenant,
-                    root,
-                    parent,
-                );
+                correlation(&log.attributes, observed_trace, response, tenant);
                 assert!(!log.attributes.keys().any(|key| key.starts_with("guest.")));
                 logs.push(json!({"body":log.body,"attributes":log.attributes,"trace":trace(observed_trace),
                     "observed_at_unix_millis":log.observed_at_unix_millis.to_string()}));
@@ -75,7 +59,7 @@ pub async fn observe(
     ] {
         assert_eq!(spans[0]["attributes"][name], value.to_string());
     }
-    json!({"activation_id":response.activation_id,"root_activation_id":root,"parent_activation_id":parent,
+    json!({"activation_id":response.activation_id,"root_activation_id":response.activation_id,"parent_activation_id":null,
         "tenant":tenant,"service":fixture::SHARED,"release_digest":response.release_digest,
         "revision_id":response.revision_id,"route_generation":response.route_generation.to_string(),
         "completion_span":spans.remove(0),"guest_logs":logs})
@@ -86,13 +70,10 @@ fn correlation(
     observed: &TraceContext,
     response: &proto::InvokeResponse,
     tenant: &str,
-    root: &str,
-    parent: &str,
 ) {
     for (name, expected) in [
         ("activation_id", response.activation_id.as_str()),
-        ("root_activation_id", root),
-        ("parent_activation_id", parent),
+        ("root_activation_id", response.activation_id.as_str()),
         ("tenant", tenant),
         ("service", fixture::SHARED),
         ("release", response.release_digest.as_str()),
@@ -100,6 +81,7 @@ fn correlation(
     ] {
         assert_eq!(attributes.get(name).map(String::as_str), Some(expected));
     }
+    assert!(!attributes.contains_key("parent_activation_id"));
     assert_eq!(
         attributes["route_generation"],
         response.route_generation.to_string()

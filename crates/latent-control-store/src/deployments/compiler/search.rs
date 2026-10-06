@@ -68,6 +68,12 @@ impl CompiledCatalog {
             )
         })?;
         let candidates = &self.candidates[endpoint.candidates.clone()];
+        if endpoint.total_weight == 0 {
+            return Err(error(
+                PlatformErrorCode::RouteUnavailable,
+                "route-has-no-positive-weight",
+            ));
+        }
         let bucket = selection_hash(target, key) % endpoint.total_weight;
         let index = candidates.partition_point(|candidate| candidate.cumulative_weight <= bucket);
         let record = self.record(candidates[index].record);
