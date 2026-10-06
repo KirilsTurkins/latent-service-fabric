@@ -32,10 +32,13 @@ for (const [location, expected] of Object.entries(lock.packages)) {
   packages++;
 }
 const npmRequire = createRequire(path.join(root, 'toolchain/node_modules/npm/package.json'));
-for (const [consumer, dependency] of [['socks', 'ip-address'], ['minimatch', 'brace-expansion'], ['brace-expansion', 'balanced-match']]) {
+for (const [consumer, dependency] of [['socks', 'ip-address'], ['minimatch', 'brace-expansion'], ['brace-expansion', 'balanced-match'],
+  ['@npmcli/query', 'postcss-selector-parser'], ['postcss-selector-parser', 'cssesc'], ['postcss-selector-parser', 'util-deprecate']]) {
   const consumerRequire = createRequire(npmRequire.resolve(consumer));
   assert.equal(fs.realpathSync(consumerRequire.resolve(dependency)), fs.realpathSync(npmRequire.resolve(dependency)),
     `Unexpected bundled dependency resolution: ${consumer} -> ${dependency}`);
 }
 assert.equal(read('toolchain/node_modules/npm/node_modules/balanced-match/package.json').version, '4.0.4');
+assert.equal(read('toolchain/node_modules/npm/node_modules/cssesc/package.json').version, '3.0.0');
+assert.equal(read('toolchain/node_modules/npm/node_modules/util-deprecate/package.json').version, '1.0.2');
 console.log(JSON.stringify({npm: npmVersion, distribution: source.profile, verifiedInstalledPackages: packages}));

@@ -1,0 +1,69 @@
+{
+  "LinuxNamespaceQualification": "pending; earlier source pack frozen but never executed during engine/capacity hold",
+  "acceptanceRemaining": [
+    "actual native Node/npm and private authenticated registry negative controls",
+    "two independent ordinary application libraries in signed components with declared grants/recovery and dormant-original counters",
+    "installed frontend test/watch, approved tool stages and complete current-head CI"
+  ],
+  "actions": {
+    "immutableOrLocalReferences": 270,
+    "workflows": 22
+  },
+  "codeHead": "6340e40e2f298c697af64a9c87b7aa4fd812c10d",
+  "coverage": {
+    "baselineRequiredBlocks": 88,
+    "currentRequiredBlocks": 228,
+    "delegatedOwners": 128
+  },
+  "development": "b06c473f3b51604ed4618ba2c2a420bb33c88cad",
+  "discoveredCases": 77,
+  "documentation": {
+    "anchors": 158,
+    "applicationCommands": 67,
+    "documents": 1038,
+    "errors": [],
+    "localLinks": 3377,
+    "svgs": 26,
+    "versionedDocuments": 548
+  },
+  "durationSeconds": 185.6603,
+  "earlierTrial": {
+    "outcome": "failed mixed-source trial; no stable-source qualification",
+    "privateCredentialCase": "unexecuted in earlier trial; covered by successful final source suite",
+    "toolSession": 87831
+  },
+  "errors": [],
+  "failures": [],
+  "issue": "#685 remains open",
+  "modules": [
+    "tools.tests.test_typescript_dependency_authoring",
+    "tools.tests.test_typescript_application_dependencies",
+    "tools.tests.test_typescript_capsule_authoring",
+    "tools.tests.test_typescript_frontend_dependencies",
+    "tools.tests.test_application_dependencies",
+    "tools.tests.test_guest_authoring_frontend",
+    "tools.tests.test_dev_tools.SelectedRecipeImports"
+  ],
+  "observedAt": "2026-10-02T04:58:21.801203+00:00",
+  "platform": "win32",
+  "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+  "rawOutputSha256": "c0f4e38cbe135e5807ffe5f772b9230b8df38dda71b34aab5d0609161a321c4f",
+  "reportedCases": 77,
+  "reviewedContracts": {
+    "historicalModuleBodiesAndGuardsUnchanged": true,
+    "historicalWorkflowPolicyAndStepsUnchanged": true,
+    "newCases": 20,
+    "qualifierDifference": "only TypeScript authoring and selected frontend helper fingerprints"
+  },
+  "schemaVersion": "latent.sdk.source-checks.v1",
+  "scope": "TypeScript source/model lifecycle, real CAS review/materialization and actual selected staged recipe imports; Node/npm and remote frontend results are modeled; no private-feed/guest/compiler/installed qualification",
+  "skipped": [
+    [
+      "tools.tests.test_typescript_dependency_authoring.NpmDependencyAuthoring.test_symbolic_local_dependency_is_rejected_before_native_dispatch",
+      "POSIX symbolic-link fixture; Windows reparse controls are separate"
+    ]
+  ],
+  "stagedTree": "bd48febf840d24b1d2e2591ebd37b6fed1055f24",
+  "stagedTreeUnchanged": true,
+  "successful": true
+}
