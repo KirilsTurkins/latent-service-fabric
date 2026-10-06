@@ -893,14 +893,6 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
                 )
                 self.assertEqual(data["after"][key], expected, key)
-            elif key == reviewed_narrow_fixture:
-                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
-                                 {k: v for k, v in value.items() if k != "run"})
-                # Only the fixture path changes: real state dependencies now
-                # select the full profile. Keep every command and assertion.
-                self.assertEqual(data["after"][key]["run"].rstrip("\n"),
-                                 value["run"].replace("crates/latent-state/src/lib.rs",
-                                                      "crates/latent-workflows/src/lib.rs"))
             elif key == reviewed_deferred_owners:
                 self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
                                  {k: v for k, v in value.items() if k != "run"})
