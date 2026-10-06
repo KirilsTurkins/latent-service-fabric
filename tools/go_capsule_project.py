@@ -81,6 +81,8 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if project["tenant"] is not None and (not isinstance(project["tenant"], str) or not 0 < len(project["tenant"]) <= 512):
         raise ValueError("invalid capsule tenant scope")
     lock, vendor, pins = validate_sdk_inputs(files)
+    from tools.go_generator_authoring import validate_generated_inputs
+    validate_generated_inputs(files)
     captured = "latent.dependencies.json" in files
     if captured:
         from tools.application_dependencies import validate_manifest
