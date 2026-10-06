@@ -291,7 +291,7 @@
       },
       {
         "source": "api/proto/latent/control/v1/audit.proto",
-        "sourceSha256": "sha256:4e22133c96a9a28407334970cd326596131f06384516403aa3cad522f4b94918"
+        "sourceSha256": "sha256:b6631fb9976854c2b7116227c47c9a3a06559dd887ad505defd362063e7e9184"
       }
     ],
     "requiredHttpEnvelopes": [
