@@ -235,6 +235,27 @@ fn corrupt_or_missing_primary_is_a_recovery_error_and_never_a_reclamation_grant(
     );
     assert!(matches!(
         required_page(&view, &owner.payload, None, 1, MAX_REFERENCE_BYTES),
+        Err(StoreError::Corrupt)
+    ));
+    drop(view);
+    database
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: owner.owner_key().unwrap(),
+                value: Some(owner.encode().unwrap()),
+            }],
+        })
+        .unwrap();
+    let view = database.snapshot().unwrap();
+    assert_eq!(
+        required_page(&view, &owner.payload, None, 1, MAX_REFERENCE_BYTES)
+            .unwrap()
+            .references,
+        vec![owner.clone()]
+    );
+    assert!(matches!(
+        required_page(&view, &owner.payload, None, 1, 1),
         Err(StoreError::Capacity)
     ));
 }
