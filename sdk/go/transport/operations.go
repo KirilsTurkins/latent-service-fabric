@@ -31,6 +31,35 @@ func (client *Client) GetActivation(ctx context.Context, request profile.GetActi
 	})
 }
 
+func (client *Client) InspectActivationTree(ctx context.Context, request profile.InspectActivationTreeRequest, options profile.CallOptions) (profile.ClientResponse[profile.InspectActivationTreeResponse], error) {
+	return execute[profile.InspectActivationTreeResponse](client, ctx, request, options, &controlv1.InspectActivationTreeRequest{}, func(ctx context.Context, wire proto.Message) (proto.Message, error) {
+		return client.node.InspectActivationTree(ctx, wire.(*controlv1.InspectActivationTreeRequest))
+	})
+}
+
+func (client *Client) InspectHttpTarget(ctx context.Context, request profile.InspectHttpTargetRequest, options profile.CallOptions) (profile.ClientResponse[profile.InspectHttpTargetResponse], error) {
+	if targetRequestValid(request) {
+		request.Route = copyTargetText(request.Route)
+		request.RevisionId = copyTargetText(request.RevisionId)
+		request.RoutingKey = copyTargetText(request.RoutingKey)
+		if request.Publication != nil {
+			owned := *request.Publication
+			request.Publication = &owned
+		}
+	}
+	return execute[profile.InspectHttpTargetResponse](client, ctx, request, options, &controlv1.InspectHttpTargetRequest{}, func(ctx context.Context, wire proto.Message) (proto.Message, error) {
+		return client.node.InspectHttpTarget(ctx, wire.(*controlv1.InspectHttpTargetRequest))
+	})
+}
+
+func copyTargetText(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	owned := *value
+	return &owned
+}
+
 func (client *Client) GetPolicy(ctx context.Context, request profile.GetPolicyRequest, options profile.CallOptions) (profile.ClientResponse[profile.GetPolicyResponse], error) {
 	return execute[profile.GetPolicyResponse](client, ctx, request, options, &controlv1.GetPolicyRequest{}, func(ctx context.Context, wire proto.Message) (proto.Message, error) {
 		return client.policy.GetPolicy(ctx, wire.(*controlv1.GetPolicyRequest))
@@ -150,6 +179,9 @@ func (client *Client) state(request any) (*callState, bool) {
 	case profile.ListCapabilitiesRequest:
 		state.requestLimit = min(client.config.MaxRequestBytes, 8*1024)
 		state.responseLimit = min(client.config.MaxResponseBytes, 128*1024)
+	case profile.InspectActivationTreeRequest, profile.InspectHttpTargetRequest:
+		state.requestLimit = min(client.config.MaxRequestBytes, 8*1024)
+		state.responseLimit = min(client.config.MaxResponseBytes, 64*1024)
 	}
 	return state, recovery
 }

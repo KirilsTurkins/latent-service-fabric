@@ -56,6 +56,16 @@ impl Default for BindingCatalog {
     }
 }
 impl BindingCatalog {
+    pub(in crate::deployments) fn inspection_plan(
+        &self,
+        tenant: &latent_core::TenantId,
+        deployment: &latent_core::DeploymentId,
+        revision: &latent_core::RevisionId,
+    ) -> Option<&Arc<CompiledCapabilityPlan>> {
+        self.plans
+            .iter()
+            .find(|plan| plan.inspection_matches(tenant, deployment, revision))
+    }
     pub fn with_current(
         &self,
         action: &mut dyn FnMut() -> Result<(), PlatformError>,

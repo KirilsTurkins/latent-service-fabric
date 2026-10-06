@@ -2,6 +2,7 @@ mod admission;
 pub(super) mod execution;
 mod fingerprint;
 mod index;
+mod inspection;
 #[cfg(test)]
 pub(in crate::deployments) mod ownership;
 mod packing;

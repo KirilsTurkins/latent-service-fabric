@@ -116,6 +116,74 @@ impl CompiledCapabilityPlan {
             .map(|binding| self.describe_binding(binding))
             .collect())
     }
+    /// Preflight every borrowed allocation before creating a descriptive copy.
+    /// This grants no provider authority and uses no new worker or query map.
+    pub fn inspect_bindings_bounded(
+        &self,
+        tenant: &TenantId,
+        maximum_bindings: usize,
+        maximum_policies: usize,
+        maximum_bytes: usize,
+    ) -> Result<Vec<BindingInspection>, PlatformError> {
+        if self.target.tenant != *tenant {
+            return Err(denied());
+        }
+        let limit = || PlatformError {
+            code: latent_core::PlatformErrorCode::ResourceExhausted,
+            message: "capability-inspection-limit".into(),
+            retryable: false,
+            details: Vec::new(),
+        };
+        if maximum_bindings > 32
+            || maximum_policies > 32
+            || maximum_bytes > 64 * 1024
+            || self.bindings.len() > maximum_bindings
+        {
+            return Err(limit());
+        }
+        let mut bytes = 512_usize + self.bindings.len() * std::mem::size_of::<BindingInspection>();
+        for binding in &self.bindings {
+            let mut charge = |text: &str| {
+                if text.is_empty() || text.len() > 512 || text.chars().any(char::is_control) {
+                    return Err(limit());
+                }
+                bytes = bytes.checked_add(text.len() + 64).ok_or_else(limit)?;
+                if bytes > maximum_bytes {
+                    return Err(limit());
+                }
+                Ok(())
+            };
+            for text in [
+                &binding.provider.capability,
+                &binding.provider.profile,
+                &binding.provider.digest,
+            ] {
+                charge(text)?;
+            }
+            for operation in &binding.operations {
+                charge(operation)?;
+            }
+            if let Some(digest) = &binding.definition_digest {
+                charge(digest.as_str())?;
+            }
+            let selected = binding.policies.binding_revision();
+            charge(selected.id)?;
+            charge(selected.digest)?;
+            let mut count = 0;
+            for policy in binding.policies.policy_revisions() {
+                count += 1;
+                if count > maximum_policies {
+                    return Err(limit());
+                }
+                charge(policy.id)?;
+                charge(policy.digest)?;
+            }
+        }
+        if bytes > maximum_bytes {
+            return Err(limit());
+        }
+        self.inspect_bindings(tenant)
+    }
     fn binding_state(&self, binding: &Binding) -> BindingState {
         let Ok(live) = self.owner.live.try_read() else {
             return BindingState::Indeterminate;

@@ -108,6 +108,14 @@ impl Lifecycle {
         phase: ActivationPhase,
         attributes: Metadata,
     ) -> Result<(), PlatformError> {
+        if phase == ActivationPhase::Admitted {
+            if let Some(budget) = &self.budget {
+                self.journal
+                    .as_ref()
+                    .expect("live lifecycle journal")
+                    .record_grant(budget);
+            }
+        }
         let stamp = self
             .journal
             .as_mut()
