@@ -5,6 +5,7 @@
     "JavaDiagnosticHistoryTests.test_foreign_tree_cursor_and_roots_cannot_disclose_records_and_invoke_role_cannot_read",
     "JavaDiagnosticHistoryTests.test_paging_preserves_unique_membership_while_observed_outcomes_may_progress",
     "JavaDiagnosticMaterialTests.test_cli_forwards_prepare_port_and_refuses_execution_override",
+    "JavaDiagnosticMaterialTests.test_explicit_ingress_port_preserves_config_bytes_and_rejects_invalid_selection",
     "JavaDiagnosticMaterialTests.test_native_receipt_byte_and_elf_identity_cannot_be_replaced",
     "JavaDiagnosticMaterialTests.test_original_input_failure_is_preserved_before_peer_node_or_authority_creation",
     "JavaDiagnosticMaterialTests.test_preparation_port_refuses_invalid_selection_and_preserves_bounded_peer_owner",
@@ -21,6 +22,18 @@
     "JavaDiagnosticReviewTests.test_review_refuses_changed_bytes_nonzero_activity_and_unknown_physical_retirement"
   ],
   "guards": {
+    "JavaDiagnosticMaterialTests.test_explicit_ingress_port_preserves_config_bytes_and_rejects_invalid_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
+        "class:setup-sha256:7dfc3cbb0efdfe76cda445d82b7af253d1bb1229fe9b64b5f9f19f377b2eb7f1"
+      ],
+      "skipSites": []
+    },
     "JavaDiagnosticMaterialTests.test_cli_forwards_prepare_port_and_refuses_execution_override": {
       "bases": [
         "unittest.TestCase"
@@ -252,6 +265,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_diagnostic_program.py",
-  "reviewReason": "Register finite native-input, policy-review, deadline, paging, tenant and retained-peer ownership guards without replacing historical cases Add one execute-to-real-session filesystem regression for the duplicate output creation found by the actual signed-node run. Preserve every original case, fixture, approval, boot, deadline and physical-retirement guard; unit mocks make no real-node qualification claim. Add optional unprivileged loopback selection, bounded peer propagation and CLI execute-override guards.",
+  "reviewReason": "Register finite native-input, policy-review, deadline, paging, tenant and retained-peer ownership guards without replacing historical cases Add one execute-to-real-session filesystem regression for the duplicate output creation found by the actual signed-node run. Preserve every original case, fixture, approval, boot, deadline and physical-retirement guard; unit mocks make no real-node qualification claim. Add optional unprivileged loopback selection, bounded peer propagation and CLI execute-override guards. Add one explicit ingress port and exact configuration-byte preservation guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

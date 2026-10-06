@@ -286,14 +286,16 @@ class JavaDiagnosticMaterialTests(unittest.TestCase):
                      patch.object(program, "inputs", return_value=({"latent": Path("cli")}, {})), \
                      patch.object(program, "RecordingClient", return_value=owner), \
                      patch.object(program, "start_provider", return_value=(owner, actual_port)) as peer, \
-                     patch.object(program, "configure", side_effect=WorkflowError("original-node-refused")), \
+                     patch.object(program, "configure", side_effect=WorkflowError("original-node-refused")) as configure, \
                      patch.object(program, "session") as node, \
                      patch.object(program, "close_failed_provider", return_value={"closed": True}) as cleanup, \
                      self.subTest(port=selected_port), self.assertRaisesRegex(WorkflowError, "original-node-refused"):
                     program.prepare(Path("native"), Path("receipt"), Path("builds"), Path("releases"),
-                                    output, provider_port=selected_port)
+                                    output, provider_port=selected_port, ingress_port=23456)
                 peer.assert_called_once_with(owner, output / "prepare-peer", maximum_seconds=1200,
                                              port=selected_port or None)
+                configure.assert_called_once_with(output / "former-node", Path("releases"),
+                                                  http=False, former_profile=True, ingress_port=0)
                 cleanup.assert_called_once_with(owner); node.assert_not_called()
                 record = json.loads((output / "PREPARE-FAILED.json").read_bytes())
                 self.assertEqual(record["recipientPort"], actual_port)
@@ -312,23 +314,75 @@ class JavaDiagnosticMaterialTests(unittest.TestCase):
             arguments = []
             for name in ("native-directory", "native-receipt", "builds", "releases", "output"):
                 arguments += ["--" + name, str(source)]
-            for flags, port in (([], 0), (["--provider-port", "12345"], 12345)):
+            for flags, port, ingress in (([], 0, 0), (["--provider-port", "12345"], 12345, 0),
+                                        (["--ingress-port", "23456"], 0, 23456)):
                 with patch.object(sys, "argv", ["diagnostics", "prepare", *arguments, *flags]), \
                      patch.object(program, "prepare") as prepare:
                     entrypoint.main()
                 prepare.assert_called_once_with(source.resolve(), source.resolve(), source.resolve(),
-                    source.resolve(), source.resolve(), former_child=True, provider_port=port)
+                    source.resolve(), source.resolve(), former_child=True, provider_port=port, ingress_port=ingress)
             for flags in (["--provider-port", "1023"], ["--provider-port", "65536"],
-                          ["--provider-port", "invalid"]):
+                          ["--provider-port", "invalid"], ["--ingress-port", "1023"],
+                          ["--ingress-port", "65536"], ["--ingress-port", "invalid"]):
                 with patch.object(sys, "argv", ["diagnostics", "prepare", *arguments, *flags]), \
                      patch.object(program, "prepare") as prepare, redirect_stderr(StringIO()), self.assertRaises(SystemExit):
                     entrypoint.main()
                 prepare.assert_not_called()
-            with patch.object(sys, "argv", ["diagnostics", "execute", *arguments, "--provider-port", "12345",
-                                           "--approved-candidate-sha256", "0" * 64]), \
-                 patch.object(program, "execute") as execute, redirect_stderr(StringIO()), self.assertRaises(SystemExit):
-                entrypoint.main()
-            execute.assert_not_called()
+            for flag in ("--provider-port", "--ingress-port"):
+                with patch.object(sys, "argv", ["diagnostics", "execute", *arguments, flag, "12345",
+                                               "--approved-candidate-sha256", "0" * 64]), \
+                     patch.object(program, "execute") as execute, redirect_stderr(StringIO()), self.assertRaises(SystemExit):
+                    entrypoint.main()
+                execute.assert_not_called()
+
+    def test_explicit_ingress_port_preserves_config_bytes_and_rejects_invalid_selection(self):
+        from tools.java_http_composition import node
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            releases = root / "releases"; releases.mkdir(); write_json(releases / "policy.json", {})
+            original = root / "original"; original.mkdir()
+            explicit = root / "explicit"; explicit.mkdir()
+            with patch.object(node.socket, "socket") as sockets:
+                reservation = sockets.return_value.__enter__.return_value
+                reservation.getsockname.return_value = ("127.0.0.1", 23456)
+                auto_config, auto_host = node.configure(original, releases)
+                reservation.bind.assert_called_once_with(("127.0.0.1", 0))
+                reservation.bind.reset_mock()
+                config, host = node.configure(explicit, releases, ingress_port=23456)
+                reservation.bind.assert_called_once_with(("127.0.0.1", 23456))
+                drift = root / "drift"; drift.mkdir()
+                reservation.getsockname.return_value = ("127.0.0.1", 23457)
+                with self.assertRaisesRegex(WorkflowError, "original-ingress-port"):
+                    node.configure(drift, releases, ingress_port=23456)
+            self.assertEqual(config.read_bytes(), auto_config.read_bytes())
+            self.assertEqual(host, auto_host)
+            self.assertEqual(host, "localhost:23456")
+            for index, port in enumerate((False, True, -1, 1, 1023, 65536, "23456", None)):
+                output = root / f"invalid-{index}"
+                with patch.object(node, "configure_node") as configure, patch.object(node.socket, "socket") as sockets, \
+                     self.subTest(port=port), self.assertRaisesRegex(WorkflowError, "unprivileged-loopback-ingress-port"):
+                    node.configure(output, releases, ingress_port=port)
+                configure.assert_not_called(); sockets.assert_not_called(); self.assertFalse(output.exists())
+                with patch.object(program, "clock") as clock, patch.object(program, "start_provider") as peer, \
+                     self.assertRaisesRegex(WorkflowError, "unprivileged-loopback-ingress-port"):
+                    program.prepare(Path("native"), Path("receipt"), Path("builds"), releases, output,
+                                    ingress_port=port)
+                clock.assert_not_called(); peer.assert_not_called(); self.assertFalse(output.exists())
+            with patch.object(node, "configure_node") as configure, self.assertRaisesRegex(WorkflowError, "requires-http"):
+                node.configure(root / "no-http", releases, http=False, ingress_port=23456)
+            configure.assert_not_called()
+            output = root / "current-preparation"
+            with patch.object(program, "clock", return_value={"original": True}), \
+                 patch.object(program, "deadline", return_value=150), \
+                 patch.object(program, "inputs", return_value=({"latent": Path("cli")}, {})), \
+                 patch.object(program, "start_provider", return_value=(object(), 12345)), \
+                 patch.object(program, "configure", side_effect=WorkflowError("original-node-refused")) as configure, \
+                 patch.object(program, "close_failed_provider", return_value={"closed": True}), \
+                 self.assertRaisesRegex(WorkflowError, "original-node-refused"):
+                program.prepare(Path("native"), Path("receipt"), Path("builds"), releases, output,
+                                former_child=False, ingress_port=23456)
+            configure.assert_called_once_with(output / "current-node", releases,
+                                              http=True, former_profile=False, ingress_port=23456)
 
 
 class JavaDiagnosticReviewTests(unittest.TestCase):

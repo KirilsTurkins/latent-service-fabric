@@ -155,10 +155,13 @@ def _write_proposals(output, program):
     return reviewed
 
 
-def prepare(native_directory, native_receipt, builds, releases, output, *, former_child=True, provider_port=0):
+def prepare(native_directory, native_receipt, builds, releases, output, *, former_child=True,
+            provider_port=0, ingress_port=0):
     require(type(former_child) is bool, "java-diagnostic-former-selection")
     require(type(provider_port) is int and (provider_port == 0 or 1024 <= provider_port <= 65535),
             "java-diagnostic-unprivileged-loopback-port")
+    require(type(ingress_port) is int and (ingress_port == 0 or 1024 <= ingress_port <= 65535),
+            "java-diagnostic-unprivileged-loopback-ingress-port")
     output = fresh(output)
     result = {"schemaVersion": SCHEMA, "status": "in-progress", "clock": None, "inputs": None,
         "applicationCapabilityPolicyMutations": 0, "guestInvocations": 0, "providerRequests": 0,
@@ -177,7 +180,8 @@ def prepare(native_directory, native_receipt, builds, releases, output, *, forme
             result["recipientPort"] = port
             for name in (("former", "current") if former_child else ("current",)):
                 work = fresh(output / (name + "-node"))
-                config, host = configure(work, releases, http=name == "current", former_profile=name == "former")
+                config, host = configure(work, releases, http=name == "current", former_profile=name == "former",
+                                         ingress_port=ingress_port if name == "current" else 0)
                 selected = provider_timeout.configure(config.parent, read_json(config), port)
                 require(selected["cells"][0]["queueCapacity"] == 4, "java-diagnostic-original-queue")
                 selected["cells"][0]["queueCapacity"] = resource_diagnostics.QUEUE_SIZE

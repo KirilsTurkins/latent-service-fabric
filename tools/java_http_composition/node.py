@@ -27,8 +27,11 @@ CHILD_SUBJECT = f"service:{len(TENANT)}:{TENANT}:{len(ADAPTER)}:{ADAPTER}"
 MEDIA = "application/vnd.latent.wit-values.v1+json"
 
 
-def configure(directory: Path, releases: Path, *, http=True, former_profile=False):
+def configure(directory: Path, releases: Path, *, http=True, former_profile=False, ingress_port=0):
     require(not former_profile or not http, "java-former-profile-no-http")
+    require(type(ingress_port) is int and (ingress_port == 0 or 1024 <= ingress_port <= 65535),
+            "java-unprivileged-loopback-ingress-port")
+    require(http or ingress_port == 0, "java-ingress-port-requires-http")
     config = configure_node(directory, releases, TENANT)
     value = read_json(config)
     # Public qualification credentials exercise tenant and management scope.
@@ -71,8 +74,9 @@ def configure(directory: Path, releases: Path, *, http=True, former_profile=Fals
     host = None
     if http:
         with socket.socket() as reservation:
-            reservation.bind(("127.0.0.1", 0))
+            reservation.bind(("127.0.0.1", ingress_port))
             port = reservation.getsockname()[1]
+            require(ingress_port == 0 or port == ingress_port, "java-original-ingress-port")
         host = f"localhost:{port}"
         value["httpIngress"] = {"formatVersion": 1, "bind": f"127.0.0.1:{port}",
             "transport": {"mode": "loopback"}, "authentication": {"mode": "public-origins", "origins": [
