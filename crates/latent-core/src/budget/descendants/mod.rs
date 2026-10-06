@@ -135,6 +135,17 @@ impl ActivationBudget {
             .get()
             .is_some_and(|lineage| lineage.parent.is_some())
     }
+
+    /// Cancel delegation and accepted descendant work under this original
+    /// ledger. This only closes authority and wakes its bounded owner signals;
+    /// it does not finalize consumption, refund capacity or retire any owner.
+    pub fn cancel_descendants(&self) -> Result<(), PlatformError> {
+        let lineage = self.inner.lineage.get().ok_or_else(denied)?;
+        self.inner.closed.store(true, Ordering::Release);
+        lineage.mark_terminal();
+        Ok(())
+    }
+
     /// Wait on at most seventeen original owner signals (root plus depth limit).
     /// The caller owns this future; no task or waiter is retained by the tree.
     pub async fn descendant_cancelled(&self) {
