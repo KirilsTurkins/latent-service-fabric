@@ -11,6 +11,7 @@
     "JavaGeneratorNative.test_actual_deadline_reaps_descendants_retains_failure_and_preserves_source",
     "JavaGeneratorNative.test_binary_nonportable_linked_and_empty_outputs_never_enter_java_source",
     "JavaGeneratorNative.test_failed_manifest_write_rolls_back_only_the_fresh_adopted_subtree",
+    "JavaGeneratorNative.test_nested_captured_local_jar_survives_generation_and_offline_build_validation",
     "JavaGeneratorNative.test_oversized_generated_source_is_rejected_at_original_project_file_bound"
   ],
   "guards": {
@@ -170,6 +171,20 @@
       ],
       "skipSites": []
     },
+    "JavaGeneratorNative.test_nested_captured_local_jar_survives_generation_and_offline_build_validation": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
     "JavaGeneratorNative.test_oversized_generated_source_is_rejected_at_original_project_file_bound": {
       "bases": [
         "JavaGeneratorFixture"
@@ -187,6 +202,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_generator_authoring.py",
-  "reviewReason": "Add explicit Java generator and processor approval, immutable output and actual containment controls without changing existing cases",
+  "reviewReason": "Retain all approved Java stage controls and add the genuine nested captured-JAR generation boundary",
   "schemaVersion": "latent.ci.contracts.v1"
 }

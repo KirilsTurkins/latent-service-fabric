@@ -188,6 +188,44 @@ class JavaGeneratorNative(JavaGeneratorFixture):
         self.assertEqual(record['executionIdentity'], planned['executionIdentity'])
         self.assertEqual(record['outputs'][0]['digest'], digest(after['src/generated/Generated.java']))
 
+    def test_nested_captured_local_jar_survives_generation_and_offline_build_validation(self):
+        from tools import guest_dependency_inputs, java_dependency_resolution
+        from tools.java_application_dependencies import deterministic_jar
+        app = self.project / 'app'
+        app.mkdir()
+        for path in list(self.project.iterdir()):
+            if path.name not in {'app', 'target'}:
+                path.rename(app / path.name)
+        value = descriptor()
+        value.update(language='java', inputRoots=['app'])
+        value['template']['ownerIssue'] = frontend.LANGUAGES['java']
+        value['build']['workingDirectory'] = 'app'
+        (self.project / 'latent.project.json').write_bytes(common.encode(value))
+        jar = app / 'lib/developer.jar'
+        jar.parent.mkdir()
+        # Bytecode headers suffice for this pre-compiler capture boundary;
+        # this source control makes no emitted-library qualification claim.
+        jar.write_bytes(deterministic_jar({'outside/Library.class': b'\xca\xfe\xba\xbe\0\0\0Esource-boundary'}))
+        authoring.edit(self.project, 'add-local', local_id='unknown/developer/1', jar=jar)
+        candidate = self.project / 'target/dependencies.json'
+        java_dependency_resolution.resolve(self.project, candidate)
+        authoring.review(self.project, candidate, digest(candidate.read_bytes()))
+        closure_before = {name: (self.project / name).read_bytes()
+                          for name in ('latent.dependencies.json', 'latent.dependencies.lock.json')}
+        planned = self.plan()
+        result = generators.run(self.project, self.candidate, planned['requestDigest'])
+        self.assertEqual((result['status'], result['cleanup']), ('succeeded', 'reaped'))
+        self.assertEqual({name: (self.project / name).read_bytes() for name in closure_before}, closure_before)
+        self.assertEqual((app / 'sdk-lock.json').read_bytes(), self.original['sdk-lock.json'])
+        self.tool.unlink()
+        (self.inputs / 'value.txt').unlink()
+        with patch('subprocess.Popen', side_effect=AssertionError('offline frontend validation reran a generator')):
+            observed = guest_dependency_inputs.capture_source(self.project, 'java')
+            validate(observed.files)
+            authoring.status(self.project)
+        self.assertIn('lib/developer.jar', observed.files)
+        self.assertIn('src/generated/Generated.java', observed.files)
+
     def test_actual_deadline_reaps_descendants_retains_failure_and_preserves_source(self):
         self.tool.write_bytes(b'#!/bin/sh\nprintf x > /outputs/progress\n'
                              b'while :; do printf x >> /outputs/progress; done &\nwait\n')
