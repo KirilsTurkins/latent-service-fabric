@@ -96,7 +96,15 @@ fn renewal_post_sync_regression_cannot_forget_newly_covered_observation() {
         authority.renew_clock_lease().unwrap_err().message,
         "admission-clock-lease-uncovered"
     );
-    assert_eq!(authority.inner.lock().unwrap().observed_at, NOW + 5);
+    assert_eq!(
+        authority
+            .inner
+            .lock()
+            .unwrap()
+            .observed_at
+            .load(Ordering::Acquire),
+        NOW + 5
+    );
     assert_eq!(
         authority
             .verify(&TenantId("tests".into()), fixture.upload())

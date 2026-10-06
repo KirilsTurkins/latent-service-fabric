@@ -18,6 +18,7 @@ pub(crate) mod metrics;
 mod owned_context;
 pub(crate) mod policy;
 pub(crate) mod random;
+pub(crate) mod runtime;
 pub(crate) mod secrets;
 pub(crate) mod service;
 pub(crate) mod streaming_http;
@@ -142,7 +143,7 @@ impl ResourceLimiter for TrackingLimiter {
                 .map(|budget| {
                     budget
                         .reserve_runtime_memory(aggregate as u64)
-                        .map_err(|error| wasmtime::Error::msg(error.to_platform_error().message))
+                        .map_err(wasmtime::Error::new)
                 })
                 .transpose()?;
             let previous_peak_memory_bytes = self.peak_memory_bytes;
@@ -236,6 +237,9 @@ impl ActivationHostContext {
 }
 
 pub(crate) struct HostState {
+    pub(crate) runtime: Option<runtime::Table>,
+    pub(crate) runtime_limits: Option<latent_core::activation_runtime::RuntimeLimits>,
+    pub(crate) runtime_stop: Option<Arc<crate::containment::StopControl>>,
     context: ActivationHostContext,
     pub(crate) limiter: TrackingLimiter,
     pub(crate) logs: InvocationLogBuffer,
@@ -284,6 +288,9 @@ impl HostState {
         }
         Self {
             context,
+            runtime: None,
+            runtime_limits: config.activation_runtime,
+            runtime_stop: None,
             limiter,
             logs,
             accounting,
