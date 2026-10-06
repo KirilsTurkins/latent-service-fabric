@@ -1,4 +1,5 @@
 use super::*;
+use latent_core::native_capacity::{NativeAdmissionClass, NativeReservationRequest};
 
 struct MissingDispatchPolicy {
     profile: DispatchProfile,
