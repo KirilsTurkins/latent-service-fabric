@@ -60,8 +60,9 @@ pub(super) fn select(head: &Head, shared: &Shared) -> Result<AcceptedHttpRoute, 
             LocalPrincipalPolicy
                 .authorize_target(&head.principal, &revision.target.tenant.0)
                 .map_err(status)?;
-            if revision.target.contract.0 != http::CONTRACT
-                || revision.target.function.0 != http::FUNCTION
+            if accepted.transaction().is_none()
+                && (revision.target.contract.0 != http::CONTRACT
+                    || revision.target.function.0 != http::FUNCTION)
             {
                 return Err(502);
             }
@@ -82,6 +83,7 @@ pub(super) struct Retention {
     pub invocation: Invocation,
     pub _route: latent_control_store::http_routes::TriggerReadLease,
     cache: Option<CacheRequest>,
+    transaction: bool,
 }
 pub(super) enum Begun {
     Cached(Delivery),
@@ -111,31 +113,25 @@ pub(super) fn begin(
         .collector
         .finish(context)
         .map_err(|e| e.status().unwrap_or(0))?;
-    let cache = cache_request(&mapped, &accepted, shared);
-    let invocation = mapped
-        .into_invocation()
-        .map_err(|e| e.status().unwrap_or(0))?;
+    let transaction = accepted.transaction().cloned();
+    let cache = if transaction.is_none() {
+        cache_request(&mapped, &accepted, shared)
+    } else {
+        None
+    };
+    let (invocation, facts) = super::transaction::map(mapped, transaction.as_ref())?;
     let (target, lease) = accepted.into_parts();
     let AcceptedHttpTarget::Application { revision, catalog } = target else {
         drop(lease);
         return Err(502);
     };
-    let request = ActivationRequest {
-        activation_id: None,
-        parent_activation_id: None,
-        root_activation_id: None,
-        principal: invocation.context().principal().clone(),
-        target: revision.target.clone(),
-        deadline_unix_millis: Some(invocation.deadline().unix_millis()),
-        priority: 0,
-        trace: invocation.context().trace().clone(),
-        idempotency_key: None,
-        retry_attempt: 0,
-        budget: shared.services.budget.clone(),
-        metadata: Metadata::new(),
-        input: Vec::new(),
-        input_media_type: http::VALUE_MEDIA_TYPE.to_owned(),
-    };
+    let request = activation_request(
+        &invocation,
+        &revision.target,
+        shared,
+        transaction.as_ref(),
+        facts.as_ref(),
+    );
     let mut reserved = shared
         .services
         .manager
@@ -148,6 +144,11 @@ pub(super) fn begin(
         )
         .map_err(status)?;
     let eligibility = reserved.publication_eligibility().map_err(status)?;
+    if let (Some(route), Some(facts)) = (&transaction, facts) {
+        let state = shared.services.state.as_ref().ok_or(403u16)?;
+        super::transaction::bind(state, route, &facts, &eligibility, &mut reserved)
+            .map_err(status)?;
+    }
     let cache = match cache.map(|request| {
         request
             .bind_eligibility(eligibility.cache_digest())
@@ -171,10 +172,39 @@ pub(super) fn begin(
             invocation,
             _route: lease,
             cache,
+            transaction: transaction.is_some(),
         },
     );
     // This fixed-size owner allocation is covered by the exchange reservation.
     Ok(Begun::Activation(Box::new(activation)))
+}
+fn activation_request(
+    invocation: &Invocation,
+    target: &latent_routing::InvocationTarget,
+    shared: &Shared,
+    route: Option<&http::transaction::TransactionRoute>,
+    facts: Option<&http::transaction::TransactionRequest>,
+) -> ActivationRequest {
+    ActivationRequest {
+        activation_id: None,
+        parent_activation_id: None,
+        root_activation_id: None,
+        principal: invocation.context().principal().clone(),
+        target: target.clone(),
+        deadline_unix_millis: Some(invocation.deadline().unix_millis()),
+        priority: 0,
+        trace: invocation.context().trace().clone(),
+        idempotency_key: facts.and_then(|facts| {
+            facts
+                .client_key()
+                .map(|key| latent_core::IdempotencyKey(key.into()))
+        }),
+        retry_attempt: 0,
+        budget: super::transaction::budget(&shared.services.budget, route),
+        metadata: Metadata::new(),
+        input: Vec::new(),
+        input_media_type: http::VALUE_MEDIA_TYPE.to_owned(),
+    }
 }
 fn cache_request(
     mapped: &http::Request,
@@ -222,6 +252,9 @@ fn cached(
         .map_err(|e| e.status().unwrap_or(0))
 }
 pub(super) fn complete(receipt: ActivationReceipt, retention: Retention) -> Result<Delivery, u16> {
+    if retention.transaction {
+        return super::transaction::complete(&receipt, retention.invocation);
+    }
     let outcome = match &receipt.outcome {
         ActivationOutcome::Succeeded(value) => Outcome::Returned {
             bytes: &value.output,

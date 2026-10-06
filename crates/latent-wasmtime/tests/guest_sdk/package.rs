@@ -23,7 +23,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 #[path = "../../../latent-packaging/tests/sbom_association/support.rs"]
-mod sbom;
+pub(crate) mod sbom;
 
 pub type Publication = (
     Arc<DirectoryArtifactRepository>,

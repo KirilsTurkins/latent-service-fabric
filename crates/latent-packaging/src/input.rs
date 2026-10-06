@@ -55,7 +55,7 @@ pub(crate) fn check_header(
     entrypoint: &str,
     annotations: &BTreeMap<String, String>,
     count: usize,
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<(), PlatformError> {
     limits.validate()?;
     if name.len() > 128

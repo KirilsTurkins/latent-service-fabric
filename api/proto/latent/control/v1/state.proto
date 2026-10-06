@@ -50,6 +50,8 @@ message NamespaceInspection {
   NamespaceStatus status = 8;
   NamespaceQuota quota = 9;
   uint64 generation = 10;
+  // Exact captured policy/binding revisions; descriptive, never a grant.
+  optional string policy_digest = 11;
 }
 
 enum NamespaceMutationKind {
@@ -123,6 +125,9 @@ enum StateMutationKind {
   STATE_MUTATION_KIND_TERMINATE_EFFECT = 2;
   STATE_MUTATION_KIND_PURGE_EXPIRED_PAYLOAD = 3;
   STATE_MUTATION_KIND_CHECKPOINT_NAMESPACE = 4;
+  // One previously purged identity in a retired, physically drained namespace.
+  // Requires current namespace-destroy authority and the original view/policy.
+  STATE_MUTATION_KIND_RELEASE_EXPIRED_COMMAND_FLOOR = 5;
 }
 
 message MutateStateRequest {

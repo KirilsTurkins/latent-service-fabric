@@ -47,12 +47,12 @@ fn synthetic_profile_is_unchanged_and_observed_on_each_read() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn stale_child_load_fails_closed_before_admission_without_consumption_or_retry() {
-    parent_and_child(true).await;
+    Box::pin(parent_and_child(true)).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn fresh_per_admission_fixture_load_admits_the_real_parent_and_child_once() {
-    parent_and_child(false).await;
+    Box::pin(parent_and_child(false)).await;
 }
 
 async fn parent_and_child(stale_child: bool) {
@@ -63,7 +63,7 @@ async fn parent_and_child(stale_child: bool) {
     let fixture = Fixture::with_load_source(load.clone()).await;
     let receipt = fixture
         .manager
-        .start(fixture.request("load-parent", 0))
+        .start(Fixture::request("load-parent", 0))
         .unwrap()
         .await;
     let ActivationOutcome::Succeeded(success) = receipt.outcome else {

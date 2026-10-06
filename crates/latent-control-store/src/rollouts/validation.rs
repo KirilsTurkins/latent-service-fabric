@@ -5,7 +5,7 @@ use super::{
     },
     Result, MAX_REQUEST_BYTES,
 };
-use latent_manifest::{DeploymentManifest, ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::{validate_deployment_document, DeploymentManifest};
 pub(crate) fn token(value: &str, maximum: usize) -> Result<()> {
     if value.is_empty()
         || value.len() > maximum
@@ -180,9 +180,7 @@ impl RolloutRequest {
                 if spec.candidate.route_weight != spec.candidate_weights[0] {
                     return Err(invalid());
                 }
-                Phase1ManifestValidator
-                    .validate_deployment(&spec.candidate)
-                    .map_err(|_| invalid())?;
+                validate_deployment_document(&spec.candidate).map_err(|_| invalid())?;
             }
             Self::Change { command, .. } => {
                 if c.operation.expected_revision == 0 {

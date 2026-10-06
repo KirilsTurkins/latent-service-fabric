@@ -99,17 +99,50 @@ fn mutable_engine_file_creation_and_reopen_never_truncate_existing_bytes() {
     let dir = root();
     let root = ProtectedRoot::open(dir.path()).unwrap();
     let (mut file, fence) = root.open_mutable_file("state.redb", 4096, true).unwrap();
+    assert!(fence.was_created());
     file.write_all(b"retained-database").unwrap();
     file.sync_all().unwrap();
     root.check_mutable_file(&fence).unwrap();
     drop(file);
     let (mut file, new_fence) = root.open_mutable_file("state.redb", 4096, true).unwrap();
+    assert!(!new_fence.was_created());
     file.rewind().unwrap();
     let mut bytes = Vec::new();
     file.read_to_end(&mut bytes).unwrap();
     assert_eq!(bytes, b"retained-database");
     root.check_mutable_file(&new_fence).unwrap();
     assert!(root.open_mutable_file("missing", 4096, false).is_err());
+}
+
+#[test]
+fn exclusive_offline_output_refuses_existing_failed_files_and_unsafe_names_without_overwrite() {
+    use std::io::Write as _;
+    let directory = root();
+    let root = ProtectedRoot::open(directory.path()).unwrap();
+    for name in ["", ".", "..", "../snapshot", "/snapshot", "nested/snapshot"] {
+        assert!(root.create_mutable_file(name, 4096).is_err());
+    }
+    let (mut output, fence) = root.create_mutable_file("snapshot", 4096).unwrap();
+    assert!(fence.was_created());
+    output.write_all(b"partial-sensitive-snapshot").unwrap();
+    output.sync_all().unwrap();
+    root.check_mutable_file(&fence).unwrap();
+    assert!(root.create_mutable_file("snapshot", 4096).is_err());
+    assert_eq!(
+        fs::read(directory.path().join("snapshot")).unwrap(),
+        b"partial-sensitive-snapshot"
+    );
+    assert_eq!(output.metadata().unwrap().mode() & 0o777, 0o600);
+    symlink(
+        directory.path().join("snapshot"),
+        directory.path().join("alias"),
+    )
+    .unwrap();
+    assert!(root.create_mutable_file("alias", 4096).is_err());
+    assert!(root
+        .create_mutable_file("oversized", 1_073_741_825)
+        .is_err());
+    assert!(!directory.path().join("oversized").exists());
 }
 
 #[test]

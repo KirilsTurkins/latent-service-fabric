@@ -181,7 +181,7 @@
       {
         "service": "latent.control.v1.StateService",
         "source": "api/proto/latent/control/v1/state.proto",
-        "sourceSha256": "sha256:ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
+        "sourceSha256": "sha256:33d4d81bd7dbd98365c76e4a6650d5ec5a20ea9548bac31460b78838a39126f9",
         "operations": [
           {
             "name": "MutateNamespace",
@@ -233,6 +233,54 @@
           "StateOperationDisposition",
           "StateMutationKind"
         ]
+      },
+      {
+        "service": "latent.control.v1.DispatcherService",
+        "source": "api/proto/latent/control/v1/dispatcher.proto",
+        "sourceSha256": "sha256:ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6",
+        "operations": [
+          {
+            "name": "InspectDispatcher",
+            "request": "InspectDispatcherRequest",
+            "response": "InspectDispatcherResponse"
+          },
+          {
+            "name": "ControlDispatcher",
+            "request": "ControlDispatcherRequest",
+            "response": "ControlDispatcherResponse"
+          },
+          {
+            "name": "GetDispatcherOperation",
+            "request": "GetDispatcherOperationRequest",
+            "response": "GetDispatcherOperationResponse"
+          }
+        ],
+        "messages": [
+          "DispatcherGeneration",
+          "InspectDispatcherRequest",
+          "DispatcherSnapshot",
+          "InspectDispatcherResponse",
+          "ControlDispatcherRequest",
+          "DispatcherOperationReceipt",
+          "ControlDispatcherResponse",
+          "GetDispatcherOperationRequest",
+          "GetDispatcherOperationResponse"
+        ],
+        "enums": [
+          "DispatcherScope",
+          "DispatcherAction",
+          "DispatcherFailure"
+        ]
+      }
+    ],
+    "supportingSources": [
+      {
+        "source": "api/proto/latent/control/v1/common.proto",
+        "sourceSha256": "sha256:9433f47d1ae62dd09bbfc55e8a43f411897a0ffc6dc51919adc0ff4df9564085"
+      },
+      {
+        "source": "api/proto/latent/control/v1/audit.proto",
+        "sourceSha256": "sha256:397c1951f6d92df72389b3321c9c353443bb1e2d64a93d5168c99b407a661c57"
       }
     ],
     "requiredHttpEnvelopes": [

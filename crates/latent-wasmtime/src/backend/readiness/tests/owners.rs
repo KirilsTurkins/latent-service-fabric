@@ -75,7 +75,7 @@ async fn dropping_post_acquire_source_wait_releases_unstarted_job_and_document_c
         .acquire(Admission {
             identity: None,
             handle,
-            source_bytes: identity.component_bytes() as usize,
+            source_bytes: usize::try_from(identity.component_bytes()).unwrap(),
             metadata_bytes: 1,
             document_bytes: 0,
         })

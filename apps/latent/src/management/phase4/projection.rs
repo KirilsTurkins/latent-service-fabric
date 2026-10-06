@@ -124,7 +124,7 @@ pub(super) fn response(value: &Response) -> Value {
             json!({"namespace":value.namespace.as_ref().map(|v|json!({"view":v.view.as_ref().map(view),
             "encodedStateBytes":v.encoded_state_bytes.to_string(),"commandCount":v.command_count.to_string(),"pendingEffectCount":v.pending_effect_count.to_string(),
             "retainedFormats":v.retained_formats.iter().map(retention).collect::<Vec<_>>(),"engineProfile":v.engine_profile,"engineProfileDigest":v.engine_profile_digest,
-            "status":c::NamespaceStatus::try_from(v.status).expect("validated enum").as_str_name(),"quota":v.quota.as_ref().map(quota),"generation":v.generation.to_string()}))})
+            "status":c::NamespaceStatus::try_from(v.status).expect("validated enum").as_str_name(),"quota":v.quota.as_ref().map(quota),"generation":v.generation.to_string(),"policyDigest":v.policy_digest}))})
         }
         Response::MutateNamespace(value) => {
             json!({"receipt":value.receipt.as_ref().map(namespace_receipt),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})

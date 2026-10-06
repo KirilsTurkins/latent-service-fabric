@@ -3,8 +3,10 @@
 mod bytes;
 mod lineage;
 mod owner;
+mod staging;
 mod state;
 mod tree;
+pub use staging::TransactionStagingWitness;
 pub use tree::{ActivationTreeNode, ActivationTreePage};
 #[cfg(test)]
 mod tests;
@@ -270,7 +272,7 @@ impl LocalActivationJournal {
         &self,
         tenant: &TenantId,
         activation_id: &ActivationId,
-        cancel_active: impl FnOnce() -> CancelDisposition,
+        cancel_active: impl FnOnce() -> Result<CancelDisposition, PlatformError>,
     ) -> Result<CancelDisposition, PlatformError> {
         self.validate_query(tenant, activation_id)?;
         let mut state = self.inner.lock();
@@ -285,10 +287,12 @@ impl LocalActivationJournal {
         else {
             return Ok(CancelDisposition::NotFound);
         };
-        Ok(record
+        record
             .status
             .terminal_state
-            .map_or_else(cancel_active, CancelDisposition::AlreadyTerminal))
+            .map_or_else(cancel_active, |state| {
+                Ok(CancelDisposition::AlreadyTerminal(state))
+            })
     }
 
     #[must_use]

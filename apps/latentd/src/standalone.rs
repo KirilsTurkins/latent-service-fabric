@@ -14,6 +14,8 @@ mod providers;
 mod rollouts;
 mod shutdown;
 mod start;
+mod startup_observation;
+pub mod state;
 mod telemetry;
 pub mod transport;
 
@@ -43,6 +45,7 @@ pub use policies::PolicyShutdownReport;
 pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
+pub use startup_observation::StartupFailureReport;
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.
 #[derive(Default)]
@@ -59,6 +62,7 @@ pub struct StandaloneNode {
     http: Option<http::HttpOwner>,
     audit: Option<audit::AuditRuntime>,
     effects: Option<effects::EffectRuntime>,
+    state: Option<Arc<state::StateRuntime>>,
     rollouts: Option<rollouts::RolloutRuntime>,
     policies: Option<policies::PolicyRuntime>,
     providers: Option<Box<providers::ProviderRuntime>>,
@@ -110,6 +114,12 @@ impl Drop for SupplyChainLifetime {
 }
 
 impl StandaloneNode {
+    /// The installed composition retains the single protected state owner.
+    #[must_use]
+    pub fn state_runtime(&self) -> Option<Arc<state::StateRuntime>> {
+        self.state.clone()
+    }
+
     #[must_use]
     pub fn configured_providers(&self) -> &[ProviderDescriptor] {
         self.providers

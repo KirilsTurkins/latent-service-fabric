@@ -109,7 +109,7 @@ fn explicit_ticker_stop_wakes_a_long_interval_and_is_idempotent() {
         || {
             let engine = Engine::default();
             let mut ticker =
-                EpochTicker::start(&engine, Duration::from_secs(3600)).expect("one helper");
+                EpochTicker::start(&engine, Duration::from_hours(1)).expect("one helper");
             let observation = ticker.observation();
             ticker.stop_and_join().expect("wake and join immediately");
             assert!(observation.completed());
@@ -130,7 +130,7 @@ fn repeated_ticker_drop_joins_every_worker() {
         || {
             let engine = Engine::default();
             for _ in 0..3 {
-                let ticker = EpochTicker::start(&engine, Duration::from_secs(3600))
+                let ticker = EpochTicker::start(&engine, Duration::from_hours(1))
                     .expect("one helper at a time");
                 let observation = ticker.observation();
                 drop(ticker);

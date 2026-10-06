@@ -21,7 +21,7 @@ async fn real_fence_warm_readiness_waits_without_fetching_or_starting_another_jo
     f.idle();
     let activity = f.backend.preparation_activity_snapshot();
     let compiler = f.backend.compiler_snapshot();
-    let reads = f.repository.verification_snapshot();
+    let verification = f.repository.verification_snapshot();
     let fence = Fence::hold(&f.eligibility);
     let mut pending = f.backend.prepare_ready_from_repository_with_wait(
         f.repository.clone(),
@@ -56,7 +56,7 @@ async fn real_fence_warm_readiness_waits_without_fetching_or_starting_another_jo
         f.backend.preparation_activity_snapshot().repository_fetches,
         activity.repository_fetches
     );
-    assert_eq!(f.repository.verification_snapshot(), reads);
+    assert_eq!(f.repository.verification_snapshot(), verification);
     drop(ready);
     f.idle();
 }

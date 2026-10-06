@@ -3,6 +3,38 @@ use crate::embedded::{EmbeddedStore, FencedStoreError, StoreLimits};
 use crate::namespace::NamespaceQuota;
 use std::fs::OpenOptions;
 
+mod history;
+mod inspection;
+
+#[test]
+fn staged_mutation_observation_counts_real_distinct_changes_without_publishing_state() {
+    let fixture = Fixture::new();
+    let (view, mut session) = fixture.session();
+    assert_eq!(session.staged_mutation_count(), 0);
+    assert!(session.get(&view, b"count", allow).unwrap().is_none());
+    assert_eq!(session.staged_mutation_count(), 0);
+    session
+        .put(&view, b"count".to_vec(), value(b"one"), allow)
+        .unwrap();
+    assert_eq!(session.staged_mutation_count(), 1);
+    session
+        .put(&view, b"count".to_vec(), value(b"two"), allow)
+        .unwrap();
+    session.delete(&view, b"count".to_vec(), allow).unwrap();
+    assert_eq!(session.staged_mutation_count(), 1);
+    session.delete(&view, b"other".to_vec(), allow).unwrap();
+    assert_eq!(session.staged_mutation_count(), 2);
+    assert!(session
+        .put(&view, Vec::new(), value(b"invalid"), allow)
+        .is_err());
+    assert_eq!(session.staged_mutation_count(), 2);
+    drop(session);
+    drop(view);
+    let (view, mut fresh) = fixture.session();
+    assert!(fresh.get(&view, b"count", allow).unwrap().is_none());
+    assert_eq!(fresh.staged_mutation_count(), 0);
+}
+
 struct Fixture {
     store: EmbeddedStore,
     scope: StateScope,
@@ -359,7 +391,8 @@ fn byte_limited_pages_require_continuation_and_never_omit_an_entry() {
     let mut keys = vec![];
     loop {
         let page = session
-            .scan(&view, b"", cursor.as_ref(), 128, 120, allow)
+            // The v2 opaque record token includes two 8-byte history epochs.
+            .scan(&view, b"", cursor.as_ref(), 128, 136, allow)
             .unwrap();
         assert_eq!(page.entries.len(), 1);
         keys.extend(page.entries.into_iter().map(|entry| entry.key));

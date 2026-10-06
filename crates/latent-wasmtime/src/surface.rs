@@ -14,6 +14,7 @@ use crate::values::validate_signature;
 
 pub(crate) mod blob;
 pub(crate) mod streaming;
+pub(crate) mod transaction;
 
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
 pub const LOG_IMPORT: &str = "latent:log/log@0.1.0";
@@ -110,10 +111,22 @@ fn lookup_function<'a, T>(
 pub(crate) struct Providers {
     pub activation_runtime: bool,
     pub local_services: bool,
+    pub network: NetworkProviders,
+    pub storage: StorageProviders,
+    pub signals: SignalProviders,
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct NetworkProviders {
     pub http: bool,
     pub streaming_http: bool,
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct StorageProviders {
     pub blobs: bool,
     pub secrets: bool,
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct SignalProviders {
     pub events: bool,
     pub random: bool,
     pub metrics: bool,
@@ -121,15 +134,19 @@ pub(crate) struct Providers {
 impl Providers {
     fn supports(self, name: &str) -> bool {
         (self.activation_runtime && name == crate::host::runtime::CAPABILITY)
-            || (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
-            || (self.random && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
-            || (self.metrics && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
-            || (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
-            || (self.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
+            || (self.signals.events
+                && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+            || (self.signals.random
+                && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
+            || (self.signals.metrics
+                && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
+            || (self.storage.secrets
+                && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
+            || (self.storage.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
             || (self.local_services
                 && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
-            || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
-            || (self.streaming_http
+            || (self.network.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
+            || (self.network.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
     }
 }
@@ -290,6 +307,18 @@ fn validate_imports(
 ) -> Result<(BTreeSet<String>, BTreeSet<String>), PlatformError> {
     let mut imports = BTreeSet::new();
     let mut type_imports = BTreeSet::new();
+    let transactional = component_type
+        .imports(engine)
+        .any(|(name, _)| name == transaction::STATE || name == transaction::INTENTS);
+    if transactional && !config.transactional_state {
+        return Err(incompatible("scoped transaction host is unavailable"));
+    }
+    let profile = if transactional {
+        latent_core::PHASE4_HOST_ABI_V1
+    } else {
+        latent_core::PHASE3_HOST_ABI_CURRENT
+    };
+    let transaction_resource = transaction::command_resource(component_type, engine);
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
         let ComponentItem::ComponentInstance(interface) = item.ty else {
@@ -297,13 +326,14 @@ fn validate_imports(
                 "host capabilities and structural types must be imported interfaces",
             ));
         };
-        let Some(specification) = latent_core::PHASE3_HOST_ABI_CURRENT.interface(name) else {
+        let Some(specification) = profile.interface(name) else {
             validate_type_interface(&interface, engine, config, remaining)?;
             retain(256 + name.len(), retained_bytes, config)?;
             type_imports.insert(name.to_owned());
             continue;
         };
         if specification.binding == latent_core::HostInterfaceBinding::Provider
+            && !(transactional && (name == transaction::STATE || name == transaction::INTENTS))
             && !providers.supports(name)
         {
             // Recognition is data-only. Providers require an installed trusted port;
@@ -334,7 +364,11 @@ fn validate_imports(
                 ComponentItem::ComponentFunc(function) => {
                     signature_with_resources(
                         &function,
-                        specification.operation_is_asynchronous(name),
+                        if specification.interface == transaction::STATE {
+                            transaction::is_async(name)?
+                        } else {
+                            specification.operation_is_asynchronous(name)
+                        },
                         config,
                         remaining,
                         &resources,
@@ -343,6 +377,7 @@ fn validate_imports(
                         match specification.interface {
                             latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            transaction::STATE | transaction::INTENTS => transaction::validate(specification.interface, name, &function, &interface, engine, transaction_resource)?,
                             _ => return Err(incompatible("unsupported host resource interface")),
                         }
                     }
@@ -354,7 +389,7 @@ fn validate_imports(
                 _ => {
                     return Err(incompatible(
                         "unsupported item in host capability interface",
-                    ))
+                    ));
                 }
             }
         }

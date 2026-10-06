@@ -1,11 +1,10 @@
 //! Independent WIT-derived type checks for the maintained HTTP codec goldens.
 use super::*;
+use crate::test_fixtures::host as fixture;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use wasm_encoder::{
     Component as EncodedComponent, ComponentImportSection, ComponentTypeRef, ComponentTypeSection,
 };
-#[path = "../../../../latent-packaging/tests/fixtures/host.rs"]
-mod fixture;
 
 fn signature() -> (Vec<Type>, Vec<Type>) {
     let source = include_str!("../../../../../wit/platform/web/package.wit");

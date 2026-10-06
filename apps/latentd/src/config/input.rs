@@ -22,6 +22,14 @@ pub(super) fn load(path: &Path) -> Result<NodeConfig, PlatformError> {
         "configurationFileProtection",
     )?;
     let mut config = decode(&bytes)?;
+    if let Some(state) = &mut config.state {
+        if state.clock_checkpoint.is_relative() {
+            state.clock_checkpoint = absolute
+                .parent()
+                .ok_or_else(|| invalid("configurationPath"))?
+                .join(&state.clock_checkpoint);
+        }
+    }
     if let Some(providers) = &mut config.providers {
         super::providers::anchor(
             providers,

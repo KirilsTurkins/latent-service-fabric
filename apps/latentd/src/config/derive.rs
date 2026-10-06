@@ -20,6 +20,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     let capacity = validation::validate(config)?;
     let admission = policy::admission(config, &capacity)?;
     let delegation_limits = config.budget_profile.limits()?;
+    validate_state_owners(config)?;
     let invocation = runtime::invocation(config, &capacity)?;
     let management = runtime::management(config, &invocation)?;
     let classes = config
@@ -59,6 +60,11 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         audit: super::audit::derive(config.audit.as_ref())?,
         rollouts: super::rollouts::derive(config.rollouts.as_ref(), config.audit.is_some())?,
         capability_policies: super::capability_policies::derive(config.capability_policies)?,
+        state: config
+            .state
+            .as_ref()
+            .map(super::state::derive)
+            .transpose()?,
         providers,
         node,
         runtime_workers: config.workers.runtime,
@@ -105,6 +111,29 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         shutdown_grace: Duration::from_millis(config.shutdown_grace_millis),
         load_sample_interval: Duration::from_millis(250),
     })
+}
+
+fn validate_state_owners(config: &NodeConfig) -> Result<(), PlatformError> {
+    if config.state.is_some()
+        && (config.budget_profile.profile() != latent_core::BudgetProfile::Phase4
+            || !matches!(
+                config.supply_chain,
+                super::SupplyChainConfig::Enforced { .. }
+            )
+            || config.capability_policies.is_none())
+    {
+        return Err(invalid("state.runtimeOwners"));
+    }
+    if config.state.as_ref().is_some_and(|state| {
+        state.clock_checkpoint.starts_with(&config.data_directory)
+            || state
+                .clock_checkpoint
+                .components()
+                .any(|part| matches!(part, std::path::Component::ParentDir))
+    }) {
+        return Err(invalid("state.externalCheckpoint"));
+    }
+    Ok(())
 }
 
 fn artifact_limits(config: &NodeConfig, page_size: u32) -> DirectoryArtifactRepositoryConfig {

@@ -9,6 +9,7 @@ mod observation;
 mod preparation;
 mod probes;
 mod run;
+mod transaction;
 mod transport_stop;
 
 use std::future::Future;
@@ -44,6 +45,11 @@ pub use inbound::InboundActivationReservation;
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
+pub use transaction::{
+    TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
+    TransactionAdmissionKind, TransactionCompletion, TransactionCompletionHook,
+    TransactionDisposition, TransactionExecution,
+};
 pub use transport_stop::ActivationTransportInterruption;
 use transport_stop::TransportStop;
 
@@ -104,6 +110,14 @@ pub struct ActivationReceipt {
     pub activation_id: ActivationId,
     pub resolved_revision: Option<ResolvedRevision>,
     pub outcome: ActivationOutcome,
+    /// Original durable disposition/recovery observation, independent of the
+    /// transport outcome. Its private fields cannot be supplied as authority.
+    pub transaction: Option<TransactionDisposition>,
+    pub delivery_failure: Option<PlatformError>,
+    /// Current-purpose authority retained through actual response delivery.
+    /// Ordinary activations have no state result authority.
+    pub result_delivery_fence:
+        Option<Arc<crate::transaction_runtime::command_completion::ResultDeliveryFence>>,
 }
 
 /// No detached task is spawned. Dropping this handle, even before its first
@@ -174,11 +188,15 @@ fn handle(
         };
         let resolved_revision = lifecycle.resolved.clone();
         let activation_id = lifecycle.activation_id().clone();
-        let outcome = lifecycle.complete(outcome);
+        let (outcome, transaction, delivery_failure, result_delivery_fence) =
+            lifecycle.complete(outcome).await.into_parts();
         ActivationReceipt {
             activation_id,
             resolved_revision,
             outcome,
+            transaction,
+            delivery_failure,
+            result_delivery_fence,
         }
     });
     ActivationHandle {
@@ -283,6 +301,26 @@ impl LocalActivationManager {
         request: ActivationRequest,
         deadline: Option<IncomingDeadline>,
     ) -> Result<ActivationHandle, PlatformError> {
+        self.start_scoped(request, deadline, None)
+    }
+
+    /// Trusted transaction ingress supplies one owned admission, independently
+    /// of guest metadata. It consumes the normal resolver, budget and scheduler.
+    pub fn start_transaction_with_deadline(
+        &self,
+        request: ActivationRequest,
+        deadline: Option<IncomingDeadline>,
+        transaction: Arc<dyn TransactionActivationAdmission>,
+    ) -> Result<ActivationHandle, PlatformError> {
+        self.start_scoped(request, deadline, Some(transaction))
+    }
+
+    fn start_scoped(
+        &self,
+        request: ActivationRequest,
+        deadline: Option<IncomingDeadline>,
+        transaction: Option<Arc<dyn TransactionActivationAdmission>>,
+    ) -> Result<ActivationHandle, PlatformError> {
         let envelope = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             self.inner.requests.build(request)
         }))
@@ -313,6 +351,7 @@ impl LocalActivationManager {
             deadline,
         );
         lifecycle.begin_observation(self.inner.observations.as_ref(), &envelope);
+        lifecycle.transaction_admission = transaction;
         Ok(handle(self.inner.clone(), envelope, lifecycle))
     }
 
