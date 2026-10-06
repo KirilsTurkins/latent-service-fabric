@@ -266,6 +266,16 @@ impl Setup {
         )
     }
 
+    /// This profile declares retained adoption metadata at ORIGINAL admission;
+    /// the global 32 MiB partition and every other fixture limit stay intact.
+    pub fn with_restore_adoption() -> Self {
+        Self::with_admission(
+            Arc::new(SystemActivationClock),
+            RESTORE_INPUT_RESPONSE_BYTES + RESTORE_ADOPTION_RESPONSE_BYTES,
+            16 * 1024 * 1024,
+        )
+    }
+
     fn with_admission(
         clock: Arc<dyn ActivationClock>,
         response_bytes: u64,

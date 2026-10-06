@@ -84,6 +84,82 @@ impl StageOwners {
     }
 }
 
+impl StageOwners {
+    pub(in crate::protected_store::tests::migration) fn review_reopened(
+        &self,
+        view: &ReadView,
+        input: &ProtectedRestoreInput,
+        request: &RestoreStageRequest,
+    ) -> Result<(), StoreError> {
+        self.verify_view(view, input, request, RecoveryStatus::ReconciliationRequired)
+    }
+
+    fn verify_view(
+        &self,
+        staged: &ReadView,
+        input: &ProtectedRestoreInput,
+        request: &RestoreStageRequest,
+        expected_status: RecoveryStatus,
+    ) -> Result<(), StoreError> {
+        self.request(input, request)?;
+        let selected = self
+            .source
+            .seed
+            .inputs
+            .quota
+            .as_ref()
+            .ok_or(StoreError::Invalid)?;
+        let mut census = TenantCensus::capture(
+            staged,
+            std::slice::from_ref(selected),
+            GlobalMetadataAllowance {
+                rows: 64,
+                bytes: 256 * 1024,
+            },
+            self.original.original_deadline(),
+        )?;
+        visit_view(
+            staged,
+            self.original.original_deadline(),
+            |_, key, bytes| {
+                census.observe(
+                    key,
+                    bytes,
+                    crate::tenant::census_contribution(staged, key, bytes)?,
+                )
+            },
+        )?;
+        census.finish()?;
+        let guard = RecoveryGuard::capture(staged)?.ok_or(StoreError::Corrupt)?;
+        if guard.status() != expected_status {
+            return Err(StoreError::Corrupt);
+        }
+        for reviewed in input.window().namespaces() {
+            let history = reviewed.proposed_history()?;
+            let key = crate::namespace::history::history_key(
+                &history.tenant,
+                &history.namespace,
+                history.incarnation,
+            )
+            .map_err(|_| StoreError::Corrupt)?;
+            let actual = staged.get(&key)?.ok_or(StoreError::Corrupt)?;
+            if NamespaceHistory::decode(&actual).map_err(|_| StoreError::Corrupt)? != history {
+                return Err(StoreError::Corrupt);
+            }
+        }
+        if self.source.seed.rows.iter().any(|(key, _)| {
+            matches!(
+                key.family,
+                Family::Outbox | Family::Attempt | Family::Inbox | Family::PayloadReference
+            )
+        }) {
+            return Err(StoreError::UnsupportedFormat);
+        }
+        self.verified.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+}
+
 impl RestoreStageOwners for StageOwners {
     fn archive_row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         self.source.row(key, bytes)
@@ -213,62 +289,7 @@ impl RestoreStageOwners for StageOwners {
         input: &ProtectedRestoreInput,
         request: &RestoreStageRequest,
     ) -> Result<(), StoreError> {
-        self.request(input, request)?;
-        let selected = self
-            .source
-            .seed
-            .inputs
-            .quota
-            .as_ref()
-            .ok_or(StoreError::Invalid)?;
-        let mut census = TenantCensus::capture(
-            staged,
-            std::slice::from_ref(selected),
-            GlobalMetadataAllowance {
-                rows: 64,
-                bytes: 256 * 1024,
-            },
-            self.original.original_deadline(),
-        )?;
-        visit_view(
-            staged,
-            self.original.original_deadline(),
-            |_, key, bytes| {
-                census.observe(
-                    key,
-                    bytes,
-                    crate::tenant::census_contribution(staged, key, bytes)?,
-                )
-            },
-        )?;
-        census.finish()?;
-        let guard = RecoveryGuard::capture(staged)?.ok_or(StoreError::Corrupt)?;
-        if guard.status() != RecoveryStatus::Staging {
-            return Err(StoreError::Corrupt);
-        }
-        for reviewed in input.window().namespaces() {
-            let history = reviewed.proposed_history()?;
-            let key = crate::namespace::history::history_key(
-                &history.tenant,
-                &history.namespace,
-                history.incarnation,
-            )
-            .map_err(|_| StoreError::Corrupt)?;
-            let actual = staged.get(&key)?.ok_or(StoreError::Corrupt)?;
-            if NamespaceHistory::decode(&actual).map_err(|_| StoreError::Corrupt)? != history {
-                return Err(StoreError::Corrupt);
-            }
-        }
-        if self.source.seed.rows.iter().any(|(key, _)| {
-            matches!(
-                key.family,
-                Family::Outbox | Family::Attempt | Family::Inbox | Family::PayloadReference
-            )
-        }) {
-            return Err(StoreError::UnsupportedFormat);
-        }
-        self.verified.fetch_add(1, Ordering::SeqCst);
-        Ok(())
+        self.verify_view(staged, input, request, RecoveryStatus::Staging)
     }
     fn dispatch_checkpoint(&self, staged: &ReadView) -> Result<(u64, u64), StoreError> {
         self.current_controls()?;

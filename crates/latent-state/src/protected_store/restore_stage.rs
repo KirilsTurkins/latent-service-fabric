@@ -41,6 +41,7 @@ const CONTROL_BYTES: usize = 1024 * 1024;
 /// Trusted operator configuration only. Neither paths, configured identity nor
 /// logical emptiness are Fresh evidence. The strict initializer proves actual
 /// separate empty roots and create-new leaves on the original fixed worker.
+#[derive(Clone)]
 pub struct ProtectedRestoreDestinationConfig {
     pub store: ProtectedStoreConfig,
     pub checkpoint: ProtectedCheckpointConfig,
@@ -65,6 +66,7 @@ impl ProtectedRestoreDestinationConfig {
 /// The authenticated host supplies immutable attributed operation data. These
 /// descriptions grant no restore authority; installed owners must review and
 /// consume the actual original native fence at every physical writer boundary.
+#[derive(Clone)]
 pub struct RestoreStageRequest {
     pub operation_id: String,
     pub operator_id: String,
@@ -202,13 +204,24 @@ pub enum RestoreStageError {
 /// metadata and original current read owners until physical response drop.
 /// No native engine, File, root, execution grant or adoption handle escapes.
 pub struct RestoreStageReceipt {
-    checkpoint: ExternalCheckpoint,
-    operation_digest: [u8; 32],
+    pub(super) checkpoint: ExternalCheckpoint,
+    pub(super) operation_digest: [u8; 32],
     imported_rows: u64,
-    owners: Arc<dyn RestoreStageOwners>,
-    input: ProtectedRestoreInput,
+    pub(super) owners: Arc<dyn RestoreStageOwners>,
+    pub(super) input: ProtectedRestoreInput,
+    pub(super) request: RestoreStageRequest,
 }
 impl RestoreStageReceipt {
+    #[must_use]
+    pub const fn input(&self) -> &ProtectedRestoreInput {
+        &self.input
+    }
+
+    #[must_use]
+    pub const fn request(&self) -> &RestoreStageRequest {
+        &self.request
+    }
+
     #[must_use]
     pub const fn checkpoint(&self) -> &ExternalCheckpoint {
         &self.checkpoint
@@ -230,16 +243,18 @@ impl RestoreStageReceipt {
 pub(super) struct RestoreDestination {
     // Both actual native owners die before the SnapshotFile's owner pins and
     // original Native permit. No activation method is provided by this type.
-    checkpoint: CheckpointFile,
-    store: PhysicalStore,
+    pub(super) checkpoint: CheckpointFile,
+    pub(super) store: PhysicalStore,
+    pub(super) config: ProtectedRestoreDestinationConfig,
 }
 
 #[derive(Default)]
 pub(super) struct RestoreStaging {
     pub(super) config: Option<ProtectedRestoreDestinationConfig>,
-    destination: Option<RestoreDestination>,
+    pub(super) destination: Option<RestoreDestination>,
     attempted: bool,
-    sealed: bool,
+    pub(super) sealed: bool,
+    pub(super) adoption_prepared: bool,
 }
 
 #[cfg(test)]
@@ -445,7 +460,7 @@ fn stage(
         &destination,
         source,
         file,
-        config.checkpoint,
+        config.checkpoint.clone(),
         fresh,
         || current_store(file, owners.as_ref()),
     )
@@ -453,6 +468,7 @@ fn stage(
     staging.destination = Some(RestoreDestination {
         checkpoint,
         store: destination,
+        config,
     });
     let destination = staging
         .destination
@@ -678,6 +694,7 @@ fn stage(
         imported_rows,
         owners,
         input,
+        request: request.clone(),
     };
     receipt.check()?;
     Ok(receipt)

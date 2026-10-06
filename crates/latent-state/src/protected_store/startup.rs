@@ -129,6 +129,23 @@ impl ProtectedStoreOwner {
         validator: impl FnOnce(&ReadView) -> Result<(), StoreError> + Send + 'static,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
+        let reservation = StartupReservation::new(&config, validator_retained_bytes)?;
+        start_initializer(reservation, clock, move |failure| {
+            PhysicalStore::initialize(&config, failure, validator, identity)
+        })
+    }
+}
+
+pub(super) struct StartupReservation {
+    bytes: u64,
+    limits: StoreLimits,
+    io: crate::store_io::StoreIoLimits,
+}
+impl StartupReservation {
+    pub(super) fn new(
+        config: &ProtectedStoreConfig,
+        validator_retained_bytes: u64,
+    ) -> Result<Self, ProtectedStoreError> {
         let initialization_bytes = config
             .validate()?
             .checked_add(8 * 1024 * 1024)
@@ -147,48 +164,54 @@ impl ProtectedStoreOwner {
         if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
             return Err(ProtectedStoreError::UnsupportedPlatform);
         }
-        let failure = Arc::new(FailureLatch::default());
-        let initializer_failure = Arc::clone(&failure);
-        let limits = config.engine;
-        let io = config.io.clone();
-        let started = StoreIoOwner::initialize_with_clock(
-            move || {
-                PhysicalStore::initialize(
-                    &config,
-                    Arc::clone(&initializer_failure),
-                    validator,
-                    identity,
-                )
-                .map_err(|error| {
-                    initializer_failure.record(error);
-                    StoreIoError::InitializationFailed
-                })
-            },
-            initialization_bytes,
-            io,
-            PhysicalStore::finalize,
-            clock,
-        );
-        let state = match started {
-            Ok(startup) => {
-                if let Some(gate) = startup.failure_gate() {
-                    failure.install(gate);
-                }
-                Starting::Running(startup)
-            }
-            Err(error) => {
-                let Some(owner) = error.owner else {
-                    return Err(ProtectedStoreError::Io(error.reason));
-                };
-                Starting::Failed(owner, error.reason)
-            }
-        };
-        Ok(ProtectedStoreStartup {
-            state,
-            failure,
-            limits,
+        Ok(Self {
+            bytes: initialization_bytes,
+            limits: config.engine,
+            io: config.io.clone(),
         })
     }
+}
+
+pub(super) fn start_initializer(
+    reservation: StartupReservation,
+    clock: Arc<dyn ActivationClock>,
+    initialize: impl FnOnce(Arc<FailureLatch>) -> Result<PhysicalStore, ProtectedStoreError>
+        + Send
+        + 'static,
+) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
+    let failure = Arc::new(FailureLatch::default());
+    let initializer_failure = Arc::clone(&failure);
+    let started = StoreIoOwner::initialize_with_clock(
+        move || {
+            initialize(Arc::clone(&initializer_failure)).map_err(|error| {
+                initializer_failure.record(error);
+                StoreIoError::InitializationFailed
+            })
+        },
+        reservation.bytes,
+        reservation.io,
+        PhysicalStore::finalize,
+        clock,
+    );
+    let state = match started {
+        Ok(startup) => {
+            if let Some(gate) = startup.failure_gate() {
+                failure.install(gate);
+            }
+            Starting::Running(startup)
+        }
+        Err(error) => {
+            let Some(owner) = error.owner else {
+                return Err(ProtectedStoreError::Io(error.reason));
+            };
+            Starting::Failed(owner, error.reason)
+        }
+    };
+    Ok(ProtectedStoreStartup {
+        state,
+        failure,
+        limits: reservation.limits,
+    })
 }
 
 impl ProtectedStoreStartup {

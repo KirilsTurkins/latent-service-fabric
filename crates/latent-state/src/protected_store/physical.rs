@@ -68,6 +68,27 @@ impl PhysicalStore {
         validator: impl FnOnce(&ReadView) -> Result<(), StoreError>,
         identity: Option<crate::store_identity::StoreIdentity>,
     ) -> Result<Self, ProtectedStoreError> {
+        Self::initialize_fenced(config, failure, None, validator, identity)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn initialize_adopted(
+        config: &ProtectedStoreConfig,
+        failure: Arc<FailureLatch>,
+        original_fence: super::restore_adoption::RestoredRootFence,
+        validator: impl FnOnce(&ReadView) -> Result<(), StoreError>,
+    ) -> Result<Self, ProtectedStoreError> {
+        Self::initialize_fenced(config, failure, Some(original_fence), validator, None)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn initialize_fenced(
+        config: &ProtectedStoreConfig,
+        failure: Arc<FailureLatch>,
+        original_fence: Option<super::restore_adoption::RestoredRootFence>,
+        validator: impl FnOnce(&ReadView) -> Result<(), StoreError>,
+        identity: Option<crate::store_identity::StoreIdentity>,
+    ) -> Result<Self, ProtectedStoreError> {
         use latent_protected_files::ProtectedRoot;
         let root =
             ProtectedRoot::open(&config.root).map_err(|_| ProtectedStoreError::UnsafeRoot)?;
@@ -93,6 +114,13 @@ impl PhysicalStore {
                 config.create_if_missing,
             )
             .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
+        if original_fence.is_some_and(|original| {
+            original.root != root.identity()
+                || original.file != fence.identity()
+                || original.lock != lock_fence.identity()
+        }) {
+            return Err(ProtectedStoreError::UnsafeRoot);
+        }
         let (engine, status) =
             EmbeddedStore::open_bounded_file(file, config.engine, config.maximum_file_bytes)
                 .map_err(ProtectedStoreError::Store)?;
@@ -155,8 +183,36 @@ impl PhysicalStore {
         Err(ProtectedStoreError::UnsupportedPlatform)
     }
 
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    pub(super) fn initialize_adopted(
+        _: &ProtectedStoreConfig,
+        _: Arc<FailureLatch>,
+        _: super::restore_adoption::RestoredRootFence,
+        _: impl FnOnce(&ReadView) -> Result<(), StoreError>,
+    ) -> Result<Self, ProtectedStoreError> {
+        Err(ProtectedStoreError::UnsupportedPlatform)
+    }
+
     pub fn engine(&self) -> &EmbeddedStore {
         self.engine.as_ref().expect("worker-owned live engine")
+    }
+
+    pub(super) fn restore_fence(
+        &self,
+    ) -> Result<super::restore_adoption::RestoredRootFence, ProtectedStoreError> {
+        self.check()?;
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            Ok(super::restore_adoption::RestoredRootFence {
+                root: self.root.identity(),
+                file: self.fence.identity(),
+                lock: self.lock_fence.identity(),
+            })
+        }
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            Err(ProtectedStoreError::UnsupportedPlatform)
+        }
     }
 
     /// Protected descriptor identity metadata only. The root itself never

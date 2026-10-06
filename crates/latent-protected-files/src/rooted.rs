@@ -30,6 +30,15 @@ pub struct ProtectedMutableFile {
     maximum_bytes: u64,
 }
 
+impl ProtectedMutableFile {
+    /// Opened object description only. It grants no path lookup, writer or
+    /// Fresh authority; the original root still must check this exact fence.
+    #[must_use]
+    pub const fn identity(&self) -> (u64, u64) {
+        self.file_identity
+    }
+}
+
 impl ProtectedRoot {
     pub fn open(path: &Path) -> Result<Self, PlatformError> {
         if !path.is_absolute() {

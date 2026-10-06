@@ -40,6 +40,29 @@ pub(in crate::protected_store) struct CheckpointFile {
 }
 
 impl CheckpointFile {
+    pub(in crate::protected_store) fn restore_fence(
+        &self,
+    ) -> Result<crate::protected_store::restore_adoption::RestoredRootFence, StoreError> {
+        self.original
+            .with_live(|| ())
+            .map_err(|_| StoreError::SnapshotExpired)?;
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            self.check()?;
+            Ok(
+                crate::protected_store::restore_adoption::RestoredRootFence {
+                    root: self.root.identity(),
+                    file: self.fence.identity(),
+                    lock: self.lock_fence.identity(),
+                },
+            )
+        }
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            Err(StoreError::UnsupportedFormat)
+        }
+    }
+
     /// Strict private restore producer. Unlike ordinary reopen, no existing
     /// root entry, interrupted initializer or matching identity is Fresh.
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]

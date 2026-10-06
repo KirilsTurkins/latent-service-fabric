@@ -87,6 +87,9 @@ pub struct ProtectedRestoreInput {
     original: Arc<NativeReservation>,
 }
 impl ProtectedRestoreInput {
+    pub(super) fn original(&self) -> Arc<NativeReservation> {
+        Arc::clone(&self.original)
+    }
     pub(super) fn is_from_file(&self, file: &SnapshotFile) -> bool {
         Arc::ptr_eq(&self.original, &file.retain_original())
             && Arc::ptr_eq(&self.current_check, &file.retain_current())

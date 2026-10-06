@@ -14,7 +14,7 @@ use crate::{
 use fixture::StageOwners;
 use std::path::Path;
 
-fn destination(
+pub(super) fn destination(
     root: &Path,
     checkpoint: &Path,
     cache_bytes: usize,
@@ -31,7 +31,7 @@ fn destination(
     }
 }
 
-fn prepare(
+pub(super) fn prepare(
     setup: &Setup,
     destination: ProtectedRestoreDestinationConfig,
 ) -> (
@@ -65,7 +65,7 @@ fn prepare(
     )
 }
 
-fn job(
+pub(super) fn job(
     setup: &Setup,
     snapshot: ProtectedSnapshot,
     input: ProtectedRestoreInput,

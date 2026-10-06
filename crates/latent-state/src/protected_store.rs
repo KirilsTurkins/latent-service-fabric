@@ -10,6 +10,7 @@ mod native_capacity;
 mod operation;
 mod physical;
 mod resource;
+mod restore_adoption;
 mod restore_input;
 mod restore_stage;
 mod resume;
@@ -28,6 +29,11 @@ pub use migration::{
 };
 pub use operation::ProtectedStoreOperation;
 pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
+pub use restore_adoption::{
+    ProtectedRestoreAdoptionJob, RestoreAdoptionFence, RestoreAdoptionKind, RestoreAdoptionOwners,
+    RestoreAdoptionPlan, RestoreAdoptionRequest, RestoreAdoptionStartError,
+    RESTORE_ADOPTION_RESPONSE_BYTES,
+};
 pub use restore_input::{
     ProtectedRestoreInput, ProtectedRestoreInputJob, ProtectedRestoreWindowFrame,
     RestoreInputOwners, RestoreInputPrecondition, RestoreReadFence, RESTORE_INPUT_RESPONSE_BYTES,
