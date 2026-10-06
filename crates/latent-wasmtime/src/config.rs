@@ -158,7 +158,17 @@ pub struct WasmtimeConfig {
     /// Per-transfer Component Model lifting allowance for generic execution.
     pub hostcall_fuel: usize,
     pub value_codec_limits: ValueCodecLimits,
+    /// An independently bounded buffered-web transfer profile. Selected only
+    /// for an actual web application export; never inherited by local children.
+    pub buffered_web_value_profile: Option<BufferedWebValueProfile>,
     pub context_policy: ContextExposurePolicy,
+}
+
+/// Host-owned bounds for the buffered web ABI, separate from service values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BufferedWebValueProfile {
+    pub hostcall_fuel: usize,
+    pub limits: ValueCodecLimits,
 }
 
 /// Compatibility name retaining every old field and its default value.
@@ -214,6 +224,7 @@ impl Default for WasmtimeConfig {
             pooling_maximum_tables_per_component: 2,
             hostcall_fuel: 128 * 1024,
             value_codec_limits: ValueCodecLimits::default(),
+            buffered_web_value_profile: None,
             context_policy: ContextExposurePolicy::default(),
         }
     }
@@ -267,6 +278,12 @@ impl WasmtimeConfig {
         self.cache_limits().validate()?;
         self.validate_compiler()?;
         self.context_policy.validate()?;
+        if let Some(web) = self.buffered_web_value_profile {
+            if web.hostcall_fuel == 0 {
+                return Err(invalid_config());
+            }
+            web.limits.validate()?;
+        }
         self.value_codec_limits.validate()
     }
 

@@ -6,7 +6,7 @@
     "api/proto/latent/control/v1/policy.proto": ["Policy", "CapabilityPolicyRecordKind", "ApplyPolicyRequest", "ApplyPolicyResponse", "GetPolicyRequest", "GetPolicyResponse", "CapabilityPolicyOperation", "GetPolicyOperationRequest", "GetPolicyOperationResponse", "ListPoliciesRequest", "ListPoliciesResponse"],
     "api/proto/latent/control/v1/capability.proto": ["CapabilityDescriptor", "ListCapabilitiesRequest", "ListCapabilitiesResponse", "CapabilityInspectionRevision", "CapabilityInspectionPolicy", "CapabilityBindingInspection", "CapabilityInspectionCeiling", "CapabilityResourceUsage"],
     "api/proto/latent/control/v1/release.proto": ["PublicationRef"],
-    "api/proto/latent/control/v1/node.proto": ["DiagnosticStage", "DiagnosticReason", "DiagnosticProfile", "ActivationDiagnostic", "ActivationTreeNode", "InspectActivationTreeRequest", "InspectActivationTreeResponse"]
+    "api/proto/latent/control/v1/node.proto": ["DiagnosticStage", "DiagnosticReason", "DiagnosticProfile", "ActivationDiagnostic", "ActivationTreeNode", "InspectActivationTreeRequest", "InspectActivationTreeResponse", "TargetObservationState", "TargetReason", "TargetPreparationState", "InspectHttpTargetRequest", "TargetDependency", "TargetDependencyRevision", "PreparedTargetExport", "TargetPreparation", "TargetCandidate", "InspectedHttpBinding", "InspectHttpTargetResponse"]
   },
   "operations": [
     {"name": "Invoke", "service": "latent.invocation.v1.InvocationService", "request": "InvokeRequest", "response": "InvokeResponse", "recovery": "activation_id"},
@@ -17,7 +17,8 @@
     {"name": "ListPolicies", "service": "latent.control.v1.PolicyService", "request": "ListPoliciesRequest", "response": "ListPoliciesResponse"},
     {"name": "ListCapabilities", "service": "latent.control.v1.CapabilityService", "request": "ListCapabilitiesRequest", "response": "ListCapabilitiesResponse"},
     {"name": "ApplyPolicy", "service": "latent.control.v1.PolicyService", "request": "ApplyPolicyRequest", "response": "ApplyPolicyResponse", "recovery": "operation_id", "precondition": "expected_generation"},
-    {"name": "GetPolicyOperation", "service": "latent.control.v1.PolicyService", "request": "GetPolicyOperationRequest", "response": "GetPolicyOperationResponse", "recovery": "operation_id"}
+    {"name": "GetPolicyOperation", "service": "latent.control.v1.PolicyService", "request": "GetPolicyOperationRequest", "response": "GetPolicyOperationResponse", "recovery": "operation_id"},
+    {"name": "InspectHttpTarget", "service": "latent.control.v1.NodeService", "request": "InspectHttpTargetRequest", "response": "InspectHttpTargetResponse"}
   ],
   "local_enums": {
     "FailureCategory": {"UNSPECIFIED": 0, "LOCAL_CANCELLED": 1, "DEADLINE": 2, "TRANSPORT": 3, "RPC": 4, "DECODE": 5, "LIMIT": 6, "INVALID_REQUEST": 7},

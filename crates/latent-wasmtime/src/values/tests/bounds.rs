@@ -211,6 +211,30 @@ fn signature_plan_accounts_for_nested_inline_list_amplification() {
     )
     .expect_err("lift allowance");
     assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    let diagnosis = latent_core::diagnostic::ActivationDiagnostic::from_error(&error)
+        .expect("signature producer's exact preparation proof");
+    assert_eq!(
+        diagnosis.stage,
+        latent_core::diagnostic::DiagnosticStage::Preparation
+    );
+    assert_eq!(
+        diagnosis.reason,
+        latent_core::diagnostic::DiagnosticReason::SignatureAllocationLimit
+    );
+    assert_eq!(
+        diagnosis.configured_bound,
+        Some((wide.maximum_lift_bytes - 1) as u64)
+    );
+    assert_eq!(
+        diagnosis.calculated_requirement,
+        Some(wide.maximum_lift_bytes as u64)
+    );
+    assert_eq!(diagnosis.fixed_bytes, Some(wide.static_lift_bytes as u64));
+    assert_eq!(diagnosis.lifting_fuel, Some(128 * 1024));
+    assert_eq!(
+        diagnosis.lift_multiplier,
+        Some(wide.per_fuel_lift_multiplier as u64)
+    );
     assert!(validate_signature(
         &[types()["wide-list"].clone()],
         ValueCodecLimits {
@@ -293,6 +317,44 @@ fn schema_walk_limits_and_unsupported_types_fail_before_values_exist() {
     }
     .validate()
     .is_err());
+}
+
+#[test]
+fn http_ingress_does_not_amplify_domain_service_signature_allocations() {
+    let service = crate::WasmtimeConfig::default();
+    let mut old_http = service.clone();
+    old_http.hostcall_fuel = 2 * 1024 * 1024;
+    old_http.value_codec_limits.max_lifted_bytes = 64 * 1024 * 1024;
+    let signature = [types()["wide-list"].clone()];
+    validate_signature(
+        &signature,
+        service.value_codec_limits,
+        service.hostcall_fuel,
+    )
+    .unwrap();
+    assert_eq!(
+        validate_signature(
+            &signature,
+            old_http.value_codec_limits,
+            old_http.hostcall_fuel
+        )
+        .unwrap_err()
+        .code,
+        PlatformErrorCode::ResourceExhausted
+    );
+    // The repair preserves this conservative rejection for a web surface; a
+    // domain child gets the unchanged service budget even on the same node.
+    let mut node = service.clone();
+    node.buffered_web_value_profile = Some(crate::BufferedWebValueProfile {
+        hostcall_fuel: old_http.hostcall_fuel,
+        limits: old_http.value_codec_limits,
+    });
+    let domain = crate::surface::selected_value_config(&node, false);
+    assert_eq!(domain.hostcall_fuel, service.hostcall_fuel);
+    assert_eq!(domain.value_codec_limits, service.value_codec_limits);
+    validate_signature(&signature, domain.value_codec_limits, domain.hostcall_fuel).unwrap();
+    let web = crate::surface::selected_value_config(&node, true);
+    assert!(validate_signature(&signature, web.value_codec_limits, web.hostcall_fuel).is_err());
 }
 
 fn fixed_length_types() -> Vec<Type> {

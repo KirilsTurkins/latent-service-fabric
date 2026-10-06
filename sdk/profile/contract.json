@@ -60,6 +60,12 @@
       "request": "GetPolicyOperationRequest",
       "response": "GetPolicyOperationResponse",
       "recovery": "operation_id"
+    },
+    {
+      "name": "InspectHttpTarget",
+      "service": "latent.control.v1.NodeService",
+      "request": "InspectHttpTargetRequest",
+      "response": "InspectHttpTargetResponse"
     }
   ],
   "messages": {
@@ -1220,6 +1226,426 @@
         "number": 6
       }
     ],
+    "InspectHttpTargetRequest": [
+      {
+        "name": "service",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "contract",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "function",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "route",
+        "type": "string",
+        "number": 4,
+        "optional": true
+      },
+      {
+        "name": "revision_id",
+        "type": "string",
+        "number": 5,
+        "optional": true
+      },
+      {
+        "name": "publication",
+        "type": "PublicationRef",
+        "number": 6,
+        "optional": true
+      },
+      {
+        "name": "routing_key",
+        "type": "string",
+        "number": 7,
+        "optional": true
+      },
+      {
+        "name": "include_preparation",
+        "type": "bool",
+        "number": 8
+      },
+      {
+        "name": "maximum_wait_millis",
+        "type": "uint64",
+        "number": 9
+      }
+    ],
+    "TargetDependencyRevision": [
+      {
+        "name": "id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "digest",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "revision",
+        "type": "uint64",
+        "number": 3
+      }
+    ],
+    "TargetDependency": [
+      {
+        "name": "capability",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "state",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "policy_identity_digest",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "provider_configuration_epoch",
+        "type": "uint64",
+        "number": 4
+      },
+      {
+        "name": "binding",
+        "type": "TargetDependencyRevision",
+        "number": 5,
+        "optional": true
+      },
+      {
+        "name": "policies",
+        "type": "TargetDependencyRevision",
+        "number": 6,
+        "repeated": true
+      },
+      {
+        "name": "provider_profile",
+        "type": "string",
+        "number": 7
+      },
+      {
+        "name": "configuration_digest",
+        "type": "string",
+        "number": 8
+      }
+    ],
+    "PreparedTargetExport": [
+      {
+        "name": "contract",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "function",
+        "type": "string",
+        "number": 2
+      }
+    ],
+    "TargetPreparation": [
+      {
+        "name": "state",
+        "type": "TargetPreparationState",
+        "number": 1
+      },
+      {
+        "name": "diagnostic",
+        "type": "ActivationDiagnostic",
+        "number": 2,
+        "optional": true
+      },
+      {
+        "name": "profile",
+        "type": "DiagnosticProfile",
+        "number": 3,
+        "optional": true
+      },
+      {
+        "name": "engine_version",
+        "type": "string",
+        "number": 4,
+        "optional": true
+      },
+      {
+        "name": "engine_configuration_digest",
+        "type": "string",
+        "number": 5,
+        "optional": true
+      },
+      {
+        "name": "target_triple",
+        "type": "string",
+        "number": 6,
+        "optional": true
+      },
+      {
+        "name": "cpu_feature_set",
+        "type": "string",
+        "number": 7,
+        "optional": true
+      },
+      {
+        "name": "sealed_metadata_fingerprint",
+        "type": "string",
+        "number": 8,
+        "optional": true
+      },
+      {
+        "name": "import_count",
+        "type": "uint64",
+        "number": 9,
+        "optional": true
+      },
+      {
+        "name": "function_count",
+        "type": "uint64",
+        "number": 10,
+        "optional": true
+      },
+      {
+        "name": "hostcall_fuel",
+        "type": "uint64",
+        "number": 11,
+        "optional": true
+      },
+      {
+        "name": "maximum_lifted_bytes",
+        "type": "uint64",
+        "number": 12,
+        "optional": true
+      },
+      {
+        "name": "maximum_type_nodes",
+        "type": "uint64",
+        "number": 13,
+        "optional": true
+      },
+      {
+        "name": "declared_budget",
+        "type": "ResourceBudget",
+        "number": 14,
+        "optional": true
+      },
+      {
+        "name": "imports",
+        "type": "string",
+        "number": 15,
+        "repeated": true
+      },
+      {
+        "name": "exports",
+        "type": "PreparedTargetExport",
+        "number": 16,
+        "repeated": true
+      },
+      {
+        "name": "type_imports",
+        "type": "string",
+        "number": 17,
+        "repeated": true
+      }
+    ],
+    "InspectedHttpBinding": [
+      {
+        "name": "id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "generation",
+        "type": "uint64",
+        "number": 2
+      },
+      {
+        "name": "selected_deployment_generation",
+        "type": "uint64",
+        "number": 3
+      },
+      {
+        "name": "state",
+        "type": "string",
+        "number": 4
+      }
+    ],
+    "TargetCandidate": [
+      {
+        "name": "deployment_id",
+        "type": "string",
+        "number": 1
+      },
+      {
+        "name": "deployment_generation",
+        "type": "uint64",
+        "number": 2
+      },
+      {
+        "name": "revision_id",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "component_digest",
+        "type": "string",
+        "number": 4
+      },
+      {
+        "name": "publication",
+        "type": "PublicationRef",
+        "number": 5,
+        "optional": true
+      },
+      {
+        "name": "requested_publication",
+        "type": "PublicationRef",
+        "number": 6,
+        "optional": true
+      },
+      {
+        "name": "package_digest",
+        "type": "string",
+        "number": 7,
+        "optional": true
+      },
+      {
+        "name": "publication_generation",
+        "type": "uint64",
+        "number": 8,
+        "optional": true
+      },
+      {
+        "name": "routing_weight",
+        "type": "uint32",
+        "number": 9
+      },
+      {
+        "name": "export_compatible",
+        "type": "bool",
+        "number": 10
+      },
+      {
+        "name": "http_compatible",
+        "type": "bool",
+        "number": 11
+      },
+      {
+        "name": "eligible",
+        "type": "bool",
+        "number": 12
+      },
+      {
+        "name": "reasons",
+        "type": "TargetReason",
+        "number": 13,
+        "repeated": true
+      },
+      {
+        "name": "dependencies",
+        "type": "TargetDependency",
+        "number": 14,
+        "repeated": true
+      },
+      {
+        "name": "preparation",
+        "type": "TargetPreparation",
+        "number": 15,
+        "optional": true
+      },
+      {
+        "name": "publication_kind",
+        "type": "string",
+        "number": 16,
+        "optional": true
+      },
+      {
+        "name": "http_bindings",
+        "type": "InspectedHttpBinding",
+        "number": 17,
+        "repeated": true
+      }
+    ],
+    "InspectHttpTargetResponse": [
+      {
+        "name": "schema_version",
+        "type": "uint32",
+        "number": 1
+      },
+      {
+        "name": "tenant",
+        "type": "string",
+        "number": 2
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "contract",
+        "type": "string",
+        "number": 4
+      },
+      {
+        "name": "function",
+        "type": "string",
+        "number": 5
+      },
+      {
+        "name": "route",
+        "type": "string",
+        "number": 6
+      },
+      {
+        "name": "state",
+        "type": "TargetObservationState",
+        "number": 7
+      },
+      {
+        "name": "catalog_transaction",
+        "type": "uint64",
+        "number": 8
+      },
+      {
+        "name": "route_generation",
+        "type": "uint64",
+        "number": 9
+      },
+      {
+        "name": "binding_generation",
+        "type": "uint64",
+        "number": 10
+      },
+      {
+        "name": "policy_store_generation",
+        "type": "uint64",
+        "number": 11,
+        "optional": true
+      },
+      {
+        "name": "candidates",
+        "type": "TargetCandidate",
+        "number": 12,
+        "repeated": true
+      },
+      {
+        "name": "selected_revision_id",
+        "type": "string",
+        "number": 13,
+        "optional": true
+      },
+      {
+        "name": "live_grants_checked",
+        "type": "bool",
+        "number": 14
+      }
+    ],
     "PublicationIdentity": [
       {
         "name": "publication",
@@ -1398,6 +1824,32 @@
       "UNSPECIFIED": 0,
       "WASMTIME_SERVICE_VALUES_V1": 1,
       "WASMTIME_BUFFERED_WEB_VALUES_V1": 2
+    },
+    "TargetObservationState": {
+      "UNSPECIFIED": 0,
+      "COHERENT": 1,
+      "STALE": 2,
+      "UNAVAILABLE": 3
+    },
+    "TargetReason": {
+      "UNSPECIFIED": 0,
+      "CURRENT": 1,
+      "EXPORT_ABSENT": 2,
+      "ZERO_ROUTING_WEIGHT": 3,
+      "PUBLICATION_UNAVAILABLE": 4,
+      "BINDING_PLAN_UNAVAILABLE": 5,
+      "POLICY_CHANGED": 6,
+      "PROVIDER_UNAVAILABLE": 7,
+      "INSPECTION_UNAVAILABLE": 8,
+      "UNMANAGED_PUBLICATION": 9,
+      "HTTP_INCOMPATIBLE": 10
+    },
+    "TargetPreparationState": {
+      "UNSPECIFIED": 0,
+      "READY": 1,
+      "REJECTED": 2,
+      "UNAVAILABLE": 3,
+      "NOT_REQUESTED": 4
     },
     "FailureCategory": {
       "UNSPECIFIED": 0,
