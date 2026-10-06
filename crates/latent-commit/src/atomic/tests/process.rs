@@ -186,7 +186,7 @@ fn fresh_admission(store: &EmbeddedStore, request: AdmissionInput) -> PreparedAd
 fn retry_admission(
     store: &EmbeddedStore,
     effects: &EffectAuthorityOwner,
-    request: AdmissionInput,
+    request: &AdmissionInput,
 ) -> PreparedAdmission {
     let owner = claim(store, request.clone());
     let view = store.snapshot().unwrap();
@@ -196,7 +196,7 @@ fn retry_admission(
     let view = store.snapshot().unwrap();
     let AdmissionDecision::New(prepared) = PreparedAdmission::retry(
         &view,
-        &request,
+        request,
         &RetryRequest {
             request_id: "original-retry-request".into(),
             expected_abort: aborted.abort_proof().unwrap(),
@@ -224,7 +224,7 @@ fn owned_envelope_child() {
     let request = scenario.request();
     if matches!(scenario, Scenario::Admission | Scenario::Retry) {
         let prepared = if scenario == Scenario::Retry {
-            retry_admission(&store, &effects, request)
+            retry_admission(&store, &effects, &request)
         } else {
             fresh_admission(&store, request)
         };
