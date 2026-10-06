@@ -178,6 +178,31 @@ class StaticSiteCaptureTests(unittest.TestCase):
             config = copy.deepcopy(self.config); config['fallback'] = fallback
             self.reject(config)
 
+    def test_optional_error_document_is_signed_html_without_rewriting_assets_or_adding_layers(self):
+        original, before = self.capture()
+        config = copy.deepcopy(self.config)
+        config['errorDocument'] = {'profile': 'html-not-found-v1', 'document': '/guide/index.html'}
+        output, after = self.capture(config, 'error-document')
+        web = json.loads((output / 'metadata/web-application.json').read_bytes())
+        self.web_schema.validate(web)
+        self.assertEqual(web['staticRouting']['errorDocument'], config['errorDocument'])
+        self.assertEqual(before['assetsDigest'], after['assetsDigest'])
+        self.assertNotEqual(before['webManifestDigest'], after['webManifestDigest'])
+        for asset in web['assets']:
+            self.assertEqual((original / asset['layer']).read_bytes(), (output / asset['layer']).read_bytes())
+        self.assertEqual(len(json.loads((output / 'package-source.json').read_bytes())['layers']), len(config['assets']) + 2)
+        for value in [None, {}, {'profile': 'other-v1', 'document': '/index.html'},
+                      {'profile': 'html-not-found-v1', 'document': '/missing.html'},
+                      {'profile': 'html-not-found-v1', 'document': '/assets/main.js'},
+                      {'profile': 'html-not-found-v1', 'document': '/_lsf/foreign/index.html'},
+                      {'profile': 'html-not-found-v1', 'document': '/server/private.html'},
+                      {'profile': 'html-not-found-v1', 'document': 'https://foreign.test/index.html'},
+                      {'profile': 'html-not-found-v1', 'document': '/../index.html'},
+                      {'profile': 'html-not-found-v1', 'document': '/index.html', 'status': 200}]:
+            rejected = copy.deepcopy(self.config)
+            rejected['errorDocument'] = value
+            self.reject(rejected)
+
     def test_excessive_counts_paths_input_bytes_and_asset_bytes_fail_before_emission(self):
         config = copy.deepcopy(self.config); config['assets'] *= 64
         self.reject(config)
@@ -190,6 +215,7 @@ class StaticSiteCaptureTests(unittest.TestCase):
     def test_complete_multilingual_inventory_at_the_limit_and_exact_count_diagnostics(self):
         config = copy.deepcopy(self.config)
         config['assets'] = [{'path': '/index.html', 'source': 'index.html'}]
+        config['errorDocument'] = {'profile': 'html-not-found-v1', 'document': '/index.html'}
         for number in range(1, 252):
             locale = 'en' if number % 2 else 'de'
             name = f'{locale}/page-{number:03}/' + 'x' * 50 + '/' + 'y' * 50 + '.html'

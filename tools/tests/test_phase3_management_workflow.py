@@ -42,6 +42,38 @@ class MemoryConnection:
 
 
 class ProviderWorkflowTests(unittest.TestCase):
+    def test_blob_probe_retains_only_closed_operation_and_error_without_replaying(self):
+        from tools.phase3_management_scenario import BLOB_CONTRACT
+        result = {"outcomeKnown": True, "data": {"activationId": "activation"}}
+        operations = ("create", "close", "write", "seal", "open", "read", "chunk-bytes")
+        errors = ("not-found", "permission-denied", "invalid-range", "invalid-state",
+                  "checksum-mismatch", "budget-exhausted", "unavailable", "uncertain",
+                  "deadline-exceeded", "cancelled")
+        for operation, name in enumerate(operations, 1):
+            for error, category in enumerate(errors, 1):
+                with self.subTest(operation=name, error=category), patch(
+                        "tools.run_phase3_management_workflow.invoke_guest",
+                        return_value=(result, operation * 1000 + error)) as invoke:
+                    with self.assertRaisesRegex(WorkflowError,
+                            f"^provider-blob-restart-case-0-blob-operation-{name}-error-{category}$"):
+                        probe(object(), {"contract": BLOB_CONTRACT}, 0, 4, stage="restart")
+                    invoke.assert_called_once()
+
+    def test_blob_probe_keeps_success_and_hides_unrecognized_guest_results(self):
+        from tools.phase3_management_scenario import BLOB_CONTRACT
+        result = {"outcomeKnown": True, "data": {"activationId": "activation"}}
+        for which, expected in ((0, 4), (1, 1), (2, 10)):
+            with self.subTest(which=which), patch("tools.run_phase3_management_workflow.invoke_guest",
+                                                  return_value=(result, expected)) as invoke:
+                self.assertEqual(probe(object(), {"contract": BLOB_CONTRACT}, which, expected), "activation")
+                invoke.assert_called_once()
+        for value in (-1001, 42, 1000, 1011, 7000, 7011, 8001, True, "private-payload"):
+            with self.subTest(value=value), patch("tools.run_phase3_management_workflow.invoke_guest",
+                                                  return_value=(result, value)) as invoke:
+                with self.assertRaisesRegex(WorkflowError, "^provider-blob-restart-case-0-unexpected-result$"):
+                    probe(object(), {"contract": BLOB_CONTRACT}, 0, 4, stage="restart")
+                invoke.assert_called_once()
+
     def test_probe_retains_http_category_and_restart_stage_without_replaying(self):
         result = {"outcomeKnown": True, "data": {"activationId": "activation"}}
         with patch("tools.run_phase3_management_workflow.invoke_guest", return_value=(result, 22)) as invoke:
