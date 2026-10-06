@@ -6,6 +6,13 @@
 
 #![forbid(unsafe_code)]
 
+#[cfg(all(
+    target_arch = "wasm32",
+    feature = "guest-activation",
+    feature = "guest-transaction"
+))]
+compile_error!("select one capsule@0.5.0 guest profile: guest-activation or guest-transaction");
+
 #[cfg(not(target_arch = "wasm32"))]
 pub mod host {
     /// Invocation-local language-runtime support; recognition installs nothing.
@@ -42,7 +49,7 @@ pub mod host {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "guest-activation"))]
 pub mod activation_guest {
     include!(concat!(env!("OUT_DIR"), "/activation_guest.rs"));
 }
@@ -73,7 +80,7 @@ pub mod blob_guest {
     include!(concat!(env!("OUT_DIR"), "/blob_guest.rs"));
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "guest-transaction"))]
 pub mod transaction_guest {
     //! Exact opt-in transaction/query/intent imports; commitment is host-owned.
     include!(concat!(env!("OUT_DIR"), "/transaction_guest.rs"));
