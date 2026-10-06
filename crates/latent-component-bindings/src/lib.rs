@@ -8,6 +8,10 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod host {
+    /// Invocation-local language-runtime support; recognition installs nothing.
+    pub mod activation {
+        include!(concat!(env!("OUT_DIR"), "/activation_host.rs"));
+    }
     /// Buffered application export; trusted identity remains the context import.
     pub mod web {
         include!(concat!(env!("OUT_DIR"), "/web_host.rs"));
@@ -36,6 +40,11 @@ pub mod host {
     pub mod echo {
         include!(concat!(env!("OUT_DIR"), "/echo_host.rs"));
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub mod activation_guest {
+    include!(concat!(env!("OUT_DIR"), "/activation_guest.rs"));
 }
 
 #[cfg(target_arch = "wasm32")]

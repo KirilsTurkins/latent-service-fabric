@@ -240,6 +240,28 @@ fn parent_cancellation_and_terminal_state_cancel_children_without_early_refunds(
 }
 
 #[test]
+fn explicit_scope_cancellation_signals_children_without_finalization_or_refund() {
+    let (parent, _, sample) = root(DelegationLimits::default());
+    let child = accept(
+        reserve(&parent, &request(100, 100, 1), sample).unwrap(),
+        sample,
+    );
+    let retained = child.accounting().clone();
+    let before = parent.snapshot_at(sample.monotonic());
+    parent.cancel_descendants().unwrap();
+    assert!(child.accounting().descendant_is_cancelled());
+    assert!(reserve(&parent, &request(1, 1, 0), sample).is_err());
+    assert!(parent.finalized().is_none());
+    assert_eq!(parent.snapshot_at(sample.monotonic()), before);
+    assert_eq!(parent.outstanding_reservations(), 1);
+    let _ = child.finish(None, sample.monotonic());
+    assert_eq!(parent.outstanding_reservations(), 1);
+    drop(retained);
+    assert_eq!(parent.outstanding_reservations(), 0);
+    assert!(parent.finalized().is_none());
+}
+
+#[test]
 fn retained_ancestry_stays_charged_through_late_grandchild_completion() {
     let (parent, _, sample) = root(DelegationLimits::default());
     let child = accept(
