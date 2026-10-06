@@ -218,6 +218,9 @@ async fn operate(
                 "destinationIdentity":result.destination_identity}),
             )
         }
+        Action::InspectCloseEffects { .. } | Action::CloseEffects { .. } => {
+            super::reconciliation::execute(source, codecs).await
+        }
         _ => metadata_action(source, codecs).await,
     }
 }

@@ -19,6 +19,7 @@ mod execution;
 mod operation;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod profile;
+mod reconciliation;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod request;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]

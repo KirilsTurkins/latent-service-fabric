@@ -45,6 +45,7 @@ pub(super) struct Codecs {
     pub formats: Vec<RetainedFormat>,
     source: latent_commit::atomic::SourceIdentity,
     reconciliation: std::sync::Mutex<Option<(RecoveryGuard, [u8; 32])>>,
+    pub(super) close_approval: std::sync::Mutex<Option<[u8; 32]>>,
 }
 
 impl Codecs {
@@ -73,6 +74,7 @@ impl Codecs {
                 format(RetainedKind::SuccessResult, "lsf.command-result.v3"),
                 format(RetainedKind::InboxIdentity, "lsf.inbox-identity.v1"),
                 format(RetainedKind::EffectEnvelope, "lsf.effect-record.v1"),
+                format(RetainedKind::EffectEnvelope, "lsf.effect-record.v2"),
                 format(RetainedKind::EffectPayload, "lsf.effect-payload.v1"),
                 format(
                     RetainedKind::AdapterProfile,
@@ -85,7 +87,21 @@ impl Codecs {
                 .source()
                 .clone(),
             reconciliation: std::sync::Mutex::new(None),
+            close_approval: std::sync::Mutex::new(None),
         })
+    }
+
+    pub(super) fn with_close(fixture: &Fixture, workload: &command::Workload) -> Arc<Self> {
+        let mut installed = Self::new(fixture, workload);
+        let codecs = Arc::get_mut(&mut installed).unwrap();
+        codecs
+            .formats
+            .push(format(RetainedKind::EffectEnvelope, "lsf.effect-record.v3"));
+        codecs.formats.push(format(
+            RetainedKind::MigrationCheckpoint,
+            latent_effects::recovery_close::FORMAT,
+        ));
+        installed
     }
 
     pub(super) fn metadata(&self) -> SnapshotMetadata {
@@ -107,7 +123,14 @@ impl Codecs {
 
 impl RecoveryCodecs for Codecs {
     fn runtime_digest(&self) -> [u8; 32] {
-        Sha256::digest(b"latent.http-restore-runtime.v1:LCM3/LCR3/LIC1/LER1/LEP1/LEV1/LDI1/LDH1/LDO1/NSH1/NV2/SV2/NRS1").into()
+        if self.formats.contains(&format(
+            RetainedKind::EffectEnvelope,
+            "lsf.effect-record.v3",
+        )) {
+            Sha256::digest(b"latent.http-restore-runtime.v3:LCM3/LCR3/LIC1/LER1+2+3/LEP1/LEV1/LDI1/LDH1/LDO1/NSH1/NV2/SV2/NRS1/CLOSE1").into()
+        } else {
+            Sha256::digest(b"latent.http-restore-runtime.v2:LCM3/LCR3/LIC1/LER1+2/LEP1/LEV1/LDI1/LDH1/LDO1/NSH1/NV2/SV2/NRS1").into()
+        }
     }
     fn retained_bytes(&self) -> u64 {
         32 * 1024
@@ -218,6 +241,26 @@ impl RecoveryCodecs for Codecs {
     fn accept_reconciliation(&self, request: &RecoveryReviewRequest) -> Result<(), StoreError> {
         self.check_reconciliation(request)
     }
+    fn inspect_retained_reconciliation(
+        &self,
+        view: &ReadView,
+        request: &latent_state::recovery::offline::RetainedReconciliationRequest,
+    ) -> Result<Vec<u8>, StoreError> {
+        super::close::inspect(self, view, request)
+    }
+    fn prepare_retained_reconciliation(
+        &self,
+        view: &ReadView,
+        request: &latent_state::recovery::offline::RetainedReconciliationRequest,
+    ) -> Result<latent_state::recovery::offline::PreparedRetainedReconciliation, StoreError> {
+        super::close::prepare(self, view, request)
+    }
+    fn accept_retained_reconciliation(
+        &self,
+        request: &latent_state::recovery::offline::RetainedReconciliationRequest,
+    ) -> Result<(), StoreError> {
+        super::close::accept(self, request)
+    }
     fn review_namespace_resume(
         &self,
         view: &ReadView,
@@ -310,12 +353,31 @@ fn observe(
         )),
         Family::Result => Some(format(RetainedKind::SuccessResult, "lsf.command-result.v3")),
         Family::Inbox => Some(format(RetainedKind::InboxIdentity, "lsf.inbox-identity.v1")),
-        Family::Outbox => Some(format(RetainedKind::EffectEnvelope, "lsf.effect-record.v1")),
+        Family::Outbox => Some(format(
+            RetainedKind::EffectEnvelope,
+            if bytes.starts_with(b"LER\0\x03") {
+                "lsf.effect-record.v3"
+            } else if bytes.starts_with(b"LER\0\x02") {
+                "lsf.effect-record.v2"
+            } else {
+                "lsf.effect-record.v1"
+            },
+        )),
         Family::PayloadReference => {
             Some(format(RetainedKind::EffectPayload, "lsf.effect-payload.v1"))
         }
         Family::Maintenance if key.key.starts_with(RECEIPT_PREFIX) => {
             Some(latent_state::recovery::resume::retained_format())
+        }
+        Family::Maintenance
+            if key
+                .key
+                .starts_with(latent_effects::recovery_close::RECEIPT_PREFIX) =>
+        {
+            Some(format(
+                RetainedKind::MigrationCheckpoint,
+                latent_effects::recovery_close::FORMAT,
+            ))
         }
         _ => None,
     };

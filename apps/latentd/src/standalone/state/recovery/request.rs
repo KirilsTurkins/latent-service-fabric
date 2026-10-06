@@ -51,6 +51,16 @@ pub(super) enum Action {
         checkpoint_manifest_digest: String,
     },
     Review {},
+    InspectCloseEffects {
+        operation_id: String,
+        effect_ids: Vec<String>,
+        reason: String,
+    },
+    CloseEffects {
+        operation_id: String,
+        plan: latent_effects::recovery_close::ClosePlan,
+        acknowledgement: String,
+    },
     Resume {
         operation_id: String,
         expected_view: Vec<u8>,
@@ -87,7 +97,9 @@ impl Action {
             Self::StageMigration { .. } | Self::CompleteMigration { .. } => {
                 &["namespace-schema-migrate"]
             }
-            Self::Review {} => &["namespace-review-recovery"],
+            Self::Review {} | Self::InspectCloseEffects { .. } | Self::CloseEffects { .. } => {
+                &["namespace-review-recovery"]
+            }
             Self::Resume { .. } => &["namespace-resume"],
         }
     }
@@ -101,24 +113,26 @@ impl Action {
         let identity = |value: &str| {
             latent_core::transaction_contract::identity(value).map_err(|_| super::super::denied())
         };
-        let file = |input: &File| {
-            if !input.root.is_absolute()
-                || input.root.as_os_str().len() > 4096
-                || input.name.is_empty()
-                || input.name.len() > 255
-                || input.name == "."
-                || input.name == ".."
-                || !input
-                    .name
-                    .bytes()
-                    .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
-            {
-                return Err(super::super::denied());
-            }
-            Ok(())
-        };
         match self {
             Self::InspectNamespace {} | Self::Review {} => Ok(()),
+            Self::InspectCloseEffects {
+                operation_id,
+                effect_ids,
+                reason,
+            } => inspect_close(operation_id, effect_ids, reason),
+            Self::CloseEffects {
+                operation_id,
+                plan,
+                acknowledgement,
+            } => {
+                identity(operation_id)?;
+                plan.encode().map_err(|_| super::super::denied())?;
+                super::assets::digest_bytes(acknowledgement)?;
+                if plan.operation_id != *operation_id {
+                    return Err(super::super::denied());
+                }
+                Ok(())
+            }
             Self::Snapshot {
                 operation_id,
                 file: input,
@@ -185,6 +199,41 @@ impl Action {
         }
     }
 }
+fn file(input: &File) -> Result<(), PlatformError> {
+    if !input.root.is_absolute()
+        || input.root.as_os_str().len() > 4096
+        || input.name.is_empty()
+        || input.name.len() > 255
+        || input.name == "."
+        || input.name == ".."
+        || !input
+            .name
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
+    {
+        return Err(super::super::denied());
+    }
+    Ok(())
+}
+fn inspect_close(operation: &str, effects: &[String], reason: &str) -> Result<(), PlatformError> {
+    latent_core::transaction_contract::identity(operation).map_err(|_| super::super::denied())?;
+    if effects.is_empty()
+        || effects.len() > latent_effects::recovery_close::EFFECTS
+        || operation.chars().any(char::is_control)
+        || reason.is_empty()
+        || reason.len() > 128
+        || reason.chars().any(char::is_control)
+    {
+        return Err(super::super::denied());
+    }
+    for (index, effect) in effects.iter().enumerate() {
+        super::assets::digest_bytes(&format!("sha256:{effect}"))?;
+        if effects[..index].contains(effect) {
+            return Err(super::super::denied());
+        }
+    }
+    Ok(())
+}
 fn view(bytes: &[u8]) -> Result<(), PlatformError> {
     if bytes.len() == 67 && bytes.starts_with(b"NV\x02") {
         Ok(())
@@ -216,6 +265,37 @@ mod tests {
                 .unwrap()
             )
             .is_err());
+        }
+    }
+
+    #[test]
+    fn native_effect_close_inspection_has_finite_original_ids_and_no_request_authority() {
+        let publication = format!("publication:sha256:{}", "1".repeat(64));
+        let valid = serde_json::json!({"action":"inspect-close-effects","operationId":"close-1",
+            "effectIds":["a".repeat(64)],"reason":"explicitly abandon restored uncertain work"});
+        let decode = |request| {
+            NativeRecoveryRequest::decode(
+                &serde_json::to_vec(
+                    &serde_json::json!({"publication":publication,"request":request}),
+                )
+                .unwrap(),
+            )
+        };
+        let accepted = decode(valid.clone()).unwrap();
+        assert_eq!(accepted.request.purposes(), &["namespace-review-recovery"]);
+        assert!(accepted.request.reviewed_open());
+        for (key, value) in [
+            ("approved", serde_json::json!(true)),
+            ("effectIds", serde_json::json!([])),
+            ("effectIds", serde_json::json!(vec!["a".repeat(64); 2])),
+            ("effectIds", serde_json::json!(vec!["a".repeat(64); 17])),
+            ("effectIds", serde_json::json!(["A".repeat(64)])),
+            ("reason", serde_json::json!("request\nchanged")),
+            ("operationId", serde_json::json!("close\n1")),
+        ] {
+            let mut rejected = valid.clone();
+            rejected[key] = value;
+            assert!(decode(rejected).is_err());
         }
     }
 }

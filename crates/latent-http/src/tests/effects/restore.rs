@@ -19,6 +19,7 @@ use latent_state::{
 };
 use std::{fs, os::unix::fs::PermissionsExt};
 
+mod close;
 mod codecs;
 mod command;
 mod physical;

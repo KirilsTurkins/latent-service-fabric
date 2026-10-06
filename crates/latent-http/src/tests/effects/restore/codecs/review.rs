@@ -45,13 +45,13 @@ impl Codecs {
         }
         self.check_review(&request.operator_id, request.review_digest, *digest)
     }
-    pub(super) fn check_operator(&self, operator: &str) -> Result<(), StoreError> {
+    pub(in super::super) fn check_operator(&self, operator: &str) -> Result<(), StoreError> {
         if operator != "operator" || !self.clock.observe().continuity_proven {
             return Err(StoreError::Unavailable);
         }
         Ok(())
     }
-    pub(super) fn check_review(
+    pub(in super::super) fn check_review(
         &self,
         operator: &str,
         actual: [u8; 32],
@@ -87,10 +87,10 @@ pub(super) fn reconcile(
             &codecs.authority.link().effect,
         )?)?
         .ok_or(StoreError::Corrupt)?;
-    if EffectRecord::decode(&record)
-        .map_err(|_| StoreError::Corrupt)?
-        .disposition()
-        != Disposition::Pending
+    let record = EffectRecord::decode(&record).map_err(|_| StoreError::Corrupt)?;
+    if record.disposition() != Disposition::Pending
+        && !(record.disposition() == Disposition::DeadLettered
+            && record.recovery_close_digest().is_some())
     {
         return Err(StoreError::Conflict);
     }
