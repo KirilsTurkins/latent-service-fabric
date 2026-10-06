@@ -170,7 +170,14 @@ def run(project: Path, candidate: Path, expected: str) -> dict:
             if len(entry_names) > MAX_FILES:
                 raise DependencyError('java-generator-project-source-limit')
             from tools.java_capsule_project import validate
-            validate(adopted)
+            # Normal nested builds project the outer reviewed manifest/lock
+            # into the app snapshot. Validate that same view, including local
+            # JAR approval, rather than treating captured binaries as ambient.
+            projected = {**guest_dependency_inputs.capture_source(owner, 'java').files,
+                         **expected_files, MANIFEST: manifest}
+            if len(projected) > MAX_FILES or sum(map(len, projected.values())) > MAX_SOURCE:
+                raise DependencyError('java-generator-project-source-limit')
+            validate(projected)
             # Adopt only a fresh source subtree. A failed process never replaces
             # source/SDK inputs, and its private execution receipt is retained.
             os.rename(outputs, target)
