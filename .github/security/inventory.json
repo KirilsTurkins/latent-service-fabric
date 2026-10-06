@@ -98,10 +98,10 @@
       "absent_when_directory_missing": "website/toolchain",
       "bundled_package": "npm",
       "derived_bundle": {
-        "builder_sha256": "dd7ed3c8b23e3d3ea51d956943761c3b0c16ca72ce0be707aa1c5355a6ec1695",
-        "integrity": "sha512-1cDbpO1Y8oAFGxZ21X5G28r3kNzWO37f2n8RZ4J2PlqyHRdOTqogQKy4RXI1BsSTAisSDXh/ftUHlXdCTlQpmw==",
-        "lock_sha256": "2deb20059ea464c0a562bce8f4ae71fc91f09a826132f222d08d3487cf574386",
-        "source_sha256": "6b4c8ec17c7363abaa2e16493f8a21aa6e60c0139d55316750b393abafdba198"
+        "builder_sha256": "2e82bbcf3883a9c7e887296085ea8b664b2e93778f1a8600dae43cd208203b61",
+        "integrity": "sha512-4FbPtex+HUbSDyWaA4h/uEiACFUrc7edyxxEzZzSxB4h78eZlgzhWG1BvGyRcd8aisS+9i4RCJ72ajQaBFCLGw==",
+        "lock_sha256": "a7db0c3d077d742f70a8895a0e9117a2e419a1332ced5a620f46d0bf0e5603c9",
+        "source_sha256": "3b6c5617dc5418b52718647f65bdfde0462de0966a31afe5441476b9975f20d3"
       },
       "kind": "npm",
       "lock": "website/toolchain/package-lock.json",
