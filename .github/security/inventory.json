@@ -79,7 +79,7 @@
             "version": "4.3.0"
           }
         },
-        "lock_sha256": "f669e1c50d416c4f6de2c2506fec45028d71719d600fcfd25a0960434b22547d",
+        "lock_sha256": "385920a3f644c34d659f705eaf1e9100b27a05a0a9b333a7087005311946ba7d",
         "source_sha256": "3b6c5617dc5418b52718647f65bdfde0462de0966a31afe5441476b9975f20d3"
       },
       "kind": "npm",
@@ -102,7 +102,7 @@
             "version": "4.3.0"
           }
         },
-        "lock_sha256": "1051e125413d8bb9330ebae3f2bdf4c604d21851a703ad83b8d4d0db13b6b8a4",
+        "lock_sha256": "71a905bc1f1a28fba2c01845ea4d1baf3affd08361f0ba0c44d325be06bb3a43",
         "source_sha256": "3b6c5617dc5418b52718647f65bdfde0462de0966a31afe5441476b9975f20d3"
       },
       "kind": "npm",
