@@ -173,6 +173,13 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
         self.owner.reserve_retained(bytes)
     }
 
+    pub fn reserve_recovery_retained<T: Send + 'static>(
+        &self,
+        bytes: u64,
+    ) -> Result<super::StoreIoRetained<OnceLock<S>, T>, StoreIoError> {
+        self.owner.reserve_recovery_retained(bytes)
+    }
+
     pub(crate) fn owns_retained<T: Send + 'static>(
         &self,
         retained: &super::StoreIoRetained<OnceLock<S>, T>,
@@ -188,6 +195,20 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
     ) -> Result<StoreIoJob<T>, StoreIoError> {
         self.owner
             .submit(kind, bytes, move |slot| {
+                operation(slot.get().expect("initialized store owner"))
+            })
+            .map_err(|error| error.reason)
+    }
+
+    pub fn submit_retaining<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        bytes: u64,
+        keeper: Arc<dyn std::any::Any + Send + Sync>,
+        operation: impl FnOnce(&S) -> T + Send + 'static,
+    ) -> Result<StoreIoJob<T>, StoreIoError> {
+        self.owner
+            .submit_retaining(kind, bytes, keeper, move |slot| {
                 operation(slot.get().expect("initialized store owner"))
             })
             .map_err(|error| error.reason)
