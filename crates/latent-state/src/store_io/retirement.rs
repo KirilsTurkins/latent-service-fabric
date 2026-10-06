@@ -28,6 +28,28 @@ impl RetirementSignal {
     }
 }
 
+/// One pre-reserved status observer, issued before moving an affine resource.
+/// It has no waiter or native handle. Only actual destructor and reservation
+/// completion can make `has_retired` positive; elapsed time proves nothing.
+pub struct StoreIoRetirementWitness {
+    signal: Arc<RetirementSignal>,
+}
+
+impl StoreIoRetirementWitness {
+    pub(super) fn new(signal: Arc<RetirementSignal>) -> Self {
+        Self { signal }
+    }
+
+    #[must_use]
+    pub fn has_retired(&self) -> bool {
+        self.signal
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .completed
+    }
+}
+
 /// Pre-reserved actual retirement receipt. Readiness proves the physical worker
 /// finished the retained value's destructor and released its owner/byte charge.
 /// Dropping this waiter only detaches observation and never cancels retirement.

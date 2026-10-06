@@ -14,7 +14,7 @@ pub(super) const HISTORY_PREFIX: &[u8] = b"dispatch-history-v1\0";
 const OWNER_FORMAT: &[u8; 5] = b"LDO\0\x01";
 const HISTORY_FORMAT: &[u8; 5] = b"LDH\0\x01";
 const PENDING_HISTORY_FORMAT: &[u8; 5] = b"LHP\0\x01";
-const ATTEMPT_RESERVATION_PREFIX: &[u8] = b"dispatch-attempt-v1\0";
+pub(super) const ATTEMPT_RESERVATION_PREFIX: &[u8] = b"dispatch-attempt-v1\0";
 pub(super) const DISPOSITION_RESERVED_BYTES: u64 = 70 * 1024;
 pub(super) const MAXIMUM_HISTORY_BYTES: usize = 4096;
 

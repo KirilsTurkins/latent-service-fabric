@@ -76,10 +76,8 @@ mod tests {
     #[test]
     fn canonical_round_trip_compacts_spare_capacity() {
         let mut text = String::with_capacity(1024 * 1024);
-        text.push_str(&format!(
-            "publication:sha256:{}",
-            "0123456789abcdef".repeat(4)
-        ));
+        text.push_str("publication:sha256:");
+        text.push_str(&"0123456789abcdef".repeat(4));
         let id = PublicationId::try_from(text.clone()).unwrap();
         assert_eq!(id.as_str(), text);
         assert_eq!(id.hex(), "0123456789abcdef".repeat(4));
