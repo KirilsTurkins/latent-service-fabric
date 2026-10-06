@@ -168,7 +168,11 @@ fn compaction_rows(
     limits: super::StoreLimits,
     expectations: &[ExpectedRow],
 ) -> Result<(), StoreError> {
-    super::format::inspect(database)?;
+    // Startup promoted the same rows through the closed metadata transition.
+    // A legacy, pending or malformed header cannot enter physical compaction.
+    if super::format::inspect(database)? != super::format::State::Current {
+        return Err(StoreError::UnsupportedFormat);
+    }
     let transaction = database.begin_read().map_err(|_| StoreError::Unavailable)?;
     let table = transaction
         .open_table(ROWS)

@@ -197,13 +197,24 @@ impl EmbeddedStore {
         was_empty: bool,
         file_status: Option<StoreFileStatus>,
     ) -> Result<Self, StoreError> {
-        Self::open_database_with_checkpoint(db, limits, was_empty, |_| {})
+        Self::open_database_with_status_and_checkpoint(db, limits, was_empty, file_status, |_| {})
     }
 
+    #[cfg(test)]
     fn open_database_with_checkpoint(
         db: Database,
         limits: StoreLimits,
         was_empty: bool,
+        checkpoint: impl FnMut(format::Checkpoint),
+    ) -> Result<Self, StoreError> {
+        Self::open_database_with_status_and_checkpoint(db, limits, was_empty, None, checkpoint)
+    }
+
+    fn open_database_with_status_and_checkpoint(
+        db: Database,
+        limits: StoreLimits,
+        was_empty: bool,
+        file_status: Option<StoreFileStatus>,
         mut checkpoint: impl FnMut(format::Checkpoint),
     ) -> Result<Self, StoreError> {
         if was_empty {
@@ -219,13 +230,17 @@ impl EmbeddedStore {
             quarantined: AtomicBool::new(false),
             reclamation: AtomicBool::new(false),
         };
-        // Validate the original row framing and configured limits before any
-        // metadata promotion. No business row is transformed or recopied.
+        // Original row limits, reservation coverage and selected page layout
+        // must pass before metadata-only promotion on this same private engine.
         store.verify()?;
-        format::upgrade(&store.db, &mut checkpoint)?;
+        {
+            let database = store.database()?;
+            format::upgrade(&database, &mut checkpoint)?;
+        }
         store.verify()?;
         Ok(store)
     }
+
     fn verify(&self) -> Result<(), StoreError> {
         let database = self.database()?;
         format::inspect(&database)?;
@@ -233,7 +248,6 @@ impl EmbeddedStore {
         let table = tx.open_table(ROWS).map_err(|_| StoreError::Corrupt)?;
         self.charge_table(&table)?;
         drop(table);
-        drop(meta);
         drop(tx);
         // Validate the selected 4096-byte page profile through the public
         // engine API, rather than assuming an imported file's private layout.
