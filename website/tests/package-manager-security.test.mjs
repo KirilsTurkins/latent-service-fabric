@@ -27,9 +27,10 @@ function child(args) {
 test('npm consumes the exact prepared ip-address, Undici, brace-expansion and HTTP cache bundles', () => {
   const source = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/source.json')));
   const lock = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/package-lock.json')));
-  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v3');
+  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v4');
   assert.deepEqual(Object.fromEntries(source.patches.map(pin => [pin.name, pin.version])), {
     'ip-address': '10.7.2', undici: '6.28.1', 'brace-expansion': '5.0.12', 'http-cache-semantics': '4.3.0',
+    'postcss-selector-parser': '7.1.6',
   });
   for (const pin of source.patches) {
     const location = `node_modules/npm/node_modules/${pin.name}`;
@@ -43,6 +44,14 @@ test('npm consumes the exact prepared ip-address, Undici, brace-expansion and HT
   assert.equal(fs.realpathSync(minimatchRequire.resolve('brace-expansion')), fs.realpathSync(npmRequire.resolve('brace-expansion')));
   assert.equal(fs.realpathSync(fetchRequire.resolve('http-cache-semantics')), fs.realpathSync(npmRequire.resolve('http-cache-semantics')));
   assert.equal(npmRequire('balanced-match/package.json').version, '4.0.4');
+  const queryRequire = createRequire(npmRequire.resolve('@npmcli/query'));
+  const selectorRequire = createRequire(npmRequire.resolve('postcss-selector-parser'));
+  assert.equal(fs.realpathSync(queryRequire.resolve('postcss-selector-parser')), fs.realpathSync(npmRequire.resolve('postcss-selector-parser')));
+  for (const name of ['cssesc', 'util-deprecate']) {
+    assert.equal(fs.realpathSync(selectorRequire.resolve(name)), fs.realpathSync(npmRequire.resolve(name)));
+  }
+  const selector = '.item#selected[data-name="value"] > a:hover';
+  assert.equal(queryRequire('postcss-selector-parser')().astSync(selector).toString(), selector);
 });
 
 test('npm HTTP cache cannot reuse private or proxy-revalidated responses through max-stale', () => {
