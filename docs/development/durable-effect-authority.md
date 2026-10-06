@@ -159,8 +159,9 @@ already quarantined physical permit, bounded by the existing physical/global
 capacity limits. Dropping all grants or response waiters cannot refund that
 unresolved capacity; process loss remains the conservative recovery boundary.
 
-All 97 effect library cases and strict all-target/all-feature Clippy passed on
-the pinned Linux Rust 1.97.1 image. The two new cases use real shared native
+The original management port milestone recorded 97 effect cases and strict
+all-target/all-feature Clippy on pinned Linux Rust 1.97.1. Provider branch
+validation is recorded separately. The two new cases use real shared native
 reservations to check replacement refusal, retained grant capacity after
 positive context retirement, and exact owner quarantine after unexpected drop.
 
