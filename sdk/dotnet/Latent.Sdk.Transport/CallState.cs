@@ -56,6 +56,11 @@ internal sealed class CallState
                 RequestLimit = Math.Min(config.MaxRequestBytes, 8192);
                 ResponseLimit = Math.Min(config.MaxResponseBytes, 128 * 1024);
                 break;
+            case Profile.InspectActivationTreeRequest:
+            case Profile.InspectHttpTargetRequest:
+                RequestLimit = Math.Min(config.MaxRequestBytes, 8 * 1024);
+                ResponseLimit = Math.Min(config.MaxResponseBytes, 64 * 1024);
+                break;
         }
         Timeout = config.DefaultTimeout;
         if (options is null) throw Error(Profile.FailureCategory.InvalidRequest, "call options are required");

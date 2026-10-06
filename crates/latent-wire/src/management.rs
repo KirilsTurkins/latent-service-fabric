@@ -1,5 +1,6 @@
 //! Bounded standalone management adapters over the local catalogs and inventory.
 
+mod activations;
 mod audit;
 mod authentication;
 mod bounds;
@@ -15,6 +16,7 @@ mod release;
 mod resource;
 mod rollouts;
 mod routes;
+mod target_inspection;
 mod triggers;
 
 use std::fmt;
@@ -72,6 +74,7 @@ pub struct ManagementServiceAdapter {
     http: Option<Arc<latent_control_store::DirectoryDeploymentRepository>>,
     web: Option<Arc<latent_artifacts::DirectoryArtifactRepository>>,
     web_backend: Option<Arc<dyn latent_executor::ExecutionBackend>>,
+    activations: Option<latent_node::LocalActivationJournal>,
 }
 
 impl ManagementServiceAdapter {
@@ -101,7 +104,16 @@ impl ManagementServiceAdapter {
             http: None,
             web: None,
             web_backend: None,
+            activations: None,
         })
+    }
+
+    /// Attach the manager's existing bounded journal. This opens no observer,
+    /// worker, durable payload log, or per-deployment resource.
+    #[must_use]
+    pub fn with_activation_journal(mut self, journal: latent_node::LocalActivationJournal) -> Self {
+        self.activations = Some(journal);
+        self
     }
 
     /// Attach the single policy owner checked by node/catalog composition.
@@ -214,12 +226,16 @@ impl ManagementServiceAdapter {
     }
 
     #[must_use]
-    pub fn node_server(self) -> proto::node_service_server::NodeServiceServer<Self> {
+    pub fn node_server(
+        self,
+    ) -> DeploymentResponseService<proto::node_service_server::NodeServiceServer<Self>> {
         let input = self.limits.max_request_bytes;
         let output = self.limits.max_response_bytes;
-        proto::node_service_server::NodeServiceServer::new(self)
-            .max_decoding_message_size(input)
-            .max_encoding_message_size(output)
+        DeploymentResponseService::new(
+            proto::node_service_server::NodeServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
     }
 
     #[must_use]
