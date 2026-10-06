@@ -115,7 +115,7 @@ def generate(build, output):
                      f"    &{name.replace('.', '_')}_msg, {symbol(name)}_fields,",
                      f"    {len(message.field)}, sizeof({native}), sizeof({name.replace('.', '_')})", "};",
                      f'_Static_assert(sizeof({name.replace(".", "_")}) <= LSF_WIRE_STORAGE, "wire scratch bound");'])
-    body.append("const lsf_rpc lsf_rpcs[8] = {")
+    body.append(f"const lsf_rpc lsf_rpcs[{len(profile['operations'])}] = {{")
     for operation in profile["operations"]:
         service_name = operation["service"]
         candidates = [(source, service) for source in descriptor.file for service in source.service
@@ -127,7 +127,7 @@ def generate(build, output):
             raise ValueError("only unary RPCs are supported")
         body.append(f'    {{"/{service_name}/{method.name}", &{symbol(method.input_type[1:])}, &{symbol(method.output_type[1:])}}},')
     body.append("};")
-    header.extend(["extern const lsf_rpc lsf_rpcs[8];", "#endif"])
+    header.extend([f"extern const lsf_rpc lsf_rpcs[{len(profile['operations'])}];", "#endif"])
     (output / "wire_generated.h").write_text("\n".join(header) + "\n")
     (output / "wire_generated.c").write_text("\n".join(body) + "\n")
     identities = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in profile["sources"]}

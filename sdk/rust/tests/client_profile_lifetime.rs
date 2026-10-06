@@ -88,6 +88,27 @@ impl ClientProfile for FixtureClient {
         })
     }
 
+    fn inspect_activation_tree(
+        &self,
+        _request: InspectActivationTreeRequest,
+        _options: CallOptions,
+    ) -> ClientFuture<'_, InspectActivationTreeResponse> {
+        ready(InspectActivationTreeResponse {
+            schema_version: 1,
+            retained_history_only: true,
+            page: Some(PageResponse::default()),
+            ..Default::default()
+        })
+    }
+
+    fn inspect_http_target(
+        &self,
+        _request: InspectHttpTargetRequest,
+        _options: CallOptions,
+    ) -> ClientFuture<'_, InspectHttpTargetResponse> {
+        panic!("target inspection is not used by the lifetime fixture")
+    }
+
     fn list_policies(
         &self,
         _request: ListPoliciesRequest,
