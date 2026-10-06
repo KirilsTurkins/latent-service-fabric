@@ -218,9 +218,15 @@ impl WasmtimeBackend {
                         input::ArtifactInput::Native(Some(job)) => Some(job.control()),
                         _ => None,
                     };
+                    // Native input retains a sealed original source too. Its
+                    // pure currentness reads use the same opted-in window as
+                    // source input; queue, compilation and linking consume it.
+                    // An arbitrary fetched input never acquires this privilege.
                     let worker_wait = if read_wait.is_some()
-                        && matches!(&input, input::ArtifactInput::Source { .. })
-                    {
+                        && matches!(
+                            &input,
+                            input::ArtifactInput::Source { .. } | input::ArtifactInput::Native(_)
+                        ) {
                         Some(worker_wait::WorkerWindow::new(future.control()?))
                     } else {
                         None

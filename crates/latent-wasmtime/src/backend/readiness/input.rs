@@ -31,6 +31,7 @@ impl ArtifactInput {
         &mut self,
         authority: &SourceAuthority,
         observation: &crate::preparation_observer::PreparationJob,
+        worker_wait: Option<&WorkerWindow>,
     ) -> Result<Option<crate::aot::supervisor::AotPreparedInput>, PlatformError> {
         let Self::Native(pending) = self else {
             return Ok(None);
@@ -42,7 +43,7 @@ impl ArtifactInput {
         {
             return Err(crate::backend::admission_association_error());
         }
-        checked.check()?;
+        WorkerWindow::check(worker_wait, || checked.check())?;
         fetch.complete();
         Ok(Some(checked))
     }
@@ -72,7 +73,7 @@ impl PreparationContext {
         })?;
         let job = self.observer.begin(&key.release);
         job.record_queue_wait(queue.started_nanos, queue.finished_nanos);
-        let mut native = input.read_native(&authority, &job)?;
+        let mut native = input.read_native(&authority, &job, worker_wait.as_ref())?;
         let SourceAuthority {
             authentication,
             eligibility,
@@ -156,7 +157,7 @@ impl PreparationContext {
             match reservation.rekey(handle.clone())? {
                 PrepareAccess::Hit(runtime) => {
                     if let Some(native) = &native {
-                        native.check()?;
+                        WorkerWindow::check(worker_wait.as_ref(), || native.check())?;
                     }
                     if runtime.eligibility != eligibility {
                         return Err(crate::backend::admission_association_error());
@@ -181,7 +182,7 @@ impl PreparationContext {
         let runtime = if matches!(&input, ArtifactInput::Native(_)) {
             drop(artifact);
             let native = native.as_mut().expect("checked input");
-            self.build_native_runtime(native, &key, compilation, &job)?
+            self.build_native_runtime(native, &key, compilation, &job, worker_wait.as_ref())?
         } else {
             self.build_runtime_with_wait(&artifact, &key, compilation, &job, worker_wait.as_ref())?
         };
