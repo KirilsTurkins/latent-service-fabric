@@ -1,5 +1,38 @@
 # Security baseline evidence
 
+## Exception re-review: 3 October 2026
+
+[PR #797](https://github.com/KirilsTurkins/latent-service-fabric/pull/797) carries
+the reviewed exception repair for the current PR wave. The fresh clean source
+was `47d3d437cd5037debea2334513d074a813fb1604`. Digest-verified Gitleaks 8.30.1
+scanned its complete tracked text snapshot: exactly 16 existing matches and zero
+other findings. Digest-verified zizmor 1.30.1 and all local source rules reported
+zero findings. The obsolete `self-repository` exception was removed because the
+actual coordinator already uses the supported `$/` workflow reference.
+
+Each retained secret-rule occurrence was compared privately with the actual
+matched value and the exact normalized file/location fingerprint. One is the
+explicitly labelled historical API-journal SHA-256; fourteen equal original
+`runs[].direct_execution.prepared_handle` lookup identities; one is the synthetic
+denied environment-variable name in the real allowlist refusal test. The recorded
+preparation producer at `7e03a2fafe1d3b2e42546140c8c22113a6998638` hashes the
+release/engine/target profile and original artifact preparation cache identity.
+The lookup still requires its separate owned artifact identity and currentness
+fence. No matched or decoded value was exported to logs, reports or documentation.
+
+The original clean/vulnerable lock, unavailable database, clean documentation,
+secret despite inline-ignore, SVG secret, source pass/fail and workflow-injection
+canaries all passed. Their fresh RustSec database was
+`ef6173cbc5c50ec8166f9a5b28f07834144373ee`, verified on 2026-10-03 at 17:01 UTC
+under the original 14-day freshness limit. This is canary evidence; it is not an
+advisory scan of the complete current dependency graph.
+
+The 16 individually re-reviewed entries receive a 14-day lifetime ending at UTC
+midnight on 2026-10-17. Their scanner, finding, path, package and fingerprint are
+unchanged. Expiry, maximum lifetime, wildcard refusal, source-change refusal and
+all required scanner jobs remain enforced. This local review does not establish
+the complete CI result or default-branch promotion of the new controls.
+
 ## Verified activation: 22 September 2026
 
 The owner separately approved the limited default-branch workflow activation.
