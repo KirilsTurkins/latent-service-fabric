@@ -2,6 +2,9 @@
 
 use crate::Metadata;
 
+mod guest_trap_kind;
+pub use guest_trap_kind::GuestTrapKind;
+
 /// Closed, non-sensitive reasons for a supply-chain currentness failure.
 /// These describe authority state, never keys, policy content or filesystem paths.
 pub const ADMISSION_CURRENTNESS_REASONS: &[&str] = &[
