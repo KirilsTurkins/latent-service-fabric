@@ -1,20 +1,6 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "typescript-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": "TypeScript guest qualification",
     "on": {
       "pull_request": {
@@ -100,12 +86,26 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "typescript-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "boundary"
   ],
-  "reviewReason": "Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
+  "reviewReason": "Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows. Retain Phase 4 parent obligation: Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows. Reviewed db532 shared SDK union: phase3-v5 and opt-in phase4 host identities coexist; canonical State/Intent installation precedes preserved activation checkpoint analysis. Both parents' commands, artifact path unions, permissions, conditions, matrices, all deadline bounds, historical mappings and case/skip/decorator guards remain required.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
