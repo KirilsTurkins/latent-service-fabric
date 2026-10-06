@@ -507,30 +507,18 @@ impl WasmtimeBackend {
             runtime.surface.value_codec_limits,
         )?;
 
-        let capabilities = if let Some(owner) = &self.shared.capabilities {
-            let publication = runtime.eligibility.as_ref().ok_or_else(|| {
-                platform_error(
-                    PlatformErrorCode::PermissionDenied,
-                    "capability publication owner required",
-                    false,
-                )
-            })?;
-            match self
-                .capability_session(
-                    owner,
-                    &request,
-                    cancellation,
-                    publication,
-                    accounting.deadline(),
-                    &stop,
-                )
-                .await?
-            {
-                Ok(session) => Some(session),
-                Err(outcome) => return Ok(outcome),
-            }
-        } else {
-            None
+        let capabilities = match self
+            .capability_session(
+                &runtime,
+                &request,
+                cancellation,
+                &stop,
+                accounting.deadline(),
+            )
+            .await?
+        {
+            Ok(session) => session,
+            Err(outcome) => return Ok(outcome),
         };
         *capability_observer = capabilities
             .as_ref()

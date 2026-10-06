@@ -158,3 +158,7 @@ HttpClient signed-node replay remains pending physical capacity. The private
 trace used an explicitly older observer and proves neither corrected normal-node
 execution nor the ordinary CLR Task/ThreadPool profile. Original failed normal
 and private attempts remain retained.
+
+The initial [Java fiber integration](java-activation-fibers.md) exercises ordinary
+threads in signed components through this bridge. Its broader standard-runtime
+profile remains unqualified.
