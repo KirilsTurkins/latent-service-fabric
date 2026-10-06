@@ -19,6 +19,8 @@ use zeroize::Zeroizing;
 mod admission;
 mod ingress;
 pub use ingress::IngressRequest;
+mod deferred;
+pub use deferred::DeferredRequest;
 mod protocol;
 pub use protocol::ProviderMetadata;
 mod client;
@@ -105,6 +107,11 @@ impl InstalledProvider {
     pub fn is_retired(&self) -> bool {
         self.epoch.retired.load(Ordering::Acquire)
     }
+    #[must_use]
+    pub fn logical_id(&self) -> &str {
+        &self.epoch.logical_id
+    }
+
     #[must_use]
     pub fn reference(&self) -> ProviderReference {
         self.epoch.registration.reference()
