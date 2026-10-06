@@ -116,7 +116,7 @@ class NpmSourceRepairTests(unittest.TestCase):
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(read_file(ROOT, path).replace(b"\r\n", b"\n"))
             packages = npm_packages(root, original)
-            self.assertEqual(len(packages), 1469)
+            self.assertEqual(len(packages), 1454)
             lock = json.loads(read_file(root, original["lock"]))
             for change in ("alias", "version", "integrity"):
                 entry, changed = copy.deepcopy(original), copy.deepcopy(lock)
@@ -136,7 +136,8 @@ class NpmSourceRepairTests(unittest.TestCase):
         patches = []
         for name, old, version, dependencies in [
                 ("ip-address", "10.5.0", "10.7.2", {}), ("undici", "6.28.0", "6.28.1", {}),
-                ("brace-expansion", "5.0.9", "5.0.12", {"balanced-match": "^4.0.2"})]:
+                ("brace-expansion", "5.0.9", "5.0.12", {"balanced-match": "^4.0.2"}),
+                ("postcss-selector-parser", "7.1.4", "7.1.6", {"cssesc": "^3.0.0", "util-deprecate": "^1.0.2"})]:
             files = {"package/package.json": (json.dumps({"name": name, "version": version,
                      "dependencies": dependencies}).encode(), 0o644)}
             raw = tarball(files)
@@ -158,17 +159,21 @@ class NpmSourceRepairTests(unittest.TestCase):
                             "integrity": sources.integrity(sources.distribution(material[name])), "advisories": []}
             (libraries if name == "braces" else patches).append(pin if name == "braces" else {**pin, "from": "4.2.0"})
         base_files = {"package/package.json": (b'{"name":"npm","version":"11.19.1"}', 0o644),
-                      "package/node_modules/balanced-match/package.json": (b'{"name":"balanced-match","version":"4.0.4"}', 0o644)}
+                      "package/node_modules/balanced-match/package.json": (b'{"name":"balanced-match","version":"4.0.4"}', 0o644),
+                      "package/node_modules/cssesc/package.json": (b'{"name":"cssesc","version":"3.0.0"}', 0o644),
+                      "package/node_modules/util-deprecate/package.json": (b'{"name":"util-deprecate","version":"1.0.2"}', 0o644)}
         derived = base_files.copy()
         for pin in patches:
             prefix = "package/node_modules/" + pin["name"] + "/"
             old = {"name": pin["name"], "version": pin["from"]}
             if pin["name"] == "brace-expansion":
                 old["dependencies"] = {"balanced-match": "^4.0.2"}
+            if pin["name"] == "postcss-selector-parser":
+                old["dependencies"] = {"cssesc": "^3.0.0", "util-deprecate": "^1.0.2"}
             base_files[prefix + "package.json"] = json.dumps(old).encode(), 0o644
             derived.update({prefix + name.removeprefix("package/"): value for name, value in material[pin["name"]].items()})
         raw_inputs["npm"] = tarball(base_files)
-        source = {"schema": 1, "profile": "npm-11.19.1-lsf-bundle-v3", "patches": patches,
+        source = {"schema": 1, "profile": "npm-11.19.1-lsf-bundle-v4", "patches": patches,
                   "libraries": libraries, "repairs": repairs,
                   "base": {"name": "npm", "version": "11.19.1", "integrity": sources.integrity(raw_inputs["npm"])}}
         source_path = root / "website/toolchain/source.json"
@@ -221,6 +226,33 @@ class NpmSourceRepairTests(unittest.TestCase):
                     path = root / paths[change]
                     path.write_bytes(path.read_bytes() + b" ")
                 with patch.object(sources, "POLICY", root), self.assertRaises(SecurityError):
+                    sources.verify_sources(root, packages, config, fetch)
+
+    def test_selector_bundle_refuses_changed_or_shadowed_existing_dependencies(self):
+        for change in ("version", "graph", "shadow"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                packages, config, original_fetch = self.verification_fixture(root)
+                files = sources.members(original_fetch({"name": "npm"}))
+                key = "package/node_modules/cssesc/package.json"
+                if change == "version":
+                    files[key] = b'{"name":"cssesc","version":"3.0.1"}', 0o644
+                elif change == "graph":
+                    files[key] = b'{"name":"cssesc","version":"3.0.0","dependencies":{"unreviewed":"1.0.0"}}', 0o644
+                else:
+                    files["package/node_modules/postcss-selector-parser/node_modules/cssesc/index.js"] = b"shadow", 0o644
+                raw = tarball(files)
+                path = root / "website/toolchain/source.json"
+                source = json.loads(path.read_bytes())
+                source["base"]["integrity"] = sources.integrity(raw)
+                path.write_text(json.dumps(source), encoding="utf-8")
+                policy_path = root / "npm-source-repairs.json"
+                policy = json.loads(policy_path.read_bytes())
+                policy["source_sha256"] = sources.digest(path.read_bytes())
+                policy_path.write_text(json.dumps(policy), encoding="utf-8")
+                fetch = lambda pin: raw if pin["name"] == "npm" else original_fetch(pin)
+                with patch.object(sources, "POLICY", root), self.assertRaisesRegex(
+                        SecurityError, "npm-repair-package-graph|npm-repair-shadowed-bundle-dependency"):
                     sources.verify_sources(root, packages, config, fetch)
 
 

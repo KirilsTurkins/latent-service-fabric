@@ -145,13 +145,13 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
                 "npm-repair-control-input-drift")
     source = decode_json(read_file(repo, "website/toolchain/source.json"))
     require(set(source) == {"schema", "profile", "base", "patches", "libraries", "repairs"}
-            and source["schema"] == 1 and source["profile"] == "npm-11.19.1-lsf-bundle-v3"
-            and isinstance(source["patches"], list) and len(source["patches"]) == 4
+            and source["schema"] == 1 and source["profile"] == "npm-11.19.1-lsf-bundle-v4"
+            and isinstance(source["patches"], list) and len(source["patches"]) == 5
             and isinstance(source["libraries"], list) and len(source["libraries"]) == 1
             and source["libraries"][0]["name"] == "braces", "npm-repair-source-profile")
     pins = source["patches"] + source["libraries"]
-    require(len({pin["name"] for pin in pins}) == 5
-            and {pin["name"] for pin in pins} == {"ip-address", "undici", "brace-expansion", "http-cache-semantics", "braces"},
+    require(len({pin["name"] for pin in pins}) == 6
+            and {pin["name"] for pin in pins} == {"ip-address", "undici", "brace-expansion", "http-cache-semantics", "braces", "postcss-selector-parser"},
             "npm-repair-upstream-coverage")
     material = {}
     for pin in pins:
@@ -159,7 +159,8 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
         require(integrity(raw) == pin["integrity"], "npm-repair-upstream-integrity")
         files = members(raw)
         dependencies = {"balanced-match": "^4.0.2"} if pin["name"] == "brace-expansion" else (
-            {"fill-range": "^7.1.1"} if pin["name"] == "braces" else {})
+            {"fill-range": "^7.1.1"} if pin["name"] == "braces" else
+            {"cssesc": "^3.0.0", "util-deprecate": "^1.0.2"} if pin["name"] == "postcss-selector-parser" else {})
         manifest(files, pin["name"], pin["version"], dependencies)
         material[pin["name"]] = files
     receipts = []
@@ -202,6 +203,12 @@ def verify_sources(repo: Path, packages: list, configuration: dict, fetch=regist
                     and not any(key.startswith(prefix + "node_modules/") for key in bundle),
                     "npm-repair-shadowed-bundle-dependency")
             manifest(bundle, "balanced-match", "4.0.4", {}, "package/node_modules/balanced-match/")
+        if name == "postcss-selector-parser":
+            require(old.get("dependencies") == {"cssesc": "^3.0.0", "util-deprecate": "^1.0.2"}
+                    and not any(key.startswith(prefix + "node_modules/") for key in bundle),
+                    "npm-repair-shadowed-bundle-dependency")
+            for dependency_name, version in (("cssesc", "3.0.0"), ("util-deprecate", "1.0.2")):
+                manifest(bundle, dependency_name, version, {}, "package/node_modules/"+dependency_name+"/")
         bundle = {key: value for key, value in bundle.items() if not key.startswith(prefix)}
         bundle.update({prefix + key.removeprefix("package/"): value for key, value in material[name].items()})
     bundle_integrity = integrity(distribution(bundle))
