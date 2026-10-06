@@ -91,7 +91,11 @@ impl Fixture {
             })
             .unwrap();
         let blobs = root.path().join("blobs");
-        std::fs::create_dir(&blobs).unwrap();
+        use std::os::unix::fs::DirBuilderExt;
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&blobs)
+            .unwrap();
         let store = LocalBlobStore::open_durable(
             &blobs,
             "private",
