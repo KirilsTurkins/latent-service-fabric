@@ -40,7 +40,8 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/diagnostic_inputs.py",
     "tools/java_transaction_qualification/diagnostic_campaign.py",
     "tools/java_transaction_qualification/pending_restore.py",
-    "tools/java_transaction_qualification/fixed_environment.py")
+    "tools/java_transaction_qualification/fixed_environment.py",
+    "contracts/state/java-aggregate-v1-to-v2-migration.json")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
