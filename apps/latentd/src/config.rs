@@ -24,6 +24,7 @@ pub(crate) mod state;
 mod supply_chain;
 #[cfg(test)]
 mod tests;
+pub(crate) mod triggers;
 mod validation;
 
 use std::path::{Path, PathBuf};
@@ -60,6 +61,7 @@ pub use state::{
     DeferredHttpConfig, StateConfig, StateOperationConfig, TenantLimitsConfig, TenantQuotaConfig,
 };
 pub(crate) use supply_chain::SupplyChainSettings;
+pub use triggers::{TriggerCredentialFile, TriggerInstallation};
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
 /// Configure the input before derivation; callers cannot alter the validated
@@ -79,6 +81,7 @@ pub struct NodeSettings {
     pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
     pub(crate) state: Option<state::StateSettings>,
+    pub(crate) transactional_triggers: Option<triggers::TriggerSettings>,
     pub(crate) providers: Option<Box<ConfiguredProviders>>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) budget_profile: latent_core::BudgetProfile,

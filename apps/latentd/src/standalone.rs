@@ -18,6 +18,7 @@ mod startup_observation;
 pub mod state;
 mod telemetry;
 pub mod transport;
+mod triggers;
 
 use std::net::SocketAddr;
 use std::sync::atomic::AtomicUsize;
@@ -46,6 +47,7 @@ pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
 pub use startup_observation::StartupFailureReport;
+pub use triggers::{TriggerShutdownReport, TriggerStatus};
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.
 #[derive(Default)]
@@ -63,6 +65,7 @@ pub struct StandaloneNode {
     audit: Option<audit::AuditRuntime>,
     effects: Option<effects::EffectRuntime>,
     state: Option<Arc<state::StateRuntime>>,
+    triggers: Option<triggers::TriggerOwner>,
     rollouts: Option<rollouts::RolloutRuntime>,
     policies: Option<policies::PolicyRuntime>,
     providers: Option<Box<providers::ProviderRuntime>>,
@@ -114,6 +117,12 @@ impl Drop for SupplyChainLifetime {
 }
 
 impl StandaloneNode {
+    /// Descriptive physical input ownership; no broker or namespace authority.
+    #[must_use]
+    pub fn transactional_trigger_status(&self) -> Option<TriggerStatus> {
+        self.triggers.as_ref().map(triggers::TriggerOwner::snapshot)
+    }
+
     /// The installed composition retains the single protected state owner.
     #[must_use]
     pub fn state_runtime(&self) -> Option<Arc<state::StateRuntime>> {
@@ -162,6 +171,10 @@ impl StandaloneNode {
             .as_ref()
             .is_some_and(|transport| !transport.is_finished())
             && self.http.as_ref().is_none_or(|http| !http.is_finished())
+            && self
+                .triggers
+                .as_ref()
+                .is_none_or(|triggers| !triggers.is_finished())
     }
 }
 

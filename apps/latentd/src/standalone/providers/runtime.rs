@@ -36,6 +36,8 @@ mod scalar;
 mod secrets;
 #[path = "startup.rs"]
 mod startup;
+#[path = "triggers.rs"]
+mod triggers;
 
 pub(in crate::standalone) struct ProviderRuntime {
     pub runtime: Arc<ActivationCapabilityRuntime>,
@@ -46,6 +48,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     streaming_secrets: Option<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
+    trigger_secrets: Option<latent_secrets::LocalSecretStore>,
     events: Option<latent_nats::NatsPublisher>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
     blobs: Option<Arc<LocalBlobStore>>,
@@ -95,6 +98,7 @@ impl ProviderRuntime {
             streaming_secrets: None,
             guest_secrets: None,
             event_secrets: None,
+            trigger_secrets: None,
             events: None,
             metrics: None,
             blobs: None,
@@ -250,6 +254,42 @@ impl ProviderRuntime {
         Ok(owner)
     }
 
+    /// Install the sole incoming owner after the same node StateRuntime opens.
+    pub async fn install_triggers(
+        &mut self,
+        settings: &crate::config::triggers::TriggerSettings,
+        state: Arc<crate::standalone::state::StateRuntime>,
+        deadline: Instant,
+    ) -> Result<latent_nats::triggers::NatsTriggers, PlatformError> {
+        if self.trigger_secrets.is_some() {
+            return Err(unavailable());
+        }
+        let store = latent_secrets::LocalSecretStore::open_before(
+            Arc::clone(&self.pools),
+            settings.installation.credential_directory.clone(),
+            latent_secrets::SecretLimits::default(),
+            Vec::new(),
+            Arc::new(latent_secrets::SystemSecretClock),
+            deadline,
+        )
+        .map_err(|_| unavailable())?
+        .await
+        .map_err(|_| unavailable())?;
+        // Retain the real store even if a later read/binding/install step fails.
+        // Existing startup rollback drains the same shared I/O/pool owners.
+        self.trigger_secrets = Some(store);
+        triggers::install(
+            &self.pools,
+            self.trigger_secrets
+                .as_ref()
+                .expect("retained input secrets"),
+            settings,
+            state,
+            deadline,
+        )
+        .await
+    }
+
     fn record(
         &mut self,
         identity: &ProviderIdentity,
@@ -341,6 +381,9 @@ impl ProviderRuntime {
         if let Some(secrets) = &self.event_secrets {
             secrets.close();
         }
+        if let Some(secrets) = &self.trigger_secrets {
+            secrets.close();
+        }
         if let Some(metrics) = &self.metrics {
             metrics.retire();
         }
@@ -363,6 +406,7 @@ impl ProviderRuntime {
             &self.streaming_secrets,
             &self.guest_secrets,
             &self.event_secrets,
+            &self.trigger_secrets,
         ]
         .into_iter()
         .flatten()

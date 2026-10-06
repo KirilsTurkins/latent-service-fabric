@@ -55,6 +55,8 @@ pub struct NodeConfig {
     pub capability_policies: Option<super::CapabilityPolicyConfig>,
     #[serde(default, deserialize_with = "super::state::present")]
     pub state: Option<super::StateConfig>,
+    #[serde(default, deserialize_with = "super::triggers::present")]
+    pub transactional_triggers: Option<super::TriggerInstallation>,
     #[serde(default, deserialize_with = "super::providers::present")]
     pub providers: Option<super::ConfiguredProviders>,
     #[serde(default, deserialize_with = "super::http::present")]

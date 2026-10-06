@@ -25,6 +25,8 @@ pub struct ShutdownReport {
     pub metrics: Option<super::providers::MetricObservation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub http: Option<super::http::HttpSnapshot>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub triggers: Option<super::TriggerShutdownReport>,
     pub clean: bool,
     pub active_connections: usize,
     pub active_rpcs: usize,
@@ -62,6 +64,9 @@ impl ShutdownReport {
     fn reclaimed(&self) -> bool {
         self.audit.is_none_or(super::AuditShutdownReport::clean)
             && self.http.is_none_or(super::http::HttpSnapshot::clean)
+            && self.triggers.is_none_or(|report| {
+                report.clean && report.joined && report.status.active_deliveries == 0
+            })
             && self.policies.is_none_or(super::PolicyShutdownReport::clean)
             && self.providers.is_none_or(|report| report.clean)
             && self.effects.is_none_or(|report| report.clean)
@@ -104,6 +109,9 @@ impl StandaloneNode {
         reason = "one ordered teardown keeps forced cleanup, resource observations and native joins together"
     )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
+        if let Some(triggers) = &self.triggers {
+            triggers.stop_accepting();
+        }
         if let Some(state) = &self.state {
             state.close_ordinary();
         }
@@ -140,7 +148,12 @@ impl StandaloneNode {
         let cleanup_handle = cleanup.handle();
         cleanup.stop_accepting();
         let drain_deadline = tokio::time::Instant::now() + self.shutdown_grace;
-        while self.manager.journal().snapshot().active != 0 {
+        while self.manager.journal().snapshot().active != 0
+            || self
+                .triggers
+                .as_ref()
+                .is_some_and(|owner| owner.snapshot().active_deliveries != 0)
+        {
             if tokio::time::Instant::now() >= drain_deadline {
                 break;
             }
@@ -158,7 +171,8 @@ impl StandaloneNode {
         self.scheduler.shutdown();
         let transport = self.transport.take();
         let http = self.http.take();
-        let (transport_result, cleanup_result, http_result) = tokio::join!(
+        let triggers = self.triggers.take();
+        let (transport_result, cleanup_result, http_result, trigger_result) = tokio::join!(
             Box::pin(async {
                 if let Some(transport) = transport {
                     transport.shutdown().await.map(|_| ())
@@ -173,6 +187,13 @@ impl StandaloneNode {
                 } else {
                     Ok(())
                 }
+            }),
+            Box::pin(async {
+                if let Some(triggers) = triggers {
+                    triggers.shutdown(drain_deadline.into_std()).await.map(Some)
+                } else {
+                    Ok(None)
+                }
             })
         );
         let mut failure = transport_result.err();
@@ -182,6 +203,13 @@ impl StandaloneNode {
         if let Err(error) = cleanup_result {
             failure.get_or_insert(error);
         }
+        let trigger_report = match trigger_result {
+            Ok(report) => report,
+            Err(error) => {
+                failure.get_or_insert(error);
+                None
+            }
+        };
         if let Some(sampler) = self.sampler.take() {
             if let Err(error) = sampler.shutdown(self.shutdown_grace).await {
                 failure.get_or_insert(error);
@@ -336,6 +364,7 @@ impl StandaloneNode {
             report.effects = effect_report;
             report.state = state_report;
             report.http = http_handle.as_ref().map(super::http::HttpHandle::snapshot);
+            report.triggers = trigger_report;
         }
         // This diagnostic contains no caller identifiers, payload, or private error.
         let _ = self.telemetry.try_emit_log(LogRecord {
@@ -427,6 +456,7 @@ impl StandaloneNode {
             effects: None,
             state: None,
             http: None,
+            triggers: None,
             clean: false,
             active_connections: transport.active_connections,
             active_rpcs: transport.active_rpcs,
