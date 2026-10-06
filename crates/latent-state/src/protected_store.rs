@@ -2,11 +2,16 @@
 //! affine view retirement belongs to the same fixed storage workers.
 
 mod config;
+mod dispatcher;
+mod native_capacity;
+mod operation;
 mod physical;
 mod startup;
 mod view;
 
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
+pub use dispatcher::ProtectedStoreDispatcher;
+pub use operation::ProtectedStoreOperation;
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
 
@@ -43,6 +48,7 @@ pub struct ProtectedStoreOwner {
     ready: StoreIoReady<PhysicalStore>,
     failure: Arc<FailureLatch>,
     limits: StoreLimits,
+    native_capacity: Arc<native_capacity::NativeBinding>,
 }
 
 impl Clone for ProtectedStoreOwner {
@@ -51,11 +57,19 @@ impl Clone for ProtectedStoreOwner {
             ready: self.ready.clone(),
             failure: Arc::clone(&self.failure),
             limits: self.limits,
+            native_capacity: Arc::clone(&self.native_capacity),
         }
     }
 }
 
 impl ProtectedStoreOwner {
+    /// Compares sealed physical ownership, including clones of this same owner.
+    /// Paths, epochs and caller descriptions cannot establish this identity.
+    #[must_use]
+    pub fn is_same_owner(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.failure, &other.failure)
+    }
+
     /// Trusted namespace/command control operations use this same physical
     /// owner. Declare all retained payload/result bytes and the correct I/O
     /// class. Return bounded owned metadata; native read views use `open_view`
@@ -71,6 +85,26 @@ impl ProtectedStoreOwner {
         self.available()?;
         self.ready
             .submit(kind, retained_payload_bytes, move |store| {
+                store.with_store(kind, operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    /// Retain an original global request owner through protected native file
+    /// checks and unclaimed result destruction. Claimed responses keep that same
+    /// owner in their typed delivery/frame guard. This installs no new capacity.
+    pub fn with_store_retaining<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_payload_bytes: u64,
+        keeper: Arc<dyn std::any::Any + Send + Sync>,
+        operation: impl FnOnce(&crate::embedded::EmbeddedStore) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit_retaining(kind, retained_payload_bytes, keeper, move |store| {
                 store.with_store(kind, operation)
             })
             .map_err(ProtectedStoreError::Io)
@@ -143,6 +177,7 @@ impl ProtectedStoreOwner {
     }
 
     fn available(&self) -> Result<(), ProtectedStoreError> {
+        self.native_capacity.seal()?;
         self.failure.get().map_or(Ok(()), Err)
     }
 }
