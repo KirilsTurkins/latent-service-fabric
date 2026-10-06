@@ -1,0 +1,477 @@
+{
+  "schemaVersion": "latent.transaction-contract.compiler.v1",
+  "language": "java",
+  "evidenceKind": "compiler-definition",
+  "compilerDefinitionQualified": true,
+  "runtimeExecutionQualified": false,
+  "externalClientExecutionQualified": false,
+  "status": "compiler-definition-qualified",
+  "world": "tests:transaction-contract/service@1.0.0",
+  "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "preparationProfileDigest": "sha256:6acd7a248633dd01c9cdcbf8a1ed33fc5e6aa1d2edb09b7d89e53fda594b5507",
+  "source": {
+    "c/probe.c": {
+      "digest": "sha256:b644908162d3099dd7be0a972e110521ec369a9f59919dd5a6290600442483ba",
+      "size": 7639
+    },
+    "dotnet/Main.cs": {
+      "digest": "sha256:2115191f18b6b87cf116100d579c03126a6a33f62b430aa29052f5d43be55b86",
+      "size": 1796
+    },
+    "go/main.go": {
+      "digest": "sha256:ada4a963063afb1541cb696adca981403a906529a5b1f19e12600c3d098f3f41",
+      "size": 1804
+    },
+    "java/dev/latent/app/Capsule.java": {
+      "digest": "sha256:60b03b8ee3e866a8fd6a5db64337ed5f826cdbfba62dbd4083efc3f7e72c96b5",
+      "size": 2459
+    },
+    "rust/component.rs": {
+      "digest": "sha256:f2660d280e0c7b009da5f6443f29a0dd83ea4fa1c3321f3ce64e9e27fccaed5f",
+      "size": 2960
+    },
+    "typescript/main.ts": {
+      "digest": "sha256:4dfe19c5a0f3bfa3ac528a04bcc041c2b4ebf7913635eef7c76ed67357c49526",
+      "size": 1937
+    },
+    "wit/world.wit": {
+      "digest": "sha256:d24899947439855d4529d7b2da6819160f632f29c8ea69b8bbe4e36264f93981",
+      "size": 437
+    }
+  },
+  "sourceRevision": "29771c51dfbb83181a083f7bcc78bd99266c724d",
+  "workingTreeChanged": false,
+  "sourceArchiveDigest": "sha256:af80fff1466f574c388b83868687c792a976fc8722191b6f9bcfb34877b34f35",
+  "componentDigest": "sha256:2705ed12cc0ef49648900a4ff4cd50a3680e97c8459e8244cc7e172a9dbb3096",
+  "componentBytes": 1045740,
+  "semanticSurfaceDigest": "sha256:8101cd6928b554048a293e0a2c9322de1239ec4bfe5c96a8a3ae39f5976c5d42",
+  "details": {
+    "bindings": {
+      "formatVersion": 1,
+      "world": "tests:transaction-contract/service@1.0.0",
+      "generator": "lsf-java-wit-v1+wit-bindgen-0.62.0",
+      "outputs": {
+        "Bindings.java": {
+          "digest": "sha256:c870c38755773c231e75383c8bd39ce2332fc7e8d7a850e1c8ca79d0388f653b",
+          "size": 29020
+        },
+        "bridge.c": {
+          "digest": "sha256:d6b2fe27762f9143c77553ad644bea1144d211214f9578f248d4ce3dfdc58710",
+          "size": 44831
+        },
+        "probe.c": {
+          "digest": "sha256:f46b6587ad7bede1950bbd3eb535e75b8583a2f48e8a4345e2e0d95af8a06d80",
+          "size": 34038
+        },
+        "probe.h": {
+          "digest": "sha256:f4802747c14d26473b80cda0a51a3ecbd116145f15fc25971e622553c2c9a788",
+          "size": 16736
+        },
+        "probe_component_type.o": {
+          "digest": "sha256:4a7996705de0c6ffa9b0fab820c4985e78a9c0ecba38e4b91be8b5d42b57e418",
+          "size": 2203
+        }
+      },
+      "digest": "sha256:ad3f04e1af28fbab282afb8c16fd82a316f7b75183382b8975a01e48c2306c14",
+      "imports": 17,
+      "exports": 1,
+      "resources": 3
+    },
+    "dependencies": {
+      "status": "checksummed-gradle-metadata",
+      "downloadedJars": 26,
+      "reviewedJars": 70,
+      "lock": {
+        "sha256": "4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+        "size": 16525
+      },
+      "metadata": {
+        "sha256": "2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30",
+        "size": 46640
+      }
+    },
+    "platform": {
+      "fiber.c": {
+        "upstreamSha256": "b7f4592776d780165154c69e75b243ad9f32df0a717eb8bd29a11924fc6bc6df",
+        "adaptedSha256": "c8484f6e4a9801f33f03197756fd92062523f8344cd9ef139cacf9a35337213f"
+      },
+      "time.c": {
+        "upstreamSha256": "9f4d0ea0a14f0786cb76172acd9bdefd4464aebf58a0372cfa66ff92dcacae2e",
+        "adaptedSha256": "685144b5e9ad8f907a455ecd546a620a1222f75179e9ecd36af12cc150809b45"
+      },
+      "memory.c": {
+        "upstreamSha256": "d685e2f0f8b3983d5886b48ece7d83298b864893f3c80701ed11cc779a51ada2",
+        "adaptedSha256": "54d8d661b7aef84a7abc04a33d6899b160aba730444eac2d33be04009c5e95f2"
+      },
+      "file.c": {
+        "upstreamSha256": "49c8a5f152eefffbe2832b607fcd40b225936fc593d1a0d53fb81ed700a30538",
+        "adaptedSha256": "6cbcbadf02ff4db88c4a8a82cf14cdc4f2ee3ee79621ecfab297c45f631c81a6"
+      },
+      "arrayclass.c": {
+        "upstreamSha256": "044dc626c36581887874d0f4cda5070be0dfdcdb703c6ef0893616e568dc0058",
+        "adaptedSha256": "a09f225c1517579640a9d0ba9483368eb0ce4d284339755c5b820aa63c85ddc0"
+      }
+    },
+    "semanticSurfaceDigest": "sha256:8101cd6928b554048a293e0a2c9322de1239ec4bfe5c96a8a3ae39f5976c5d42",
+    "tools": [
+      {
+        "name": "java",
+        "digest": "sha256:7380ce48ed5013735d2c8414db54adb8f981e7933ff594bd36f3baccddaafba3",
+        "size": 16264
+      },
+      {
+        "name": "gradle",
+        "digest": "sha256:0b088fd5c9c972089c80c691b28cc4c65def93e1b814fc9f60f0734493954caf",
+        "size": 8700
+      },
+      {
+        "name": "clang",
+        "digest": "sha256:0ed7eeb0e922f6effcee5ebfa87cedf961676b78962291884cdac68d9138d5c4",
+        "size": 118680
+      },
+      {
+        "name": "wit-bindgen",
+        "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+        "size": 19856344
+      },
+      {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      }
+    ],
+    "commands": [
+      {
+        "stage": "java-version",
+        "command": [
+          "/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25.0.4-101.0.LTS/x64/bin/java",
+          "-version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.023395
+      },
+      {
+        "stage": "gradle-version",
+        "command": [
+          "/home/runner/work/_temp/gradle-9.1.0/bin/gradle",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.393092
+      },
+      {
+        "stage": "clang-version",
+        "command": [
+          "/home/runner/work/_temp/wasi-sdk-29.0-x86_64-linux/bin/clang-21",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013072
+      },
+      {
+        "stage": "wit-bindgen-version",
+        "command": [
+          "/home/runner/work/_temp/java-bindgen/wit-bindgen",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012915
+      },
+      {
+        "stage": "wasm-tools-version",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012816
+      },
+      {
+        "stage": "wit-graph",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/home/runner/work/_temp/transaction-contract-java/compiler/sdk-reference/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.013328
+      },
+      {
+        "stage": "wit-bindings",
+        "command": [
+          "/home/runner/work/_temp/java-bindgen/wit-bindgen",
+          "c",
+          "/home/runner/work/_temp/transaction-contract-java/compiler/sdk-reference/wit",
+          "--world",
+          "latent:java-guest/sdk@1.0.0",
+          "--rename-world",
+          "probe",
+          "--no-sig-flattening",
+          "--async=-all",
+          "--out-dir",
+          "/home/runner/work/_temp/transaction-contract-java/compiler/sdk-reference/bindings"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012909
+      },
+      {
+        "stage": "bindings-metadata",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/home/runner/work/_temp/transaction-contract-java/compiler/sdk-reference/bindings/probe_component_type.o"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012912
+      },
+      {
+        "stage": "wit-graph",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012936
+      },
+      {
+        "stage": "wit-bindings",
+        "command": [
+          "/home/runner/work/_temp/java-bindgen/wit-bindgen",
+          "c",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/wit",
+          "--world",
+          "tests:transaction-contract/service@1.0.0",
+          "--rename-world",
+          "probe",
+          "--no-sig-flattening",
+          "--async=-all",
+          "--out-dir",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/bindings"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012797
+      },
+      {
+        "stage": "bindings-metadata",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/bindings/probe_component_type.o"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012853
+      },
+      {
+        "stage": "wit-graph",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012703
+      },
+      {
+        "stage": "wit-bindings",
+        "command": [
+          "/home/runner/work/_temp/java-bindgen/wit-bindgen",
+          "c",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/wit",
+          "--world",
+          "tests:transaction-contract/service@1.0.0",
+          "--rename-world",
+          "probe",
+          "--no-sig-flattening",
+          "--async=-all",
+          "--out-dir",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/bindings-check"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012642
+      },
+      {
+        "stage": "bindings-metadata",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/bindings-check/probe_component_type.o"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012678
+      },
+      {
+        "stage": "java-to-c",
+        "command": [
+          "/home/runner/work/_temp/gradle-9.1.0/bin/gradle",
+          "--no-daemon",
+          "generateC"
+        ],
+        "exitCode": 0,
+        "seconds": 13.684269
+      },
+      {
+        "stage": "c-to-wasm",
+        "command": [
+          "/home/runner/work/_temp/wasi-sdk-29.0-x86_64-linux/bin/clang-21",
+          "-target",
+          "wasm32-wasip1",
+          "-std=c11",
+          "-O2",
+          "-DLSF_TEAVM_WASM=1",
+          "-DTEAVM_CUSTOM_LOG=1",
+          "-mllvm",
+          "-wasm-enable-sjlj",
+          "-lsetjmp",
+          "-mllvm",
+          "-wasm-use-legacy-eh=false",
+          "-mexec-model=reactor",
+          "-Wl,--no-entry",
+          "-Wl,--export-memory",
+          "-Wl,-z,stack-size=65536",
+          "-Wl,--max-memory=67108864",
+          "-include",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/runtime/native.h",
+          "-I",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/bindings",
+          "-I",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/runtime",
+          "-iquote",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/project/build/teavm-c/c",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/project/build/teavm-c/c/all.c",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/bindings/bridge.c",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/feasibility/platform.c",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/bindings/probe.c",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/bindings/probe_component_type.o",
+          "-o",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/core.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 4.780916
+      },
+      {
+        "stage": "closed-runtime",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "embed",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/wit",
+          "/home/runner/work/latent-service-fabric/latent-service-fabric/sdk/java-guest/feasibility/closed-runtime.wat",
+          "--world",
+          "runtime-support",
+          "-o",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/closed-runtime.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.01282
+      },
+      {
+        "stage": "component-new",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "new",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/core.wasm",
+          "--adapt",
+          "wasi_snapshot_preview1=/home/runner/work/_temp/transaction-contract-java/compiled/closed-runtime.wasm",
+          "-o",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/component.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012716
+      },
+      {
+        "stage": "component-validate",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "validate",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/component.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012757
+      },
+      {
+        "stage": "component-surface",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/component.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012785
+      },
+      {
+        "stage": "expected-wit",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012809
+      },
+      {
+        "stage": "compiled-wit",
+        "command": [
+          "/home/runner/downloader/bin/wasm-tools",
+          "component",
+          "wit",
+          "/home/runner/work/_temp/transaction-contract-java/compiled/component.wasm",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012923
+      }
+    ]
+  },
+  "seconds": 23.547079,
+  "commands": [
+    {
+      "stage": "source-revision",
+      "exitCode": 0,
+      "seconds": 0.013926
+    },
+    {
+      "stage": "source-status",
+      "exitCode": 0,
+      "seconds": 0.527079
+    },
+    {
+      "stage": "retained-shared-source",
+      "exitCode": 0,
+      "seconds": 0.022846
+    },
+    {
+      "stage": "validate-authoritative-component",
+      "exitCode": 0,
+      "seconds": 0.013303
+    },
+    {
+      "stage": "authoritative-surface",
+      "exitCode": 0,
+      "seconds": 0.012881
+    },
+    {
+      "stage": "compiled-surface",
+      "exitCode": 0,
+      "seconds": 0.01267
+    },
+    {
+      "stage": "retained-surface",
+      "exitCode": 0,
+      "seconds": 0.01257
+    }
+  ]
+}
