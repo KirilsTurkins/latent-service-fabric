@@ -14,6 +14,7 @@ use latent_control_store::{
     DeploymentStore, DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig,
 };
 use latent_core::{BudgetProfile, NodeId, SystemActivationClock, TenantId};
+use latent_routing::RouteResolver;
 use latent_effects::authority::{EffectAuthorityOwner, EffectTime};
 use latent_effects::runtime::{DispatcherConfig, DispatcherOwner, EffectTimeSource};
 use latent_node::transaction_runtime::{TransactionAdmissionOwners, TransactionInstallation};
