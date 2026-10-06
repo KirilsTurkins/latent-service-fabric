@@ -21,6 +21,7 @@ pub(super) const FORMAT: &str = "lsf-wit-values-v1";
 pub(super) async fn publish(
     catalog: &DirectoryArtifactRepository,
     profile: ManifestValidationProfile,
+    variant: &str,
 ) -> (
     ReleaseUseEligibility,
     VerifiedArtifactMetadata,
@@ -31,12 +32,13 @@ pub(super) async fn publish(
         std::env::var_os("LSF_TRANSACTION_GUEST_ROOT")
             .expect("maintained compiled transaction fixture root"),
     );
-    let root = root.join("aggregate");
+    assert!(matches!(variant, "aggregate" | "result-boundary"));
+    let root = root.join(variant);
     let report: Value =
         serde_json::from_slice(&fs::read(root.join("report.json")).unwrap()).unwrap();
     assert_eq!(report["compiled"], true);
     assert_eq!(report["language"], "rust");
-    assert_eq!(report["variant"], "aggregate");
+    assert_eq!(report["variant"], variant);
     assert_eq!(report["world"], WORLD);
     assert_eq!(
         report["hostAbiDigest"],
@@ -99,7 +101,7 @@ pub(super) async fn publish(
     let manifest = JsonManifestCodec::default()
         .decode_capsule(&serde_json::to_vec(&document).unwrap())
         .unwrap();
-    let contracts = surface::contracts(&root, &component, &manifest, profile);
+    let contracts = surface::contracts(&root, &component, &manifest, profile, variant);
     let receipt = catalog
         .publish_managed(
             ReleaseMutationContext {

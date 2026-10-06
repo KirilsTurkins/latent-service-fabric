@@ -4,6 +4,9 @@ These are ordinary editable projects produced by the maintained six creators.
 They neither change the captured SDK nor install a profile or capability grant.
 The forbidden-HTTP component must be rejected by transaction preparation/admission;
 successfully compiling its actual import is a prerequisite, not execution evidence.
+The Rust result-boundary variant stages real state and an intent before returning
+a finite tuple of strings. Its different result type is an isolated qualification
+contract, not a compatible replacement for the aggregate publication.
 """
 from __future__ import annotations
 
@@ -14,11 +17,11 @@ import sys
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools.rust_capsule_project import read_file, snapshot
+from tools.rust_capsule_project import ROOT, read_file, snapshot
 from tools.transaction_guest_project import TEMPLATE
 
 LANGUAGES = ("rust", "c", "typescript", "go", "java", "dotnet")
-VARIANTS = ("forbidden-http",)
+VARIANTS = ("forbidden-http", "result-boundary")
 URL = "http://127.0.0.1:1/forbidden-transaction-effect"
 HTTP = "latent:http/client@0.2.0"
 SOURCES = {
@@ -118,6 +121,8 @@ def forbidden_http(source: str, language: str) -> str:
 def create(directory: Path, language: str, variant: str, name: str | None = None) -> Path:
     if language not in LANGUAGES or variant not in VARIANTS:
         raise ValueError("unknown controlled transaction guest variant")
+    if variant == "result-boundary" and language != "rust":
+        raise ValueError("result-boundary qualification guest requires Rust")
     if language == "rust":
         from tools.rust_capsule_project import create as author
     elif language == "c":
@@ -131,6 +136,13 @@ def create(directory: Path, language: str, variant: str, name: str | None = None
     else:
         from tools.dotnet_guest.project import create as author
     project = author(directory, TEMPLATE, name or "transaction-" + language + "-" + variant)
+    if variant == "result-boundary":
+        source = ROOT / "examples/rust-capsules" / TEMPLATE
+        # An ordinary editable authored project, with unchanged captured SDK,
+        # grants, companion, host imports and request resource ceilings.
+        (project / SOURCES[language]).write_bytes(read_file(source / "result-boundary.rs"))
+        (project / "wit/world.wit").write_bytes(read_file(source / "result-boundary-world.wit"))
+        return project
     files = snapshot(project)
     world = files["wit/world.wit"].decode()
     if HTTP in world:

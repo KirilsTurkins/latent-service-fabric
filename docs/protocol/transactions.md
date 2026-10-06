@@ -114,6 +114,15 @@ contains exact publication, revision, separate component and release digests, ro
 contract digest, state schema and input/result format. Replays retain that
 source identity despite subsequent route changes.
 
+Transactional invocation carries its full result once in `invocation.result`.
+The command inspection retains disposition, source, receipt, effect IDs and
+payload availability. Its optional duplicate result is omitted by the ordinary
+producer; receivers still accept equal older duplicates and reject disagreement.
+An inline success must match the commit's state version and effect IDs, and all
+inline results remain bound to the exact source and durable disposition.
+Standalone command lookup carries its own retained result and cannot borrow an
+invocation body. The existing per-value and total response limits remain fixed.
+
 [StateService](../../api/proto/latent/control/v1/state.proto) defines namespace
 inspection, entity selection and guarded approved mutations with immutable
 operation receipts. Writes require current management credentials, expected

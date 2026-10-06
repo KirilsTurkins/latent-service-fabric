@@ -10,6 +10,27 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_rust_result_boundary_is_a_real_captured_authored_guest_with_unchanged_sdk_and_grants(self):
+        from tools.transaction_guest_variants import create
+        from tools.rust_capsule_build import validate_project
+        with tempfile.TemporaryDirectory() as temporary:
+            project = create(Path(temporary) / "result", "rust", "result-boundary", "transaction-rust-aggregate")
+            files = snapshot(project)
+            validate_project(files)
+            source = ROOT / "examples/rust-capsules" / TEMPLATE
+            self.assertEqual(files["src/lib.rs"], (source / "result-boundary.rs").read_bytes())
+            self.assertEqual(files["wit/world.wit"], (source / "result-boundary-world.wit").read_bytes())
+            self.assertIn(b'Command::acquire()', files["src/lib.rs"])
+            self.assertIn(b'command.put(', files["src/lib.rs"])
+            self.assertIn(b'.stage(&mut command)', files["src/lib.rs"])
+            self.assertIn(b'-> tuple<string, string, string, string>;', files["wit/world.wit"])
+            declaration = json.loads(files["capsule-project.json"])
+            self.assertEqual(declaration["limits"]["outboundRequests"], 0)
+            self.assertEqual(json.loads(files["transaction-binding.json"])["namespace"], TEMPLATE)
+            with self.assertRaisesRegex(ValueError, "requires Rust"):
+                create(Path(temporary) / "unsupported", "java", "result-boundary")
+
+
     def test_rust_authored_projects_select_and_pin_their_guest_binding_profile(self):
         import tomllib
         from tools.rust_capsule_project import create

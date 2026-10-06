@@ -1,11 +1,13 @@
 //! Trusted installed bindings meet the real pinned activation admission seam.
+mod abort_recovery;
 mod admission;
 mod completion;
 mod policy;
 mod replay;
+mod retry;
 mod selection;
 mod selection_pins;
-pub use selection::{TransactionInstallation, TransactionSelection};
+pub use selection::{TransactionInstallation, TransactionRetrySelection, TransactionSelection};
 pub use selection_pins::TransactionInstallationSelection;
 
 use super::{

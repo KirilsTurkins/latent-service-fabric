@@ -187,6 +187,11 @@ fn result_outcome(
             },
             consumption,
         },
+        Outcome::Aborted if result.code() == Some("state-conflict") => ActivationOutcome::Failed {
+            terminal_state: ActivationTerminalState::PlatformFailed,
+            error: error(PlatformErrorCode::StateConflict),
+            consumption,
+        },
         _ => failure(consumption),
     })
 }
@@ -212,30 +217,9 @@ fn inspection(
     let available = result.is_some_and(|result| result.value().is_some());
     let source = source(record.source());
     let committed = record.outcome() == Outcome::Committed;
-    let retained_result = result.and_then(|result| {
-        let value = result.value()?;
-        match result.outcome() {
-            Outcome::Committed => {
-                Some(t::command_inspection::RetainedResult::Success(i::Success {
-                    payload: value.bytes.clone(),
-                    media_type: value.media_type.clone(),
-                    metadata: value.metadata.iter().cloned().collect(),
-                    committed_state_version: Some(hex(result.committed_view_token())),
-                    effect_ids: record.effect_ids().iter().map(|id| id.hex()).collect(),
-                }))
-            }
-            Outcome::Rejected => Some(t::command_inspection::RetainedResult::BusinessRejection(
-                i::DeclaredError {
-                    code: result.code()?.into(),
-                    message: String::new(),
-                    payload: value.bytes.clone(),
-                    media_type: value.media_type.clone(),
-                    metadata: value.metadata.iter().cloned().collect(),
-                },
-            )),
-            _ => None,
-        }
-    });
+    // InvokeCommand carries the exact body once in invocation.result. Repeating
+    // it here makes the supported maximum exceed the unchanged frame budget.
+    // Standalone LookupCommand retains its own body projection separately.
     t::CommandInspection {
         key: Some(t::CommandKey {
             namespace: Some(t::NamespaceSelector {
@@ -255,7 +239,7 @@ fn inspection(
             Outcome::Pending => t::CommandOutcome::InProgress,
             Outcome::Committed => t::CommandOutcome::Committed,
             Outcome::Rejected => t::CommandOutcome::Rejected,
-            Outcome::Aborted => t::CommandOutcome::RecoveryRequired,
+            Outcome::Aborted => t::CommandOutcome::Aborted,
         } as i32,
         metadata_durable: matches!(
             record.outcome(),
@@ -263,7 +247,7 @@ fn inspection(
         ),
         application_state_committed: committed,
         source: Some(source.clone()),
-        retained_result,
+        retained_result: None,
         commit: committed.then(|| t::CommitReceipt {
             command_id: record.id().hex(),
             attempt_id: record.attempt().to_string(),
@@ -274,7 +258,12 @@ fn inspection(
             receipt_id: record.disposition_id().hex(),
             source: Some(source),
         }),
-        proven_abort: None,
+        proven_abort: record.abort_proof().map(|proof| t::AbortFence {
+            command_id: record.id().hex(),
+            attempt_id: record.attempt().to_string(),
+            transaction_id: record.transaction_id().hex(),
+            owner_fence: proof.bytes().to_vec(),
+        }),
         retention: Some(t::LinkedRetention {
             record_format: "lsf-command-v3".into(),
             record_version: 3,

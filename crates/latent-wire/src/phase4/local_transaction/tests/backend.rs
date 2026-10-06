@@ -15,6 +15,10 @@ use tokio::sync::Notify;
 pub(super) struct Imports {
     pub commands: AtomicU64,
     pub queries: AtomicU64,
+    pub returned_bytes: AtomicU64,
+    pub staged_intents: AtomicU64,
+    pub platform_failure: std::sync::Mutex<Option<latent_core::PlatformErrorCode>>,
+    pub result_limit_trap: AtomicBool,
     pub pause_read: AtomicBool,
     pub entered: Notify,
     pub release: Notify,
@@ -95,7 +99,11 @@ impl TransactionHost for Host {
         self.inner.delete(key)
     }
     fn stage(&self, intent: Intent) -> BoxFuture<'_, Result<u32, IntentFailure>> {
-        self.inner.stage(intent)
+        Box::pin(async move {
+            let sequence = self.inner.stage(intent).await?;
+            self.imports.staged_intents.fetch_add(1, Ordering::SeqCst);
+            Ok(sequence)
+        })
     }
     fn finish_guest_access(&self) {
         self.inner.finish_guest_access();
@@ -174,9 +182,31 @@ impl ExecutionBackend for Backend {
                     imports: Arc::clone(&self.imports),
                 }),
             };
-            self.real
+            let report = self
+                .real
                 .invoke_prepared_contained(request, prepared, &control)
-                .await
+                .await;
+            if let Ok(GuestOutcome::Returned { output, .. }) = &report.outcome {
+                self.imports
+                    .returned_bytes
+                    .store(output.len() as u64, Ordering::SeqCst);
+            }
+            if let Err(error) = &report.outcome {
+                *self.imports.platform_failure.lock().unwrap() = Some(error.code);
+            }
+            if let Ok(GuestOutcome::Trapped { trap, .. }) = &report.outcome {
+                // The real backend represents a codec failure as a guest trap.
+                // Observe its exact bounded classification without changing it.
+                if trap.code == "result-limit-exceeded"
+                    && trap.metadata.get("result-codec-error").map(String::as_str)
+                        == Some("ResourceExhausted")
+                {
+                    self.imports.result_limit_trap.store(true, Ordering::SeqCst);
+                    *self.imports.platform_failure.lock().unwrap() =
+                        Some(latent_core::PlatformErrorCode::ResourceExhausted);
+                }
+            }
+            report
         })
     }
     fn prepare<'a>(

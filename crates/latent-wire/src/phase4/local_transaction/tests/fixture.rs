@@ -1,4 +1,5 @@
 use super::*;
+mod namespace;
 mod records;
 mod store;
 use crate::invocation::{
@@ -85,6 +86,9 @@ pub(super) struct Fixture {
     routes: Arc<DirectoryDeploymentRepository>,
     installation: Arc<TransactionInstallation>,
     deployment: latent_manifest::DeploymentManifest,
+    publication: latent_artifacts::ReleaseUseEligibility,
+    namespaces: Arc<NamespaceCatalog>,
+    recovery: latent_capabilities::namespace::RecoverySelection,
     native: latent_core::native_capacity::NativeCapacityOwner,
     effects: EffectAuthorityOwner,
     dispatcher: Option<DispatcherOwner>,
@@ -99,11 +103,80 @@ impl Fixture {
         Self::with_quota(paused, NamespaceQuota::default()).await
     }
 
+    pub async fn with_quota(paused: bool, quota: NamespaceQuota) -> Self {
+        Self::with_recovery(
+            paused,
+            quota,
+            latent_capabilities::namespace::RecoverySelection::OriginalCaller,
+            &["alice"],
+        )
+        .await
+    }
+
+    pub async fn with_recovery(
+        paused: bool,
+        quota: NamespaceQuota,
+        recovery: latent_capabilities::namespace::RecoverySelection,
+        subjects: &[&str],
+    ) -> Self {
+        Self::with_result_limit(paused, quota, recovery, subjects, 4096).await
+    }
+
+    pub async fn with_result_limit(
+        paused: bool,
+        quota: NamespaceQuota,
+        recovery: latent_capabilities::namespace::RecoverySelection,
+        subjects: &[&str],
+        maximum_result_bytes: usize,
+    ) -> Self {
+        Self::with_guest(
+            paused,
+            quota,
+            recovery,
+            subjects,
+            maximum_result_bytes,
+            "aggregate",
+            1,
+        )
+        .await
+    }
+    pub async fn with_large_result_guest() -> Self {
+        Self::with_guest(
+            false,
+            NamespaceQuota::default(),
+            latent_capabilities::namespace::RecoverySelection::OriginalCaller,
+            &["alice"],
+            latent_core::transaction_contract::VALUE_BYTES,
+            "result-boundary",
+            1,
+        )
+        .await
+    }
+    pub async fn with_concurrent_commands(paused: bool) -> Self {
+        Self::with_guest(
+            paused,
+            NamespaceQuota::default(),
+            latent_capabilities::namespace::RecoverySelection::OriginalCaller,
+            &["alice"],
+            4096,
+            "aggregate",
+            2,
+        )
+        .await
+    }
     #[expect(
         clippy::too_many_lines,
         reason = "One real runtime composition captures each independent owner before admission"
     )]
-    pub async fn with_quota(paused: bool, quota: NamespaceQuota) -> Self {
+    async fn with_guest(
+        paused: bool,
+        quota: NamespaceQuota,
+        recovery: latent_capabilities::namespace::RecoverySelection,
+        subjects: &[&str],
+        maximum_result_bytes: usize,
+        variant: &str,
+        parallelism: u32,
+    ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
@@ -125,7 +198,7 @@ impl Fixture {
             .unwrap(),
         );
         let (publication, metadata, deployment, declaration) =
-            publication::publish(&catalog, manifest_profile).await;
+            publication::publish(&catalog, manifest_profile, variant).await;
         let effects = EffectAuthorityOwner::new(128, 16, 100).unwrap();
         let policy = Arc::new(
             PolicyStore::open(
@@ -135,7 +208,8 @@ impl Fixture {
             )
             .unwrap(),
         );
-        let (state, intents) = policy::install(&policy, &publication, &effects);
+        let (state, intents) =
+            policy::install(&policy, &publication, &effects, &recovery, subjects);
         let mut config = ProtectedStoreConfig::bounded_linux(root.path().join("state"));
         fs::create_dir(&config.root).unwrap();
         fs::set_permissions(&config.root, fs::Permissions::from_mode(0o700)).unwrap();
@@ -145,9 +219,11 @@ impl Fixture {
             latent_core::native_capacity::NativeCapacityOwner::new(Default::default()).unwrap();
         store.bind_native_capacity(&native).unwrap();
         let schema = declaration.state_schema.clone();
+        let namespaces = Arc::new(NamespaceCatalog::new());
+        let bootstrap_namespaces = Arc::clone(&namespaces);
         store
             .with_store(StoreIoKind::Write, 8192, move |store| {
-                let plan = NamespaceCatalog::new()
+                let plan = bootstrap_namespaces
                     .prepare(
                         store,
                         NamespaceOperationContext {
@@ -177,11 +253,11 @@ impl Fixture {
                 publication.clone(),
                 state,
                 Some(intents),
-                latent_capabilities::namespace::RecoverySelection::OriginalCaller,
+                recovery.clone(),
                 "visibility-v1".into(),
                 latent_commit::atomic::ResultPolicy {
                     replay: latent_commit::atomic::ReplayPolicy::Full,
-                    maximum_result_bytes: 4096,
+                    maximum_result_bytes,
                     result_millis: 10_000,
                     identity_millis: 20_000,
                     maximum_attempts: 3,
@@ -189,7 +265,7 @@ impl Fixture {
             )
             .unwrap(),
         );
-        let runtime_config = WasmtimeConfig {
+        let mut runtime_config = WasmtimeConfig {
             transactional_state: true,
             maximum_memory_bytes: budget().memory_bytes,
             maximum_fuel: budget().cpu_fuel,
@@ -197,13 +273,31 @@ impl Fixture {
             epoch_tick_interval_millis: 1,
             ..Default::default()
         };
+        if variant == "result-boundary" {
+            // Exercise the encoded-result ceiling with the existing finite
+            // transaction transfer profile. The default 128 KiB transfer
+            // allowance rejects this result before its 1 MiB codec boundary.
+            // Keep the codec output/string ceilings and every parent case fixed.
+            let profile: serde_json::Value = serde_json::from_str(include_str!(
+                "../../../../../../sdk/profile/transaction-preparation-v1.json"
+            ))
+            .unwrap();
+            runtime_config.hostcall_fuel =
+                usize::try_from(profile["hostcallFuel"].as_u64().unwrap()).unwrap();
+            runtime_config.value_codec_limits.max_lifted_bytes =
+                usize::try_from(profile["limits"]["maxLiftedBytes"].as_u64().unwrap()).unwrap();
+            assert_eq!(
+                runtime_config.value_codec_limits.max_output_bytes,
+                latent_core::transaction_contract::VALUE_BYTES
+            );
+        }
         let routes = Arc::new(
             DirectoryDeploymentRepository::open_with_catalog(
                 root.path().join("routes"),
                 catalog.clone(),
                 DirectoryDeploymentRepositoryConfig {
                     manifest_profile,
-                    ..DirectoryDeploymentRepositoryConfig::default()
+                    ..Default::default()
                 },
                 catalog.lifecycle_authority(),
                 Arc::new(runtime_config.detected_runtime_profile().unwrap()),
@@ -243,7 +337,7 @@ impl Fixture {
         let imports = Arc::new(backend::Imports::default());
         imports.pause_read.store(paused, Ordering::SeqCst);
         let backend = Arc::new(backend::Backend { real, imports });
-        let mut node_policy = admission_model::node_policy(1);
+        let mut node_policy = admission_model::node_policy(parallelism);
         node_policy.budget_ceiling = budget();
         node_policy.architecture = std::env::consts::ARCH.into();
         node_policy.limits.maximum_reserved_cpu_fuel = budget().cpu_fuel * 8;
@@ -253,6 +347,7 @@ impl Fixture {
             .remove(&TenantId(admission_model::TENANT.into()))
             .unwrap();
         tenant.limits = node_policy.limits;
+        tenant.allowed_subjects = subjects.iter().map(|subject| (*subject).into()).collect();
         node_policy.tenants = BTreeMap::from([(TenantId(publication::TENANT.into()), tenant)]);
         for trust in node_policy.trust_classes.values_mut() {
             trust.limits = node_policy.limits;
@@ -280,6 +375,9 @@ impl Fixture {
             routes,
             installation,
             deployment,
+            publication,
+            namespaces,
+            recovery,
             native,
             effects,
             dispatcher: None,
@@ -307,7 +405,7 @@ impl Fixture {
         let owners = Arc::new(
             TransactionAdmissionOwners::new(
                 Arc::clone(&self.store),
-                Arc::new(NamespaceCatalog::new()),
+                Arc::clone(&self.namespaces),
                 Arc::clone(&self.policy),
                 dispatcher.command_admission_source(),
             )
@@ -363,6 +461,14 @@ impl Fixture {
     }
     pub fn executions(&self) -> u64 {
         self.backend.imports.commands.load(Ordering::SeqCst)
+    }
+    pub fn persisted_root(&self) -> &std::path::Path {
+        self._root.path()
+    }
+    pub fn recovery_scope(&self, subject: &str) -> String {
+        latent_capabilities::namespace::CallerScope::derive(&principal(subject), &self.recovery)
+            .unwrap()
+            .scope
     }
     pub async fn drop_duplicate_during_native_lookup(&self) {
         use std::{
@@ -438,6 +544,7 @@ impl Fixture {
         self.retire().await;
         self.store = Arc::new(start_store(self.config.clone()).unwrap().await.unwrap());
         self.store.bind_native_capacity(&self.native).unwrap();
+        self.namespaces = Arc::new(NamespaceCatalog::new());
         self.manager = manager(&self.routes, &self.catalog, &self.backend, &self.quotas);
         self.wire().await;
     }
@@ -463,6 +570,15 @@ impl Fixture {
             .unwrap();
         self.restart().await;
         resolved
+    }
+    pub async fn namespace_transition(
+        &self,
+        action: latent_state::namespace::NamespaceTransition,
+    ) -> Result<latent_state::namespace::NamespaceRecord, PlatformError> {
+        namespace::transition(self, action).await
+    }
+    pub fn authorize_incarnation(&self, incarnation: u64) {
+        namespace::authorize_incarnation(self, incarnation);
     }
     async fn retire(&mut self) {
         drop(self.adapter.take());

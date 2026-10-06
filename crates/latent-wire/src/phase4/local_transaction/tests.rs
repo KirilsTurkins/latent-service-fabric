@@ -3,10 +3,16 @@
 //! publication is explicit; these cases do not qualify publisher signatures.
 mod backend;
 mod fixture;
+mod large_results;
+mod namespace;
 mod policy;
+mod process_loss;
 mod publication;
 mod recovery;
 mod requests;
+mod result_bounds;
+mod retries;
+mod scopes;
 
 use super::*;
 use crate::phase4::{Phase4Call, Phase4Runtime};

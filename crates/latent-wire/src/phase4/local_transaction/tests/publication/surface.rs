@@ -10,16 +10,31 @@ pub(super) fn contracts(
     component: &[u8],
     manifest: &CapsuleManifest,
     profile: ManifestValidationProfile,
+    variant: &str,
 ) -> Vec<ContractDescriptor> {
-    let sources: BTreeMap<String, &[u8]> = [
-        (
-            "wit/world.wit".into(),
+    let application: &[u8] = match variant {
+        "aggregate" => include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../examples/rust-capsules/transactional-aggregate/world.wit"
+        )),
+        "result-boundary" => {
+            assert_eq!(
+                fs::read(root.join("project/src/lib.rs")).unwrap(),
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../../examples/rust-capsules/transactional-aggregate/result-boundary.rs"
+                ))
+                .as_slice()
+            );
             include_bytes!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../examples/rust-capsules/transactional-aggregate/world.wit"
+                "/../../examples/rust-capsules/transactional-aggregate/result-boundary-world.wit"
             ))
-            .as_slice(),
-        ),
+        }
+        _ => unreachable!("selected authored transaction variant"),
+    };
+    let sources: BTreeMap<String, &[u8]> = [
+        ("wit/world.wit".into(), application),
         (
             "wit/deps/state/package.wit".into(),
             include_bytes!(concat!(

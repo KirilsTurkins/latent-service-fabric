@@ -41,6 +41,7 @@ impl NativeTransactionAdmission {
                         cleanup_failure: host.retire().await.err(),
                     },
                 };
+                let disposition = self.persist_conflict_abort(disposition, &host).await;
                 let observation = command_observation(&disposition, consumption);
                 (
                     TransactionCompletionResult::Command(disposition),
@@ -144,6 +145,15 @@ fn command_observation(
                 },
                 consumption,
             },
+            Outcome::Aborted if result.code() == Some("state-conflict") => {
+                failure_for_platform_error(
+                    super::error(
+                        PlatformErrorCode::StateConflict,
+                        "transaction-state-conflict",
+                    ),
+                    consumption,
+                )
+            }
             _ => unavailable(consumption),
         },
         CommandCompletionDisposition::Retired {

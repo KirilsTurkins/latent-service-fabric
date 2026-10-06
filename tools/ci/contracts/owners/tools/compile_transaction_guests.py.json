@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain actual authored transaction compiler source, recipe, binding and failure evidence separately from node execution",
+  "reviewReason": "Review real bounded Rust result compilation and updated compiler scope while preserving both prior variants",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "884b621796445429b29258651b7d6252c5db98aa264d4f9f50673a493d99068f"
+  "sha256": "24fc5fcf74d4e733fdaa64b3dd20608ea1b297b96cc1118e3b90245c62f70d44"
 }

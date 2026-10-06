@@ -2271,6 +2271,7 @@ dependencies = [
  "latent-scheduler",
  "latent-state",
  "latent-telemetry",
+ "latent-test-process",
  "latent-wasmtime",
  "prost",
  "serde",

@@ -29,10 +29,9 @@ pub(super) fn install(
     policy: &PolicyStore,
     publication: &latent_artifacts::ReleaseUseEligibility,
     effects: &EffectAuthorityOwner,
+    recovery: &RecoverySelection,
+    subjects: &[&str],
 ) -> (Arc<PolicyCallBinding>, Arc<PolicyCallBinding>) {
-    let caller =
-        CallerScope::derive(&principal("alice"), &RecoverySelection::OriginalCaller).unwrap();
-    let scopes = json!([{"namespace":publication::NAMESPACE,"incarnation":1,"entity":null,"recoveryKind":caller.kind,"recoveryScope":caller.scope,"resultPolicy":"visibility-v1"}]);
     let mut bindings = Vec::new();
     for (id, capability, operations) in [
         ("state", STATE_CONTRACT, OPERATIONS.as_slice()),
@@ -44,10 +43,14 @@ pub(super) fn install(
             "intents-binding"
         };
         let digest = format!("sha256:{}", "2".repeat(64));
-        let document = json!({"formatVersion":1,"tenant":publication::TENANT,"rules":[{
-            "id":"alice","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":[publication::SERVICE],"publications":[publication.publication().as_str()],"capability":capability,"operations":operations,
-            "resources":{"kind":"state","scopes":scopes},"ceiling":{"operations":256,"inputBytes":2_097_152,"outputBytes":2_097_152,"wallTimeMillis":10_000}
-        }]});
+        let rules:Vec<_> = subjects.iter().map(|subject| {
+            let caller = CallerScope::derive(&principal(subject),recovery).unwrap();
+            json!({
+                "id":subject,"effect":"allow","principals":[{"kind":"user","subject":subject}],"services":[publication::SERVICE],"publications":[publication.publication().as_str()],"capability":capability,"operations":operations,
+                "resources":{"kind":"state","scopes":[{"namespace":publication::NAMESPACE,"incarnation":1,"entity":null,"recoveryKind":caller.kind,"recoveryScope":caller.scope,"resultPolicy":"visibility-v1"}]},"ceiling":{"operations":256,"inputBytes":2_097_152,"outputBytes":2_097_152,"wallTimeMillis":10_000}
+            })
+        }).collect();
+        let document = json!({"formatVersion":1,"tenant":publication::TENANT,"rules":rules});
         let provider = json!({"formatVersion":1,"tenant":publication::TENANT,"capability":capability,"providerProfile":"namespace-v1","configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}});
         for (kind, selected, value) in [
             (RecordKind::Policy, id, document),

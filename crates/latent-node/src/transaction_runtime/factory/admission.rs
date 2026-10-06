@@ -23,6 +23,9 @@ use latent_state::{
 enum PendingPublication {
     New(latent_commit::atomic::AdmittedCommand),
     Existing(CommandRecord),
+    // A positively completed read/preparation refused before any writer.
+    // This is distinct from unknown physical Pending publication.
+    Refused(AtomicError),
 }
 
 impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
@@ -305,7 +308,7 @@ impl NativeTransactionAdmission {
     async fn publish_pending(
         &self,
         input: AdmissionInput,
-        retry: Option<latent_commit::atomic::RetryRequest>,
+        retry: Option<super::TransactionRetrySelection>,
         authorization: Arc<StateAuthorization>,
         role: Arc<CommandRole>,
         bytes: u64,
@@ -337,7 +340,10 @@ impl NativeTransactionAdmission {
                         .map_err(|_| AtomicError::PermissionDenied)
                 };
                 let prepared = if let Some(retry) = retry {
-                    PreparedAdmission::retry(&view, &input, &retry, time, authorize)
+                    authorize(CommandAccess::Admit, None).and_then(|()| {
+                        super::retry::check_association(&view, &input, &retry)?;
+                        PreparedAdmission::retry(&view, &input, &retry.request, time, authorize)
+                    })
                 } else {
                     PreparedAdmission::prepare(&view, input, time, authorize)
                 };
@@ -350,7 +356,7 @@ impl NativeTransactionAdmission {
                             .iter()
                             .any(|row| row.key == expected.key && row.value == expected.value)
                         {
-                            return Ok(Err(AtomicError::Conflict));
+                            return Ok(Ok(PendingPublication::Refused(AtomicError::Conflict)));
                         }
                         prepared
                             .publish(store, || {
@@ -365,7 +371,7 @@ impl NativeTransactionAdmission {
                     Ok(AdmissionDecision::Existing(record)) => {
                         Ok(PendingPublication::Existing(record))
                     }
-                    Err(error) => Err(error),
+                    Err(error) => Ok(PendingPublication::Refused(error)),
                 })
             },
         );
@@ -406,6 +412,14 @@ impl NativeTransactionAdmission {
                     latent_core::PlatformErrorCode::AlreadyExists,
                     "transaction-already-admitted",
                 ))
+            }
+            Ok(PendingPublication::Refused(reason)) => {
+                // The actual worker completed without accepting any writer or
+                // guest. Retire only this contender's new role, preserving the
+                // legitimate owner and all existing durable command history.
+                role.retire().map_err(atomic)?;
+                *state = State::Failed;
+                Err(atomic(reason))
             }
             Err(reason) => {
                 if !matches!(
