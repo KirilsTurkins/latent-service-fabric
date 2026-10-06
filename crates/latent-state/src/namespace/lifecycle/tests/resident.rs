@@ -242,9 +242,9 @@ fn retained_metadata_footprint_covers_maximum_record_and_pin_shapes() {
     )
     .unwrap();
     let completion = catalog.lifecycle().begin_create(&record).unwrap();
-    let entries = catalog.lifecycle().entries.lock().unwrap();
+    let entries = catalog.lifecycle().entries.read().unwrap();
     assert_eq!(entries.capacity(), maximum.namespaces);
-    let state = entries[0].state.lock().unwrap();
+    let state = entries[0].state.read().unwrap();
     assert_eq!(state.record, record);
     assert_eq!(state.pending.as_ref(), Some(&record));
     drop(state);
