@@ -1,0 +1,40 @@
+{
+  "cases": [
+    "StagedRustLinker.test_captured_compiler_discovers_staged_zig_without_inherited_tool_paths",
+    "StagedRustLinker.test_wrong_staged_zig_version_fails_before_linker_or_compiler_selection"
+  ],
+  "guards": {
+    "StagedRustLinker.test_captured_compiler_discovers_staged_zig_without_inherited_tool_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Maintained Rust compiler discovery requires Linux')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:367a507e2f3c8c3e4b923e0613b3fccf11a6a4ce13aa1ede1be60566be09baf6",
+        "class:setup-sha256:ceaf5430149bae3a9fe9a3f866bf3e9d9cf03d5a01dc4732c637433506d10a9d"
+      ],
+      "skipSites": []
+    },
+    "StagedRustLinker.test_wrong_staged_zig_version_fails_before_linker_or_compiler_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Maintained Rust compiler discovery requires Linux')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:367a507e2f3c8c3e4b923e0613b3fccf11a6a4ce13aa1ede1be60566be09baf6",
+        "class:setup-sha256:ceaf5430149bae3a9fe9a3f866bf3e9d9cf03d5a01dc4732c637433506d10a9d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_rust_linker.py",
+  "reviewReason": "Register deterministic staged-Zig discovery and version-denial controls for the maintained Rust frontend, retaining all existing test and compiler bounds.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
