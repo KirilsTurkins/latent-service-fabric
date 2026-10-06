@@ -59,6 +59,20 @@ test("provider usage maps retain full-width unsigned counters and reject lossy i
   }
 });
 
+test("packed repeated target reasons retain unknown numbers and share bounded segment accounting", () => {
+  const schema = registry.getMessage("latent.control.v1.TargetCandidate");
+  const field = schema.field.reasons.number;
+  const packed = new BinaryWriter().int32(-73).int32(777).finish();
+  const mixed = new BinaryWriter().tag(field, WireType.LengthDelimited).bytes(packed).tag(field, WireType.Varint).int32(1).finish();
+  assert.deepEqual(decode(schema, mixed, 65536).reasons, [-73, 777, 1]);
+  const full = new BinaryWriter();
+  for (let index = 0; index < 128; index++) full.int32(1);
+  const exhausted = new BinaryWriter().tag(field, WireType.LengthDelimited).bytes(full.finish()).tag(field, WireType.Varint).int32(1).finish();
+  assert.throws(() => decode(schema, exhausted, 65536));
+  const malformed = new BinaryWriter().tag(field, WireType.LengthDelimited).bytes(Uint8Array.of(0x80)).finish();
+  assert.throws(() => decode(schema, malformed, 65536));
+});
+
 test("policy and capability pages preserve their different authoritative defaults", () => {
   for (const page of [undefined, {}, { pageSize: 0 }, { pageSize: 128 }]) {
     validateRequest("listCapabilities", { deploymentId: "owned", page }, "tests");

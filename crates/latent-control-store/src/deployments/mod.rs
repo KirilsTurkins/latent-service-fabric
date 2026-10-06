@@ -13,6 +13,7 @@ mod publication;
 mod recovery_admission;
 pub(crate) mod rollouts;
 mod scoped_routes;
+pub mod target_inspection;
 #[cfg(test)]
 mod tests;
 

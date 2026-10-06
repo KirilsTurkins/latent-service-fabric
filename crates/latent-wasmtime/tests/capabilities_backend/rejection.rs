@@ -76,7 +76,7 @@ async fn unsupported_or_uninstalled_imports_do_not_gain_ambient_authority() {
         );
         let expected = match family {
             "random" | "blob" | "secrets" => "required host capability provider is unavailable",
-            _ => "component imports an unsupported host capability",
+            _ => "unknown imported interfaces may contain only structural value types",
         };
         assert_eq!(error.message, expected, "{family}");
     }

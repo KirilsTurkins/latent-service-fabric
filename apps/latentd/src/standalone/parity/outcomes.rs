@@ -39,17 +39,8 @@ pub async fn run(session: &mut Session) -> (Vec<Value>, Value) {
                 }
                 if index == 0 {
                     assert_eq!(remote.release_digest, session.echo_release);
-                    echo_telemetry = Some(
-                        telemetry::observe(
-                            &session.node,
-                            &remote,
-                            "examples",
-                            "parity-root",
-                            "parity-parent",
-                            1,
-                        )
-                        .await,
-                    );
+                    echo_telemetry =
+                        Some(telemetry::observe(&session.node, &remote, "examples", 1).await);
                 }
             }
             (Err(left), Err(right)) => {

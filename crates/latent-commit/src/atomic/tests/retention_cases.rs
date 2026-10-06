@@ -2,6 +2,7 @@ use super::*;
 use crate::atomic::record::result_row_key;
 
 mod clocks;
+mod linked_dispatch;
 mod ownership;
 
 fn observation(now: u64, elapsed: u64) -> MaintenanceClock {

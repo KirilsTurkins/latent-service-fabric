@@ -5,7 +5,11 @@ use latent_core::{ActivationPhase, ActivationTerminalState, BudgetConsumption, M
 
 use super::*;
 
+#[path = "tests/broker_lineage.rs"]
+mod broker_lineage;
 mod support;
+#[path = "tests/tree.rs"]
+mod tree;
 use support::{envelope, journal, outcome, Clock};
 
 #[test]
