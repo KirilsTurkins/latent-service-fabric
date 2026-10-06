@@ -1,12 +1,12 @@
 use super::*;
 use crate::namespace::compatibility::{ReviewedSchema, SchemaDeclaration};
-use crate::recovery::migration::{
+use crate::recovery::v1::migration::{
     self, AggregateMigrationObservation, AggregateMigrationProgress, AggregateMigrationRequest,
     MigrationAction,
 };
 
 const V2: &[u8] =
-    include_bytes!("../../../../../../contracts/state/application-aggregate-v2.schema.json");
+    include_bytes!("../../../../../../../contracts/state/application-aggregate-v2.schema.json");
 struct MigrationCodecs {
     inner: Codecs,
 }
@@ -40,7 +40,7 @@ impl RecoveryCodecs for MigrationCodecs {
     fn installed_formats(&self) -> &[RetainedFormat] {
         static FORMATS: std::sync::LazyLock<Vec<RetainedFormat>> = std::sync::LazyLock::new(|| {
             vec![
-                crate::recovery::resume::retained_format(),
+                crate::recovery::v1::resume::retained_format(),
                 migration::retained_format(),
             ]
         });
@@ -55,36 +55,42 @@ impl RecoveryCodecs for MigrationCodecs {
     }
     fn validate_view(&self, view: &ReadView) -> Result<SnapshotClosure, StoreError> {
         let mut inventory = RetainedInventory::default();
-        crate::recovery::snapshot::visit_view(view, Instant::now() + WATCHDOG, |_, key, bytes| {
-            self.validate_row(view, key, bytes)?;
-            let retained = if key.family == Family::Maintenance
-                && key.key.starts_with(migration::PROGRESS_PREFIX)
-            {
-                Some((
-                    migration::retained_format(),
-                    u64::from(!AggregateMigrationProgress::decode(bytes)?.completed()),
-                ))
-            } else if key.family == Family::Maintenance
-                && key.key.starts_with(crate::recovery::resume::RECEIPT_PREFIX)
-            {
-                Some((crate::recovery::resume::retained_format(), 0))
-            } else {
-                None
-            };
-            if let Some((format, unresolved)) = retained {
-                inventory
-                    .observe(
-                        format,
-                        RetainedCount {
-                            rows: 1,
-                            bytes: (key.key.len() + bytes.len()) as u64,
-                            unresolved,
-                        },
-                    )
-                    .map_err(|_| StoreError::Capacity)?;
-            }
-            Ok(())
-        })?;
+        crate::recovery::v1::snapshot::visit_view(
+            view,
+            Instant::now() + WATCHDOG,
+            |_, key, bytes| {
+                self.validate_row(view, key, bytes)?;
+                let retained = if key.family == Family::Maintenance
+                    && key.key.starts_with(migration::PROGRESS_PREFIX)
+                {
+                    Some((
+                        migration::retained_format(),
+                        u64::from(!AggregateMigrationProgress::decode(bytes)?.completed()),
+                    ))
+                } else if key.family == Family::Maintenance
+                    && key
+                        .key
+                        .starts_with(crate::recovery::v1::resume::RECEIPT_PREFIX)
+                {
+                    Some((crate::recovery::v1::resume::retained_format(), 0))
+                } else {
+                    None
+                };
+                if let Some((format, unresolved)) = retained {
+                    inventory
+                        .observe(
+                            format,
+                            RetainedCount {
+                                rows: 1,
+                                bytes: (key.key.len() + bytes.len()) as u64,
+                                unresolved,
+                            },
+                        )
+                        .map_err(|_| StoreError::Capacity)?;
+                }
+                Ok(())
+            },
+        )?;
         Ok(SnapshotClosure {
             inventory,
             required_artifacts: artifacts(),

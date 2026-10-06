@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     embedded::{AtomicBatch, ExpectedRow, FencedStoreError, StoreError},
-    recovery::{
+    recovery::v1::{
         guard_key,
         resume::{
             NamespaceRecoveryView, NamespaceResumePlan, NamespaceResumeReceipt,

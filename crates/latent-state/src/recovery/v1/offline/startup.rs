@@ -75,6 +75,7 @@ impl OfflineRecoverySource {
             config,
             codecs.scratch_bytes(),
             move |view| {
+                super::super::require_profile(view)?;
                 if review {
                     if super::super::RecoveryGuard::capture(view)?.is_some_and(|guard| {
                         guard.status() == super::super::RecoveryStatus::Staging

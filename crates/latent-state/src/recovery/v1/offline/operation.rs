@@ -6,7 +6,7 @@ use super::{
 use crate::{
     embedded::{AtomicBatch, EmbeddedStore, ReadView, RowKey, StoreError},
     protected_store::{ProtectedStoreConfig, ProtectedStoreError},
-    recovery::{
+    recovery::v1::{
         restore::{RestoreChecks, RestorePlan, RestoreWindow},
         snapshot::{
             export_snapshot, inspect_snapshot, validate_deadline, SnapshotMetadata, SnapshotReceipt,

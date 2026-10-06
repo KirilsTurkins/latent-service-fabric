@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
     embedded::FencedStoreError,
-    recovery::{
+    recovery::v1::{
         migration::{
             AggregateMigrationPlan, AggregateMigrationProgress, MigrationAction,
             VerifiedMigrationCheckpoint,

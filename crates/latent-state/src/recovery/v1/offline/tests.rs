@@ -6,7 +6,7 @@ use crate::{
         compatibility::{RetainedCount, RetainedInventory, SchemaId},
         namespace_record_key, NamespacePins, NamespaceQuota, NamespaceRecord, NamespaceTransition,
     },
-    recovery::{
+    recovery::v1::{
         restore::RestoreRequest,
         resume::{NamespaceResumeObservation, NamespaceResumeReceipt, NamespaceResumeRequest},
         snapshot::{NamespaceSnapshot, RequiredArtifact},
@@ -35,7 +35,7 @@ use std::{
 };
 
 const DEFINITION: &[u8] =
-    include_bytes!("../../../../../contracts/state/application-aggregate-v1.schema.json");
+    include_bytes!("../../../../../../contracts/state/application-aggregate-v1.schema.json");
 
 mod migration;
 

@@ -195,6 +195,29 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
             .map_err(|error| error.reason)
     }
 
+    #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+    pub(crate) fn wait_test_metadata_retirement(&self, deadline: Instant) {
+        let control = &self.owner.inner.control;
+        let mut state = control.state.lock().unwrap();
+        while state.accepted != 0
+            || state.active_reads != 0
+            || state.active_writes != 0
+            || state.active_recovery_reads != 0
+        {
+            let remaining = deadline
+                .checked_duration_since(Instant::now())
+                .expect("actual native metadata retirement deadline expired");
+            let (next, timeout) = control.changed.wait_timeout(state, remaining).unwrap();
+            state = next;
+            assert!(
+                !timeout.timed_out(),
+                "actual native metadata did not retire"
+            );
+        }
+        // Test synchronization only. Production custody independently reserves
+        // under this SAME lock and still rejects newly arrived work/native pins.
+    }
+
     pub(crate) fn failure_gate(&self) -> impl Fn(StoreIoError) + Send + Sync + 'static {
         let control = Arc::clone(&self.owner.inner.control);
         move |error| control.fail(error)
@@ -212,6 +235,28 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
         bytes: u64,
     ) -> Result<super::StoreIoRetained<OnceLock<S>, T>, StoreIoError> {
         self.owner.reserve_recovery_retained(bytes)
+    }
+
+    pub(crate) fn reserve_custody<T: Send + 'static>(
+        &self,
+        bytes: u64,
+        deadline: Instant,
+        keeper: Arc<dyn std::any::Any + Send + Sync>,
+    ) -> Result<super::StoreIoCustody<OnceLock<S>, T>, StoreIoError> {
+        self.owner.reserve_custody(bytes, deadline, keeper)
+    }
+
+    pub(crate) fn submit_custody<T: Send + 'static, R: Send + 'static>(
+        &self,
+        custody: super::StoreIoCustody<OnceLock<S>, T>,
+        kind: StoreIoKind,
+        bytes: u64,
+        operation: impl FnOnce(&mut super::StoreIoCustody<OnceLock<S>, T>, &S) -> R + Send + 'static,
+    ) -> Result<StoreIoJob<(super::StoreIoCustody<OnceLock<S>, T>, R)>, StoreIoError> {
+        self.owner
+            .submit_custody(custody, kind, bytes, move |custody, slot| {
+                operation(custody, slot.get().expect("initialized store owner"))
+            })
     }
 
     pub(crate) fn owns_retained<T: Send + 'static>(

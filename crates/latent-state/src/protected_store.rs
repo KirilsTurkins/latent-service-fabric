@@ -1,17 +1,56 @@
 //! One protected, bounded node database. All native work, initialization and
 //! affine view retirement belongs to the same fixed storage workers.
 
+mod checkpoint;
 mod config;
+mod custody;
 mod dispatcher;
+mod migration;
 mod native_capacity;
 mod operation;
 mod physical;
+mod resource;
+mod restore_adoption;
+mod restore_input;
+mod restore_stage;
+mod resume;
+mod snapshot;
 mod startup;
 mod view;
 
+pub use checkpoint::{
+    CheckpointInspection, ProtectedCheckpoint, ProtectedCheckpointConfig, ProtectedCheckpointJob,
+    StoreInitializationWitness,
+};
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
+pub use migration::{
+    AggregateMigrationOwners, MigrationCommitFence, MigrationReceipt, ProtectedMigrationJob,
+};
 pub use operation::ProtectedStoreOperation;
+pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
+pub use restore_adoption::{
+    ProtectedRestoreAdoptionJob, RestoreAdoptionFence, RestoreAdoptionKind, RestoreAdoptionOwners,
+    RestoreAdoptionPlan, RestoreAdoptionRequest, RestoreAdoptionStartError,
+    RESTORE_ADOPTION_RESPONSE_BYTES,
+};
+pub use restore_input::{
+    ProtectedRestoreInput, ProtectedRestoreInputJob, ProtectedRestoreWindowFrame,
+    RestoreInputOwners, RestoreInputPrecondition, RestoreReadFence, RESTORE_INPUT_RESPONSE_BYTES,
+};
+pub use restore_stage::{
+    ProtectedRestoreDestinationConfig, ProtectedRestoreStageJob, RestoreRowDisposition,
+    RestoreStageControls, RestoreStageError, RestoreStageOwners, RestoreStageReceipt,
+    RestoreStageRequest, RestoreWriteFence, RestoreWriteKind,
+};
+pub use resume::{
+    MigrationResumeCommitFence, ProtectedMigrationResumeJob, ProtectedMigrationResumeReceipt,
+};
+pub use snapshot::{
+    ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob,
+    ProtectedSnapshotManifestFrame, ProtectedSnapshotReceipt, ProtectedSnapshotReceiptJob,
+    SnapshotReceiptOwners, SnapshotReceiptReadFence, SNAPSHOT_RECEIPT_RESPONSE_BYTES,
+};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewOpenJob, ProtectedViewResult};
 

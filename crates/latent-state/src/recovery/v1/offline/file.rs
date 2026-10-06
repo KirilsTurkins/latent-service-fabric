@@ -1,5 +1,5 @@
 use super::{OfflineRecoveryError, SnapshotFile};
-use crate::recovery::snapshot::SNAPSHOT_FILE_BYTES;
+use crate::recovery::v1::snapshot::SNAPSHOT_FILE_BYTES;
 use latent_protected_files::{ProtectedMutableFile, ProtectedRoot};
 use std::{
     fs::File,

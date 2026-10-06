@@ -3,7 +3,10 @@
 //! view; sessions own bounded logical buffers and verify the borrowed view's ID.
 //! Scope descriptors and cursors never grant policy or commit authority.
 
+mod accounting;
 mod codec;
+pub mod entities;
+pub(crate) mod migration;
 pub(crate) mod offline;
 mod validation;
 pub mod version;
@@ -14,6 +17,7 @@ use crate::{
         namespace_record_key, NamespacePins, NamespaceRecord, NamespaceStatus, NamespaceVersion,
     },
 };
+pub(crate) use accounting::row_usage as tenant_row_usage;
 use codec::{Cell, Usage};
 use latent_core::{
     transaction_contract::{self as contract, ExpectedVersion, Precondition, Value},
@@ -25,6 +29,7 @@ use std::{
     time::{Duration, Instant},
 };
 pub use validation::validate_row;
+pub use validation::{inspect_cell, inspect_usage, tenant_for_row, ObservedCell, StateUsage};
 static NEXT_SESSION: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -188,6 +193,7 @@ pub struct StateSession {
     recovery_bytes: Option<Vec<u8>>,
     usage: Usage,
     usage_bytes: Option<Vec<u8>>,
+    tenant_accounting: crate::tenant::PreparedTenantUpdate,
     view: usize,
     identity: u64,
     limits: SessionLimits,
@@ -219,6 +225,11 @@ impl StateSession {
             return Err(StateError::Invalid);
         }
         authorize(&scope, StateAccess::Read)?;
+        let tenant_accounting = crate::tenant::prepare_update(
+            view,
+            &scope.tenant,
+            crate::tenant::TenantDelta::default(),
+        )?;
         let recovery_bytes = view.get(&crate::recovery::guard_key())?;
         if let Some(bytes) = &recovery_bytes {
             crate::recovery::RecoveryGuard::decode(bytes)?
@@ -256,6 +267,7 @@ impl StateSession {
             .checked_add(usage_bytes.as_ref().map_or(0, Vec::len))
             .and_then(|bytes| bytes.checked_add(history.encode().ok()?.len()))
             .and_then(|bytes| bytes.checked_add(recovery_bytes.as_ref().map_or(0, Vec::len)))
+            .and_then(|bytes| bytes.checked_add(tenant_accounting.read_bytes()))
             .and_then(|bytes| bytes.checked_mul(2))
             .ok_or(StateError::Limit)?;
         if read_charge > limits.read_bytes
@@ -279,6 +291,7 @@ impl StateSession {
             recovery_bytes,
             usage,
             usage_bytes,
+            tenant_accounting,
             view: view.identity(),
             identity,
             limits,
@@ -742,8 +755,14 @@ impl StateSession {
             .ok_or(StateError::Limit)?;
         let mut usage = self.usage;
         let mut mutations = Vec::with_capacity(self.staged.len());
+        let mut state_expectations = Vec::with_capacity(self.staged.len());
         for (key, value) in self.staged {
             let observation = self.observations.get(&key).ok_or(StateError::Corrupt)?;
+            state_expectations.push(accounting::row_expectation(
+                &self.scope,
+                &key,
+                observation.original.clone(),
+            )?);
             if let Some(cell) = &observation.cell {
                 let amount = (key.len()
                     + observation
@@ -823,6 +842,8 @@ impl StateSession {
             epochs: self.history.epochs,
             usage: usage.encode(),
             mutations,
+            state_expectations,
+            tenant_accounting: self.tenant_accounting,
         })
     }
 }
@@ -838,6 +859,8 @@ pub struct StatePlan {
     epochs: crate::namespace::history::HistoryEpochs,
     usage: Vec<u8>,
     mutations: Vec<RowMutation>,
+    state_expectations: Vec<ExpectedRow>,
+    tenant_accounting: crate::tenant::PreparedTenantUpdate,
 }
 impl StatePlan {
     #[must_use]
@@ -892,6 +915,8 @@ impl StatePlan {
             value: Some(self.usage),
         });
         batch.mutations.extend(self.mutations);
+        batch.expectations.extend(self.state_expectations);
+        self.tenant_accounting.rebuild_batch(batch)?;
         Ok(self.namespace.version)
     }
 }
