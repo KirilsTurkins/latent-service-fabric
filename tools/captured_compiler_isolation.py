@@ -90,7 +90,9 @@ class Isolation:
         self.workspace = regular_path(workspace).resolve(strict=True)
         self.read_only_inputs: list[Path] = []
         self.child_path: Path | None = None
-        self.sandbox = regular_path(Path(sandbox)).resolve(strict=True)
+        # Bind discovered host tools to physical files across system bin aliases.
+        self.sandbox = regular_path(Path(sandbox).resolve(strict=True))
+        loader_probe = str(regular_path(Path(loader_probe).resolve(strict=True)))
         self.tools = {name: regular_path(path).resolve(strict=True) for name, path in tools.items()}
         self.distributions = {name: regular_path(path).resolve(strict=True) for name, path in distributions.items()}
         if len(loader_directories) > 8:

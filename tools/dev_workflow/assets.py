@@ -7,7 +7,7 @@ from pathlib import Path
 import time
 
 from . import paths, state
-from .common import decode, digest, encode, members, require, sha
+from .common import MAX_REVISIONS, decode, digest, encode, members, require, sha
 
 CHUNK = 1024 * 1024
 # The captured .NET NativeAOT compiler is larger than the Rust/C bundles.
@@ -19,7 +19,12 @@ MAX_SETS = 3
 
 
 def manifest(value: dict) -> dict:
-    members(value, {"schemaVersion", "files", "identity"})
+    members(value, {"schemaVersion", "files", "identity"}, {'domain'})
+    captured = 'domain' in value
+    if captured:
+        from .captured_inputs import DOMAIN, METADATA, ARCHIVE, MAX_REFERENCES
+        from tools.application_dependencies import MAX_CLOSURE_BYTES, MAX_LOCK
+        require(value['domain'] == DOMAIN, 'offline-input-domain')
     require(value["schemaVersion"] == "latent.dev.inputs.v1", "offline-input-schema")
     require(isinstance(value["files"], list) and 0 < len(value["files"]) <= MAX_FILES, "offline-input-file-limit")
     names, total = set(), 0
@@ -34,34 +39,44 @@ def manifest(value: dict) -> dict:
         sha(entry["sha256"])
         total += entry["size"]
     require(total <= MAX_TOTAL, "offline-input-total-limit")
+    if captured:
+        require({entry['path'] for entry in value['files']} == {METADATA, ARCHIVE}
+                and all(entry['executable'] is False for entry in value['files']), 'captured-input-transfer-inventory')
+        require(total <= MAX_CLOSURE_BYTES + MAX_LOCK + MAX_REFERENCES * 1024 + 10240,
+                'captured-input-transfer-byte-limit')
     require(digest(encode({key: item for key, item in value.items() if key != "identity"})) == sha(value["identity"]),
             "offline-input-identity")
     return value
 
 
-def directory(root: Path, identity: str) -> Path:
-    return root / "assets" / sha(identity)[7:]
+def directory(root: Path, identity: str, domain: str | None = None) -> Path:
+    if domain is not None:
+        from .captured_inputs import DOMAIN
+        require(domain == DOMAIN, 'offline-input-domain')
+    return root / ('captures' if domain is not None else 'assets') / sha(identity)[7:]
 
 
 def receive(root: Path, operation: str, arguments: dict) -> dict:
     if operation == "asset-begin":
         value = manifest(arguments)
-        cache = root / "assets"
+        cache = root / ('captures' if arguments.get('domain') is not None else 'assets')
         if not cache.exists():
             paths.new_directory(cache)
-        destination = directory(root, value["identity"])
+        destination = directory(root, value["identity"], value.get('domain'))
         if not destination.exists():
-            require(sum(1 for _ in cache.iterdir()) < MAX_SETS, "offline-input-cache-full-purge-workspace-explicitly")
+            require(sum(1 for _ in cache.iterdir()) < (MAX_REVISIONS if 'domain' in value else MAX_SETS),
+                    "offline-input-cache-full-purge-workspace-explicitly")
             paths.new_directory(destination)
             state.atomic(destination, "transfer.json", value)
         else:
             require(state.load(destination, "transfer.json") == value, "partial-or-different-offline-input")
         return {"identity": value["identity"], "complete": (destination / "complete.json").exists()}
-    members(arguments, {"identity"}, {"path", "offset", "bytes"})
-    destination = directory(root, arguments["identity"])
+    members(arguments, {"identity"}, {"path", "offset", "bytes", 'domain'})
+    destination = directory(root, arguments["identity"], arguments.get('domain'))
     value = manifest(state.load(destination, "transfer.json"))
+    require(value.get('domain') == arguments.get('domain'), 'offline-input-domain')
     if operation == "asset-finish":
-        members(arguments, {"identity"})
+        members(arguments, {"identity"}, {'domain'})
         for entry in value["files"]:
             require(paths.digest_file(destination, entry["path"], MAX_ASSET) == (entry["sha256"], entry["size"]),
                     "offline-input-content-mismatch")
@@ -71,7 +86,7 @@ def receive(root: Path, operation: str, arguments: dict) -> dict:
         state.atomic(destination, "complete.json", value)
         return {"identity": value["identity"], "directory": str(destination), "complete": True}
     require(operation == "asset-chunk", "offline-input-operation")
-    members(arguments, {"identity", "path", "offset", "bytes"})
+    members(arguments, {"identity", "path", "offset", "bytes"}, {'domain'})
     entry = next((entry for entry in value["files"] if entry["path"] == arguments["path"]), None)
     require(entry is not None and type(arguments["offset"]) is int and arguments["offset"] >= 0, "offline-input-chunk-path")
     require(isinstance(arguments["bytes"], str) and len(arguments["bytes"]) <= (CHUNK + 2) // 3 * 4, "offline-input-chunk-limit")
@@ -105,19 +120,24 @@ def receive(root: Path, operation: str, arguments: dict) -> dict:
     return {"identity": value["identity"], "path": entry["path"], "offset": offset + len(raw)}
 
 
-def transfer(connection, sources: dict[str, Path]) -> dict:
+def transfer(connection, sources: dict[str, Path], *, domain: str | None = None) -> dict:
     require(0 < len(sources) <= MAX_FILES, "offline-input-file-limit")
     deadline = time.monotonic() + 900
     def check():
         require(time.monotonic() < deadline, "offline-input-transfer-deadline")
     def call(operation, arguments, timeout=30):
         check()
+        if domain is not None:
+            arguments = {**arguments, 'domain': domain}
+            operation = operation.replace('asset-', 'capture-', 1)
         return connection.call(operation, arguments, timeout=min(timeout, deadline - time.monotonic()))
     entries = []
     for name, path in sorted(sources.items()):
         checksum, size = paths.digest_file(path.parent, path.name, MAX_ASSET, check=check)
         entries.append({"path": name, "sha256": checksum, "size": size, "executable": name == "trust/gh"})
     record = {"schemaVersion": "latent.dev.inputs.v1", "files": entries}
+    if domain is not None:
+        record['domain'] = domain
     record["identity"] = digest(encode(record))
     manifest(record)
     observation = call("asset-begin", record)

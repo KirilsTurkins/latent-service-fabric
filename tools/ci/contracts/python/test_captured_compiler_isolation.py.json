@@ -1,5 +1,5 @@
 {
-  "cases":["CompilerInputs.test_absolute_embedded_file_outside_capture_is_rejected","CompilerInputs.test_dependency_output_cannot_hide_rules_variables_or_overflow","CompilerInputs.test_dependency_output_preserves_escaped_names_and_continuations","CompilerInputs.test_distribution_binds_headers_runtime_and_zero_byte_files","CompilerNamespace.test_captured_loader_mutation_is_rejected_before_reuse","CompilerNamespace.test_captured_sdk_child_path_cannot_expose_unregistered_executables","CompilerNamespace.test_deadline_kills_descendants_and_next_build_is_clean","CompilerNamespace.test_go_compiler_policy_cannot_enable_network_cgo_or_an_ambient_toolchain","CompilerNamespace.test_loader_search_rejects_uncaptured_duplicate_and_excessive_directories","CompilerNamespace.test_loader_search_uses_captured_libraries_and_cannot_inherit_ambient_paths","CompilerNamespace.test_selected_bytes_work_but_ambient_file_and_credentials_are_absent","CompilerNamespace.test_selected_sources_are_read_only_and_owned_outputs_remain_writable"],
+  "cases":["CanonicalCompilerHostTools.test_explicit_captured_workspace_executable_and_distribution_links_remain_denied","CanonicalCompilerHostTools.test_host_directory_aliases_bind_canonical_tool_bytes_before_namespace_execution","CompilerInputs.test_absolute_embedded_file_outside_capture_is_rejected","CompilerInputs.test_dependency_output_cannot_hide_rules_variables_or_overflow","CompilerInputs.test_dependency_output_preserves_escaped_names_and_continuations","CompilerInputs.test_distribution_binds_headers_runtime_and_zero_byte_files","CompilerNamespace.test_captured_loader_mutation_is_rejected_before_reuse","CompilerNamespace.test_captured_sdk_child_path_cannot_expose_unregistered_executables","CompilerNamespace.test_deadline_kills_descendants_and_next_build_is_clean","CompilerNamespace.test_go_compiler_policy_cannot_enable_network_cgo_or_an_ambient_toolchain","CompilerNamespace.test_loader_search_rejects_uncaptured_duplicate_and_excessive_directories","CompilerNamespace.test_loader_search_uses_captured_libraries_and_cannot_inherit_ambient_paths","CompilerNamespace.test_selected_bytes_work_but_ambient_file_and_credentials_are_absent","CompilerNamespace.test_selected_sources_are_read_only_and_owned_outputs_remain_writable"],
   "guards":{
     "CompilerInputs.test_absolute_embedded_file_outside_capture_is_rejected":
       "c08417c1ebc8bcdcb90b44f9c6d732d9518f7e4479ec1bc26c276b5b51c17eb5",
@@ -24,14 +24,19 @@
     "CompilerNamespace.test_selected_bytes_work_but_ambient_file_and_credentials_are_absent":
       "307f6b6965c8bb6e40d906030c0eb393b1f374aeb08edbaa70b0e7ff9f18b096",
     "CompilerNamespace.test_selected_sources_are_read_only_and_owned_outputs_remain_writable":
-      "307f6b6965c8bb6e40d906030c0eb393b1f374aeb08edbaa70b0e7ff9f18b096"
+      "307f6b6965c8bb6e40d906030c0eb393b1f374aeb08edbaa70b0e7ff9f18b096",
+    "CanonicalCompilerHostTools.test_explicit_captured_workspace_executable_and_distribution_links_remain_denied":
+      "6034d46bc1bde979f2ff96f8347788ad6c5da119d460b7e37bde643cd70dd895",
+    "CanonicalCompilerHostTools.test_host_directory_aliases_bind_canonical_tool_bytes_before_namespace_execution":
+      "6034d46bc1bde979f2ff96f8347788ad6c5da119d460b7e37bde643cd70dd895"
   },
   "kind":"python",
   "module":"tools/tests/test_captured_compiler_isolation.py",
-  "reviewReason":"Retain all nine historical compiler and namespace guards; add three actual captured loader closure, ambient search denial, bounds and mutation controls for the hosted CPython absolute RUNPATH repair.",
+  "reviewReason":"Retain all nine historical compiler and namespace guards; add three actual captured loader closure, ambient search denial, bounds and mutation controls for the hosted CPython absolute RUNPATH repair. Two additive canonical host-tool execution and explicit captured-link denial controls execute in the original maintained namespace suite.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "c08417c1ebc8bcdcb90b44f9c6d732d9518f7e4479ec1bc26c276b5b51c17eb5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e512317641672518b9e2fa30e9c6c7d0489fae30f1a78dd43134ba67e8288154","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "307f6b6965c8bb6e40d906030c0eb393b1f374aeb08edbaa70b0e7ff9f18b096":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e512317641672518b9e2fa30e9c6c7d0489fae30f1a78dd43134ba67e8288154","class:raise:raise unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')","class:setup-sha256:dc680314629b4f4a5ad78dba54cc482ca48d526b9fc12f300d1de7a8162a9695","class:skip:unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')"],"skipSites":[]}
+    "307f6b6965c8bb6e40d906030c0eb393b1f374aeb08edbaa70b0e7ff9f18b096":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:e512317641672518b9e2fa30e9c6c7d0489fae30f1a78dd43134ba67e8288154","class:raise:raise unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')","class:setup-sha256:dc680314629b4f4a5ad78dba54cc482ca48d526b9fc12f300d1de7a8162a9695","class:skip:unittest.SkipTest('actual namespace qualification requires Linux bubblewrap')"],"skipSites":[]},
+    "6034d46bc1bde979f2ff96f8347788ad6c5da119d460b7e37bde643cd70dd895":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:e512317641672518b9e2fa30e9c6c7d0489fae30f1a78dd43134ba67e8288154","class:setup-sha256:f4f4d9d647fc8ad98869fdfc877f7bf719211c49ace7565d88cc91a8a7d2f74a"]}
   }
 }
