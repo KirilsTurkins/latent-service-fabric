@@ -1,6 +1,7 @@
 use super::*;
 use std::fs::OpenOptions;
 
+mod format;
 mod measurement;
 mod writers;
 

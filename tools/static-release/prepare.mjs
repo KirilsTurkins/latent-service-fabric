@@ -44,11 +44,20 @@ export async function prepare({cli, python, buildOutput, inventory, repository, 
     '--input', inventory, '--output', path.join(directory, 'inputs')], directory)).toString('utf8'));
   requireValue(captured.schemaVersion === 'latent.static-site.capture.v1' && captured.frameworkBuildExecuted === false,
     'supplied-static-capture-required');
+  const {budget: captureBudget, ...capturedObservation} = captured;
+  const captureObservationBytes = await readBytes(path.join(directory, 'inputs/metadata/static-observation.json'), 32768);
+  requireValue(captureBudget?.schemaVersion === 'latent.static-site.budget.v1' && captureBudget.complete === true
+    && jsonBytes(capturedObservation).equals(captureObservationBytes)
+    && captureBudget.selection?.assetsDigest === captured.assetsDigest
+    && captureBudget.selection?.webManifestDigest === captured.webManifestDigest
+    && captureBudget.selection?.inputObservationTrust === 'operator-supplied', 'capture-budget-association');
+  // Operator diagnostics are deliberately outside provenance and signed inputs.
+  await writeJson(path.join(directory, 'capture-budget.json'), captureBudget);
   const source = captured.observations.find(item => item.kind === 'source');
   requireValue(source && captured.observations.filter(item => item.kind === 'source').length === 1, 'source-observation-required');
   // The capture adapter checked these supplied bytes against the reviewed input.
   materials.push({name: 'source-snapshot', digest: source.digest, size: source.size});
-  materials.push(record('static-capture-observation', jsonBytes(captured)));
+  materials.push(record('static-capture-observation', captureObservationBytes));
   const summary = await native(cli, ['package', 'build', '--source', path.join(directory, 'inputs/package-source.json'),
     '--input-root', path.join(directory, 'inputs'), '--sbom-inputs', path.join(directory, 'inputs/sbom-inputs.json'),
     '--output-dir', path.join(directory, 'package'), '--validate-web'], directory);
@@ -72,7 +81,8 @@ export async function prepare({cli, python, buildOutput, inventory, repository, 
   const receipt = {schemaVersion: 'latent.static.prepared.v1', packageDigest: summary.packageDigest,
     observationDigest: sha256(observationBytes), inputObservationTrust: 'operator-supplied', frameworkBuildExecuted: false,
     assemblyExecuted: true, reproducibility: 'not-checked', hermetic: false,
-    dependencyCompleteness: 'declared-inputs-incomplete', sbomInventoryDigest: summary.sbomInventoryDigest};
+    dependencyCompleteness: 'declared-inputs-incomplete', sbomInventoryDigest: summary.sbomInventoryDigest,
+    captureBudget};
   await writeJson(path.join(directory, 'PREPARE-COMPLETE.json'), receipt);
   return receipt;
 }
