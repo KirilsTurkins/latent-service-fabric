@@ -81,6 +81,13 @@ impl WasmtimeConfig {
         ]);
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
+        if let Some(limits) = self.activation_runtime {
+            fields.insert(
+                "activation-runtime-profile".into(),
+                latent_core::activation_runtime::PROFILE.into(),
+            );
+            fields.insert("activation-runtime-limits".into(), format!("{limits:?}"));
+        }
         if mode == DispatchMode::Generic {
             if self.angular_renderer {
                 fields.insert(
