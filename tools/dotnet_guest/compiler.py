@@ -11,7 +11,7 @@ import tempfile
 from tools.build_observation import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.dotnet_guest.sdk import install as install_sdk
-from tools.dotnet_guest import runtime
+from tools.dotnet_guest import runtime, http_errors
 from tools.guest_compatibility_build import interface_names
 
 SDK_VERSION = "10.0.100"
@@ -76,6 +76,7 @@ class Compiler:
         if sys.platform != "linux" or platform.machine() not in {"x86_64", "AMD64"}:
             raise ValueError("the pinned NativeAOT LLVM compiler is qualified only on Linux x86-64")
         self.tools, self.commands, self.vendor = tools.resolve(strict=True), commands, vendor
+        self.http_error_tools = self.tools
         self.offline = offline or captured
         self.isolation, self.application_closure, self.executable_approval = None, None, None
         self.generated_materials, self.noncrypto_port = [], None
@@ -109,6 +110,10 @@ class Compiler:
         self.roots["package-hash"] = tools / "package-hash"
         if snapshot(tools / "package-hash-source") != snapshot(self.sdk / "tools/package-hash"):
             raise ValueError("NuGet content-hash source differs from the captured SDK")
+        http_error_tool = http_errors.verify_installed(self.sdk, tools)
+        self.roots["http-errors"] = tools / "http-errors"
+        self.roots["http-errors-source"] = tools / "http-errors-source"
+        self.http_error_port = None
         self.roots.update(packages(json.loads(read_file(self.sdk / "probes/smoke/packages.lock.json")), tools / "packages",
             lambda archive: commands.run("nuget-content-hash", self.dotnet, tools / "package-hash/PackageHash.dll", archive).decode().strip()))
         self.wasi_sdk = Path(json.loads(read_file(tools / "wasi-sdk.json"))["path"]).resolve(strict=True)
@@ -134,6 +139,7 @@ class Compiler:
             ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen),
             *((runtime.ADAPTERS[name][0].removeprefix("dotnet-"), path)
               for name, path in self.runtimes.items()), ('component-composer', self.wac))]
+        self.materials.append(http_error_tool)
         self.before = tree_identity(self.roots)
         if captured:
             from tools.dotnet_compiler_isolation import stage
@@ -223,6 +229,11 @@ class Compiler:
             # prohibits restore from silently reaching the network on a miss.
             (project / "nuget.config").write_text(
                 '<configuration><packageSources><clear /></packageSources></configuration>\n', encoding="utf-8")
+        self.http_error_port = None
+        if {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared):
+            self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
+                output, command.output, self.run,
+                protect_inputs=self.isolation.protect_inputs if self.isolation else None)
         self.run("locked-restore", self.dotnet, "restore", project / "Capsule.csproj", "--configfile",
             project / "nuget.config", "--locked-mode", "--packages", self.package_cache, "--disable-parallel",
             "-p:NuGetAudit=false", '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')
@@ -292,6 +303,18 @@ class Compiler:
             raise ValueError('native-aot-raw-wit-byte-limit')
         (command.output / 'native-aot-raw.wit.json').write_bytes(raw_wit)
         actual = interface_names(json.loads(raw_wit))["imports"]
+        http_error_port = None
+        if self.http_error_port is not None:
+            http_error_port = self.http_error_port.finish(project, command.output)
+            self.compiler_patches = [*self.compiler_patches, {
+                "name": http_error_port["patch"], "profile": "dotnet-wasi-http-errors-v1",
+                "original": http_error_port["frameworkInputs"][0], "selected": http_error_port["derived"],
+                "selection": {key: http_error_port[key] for key in (
+                    "sourceCaptureDigest", "targetsDigest", "method", "categories", "cecilDigest",
+                    "arbitraryPayloadDisclosure", "nativeAotReferenceBinding")},
+            }]
+            self.generated_materials.extend((self.http_error_port.identity,
+                file_identity(command.output / "http-error-port.json", "dotnet-http-error-port", http_errors.MAX_RECEIPT)))
         profile = runtime.select(declared, actual)
         adapter = self.runtimes[profile]
         additional = [(name, self.runtimes[name]) for name in runtime.additional(declared, actual)]
@@ -321,19 +344,25 @@ class Compiler:
         if "import wasi:" in surface or "wasi_snapshot_preview1" in surface:
             raise ValueError("ambient WASI import survived the closed runtime composition")
         (output / "component.wit").write_text(surface, encoding="utf-8")
-        return component, {"bindings": receipt, "capabilities": facades,
+        generated_receipt = {"bindings": receipt, "capabilities": facades,
             "runtimeProfile": selection,
             "filesDigest": digest(json.dumps(receipt["outputs"], sort_keys=True).encode())}
+        if http_error_port is not None:
+            generated_receipt["httpErrorPort"] = http_error_port
+        return component, generated_receipt
 
     def check_unchanged(self):
         if self.noncrypto_port:
             self.noncrypto_port.recheck()
+        if self.http_error_port:
+            self.http_error_port.recheck()
         if tree_identity(self.roots) != self.before:
             raise ValueError("observed .NET compiler inputs changed during build")
         after = [file_identity(path, name) for name, path in (
             ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen),
             *((runtime.ADAPTERS[name][0].removeprefix("dotnet-"), path)
               for name, path in self.runtimes.items()), ('component-composer', self.wac))]
+        after.append(http_errors.verify_installed(self.sdk, self.tools))
         if after != self.materials:
             raise ValueError(".NET compiler or runtime adapter changed during build")
         if self.isolation:
