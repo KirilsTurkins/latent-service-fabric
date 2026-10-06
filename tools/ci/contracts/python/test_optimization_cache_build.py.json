@@ -1,1 +1,20 @@
-{"cases":["CacheBuildTests.test_failed_first_library_removes_owned_source_and_preserves_both_failures","CacheBuildTests.test_lock_and_common_collector_changes_rejected_before_build","CacheBuildTests.test_only_declared_library_targets_and_legacy_recipe","CacheBuildTests.test_symbolic_or_dirty_harness_rejected_before_checkout"],"guards":{"CacheBuildTests.test_failed_first_library_removes_owned_source_and_preserves_both_failures":"502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c","CacheBuildTests.test_lock_and_common_collector_changes_rejected_before_build":"502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c","CacheBuildTests.test_only_declared_library_targets_and_legacy_recipe":"502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c","CacheBuildTests.test_symbolic_or_dirty_harness_rejected_before_checkout":"502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c"},"kind":"python","module":"tools/tests/test_optimization_cache_build.py","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:22e4aad5abeeef217a5a6460f55f7918603f8c42379ddd5dd25a2eeb8c28449b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
+{
+  "cases":["CacheBuildTests.test_failed_first_library_removes_owned_source_and_preserves_both_failures","CacheBuildTests.test_lock_and_common_collector_changes_rejected_before_build","CacheBuildTests.test_only_declared_library_targets_and_legacy_recipe","CacheBuildTests.test_symbolic_or_dirty_harness_rejected_before_checkout"],
+  "guards":{
+    "CacheBuildTests.test_failed_first_library_removes_owned_source_and_preserves_both_failures":
+      "502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c",
+    "CacheBuildTests.test_lock_and_common_collector_changes_rejected_before_build":
+      "502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c",
+    "CacheBuildTests.test_only_declared_library_targets_and_legacy_recipe":
+      "502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c",
+    "CacheBuildTests.test_symbolic_or_dirty_harness_rejected_before_checkout":
+      "502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_optimization_cache_build.py",
+  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "502cf7b1327debcaffa423f982534d28b342c93ca10d92aa94b31deefdce9e9c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:22e4aad5abeeef217a5a6460f55f7918603f8c42379ddd5dd25a2eeb8c28449b","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}
