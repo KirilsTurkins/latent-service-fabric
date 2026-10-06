@@ -2263,6 +2263,7 @@ dependencies = [
  "latent-executor",
  "latent-manifest",
  "latent-node",
+ "latent-packaging",
  "latent-policy",
  "latent-rollout",
  "latent-routing",

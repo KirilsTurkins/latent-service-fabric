@@ -8,7 +8,10 @@ publisher/builder and clean-host packaged qualification remain separate gates.
 
 `LSF_TRANSACTION_GUEST_ROOT` names the output of
 `tools/compile_transaction_guests.py --language rust`. The fixture checks the
-actual component digest and captured template/WIT identities. Preparation must
+actual component digest and captured template/WIT identities. Its contract
+descriptors are derived by the maintained packager from the exact application,
+state and intents WIT, then checked against the compiled component and explicit
+Phase 4 manifest profile before publication or deployment. Preparation must
 create zero guest Stores. Execution counts are incremented only when the compiled
 guest calls the real `acquire-command` import, independently of durable state,
 attempt, result, commit receipt and effect IDs. A forwarding test observer keeps

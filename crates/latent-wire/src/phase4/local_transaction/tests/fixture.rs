@@ -7,9 +7,7 @@ use crate::phase4::{Phase4ServiceAdapter, Phase4Services};
 use latent_admission::{
     LocalAdmissionController, LocalQuotaProvider, NodeLoadSnapshot, NodeLoadSource,
 };
-use latent_artifacts::{
-    ArtifactRepository, DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig,
-};
+use latent_artifacts::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
 use latent_control_store::{
     DeploymentStore, DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig,
 };
@@ -123,7 +121,8 @@ impl Fixture {
             )
             .unwrap(),
         );
-        let (publication, metadata, deployment, declaration) = publication::publish(&catalog).await;
+        let (publication, metadata, deployment, declaration) =
+            publication::publish(&catalog, manifest_profile).await;
         let effects = EffectAuthorityOwner::new(128, 16, 100).unwrap();
         let policy = Arc::new(
             PolicyStore::open(

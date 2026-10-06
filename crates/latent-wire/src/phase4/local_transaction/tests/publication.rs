@@ -1,20 +1,26 @@
 //! A real maintained compiled component in a trusted-local test catalog.
 //! Publisher/builder qualification remains a separate signed-package campaign.
-use super::*;
+mod surface;
+
 use latent_artifacts::*;
-use latent_core::{ArtifactReference, ContractId, Metadata, TenantId};
-use latent_manifest::{DeploymentManifest, JsonManifestCodec, ManifestCodec, TransactionBinding};
+use latent_core::{ArtifactReference, Metadata, TenantId};
+use latent_manifest::{
+    DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidationProfile,
+    TransactionBinding,
+};
 use serde_json::{json, Value};
 use std::{fs, path::PathBuf};
 
 pub(super) const TENANT: &str = "examples";
 pub(super) const SERVICE: &str = "examples/transaction-rust-aggregate";
 pub(super) const CONTRACT: &str = "examples:transactional-aggregate/api@1.0.0";
+const WORLD: &str = "examples:transactional-aggregate/service@1.0.0";
 pub(super) const NAMESPACE: &str = "transactional-aggregate";
 pub(super) const FORMAT: &str = "lsf-wit-values-v1";
 
 pub(super) async fn publish(
     catalog: &DirectoryArtifactRepository,
+    profile: ManifestValidationProfile,
 ) -> (
     ReleaseUseEligibility,
     VerifiedArtifactMetadata,
@@ -31,6 +37,11 @@ pub(super) async fn publish(
     assert_eq!(report["compiled"], true);
     assert_eq!(report["language"], "rust");
     assert_eq!(report["variant"], "aggregate");
+    assert_eq!(report["world"], WORLD);
+    assert_eq!(
+        report["hostAbiDigest"],
+        latent_manifest::phase4_host_abi_digest()
+    );
     for capability in [
         latent_capabilities::namespace::STATE_CONTRACT,
         latent_capabilities::namespace::INTENT_CONTRACT,
@@ -75,7 +86,7 @@ pub(super) async fn publish(
     )))
     .unwrap();
     document["component"]["digest"] = digest.0.clone().into();
-    document["component"]["world"] = "examples:transactional-aggregate/service@1.0.0".into();
+    document["component"]["world"] = WORLD.into();
     document["component"]["version"] = "1.0.0".into();
     document["metadata"]["tenant"] = TENANT.into();
     document["metadata"]["name"] = SERVICE.into();
@@ -88,6 +99,7 @@ pub(super) async fn publish(
     let manifest = JsonManifestCodec::default()
         .decode_capsule(&serde_json::to_vec(&document).unwrap())
         .unwrap();
+    let contracts = surface::contracts(&root, &component, &manifest, profile);
     let receipt = catalog
         .publish_managed(
             ReleaseMutationContext {
@@ -112,18 +124,7 @@ pub(super) async fn publish(
                     annotations: Metadata::new(),
                 },
                 manifest,
-                contracts: vec![ContractDescriptor {
-                    id: ContractId(CONTRACT.into()),
-                    package_name: "examples:transactional-aggregate".into(),
-                    semantic_version: "1.0.0".into(),
-                    interfaces: Vec::new(),
-                    dependencies: Vec::new(),
-                    digest: latent_artifacts::content_digest(include_bytes!(concat!(
-                        env!("CARGO_MANIFEST_DIR"),
-                        "/../../examples/rust-capsules/transactional-aggregate/world.wit"
-                    )))
-                    .0,
-                }],
+                contracts,
                 component_bytes: component,
             }),
             &mut |_| Ok(()),
@@ -158,10 +159,7 @@ pub(super) async fn publish(
     let deployment = JsonManifestCodec::default()
         .decode_deployment(&serde_json::to_vec(&document).unwrap())
         .unwrap();
-    let declaration = TransactionBinding::decode(
-        &fs::read(root.join("project/transaction-binding.json")).unwrap(),
-    )
-    .unwrap();
+    let declaration = surface::declaration(&root, &report);
     assert_eq!(declaration.namespace, NAMESPACE);
     (publication, metadata, deployment, declaration)
 }
