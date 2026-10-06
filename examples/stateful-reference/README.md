@@ -87,6 +87,21 @@ aborts delivery; it creates no substitute browser response. The node conductor
 must attest each selected guest's admitted component/compiler/ABI identities
 and actual command records before treating the browser receipt as qualification.
 
+`tools/run_stateful_reference_browser.py --inputs ../private-conductor.json
+--output ../browser-evidence` coordinates that journey on the preinstalled
+ordinary node. The private input uses schema
+`latent.stateful-reference.conductor-input.v1`, the declared single-backend or
+six-backend scope, the actual `latent` executable, protected operator/Alice client
+configurations, the pinned Node executable, and the browser inputs above. Each
+backend entry has its language and two `entities` entries, `alice` and `bob`;
+each supplies the ordinary assembled build directory, its actual admitted
+publication, result/state policy identities and explicit deployment grants.
+The conductor preserves the browser's 240-second deadline and records real
+deployment/trigger CAS receipts and current original-command/effect inspections.
+It writes private inputs and evidence outside the checkout. Its receipt describes
+the common browser boundary separately from inbox, provider recovery, schema,
+retention, dormancy and packaged-workflow qualification.
+
 Current source checks cover creation of all six captured projects, identical
 export contracts, preserved SDK bytes and runtime worlds, pinned canonical
 binding generation and nine browser-client unit transport scenarios. The Java

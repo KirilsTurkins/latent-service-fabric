@@ -148,6 +148,7 @@ async function responseLoss(page, expectedDisposition) {
     assert.match(envelope['command-id'], /^[0-9a-f]{64}$/);
     observed.commandId = envelope['command-id'];
     observed.effectIds = envelope['effect-ids'];
+    observed.resultDigest = digest(Buffer.from(envelope.result['body-base64'], 'base64'));
     observed.result = envelope.result;
     assert.equal(actual.headers()['set-cookie'], undefined);
     await intercepted.abort('failed');
@@ -218,8 +219,12 @@ try {
     assert.equal(denied.headers()['set-cookie'], undefined);
     observations.push({language: backend.language, backendInput: backend, ssrDigest: a.ssrDigest,
       revisions: [a.original.toString(), (a.original + 3n).toString()], commandPosts,
-      lostCommit: {commandId: lostCommit.observed.commandId, bodyDigest: lostCommit.observed.bodyDigest},
-      lostRejection: {commandId: lostRejection.observed.commandId, bodyDigest: lostRejection.observed.bodyDigest},
+      lostCommit: {commandId: lostCommit.observed.commandId, clientKey: lostCommit.observed.key,
+        bodyDigest: lostCommit.observed.bodyDigest, resultDigest: lostCommit.observed.resultDigest,
+        effectIds: lostCommit.observed.effectIds},
+      lostRejection: {commandId: lostRejection.observed.commandId, clientKey: lostRejection.observed.key,
+        bodyDigest: lostRejection.observed.bodyDigest, resultDigest: lostRejection.observed.resultDigest,
+        effectIds: lostRejection.observed.effectIds},
       bobSsrDigest: own.ssrDigest, sameTenantForeignResultStatus: denied.status(), tokenRotationSameCommand: true});
     for (const selected of [first, second, bob]) await selected.close();
     emit({event: 'complete', phase: 'backend-browser', language: backend.language,
