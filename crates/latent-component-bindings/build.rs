@@ -341,12 +341,27 @@ fn write_transaction_guest_bindings(output: &Path, wit: &Path) -> io::Result<()>
         }});"#
         ),
     )?;
+    // Two installed profiles use the same package/version with different
+    // aggregate worlds. Keep the public host profile unchanged and give this
+    // import-only SDK staging world its own metadata identity.
+    let guest_wit = output.join("transaction-guest-wit");
+    recreate(&guest_wit)?;
+    copy_wit_tree(wit, &guest_wit)?;
+    let world = fs::read_to_string(guest_wit.join("world.wit"))?;
+    if world.matches("world capsule {").count() != 1 {
+        return Err(io::Error::other("exact transaction staging world required"));
+    }
+    fs::write(
+        guest_wit.join("world.wit"),
+        world.replacen("world capsule {", "world transaction-bindings {", 1),
+    )?;
+    let guest_path = format!("{:?}", guest_wit.to_string_lossy());
     fs::write(
         output.join("transaction_guest.rs"),
         format!(
             r#"wit_bindgen::generate!({{
-        path: {path},
-        world: "latent:platform/capsule@0.5.0",
+        path: {guest_path},
+        world: "latent:platform/transaction-bindings@0.5.0",
         generate_all,
     }});"#
         ),
