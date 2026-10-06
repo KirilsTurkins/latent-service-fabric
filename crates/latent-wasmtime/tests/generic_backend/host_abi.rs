@@ -25,15 +25,15 @@ fn artifact(spec: &latent_core::HostInterfaceSpec) -> latent_artifacts::CapsuleA
 
 #[tokio::test(flavor = "current_thread")]
 async fn outbound_proposal_and_wasi_sockets_are_not_ambient_authority() {
-    const PROPOSED: &str = "latent:network/streams@0.1.0";
-    const WIT: &str = include_str!("../../../../research/standard-outbound/streams.wit");
+    const STREAMS: &str = "latent:network/streams@0.1.0";
+    const WIT: &str = include_str!("../../../../wit/platform/network/package.wit");
     let factory = WasmtimeComponentEngineFactory::new(config()).unwrap();
     let backend = factory.create_backend_instance();
-    let proposed = host_fixture::interface(WIT, PROPOSED, None);
-    // An unknown standard-socket namespace remains unknown even with an empty
-    // imported instance. Declaring an import or dependency cannot grant egress.
+    let streams = host_fixture::interface(WIT, STREAMS, None);
+    // An uninstalled stream interface remains denied. An unknown standard
+    // socket namespace stays unknown even with an empty imported instance.
     let wasi = wasm_encoder::InstanceType::new();
-    for (name, interface) in [(PROPOSED, &proposed), ("wasi:sockets/tcp@0.2.0", &wasi)] {
+    for (name, interface) in [(STREAMS, &streams), ("wasi:sockets/tcp@0.2.0", &wasi)] {
         let bytes = fixture::with_host(fixture::Options::default(), name, interface);
         let mut artifact = artifact_bytes(bytes, &[fixture::CONTRACT]);
         artifact.manifest.imports = vec![ContractImport {

@@ -93,7 +93,7 @@
   "requiredJobs": [
     "boundary"
   ],
-  "reviewReason": "Reconcile current namespace management and captured native prerequisites with original command waiter source; preserve all commands, actual cases, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
+  "reviewReason": "Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
