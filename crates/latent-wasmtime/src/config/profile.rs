@@ -258,6 +258,7 @@ impl WasmtimeConfig {
         // caller hint. Both policies and the selection version bind every
         // prepared/native artifact even when the selected component is small.
         include!("value-profile-selection", "actual-web-export-v1");
+        include!("structural-type-imports", "resource-free-values-v1");
         if let Some(web) = self.buffered_web_value_profile {
             include!("buffered-web-profile", "bounded-buffered-web-v1");
             include!("buffered-web-hostcall-fuel", web.hostcall_fuel);

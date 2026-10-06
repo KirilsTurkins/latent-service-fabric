@@ -117,7 +117,7 @@ class Peer:
         if not timeout.endswith("m") or not 0 < int(timeout[:-1]) <= 300000:
             raise ValueError("absolute deadline header")
         service, operation = headers[":path"].rsplit("/", 1)
-        module = invocation_pb2 if operation in {"Invoke", "Cancel", "GetActivation"} else node_pb2 if operation == "InspectActivationTree" else capability_pb2 if operation == "ListCapabilities" else policy_pb2
+        module = invocation_pb2 if operation in {"Invoke", "Cancel", "GetActivation"} else node_pb2 if operation in {"InspectActivationTree", "InspectHttpTarget"} else capability_pb2 if operation == "ListCapabilities" else policy_pb2
         expected = "/latent.invocation.v1.InvocationService" if module is invocation_pb2 else "/latent.control.v1.NodeService" if module is node_pb2 else "/latent.control.v1.CapabilityService" if module is capability_pb2 else "/latent.control.v1.PolicyService"
         if service != expected:
             raise ValueError("authoritative RPC path")
@@ -197,10 +197,25 @@ class Peer:
                 self.reply(connection, stream, value)
             else:
                 self.reply(connection, stream, value)
+        elif operation == "InspectHttpTarget":
+            value = node_pb2.InspectHttpTargetResponse(schema_version=1, tenant="tests", service=request.service, contract=request.contract,
+                function=request.function, route=request.route if request.HasField("route") else "default", state=1, catalog_transaction=MAXIMUM,
+                route_generation=MAXIMUM, binding_generation=MAXIMUM)
+            candidate = value.candidates.add(deployment_id="deployment-a", revision_id="revision-a", component_digest="sha256:"+"a"*64, reasons=[777])
+            candidate.preparation.state = 3 if request.include_preparation else 4
+            if request.function == "foreign": value.tenant = "foreign"
+            if request.function == "drift": candidate.revision_id = "revision-b"
+            self.reply(connection, stream, value)
         elif operation == "InspectActivationTree":
-            assert request.activation_id == "operator-root"
             value = node_pb2.InspectActivationTreeResponse(schema_version=1, history_available=True, retained_history_only=True)
             value.page.SetInParent()
+            if request.HasField("service"):
+                assert request.activation_id == "" and request.service == "http-adapter" and request.from_unix_millis == MAXIMUM
+                value.nodes.add(activation_id="real-ingress", root_activation_id="real-ingress", target_service=request.service,
+                    received_at_unix_millis=MAXIMUM, principal_kind="trigger", phase="running")
+                self.reply(connection, stream, value)
+                return
+            assert request.activation_id == "operator-root"
             child = value.nodes.add(activation_id="child", root_activation_id="operator-root", parent_activation_id="operator-root", phase="materializing", principal_kind="service")
             child.diagnostic.CopyFrom(node_pb2.ActivationDiagnostic(schema_version=1, stage=777, reason=778, profile=779, configured_bound=0, calculated_requirement=MAXIMUM))
             self.reply(connection, stream, value)

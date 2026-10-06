@@ -1,5 +1,9 @@
 # Authorized activation inspection
 
+Use `latent activation roots --service examples/java-http-adapter --from-unix-millis 1790000000000` to discover actual accepted ingress roots in the authenticated tenant. Follow each returned `activationId` with `latent activation tree ID` to inspect its real children. This uses the same authorized RPC and journal index; it does not add an HTTP response header or trust an application-supplied ID. The optional inclusive receive time is an observation filter, not a completeness guarantee.
+
+Root discovery examines at most 256 retained index entries per request, with the same 32-node default, 128-node ceiling and 64 KiB projection bound. An empty page may have `nextPageToken` when the finite scan encountered roots for other services or children; follow that cursor explicitly. The cursor binds tenant, service, receive-time presence/value and a serial horizon. New roots remain outside an existing cursor's horizon. Discovery returns only roots, their accepted `targetService` and exact decimal `receivedAtUnixMillis`; unavailable or evicted history remains unknown.
+
 Use the configured tenant administrator credential and the supported CLI:
 
 ```powershell

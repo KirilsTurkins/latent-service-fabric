@@ -93,6 +93,7 @@ final class Protocol {
 
     static void request(Object value, String tenant) {
         switch (value) {
+            case Management.InspectHttpTargetRequest request -> TargetInspection.request(request, tenant);
             case Management.InvokeRequest request -> {
                 require(request.target().isPresent());
                 var target = request.target().get();
@@ -107,7 +108,11 @@ final class Protocol {
             case Management.CancelRequest request -> require(identity(request.activationId()) && request.reason().length() <= 4096);
             case Management.GetActivationRequest request -> require(identity(request.activationId()));
             case Management.InspectActivationTreeRequest request -> {
-                require(treeIdentity(request.activationId()));
+                if (request.service().isPresent()) {
+                    require(request.activationId().isEmpty() && treeIdentity(request.service().get()));
+                } else {
+                    require(request.fromUnixMillis().isEmpty() && treeIdentity(request.activationId()));
+                }
                 request.page().ifPresent(page -> {
                     require(Integer.compareUnsigned(page.pageSize(), 128) <= 0);
                     page.pageToken().ifPresent(token -> require(token.length() <= 160));
@@ -200,6 +205,7 @@ final class Protocol {
     static boolean response(Object value, Object request, String tenant, Management.RequestIdentity recovery) {
         activation(value).ifPresent(identity -> require(recovery.activationId().map(identity::equals).orElse(true)));
         switch (value) {
+            case Management.InspectHttpTargetResponse response -> TargetInspection.response(response, (Management.InspectHttpTargetRequest)request, tenant);
             case Management.InvokeResponse response -> {
                 require(identity(response.activationId()) && response.consumption().isPresent());
                 require((response.success().isPresent() ? 1 : 0) + (response.declaredError().isPresent() ? 1 : 0)
@@ -234,6 +240,7 @@ final class Protocol {
             case Management.GetPolicyResponse response -> response.policy().ifPresent(policy ->
                     policy(policy, tenant, Optional.of(((Management.GetPolicyRequest) request).id()), ((Management.GetPolicyRequest) request).recordKind()));
             case Management.InspectActivationTreeResponse response -> {
+                var selector = (Management.InspectActivationTreeRequest) request;
                 int maximum = ((Management.InspectActivationTreeRequest) request).page().map(Management.PageRequest::pageSize).orElse(0);
                 if (maximum == 0) maximum = 32;
                 require(response.schemaVersion() == 1 && response.retainedHistoryOnly() && response.page().isPresent() && response.nodes().size() <= maximum);
@@ -241,6 +248,10 @@ final class Protocol {
                 page.nextPageToken().ifPresent(token -> require(!token.isEmpty() && token.length() <= 160));
                 require(response.historyAvailable() || response.nodes().isEmpty() && page.nextPageToken().isEmpty());
                 response.nodes().forEach(node -> {
+                    require(node.targetService().length() <= 512);
+                    selector.service().ifPresent(service -> require(node.targetService().equals(service)
+                        && node.parentActivationId().isEmpty() && node.activationId().equals(node.rootActivationId())
+                        && (selector.fromUnixMillis().isEmpty() || Long.compareUnsigned(node.receivedAtUnixMillis(), selector.fromUnixMillis().get()) >= 0)));
                     require(treeIdentity(node.activationId()) && treeIdentity(node.rootActivationId()) && node.phase().length() <= 64 && node.principalKind().length() <= 64);
                     node.parentActivationId().ifPresent(id -> require(treeIdentity(id)));
                     node.callerService().ifPresent(id -> require(treeIdentity(id)));

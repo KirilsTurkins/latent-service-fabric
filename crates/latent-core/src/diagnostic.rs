@@ -204,6 +204,8 @@ impl ActivationDiagnostic {
     }
 }
 
+// Missing, valid-present and invalid-present are distinct validation states.
+#[allow(clippy::option_option)]
 trait OptionalTranspose<T> {
     fn transpose_option(self) -> Option<Option<T>>;
 }

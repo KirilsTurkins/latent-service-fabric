@@ -16,6 +16,7 @@ mod release;
 mod resource;
 mod rollouts;
 mod routes;
+mod target_inspection;
 mod triggers;
 
 use std::fmt;
@@ -109,6 +110,7 @@ impl ManagementServiceAdapter {
 
     /// Attach the manager's existing bounded journal. This opens no observer,
     /// worker, durable payload log, or per-deployment resource.
+    #[must_use]
     pub fn with_activation_journal(mut self, journal: latent_node::LocalActivationJournal) -> Self {
         self.activations = Some(journal);
         self
@@ -224,12 +226,16 @@ impl ManagementServiceAdapter {
     }
 
     #[must_use]
-    pub fn node_server(self) -> proto::node_service_server::NodeServiceServer<Self> {
+    pub fn node_server(
+        self,
+    ) -> DeploymentResponseService<proto::node_service_server::NodeServiceServer<Self>> {
         let input = self.limits.max_request_bytes;
         let output = self.limits.max_response_bytes;
-        proto::node_service_server::NodeServiceServer::new(self)
-            .max_decoding_message_size(input)
-            .max_encoding_message_size(output)
+        DeploymentResponseService::new(
+            proto::node_service_server::NodeServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
     }
 
     #[must_use]

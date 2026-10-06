@@ -234,7 +234,7 @@ impl super::super::PreparationContext {
             .metadata_bytes
             .checked_add(surface.retained_bytes)
             .ok_or_else(metadata_overflow)?;
-        let pre = self.link_component(component)?;
+        let pre = self.link_component(component, &surface.type_imports)?;
         if self.profile.id == PHASE0_BACKEND_ID {
             crate::phase0::validate_prepared(&pre)?;
         }

@@ -1,6 +1,7 @@
 import * as profile from "../management.js";
 import { type Operation } from "./protocol/schema.js";
 import { ShapeError } from "./protocol/preflight.js";
+import { validateTargetRequest, validateTargetResponse } from "./target-inspection.js";
 
 type RecordValue = Record<string, unknown>;
 
@@ -34,9 +35,13 @@ function pageLimit(operation: Operation, value: unknown): number {
 
 export function validateRequest(operation: Operation, value: unknown, tenant: string): void {
   const request = object(value);
+  if (operation === "inspectHttpTarget") validateTargetRequest(request, tenant);
   for (const key of ["activationId", "rootActivationId", "parentActivationId", "operationId", "id", "deploymentId"]) bounded(request[key], operation === "inspectActivationTree" ? 512 : 256);
   if (operation === "inspectActivationTree") {
-    if (typeof request.activationId !== "string" || !request.activationId || /[\s\x00-\x1f\x7f]/.test(request.activationId)) throw new ShapeError();
+    const selected = request.service === undefined ? request.activationId : request.service;
+    if (request.service !== undefined ? request.activationId !== "" : request.fromUnixMillis !== undefined) throw new ShapeError();
+    if (typeof selected !== "string" || !selected || /[\s\x00-\x1f\x7f]/.test(selected)) throw new ShapeError();
+    bounded(selected, 512);
     pageLimit(operation, request.page);
   }
   if (operation === "invoke") {
@@ -62,6 +67,7 @@ export function validateRequest(operation: Operation, value: unknown, tenant: st
 
 export function validateResponse(operation: Operation, request: unknown, raw: RecordValue, tenant: string): void {
   const input = object(request);
+  if (operation === "inspectHttpTarget") validateTargetResponse(raw, input, tenant);
   if (operation === "inspectActivationTree") {
     const page = object(raw.page);
     bounded(page.nextPageToken, 160);
@@ -70,6 +76,10 @@ export function validateResponse(operation: Operation, request: unknown, raw: Re
       || (raw.historyAvailable === false && (raw.nodes.length !== 0 || page.nextPageToken !== undefined))) throw new ShapeError();
     for (const value of raw.nodes) {
       const node = object(value);
+      bounded(node.targetService, 512);
+      if (input.service !== undefined && (node.targetService !== input.service || node.parentActivationId !== undefined
+        || node.activationId !== node.rootActivationId
+        || (input.fromUnixMillis !== undefined && BigInt(node.receivedAtUnixMillis as string) < BigInt(input.fromUnixMillis as bigint)))) throw new ShapeError();
       for (const key of ["activationId", "rootActivationId", "parentActivationId", "callerService"]) {
         bounded(node[key], 512);
         if (node[key] !== undefined && (node[key] === "" || /[\s\x00-\x1f\x7f]/.test(node[key] as string))) throw new ShapeError();
