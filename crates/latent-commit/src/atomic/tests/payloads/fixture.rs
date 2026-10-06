@@ -196,16 +196,23 @@ impl Fixture {
         request.budget.blob_read_bytes = 65536;
         request.budget.outbound_requests = 32;
         request.activation.budget = request.budget.clone();
-        control.budget = latent_core::ActivationBudget::new(
-            latent_core::EffectiveActivationBudget::admit_at(
+        let original_deadline = latent_core::IncomingDeadline::new(
+            control.budget.deadline().monotonic().unwrap(),
+            control.budget.deadline().unix_millis().unwrap(),
+        );
+        control.budget = latent_core::ActivationBudget::with_profile(
+            latent_core::EffectiveActivationBudget::admit_profile_with_deadline_at(
+                latent_core::BudgetProfile::Phase3,
                 &request.budget,
                 &request.budget,
                 &request.budget,
-                None,
+                &original_deadline,
                 latent_core::ClockSample::system_now(),
             )
             .unwrap(),
-        );
+            latent_core::BudgetProfile::Phase3,
+        )
+        .unwrap();
         request.activation.deadline_unix_millis = control.budget.deadline().unix_millis();
         let session = authority
             .broker
