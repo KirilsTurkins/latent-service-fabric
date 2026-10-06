@@ -7,12 +7,17 @@
 //! execution cell, guest store, reusable credential, or application timer.
 
 mod grant;
+mod lookup;
 pub use grant::DispatchGrant;
+pub use lookup::{DispatchPurpose, ProviderLookupAuthorization};
 
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex, MutexGuard},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex, MutexGuard,
+    },
     time::{Duration, Instant},
 };
 
@@ -337,6 +342,10 @@ pub struct EffectCommitFence<'a> {
 }
 
 impl EffectAuthorityOwner {
+    pub(crate) fn same_owner(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+
     pub fn new(
         maximum_rules: usize,
         maximum_physical: usize,
@@ -565,6 +574,7 @@ impl EffectAuthorityOwner {
         state.physical += 1;
         Ok(DispatchContext {
             owner: Arc::clone(&self.0),
+            live: Arc::new(AtomicBool::new(true)),
             profile: authority.profile.clone(),
             scope: authority.scope.clone(),
             effect: authority.link.effect.clone(),
@@ -574,6 +584,9 @@ impl EffectAuthorityOwner {
             reference,
             deadline,
             retired: false,
+            grant_issued: false,
+            lookup: None,
+            retained_owner: None,
         })
     }
 
@@ -638,6 +651,7 @@ fn current_ceiling(
 /// capacity. `retire` belongs to physical completion/cleanup, not RPC completion.
 pub struct DispatchContext {
     owner: Arc<Owner>,
+    live: Arc<AtomicBool>,
     scope: EffectScope,
     profile: DispatchProfile,
     effect: String,
@@ -647,9 +661,25 @@ pub struct DispatchContext {
     reference: String,
     deadline: Instant,
     retired: bool,
+    grant_issued: bool,
+    lookup: Option<Arc<dyn ProviderLookupAuthorization>>,
+    retained_owner: Option<Arc<dyn std::any::Any + Send + Sync>>,
 }
 
 impl DispatchContext {
+    /// Retain the already reserved original request/global owner before issuing
+    /// any provider grant. The refused owner is returned unchanged; replacement
+    /// or late installation cannot refund an accepted owner's capacity.
+    pub fn retain_owner(
+        &mut self,
+        owner: Arc<dyn std::any::Any + Send + Sync>,
+    ) -> Result<(), Arc<dyn std::any::Any + Send + Sync>> {
+        if self.grant_issued || self.retained_owner.is_some() {
+            return Err(owner);
+        }
+        self.retained_owner = Some(owner);
+        Ok(())
+    }
     #[must_use]
     pub fn scope(&self) -> &EffectScope {
         &self.scope
@@ -696,6 +726,7 @@ impl DispatchContext {
             .physical
             .checked_sub(1)
             .ok_or(AuthorityError::Unavailable)?;
+        self.live.store(false, Ordering::Release);
         self.retired = true;
         Ok(())
     }
@@ -704,6 +735,13 @@ impl DispatchContext {
 impl Drop for DispatchContext {
     fn drop(&mut self) {
         if !self.retired {
+            self.live.store(false, Ordering::Release);
+            if let Some(owner) = self.retained_owner.take() {
+                // Preserve the exact original capacity while physical ownership
+                // is unresolved. The existing finite physical/global caps bound
+                // this quarantine; only actual retirement or process loss ends it.
+                std::mem::forget(owner);
+            }
             if let Ok(mut state) = self.owner.state.lock() {
                 // Keep the physical permit occupied. No timeout/lease path may
                 // turn this diagnostic owner into an automatic retry.

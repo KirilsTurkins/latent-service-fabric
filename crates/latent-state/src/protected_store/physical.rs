@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex, OnceLock};
 
-use super::{ProtectedFencedStoreError, ProtectedStoreConfig, ProtectedStoreError};
+use super::{
+    FreshStoreInitialization, ProtectedFencedStoreError, ProtectedStoreConfig, ProtectedStoreError,
+};
 use crate::embedded::{
     AtomicBatch, EmbeddedStore, Family, FencedStoreError, ReadView, RowKey, StoreError,
     StoreFileStatus,
@@ -44,6 +46,7 @@ pub(super) struct PhysicalStore {
     pub(super) status: StoreFileStatus,
     failure: Arc<FailureLatch>,
     pub(super) dispatcher: Arc<std::sync::atomic::AtomicBool>,
+    fresh_initialization: std::sync::atomic::AtomicBool,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     root: latent_protected_files::ProtectedRoot,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -102,6 +105,9 @@ impl PhysicalStore {
             status,
             failure,
             dispatcher: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            fresh_initialization: std::sync::atomic::AtomicBool::new(
+                lock_fence.was_created() && fence.was_created(),
+            ),
             root,
             fence,
             root_lock,
@@ -184,7 +190,7 @@ impl PhysicalStore {
         self.check()?;
         let result = self.classify(operation(self.engine()));
         if self.check_root().is_err() {
-            let error = if kind == StoreIoKind::Write && result.is_ok() {
+            let error = if kind.is_write() && result.is_ok() {
                 ProtectedStoreError::CommitUncertain
             } else {
                 ProtectedStoreError::UnsafeRoot
@@ -193,6 +199,28 @@ impl PhysicalStore {
             return Err(error);
         }
         result
+    }
+
+    pub fn with_initialization<T>(
+        &self,
+        operation: impl FnOnce(
+            &EmbeddedStore,
+            Option<FreshStoreInitialization<'_>>,
+        ) -> Result<T, StoreError>,
+    ) -> Result<T, ProtectedStoreError> {
+        self.with_store(StoreIoKind::Write, |engine| {
+            // Consume before validation/callback. A refused or detached first
+            // initialization never manufactures another fresh-store attempt.
+            let fresh = self
+                .fresh_initialization
+                .swap(false, std::sync::atomic::Ordering::AcqRel);
+            let witness = if fresh && engine.snapshot()?.is_empty()? {
+                Some(FreshStoreInitialization { store: engine })
+            } else {
+                None
+            };
+            operation(engine, witness)
+        })
     }
 
     pub fn apply_fenced<E>(

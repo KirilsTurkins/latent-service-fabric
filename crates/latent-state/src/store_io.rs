@@ -19,6 +19,7 @@ mod retained;
 mod retirement;
 mod startup;
 mod state;
+mod thread;
 mod types;
 mod worker;
 
@@ -30,17 +31,17 @@ pub use retirement::{StoreIoRetirement, StoreIoRetirementWitness};
 pub use startup::{StoreIoReady, StoreIoStartup};
 pub use types::{
     StoreIoAdmissionError, StoreIoEnginePhase, StoreIoError, StoreIoKind, StoreIoLimits,
-    StoreIoShutdown, StoreIoSnapshot, StoreIoStartError,
+    StoreIoRecoveryLimits, StoreIoShutdown, StoreIoSnapshot, StoreIoStartError,
 };
 
 use std::future::Future;
 use std::sync::{Arc, Condvar, Mutex};
-use std::thread::JoinHandle;
 use std::time::Instant;
 
 use job::{Completion, Reservation, TypedWork};
 use latent_core::{ActivationClock, SystemActivationClock};
 use state::{Bootstrap, Control, QueuedWork, State};
+use thread::StoreThread;
 
 /// One engine, fixed node workers and bounded accepted ownership.
 pub struct StoreIoOwner<S> {
@@ -49,7 +50,7 @@ pub struct StoreIoOwner<S> {
 
 struct Owner<S> {
     control: Arc<Control<S>>,
-    threads: Mutex<Vec<JoinHandle<()>>>,
+    threads: Mutex<Vec<StoreThread>>,
 }
 
 impl<S> Clone for StoreIoOwner<S> {
@@ -105,11 +106,24 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         for index in 0..workers {
             let worker_control = Arc::clone(&control);
             let worker_engine = Arc::clone(&engine);
-            if let Ok(thread) = std::thread::Builder::new()
-                .name(format!("latent-store-io-{index}"))
-                .stack_size(1024 * 1024)
-                .spawn(move || worker::run(worker_control, worker_engine))
-            {
+            let recovery = control
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .limits
+                .recovery
+                .is_some_and(|limits| index < limits.workers);
+            let name = if recovery {
+                format!("latent-store-recovery-{index}")
+            } else {
+                format!("latent-store-io-{index}")
+            };
+            if let Ok(thread) = StoreThread::spawn(
+                std::thread::Builder::new()
+                    .name(name)
+                    .stack_size(1024 * 1024),
+                move || worker::run(worker_control, worker_engine, recovery),
+            ) {
                 owner
                     .inner
                     .threads
@@ -164,15 +178,29 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         retained_bytes: u64,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
-        self.submit_class(kind, retained_bytes, false, operation)
+        self.submit_inner(kind, retained_bytes, None, operation)
     }
 
+    /// Retain the original request owner through native callback completion and
+    /// unclaimed result destruction, including errors or waiter loss. A claimed
+    /// response must retain its original owner independently through delivery.
     #[allow(clippy::result_large_err)]
-    fn submit_class<T: Send + 'static, F: FnOnce(&S) -> T + Send + 'static>(
+    pub fn submit_retaining<T: Send + 'static, F: FnOnce(&S) -> T + Send + 'static>(
         &self,
         kind: StoreIoKind,
         retained_bytes: u64,
-        recovery: bool,
+        keeper: Arc<dyn std::any::Any + Send + Sync>,
+        operation: F,
+    ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
+        self.submit_inner(kind, retained_bytes, Some(keeper), operation)
+    }
+
+    #[allow(clippy::result_large_err)]
+    fn submit_inner<T: Send + 'static, F: FnOnce(&S) -> T + Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_bytes: u64,
+        keeper: Option<Arc<dyn std::any::Any + Send + Sync>>,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
         let control = &self.inner.control;
@@ -192,7 +220,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             let charge = retained_bytes
                 .checked_add(metadata)
                 .ok_or(StoreIoError::Exhausted)?;
-            state.admit_class(charge, recovery)?;
+            state.admit(kind.is_recovery(), charge)?;
             let next = state
                 .next_job
                 .checked_add(1)
@@ -204,26 +232,26 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             Err(reason) => return Err(StoreIoAdmissionError { reason, operation }),
         };
         state.next_job = next;
-        state.accepted += 1;
-        state.retained_bytes += charge;
-        if recovery {
-            state.recovery_accepted += 1;
-            state.recovery_bytes += charge;
-        }
+        state.reserve(kind.is_recovery(), charge);
         let completion = Arc::new(Completion::new());
         let reservation = Reservation {
             control: Arc::clone(control),
             bytes: charge,
-            recovery,
+            recovery: kind.is_recovery(),
+            keeper,
         };
         let work = TypedWork {
             operation,
             completion: Arc::clone(&completion),
             reservation,
         };
-        state.queue.push_back(QueuedWork {
+        let queue = if kind.is_recovery() {
+            &mut state.recovery_queue
+        } else {
+            &mut state.queue
+        };
+        queue.push_back(QueuedWork {
             kind,
-            recovery,
             work: Box::new(work),
         });
         drop(state);
@@ -269,7 +297,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         let mut retired = 0;
         let mut index = 0;
         while index < threads.len() {
-            if threads[index].is_finished() {
+            if threads[index].has_exited() {
                 let thread = threads.swap_remove(index);
                 if thread.join().is_err() {
                     return Err(StoreIoError::RecoveryRequired);
@@ -280,6 +308,16 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             }
         }
         Ok(retired)
+    }
+
+    /// Remaining owned OS handles, including a retired worker's exit epilogue.
+    /// A zero physical-worker counter does not itself prove these were joined.
+    pub fn pending_thread_joins(&self) -> Result<usize, StoreIoError> {
+        self.inner
+            .threads
+            .lock()
+            .map(|threads| threads.len())
+            .map_err(|_| StoreIoError::Poisoned)
     }
 }
 
