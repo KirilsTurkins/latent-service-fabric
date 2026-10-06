@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/generate_transaction_contracts.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reconcile current namespace management and captured native prerequisites with original command waiter source; preserve all commands, actual cases, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "10d9cfc46eaa56477d798d86f7a2a2253daf38a2a7294d81f868402f96494ba4"
-}
+{"kind":"owner","path":"tools/generate_transaction_contracts.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reconcile current namespace management and captured native prerequisites with original command waiter source; preserve all commands, actual cases, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.","schemaVersion":"latent.ci.contracts.v1","sha256":"10d9cfc46eaa56477d798d86f7a2a2253daf38a2a7294d81f868402f96494ba4"}
