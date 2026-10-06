@@ -1,18 +1,1 @@
-{
-  "cases":["SecurityProfileSchema.test_external_report_requires_every_observed_control","SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings","SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement"],
-  "guards":{
-    "SecurityProfileSchema.test_external_report_requires_every_observed_control":
-      "c4b35cfaa82c62eab6763354e900ba04e07195794f74725f074ef3eaf5aea9e1",
-    "SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings":
-      "c4b35cfaa82c62eab6763354e900ba04e07195794f74725f074ef3eaf5aea9e1",
-    "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement":
-      "c4b35cfaa82c62eab6763354e900ba04e07195794f74725f074ef3eaf5aea9e1"
-  },
-  "kind":"python",
-  "module":"tools/tests/test_node_security_profile_schema.py",
-  "reviewReason":"Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "c4b35cfaa82c62eab6763354e900ba04e07195794f74725f074ef3eaf5aea9e1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:2ab428976030d302210e274fd2d9c9fe862331f1300c6e30cd081ba49599d84d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
-  }
-}
+{"cases":["SecurityProfileSchema.test_external_report_requires_every_observed_control","SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings","SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement"],"guards":{"SecurityProfileSchema.test_external_report_requires_every_observed_control":"c4b35cfaa82c62eab6763354e900ba04e07195794f74725f074ef3eaf5aea9e1","SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings":"c4b35cfaa82c62eab6763354e900ba04e07195794f74725f074ef3eaf5aea9e1","SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement":"c4b35cfaa82c62eab6763354e900ba04e07195794f74725f074ef3eaf5aea9e1"},"kind":"python","module":"tools/tests/test_node_security_profile_schema.py","reviewReason":"October 4 security patch: exact Wasmtime48.0.4 pin substitution; Python ASTs are unchanged after normalizing only48.0.3 to48.0.4. All case identities, skips, decorators, commands, historical obligations and finite guards are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"c4b35cfaa82c62eab6763354e900ba04e07195794f74725f074ef3eaf5aea9e1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:2ab428976030d302210e274fd2d9c9fe862331f1300c6e30cd081ba49599d84d","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}}}
