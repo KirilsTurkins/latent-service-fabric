@@ -281,10 +281,10 @@ impl ProviderRuntime {
             return Err(unavailable());
         }
         let publisher = self.events.as_ref().ok_or_else(unavailable)?;
-        installation
+        let adapters = installation
             .deferred
             .iter()
-            .map(move |deferred| {
+            .map(|deferred| {
                 publisher
                     .deferred_adapter(
                         &installation.identity.tenant,
@@ -297,7 +297,11 @@ impl ProviderRuntime {
                     })
                     .map_err(|_| unavailable())
             })
-            .collect()
+            .collect();
+        // Each returned adapter retains this same clock owner. The constructor
+        // consumes its incoming Arc only after every adapter is constructed.
+        drop(time);
+        adapters
     }
 
     pub fn descriptors(&self) -> &[ProviderDescriptor] {

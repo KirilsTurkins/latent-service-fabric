@@ -43,6 +43,7 @@ work and is dropped before disk or network I/O. Typed audit actions distinguish
 planning, reconciliation, redrive, terminal declaration and historical receipt
 read without changing the numeric identities of existing audit actions.
 
+
 Provider reconciliation accepts a typed positive receipt from a status lookup
 through the existing sealed provider grant. Absent, expired, conflicting or
 ambiguous remote status remains uncertain and cannot authorize another send.
@@ -95,5 +96,8 @@ ordinary saturation, stale plans, affirmative nonexecution redrive, original
 execution revocation, restore review and unsafe uncertain redrive refusal.
 The controlled lookup adapter in these worker schedules is distinct from the
 actual TLS/provider qualification. The public
+
+The native catalog tests exercise actual engine snapshots, CAS, reopen, history
+and high-water accounting. These tests qualify the catalog substrate. The public
 authenticated adapter, CLI/node acceptance and full Phase 4 management scope
 remain separate integration requirements of [issue 400](https://github.com/KirilsTurkins/latent-service-fabric/issues/400).
