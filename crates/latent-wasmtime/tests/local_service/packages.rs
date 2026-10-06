@@ -9,6 +9,11 @@ mod fixture;
 #[path = "../generic_backend/support.rs"]
 #[allow(dead_code)]
 mod runtime_fixture;
+#[path = "../../../latent-packaging/tests/sbom_association/support.rs"]
+#[allow(dead_code)]
+mod sbom;
+
+pub const ACTIVATION: &str = "latent:runtime/activation@0.1.0";
 
 pub fn budget() -> latent_core::ResourceBudget {
     latent_core::ResourceBudget {
@@ -41,7 +46,7 @@ pub fn caller(tenant: Option<&str>) -> PackageBundle {
             vec![json!({"name":"which","value_type":"U32","documentation":null})],
             json!("U32"),
         )],
-        true,
+        &[latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY],
     )
 }
 pub fn callee(answer: i32) -> PackageBundle {
@@ -60,7 +65,18 @@ pub fn callee(answer: i32) -> PackageBundle {
             ),
             function("spin", false, vec![], json!("U32")),
         ],
-        false,
+        &[],
+    )
+}
+
+pub fn activation_runtime(bytes: Vec<u8>) -> PackageBundle {
+    build(
+        "caller", bytes,
+        "package tests:caller@1.0.0; interface api { run: async func(which: u32) -> u32; } world service { import latent:runtime/activation@0.1.0; export api; }",
+        component::CALLER,
+        vec![function("run", true,
+            vec![json!({"name":"which","value_type":"U32","documentation":null})], json!("U32"))],
+        &[ACTIVATION],
     )
 }
 #[expect(
@@ -82,7 +98,7 @@ fn build(
     source: &str,
     contract: &str,
     functions: Vec<Value>,
-    caller: bool,
+    imports: &[&str],
 ) -> PackageBundle {
     let package = format!("tests:{name}");
     let world = format!("{package}/service@1.0.0");
@@ -99,14 +115,13 @@ fn build(
         .as_object_mut()
         .unwrap()
         .remove("tenant");
-    manifest["metadata"]["name"] = json!(if caller { "caller" } else { "callee" });
+    manifest["metadata"]["name"] = json!(if name == "caller" { "caller" } else { "callee" });
     manifest["component"]["world"] = json!(world);
     manifest["exports"] = json!([contract]);
-    manifest["imports"] = if caller {
-        json!([{"contract":latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY,"optional":false}])
-    } else {
-        json!([])
-    };
+    manifest["imports"] = json!(imports
+        .iter()
+        .map(|contract| json!({"contract":contract,"optional":false}))
+        .collect::<Vec<_>>());
     manifest["execution"]["limits"] = budget_json();
     manifest["execution"]["threading"] = json!("single-threaded");
     let mut locked = vec![];
@@ -130,33 +145,39 @@ fn build(
             contracts.clone(),
         ),
     ];
-    if caller {
-        let wit = latent_core::PHASE3_HOST_ABI_V2
-            .interface(latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
-            .unwrap()
-            .wit;
+    let mut dependencies = vec![];
+    for import in imports {
+        let spec = latent_core::PHASE3_HOST_ABI_CURRENT
+            .interface(import)
+            .unwrap();
+        let wit = spec.wit;
+        let (package, version) = import.rsplit_once('@').unwrap();
+        let package = package.split('/').next().unwrap();
+        let id = format!("{package}@{version}");
+        let path = if *import == ACTIVATION {
+            "wit/activation.wit"
+        } else {
+            "wit/invocation.wit"
+        };
         locked.push(WitLockedPackage {
-            id: "latent:service@0.1.0".into(),
-            source_path: "wit/invocation.wit".into(),
+            id: id.clone(),
+            source_path: path.into(),
             digest: artifact_blob_digest(wit.as_bytes()),
             dependencies: vec![],
         });
         layers.push(fixture::layer(
-            "wit/invocation.wit",
+            path,
             LayerRole::Asset,
             "text/plain",
             wit.as_bytes().to_vec(),
         ));
+        dependencies.push(id);
     }
     locked.push(WitLockedPackage {
         id: format!("{package}@1.0.0"),
         source_path: "wit/service.wit".into(),
         digest: artifact_blob_digest(source.as_bytes()),
-        dependencies: if caller {
-            vec!["latent:service@0.1.0".into()]
-        } else {
-            vec![]
-        },
+        dependencies,
     });
     layers.push(fixture::layer(
         "wit/service.wit",
@@ -176,18 +197,16 @@ fn build(
         "application/vnd.latent.wit-lock.v1+json",
         encode_wit_lock(&lock, latent_artifacts::package::PackageLimits::default()).unwrap(),
     ));
-    latent_packaging::build_package(
-        PackageInput {
-            kind: latent_artifacts::package::PackageKind::Capsule,
-            name: name.into(),
-            version: "1.0.0".into(),
-            entrypoint: "component.wasm".into(),
-            annotations: std::collections::BTreeMap::default(),
-            layers,
-        },
-        latent_packaging::PackagingLimits::default(),
-    )
-    .unwrap()
+    let input = PackageInput {
+        kind: latent_artifacts::package::PackageKind::Capsule,
+        name: name.into(),
+        version: "1.0.0".into(),
+        entrypoint: "component.wasm".into(),
+        annotations: std::collections::BTreeMap::default(),
+        layers,
+    };
+    let inventory = sbom::inventory(&input);
+    latent_packaging::build_package_with_sbom(input, inventory, Default::default()).unwrap()
 }
 pub fn artifact(bundle: &PackageBundle) -> latent_artifacts::CapsuleArtifact {
     use latent_manifest::{JsonManifestCodec, ManifestCodec};
