@@ -1,0 +1,295 @@
+{
+  "asynchronous": 8,
+  "engineVersion": "48.0.3",
+  "evidenceKind": "engine-type-plan",
+  "operations": 13,
+  "plans": [
+    {
+      "asynchronous": false,
+      "direction": "params",
+      "examinedTypeNodes": 0,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583168,
+      "operation": "acquire-command",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 256
+    },
+    {
+      "asynchronous": false,
+      "direction": "results",
+      "examinedTypeNodes": 18,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583724,
+      "operation": "acquire-command",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 812
+    },
+    {
+      "asynchronous": false,
+      "direction": "params",
+      "examinedTypeNodes": 0,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583168,
+      "operation": "acquire-query",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 256
+    },
+    {
+      "asynchronous": false,
+      "direction": "results",
+      "examinedTypeNodes": 18,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583724,
+      "operation": "acquire-query",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 812
+    },
+    {
+      "asynchronous": false,
+      "direction": "params",
+      "examinedTypeNodes": 1,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583424,
+      "operation": "info",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 512
+    },
+    {
+      "asynchronous": false,
+      "direction": "results",
+      "examinedTypeNodes": 36,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12586122,
+      "operation": "info",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 3210
+    },
+    {
+      "asynchronous": false,
+      "direction": "params",
+      "examinedTypeNodes": 1,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583424,
+      "operation": "query-info",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 512
+    },
+    {
+      "asynchronous": false,
+      "direction": "results",
+      "examinedTypeNodes": 27,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12584782,
+      "operation": "query-info",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 1870
+    },
+    {
+      "asynchronous": true,
+      "direction": "params",
+      "examinedTypeNodes": 3,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583680,
+      "operation": "get",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 768
+    },
+    {
+      "asynchronous": true,
+      "direction": "results",
+      "examinedTypeNodes": 34,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 33556806,
+      "operation": "get",
+      "perFuelLiftMultiplier": 16,
+      "staticLiftBytes": 2374
+    },
+    {
+      "asynchronous": true,
+      "direction": "params",
+      "examinedTypeNodes": 3,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583680,
+      "operation": "get-query",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 768
+    },
+    {
+      "asynchronous": true,
+      "direction": "results",
+      "examinedTypeNodes": 34,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 33556806,
+      "operation": "get-query",
+      "perFuelLiftMultiplier": 16,
+      "staticLiftBytes": 2374
+    },
+    {
+      "asynchronous": true,
+      "direction": "params",
+      "examinedTypeNodes": 7,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12584448,
+      "operation": "scan",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 1536
+    },
+    {
+      "asynchronous": true,
+      "direction": "results",
+      "examinedTypeNodes": 18,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583724,
+      "operation": "scan",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 812
+    },
+    {
+      "asynchronous": true,
+      "direction": "params",
+      "examinedTypeNodes": 7,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12584448,
+      "operation": "scan-query",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 1536
+    },
+    {
+      "asynchronous": true,
+      "direction": "results",
+      "examinedTypeNodes": 18,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583724,
+      "operation": "scan-query",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 812
+    },
+    {
+      "asynchronous": false,
+      "direction": "params",
+      "examinedTypeNodes": 1,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583424,
+      "operation": "describe-page",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 512
+    },
+    {
+      "asynchronous": false,
+      "direction": "results",
+      "examinedTypeNodes": 39,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12586412,
+      "operation": "describe-page",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 3500
+    },
+    {
+      "asynchronous": true,
+      "direction": "params",
+      "examinedTypeNodes": 1,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583424,
+      "operation": "page-next",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 512
+    },
+    {
+      "asynchronous": true,
+      "direction": "results",
+      "examinedTypeNodes": 39,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 33557334,
+      "operation": "page-next",
+      "perFuelLiftMultiplier": 16,
+      "staticLiftBytes": 2902
+    },
+    {
+      "asynchronous": true,
+      "direction": "params",
+      "examinedTypeNodes": 14,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 33556270,
+      "operation": "put",
+      "perFuelLiftMultiplier": 16,
+      "staticLiftBytes": 1838
+    },
+    {
+      "asynchronous": true,
+      "direction": "results",
+      "examinedTypeNodes": 17,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583724,
+      "operation": "put",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 812
+    },
+    {
+      "asynchronous": true,
+      "direction": "params",
+      "examinedTypeNodes": 3,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583680,
+      "operation": "delete",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 768
+    },
+    {
+      "asynchronous": true,
+      "direction": "results",
+      "examinedTypeNodes": 17,
+      "interface": "latent:state/key-value@0.2.0",
+      "maximumLiftBytes": 12583724,
+      "operation": "delete",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 812
+    },
+    {
+      "asynchronous": true,
+      "direction": "params",
+      "examinedTypeNodes": 21,
+      "interface": "latent:intents/staging@0.1.0",
+      "maximumLiftBytes": 33557384,
+      "operation": "stage",
+      "perFuelLiftMultiplier": 16,
+      "staticLiftBytes": 2952
+    },
+    {
+      "asynchronous": true,
+      "direction": "results",
+      "examinedTypeNodes": 18,
+      "interface": "latent:intents/staging@0.1.0",
+      "maximumLiftBytes": 12583952,
+      "operation": "stage",
+      "perFuelLiftMultiplier": 6,
+      "staticLiftBytes": 1040
+    }
+  ],
+  "preparationQualified": true,
+  "profile": {
+    "codec": "application/vnd.latent.wit-values.v1+json",
+    "componentAsync": true,
+    "digest": "sha256:6acd7a248633dd01c9cdcbf8a1ed33fc5e6aa1d2edb09b7d89e53fda594b5507",
+    "engine": "wasmtime@48.0.3",
+    "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+    "hostcallFuel": 2097152,
+    "limits": {
+      "maxCollectionItems": 4096,
+      "maxDecodedValueBytes": 16777216,
+      "maxDepth": 32,
+      "maxInputBytes": 2097152,
+      "maxLiftedBytes": 67108864,
+      "maxNodes": 32768,
+      "maxOutputBytes": 2097152,
+      "maxStringBytes": 524288,
+      "maxTypeNameBytes": 256,
+      "maxTypeNodes": 4096
+    },
+    "profile": "lsf-transaction-http-preparation-v1",
+    "runtimeExecutionQualified": false,
+    "runtimeInstallation": false,
+    "schemaVersion": "latent.transaction-contract.preparation-profile.v1"
+  },
+  "runtimeExecutionQualified": false,
+  "schemaVersion": "latent.transaction-contract.preparation.v1"
+}
