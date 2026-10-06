@@ -73,6 +73,11 @@ the engine's allocator repair is not permission to reset application records.
 The [repeatable qualification](../docs/testing/transaction-store-engine.md)
 records finite real commits, two concurrent writers, retained/expired read views,
 compaction, closed backup/reopen and owned child termination before/after commit.
+The [current finite observation](../docs/evidence/transaction-store-current-381-c993.json)
+records these existing cases at exact source `c99365fc` after the v1/v2 metadata
+transition: all 22 selected engine cases passed on the recorded private Linux
+ext4 fixture with Rust 1.97.1 and redb 4.3.0. Original measurements remain tied
+to their earlier immutable inputs; this observation adds no broader workload.
 The local Docker volume exposes the WSL2 Linux ext filesystem. Measurements are
 observations under that virtualized host load, not throughput promises.
 Process-crash checks establish all-or-none recovery at those barriers;

@@ -5,6 +5,16 @@ It qualifies the bounded storage prototype, not the complete Phase 4 node.
 The [recorded result](../evidence/transaction-store-engine-381.json) preserves
 the actual source snapshot, engine/tool/configuration and host observations.
 
+The [current finite observation](../evidence/transaction-store-current-381-c993.json)
+adds exact source `c99365fce5309f5dc215ff1b1d2dcba37e94478d`, current source
+fingerprints and the actual source archive, image, CPU, kernel and private ext4
+fixture observations. All 22 existing selected engine cases passed, including
+the original 32 sequential commits, two bounded writers, snapshots, compaction,
+closed backup/reopen and both owned child crash barriers. Original processes
+were reaped and source/head stayed unchanged. The v1/v2 format path is included;
+neither historical JSON result was rewritten. This remains a single finite
+local-engine observation, with no power-loss, complete-node or package claim.
+
 The later [integrated owner result](../evidence/transaction-store-owner-381.json)
 records the selected engine behind the protected fixed-worker owner at source
 `1d8784c21f840e9ec76ee7c4a3cc9108f1b7929a`. All 66 state cases, the 17 ordinary
