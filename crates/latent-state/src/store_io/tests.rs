@@ -33,6 +33,7 @@ impl Drop for Store {
 
 fn limits() -> StoreIoLimits {
     StoreIoLimits {
+        recovery: None,
         workers: 2,
         queued_jobs: 8,
         accepted_jobs: 16,

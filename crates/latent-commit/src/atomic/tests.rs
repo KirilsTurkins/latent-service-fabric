@@ -16,6 +16,7 @@ use latent_state::{
 };
 use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
+mod captured;
 
 mod retention_cases;
 
