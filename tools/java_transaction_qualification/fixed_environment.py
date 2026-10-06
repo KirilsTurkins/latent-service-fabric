@@ -61,6 +61,8 @@ def load(args):
                 "reviewed-policy-original-byte-drift")
     hosts = read_file(path.parent / "observed-native-hosts-reference.json", 262144)
     require(digest(hosts) == value.get("observedHostsReferenceSha256"), "reviewed-host-reference-byte-drift")
+    from .reviewed_tls import selected
+    selected(args, value)
     return value
 
 
@@ -68,8 +70,11 @@ def identity(args):
     value = load(args)
     if value is None:
         return None
-    return {"file": str(args.reviewed_policy_environment), "digest": args.reviewed_policy_environment_digest,
-            "recipient": value["recipient"]}
+    result = {"file": str(args.reviewed_policy_environment), "digest": args.reviewed_policy_environment_digest,
+              "recipient": value["recipient"]}
+    if "reviewedTlsFixture" in value:
+        result["reviewedTlsFixture"] = value["reviewedTlsFixture"]
+    return result
 
 
 def check_tools(args, actual):

@@ -1,11 +1,13 @@
 """Reviewed fixture selectors cannot refresh policy, tools or current hosts."""
 import json
+import os
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
 import unittest
 
 from tools.java_transaction_qualification import fixed_environment as fixed
+from tools.java_transaction_qualification import reviewed_tls
 from tools.java_transaction_qualification.inputs import digest
 
 
@@ -45,6 +47,43 @@ def save(args, value):
 
 
 class ReviewedEnvironment(unittest.TestCase):
+    def test_default_tls_and_closed_original_native_three_file_selection(self):
+        self.assertIsNone(reviewed_tls.selected(SimpleNamespace(), None))
+        with tempfile.TemporaryDirectory() as temp:
+            args, value, _ = fixture(Path(temp))
+            folder = Path(temp) / "tls-fixture"
+            folder.mkdir()
+            rows = []
+            for name in sorted(reviewed_tls.FILES):
+                raw = ("native-fixture-" + name).encode()
+                (folder / name).write_bytes(raw)
+                rows.append({"file": name, "bytes": len(raw), "digest": digest(raw)})
+            value["reviewedTlsFixture"] = {"directory": "tls-fixture", "producerNativeSource": args.native_source_commit,
+                                           "files": rows}
+            save(args, value)
+            self.assertEqual(fixed.load(args), value)
+            self.assertEqual(set(reviewed_tls.selected(args, value)[1]), reviewed_tls.FILES)
+            (folder / "ca.der").write_bytes(b"changed")
+            with self.assertRaisesRegex(ValueError, "tls-byte-drift"):
+                fixed.load(args)
+
+    def test_tls_hardlinks_and_extra_records_cannot_borrow_native_fixture_identity(self):
+        with tempfile.TemporaryDirectory() as temp:
+            args, value, _ = fixture(Path(temp))
+            folder = Path(temp) / "tls-fixture"
+            folder.mkdir()
+            rows = []
+            for name in sorted(reviewed_tls.FILES):
+                raw = name.encode()
+                (folder / name).write_bytes(raw)
+                rows.append({"file": name, "bytes": len(raw), "digest": digest(raw)})
+            value["reviewedTlsFixture"] = {"directory": "tls-fixture", "producerNativeSource": args.native_source_commit,
+                                           "files": rows}
+            save(args, value)
+            os.link(folder / "ca.der", Path(temp) / "foreign-alias")
+            with self.assertRaisesRegex(ValueError, "tls-refuses-links"):
+                fixed.load(args)
+
     def test_default_selection_has_no_review_or_fixed_environment(self):
         args = SimpleNamespace()
         self.assertIsNone(fixed.load(args))

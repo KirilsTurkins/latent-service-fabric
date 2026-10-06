@@ -22,6 +22,7 @@ from tools.build_process_signals import owned_cancellation
 from tools.java_transaction_qualification import configuration as cfg, inputs, lifecycle, packaging, policies, staging
 from tools.java_transaction_qualification import diagnostic_inputs
 from tools.java_transaction_qualification import fixed_environment
+from tools.java_transaction_qualification import reviewed_tls
 from tools.java_transaction_qualification.campaign import Campaign
 from tools.java_transaction_qualification.evidence import Evidence, RecordingClient, native
 from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
@@ -41,6 +42,7 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/diagnostic_campaign.py",
     "tools/java_transaction_qualification/pending_restore.py",
     "tools/java_transaction_qualification/fixed_environment.py",
+    "tools/java_transaction_qualification/reviewed_tls.py",
     "contracts/state/java-aggregate-v1-to-v2-migration.json")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
@@ -113,7 +115,10 @@ def collector_identity():
 
 def prepare_environment(client, args, work, signed):
     reviewed = fixed_environment.load(args)
-    native(client, args.signer, "fixture-tls", "fixture-tls", work / "tls")
+    if not reviewed_tls.copy(args, reviewed, work / "tls"):
+        native(client, args.signer, "fixture-tls", "fixture-tls", work / "tls")
+    else:
+        client.evidence.record("reviewed-native-tls-fixture", reviewed["reviewedTlsFixture"])
     native(client, args.signer, "fixture-clock", "fixture-state-clock", work / "clock", lifecycle.NODE_ID)
     clock = read_json(work / "clock/clock-bootstrap.json")
     checkpoint = work / "clock/state-clock.json"

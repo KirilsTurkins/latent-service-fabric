@@ -12,6 +12,17 @@ prepare/resume source pins include this selection, with the original twelve
 actions, six node sessions and nonrenewable 1,200-second deadline unchanged.
 Reading and validating the review starts no signing or preparation clock.
 
+The optional closed `reviewedTlsFixture` input within that review selects only
+the original native-produced `ca.der`, `key.pem` and `server.pem`. The source
+directory is exactly `tls-fixture`, with bounded byte counts and digests for all
+three regular files. Links, hardlinks, extra files and changed bytes refuse.
+Each new attempt copies those exact bytes into a new private TLS directory and
+checks the current certificate chain, explicit localhost SAN and key match with
+a bounded in-memory TLS handshake. The default still creates a fresh native
+fixture. Protected clock, signing, workroot and catalogs remain newly produced;
+retaining TLS bytes supplies no native authority or clock continuity. The
+selection and every digest remain in preparation/resume source pins.
+
 The separate `--pending-restore-only` selection uses the installed native V3
 close owner. It requires a new candidate whose source selection and collector
 digests include that programme. It retains the original twelve native-action,
