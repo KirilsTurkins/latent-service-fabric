@@ -21,13 +21,14 @@ archive and four embedded preflight resource identities. The
 archive and executable identities. These native/frontend bytes were consumed
 unchanged; no native runtime was rebuilt or substituted.
 
-The current source review updates only the support matrix's `resource-budget`
-source fingerprint from the producer's older pinned source to its reviewed
-current source. Its qualified combinations, profile values and all other
-matrix contents are unchanged. The actual R5 matrix resource remains
+The current source review refreshes the support matrix's Java authoring, host
+recognition, provider configuration and resource-budget source fingerprints,
+plus its source-review revision. The finite combinations, profile values,
+qualified-state flags and all other parsed matrix contents are unchanged.
+The actual R5 matrix resource remains
 `sha256:13b43cbd26d4b1500c4e03c90800bd8a66a804cac541dbaa3ea4fe11f75df7f6`;
 the reviewed source matrix is
-`sha256:257b35fb522f0883180d0173d9127d79d3bfe8d375e2f6ba851dca877ad8ad56`.
+`sha256:0aebd491ebea75ab5769cd4256261511cbc728d5202078987d911f48249acdd8`.
 The other three embedded canonical resources still match byte for byte. No
 current-source producer artifact or changed producer-policy approval is claimed
 from these historical executable bytes.
