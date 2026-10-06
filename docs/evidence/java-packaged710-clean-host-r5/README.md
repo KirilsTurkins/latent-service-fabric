@@ -22,13 +22,14 @@ archive and executable identities. These native/frontend bytes were consumed
 unchanged; no native runtime was rebuilt or substituted.
 
 The current source review refreshes the support matrix's Java authoring, host
-recognition, provider configuration and resource-budget source fingerprints,
-plus its source-review revision. The finite combinations, profile values,
+recognition, native surface inspection, provider configuration, static capture,
+resource budget, publication identity and structural engine-profile source
+fingerprints, plus its source-review revision. The finite combinations, profile values,
 qualified-state flags and all other parsed matrix contents are unchanged.
 The actual R5 matrix resource remains
 `sha256:13b43cbd26d4b1500c4e03c90800bd8a66a804cac541dbaa3ea4fe11f75df7f6`;
 the reviewed source matrix is
-`sha256:0aebd491ebea75ab5769cd4256261511cbc728d5202078987d911f48249acdd8`.
+`sha256:db117da67f0c267537e63e34f3b0ae5d5e85dac90aa243acd7b3c545fcc92747`.
 The other three embedded canonical resources still match byte for byte. No
 current-source producer artifact or changed producer-policy approval is claimed
 from these historical executable bytes.
