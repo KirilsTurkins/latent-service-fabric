@@ -21,6 +21,7 @@ from tools.static_site import capture, read, require
 ROOT = Path(__file__).resolve().parents[1]
 TOOLCHAIN = ROOT / 'examples/framework-compatibility'
 NAMES = ('angular-root', 'angular-mounted', 'docs-root', 'docs-mounted')
+RECIPE_PROFILE = 'latent.framework.static-recipe.v1'
 
 
 def run(command, environment, cwd=TOOLCHAIN, seconds=300, stage='framework-tool'):
@@ -87,7 +88,7 @@ def build(args):
                 run([node, TOOLCHAIN / 'prepare-documentation.mjs', generated, public, mount], environment)
             files = sorted(path.relative_to(public).as_posix() for path in public.rglob('*') if path.is_file())
             require(not any(path.is_symlink() for path in public.rglob('*')), 'linked-framework-output')
-            observed = {'actualFrameworkBuild': True, 'framework': 'angular-primeng' if angular else 'docusaurus',
+            observed = {'recipeProfile': RECIPE_PROFILE, 'actualFrameworkBuild': True, 'framework': 'angular-primeng' if angular else 'docusaurus',
                         'versions': packages, 'mount': mount, 'serverRenderer': False,
                         'publicOutputs': [file_identity(public / name, name, 8 * 1024 * 1024) for name in files],
                         'runtimeBrowserQualified': False, 'reproducibility': 'not-checked'}
@@ -111,7 +112,8 @@ def build(args):
                 require('404.html' in files, 'docusaurus-error-document-output')
                 config['errorDocument'] = {'profile': 'html-not-found-v1', 'document': '/404.html'}
             (output / 'static-site.json').write_bytes(canonical(config))
-            capture(public, config, output / 'inputs')
+            captured = capture(public, config, output / 'inputs')
+            (output / 'capture-budget.json').write_bytes(canonical(captured['budget']))
             sbom_path = output / 'inputs/sbom-inputs.json'
             sbom = json.loads(sbom_path.read_bytes())
             sbom['entries'].extend(dependencies(TOOLCHAIN, packages))
@@ -135,7 +137,8 @@ def build(args):
                 'hermetic': False, 'dependencyCompleteness': 'declared-inputs-incomplete'}
             (output / 'observation.json').write_bytes(canonical(assembly))
             summaries.append({'name': name, 'packageDigest': summary['packageDigest'], 'outputs': outputs,
-                              'runtimeBrowserQualified': False})
+                              'recipeProfile': RECIPE_PROFILE, 'runtimeBrowserQualified': False,
+                              'captureBudget': captured['budget']})
     (args.output / 'summary.json').write_bytes(canonical(summaries))
     print(json.dumps(summaries, separators=(',', ':')))
 
