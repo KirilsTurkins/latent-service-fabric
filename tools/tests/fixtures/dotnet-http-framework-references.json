@@ -1,0 +1,1401 @@
+{
+  "schemaVersion": "latent.dotnet.http-reference-control.v1",
+  "sourceRevision": "dbd1038d57f3514c2df3e6304d42efdac72f2d43",
+  "capture": "private unchanged guard observation after actual NativeAOT; paths replaced by authenticated SDK scopes",
+  "originalReferenceBytes": 65726,
+  "originalReferenceSha256": "eeda66fa4701b3123354cbd648810ed1a70ad06d1a1284db6bcfff0731d1d6b8",
+  "originalLimitBytes": 65536,
+  "derivedCount": 1,
+  "nativeResponseBytes": 71479,
+  "nativeResponseSha256": "3f6adc67f0eb8a42cd3b08a9822c2b7c5fdb00eaacc26cf68beeafc79993ccc0",
+  "compilerInputsSha256": "19fc5abcea6c538f1d540af960dbeffe824a3ab731974e3df41d23be52e4cc6c",
+  "compilerInputsBytes": 3551899,
+  "scopes": {
+    "framework-public": "runtime.wasi-wasm.microsoft.dotnet.ilcompiler.llvm/10.0.0-rc.1.26306.1/runtimes/wasi-wasm/lib",
+    "framework-private": "runtime.wasi-wasm.microsoft.dotnet.ilcompiler.llvm/10.0.0-rc.1.26306.1/runtimes/wasi-wasm/native-hidden",
+    "derived": "System.Net.Http private derived owner"
+  },
+  "references": [
+    {
+      "scope": "framework-public",
+      "name": "Microsoft.CSharp.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "Microsoft.VisualBasic.Core.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "Microsoft.VisualBasic.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "Microsoft.Win32.Primitives.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "Microsoft.Win32.Registry.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "mscorlib.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "netstandard.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.AppContext.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Buffers.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Collections.Concurrent.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Collections.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Collections.Immutable.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Collections.NonGeneric.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Collections.Specialized.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ComponentModel.Annotations.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ComponentModel.DataAnnotations.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ComponentModel.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ComponentModel.EventBasedAsync.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ComponentModel.Primitives.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ComponentModel.TypeConverter.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Configuration.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Console.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Core.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Data.Common.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Data.DataSetExtensions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Data.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.Contracts.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.Debug.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.DiagnosticSource.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.FileVersionInfo.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.Process.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.StackTrace.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.TextWriterTraceListener.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.Tools.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.TraceSource.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Diagnostics.Tracing.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Drawing.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Drawing.Primitives.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Dynamic.Runtime.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Formats.Asn1.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Formats.Tar.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Globalization.Calendars.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Globalization.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Globalization.Extensions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.Compression.Brotli.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.Compression.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.Compression.FileSystem.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.Compression.ZipFile.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.FileSystem.AccessControl.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.FileSystem.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.FileSystem.DriveInfo.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.FileSystem.Primitives.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.FileSystem.Watcher.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.IsolatedStorage.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.MemoryMappedFiles.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.Pipelines.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.Pipes.AccessControl.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.Pipes.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.IO.UnmanagedMemoryStream.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Linq.AsyncEnumerable.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Linq.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Linq.Expressions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Linq.Parallel.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Linq.Queryable.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Memory.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.Http.Json.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.HttpListener.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.Mail.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.NameResolution.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.NetworkInformation.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.Ping.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.Primitives.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.Quic.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.Requests.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.Security.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.ServerSentEvents.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.ServicePoint.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.Sockets.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.WebClient.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.WebHeaderCollection.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.WebProxy.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.WebSockets.Client.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Net.WebSockets.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Numerics.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Numerics.Vectors.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ObjectModel.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Private.DataContractSerialization.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Private.Uri.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Private.Xml.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Private.Xml.Linq.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Reflection.DispatchProxy.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Reflection.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Reflection.Emit.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Reflection.Emit.ILGeneration.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Reflection.Emit.Lightweight.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Reflection.Extensions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Reflection.Metadata.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Reflection.Primitives.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Reflection.TypeExtensions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Resources.Reader.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Resources.ResourceManager.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Resources.Writer.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.CompilerServices.Unsafe.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.CompilerServices.VisualC.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Extensions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Handles.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.InteropServices.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.InteropServices.JavaScript.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.InteropServices.RuntimeInformation.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Intrinsics.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Loader.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Numerics.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Serialization.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Serialization.Formatters.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Serialization.Json.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Serialization.Primitives.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Runtime.Serialization.Xml.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.AccessControl.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Claims.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Cryptography.Algorithms.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Cryptography.Cng.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Cryptography.Csp.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Cryptography.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Cryptography.Encoding.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Cryptography.OpenSsl.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Cryptography.Primitives.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Cryptography.X509Certificates.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Principal.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.Principal.Windows.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Security.SecureString.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ServiceModel.Web.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ServiceProcess.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Text.Encoding.CodePages.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Text.Encoding.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Text.Encoding.Extensions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Text.Encodings.Web.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Text.Json.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Text.RegularExpressions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.AccessControl.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.Channels.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.Overlapped.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.Tasks.Dataflow.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.Tasks.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.Tasks.Extensions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.Tasks.Parallel.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.Thread.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.ThreadPool.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Threading.Timer.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Transactions.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Transactions.Local.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.ValueTuple.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Web.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Web.HttpUtility.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Windows.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Xml.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Xml.Linq.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Xml.ReaderWriter.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Xml.Serialization.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Xml.XDocument.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Xml.XmlDocument.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Xml.XmlSerializer.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Xml.XPath.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "System.Xml.XPath.XDocument.dll"
+    },
+    {
+      "scope": "framework-public",
+      "name": "WindowsBase.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "Microsoft.CSharp.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "Microsoft.VisualBasic.Core.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "Microsoft.VisualBasic.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "Microsoft.Win32.Primitives.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "Microsoft.Win32.Registry.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "mscorlib.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "netstandard.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.AppContext.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Buffers.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Collections.Concurrent.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Collections.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Collections.Immutable.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Collections.NonGeneric.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Collections.Specialized.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ComponentModel.Annotations.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ComponentModel.DataAnnotations.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ComponentModel.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ComponentModel.EventBasedAsync.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ComponentModel.Primitives.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ComponentModel.TypeConverter.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Configuration.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Console.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Core.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Data.Common.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Data.DataSetExtensions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Data.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.Contracts.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.Debug.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.DiagnosticSource.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.FileVersionInfo.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.Process.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.StackTrace.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.TextWriterTraceListener.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.Tools.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.TraceSource.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Diagnostics.Tracing.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Drawing.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Drawing.Primitives.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Dynamic.Runtime.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Formats.Asn1.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Formats.Tar.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Globalization.Calendars.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Globalization.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Globalization.Extensions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.Compression.Brotli.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.Compression.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.Compression.FileSystem.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.Compression.ZipFile.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.FileSystem.AccessControl.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.FileSystem.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.FileSystem.DriveInfo.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.FileSystem.Primitives.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.FileSystem.Watcher.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.IsolatedStorage.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.MemoryMappedFiles.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.Pipelines.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.Pipes.AccessControl.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.Pipes.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.IO.UnmanagedMemoryStream.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Linq.AsyncEnumerable.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Linq.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Linq.Expressions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Linq.Parallel.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Linq.Queryable.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Memory.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.Http.Json.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.HttpListener.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.Mail.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.NameResolution.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.NetworkInformation.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.Ping.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.Primitives.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.Quic.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.Requests.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.Security.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.ServerSentEvents.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.ServicePoint.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.Sockets.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.WebClient.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.WebHeaderCollection.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.WebProxy.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.WebSockets.Client.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Net.WebSockets.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Numerics.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Numerics.Vectors.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ObjectModel.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Private.CoreLib.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Private.DataContractSerialization.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Private.Reflection.Execution.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Private.StackTraceMetadata.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Private.TypeLoader.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Private.Uri.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Private.Xml.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Private.Xml.Linq.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Reflection.DispatchProxy.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Reflection.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Reflection.Emit.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Reflection.Emit.ILGeneration.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Reflection.Emit.Lightweight.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Reflection.Extensions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Reflection.Metadata.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Reflection.Primitives.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Reflection.TypeExtensions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Resources.Reader.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Resources.ResourceManager.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Resources.Writer.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.CompilerServices.Unsafe.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.CompilerServices.VisualC.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Extensions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Handles.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.InteropServices.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.InteropServices.JavaScript.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.InteropServices.RuntimeInformation.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Intrinsics.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Loader.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Numerics.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Serialization.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Serialization.Formatters.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Serialization.Json.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Serialization.Primitives.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Runtime.Serialization.Xml.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.AccessControl.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Claims.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Cryptography.Algorithms.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Cryptography.Cng.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Cryptography.Csp.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Cryptography.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Cryptography.Encoding.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Cryptography.OpenSsl.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Cryptography.Primitives.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Cryptography.X509Certificates.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Principal.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.Principal.Windows.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Security.SecureString.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ServiceModel.Web.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ServiceProcess.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Text.Encoding.CodePages.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Text.Encoding.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Text.Encoding.Extensions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Text.Encodings.Web.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Text.Json.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Text.RegularExpressions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.AccessControl.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.Channels.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.Overlapped.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.Tasks.Dataflow.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.Tasks.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.Tasks.Extensions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.Tasks.Parallel.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.Thread.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.ThreadPool.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Threading.Timer.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Transactions.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Transactions.Local.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.ValueTuple.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Web.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Web.HttpUtility.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Windows.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Xml.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Xml.Linq.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Xml.ReaderWriter.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Xml.Serialization.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Xml.XDocument.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Xml.XmlDocument.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Xml.XmlSerializer.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Xml.XPath.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "System.Xml.XPath.XDocument.dll"
+    },
+    {
+      "scope": "framework-private",
+      "name": "WindowsBase.dll"
+    },
+    {
+      "scope": "derived",
+      "name": "System.Net.Http.dll"
+    }
+  ],
+  "normalDefaultClientQualified": false
+}
