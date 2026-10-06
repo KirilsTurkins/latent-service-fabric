@@ -169,3 +169,142 @@ endpoint or packaged guest qualification. Concrete transports and their controll
 real endpoint evidence belong to #392/#393; ordinary state-runtime composition,
 management authorization and terminal payload retirement also consume their
 respective Phase 4 ports before aggregate delivery is complete.
+
+## Attributed node controls
+
+The dispatcher is node-wide, across tenants and namespaces. Its management
+gateway requires current trusted node-operator authorization; a tenant
+administrator or a known effect ID supplies no permission to pause it or release
+its node-wide aggregates. These are existing private management transport ports.
+
+`prepare_control` captures the original authenticated actor tenant/subject,
+operation ID, `Pause`/`Resume` action and exact control generation. That generation
+combines the actual persisted exclusive dispatcher epoch with a checked monotonic
+revision. Preparation does no I/O and changes no admission. A prepared value is
+affine to this actual dispatcher; another engine/owner rejects it before queuing.
+Local safety pause and restore-review changes invalidate stale preparations.
+
+`submit_control` transfers that immutable request to the same protected store's
+fixed writer. It reserves 64 KiB for the bounded request, intermediate rows and
+receipt. The actual engine transaction checks the owner row, latest control and
+absent original receipt. Its final short callback holds current node policy
+through one acceptance, advances the revision and pauses admission. Receipt
+durability then atomically stores the owner clock floor, latest control and
+attributed original-operation receipt. The policy lock never spans disk I/O.
+Only successful durable completion publishes a resume. Dropped waiters keep the
+actual writer and its reservation; no unobserved writer is refunded.
+
+Both `dispatch-control-v1\0` and `dispatch-control-receipt-v1\0` live in the
+Maintenance family. Values are closed `LDC\0\x01` records, bounded to 4 KiB.
+The receipt key contains SHA-256 of `latent.dispatcher-control-operation.v1\0`
+and the length-framed authenticated tenant, subject and original operation ID.
+IDs are at most 256 UTF-8 bytes; a reused ID with a changed action/precondition
+fails exact association. Startup validates receipt/latest-control/owner links
+in finite pages and keeps an earlier durable pause across exclusive epochs.
+
+Historical receipt lookup preserves the original action and precondition; it
+never republishes a historical resume. Unknown completion keeps admission paused
+and the pending original identity. Only actual receipt recovery or the admitted
+exclusive-owner recovery path can establish its outcome. No timeout, pause,
+cancel, cursor, decoded receipt or numeric generation proves provider retirement.
+Already accepted claim/send/cleanup can finish after pause; shutdown reports
+physical retirement and fixed thread joins separately.
+
+Pause remains available with an unproven or backwards clock. Resume requires
+protected continuity, no sticky failure and no restore-review fence. Restore
+composition installs `start_in_restore_review` before readiness, or the trusted
+`require_restore_review` safety port before exposure. Generic resume cannot clear
+that fence; #399's separately reviewed restore protocol must provide any future
+clear/resume authority. A known durable resume whose later safety fence prevents
+publication remains a known receipt and reports `published: false`.
+
+The common authenticated RPC/CLI composition and #397 reserved recovery lane
+consume these ports. This domain implementation does not by itself qualify the
+public management workflow, ordinary-queue saturation or backup/restore review.
+
+## Original command role and clock
+
+The same protected node role also supplies commands when no effect adapters are
+configured. `command_admission_source()` returns a cloneable sealed metadata
+source, with no worker or scheduling handle. `capture()` reserves a non-clone
+`CommandAdmission` from a finite node slot table (128 by default, hard ceiling
+1024). Captured guards expose their actual protected owner epoch and positively
+qualified time; descriptions and client counters cannot reconstruct them.
+
+`with_current` is the short outer native-writer acceptance fence. It checks the
+same epoch/control generation, pending control, restore review, current store
+failure/close/quarantine and nonrewinding original clock before invoking the
+host's namespace, policy/effect and cancellation acceptance. It performs no I/O
+and releases before flush. Initial startup time still needs the admitted
+external checkpoint and retained command registry's maximum clock floor; this
+port does not synthesize continuity from wall time.
+
+The actual physical command owner must retain its guard through guest/native
+cleanup and invoke `retire(self)` only after positive retirement. Lost waiters,
+logical cancellation, expired leases and a finalized activation ledger are not
+retirement proof. Unexpected guard Drop quarantines the shared store and keeps
+the bounded guard/root role. Driver shutdown cannot retire that role or allow a
+new epoch while any original command guard remains. A plain effect pause allows
+fresh commands to accumulate paused intents; stale control generations and
+restore review fail writer acceptance. Diagnostic epoch/time getters reserve no
+command slot and grant no writer permission. The sealed source exposes the exact
+installed effect registry and checks registry owner identity; it does not create
+a second authority. Its clock getter fails closed after physical role close.
+
+Pinned Rust1.97.1 Linux: all70 effect cases and strict all-target/all-feature
+Clippy passed, including four real protected-store command schedules: zero
+adapters with bounded sources and clock rollback, control/restore fences, sticky
+deadline with exclusive role retention, and detached native writer/buffer
+retirement before rejecting an old command fence. The earlier adapter factory
+passed all-feature standalone compilation. Checking the newly added command
+wrapper was interrupted by Docker becoming read-only (SIGBUS and filesystem
+error 30), so that full application check remains pending. Full guest admission
+and response/recovery capacity remain their integration owners.
+
+## Shared native capacity for ordinary attempts
+
+The trusted composition root installs the same `NativeCapacityOwner` into the
+protected store and dispatcher before ordinary dispatch. An unbound dispatcher
+leaves due work pending; a foreign store/global binding fails closed. No attempt
+constructs another capacity owner. The first accepted native reservation seals
+the dispatcher binding, including after every earlier attempt retires.
+
+Admission reserves the ordinary partition before fixed provider-job submission,
+durable claim, payload decoding or adapter allocation. Its conservative work
+allowance is 14 MiB: the 4 MiB attempt envelope, 8 MiB native preparation bound
+and 2 MiB receipt bound, plus the native owner's 2,048-byte metadata allowance.
+This prepays possible buffers rather than allocating a 14 MiB buffer. Full
+ordinary slots or aggregate bytes leave the exact due row and payload unclaimed.
+The independent recovery partition and protected-store recovery workers remain
+available within their finite limits. Native configuration too small for one
+reviewed attempt fails visibly instead of undercharging or borrowing recovery.
+
+One monotonic deadline is captured before queueing from the immutable attempt
+timeout. The actual effect context can only narrow it; starting a queued worker
+cannot refresh it. Original node/role and native-capacity checks run at the
+engine's final claim and send-marker acceptance, after OCC/capacity preparation
+and before flush. Provider admission also checks the same original native
+reservation inside the Effects -> Native fence. No I/O runs under these locks.
+
+The same keeper remains with the provider context/grant, operation pin, native
+closure and unclaimed result, and bounded durable receipt. Provider cleanup does
+not refund it while receipt recording or reserved native retirement is paused.
+Logical shutdown, deadline expiry and dropped result waiters do not prove
+physical retirement. Unexpected physical-owner loss preserves the original
+bounded global reservation with quarantine; positive retirement releases it
+only after the actual retained buffers and operation pin destruct.
+
+Pinned Rust 1.97.1 Linux validation passed all 110 effects and 128 state library
+cases, without ignored or filtered cases, and strict all-target/all-feature
+Clippy for both crates. Nine new required cases cover original deadline
+narrowing, final claim/send rejection, unbound and foreign owners, ordinary
+slot and byte pressure, queued expiry, and paused native retirement. The slot
+pressure schedule also fills all three ordinary engine workers and their queue
+while an actual recovery read and recovery operation retirement still complete
+on the same protected owner. These tests use the actual embedded engine and
+fixed workers; the provider itself is a controlled physical-cleanup fixture.
+
+This port composes the actual dispatcher worker and protected engine. Ordinary
+Standalone/verified-guest installation and authenticated management qualification
+remain recorded by their owning integration tickets; this focused capacity
+change does not close all of #391 or the durable quota/retention work in #397.

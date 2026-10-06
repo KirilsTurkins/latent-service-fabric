@@ -1,5 +1,6 @@
 use latent_core::BoxFuture;
 
+use super::{ProviderReconciliationOutcome, ProviderReconciliationRequest};
 use crate::authority::{AuthorityError, DispatchGrant, DispatchProfile, EffectTime};
 use crate::dispatch::{AttemptIdentity, AttemptReceipt, RetryProof};
 use crate::payload::PayloadRecord;
@@ -29,6 +30,29 @@ pub trait DeferredEffectAdapter: Send + Sync {
         payload: PayloadRecord,
         attempt: AttemptIdentity,
     ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError>;
+
+    /// Admit a positive-receipt status lookup through the same protected
+    /// provider, current profile and original sealed grant. First poll performs
+    /// lookup only, never another send. The fixed owner drives accepted work
+    /// through actual physical cleanup even after its management waiter drops.
+    fn accept_reconciliation(
+        &self,
+        _grant: DispatchGrant,
+        _request: ProviderReconciliationRequest,
+    ) -> Result<BoxFuture<'static, ProviderReconciliationOutcome>, AuthorityError> {
+        Err(AuthorityError::UnsupportedFormat)
+    }
+
+    /// Trusted concrete qualification for a manual redrive of the exact original
+    /// payload/profile. This short callback performs no I/O. Unknown status,
+    /// administrator text or an idempotency key cannot manufacture this proof.
+    fn qualify_redrive(
+        &self,
+        _request: &ProviderReconciliationRequest,
+        _time: EffectTime,
+    ) -> Result<RetryProof, AuthorityError> {
+        Err(AuthorityError::PolicyBlocked)
+    }
 }
 
 /// Supplied by the protected node clock/checkpoint owner. A wall clock alone
