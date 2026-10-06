@@ -102,7 +102,8 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
                "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java",
                "fibers/conformance/compiler/WaitFramePluginOrder.java",
-               "fibers/conformance/compiler/WaitFrameModelControl.java")
+               "fibers/conformance/compiler/WaitFrameModelControl.java",
+               "fibers/conformance/compiler/QueueDeadlineModelControl.java")
     compiler.run("wait-frame-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", output, *(compiler.sdk / source for source in sources))
     result = compiler.run("wait-frame-model-control", "java", "-Xmx256m", "-cp",
@@ -113,9 +114,30 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
                 "async-lowered-owned-pairs;platform-first-negative;shape-and-repeat-negatives;application-identity;"
                 "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative")
     if result != expected: raise ValueError("Java wait frame model control did not complete")
+    queue = compiler.run("queue-deadline-model-control", "java", "-Xmx256m", "-cp",
+                         str(output) + os.pathsep + classpath,
+                         "dev.latent.guest.runtime.compiler.QueueDeadlineModelControl").strip()
+    if queue != ("QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;"
+                 "second-sample-comparison;owned-clock-hooks=2;negative-shapes=4"):
+        raise ValueError("Java queue deadline model control did not complete")
+    timer_output = output / "timer-source-control"
+    timer_output.mkdir()
+    timer_fixture = "fibers/conformance/compiler/timer-source-control/"
+    timer_sources = ("runtime/dev/latent/guest/Option.java", "runtime/dev/latent/guest/Unsigned64.java",
+                     "fibers/dev/latent/guest/runtime/Activation.java", "fibers/dev/latent/guest/runtime/Monitors.java",
+                     timer_fixture + "dev/latent/generated/Bindings.java", timer_fixture + "TimerReadinessSourceControl.java")
+    compiler.run("timer-readiness-source-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
+                 "-d", timer_output, *(compiler.sdk / name for name in timer_sources))
+    timer = compiler.run("timer-readiness-source-control", "java", "-Xmx256m", "-cp",
+                         str(timer_output) + os.pathsep + classpath, "TimerReadinessSourceControl").strip()
+    if timer != ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback"):
+        raise ValueError("Java timer readiness source control did not complete")
     return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2,
             "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2,
-            "coroutineWrappers": 6, "coroutineMonitors": 2, "coroutineNativePairs": 2, "jarDigests": identities}
+            "coroutineWrappers": 6, "coroutineMonitors": 2, "coroutineNativePairs": 2,
+            "queueClockSamples": 2, "queueShapeNegatives": 4,
+            "timerReadinessSourceControl": "passed-private-source-ledger-not-guest-qualification", "jarDigests": identities}
 
 
 def completable_source_control(compiler: Compiler, output: Path) -> dict:

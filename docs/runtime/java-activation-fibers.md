@@ -59,6 +59,14 @@ validation precedes monitor ownership checks; interruption clears the current
 thread's flag at the standard throwing boundary. Absolute deadlines saturate
 without shortening a large requested timeout.
 
+Each timed Java frame holds one host timer created through `timer-start`. Its
+captured monotonic deadline also controls the maintained TeaVM queue entry.
+The pump uses `timer-next` only for an exact queue-deadline match and keeps the
+timer charged until the resumed frame confirms `timer-stop`. Unmatched queue
+waits retain their separately charged `wait-for` path. The pump pairs a queue
+delay with its first clock sample; the second sample still checks whether an
+event is due.
+
 Root completion closes independent admission, while accepted application threads
 and running callbacks may still submit necessary continuations. Idle pool workers
 remain available during that drain. Once no accepted application work remains,
