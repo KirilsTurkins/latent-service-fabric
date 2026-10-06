@@ -465,6 +465,7 @@ fn stage(
         || current_store(file, owners.as_ref()),
     )
     .map_err(RestoreStageError::Checkpoint)?;
+    let expected_identity = config.identity.clone();
     staging.destination = Some(RestoreDestination {
         checkpoint,
         store: destination,
@@ -610,7 +611,7 @@ fn stage(
     if StoreIdentity::inspect(&view)
         .map_err(RestoreStageError::Review)?
         .as_ref()
-        != Some(&config.identity)
+        != Some(&expected_identity)
     {
         return Err(RestoreStageError::Review(StoreError::Corrupt));
     }

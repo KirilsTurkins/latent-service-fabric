@@ -219,7 +219,7 @@ impl CheckpointFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    pub(super) fn open(
+    pub(in crate::protected_store) fn open(
         store: &PhysicalStore,
         config: ProtectedCheckpointConfig,
         identity: StoreIdentity,
@@ -349,7 +349,7 @@ impl CheckpointFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    pub(super) fn inspect(
+    pub(in crate::protected_store) fn inspect(
         &self,
         view: &ReadView,
         dispatch: Option<(u64, u64)>,
