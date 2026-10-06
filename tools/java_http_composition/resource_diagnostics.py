@@ -64,7 +64,7 @@ def fuel(client, targets, host):
                 "java-resource-original-child-cpu-consumed")
         if result["invocation"]["category"] == "success":
             response = decoded(result["invocation"])
-            require(len(response) == 1 and response[0]["status"] == 500, "java-resource-original-child-trap-response")
+            require(len(response) == 1 and response[0]["status"] == 503, "java-resource-original-child-trap-response")
         require("activation.diagnostic.v1" not in json.dumps(result["invocation"]),
                 "java-resource-public-diagnostic-redaction")
         result["typedDiagnostic"] = terminal_observation(child, stages=(5,), reason=11)

@@ -16,6 +16,7 @@
     "JavaDiagnosticPolicyTests.test_program_has_eight_initial_records_four_revisions_and_original_narrow_scopes",
     "JavaDiagnosticPolicyTests.test_review_hash_is_exact_original_policy_owner_file_bytes",
     "JavaDiagnosticPolicyTests.test_wrong_clock_changes_only_original_service_principal_and_restore_is_original_document",
+    "JavaDiagnosticReviewTests.test_child_fuel_requires_declared_adapter_503_and_exact_guest_fuel_reason",
     "JavaDiagnosticReviewTests.test_current_policy_absence_is_authoritative_known_and_scoped_before_any_mutation",
     "JavaDiagnosticReviewTests.test_current_program_calls_original_context_owner_and_preserves_service_admission_order",
     "JavaDiagnosticReviewTests.test_original_boot_and_deadline_cannot_be_extended_or_expired",
@@ -23,54 +24,6 @@
     "JavaDiagnosticReviewTests.test_review_refuses_changed_bytes_nonzero_activity_and_unknown_physical_retirement"
   ],
   "guards": {
-    "JavaDiagnosticReviewTests.test_current_program_calls_original_context_owner_and_preserves_service_admission_order": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "JavaDiagnosticMaterialTests.test_explicit_ingress_port_preserves_config_bytes_and_rejects_invalid_selection": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
-        "class:setup-sha256:7dfc3cbb0efdfe76cda445d82b7af253d1bb1229fe9b64b5f9f19f377b2eb7f1"
-      ],
-      "skipSites": []
-    },
-    "JavaDiagnosticMaterialTests.test_cli_forwards_prepare_port_and_refuses_execution_override": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
-        "class:setup-sha256:7dfc3cbb0efdfe76cda445d82b7af253d1bb1229fe9b64b5f9f19f377b2eb7f1"
-      ],
-      "skipSites": []
-    },
-    "JavaDiagnosticMaterialTests.test_preparation_port_refuses_invalid_selection_and_preserves_bounded_peer_owner": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
-        "class:setup-sha256:7dfc3cbb0efdfe76cda445d82b7af253d1bb1229fe9b64b5f9f19f377b2eb7f1"
-      ],
-      "skipSites": []
-    },
     "JavaDiagnosticHistoryTests.test_duplicate_membership_cycles_wrong_versions_and_byte_bounds_refuse": {
       "bases": [
         "unittest.TestCase"
@@ -119,6 +72,30 @@
       ],
       "skipSites": []
     },
+    "JavaDiagnosticMaterialTests.test_cli_forwards_prepare_port_and_refuses_execution_override": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
+        "class:setup-sha256:7dfc3cbb0efdfe76cda445d82b7af253d1bb1229fe9b64b5f9f19f377b2eb7f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDiagnosticMaterialTests.test_explicit_ingress_port_preserves_config_bytes_and_rejects_invalid_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
+        "class:setup-sha256:7dfc3cbb0efdfe76cda445d82b7af253d1bb1229fe9b64b5f9f19f377b2eb7f1"
+      ],
+      "skipSites": []
+    },
     "JavaDiagnosticMaterialTests.test_native_receipt_byte_and_elf_identity_cannot_be_replaced": {
       "bases": [
         "unittest.TestCase"
@@ -132,6 +109,18 @@
       "skipSites": []
     },
     "JavaDiagnosticMaterialTests.test_original_input_failure_is_preserved_before_peer_node_or_authority_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
+        "class:setup-sha256:7dfc3cbb0efdfe76cda445d82b7af253d1bb1229fe9b64b5f9f19f377b2eb7f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDiagnosticMaterialTests.test_preparation_port_refuses_invalid_selection_and_preserves_bounded_peer_owner": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -227,7 +216,31 @@
       ],
       "skipSites": []
     },
+    "JavaDiagnosticReviewTests.test_child_fuel_requires_declared_adapter_503_and_exact_guest_fuel_reason": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaDiagnosticReviewTests.test_current_policy_absence_is_authoritative_known_and_scoped_before_any_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaDiagnosticReviewTests.test_current_program_calls_original_context_owner_and_preserves_service_admission_order": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -251,7 +264,7 @@
       ],
       "skipSites": []
     },
-    "JavaDiagnosticReviewTests.test_review_refuses_changed_bytes_nonzero_activity_and_unknown_physical_retirement": {
+    "JavaDiagnosticReviewTests.test_prepared_execution_creates_each_session_output_once_and_retires_both_owners": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -263,7 +276,7 @@
       ],
       "skipSites": []
     },
-    "JavaDiagnosticReviewTests.test_prepared_execution_creates_each_session_output_once_and_retires_both_owners": {
+    "JavaDiagnosticReviewTests.test_review_refuses_changed_bytes_nonzero_activity_and_unknown_physical_retirement": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -278,6 +291,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_diagnostic_program.py",
-  "reviewReason": "Register finite native-input, policy-review, deadline, paging, tenant and retained-peer ownership guards without replacing historical cases Add one execute-to-real-session filesystem regression for the duplicate output creation found by the actual signed-node run. Preserve every original case, fixture, approval, boot, deadline and physical-retirement guard; unit mocks make no real-node qualification claim. Add optional unprivileged loopback selection, bounded peer propagation and CLI execute-override guards. Add one explicit ingress port and exact configuration-byte preservation guard.",
+  "reviewReason": "Register finite native-input, policy-review, deadline, paging, tenant and retained-peer ownership guards without replacing historical cases Add one execute-to-real-session filesystem regression for the duplicate output creation found by the actual signed-node run. Preserve every original case, fixture, approval, boot, deadline and physical-retirement guard; unit mocks make no real-node qualification claim. Add optional unprivileged loopback selection, bounded peer propagation and CLI execute-override guards. Add one explicit ingress port and exact configuration-byte preservation guard. Add one recorded-wire fuel control: strict503 from the maintained generated adapter, reject500, and require closed execution-stage guest-fuel reason11; all original cases, controls, deadlines and budgets are unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -386,6 +386,51 @@ class JavaDiagnosticMaterialTests(unittest.TestCase):
 
 
 class JavaDiagnosticReviewTests(unittest.TestCase):
+    def test_child_fuel_requires_declared_adapter_503_and_exact_guest_fuel_reason(self):
+        from base64 import b64encode
+        from contextlib import ExitStack
+        from tools.java_http_composition import resource_diagnostics as resources
+        from tools.java_http_composition import context
+        from tools.java_http_composition.node import ADAPTER
+
+        budget = {"cpuFuel": 10_000_000_000, "memoryBytes": 134217728,
+                  "wallTimeLimitMillis": 120000, "childCalls": 4, "outboundRequests": 2,
+                  "stateReadBytes": 0, "stateWriteBytes": 0, "blobReadBytes": 0,
+                  "blobWriteBytes": 0, "logBytes": 0, "effectCount": 0}
+        activation = "java-diagnostics-child-fuel"
+        parent = {"activationId": activation, "parentActivationId": None, "rootActivationId": activation,
+                  "principalKind": "administrator", "callerService": None,
+                  "effectiveDeadlineUnixMillis": "200000", "grantedBudget": {**budget, "cpuFuel": resources.FUEL}}
+        child = {"activationId": "actual-child", "parentActivationId": activation, "rootActivationId": activation,
+                 "principalKind": "service", "callerService": ADAPTER, "terminalState": "resource_exhausted",
+                 "effectiveDeadlineUnixMillis": "150000", "grantedBudget": {**budget,
+                    "cpuFuel": 497234471, "memoryBytes": 62324736, "wallTimeLimitMillis": 59959,
+                    "childCalls": 0, "outboundRequests": 1}, "diagnosticIsTerminal": True,
+                 "diagnostic": {"stage": 5, "reason": 11}}
+        with tempfile.TemporaryDirectory() as temporary:
+            client = SimpleNamespace(evidence=Path(temporary), call=lambda *args: {
+                "data": {"finalConsumption": {"cpuFuel": 497234471}}})
+            for public_status, reason in ((503, 11), (500, 11), (503, 1)):
+                client.evidence = Path(temporary) / f"case-{public_status}-{reason}"
+                client.evidence.mkdir()
+                current_child = {**child, "diagnostic": {"stage": 5, "reason": reason}}
+                payload = b64encode(json.dumps([{"status": public_status}]).encode()).decode()
+                invocation = {"category": "success", "data": {"payload": {"data": payload}}}
+                with ExitStack() as stack:
+                    original = stack.enter_context(patch.object(resources, "invoke", return_value=invocation))
+                    stack.enter_context(patch.object(context, "tree", return_value={"nodes": [parent, current_child]}))
+                    stack.enter_context(patch.object(resources, "idle", return_value={"owners": 0}))
+                    stack.enter_context(patch.object(resources, "fresh_status", return_value={"httpStatus": 200}))
+                    with self.subTest(public_status=public_status, reason=reason):
+                        if public_status == 500:
+                            with self.assertRaisesRegex(WorkflowError, "original-child-trap-response"):
+                                resources.fuel(client, {"adapter": {"budget": budget}}, "localhost:23456")
+                        else:
+                            result = resources.fuel(client, {"adapter": {"budget": budget}}, "localhost:23456")
+                            self.assertEqual(result["status"], "passed" if reason == 11 else "typed-diagnostic-unexpected")
+                            self.assertEqual(result["childStatus"]["finalConsumption"]["cpuFuel"], 497234471)
+                        self.assertEqual(original.call_args.kwargs["budget_override"]["cpuFuel"], resources.FUEL)
+
     def test_current_program_calls_original_context_owner_and_preserves_service_admission_order(self):
         from contextlib import ExitStack
         with tempfile.TemporaryDirectory() as temporary:
