@@ -38,8 +38,8 @@ pub(super) fn with_preparation(
     // Reservation precedes all decode/copy work. One bounded owner slot, no
     // waiting queue; reject spare-capacity abuse before holding received data.
     {
-        let mut state = owner.lock()?;
-        owner.sample(&mut state)?;
+        let state = owner.read()?;
+        owner.sample(&state)?;
         check_tenant(tenant, &state)?;
     }
     // Component structural validation can outlast a clock lease. It confers no
