@@ -5,6 +5,15 @@ from . import paths, state
 from .common import require
 
 
+def snapshot_bound(directory: Path) -> int:
+    from . import snapshot
+    name = 'snapshot.json' if (directory / 'snapshot.json').exists() else 'snapshot-intent.json'
+    record = state.load(directory, name)
+    snapshot.validate(record)
+    require(record['identity'] == 'sha256:' + directory.name, 'snapshot-owner-identity')
+    return 8192 + (record['capturedInputs']['objectCount'] + 512 if 'capturedInputs' in record else 0)
+
+
 def prune_snapshots(root: Path, *, incoming: str) -> None:
     from tools.native_runtime import files
     directory = root / "snapshots"
@@ -28,9 +37,7 @@ def prune_snapshots(root: Path, *, incoming: str) -> None:
             continue
         require(path.parent == directory and len(path.name) == 64 and all(c in "0123456789abcdef" for c in path.name),
                 "unowned-snapshot-path")
-        record = state.load(path, "snapshot.json")
-        require(record["identity"] == "sha256:" + path.name, "snapshot-owner-identity")
-        files.remove_tree(path, maximum=8192)
+        files.remove_tree(path, maximum=snapshot_bound(path))
         candidates = [item for item in candidates if item != path]
 
 
@@ -70,12 +77,24 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
         receipt = lifecycle.remove(layout, purge=installed["installationId"])
     snapshots = root / "snapshots"
     if snapshots.exists():
-        files.remove_tree(snapshots, maximum=32768)
+        entries = list(snapshots.iterdir())
+        require(len(entries) <= 4, 'snapshot-retention-inventory-invalid')
+        files.remove_tree(snapshots, maximum=sum(snapshot_bound(path) for path in entries) + 4)
     from .tool_install import purge as purge_tools
     purge_tools(root)
     assets = root / "assets"
     if assets.exists():
         files.remove_tree(assets, maximum=256)
+    captures = root / 'captures'
+    if captures.exists():
+        from . import assets as transfers, captured_inputs
+        entries = list(captures.iterdir())
+        require(len(entries) <= 4, 'captured-input-retention-inventory-invalid')
+        for path in entries:
+            value = transfers.manifest(state.load(path, 'transfer.json'))
+            require(value.get('domain') == captured_inputs.DOMAIN and value['identity'] == 'sha256:' + path.name,
+                    'captured-input-cleanup-owner')
+        files.remove_tree(captures, maximum=64)
     if (root / "test-profile-plan.json").exists():
         paths.read(root, "test-profile-plan.json")
         (root / "test-profile-plan.json").unlink()

@@ -1,0 +1,111 @@
+{
+  "cases": [
+    "CapturedInputs.test_capture_assets_are_data_only_and_cannot_use_installer_cache_namespace",
+    "CapturedInputs.test_capture_identity_and_expanded_bounds_reject_forged_headers",
+    "CapturedInputs.test_corrupt_object_data_cannot_complete_restore",
+    "CapturedInputs.test_incomplete_or_wrong_domain_transfer_preserves_last_good_project",
+    "CapturedInputs.test_large_objects_use_authenticated_domain_without_changing_controller_limits",
+    "CapturedInputs.test_pack_restore_and_build_attempt_copy_preserve_real_offline_capture",
+    "CapturedInputs.test_real_chunk_receiver_associates_only_verified_capture_and_rejects_later_tamper"
+  ],
+  "guards": {
+    "CapturedInputs.test_capture_assets_are_data_only_and_cannot_use_installer_cache_namespace": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8334774514f2abc38d875c80623fd884719bc88846d9211ea66c4d77eee375f",
+        "class:setup-sha256:d328bcb3bd20c419286d95fc7dd9b97d4fd2f8d6d5fc4b5b2851c9cd21dae173"
+      ],
+      "skipSites": []
+    },
+    "CapturedInputs.test_capture_identity_and_expanded_bounds_reject_forged_headers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8334774514f2abc38d875c80623fd884719bc88846d9211ea66c4d77eee375f",
+        "class:setup-sha256:d328bcb3bd20c419286d95fc7dd9b97d4fd2f8d6d5fc4b5b2851c9cd21dae173"
+      ],
+      "skipSites": []
+    },
+    "CapturedInputs.test_corrupt_object_data_cannot_complete_restore": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8334774514f2abc38d875c80623fd884719bc88846d9211ea66c4d77eee375f",
+        "class:setup-sha256:d328bcb3bd20c419286d95fc7dd9b97d4fd2f8d6d5fc4b5b2851c9cd21dae173"
+      ],
+      "skipSites": []
+    },
+    "CapturedInputs.test_incomplete_or_wrong_domain_transfer_preserves_last_good_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'Actual anchored receiver and helper require Linux')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:e8334774514f2abc38d875c80623fd884719bc88846d9211ea66c4d77eee375f",
+        "class:setup-sha256:d328bcb3bd20c419286d95fc7dd9b97d4fd2f8d6d5fc4b5b2851c9cd21dae173"
+      ],
+      "skipSites": [
+        "skip-control-sha256:49bbcc04d158451887bc2f310d4e5a53cef7fc6ec43bfcb2005cee6595c39cb9",
+        "unittest.skipUnless(os.name == 'posix', 'Actual anchored receiver and helper require Linux')"
+      ]
+    },
+    "CapturedInputs.test_large_objects_use_authenticated_domain_without_changing_controller_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8334774514f2abc38d875c80623fd884719bc88846d9211ea66c4d77eee375f",
+        "class:setup-sha256:d328bcb3bd20c419286d95fc7dd9b97d4fd2f8d6d5fc4b5b2851c9cd21dae173"
+      ],
+      "skipSites": []
+    },
+    "CapturedInputs.test_pack_restore_and_build_attempt_copy_preserve_real_offline_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8334774514f2abc38d875c80623fd884719bc88846d9211ea66c4d77eee375f",
+        "class:setup-sha256:d328bcb3bd20c419286d95fc7dd9b97d4fd2f8d6d5fc4b5b2851c9cd21dae173"
+      ],
+      "skipSites": []
+    },
+    "CapturedInputs.test_real_chunk_receiver_associates_only_verified_capture_and_rejects_later_tamper": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'Actual anchored receiver and helper require Linux')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:e8334774514f2abc38d875c80623fd884719bc88846d9211ea66c4d77eee375f",
+        "class:setup-sha256:d328bcb3bd20c419286d95fc7dd9b97d4fd2f8d6d5fc4b5b2851c9cd21dae173"
+      ],
+      "skipSites": [
+        "skip-control-sha256:d72dae84c93517da90c62b74c2df5c6dba8258eee47f8702e169512274e28df9",
+        "unittest.skipUnless(os.name == 'posix', 'Actual anchored receiver and helper require Linux')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_captured_inputs.py",
+  "reviewReason": "Protect authenticated captured-object transport and unchanged controller source limits",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
