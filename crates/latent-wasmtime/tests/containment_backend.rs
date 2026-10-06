@@ -996,13 +996,26 @@ fn assert_activation_failure(
     match outcome {
         ActivationOutcome::Failed {
             terminal_state: actual_terminal_state,
-            error,
+            mut error,
             consumption,
         } => {
             assert_eq!(actual_terminal_state, terminal_state);
             assert_eq!(error.code, code);
             assert!(!error.retryable);
             assert!(error.message.len() <= 512);
+            if code == latent_core::PlatformErrorCode::GuestTrap {
+                let detail = error.details.pop().expect("closed guest trap kind");
+                assert_eq!(detail.kind, "activation.guest-trap-kind");
+                assert_eq!(
+                    detail.fields,
+                    Metadata::from([(
+                        "kind".to_owned(),
+                        latent_core::error::GuestTrapKind::UnreachableCode
+                            .wire_name()
+                            .to_owned(),
+                    )])
+                );
+            }
             assert_eq!(
                 error.details.len(),
                 1 + usize::from(diagnostic_reason.is_some())
