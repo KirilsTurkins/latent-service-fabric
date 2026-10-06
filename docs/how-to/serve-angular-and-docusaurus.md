@@ -11,6 +11,19 @@ These examples use Angular **20.3.32**, PrimeNG **20.4.0**, Aura/Lara themes
 **1.2.5** and Docusaurus **3.10.2**. Other versions and plugins need their own
 browser checks.
 
+The current development builder additionally selects the optional signed
+Docusaurus 404 document. Use matching development CLI/node/helper versions for
+that extension; the retained alpha.5 binaries reject its new closed member.
+The released alpha.5 recipe and qualification remain historical evidence for
+their original checkout. See the
+[signed 404 contract](../component-development/static-sites.md#optional-signed-404-document-development).
+
+The maintained compatibility recipe is `latent.framework.static-recipe.v1`:
+the pinned examples below use external scripts/styles, local WOFF2 fonts,
+build-time base paths, and reviewed deterministic runtime styles. This version
+describes those finite examples and browser interactions; it grants no arbitrary
+server-bundle, plugin or external-media support.
+
 ## Build the examples
 
 Use a Linux build workspace with Node 24.19 and Python 3.13 or newer. On Windows,
@@ -39,6 +52,12 @@ plus its selected public inventory. No publisher credentials are needed to build
 Publishing still requires your organization's approved publisher and builder
 evidence; this command does not create those approvals.
 
+Current builders save `capture-budget.json` and include it as `captureBudget` in
+`summary.json`. Review count, logical bytes, encoded manifest, largest files and
+exact headroom before requesting signatures, following the
+[budget guide](../component-development/static-sites.md#review-budget-headroom-before-signing).
+The shared complete public inventory is preserved even when bytes repeat.
+
 ## Choose the mount before building
 
 | Example | Static trigger mount | Application configuration |
@@ -57,6 +76,16 @@ that mount. Keep its HTML free of `<base>` elements. Configure Docusaurus throug
 `baseUrl` and let the generator produce localized links and lazy chunk URLs.
 The maintained Docusaurus plugin uses portable runtime chunk names, replacing
 the generator's default naming convention that contains `~`.
+
+The maintained client-only Angular bundler emits an external module script and
+no inline critical CSS; deterministic runtime component/theme styles use the
+reviewed identities below. When adapting another build, move inline critical
+CSS into reviewed external styles before capture. Docusaurus externalizes its
+owned bootstrap scripts/styles before capture. Angular uses client bootstrap
+and lazy navigation; Docusaurus hydrates its generated pages for theme, language
+and lazy navigation. This recipe does not publish an Angular server renderer or
+qualify arbitrary server hydration. The builder records the recipe profile in
+its build observation and summary.
 
 Select SPA fallback for Angular and directory indexes with no SPA fallback for
 Docusaurus. The supplied inventory files already select these policies. Apply

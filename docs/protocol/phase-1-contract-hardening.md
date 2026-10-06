@@ -517,10 +517,6 @@ This record freezes transport definitions. The companion
 and recovery identities; these definitions grant no access and do not install a
 transactional runtime. Later methods or fields require another reviewed baseline
 update.
-
-recovery. The golden retains all thirteen earlier file descriptors with their
-field numbers, types, enum values, oneofs and service signatures unchanged.
-
 This record freezes transport definitions. The companion
 [transaction contract](transactions.md) defines host authority,
 durable formats and recovery identities; adding a descriptor grants no access

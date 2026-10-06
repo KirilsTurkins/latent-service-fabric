@@ -20,6 +20,17 @@ MAX_ASSET_BYTES = 8 * 1024 * 1024
 MAX_TREE_BYTES = 16 * 1024 * 1024
 MAX_INPUT_BYTES = 256 * 1024
 MAX_WEB_MANIFEST_BYTES = 256 * 1024
+MAX_OBSERVATIONS = 8
+MAX_OBSERVATION_BYTES = 1024 * 1024
+MAX_EXCLUDED = 128
+MAX_STYLE_HASHES = 64
+MAX_PATH_BYTES = 232
+MAX_SEGMENT_BYTES = 64
+# Coupled to PackageLimits and MAX_WEB_* in latent-artifacts; this capture
+# reserves web/capture metadata plus the native SBOM/build-input layers.
+MAX_PACKAGE_LAYERS = 256
+RESERVED_PACKAGE_LAYERS = 4
+LARGEST_ASSETS = 5
 MEDIA = {'html': 'text/html', 'js': 'text/javascript', 'mjs': 'text/javascript',
          'css': 'text/css', 'json': 'application/json', 'xml': 'application/xml', 'txt': 'text/plain',
          'svg': 'image/svg+xml', 'png': 'image/png', 'jpg': 'image/jpeg',
@@ -56,10 +67,22 @@ def decode(raw):
         raise SnapshotError('static-site-input-json') from error
 
 
+def encode_input(config):
+    # Programmatic fixture/tool callers receive the CLI's descriptor bound too.
+    # Stop encoding at that bound rather than materializing an unlimited list.
+    result = bytearray()
+    encoder = json.JSONEncoder(sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False)
+    for piece in encoder.iterencode(config):
+        raw = piece.encode()
+        bounded(len(result) + len(raw), MAX_INPUT_BYTES, 'input-bytes')
+        result.extend(raw)
+    return bytes(result)
+
+
 def path(value):
-    require(isinstance(value, str) and len(value) <= 232, 'path')
+    require(isinstance(value, str) and len(value) <= MAX_PATH_BYTES, 'path')
     portable_path(value)
-    require(all(len(part) <= 64 for part in value.split('/')), 'path-segment-bytes')
+    require(all(len(part) <= MAX_SEGMENT_BYTES for part in value.split('/')), 'path-segment-bytes')
     return value
 
 
@@ -118,15 +141,83 @@ def asset_digest(assets):
     return 'sha256:' + value.hexdigest()
 
 
-def capture(root: Path, config: dict, destination: Path) -> dict:
+def budget(config, input_raw, table, web_raw, observation, contents):
+    """Describe only the bounded immutable capture; never reread source files."""
+    paths = [row['path'][1:] for row in table] + [row['source'] for row in config['assets']]
+    paths += config['excluded'] + [row['name'] for row in observation['observations']]
+    def usage(actual, maximum, unit):
+        return {'actual': actual, 'maximum': maximum, 'remaining': maximum - actual, 'unit': unit}
+    largest = sorted(table, key=lambda row: (-row['size'], row['path']))[:LARGEST_ASSETS]
+    distinct = {row['digest']: row['size'] for row in table}
+    source = next(row for row in observation['observations'] if row['kind'] == 'source')
+    return {'schemaVersion': 'latent.static-site.budget.v1', 'complete': True,
+            'selection': {'captureProfile': config['profile'], 'webProfile': 'lsf.web-release.v1',
+                          'routingProfile': 'static-site-v1', 'packageName': config['name'],
+                          'packageVersion': config['version'], 'sourceObservationDigest': source['digest'],
+                          'inputDescriptorDigest': digest(input_raw), 'assetsDigest': observation['assetsDigest'],
+                          'webManifestDigest': observation['webManifestDigest'], 'inputObservationTrust': 'operator-supplied'},
+            'captureLimits': {
+                'publicAssetCount': usage(len(table), MAX_ASSETS, 'paths'),
+                'largestAssetBytes': usage(max(row['size'] for row in table), MAX_ASSET_BYTES, 'bytes'),
+                'logicalPublicBytes': usage(sum(row['size'] for row in table), MAX_TREE_BYTES, 'bytes'),
+                'webManifestBytes': usage(len(web_raw), MAX_WEB_MANIFEST_BYTES, 'bytes'),
+                'inputDescriptorBytes': usage(len(input_raw), MAX_INPUT_BYTES, 'bytes'),
+                'longestRelativePathBytes': usage(max(len(value.encode()) for value in paths), MAX_PATH_BYTES, 'bytes'),
+                'longestPathSegmentBytes': usage(max(len(part.encode()) for value in paths for part in value.split('/')), MAX_SEGMENT_BYTES, 'bytes'),
+                'excludedCount': usage(len(config['excluded']), MAX_EXCLUDED, 'paths'),
+                'styleHashCount': usage(len(config.get('styleHashes', [])), MAX_STYLE_HASHES, 'hashes'),
+                'observationCount': usage(len(observation['observations']), MAX_OBSERVATIONS, 'files'),
+                'largestObservationBytes': usage(max(row['size'] for row in observation['observations']), MAX_OBSERVATION_BYTES, 'bytes'),
+                'packageNameBytes': usage(len(config['name'].encode()), 128, 'bytes'),
+                'packageVersionBytes': usage(len(config['version'].encode()), 128, 'bytes')},
+            'largestAssets': [{'path': row['path'], 'size': row['size'], 'digest': row['digest']} for row in largest],
+            'largestAssetsMaximum': LARGEST_ASSETS,
+            'storageObservation': {'distinctPublicDigests': len(distinct), 'deduplicatedPublicBytes': sum(distinct.values()),
+                                   'accounting': 'logical-paths-charged-independently', 'catalogCapacityObserved': False},
+            'generatedInputs': {'scope': 'capture-inputs-before-assembly',
+                                'webManifestBytes': len(web_raw), 'captureObservationBytes': len(contents['metadata/static-observation.json']),
+                                'packageSourceBytes': len(contents['package-source.json']), 'sbomInputsBytes': len(contents['sbom-inputs.json']),
+                                'capturedMetadataLayers': 2, 'capturedLayers': len(table) + 2,
+                                'reservedPackageLayers': RESERVED_PACKAGE_LAYERS, 'packageLayerCeiling': MAX_PACKAGE_LAYERS,
+                                'standardPackageLayers': usage(len(table) + RESERVED_PACKAGE_LAYERS, MAX_PACKAGE_LAYERS, 'layers'),
+                                'finalPackageBytesObserved': False},
+            'qualification': {'signingVerified': False, 'admissionVerified': False, 'browserQualified': False, 'servingQualified': False},
+            'nodeCapacity': 'not-observed'}
+
+
+def human_budget(report):
+    selection = report['selection']
+    lines = [report['schemaVersion'] + ' complete',
+             f"{selection['captureProfile']} / {selection['webProfile']} / {selection['routingProfile']}",
+             f"Package {selection['packageName']} {selection['packageVersion']}; operator-supplied source {selection['sourceObservationDigest']}"]
+    for name, row in report['captureLimits'].items():
+        lines.append(f"{name}: {row['actual']}/{row['maximum']} {row['unit']}; remaining {row['remaining']}")
+    lines.append(f"Largest assets (maximum {report['largestAssetsMaximum']}; ties by public path):")
+    lines.extend(f"  {json.dumps(row['path'])}: {row['size']} bytes" for row in report['largestAssets'])
+    storage, generated = report['storageObservation'], report['generatedInputs']
+    lines.append(f"Distinct public content: {storage['distinctPublicDigests']} digests, {storage['deduplicatedPublicBytes']} bytes; logical paths remain independently charged")
+    lines.append(f"Generated inputs: web {generated['webManifestBytes']}, capture {generated['captureObservationBytes']}, recipe {generated['packageSourceBytes']}, SBOM input {generated['sbomInputsBytes']} bytes")
+    layers = generated['standardPackageLayers']
+    lines.append(f"Standard package layers: {layers['actual']}/{layers['maximum']}; remaining {layers['remaining']}; {generated['reservedPackageLayers']} reserved metadata/SBOM layers")
+    lines.append('Final package and node/catalog capacity not observed; signing, admission, browser and serving qualification remain required.')
+    return '\n'.join(lines)
+
+
+def capture(root: Path, config: dict, destination: Path, *, input_raw: bytes | None = None) -> dict:
     root, destination = root.absolute(), destination.absolute()
     require(root.is_dir() and not any(is_reparse(p) for p in [root, *root.parents]), 'root-link')
     require(not destination.exists() and root != destination and root not in destination.parents, 'output-root')
     require(destination.parent.is_dir() and not any(is_reparse(p) for p in [destination.parent, *destination.parent.parents]), 'output-link')
+    # Freeze the explicit descriptor too. CLI reporting uses its exact supplied
+    # bytes; programmatic callers use canonical JSON, with the same input bound.
+    input_raw = encode_input(config) if input_raw is None else input_raw
+    selected = decode(input_raw)
+    require(selected == config, 'input-descriptor-changed')
+    config = selected
     fields(config, {'formatVersion', 'profile', 'name', 'version', 'assets', 'entryDocument',
                     'directoryIndex', 'fallback', 'excluded', 'observations'}, {'styleHashes', 'errorDocument'})
     styles = config.get('styleHashes', [])
-    require(isinstance(styles, list) and len(styles) <= 64
+    require(isinstance(styles, list) and len(styles) <= MAX_STYLE_HASHES
             and all(isinstance(value, str) and re.fullmatch(r'sha256:[0-9a-f]{64}', value) for value in styles)
             and styles == sorted(set(styles)), 'style-hashes')
     require(type(config['formatVersion']) is int and config['formatVersion'] == 1
@@ -141,7 +232,7 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
     require(isinstance(assets, list) and assets, 'asset-count')
     bounded(len(assets), MAX_ASSETS, 'asset-count')
     excluded = config['excluded']
-    require(isinstance(excluded, list) and len(excluded) <= 128, 'excluded-count')
+    require(isinstance(excluded, list) and len(excluded) <= MAX_EXCLUDED, 'excluded-count')
     exclusions = {path(item).casefold() for item in excluded}
     require(len(exclusions) == len(excluded), 'excluded-collision')
     names, sources, captured = set(), set(), []
@@ -181,7 +272,7 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
         require(error_document['profile'] == 'html-not-found-v1', 'error-document-profile')
         html(error_document['document'])
     declared = config['observations']
-    require(isinstance(declared, list) and 3 <= len(declared) <= 8, 'observation-count')
+    require(isinstance(declared, list) and 3 <= len(declared) <= MAX_OBSERVATIONS, 'observation-count')
     observations, seen = [], set()
     for row in declared:
         fields(row, {'kind', 'source', 'digest'})
@@ -189,7 +280,7 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
         source = path(row['source'])
         require(source.casefold() not in seen and source.casefold() not in sources, 'observation-collision')
         seen.add(source.casefold())
-        data = read(root, source, 1024 * 1024)
+        data = read(root, source, MAX_OBSERVATION_BYTES)
         require(data, 'empty-observation')
         require(row['digest'] == digest(data), 'observation-digest')
         observations.append({'kind': row['kind'], 'name': source, 'digest': digest(data), 'size': len(data)})
@@ -204,14 +295,15 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
            'assets': table, 'routes': routes, 'staticRouting': routing}
     if styles:
         web['styleHashes'] = styles
-    bounded(len(canonical(web)), MAX_WEB_MANIFEST_BYTES, 'web-manifest-bytes')
+    web_raw = canonical(web)
+    bounded(len(web_raw), MAX_WEB_MANIFEST_BYTES, 'web-manifest-bytes')
     observation = {'schemaVersion': 'latent.static-site.capture.v1', 'inputObservationTrust': 'operator-supplied',
                    'frameworkBuildExecuted': False, 'reproducibility': 'not-checked',
                    'observations': sorted(observations, key=lambda row: (row['kind'], row['name'])),
                    'excluded': sorted(excluded), 'assetsDigest': web['assetsDigest'],
-                   'webManifestDigest': digest(canonical(web)), 'routingDigest': digest(canonical(routing))}
+                   'webManifestDigest': digest(web_raw), 'routingDigest': digest(canonical(routing))}
     contents = {row['layer']: data for row, data in captured}
-    contents['metadata/web-application.json'] = canonical(web)
+    contents['metadata/web-application.json'] = web_raw
     contents['metadata/static-observation.json'] = canonical(observation)
     layers = [{'path': name, 'source': name, 'role': 'asset',
                'mediaType': by_path[name[6:]]['mediaType'] if name.startswith('public/') else 'application/json'}
@@ -225,13 +317,15 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
                               'size': len(data), 'digestScope': 'output-bytes', 'origin': 'package-input'}
                              for name, data in sorted(contents.items())]}
     contents.update({'package-source.json': canonical(recipe), 'sbom-inputs.json': canonical(inventory)})
+    report = budget(config, input_raw, table, web_raw, observation, contents)
     destination.mkdir()
     for name, data in sorted(contents.items()):
         target = destination / name
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open('xb') as stream:
             stream.write(data)
-    return observation
+    # Diagnostics never enter web metadata, SBOM inputs or capture provenance.
+    return {**observation, 'budget': report}
 
 
 def main():
@@ -239,10 +333,12 @@ def main():
     parser.add_argument('--build-output', type=Path, required=True)
     parser.add_argument('--input', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--format', choices=('json', 'human'), default='json')
     args = parser.parse_args()
     try:
         raw = read(args.input.absolute().parent, args.input.name, MAX_INPUT_BYTES)
-        print(json.dumps(capture(args.build_output, decode(raw), args.output), sort_keys=True))
+        result = capture(args.build_output, decode(raw), args.output, input_raw=raw)
+        print(human_budget(result['budget']) if args.format == 'human' else json.dumps(result, sort_keys=True))
         return 0
     except (SnapshotError, OSError, ValueError, TypeError) as error:
         print(str(error) if isinstance(error, SnapshotError) else 'static-site-capture-failed', file=sys.stderr)
