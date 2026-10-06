@@ -3,7 +3,7 @@ from copy import deepcopy
 from pathlib import Path
 import time
 
-from tools.java_http_composition.node import ADAPTER, CHILD_SUBJECT, CONTEXT_REQUIRED, decoded, idle, invoke, request, web_request
+from tools.java_http_composition.node import ADAPTER, CHILD_SUBJECT, CONTEXT_REQUIRED, decoded, idle, invoke, request, web_request, rebind, route
 from tools.phase2_operator_process import require, read_json, write_json
 from tools.run_rust_capsule_workflow import write_workflow_receipt
 from tools.static_api.node import policy
@@ -16,18 +16,18 @@ def ordinary_import(client, targets, releases, publications, host):
     descriptor["spec"]["grants"] = targets["domain"]["grants"]
     source = client.directory / "context-required-deployment.json"
     write_json(source, descriptor)
+    state = client.call("deployment", "get", descriptor["metadata"]["name"], "--operation-snapshot", codes=(6,))["data"]
     applied = client.call("deployment", "apply", source, "--operation-id", "java-context-required-deploy",
-                          "--expected-generation", 0, codes=(0, 4))
+                          "--expected-generation", 0, "--expected-state-version", state["stateVersion"], codes=(0, 4))
+    require(applied["requestDispatched"], "java-context-required-deployment-must-reach-node")
     result = {"publication": publications["context-required"], "deployment": applied,
+              "expectedStateVersion": state["stateVersion"],
+              "originalDeploymentOperation": client.call("deployment", "operation", "java-context-required-deploy", codes=(0, 6)),
               "contextInstallationProfile": "ordinary-installed-clocks-and-local-service-v1"}
     if applied["category"] == "success":
-        input_path, budget_path = client.directory / "context-required-input.json", client.directory / "context-required-budget.json"
-        write_json(input_path, [])
-        write_json(budget_path, targets["domain"]["budget"])
-        denied = client.call("--rpc-timeout-ms", "120000", "invoke", "--service", CONTEXT_REQUIRED,
-            "--contract", "examples:java-http-context-required/api@1.0.0", "--function", "status",
-            "--activation-id", "java-context-required", "--route", "java-http-context-required",
-            "--input", input_path, "--budget", budget_path, "--budget-profile", "phase3", codes=(4,))
+        invocation_targets = {**targets, "context-required": {
+            "name": "java-http-context-required", "budget": targets["domain"]["budget"]}}
+        denied = invoke(client, invocation_targets, "context-required", "status", [], "java-context-required", codes=(4,))
         result.update(stage="invocation", invocation=denied, tree=tree(client, "java-context-required"))
     else:
         denied = applied
@@ -66,12 +66,17 @@ def capture_http(client, host, path="/api/status", *, headers=None, expected=(20
     before = {row["activationId"] for row in roots(client)}
     started = int(time.time() * 1000)
     status, _body, _headers = request(host, path, headers=headers)
-    require(status in expected, "java-context-http-outcome")
     discovered = [row for row in roots(client) if row["activationId"] not in before]
     require(len(discovered) <= 1, "java-context-unrelated-concurrent-http-root")
     require(status != 200 or len(discovered) == 1, "java-context-successful-http-root-not-discovered")
-    return {"httpStatus": status, "observedFromUnixMillis": started,
-            "tree": tree(client, discovered[0]["activationId"]) if discovered else None}
+    observed = {"httpStatus": status, "observedFromUnixMillis": started,
+                "tree": tree(client, discovered[0]["activationId"]) if discovered else None}
+    count = getattr(client, "java_http_observations", 0)
+    require(count < 32, "java-context-http-observation-bound")
+    client.java_http_observations = count + 1
+    write_json(client.evidence / f"http-observation-{count:02d}.json", observed)
+    require(expected is None or status in expected, "java-context-http-outcome")
+    return observed
 
 
 def hops(observation):
@@ -109,7 +114,7 @@ def narrowed(parent, child):
             "remainingCpuEffectObserved": True}
 
 
-def qualify(client, targets, host, evidence: Path):
+def qualify(client, targets, releases, publications, host, evidence: Path):
     result = {"schemaVersion": "latent.java-http.context.v1", "status": "in-progress",
         "guestContextImport": "omitted-ordinary-profile", "sourceActorObservations": "unavailable-to-ordinary-guest"}
     try:
@@ -138,17 +143,31 @@ def qualify(client, targets, host, evidence: Path):
         result["reducedParent"] = {"requestedBudget": reduced, "tree": reduced_tree, "limits": narrowed(parent, child)}
 
         record = client.call("policy", "get", "--id", "clockMonotonic-allow")["data"]["policy"]
-        from tools.java_http_composition.policy_proposals import wrong_clock
-        wrong = wrong_clock(record["document"])
+        wrong = deepcopy(record["document"])
+        for rule in wrong["rules"]:
+            for principal in rule["principals"]:
+                if principal["kind"] == "service" and principal["subject"] == CHILD_SUBJECT:
+                    principal["subject"] = "service:8:examples:22:examples/wrong-adapter"
         changed = policy(client, "policy", "clockMonotonic-allow", wrong, int(record["generation"]))
         try:
-            denied = capture_http(client, host, expected=(403,))
-            if denied["tree"]:
-                require(all(row["terminalState"] != "completed" for row in denied["tree"]["nodes"]
-                    if row["parentActivationId"] is not None), "java-context-wrong-child-grant-accepted")
+            result["wrongClockPolicyRebinding"] = rebind(client, targets, releases, publications, ("domain", "adapter"))
+            route(client, host, publications["adapter"])
+            denied = capture_http(client, host, expected=(403, 500))
+            require(denied["tree"] is not None, "java-context-wrong-child-grant-observation-missing")
+            children = [row for row in denied["tree"]["nodes"] if row["parentActivationId"] is not None]
+            require(len(children) == 1 and len(denied["tree"]["nodes"]) == 2,
+                    "java-context-wrong-child-grant-real-child-required")
+            child = children[0]
+            diagnostic = child["diagnostic"]
+            require(child["principalKind"] == "service" and child["callerService"] == ADAPTER
+                and child["terminalState"] != "completed"
+                and diagnostic is not None and diagnostic["stage"] == 4 and diagnostic["reason"] == 8,
+                "java-context-wrong-child-grant-producer-diagnosis-required")
             result["wrongChildPrincipalGrant"] = denied
         finally:
             policy(client, "policy", "clockMonotonic-allow", record["document"], int(changed["generation"]))
+            result["restoredClockPolicyRebinding"] = rebind(client, targets, releases, publications, ("domain", "adapter"))
+            route(client, host, publications["adapter"])
         idle(client)
         require(request(host)[0] == 200, "java-context-restored-child-grant-not-fresh")
 
@@ -165,11 +184,28 @@ def qualify(client, targets, host, evidence: Path):
                         "java-context-header-lineage-became-authority")
             result["headerSpoofs"].append({"headerNames": sorted(headers), **observed})
 
-        for name, flags in (("lineage", ("--root-activation-id", "forged-root", "--parent-activation-id", "forged-parent")),
-            ("oversized-context", tuple(value for index in range(5) for value in ("--metadata", "guest.synthetic" + str(index) + "=" + "x" * 4096)))):
+        bounded_metadata = ["guest.synthetic" + str(index) + "=" + "x" * 4096 for index in range(5)]
+        accepted = invoke(client, targets, "domain", "status", [], "java-context-bounded-metadata",
+                          context_flags=tuple(value for entry in bounded_metadata for value in ("--metadata", entry)))
+        require(accepted["category"] == "success", "java-context-bounded-metadata-rejected")
+        result["boundedMetadata"] = {"requestedUtf8Bytes": sum(len(entry.encode()) for entry in bounded_metadata),
+                                     "response": accepted}
+        oversized_metadata = ["guest.synthetic" + str(index) + "=" + "x" * 4096 for index in range(9)]
+        oversized_bytes = sum(len(entry.encode()) for entry in oversized_metadata)
+        require(oversized_bytes > 32 * 1024, "java-context-oversized-vector-must-exceed-cli-bound")
+        for name, flags, codes in (
+            ("lineage", ("--root-activation-id", "forged-root", "--parent-activation-id", "forged-parent"), (4,)),
+            ("oversized-context", tuple(value for entry in oversized_metadata for value in ("--metadata", entry)), (2,))):
             denied = invoke(client, targets, "domain", "status", [], "java-context-denied-" + name,
-                            context_flags=flags, codes=(4,))
-            require(denied["category"] != "success", "java-context-supplied-authority-accepted")
+                            context_flags=flags, codes=codes)
+            if name == "lineage":
+                require(denied["category"] == "platform-failure" and denied["error"]["code"] == "permission-denied"
+                    and denied["requestDispatched"] and denied["outcomeKnown"], "java-context-supplied-authority-accepted")
+            else:
+                require(denied["category"] == "local-error" and denied["error"]["code"] == "invalid-arguments"
+                    and not denied["requestDispatched"] and denied["outcomeKnown"], "java-context-oversized-metadata-outcome")
+                result["oversizedMetadataBounds"] = {"requestedUtf8Bytes": oversized_bytes,
+                    "maximumCliMetadataUtf8Bytes": 32 * 1024, "rejectedBeforeDispatch": True}
             result[name + "Denied"] = denied
             idle(client)
             require(request(host)[0] == 200, "java-context-denied-input-poisoned-fresh-call")
