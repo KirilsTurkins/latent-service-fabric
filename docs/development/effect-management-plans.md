@@ -26,6 +26,9 @@ role lock. No callback performs disk/network I/O, audit flush or an async wait
 inside these fences. Native control tests also observe pending resume inside the
 actual writer before durability, after the short acceptance locks have retired.
 
+gateway must retain its original current operator, publication, namespace and
+data-read decisions and apply the prepared batch under the actual writer fence.
+
 A plan binds the exact supported effect-row bytes, immutable command/caller and
 namespace incarnation, original operation ID, action, policy precondition, reason
 and full original request digest. It retains the last completed physical attempt
@@ -61,6 +64,7 @@ ceiling and expiry. It holds only through final acceptance, allocates no provide
 work and is dropped before disk or network I/O. Typed audit actions distinguish
 planning, reconciliation, redrive, terminal declaration and historical receipt
 read without changing the numeric identities of existing audit actions.
+
 
 Provider reconciliation accepts a typed positive receipt from a status lookup
 through the existing sealed provider grant. Absent, expired, conflicting or
@@ -121,3 +125,8 @@ The controlled lookup adapter in these gateway schedules is distinct from the
 actual TLS/provider qualification. Packaged CLI/node acceptance and the full
 Phase 4 management scope remain separate integration requirements of
 [issue 400](https://github.com/KirilsTurkins/latent-service-fabric/issues/400).
+
+The native catalog tests exercise actual engine snapshots, CAS, reopen, history
+and high-water accounting. These tests qualify the catalog substrate. The public
+authenticated adapter, CLI/node acceptance and full Phase 4 management scope
+remain separate integration requirements of [issue 400](https://github.com/KirilsTurkins/latent-service-fabric/issues/400).

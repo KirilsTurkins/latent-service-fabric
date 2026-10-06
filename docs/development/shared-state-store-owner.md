@@ -270,6 +270,11 @@ past an actual live writer without a second write. The sixth registered case
 uses the real protected Linux engine and verifies the committed row while all
 three ordinary workers and their queue are paused. Its Linux execution is pending
 the shared Docker filesystem recovery. This admission port does not by itself
+
+three ordinary workers and their queue are paused. All 113 state cases, together
+with 102 core and 70 effect cases, passed on the pinned Linux image with no
+ignored or filtered cases. Combined strict all-target/all-feature Clippy passed
+for all three crates. This admission port does not by itself
 complete #397's durable quota, linked retention or compaction requirements.
 
 ## Original capacity retained by a native view
