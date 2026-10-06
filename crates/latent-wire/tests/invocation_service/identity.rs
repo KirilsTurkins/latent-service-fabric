@@ -112,6 +112,9 @@ async fn manager_assigns_identity_and_preserves_opaque_lineage_and_uninterpreted
         input
             .metadata
             .insert("retry_attempt".to_owned(), "99".to_owned());
+        input
+            .metadata
+            .insert("requested-root-correlation".into(), "unknown-root".into());
         let begun = harness.manager.journal().snapshot().begun;
         let entered = harness.backend.entered.load(Ordering::Relaxed);
         let prepared = harness.artifacts.entered.load(Ordering::Relaxed);
@@ -148,6 +151,11 @@ async fn manager_assigns_identity_and_preserves_opaque_lineage_and_uninterpreted
         assert_ne!(activation.trace.trace_id.0, "guest-spoof");
         if index > 0 {
             assert_eq!(activation.root_activation_id, activation.activation_id);
+            assert!(activation.parent_activation_id.is_none());
+            assert_eq!(
+                activation.metadata["requested-root-correlation"],
+                "unknown-root"
+            );
             assert_ne!(activation.trace.trace_id, first.trace.trace_id);
             assert_ne!(activation.trace.span_id, first.trace.span_id);
             assert_eq!(activation.metadata["retry_attempt"], "99");
