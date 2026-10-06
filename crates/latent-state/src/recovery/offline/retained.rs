@@ -150,6 +150,9 @@ fn prepare(
             return Err(StoreError::Conflict);
         }
     } else {
+        if prepared.batch.expectations.len() == ROWS {
+            return Err(StoreError::Capacity);
+        }
         prepared
             .batch
             .expectations

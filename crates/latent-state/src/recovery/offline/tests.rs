@@ -40,6 +40,7 @@ const DEFINITION: &[u8] =
 mod file_bound;
 mod migration;
 mod restore_authority;
+mod retained_bound;
 
 struct Codecs {
     denied: AtomicBool,
