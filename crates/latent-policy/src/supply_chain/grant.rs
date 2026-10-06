@@ -3,7 +3,6 @@ use latent_artifacts::{AdmissionBinding, AdmissionGrant, AdmissionRecheck};
 use latent_core::PlatformError;
 use latent_signing::{VerifiedBuildProvenance, VerifiedPackageSignature};
 use std::any::Any;
-use std::cell::RefCell;
 use std::sync::Arc;
 
 pub(super) struct Grant {
@@ -14,7 +13,7 @@ pub(super) struct Grant {
     pub builder: VerifiedBuildProvenance,
 }
 impl Grant {
-    pub fn check(&self, owner: &Arc<Inner>, state: &mut State) -> Result<(), PlatformError> {
+    pub fn check(&self, owner: &Arc<Inner>, state: &State) -> Result<(), PlatformError> {
         if !Arc::ptr_eq(owner, &self.owner) || state.floor.epoch != self.epoch {
             return Err(denied("admission-grant-stale"));
         }
@@ -29,7 +28,7 @@ impl Grant {
         {
             return Err(denied("admission-tenant-publisher-denied"));
         }
-        Ok(())
+        owner.currentness()
     }
 }
 impl AdmissionGrant for Grant {
@@ -53,36 +52,35 @@ impl AdmissionGrant for Grant {
         std::mem::size_of::<Self>() + self.binding.receipt.capacity() + 16 * 1024
     }
     fn check_current(&self) -> Result<(), PlatformError> {
-        self.check(&self.owner, &mut *self.owner.lock()?)
+        self.check(&self.owner, &*self.owner.read()?)
     }
     fn with_current(
         &self,
         action: &mut dyn FnMut(&dyn AdmissionRecheck) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        let mut state = self.owner.lock()?;
-        self.check(&self.owner, &mut state)?;
+        let state = self.owner.commit()?;
+        self.check(&self.owner, &state)?;
         let checker = Checker {
             initial: self,
-            state: RefCell::new(&mut *state),
+            state: &state,
         };
         action(&checker)
     }
 }
 struct Checker<'a> {
     initial: &'a Grant,
-    state: RefCell<&'a mut State>,
+    state: &'a State,
 }
 impl AdmissionRecheck for Checker<'_> {
     fn check(&self) -> Result<(), PlatformError> {
-        self.initial
-            .check(&self.initial.owner, &mut self.state.borrow_mut())
+        self.initial.check(&self.initial.owner, self.state)
     }
     fn check_grant(&self, grant: &dyn AdmissionGrant) -> Result<(), PlatformError> {
         let grant = grant
             .as_any()
             .downcast_ref::<Grant>()
             .ok_or_else(|| denied("admission-authority-mismatch"))?;
-        grant.check(&self.initial.owner, &mut self.state.borrow_mut())
+        grant.check(&self.initial.owner, self.state)
     }
     fn check_web_grant(
         &self,
@@ -92,6 +90,6 @@ impl AdmissionRecheck for Checker<'_> {
             .as_any()
             .downcast_ref::<super::web::Grant>()
             .ok_or_else(|| denied("admission-authority-mismatch"))?;
-        grant.check(&self.initial.owner, &mut self.state.borrow_mut())
+        grant.check(&self.initial.owner, self.state)
     }
 }
