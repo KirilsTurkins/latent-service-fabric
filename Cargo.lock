@@ -1619,6 +1619,7 @@ dependencies = [
  "latent-effects",
  "latent-state",
  "latent-test-process",
+ "rustix",
  "sha2 0.11.0",
  "tempfile",
  "tokio",
