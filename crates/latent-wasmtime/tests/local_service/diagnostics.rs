@@ -54,6 +54,15 @@ impl Default for Recorder {
 
 impl Recorder {
     fn record(&self, stage: Stage, error: &PlatformError) {
+        if std::env::var("LSF_TEST_FAILURE_HASH").as_deref() == Ok("1") {
+            eprintln!(
+                "sdk-fixture-failure-hash stage={stage:?} code={:?} message-blake3={} details={} retryable={}",
+                error.code,
+                blake3::hash(error.message.as_bytes()),
+                error.details.len(),
+                error.retryable,
+            );
+        }
         let record = FailureRecord {
             stage,
             code: error.code,
