@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "profile": "braces-3.0.3-lsf-depth-v1",
+  "name": "braces",
+  "version": "3.0.3",
+  "upstreamIntegrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
+  "files": [
+    {
+      "path": "lib/utils.js",
+      "beforeSha256": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
+      "afterSha256": "573394298aec1db77e08d22516a333bcdc4a02af416b215f407f44efaed503bf",
+      "edits": [
+        {
+          "before": "exports.isInteger = num => {",
+          "after": "// The maintained derivative bounds every AST walker before recursion.\nexports.MAX_AST_DEPTH = 128;\nexports.assertDepth = ast => {\n  const pending = [[ast, 0]];\n  let count = 1;\n  while (pending.length) {\n    const [node, depth] = pending.pop();\n    if (depth > exports.MAX_AST_DEPTH) {\n      throw new RangeError('braces AST depth exceeds the maintained limit');\n    }\n    if (node && Array.isArray(node.nodes)) {\n      for (const child of node.nodes) {\n        if (++count > 65536) {\n          throw new RangeError('braces AST nodes exceed the maintained limit');\n        }\n        pending.push([child, depth + 1]);\n      }\n    }\n  }\n};\n\nexports.isInteger = num => {",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "path": "lib/compile.js",
+      "beforeSha256": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+      "afterSha256": "7afb2446707f01664fb86da09525cedfae7b6f7f2d9775104f1e823a18079498",
+      "edits": [
+        {
+          "before": "const compile = (ast, options = {}) => {\n",
+          "after": "const compile = (ast, options = {}) => {\n  utils.assertDepth(ast);\n",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "path": "lib/expand.js",
+      "beforeSha256": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+      "afterSha256": "b00c5a7e2142247333b4f4e326b23aa0d62ad7d6f9f43838bd982dc9595e88e5",
+      "edits": [
+        {
+          "before": "const expand = (ast, options = {}) => {\n",
+          "after": "const expand = (ast, options = {}) => {\n  utils.assertDepth(ast);\n",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "path": "lib/stringify.js",
+      "beforeSha256": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+      "afterSha256": "203f44c90611101883fdb8793fe8ea708a8815a934cae75334dc1a34a9325f79",
+      "edits": [
+        {
+          "before": "module.exports = (ast, options = {}) => {\n",
+          "after": "module.exports = (ast, options = {}) => {\n  utils.assertDepth(ast);\n",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "path": "lib/parse.js",
+      "beforeSha256": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+      "afterSha256": "2456b8b0a2400e545f34ebd0a7ac7788f3a2348101d1ac14158c75d17100c302",
+      "edits": [
+        {
+          "before": "const stringify = require('./stringify');\n",
+          "after": "const stringify = require('./stringify');\nconst { MAX_AST_DEPTH } = require('./utils');\n",
+          "count": 1
+        },
+        {
+          "before": "      stack.push(block);\n",
+          "after": "      if (stack.length >= MAX_AST_DEPTH) {\n        throw new RangeError('braces nesting depth exceeds the maintained limit');\n      }\n      stack.push(block);\n",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}
