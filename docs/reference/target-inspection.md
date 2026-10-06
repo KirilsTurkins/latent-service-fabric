@@ -106,3 +106,23 @@ absent optional values remain null, present zero remains `"0"`, and repeated
 fields remain arrays. Machine clients use the same generated protobuf operation
 and bounded native transport owners as the common client profile. The query
 produces no synthetic activation, public HTTP header or operation receipt.
+
+## Executed composition workflow
+
+The [retained signed Java campaign](https://github.com/KirilsTurkins/latent-service-fabric/blob/82f12f26/docs/evidence/java-composed-c4-3b7/README.md)
+uses independently built domain, adapter and candidate publications. Its
+[original HTTP receipts](https://github.com/KirilsTurkins/latent-service-fabric/blob/82f12f26/docs/evidence/java-composed-c4-3b7/actual-http-campaign-passed.json)
+cover supported read-only inspect/bind commands, wrong-tenant isolation,
+invoke-only inspection denial, stale policy after revocation and restoration,
+and a new explicit deployment/binding operation. Canary inspection reports two
+candidates without implicit selection and selects only with supported routing
+input. All 16 live samples are attributed; promotion, drain and rollback retain
+original operation receipts and coherent target observations.
+
+The native runtime source is `66f2a031`, Java build source `c4e8c6c0`, and
+successful qualifier source `3b7d579e`. Their owners are distinct. The campaign
+reuses unchanged, hash-verified signed guests and native executables; it does not
+claim a rebuild from the qualifier commit. Both manifests retain the exact bytes,
+sizes and digests of 67 evidence/build files. The original failed aggregate stays
+failed. This evidence qualifies the synthetic stateless composition; actual
+durable Java transactions have their separate Phase 4 qualification gate.
