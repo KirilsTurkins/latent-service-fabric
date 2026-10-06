@@ -212,6 +212,24 @@ impl Runtime {
         scopes: &[Scope<'_>],
         call_wall_millis: u64,
     ) -> Self {
+        Self::activation_scoped_with_clocks(
+            broker,
+            policies,
+            tenant,
+            scopes,
+            call_wall_millis,
+            false,
+        )
+    }
+
+    pub fn activation_scoped_with_clocks(
+        broker: &ActivationCapabilityBroker,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+        clocks: bool,
+    ) -> Self {
         let mut owner = Self::default();
         let profile = latent_core::activation_runtime::PROFILE;
         let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
@@ -227,6 +245,27 @@ impl Runtime {
             .unwrap();
         owner.add_operations(registration.reference(), &ACTIVATION_OPERATIONS);
         owner.clocks.push(registration);
+        if clocks {
+            for (capability, profile, operation) in CLOCKS {
+                let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
+                let registration = broker
+                    .register_provider(ProviderConfiguration {
+                        capability,
+                        profile,
+                        configuration_digest: digest.as_str(),
+                        configuration_epoch: 1,
+                        restriction_json: br#"{"operations":[]}"#,
+                        minimum_call_charges: &[ProviderBudgetRequirement {
+                            operation,
+                            dimension: BudgetDimension::CpuFuel,
+                            minimum: 100,
+                        }],
+                    })
+                    .unwrap();
+                owner.add(registration.reference(), operation);
+                owner.clocks.push(registration);
+            }
+        }
         owner.authorize(policies, tenant, scopes, call_wall_millis);
         owner
     }
