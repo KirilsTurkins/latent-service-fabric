@@ -79,7 +79,7 @@ async fn foreign_global_owner_cannot_claim_against_another_protected_store_capac
         .await;
     let (adapter, _entered) = Adapter::new("test.v1", None);
     let mut paused = config();
-    paused.initially_paused = true;
+    paused.start_paused = true;
     let mut owner = fixture
         .start_unbound(paused, vec![adapter.clone()], None)
         .await
