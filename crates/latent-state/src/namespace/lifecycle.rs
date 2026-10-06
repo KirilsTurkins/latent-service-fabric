@@ -3,12 +3,15 @@
 //! and resolves it from the actual committed row before admitting new resources.
 use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
-    Arc, Mutex, RwLock,
+    Arc, RwLock,
 };
 
 use latent_core::native_capacity::{NativeCapacityOwner, NativeReservation};
 
 use super::{catalog::NamespaceRead, NamespaceError, NamespaceRecord, NamespaceStatus};
+
+#[cfg(test)]
+use std::sync::Mutex;
 
 mod resident;
 use resident::ResidentMetadata;
@@ -41,7 +44,7 @@ struct State {
     pending: Option<NamespaceRecord>,
 }
 struct Stamp {
-    state: Mutex<State>,
+    state: RwLock<State>,
     pins: AtomicUsize,
     #[cfg(test)]
     retirement_observer: Option<Arc<dyn Fn() + Send + Sync>>,
@@ -49,7 +52,7 @@ struct Stamp {
 
 /// No engine Arc, file, background task or provider pool is retained here.
 pub struct NamespaceLifecycleRegistry {
-    entries: Mutex<Vec<Arc<Stamp>>>,
+    entries: RwLock<Vec<Arc<Stamp>>>,
     maximum: usize,
     owner: Arc<Owner>,
 }
@@ -112,7 +115,7 @@ impl NamespaceLifecycleRegistry {
                 maximum: limits.owners,
                 resident,
             }),
-            entries: Mutex::new(entries),
+            entries: RwLock::new(entries),
             maximum: limits.namespaces,
         };
         if let Some(resident) = &registry.owner.resident {
@@ -132,7 +135,7 @@ impl NamespaceLifecycleRegistry {
         let stamp = self.stamp(read.record())?;
         let state = stamp
             .state
-            .try_lock()
+            .try_read()
             .map_err(|_| NamespaceError::Unavailable)?;
         if state.pending.is_some()
             || !same_lifecycle(&state.record, read.record())
@@ -188,12 +191,12 @@ impl NamespaceLifecycleRegistry {
         }
         let mut entries = self
             .entries
-            .try_lock()
+            .try_write()
             .map_err(|_| NamespaceError::Unavailable)?;
         for entry in entries.iter() {
             let state = entry
                 .state
-                .try_lock()
+                .try_read()
                 .map_err(|_| NamespaceError::Unavailable)?;
             if state.record.tenant == after.tenant && state.record.id == after.id {
                 return Err(NamespaceError::Conflict);
@@ -205,7 +208,7 @@ impl NamespaceLifecycleRegistry {
         let accepted = accept()?;
         let epoch = 1;
         let stamp = Arc::new(Stamp {
-            state: Mutex::new(State {
+            state: RwLock::new(State {
                 record: after.clone(),
                 epoch,
                 pending: Some(after.clone()),
@@ -257,7 +260,7 @@ impl NamespaceLifecycleRegistry {
         let stamp = self.stamp(before.record())?;
         let mut state = stamp
             .state
-            .try_lock()
+            .try_write()
             .map_err(|_| NamespaceError::Unavailable)?;
         if state.pending.is_some() || !same_lifecycle(&state.record, before.record()) {
             return Err(NamespaceError::Conflict);
@@ -305,7 +308,7 @@ impl NamespaceLifecycleRegistry {
         let stamp = self.stamp(read.record())?;
         let state = stamp
             .state
-            .try_lock()
+            .try_read()
             .map_err(|_| NamespaceError::Unavailable)?;
         if state.pending.is_some() || !same_lifecycle(&state.record, read.record()) {
             return Err(NamespaceError::PermissionDenied);
@@ -329,26 +332,46 @@ impl NamespaceLifecycleRegistry {
             Err(NamespaceError::Unavailable)
         }
     }
-    fn stamp(&self, record: &NamespaceRecord) -> Result<Arc<Stamp>, NamespaceError> {
-        let mut entries = self
-            .entries
-            .try_lock()
-            .map_err(|_| NamespaceError::Unavailable)?;
-        for entry in entries.iter() {
+    fn find_stamp(
+        entries: &[Arc<Stamp>],
+        record: &NamespaceRecord,
+    ) -> Result<Option<Arc<Stamp>>, NamespaceError> {
+        for entry in entries {
             let state = entry
                 .state
-                .try_lock()
+                .try_read()
                 .map_err(|_| NamespaceError::Unavailable)?;
             if state.record.tenant == record.tenant && state.record.id == record.id {
-                return Ok(Arc::clone(entry));
+                return Ok(Some(Arc::clone(entry)));
             }
+        }
+        Ok(None)
+    }
+    fn stamp(&self, record: &NamespaceRecord) -> Result<Arc<Stamp>, NamespaceError> {
+        // Existing namespaces need only a shared read. Two authorized currentness
+        // checks cannot deny one another by occupying an exclusive metadata lock.
+        let entries = self
+            .entries
+            .try_read()
+            .map_err(|_| NamespaceError::Unavailable)?;
+        if let Some(stamp) = Self::find_stamp(&entries, record)? {
+            return Ok(stamp);
+        }
+        drop(entries);
+        let mut entries = self
+            .entries
+            .try_write()
+            .map_err(|_| NamespaceError::Unavailable)?;
+        // Another creator may have installed the same stamp between these gates.
+        if let Some(stamp) = Self::find_stamp(&entries, record)? {
+            return Ok(stamp);
         }
         if entries.len() >= self.maximum {
             return Err(NamespaceError::Capacity);
         }
         record.validate()?;
         let stamp = Arc::new(Stamp {
-            state: Mutex::new(State {
+            state: RwLock::new(State {
                 record: record.clone(),
                 epoch: record.version.generation,
                 pending: None,
@@ -396,7 +419,7 @@ impl NamespaceLifecycleHandle {
         let state = self
             .stamp
             .state
-            .try_lock()
+            .try_read()
             .map_err(|_| NamespaceError::Unavailable)?;
         if state.epoch != self.epoch
             || state.pending.is_some()
@@ -436,7 +459,7 @@ impl NamespaceLifecycleCompletion {
         let mut state = self
             .stamp
             .state
-            .try_lock()
+            .try_write()
             .map_err(|_| NamespaceError::Unavailable)?;
         if state.epoch != self.epoch || state.pending.as_ref() != Some(actual.record()) {
             return Err(NamespaceError::Conflict);

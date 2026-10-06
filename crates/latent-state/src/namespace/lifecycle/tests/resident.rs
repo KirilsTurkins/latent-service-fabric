@@ -187,7 +187,7 @@ fn actual_last_stamp_destructor_releases_the_original_metadata_keeper_only_after
     });
     let release = Release(Arc::clone(&gate));
     let (entered, observed) = mpsc::sync_channel(1);
-    let mut entries = registry.entries.lock().unwrap();
+    let mut entries = registry.entries.write().unwrap();
     let stamp = Arc::get_mut(&mut entries[0]);
     assert!(
         stamp.is_none(),
@@ -197,7 +197,7 @@ fn actual_last_stamp_destructor_releases_the_original_metadata_keeper_only_after
     // The observer itself is attached before pinning the independent stamp;
     // no fake retired boolean or timeout refunds native ownership.
     drop(handle);
-    let mut entries = registry.entries.lock().unwrap();
+    let mut entries = registry.entries.write().unwrap();
     let stamp = Arc::get_mut(&mut entries[0]).unwrap();
     let blocked = Arc::clone(&gate);
     stamp.retirement_observer = Some(Arc::new(move || {
