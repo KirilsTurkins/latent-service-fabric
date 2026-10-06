@@ -1701,6 +1701,7 @@
         "deployments::tests::bindings::manual_route_publication_wins_against_older_prepared_bindings",
         "deployments::tests::bindings::policy_change_between_prepare_and_commit_cannot_publish_stale_binding",
         "deployments::tests::bindings::publications::identical_checked_package_has_independent_tenant_plans_and_revocation",
+        "deployments::tests::bindings::rejections::absent_deployment_grant_retains_scoped_producer_reason_and_recovers",
         "deployments::tests::bindings::rejections::auto_cannot_widen_explicit_host_only_modes",
         "deployments::tests::bindings::rejections::removing_a_local_provider_retains_unavailable_binding_history",
         "deployments::tests::bindings::rejections::replacement_needs_only_current_and_tentative_plan_capacity",
@@ -1894,7 +1895,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 250,
+      "minimumCases": 251,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
@@ -3011,6 +3012,7 @@
         "observations::observation_incarnations_remain_unique_across_managers_and_id_reuse",
         "observations::observations_match_committed_outcomes_and_exclude_payloads_and_diagnostics",
         "observations::observer_panics_and_closed_export_pipeline_preserve_success_and_cleanup",
+        "observations::pre_child_grant_denial_reaches_the_real_root_journal_without_new_owners",
         "observations::resolved_context_grants_and_elapsed_time_follow_actual_lifecycle",
         "outcomes::containment_control_looking_payloads_remain_opaque_product_input",
         "outcomes::declared_and_platform_outcomes_have_distinct_retention_and_finalize_spent_resources",
@@ -3045,7 +3047,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 63,
+      "minimumCases": 64,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
