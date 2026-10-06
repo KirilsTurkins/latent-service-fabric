@@ -605,6 +605,7 @@ impl WasmtimeBackend {
                         message: "runtime-lifecycle-unproven".into(),
                         guest_backtrace: Vec::new(),
                         metadata: Metadata::new(),
+                        diagnostic: None,
                     },
                     consumption,
                 })
