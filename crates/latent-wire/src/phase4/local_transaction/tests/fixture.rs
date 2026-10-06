@@ -88,6 +88,7 @@ pub(super) struct Fixture {
     dispatcher: Option<DispatcherOwner>,
     cleanup: Option<ActivationCleanupOwner>,
     config: ProtectedStoreConfig,
+    minimum_checkpoint: Option<(u64, u64)>,
     _factory: WasmtimeComponentEngineFactory,
     _root: tempfile::TempDir,
 }
@@ -287,6 +288,7 @@ impl Fixture {
             dispatcher: None,
             cleanup: None,
             config,
+            minimum_checkpoint: None,
             _factory: factory,
             _root: root,
         };
@@ -300,7 +302,7 @@ impl Fixture {
             self.effects.clone(),
             Vec::new(),
             self.clock.clone(),
-            None,
+            self.minimum_checkpoint,
         )
         .await
         .unwrap();
@@ -482,6 +484,19 @@ impl Fixture {
             .await
             .unwrap();
         assert!(report.clean, "{report:?}");
+        // This observation belongs to the same uninterrupted fixture process,
+        // after the old dispatcher has positively retired. It is not an
+        // external restore or a clock-continuity assertion after process loss.
+        self.minimum_checkpoint = self
+            .store
+            .with_store(StoreIoKind::Read, 8192, |store| {
+                latent_effects::dispatch_store::DispatchCatalog::checkpoint(&store.snapshot()?)
+            })
+            .unwrap()
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(self.minimum_checkpoint.is_some());
         let deadline = Instant::now() + Duration::from_secs(10);
         let report = self
             .store
