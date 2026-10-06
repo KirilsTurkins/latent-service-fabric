@@ -188,7 +188,18 @@ fn retry_admission(
     effects: &EffectAuthorityOwner,
     request: &AdmissionInput,
 ) -> PreparedAdmission {
-    let owner = claim(store, request.clone());
+    let owner = claim(
+        store,
+        AdmissionInput {
+            key: request.key.clone(),
+            fingerprint: request.fingerprint.clone(),
+            source: request.source.clone(),
+            result_read_policy: request.result_read_policy.clone(),
+            result_policy: request.result_policy,
+            inbox: request.inbox.clone(),
+            owner_epoch: request.owner_epoch,
+        },
+    );
     let view = store.snapshot().unwrap();
     let abort = envelope(Scenario::Abort, &view, owner, effects);
     let aborted = publish_envelope(abort, store, effects, false);
