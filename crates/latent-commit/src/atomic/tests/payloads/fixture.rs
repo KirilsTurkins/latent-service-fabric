@@ -202,6 +202,7 @@ impl Fixture {
             )
             .unwrap(),
         );
+        request.activation.deadline_unix_millis = control.budget.deadline().unix_millis();
         let session = authority
             .broker
             .open_session(plan, &request, &control, &authority.publication)
