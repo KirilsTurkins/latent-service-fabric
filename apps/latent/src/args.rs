@@ -21,7 +21,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 pub use invoke::{InvokeArgs, InvokeBudgetProfile};
 pub use management::{
-    ActivationCommand, ActivationTreeArgs, ApplyArgs, DeploymentCommand, NodeCommand, PublicationArgs, PublishArgs,
+    ActivationCommand, ApplyArgs, DeploymentCommand, NodeCommand, PublicationArgs, PublishArgs,
     ReleaseCommand, RouteCommand, ServicePageArgs, TargetInspectionArgs, ValidateCommand,
 };
 #[cfg(test)]
