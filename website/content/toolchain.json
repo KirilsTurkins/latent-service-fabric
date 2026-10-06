@@ -11,7 +11,7 @@
   "npmSource": {
     "repository": "npm/cli",
     "commit": "3acf9a784798094a5feb43c2e1898429dd667cb6",
-    "reason": "The explicit npm-11.19.1-lsf-bundle-v3 derivation authenticates npm 11.19.1 and replaces its complete ip-address, undici, brace-expansion and http-cache-semantics bundles with pinned 10.7.2, 6.28.1, 5.0.12 and 4.3.0 archives before execution. SHA-bound source repairs prevent security-zeroed HTTP cache reuse and bound braces parsing and all AST walkers while preserving upstream package names, versions, graphs and licenses. The toolchain and application locks authenticate the deterministic derived archives. This is a maintained source derivation, not an upstream npm release.",
+    "reason": "The explicit npm-11.19.1-lsf-bundle-v4 derivation authenticates npm 11.19.1 and replaces its complete ip-address, undici, brace-expansion, http-cache-semantics and postcss-selector-parser bundles with pinned 10.7.2, 6.28.1, 5.0.12, 4.3.0 and 7.1.6 archives before execution. SHA-bound source repairs prevent security-zeroed HTTP cache reuse and bound braces parsing and all AST walkers while preserving upstream package names, versions, graphs and licenses. The toolchain and application locks authenticate the deterministic derived archives. This is a maintained source derivation, not an upstream npm release.",
     "distribution": "toolchain/source.json"
   },
   "docusaurus": {
