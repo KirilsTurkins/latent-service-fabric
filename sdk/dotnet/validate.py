@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk/dotnet"
 PROJECTS = ("Latent.Sdk", "Latent.Sdk.SemanticTests", "Latent.Sdk.Transport", "Latent.Sdk.Transport.Tests", "Latent.Sdk.ProviderWorkflow")
 LOCKED = PROJECTS[2:]
-PROTOS = ("latent/control/v1/common.proto", "latent/control/v1/policy.proto", "latent/control/v1/capability.proto", "latent/invocation/v1/invocation.proto")
+PROTOS = ("latent/control/v1/common.proto", "latent/control/v1/policy.proto", "latent/control/v1/capability.proto", "latent/control/v1/node.proto", "latent/control/v1/release.proto", "latent/invocation/v1/invocation.proto")
 SDK_VERSION = "8.0.425"
 RUNTIME_VERSION = "8.0.31"
 GRPC_TOOLS = "2.71.0"
@@ -101,7 +101,7 @@ def package_graph(source: Path, artifacts: Path, packages: Path) -> list[dict]:
 def generation(artifacts: Path, packages: Path, environment: dict[str, str]) -> dict:
     generated = artifacts / "obj/Latent.Sdk.Transport/debug/latent"
     sources = sorted(path for path in generated.rglob("*.cs"))
-    require(len(sources) == 7, "dotnet-generated-source-count")
+    require(len(sources) == 10, "dotnet-generated-source-count")
     generator = packages / "grpc.tools" / GRPC_TOOLS / "tools/linux_x64"
     protoc = command([str(generator / "protoc"), "--version"], SDK, environment, quiet=True)
     return {"schemaVersion": 1, "sdkVersion": SDK_VERSION, "runtimeVersion": RUNTIME_VERSION,
