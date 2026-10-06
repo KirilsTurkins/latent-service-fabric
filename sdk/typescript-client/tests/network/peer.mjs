@@ -95,6 +95,15 @@ export async function peer() {
         send(stream, descriptor.output, { policies, page: {}, catalogGeneration: 18446744073709551615n });
       } else if (operation === "listCapabilities") {
         send(stream, descriptor.output, { capabilities: [{ id: "http", contract: "latent:http/client@0.2.0", provider: "http", operations: ["send"], inspection: { providerConfigurationEpoch: 18446744073709551615n, providerProfile: "bounded-http-v1", state: "current" } }], page: {}, state: "current" });
+      } else if (operation === "inspectHttpTarget") {
+        const value = { schemaVersion: 1, tenant: "tests", service: request.service, contract: request.contract, function: request.function,
+          route: request.route ?? "default", state: request.function === "future" ? 777 : 1, catalogTransaction: 18446744073709551615n,
+          routeGeneration: 18446744073709551615n, bindingGeneration: 18446744073709551615n,
+          candidates: [{ deploymentId: "deployment-a", revisionId: request.function === "drift" ? "revision-b" : "revision-a",
+            componentDigest: `sha256:${"a".repeat(64)}`, publication: request.publication, requestedPublication: request.publication,
+            reasons: [777], preparation: { state: request.function === "unmeasured" ? 1 : request.function === "future" ? 779 : request.includePreparation ? 3 : 4 } }] };
+        if (request.function === "foreign") value.tenant = "foreign";
+        send(stream, descriptor.output, value);
       }
     });
   });

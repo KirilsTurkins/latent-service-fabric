@@ -2,68 +2,68 @@
   "cases":["SecurityFixtureTests.test_archive_extraction_never_uses_supplied_filesystem_paths","SecurityFixtureTests.test_binary_marker_cannot_hide_a_documentation_secret","SecurityFixtureTests.test_bundled_dependencies_require_reviewed_integrity_pinned_owner","SecurityFixtureTests.test_child_environment_and_output_bound_redact_failures","SecurityFixtureTests.test_current_manifest_inventory_covers_guest_client_and_build_locks","SecurityFixtureTests.test_deep_tracked_inputs_are_read_without_relaxing_path_validation","SecurityFixtureTests.test_derived_npm_bundle_keeps_complete_advisory_coverage","SecurityFixtureTests.test_derived_npm_does_not_enable_arbitrary_file_sources","SecurityFixtureTests.test_derived_npm_rejects_omissions_and_changed_inputs","SecurityFixtureTests.test_duplicate_json_and_committed_expired_fixture_fail","SecurityFixtureTests.test_each_reviewed_source_rule_has_a_harmless_detection_fixture","SecurityFixtureTests.test_exact_exception_matches_no_other_version_path_or_finding","SecurityFixtureTests.test_expired_unowned_wildcard_and_long_exceptions_fail","SecurityFixtureTests.test_legacy_release_absent_features_do_not_hide_partial_or_unknown_manifests","SecurityFixtureTests.test_linked_input_rejected_where_symlinks_are_supported","SecurityFixtureTests.test_local_modified_evidence_is_not_reported_as_an_exact_clean_revision","SecurityFixtureTests.test_new_manifest_missing_lock_or_unresolved_requirement_cannot_pass","SecurityFixtureTests.test_node_sdk_inventory_includes_pinned_runtime_and_development_dependencies","SecurityFixtureTests.test_osv_empty_truncated_stale_duplicate_and_unavailable_fail","SecurityFixtureTests.test_osv_pass_and_fail_use_explicit_per_package_results","SecurityFixtureTests.test_renderer_toolchain_removes_the_unpatched_archive_extractor","SecurityFixtureTests.test_secret_exception_cannot_hide_changed_content_location_or_rule","SecurityFixtureTests.test_source_exception_is_bound_to_exact_content_and_location","SecurityFixtureTests.test_stage_only_selected_documentation_and_reject_path_escape","SecurityFixtureTests.test_stale_database_head_age_and_future_timestamp_fail","SecurityFixtureTests.test_synthetic_source_rule_has_pass_and_fail_without_execution","SecurityFixtureTests.test_tools_require_both_reviewed_archive_and_binary_digests","SecurityFixtureTests.test_unavailable_database_is_not_an_empty_advisory_result"],
   "guards":{
     "SecurityFixtureTests.test_archive_extraction_never_uses_supplied_filesystem_paths":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_binary_marker_cannot_hide_a_documentation_secret":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_bundled_dependencies_require_reviewed_integrity_pinned_owner":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_child_environment_and_output_bound_redact_failures":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_current_manifest_inventory_covers_guest_client_and_build_locks":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_deep_tracked_inputs_are_read_without_relaxing_path_validation":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_derived_npm_bundle_keeps_complete_advisory_coverage":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_derived_npm_does_not_enable_arbitrary_file_sources":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_derived_npm_rejects_omissions_and_changed_inputs":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_duplicate_json_and_committed_expired_fixture_fail":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_each_reviewed_source_rule_has_a_harmless_detection_fixture":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_exact_exception_matches_no_other_version_path_or_finding":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_expired_unowned_wildcard_and_long_exceptions_fail":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_legacy_release_absent_features_do_not_hide_partial_or_unknown_manifests":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_linked_input_rejected_where_symlinks_are_supported":
-      "52c8be8e59568c4095a18e14d078e37c229508575732bc9830bb20f0fccb2eb0",
+      "b64cd442c2cfb891c4ce6a97b65595492d898741e7ca70aa91c91ed1ca948108",
     "SecurityFixtureTests.test_local_modified_evidence_is_not_reported_as_an_exact_clean_revision":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_new_manifest_missing_lock_or_unresolved_requirement_cannot_pass":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_node_sdk_inventory_includes_pinned_runtime_and_development_dependencies":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_osv_empty_truncated_stale_duplicate_and_unavailable_fail":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_osv_pass_and_fail_use_explicit_per_package_results":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_renderer_toolchain_removes_the_unpatched_archive_extractor":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_secret_exception_cannot_hide_changed_content_location_or_rule":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_source_exception_is_bound_to_exact_content_and_location":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_stage_only_selected_documentation_and_reject_path_escape":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_stale_database_head_age_and_future_timestamp_fail":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_synthetic_source_rule_has_pass_and_fail_without_execution":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_tools_require_both_reviewed_archive_and_binary_digests":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06",
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790",
     "SecurityFixtureTests.test_unavailable_database_is_not_an_empty_advisory_result":
-      "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06"
+      "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790"
   },
   "kind":"python",
   "module":"tools/tests/test_security_baseline.py",
-  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason":"Keep all 28 original cases and execution/skip controls. The derived npm fixture normalizes input line endings before a Windows text write; all other fixture helpers remain AST-identical. Coverage includes the added fourth authenticated bundled package. Incoming reviewed obligation: Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced. Store identical case-owned guards using the authenticated shared v2 representation; retain every original case and execution control.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
-    "13b81899054b2966bb89f5b4933d1fd22cc7b299e019d4cf0c660e8ae194fc06":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:1b5d4a9df122a9ee26546cbfd6faa06a9836c7002402ff35178c8134e66a5229","class:setup-sha256:93a432dca688b8ebc4d92d7de69bff976a685c76f6f72562097fff9b2960492a"],"skipSites":[]},
-    "52c8be8e59568c4095a18e14d078e37c229508575732bc9830bb20f0fccb2eb0":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:1b5d4a9df122a9ee26546cbfd6faa06a9836c7002402ff35178c8134e66a5229","class:setup-sha256:93a432dca688b8ebc4d92d7de69bff976a685c76f6f72562097fff9b2960492a"],"skipSites":["self.skipTest('host does not allow creating symlinks')","skip-control-sha256:660e8593afd680a4c1f9c80e79fb0a780dcf9a34061c9b6c08e29f3988105757"]}
+    "745ea497e46d068f294ee13f0030bc8188853890ee4e55a5b4c558dffb316790":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:1b5d4a9df122a9ee26546cbfd6faa06a9836c7002402ff35178c8134e66a5229","class:setup-sha256:8ce4e0d640ca553466bd361b576590f005acc5245993fd605e4995b7d91337f3"],"skipSites":[]},
+    "b64cd442c2cfb891c4ce6a97b65595492d898741e7ca70aa91c91ed1ca948108":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:1b5d4a9df122a9ee26546cbfd6faa06a9836c7002402ff35178c8134e66a5229","class:setup-sha256:8ce4e0d640ca553466bd361b576590f005acc5245993fd605e4995b7d91337f3"],"skipSites":["self.skipTest('host does not allow creating symlinks')","skip-control-sha256:660e8593afd680a4c1f9c80e79fb0a780dcf9a34061c9b6c08e29f3988105757"]}
   }
 }
