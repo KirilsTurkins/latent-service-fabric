@@ -22,7 +22,6 @@ fn decoded() -> proto::InvokeRequest {
     .encode_to_vec();
     proto::InvokeRequest {
         activation_id: Some(ID.into()),
-        root_activation_id: Some("root".into()),
         target: Some(proto::InvocationTarget {
             tenant: "tenant".into(),
             service: "service".into(),

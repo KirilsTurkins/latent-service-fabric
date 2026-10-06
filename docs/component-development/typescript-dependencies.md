@@ -1,0 +1,24 @@
+# Captured npm dependencies
+
+Declare application dependencies in the ordinary root `package.json` and review a native npm v2/v3 `package-lock.json`. Keep them separate from `vendor/lsf/sdk/typescript-guest/tools/package-lock.json`, which pins the SDK compiler. Package coordinates identify provenance; no application catalogue entry is required.
+
+Create/update the native lock in a separate fetch step with lifecycle scripts disabled, then capture and review the selected closure:
+
+```powershell
+npm install --package-lock-only --ignore-scripts --install-links=true --bin-links=false --no-audit --no-fund
+python tools/typescript_capsule.py resolve ./my-typescript --candidate ./npm-candidate.json
+Copy-Item -LiteralPath ./npm-candidate.json -Destination ./my-typescript/latent.dependencies.lock.json
+python tools/typescript_capsule.py build ./my-typescript --tools ./reviewed-typescript-tools --output ./my-typescript/target/build-1 --repository https://github.com/example/application
+```
+
+Capture uses pinned Node 24.19.0 and the observed npm CLI in an owned directory and empty home/cache. It runs native `npm ci` with ignored scripts, disabled executable links and strict peer resolution. Relative local dependencies keep their native layout in an owned mirror; absolute file paths are relocated only for that fetch attempt, with original and selected declaration digests retained. Local original source bytes, original integrity-checked package archives, the selected regular module tree, exact physical transitive/peer/optional edges and platform selection are captured separately. Unsafe archive entries and unobserved links fail even when npm has expanded the package. Directory dependencies containing bundled `node_modules` currently require an explicitly packed native archive so their original input boundary is complete.
+
+The default module recipe uses neutral ESM output with the native `exports`/`imports` order and import/require/default branches. Static CommonJS `require` is supported for captured modules. `--condition <name>` records explicit custom conditions; the recipe does not force a browser branch. Reachable dynamic module/code loading and native addons fail concretely. A reachable standard runtime module reports the missing operation/profile until its maintained implementation is installed. Bundling does not qualify pending Promise exports, timers, Node processes, or network authority; `spidermonkey-public-sync-v1` remains the current selected profile.
+
+The builder typechecks ordinary application imports against the captured tree, bundles immutable JSON/text/binary assets and records exact reachable source digests, selected files, module conditions and an external source map. Application initializers cannot observe clock/entropy through the recipe's guarded standard intrinsics during snapshot creation. This guard is a current profile control, not qualification of all clock/entropy APIs or arbitrary metaprogramming. Fresh activation/runtime semantics retain their separate component gates.
+
+Captured builds require the maintained Linux namespace profile. The builder stages the complete reviewed SDK compiler, records native helper/loader bytes, and isolates Node, bundling and component initialization without network, ambient home or inherited registry/signing credentials. Captured source/module/compiler mounts are read-only during application initialization; bounded commands reap owned descendants. No application package plugin or install script is executed by this recipe. Application generators require a separately approved isolated stage and are not enabled by capture alone. The boundary targets a trusted single-user build host and does not claim hardened multitenant or fully hermetic execution.
+
+For private registries, pass `--registry-config` with `{"registries":[{"scope":"@private","url":"https://registry.example.com","authorizationEnv":"LSF_PRIVATE_NPM_AUTH"}]}`. Credentials reach only that explicit resolver; ordinary compilation consumes verified objects and does not read project/home npm configuration. An update, removal, lock edit, selected condition/profile change, missing object or altered dependency invalidates relevant input identities and requires capture/review again.
+
+The required TypeScript CI qualifier now adds an external developer-owned conditional ESM/CommonJS module using real `@jridgewell/trace-mapping` transitives and immutable UTF-8 JSON/text/binary resources, removes the original external sources, compiles the reviewed closure, and sends the result through the existing signing/admission/node workflow. Exact-head passing receipts are required before claiming that qualification. Native Node tests are controls; additional async/runtime, generator, private-feed, snapshot-effect and full denial/recovery matrices remain separate acceptance work.

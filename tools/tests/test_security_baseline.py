@@ -226,7 +226,7 @@ class SecurityFixtureTests(unittest.TestCase):
         policy = decode_json(read_file(POLICY, "inventory.json"))
         entry = next(row for row in policy["manifests"] if row["path"] == "website/toolchain/package.json")
         for path in (entry["path"], entry["lock"], "website/toolchain/source.json", "website/toolchain/prepare.py"):
-            self.write(path, read_file(ROOT, path).decode())
+            self.write(path, read_file(ROOT, path).decode().replace("\r\n", "\n"))
         return entry
 
     def test_derived_npm_bundle_keeps_complete_advisory_coverage(self):
@@ -242,11 +242,11 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertIn(("balanced-match", "4.0.4"), values)
         self.assertIn(("undici", "6.28.1"), values)
         self.assertIn(("http-cache-semantics", "4.3.0"), values)
+        self.assertNotIn(("http-cache-semantics", "4.2.0"), values)
         self.assertNotIn(("ip-address", "10.5.0"), values)
         self.assertNotIn(("ip-address", "10.5.1"), values)
         self.assertNotIn(("brace-expansion", "5.0.9"), values)
         self.assertNotIn(("undici", "6.28.0"), values)
-        self.assertNotIn(("http-cache-semantics", "4.2.0"), values)
 
     def test_derived_npm_rejects_omissions_and_changed_inputs(self):
         entry = self.derived_npm_fixture()

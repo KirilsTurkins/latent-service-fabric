@@ -504,7 +504,7 @@ impl WasmtimeBackend {
             &function.params,
             raw_input.bytes(),
             &request.activation.input_media_type,
-            self.config.value_codec_limits,
+            runtime.surface.value_codec_limits,
         )?;
 
         let capabilities = if let Some(owner) = &self.shared.capabilities {
@@ -546,8 +546,13 @@ impl WasmtimeBackend {
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
-        let mut store =
-            AccountedStore::new(self.invocation_store(request, &stop, accounting, capabilities)?);
+        let mut store = AccountedStore::new(self.invocation_store(
+            request,
+            &stop,
+            accounting,
+            capabilities,
+            runtime.surface.hostcall_fuel,
+        )?);
         // Decoding and every borrowed validation have completed. The Store now
         // owns only the moved context; destroy the actual raw input before call.
         raw_input.release(InvocationInputDropReason::BeforeGuestCall);
@@ -593,7 +598,11 @@ impl WasmtimeBackend {
         timing.component_post_return_micros = elapsed_micros(component_post_return_started);
 
         let encoded = call_result.as_ref().ok().map(|()| {
-            values::encode_result(&function.results, &output, self.config.value_codec_limits)
+            values::encode_result(
+                &function.results,
+                &output,
+                runtime.surface.value_codec_limits,
+            )
         });
         // Capture the execution winner before cleanup signals unfinished child
         // owners. Cleanup cancellation cannot replace an existing trap, resource
@@ -687,6 +696,7 @@ impl WasmtimeBackend {
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
+        hostcall_fuel: usize,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -729,7 +739,7 @@ impl WasmtimeBackend {
             host_state.limiter.reserve_exception_heap()?;
         }
         let mut store = Store::new(&self.engine, host_state);
-        store.set_hostcall_fuel(self.config.hostcall_fuel);
+        store.set_hostcall_fuel(hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
         store.set_fuel(initial_fuel).map_err(|error| {
             platform_error(
@@ -881,6 +891,13 @@ impl ExecutionBackend for WasmtimeBackend {
     }
     fn backend_id(&self) -> &str {
         &self.profile.id
+    }
+
+    fn inspect_ready(
+        &self,
+        ready: latent_executor::PreparedReadiness,
+    ) -> Result<latent_executor::PreparationInspection, PlatformError> {
+        self.inspect_readiness(ready)
     }
 
     fn preparation_key(
