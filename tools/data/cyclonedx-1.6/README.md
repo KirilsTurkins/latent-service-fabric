@@ -6,6 +6,14 @@ and the observer's conservative SPDX declaration subset.
 and SHA-256 hashes. [LICENSE](LICENSE) preserves the upstream Apache-2.0 license;
 individual files retain their original notices.
 
+The BOM schema is stored as `bom-1.6.schema.json.gz` to keep the complete source
+capture within its existing finite byte budget. [STORAGE.json](STORAGE.json)
+records the deterministic gzip transport identity. Decoding it restores the
+exact upstream bytes, including whitespace and notices; the original source
+byte count and SHA-256 in `SOURCES.json` remain unchanged. The offline validator
+checks both identities and bounds decoding by the original source byte count.
+`gzip -dc bom-1.6.schema.json.gz` produces the pinned JSON file for inspection.
+
 The BOM schema references the included SPDX and JSON Signature Format schemas.
 Tests register all three locally and reject attempts to retrieve other resources.
 The narrower LSF profile excludes inline signatures and standalone SPDX ID
