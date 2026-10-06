@@ -149,6 +149,59 @@ entry as the SPA fallback. For static-generator output, choose `redirect` with
 Include `/guide/index.html` explicitly to serve `/guide/`. A request to `/guide`
 then redirects to `/guide/` with status 308; `/guide/missing` remains 404.
 
+### Optional signed 404 document (development)
+
+The development capture/native tools support an optional finite extension:
+
+```json
+"errorDocument": {"profile": "html-not-found-v1", "document": "/404.html"}
+```
+
+Add it to `static-site-input-v1` and include `/404.html` in the ordinary reviewed
+asset map. Capture copies the same object into `staticRouting.errorDocument`.
+It must name a same-publication admitted `text/html` asset with the normal
+immutable digest, size and count/byte charges. Missing, non-HTML, private,
+hidden, reserved, remote or malformed references fail before publication.
+The profile fixes status 404 and cannot name a renderer or another publication.
+
+This is an optional closed-contract extension, retaining `lsf.web-release.v1`
+and `static-site-v1`. Omitting it preserves existing manifests and empty-miss
+behavior. Older closed readers, including the retained alpha.4/alpha.5 tools,
+reject the new member: use matching development capture, package, admission and
+node tools, then recapture, resign and republish. Do not patch an existing signed
+manifest. Historical release receipts and documentation remain unchanged.
+
+Resolution remains exact signed route, exact asset, directory index, then SPA
+fallback. An eligible navigation that still misses can select the 404 document;
+SPA fallback continues to return its configured 200 entry before this step.
+The error document's own missing/corrupt bytes cannot recurse to another fallback.
+The maintained finite generator emits a styled `404.html`; the pinned realistic
+Docusaurus example selects its existing generated page at root and `/docs`.
+Set all error-page links/assets to the build's reviewed mount, as on other pages.
+
+The error body requires the existing current route, tenant/publication and
+browser admission. With Fetch Metadata present, both `Sec-Fetch-Mode: navigate`
+and `Sec-Fetch-Dest: document` are required. Missing/unknown/partial metadata
+does not qualify; with all Fetch Metadata absent, explicit positive `text/html`
+Accept qualifies. `*/*` alone does not. Malformed Accept or duplicate/oversized
+fields receive the normal bounded 400/431 rejection. Unsupported metadata values
+retain the host's normal empty 403 rejection. Metadata is not authority:
+missing non-HTML filename extensions and the site-local `/api` and `/_lsf`
+namespaces cannot select an error document even with spoofed navigation fields.
+Keep other API namespaces on their more-specific operator-owned API triggers;
+ordinary browser fetch/script/style/image/font requests never qualify.
+
+The response retains 404, host CSP/security headers, the selected HTML's ETag,
+Content-Type and Content-Length, and uses `Cache-Control: private, no-store`.
+HEAD has identical representation metadata and no body. Valid If-Match and
+If-None-Match are ignored for the unsuccessful navigation: no 200, 304 or 412
+upgrade is possible. Malformed preconditions are still rejected. Denied methods,
+unauthorized requests, retired/revoked publications and internal read failures
+keep their ordinary empty rejection responses. The host does not mutate HTML.
+Shared asset-read/cache ownership remains bounded; no guest activation, renderer
+heap, execution cell or per-site worker is created. Current authority is checked
+again before output, including cached error bytes and HEAD.
+
 The operator controls the host and mount in the static HTTP trigger. The signed
 web manifest controls entry, directory indexes and fallback. Changing any routing
 policy changes the checked manifest and package identity even when the public
@@ -250,6 +303,30 @@ and retains `static-site-receipt.json` with the other delivery receipts. The
 adapter's adversarial tests and the real HTTP tests additionally cover path
 aliases, private outputs, symlinks, saturation, corrupt assets, revocation
 between selection and delivery and blocking-read ownership during shutdown.
+
+For an unconfigured or denied navigation, the node sends an empty, uncached
+403 or 404. Chromium can replace that response with its own privileged error
+document. The browser oracle checks the origin status, zero content length and
+cache policy separately from that document's identity; the bounded HTTP client
+checks the actual origin body. The same required lane runs controlled Chromium
+vectors that reject nonempty origin errors, incorrect status, cacheable errors
+and missing zero-length framing. These vectors validate the oracle; the signed
+publication workflow supplies the real-node evidence.
+
+The signed workflow also has a physical corruption vector for its configured
+404 asset. Immediately after the stopped restore, before that asset first
+enters the verified HTTP cache, the harness changes one byte in the active
+restored installation's original digest-addressed blob. It requires empty,
+uncached GET and HEAD 502 responses and checks Chromium's origin framing and
+error-document identity. The fixed signed bytes are restored through the held
+original inode in `finally`, including when the campaign is cancelled. GET and
+HEAD must then select the original signed 404 representation again. Normal
+guide delivery, request-owner retirement and conservative catalog accounting
+remain checked; corruption never authorizes a renderer or fallback document.
+The two documentation publications each retain all 250 captured assets under
+the unchanged 252-asset ceiling. Their receipt labels these counts as signed
+fixture inventory, alongside actual node ownership and catalog observations;
+it does not report physical cache allocation or a throughput benchmark.
 
 ## Apply a static publication and recover an operation
 

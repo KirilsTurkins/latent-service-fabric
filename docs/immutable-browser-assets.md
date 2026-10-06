@@ -71,7 +71,9 @@ Resolution follows this order:
 2. Exact admitted public asset.
 3. Configured directory index, when enabled.
 4. Configured SPA document, for an eligible navigation only.
-5. Empty 404 with `Cache-Control: no-store`.
+5. Optional signed `html-not-found-v1` error document for an eligible HTML
+   navigation, retaining 404 and `Cache-Control: private, no-store`.
+6. Empty 404 with `Cache-Control: no-store`.
 
 With `directoryIndex: redirect` and `directoryIndexDocument: /index.html`,
 `/docs/guide/` selects `/guide/index.html`. If those checked bytes exist,
@@ -91,6 +93,27 @@ range in `Accept`. Missing `Accept` and `*/*` alone do not qualify. No other
 HTML media type is supported. Script/style/image/font/manifest destinations
 and JSON/API misses receive 404 even when fallback is enabled; filename
 extensions do not decide navigation eligibility.
+
+The development-only optional `staticRouting.errorDocument` has the closed
+shape `{"profile":"html-not-found-v1","document":"/404.html"}`. It names one
+normal same-publication admitted HTML asset; old closed validators reject this
+extension and omission retains the previous empty miss. Unlike SPA fallback,
+error-document selection additionally excludes missing non-HTML filename
+extensions and site-local `/api` and `/_lsf` namespaces even when a native caller
+spoofs navigation metadata. It never changes signed route matches or API trigger
+precedence. There is no recursive fallback, renderer or runtime HTML rewrite.
+See the [capture/migration recipe](component-development/static-sites.md#optional-signed-404-document-development).
+
+The unsuccessful representation always remains 404. Its ETag, media type and
+Content-Length describe the selected immutable HTML bytes; HEAD suppresses the
+body. Valid conditional preconditions are ignored for this unsuccessful request,
+so If-None-Match cannot produce 304 and If-Match cannot produce 412. Malformed
+or excessive preconditions retain normal rejection. Private no-store prevents
+shared caching; the shared verified asset-byte cache is not serving authority.
+Current publication/tenant/browser admission and host security headers apply to
+every response, including HEAD, warm bytes, retirement and revocation. Internal
+read corruption, method/authentication failures and subresource/API misses never
+acquire the custom HTML body.
 
 Static content negotiation accepts at most 16 media ranges in 2,048 bytes.
 It supports exact media types, type wildcards, `*/*`, and at most eight unique

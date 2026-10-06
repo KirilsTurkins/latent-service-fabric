@@ -11,6 +11,22 @@ mod timer;
 pub use timer::{RuntimeTimer, TimerWait};
 
 pub const PROFILE: &str = "activation-owned-v1";
+/// Frozen capability identity and operation names shared by optional node
+/// installation and language qualification. These constants grant no authority.
+pub const CAPABILITY: &str = "latent:runtime/activation@0.1.0";
+pub const OPERATIONS: [&str; 11] = [
+    "register",
+    "park",
+    "wake",
+    "settle",
+    "close",
+    "observe",
+    "wait-for",
+    "wait-until",
+    "timer-start",
+    "timer-next",
+    "timer-stop",
+];
 static GENERATION: AtomicU64 = AtomicU64::new(1);
 
 /// Finite operator-selected ceilings. There is deliberately no product default:
