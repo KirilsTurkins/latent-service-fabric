@@ -106,6 +106,8 @@ def restore(root: Path, expected: dict, directory: Path) -> None:
     rows = references(lock)
     require(value['objects'] == rows and digest(encode(rows)) == expected['objectsIdentity'],
             'captured-input-object-inventory')
+    require(len(rows) == expected['objectCount'] and sum(row['size'] for row in rows) == expected['objectBytes'],
+            'captured-input-object-accounting')
     remaining = {row['digest'][7:]: row for row in rows}
     store = Store(root / dependencies.OBJECTS)
     maximum_archive = capture.MAX_CLOSURE_BYTES + len(rows) * 1024 + 10240

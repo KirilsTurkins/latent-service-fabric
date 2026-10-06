@@ -103,6 +103,20 @@ class CapturedInputs(unittest.TestCase):
         with self.assertRaisesRegex(common.DevError, 'captured-input-snapshot-document-binding'):
             snapshot.validate(value)
 
+    def test_object_byte_accounting_is_checked_before_any_payload_is_adopted(self):
+        packet = self.root / 'packet'
+        captured_inputs.pack(self.source, self.record['capturedInputs'], packet)
+        value = dependencies.capture_document((packet / captured_inputs.METADATA).read_bytes())
+        expected = {**self.record['capturedInputs'], 'objectBytes': 1}
+        expected['identity'] = common.digest(common.encode({key: item for key, item in expected.items() if key != 'identity'}))
+        value['capture'] = expected
+        (packet / captured_inputs.METADATA).write_bytes(common.encode(value))
+        destination = self.root / 'misstated-accounting'
+        self.materialize(destination)
+        with self.assertRaisesRegex(common.DevError, 'captured-input-object-accounting'):
+            captured_inputs.restore(destination, expected, packet)
+        self.assertFalse((destination / dependencies.OBJECTS).exists())
+
     def test_capture_assets_are_data_only_and_cannot_use_installer_cache_namespace(self):
         files = [{'path': name, 'sha256': common.digest(b'bytes'), 'size': 5, 'executable': False}
                  for name in (captured_inputs.METADATA, captured_inputs.ARCHIVE)]
