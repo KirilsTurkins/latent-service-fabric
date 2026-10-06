@@ -113,9 +113,18 @@ interruption instead of replacing it with cleanup cancellation.
 Three additional normal-suite regressions exercise 40 completed cycles under
 the original 16-call session ceiling, exact import counts, live pending-call
 reservations, cancellation/drop, and malformed sync/async result destinations.
-Their native execution on this repair remains pending. The prior signed Java
-executor failure and its closed `resource-exhausted` receipt are retained; a
-successful source repair alone does not qualify the expanded Java profile.
+The complete 27-case `local_service` matrix passed on pinned Linux Rust 1.97.1
+and Wasmtime 48.0.3 at source `b5c376422d23a5fe9b0825ffc5449e3675a21a7c`.
+Completed loops execute 123, 203 and 83 original imports. A pending wait keeps
+exactly one call, one result and 128 output bytes charged. Explicit cancellation
+permits fresh admission after cleanup; dropping the outer manager future still
+quarantines its cell because it cannot publish a reusable cleanup proof. The
+first native attempt and its incorrect fresh-cell expectation remain retained.
+The corrected run log has SHA-256
+`9e5c4c8cbdee7e15b8f3df22a9e5b1f67a9d64227012cf609971582a8113c93a`.
+The prior signed Java executor failure and its closed `resource-exhausted`
+receipt are also retained. This host matrix does not qualify the expanded Java
+profile.
 
 These checks are implementation evidence for #736. Remaining requirements
 include the complete signed cross-tenant, late-wake and node-stop matrix,
