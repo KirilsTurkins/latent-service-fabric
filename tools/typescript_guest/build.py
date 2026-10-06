@@ -31,6 +31,7 @@ RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
+RECIPE += ("tools/typescript_generator_authoring.py",)
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path):
@@ -136,6 +137,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("compiler-inputs", read_file(output / "compiler-inputs.json", 8 * 1024 * 1024)),
                 ("dependency-lock", files["vendor/lsf/sdk/typescript-guest/tools/package-lock.json"]),
                 ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"])))
+            if 'typescript-generated-inputs.json' in files:
+                data = files['typescript-generated-inputs.json']
+                materials.append({"name": "typescript-generator-inputs", "role": "generated",
+                                  "digest": digest(data), "size": len(data)})
             if closure is not None:
                 for name in ("application-dependencies.json", "npm-inputs.json", "compiler-containment.json", "bundle-selected-inputs.json", "application.mjs.map"):
                     data = read_file(output / name, 32 * 1024 * 1024)
