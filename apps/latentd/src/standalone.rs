@@ -34,7 +34,11 @@ use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory};
 use latent_wire::invocation::{ActivationCleanupOwner, ActivationCleanupSnapshot};
 
 pub use audit::AuditShutdownReport;
-pub use effects::{DispatcherSnapshot, EffectRuntime, EffectShutdownReport};
+pub use effects::{
+    DispatcherControlError, DispatcherControlJob, DispatcherControlLookup,
+    DispatcherControlRequest, DispatcherSnapshot, EffectRuntime, EffectShutdownReport,
+    PreparedDispatcherControl,
+};
 pub use policies::PolicyShutdownReport;
 pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;

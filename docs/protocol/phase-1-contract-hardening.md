@@ -497,27 +497,34 @@ does not by itself enable Angular T1, additional renderer imports or providers.
 The [management reference](../reference/management-services.md#web-publication-and-preparation)
 defines the trust fence, finite ownership and uncertainty boundary.
 
-### Phase 4 transaction and state wire contracts (#380, #382)
+### Phase 4 transaction definitions and State capability audit (#382, #397)
 
-The normalized descriptor baseline deliberately adds the two files already
-listed in the exhaustive Protobuf manifest: `latent/transaction/v1/transaction.proto`
-and `latent/control/v1/state.proto`. The application `TransactionService` adds
-command invocation, query, command/commit lookup, effect inspection/history and
-cancellation messages. The distinct management `StateService` adds namespace
-inspection, entity selection, fenced mutation and operation-receipt lookup.
+The descriptor baseline adds `latent/control/v1/state.proto` and
+`latent/transaction/v1/transaction.proto`. Their four `StateService` and seven
+`TransactionService` methods describe bounded namespace/entity selection,
+explicit management operations, commands, fresh queries and outcome/effect
+recovery. The golden preserves all earlier field numbers, types, oneofs,
+existing enum values and service signatures.
 
-Buf 1.72.0 generates these descriptors from the current source. All 13 existing
-file descriptors remain exactly equal after location-only normalization,
-including field numbers, types, cardinality, presence, oneofs, enum defaults,
-reservations, imports, options and RPC signatures. The golden now contains 15
-files; its existing drift-rejection tests and assertions remain enforced.
+`AuditCapabilityResourceClass` appends `STATE` at value 11 for the typed State
+capability decision already emitted by this delivery. Values 0 through 10 and
+the rest of the earlier audit descriptor remain unchanged. The other twelve
+earlier file descriptors are unchanged in full. The strict descriptor validator
+continues to reject any unreviewed semantic change.
 
-This baseline contains no dispatcher-management descriptor or new audit
-metadata. Its state mutation values remain 0 through 4; it does not include a
-command-floor-release mutation. Later additive management contracts require a
-separate compatibility review from their actual source. Recording these wire
-declarations grants no management authority and does not qualify an installed
-transaction runtime, durable engine or effect provider.
+This record freezes transport definitions. The companion
+[transaction contract](transactions.md) defines host authority, durable formats
+and recovery identities; these definitions grant no access and do not install a
+transactional runtime. Later methods or fields require another reviewed baseline
+update.
+recovery. The golden retains all thirteen earlier file descriptors with their
+field numbers, types, enum values, oneofs and service signatures unchanged.
+
+This record freezes transport definitions. The companion
+[transaction contract](transactions.md) defines host authority,
+durable formats and recovery identities; adding a descriptor grants no access
+and does not install a transactional runtime. Later management deliveries append
+their methods and fields through separately reviewed descriptor updates.
 
 ## Alpha removal of component-only release selectors
 

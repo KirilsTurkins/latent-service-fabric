@@ -2,16 +2,31 @@
 //! accepted provider work and buffers remain owned until actual cleanup.
 
 mod adapter;
+mod admission;
+mod capacity;
 mod config;
+pub mod control;
 mod driver;
 mod owner;
+mod reconciliation;
 mod state;
 mod store;
 mod worker;
 
 pub use adapter::{AdapterOutcome, DeferredEffectAdapter, EffectTimeSource};
+pub use admission::{CommandAdmission, CommandAdmissionSource};
 pub use config::{DispatchOrdering, DispatcherConfig};
+pub use control::{
+    DispatcherControlAction, DispatcherControlError, DispatcherControlGeneration,
+    DispatcherControlJob, DispatcherControlLookup, DispatcherControlOutcome,
+    DispatcherControlReceipt, DispatcherControlRequest, DispatcherControlSnapshot,
+    PreparedDispatcherControl,
+};
 pub use owner::DispatcherOwner;
+pub use reconciliation::{
+    ProviderConfirmation, ProviderReconciliationOutcome, ProviderReconciliationReason,
+    ProviderReconciliationRequest,
+};
 pub use state::{DispatcherShutdown, DispatcherSnapshot};
 pub use store::{RequiredProfilePage, RequiredProfileRow};
 

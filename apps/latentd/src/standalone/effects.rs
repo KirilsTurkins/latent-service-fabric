@@ -7,13 +7,17 @@ use std::time::Instant;
 
 use latent_effects::authority::EffectAuthorityOwner;
 use latent_effects::runtime::{
-    DeferredEffectAdapter, DispatcherConfig, DispatcherError, DispatcherOwner, EffectTimeSource,
-    RequiredProfilePage,
+    CommandAdmission, CommandAdmissionSource, DeferredEffectAdapter, DispatcherConfig,
+    DispatcherError, DispatcherOwner, EffectTimeSource, RequiredProfilePage,
 };
 use latent_state::protected_store::ProtectedStoreOwner;
 
 use super::{error, PlatformError, PlatformErrorCode, StandaloneNode};
 
+pub use latent_effects::runtime::{
+    DispatcherControlError, DispatcherControlJob, DispatcherControlLookup,
+    DispatcherControlRequest, PreparedDispatcherControl,
+};
 pub use latent_effects::runtime::{DispatcherShutdown as EffectShutdownReport, DispatcherSnapshot};
 
 /// One fixed scheduling owner. Its accepted providers and root registration
@@ -46,6 +50,30 @@ impl EffectRuntime {
         .map_err(runtime_error)
     }
 
+    #[must_use]
+    pub fn command_admission_source(&self) -> CommandAdmissionSource {
+        self.owner.command_admission_source()
+    }
+    /// Install the same global native owner used by transaction and management
+    /// admission before the first command captures this protected node role.
+    pub fn bind_native_capacity(
+        &self,
+        owner: &latent_core::native_capacity::NativeCapacityOwner,
+    ) -> Result<(), PlatformError> {
+        self.owner
+            .bind_native_capacity(owner)
+            .map_err(runtime_error)
+    }
+    pub fn command_admission(&self) -> Result<CommandAdmission, PlatformError> {
+        self.owner.command_admission().map_err(runtime_error)
+    }
+    pub fn command_owner_epoch(&self) -> Result<u64, PlatformError> {
+        self.owner.command_owner_epoch().map_err(runtime_error)
+    }
+    pub fn command_time(&self) -> Result<latent_effects::authority::EffectTime, PlatformError> {
+        self.owner.command_time().map_err(runtime_error)
+    }
+
     pub fn snapshot(&self) -> Result<DispatcherSnapshot, PlatformError> {
         self.owner.snapshot().map_err(runtime_error)
     }
@@ -68,6 +96,32 @@ impl EffectRuntime {
     }
     pub fn resume(&self) -> Result<(), PlatformError> {
         self.owner.resume().map_err(runtime_error)
+    }
+    pub fn prepare_dispatcher_control(
+        &self,
+        request: DispatcherControlRequest,
+    ) -> Result<PreparedDispatcherControl, DispatcherControlError> {
+        self.owner.prepare_control(request)
+    }
+    pub fn submit_dispatcher_control(
+        &self,
+        prepared: PreparedDispatcherControl,
+        authorize: impl FnOnce(
+                &mut dyn FnMut() -> Result<(), DispatcherControlError>,
+            ) -> Result<(), DispatcherControlError>
+            + Send
+            + 'static,
+    ) -> Result<DispatcherControlJob, DispatcherControlError> {
+        self.owner.submit_control(prepared, authorize)
+    }
+    pub fn lookup_dispatcher_control(
+        &self,
+        request: DispatcherControlRequest,
+    ) -> Result<DispatcherControlLookup, DispatcherControlError> {
+        self.owner.lookup_control(request)
+    }
+    pub fn require_dispatcher_restore_review(&self) -> Result<(), DispatcherControlError> {
+        self.owner.require_restore_review()
     }
     pub fn wake(&self) {
         self.owner.wake();

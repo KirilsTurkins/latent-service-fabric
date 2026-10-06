@@ -39,8 +39,22 @@ test('task subsections preserve every current document once and separate compile
   assert.equal(profiles.collapsed, true);
   assert.deepEqual(profiles.items.map(item => item.id), ['rust', 'c', 'typescript', 'go', 'java', 'dotnet']
     .map(language => `component-development/${language}-authoring`));
-  assert.ok(flatten(navigation.learn).every(item => !item.id?.endsWith('-authoring')));
+  const compilerIds = new Set(profiles.items.map(item => item.id));
+  assert.ok(flatten(navigation.learn).every(item => !compilerIds.has(item.id)));
   assert.ok(!actual.some(id => /(?:windows-application|linux-workspace|packaged-languages)$/.test(id)));
+});
+
+test('transactional application authoring stays in Learn alongside separate compiler references', () => {
+  const guide = {source: 'docs/component-development/transactional-authoring.md',
+    id: 'component-development/transactional-authoring', title: 'Transactional capsule authoring'};
+  const languages = ['rust', 'c', 'typescript', 'go', 'java', 'dotnet'];
+  const profiles = languages.map(language => ({source: `docs/component-development/${language}-authoring.md`,
+    id: `component-development/${language}-authoring`, title: `${language} capsule authoring`}));
+  const navigation = buildSidebars([guide, ...profiles]);
+  assert.deepEqual(flatten(navigation.learn).map(item => item.id), [guide.id]);
+  assert.deepEqual(flatten(navigation.reference).map(item => item.id), profiles.map(item => item.id));
+  const actual = Object.values(navigation).flatMap(flatten).map(item => item.id);
+  assert.deepEqual([...actual].sort(), [guide, ...profiles].map(item => item.id).sort());
 });
 
 test('core guide coverage resolves actual source-backed published routes', () => {

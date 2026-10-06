@@ -15,6 +15,7 @@ pub struct DispatcherConfig {
     pub workers: usize,
     pub queued_jobs: usize,
     pub accepted_jobs: usize,
+    pub maximum_command_owners: usize,
     pub per_tenant_jobs: usize,
     pub retained_bytes: u64,
     pub page_rows: usize,
@@ -23,6 +24,9 @@ pub struct DispatcherConfig {
     pub poll_interval: Duration,
     pub ordering: DispatchOrdering,
     pub start_paused: bool,
+    /// Set by an admitted restore plan, before exposing dispatch readiness.
+    /// Generic resume cannot clear this sticky review fence.
+    pub start_in_restore_review: bool,
 }
 
 impl Default for DispatcherConfig {
@@ -31,6 +35,7 @@ impl Default for DispatcherConfig {
             workers: 2,
             queued_jobs: 4,
             accepted_jobs: 16,
+            maximum_command_owners: 128,
             per_tenant_jobs: 1,
             retained_bytes: 80 * 1024 * 1024,
             page_rows: 16,
@@ -39,6 +44,7 @@ impl Default for DispatcherConfig {
             poll_interval: Duration::from_millis(100),
             ordering: DispatchOrdering::Unordered,
             start_paused: false,
+            start_in_restore_review: false,
         }
     }
 }
@@ -53,6 +59,7 @@ impl DispatcherConfig {
         if !(1..=16).contains(&self.workers)
             || !(1..=64).contains(&self.queued_jobs)
             || !(1..=128).contains(&self.accepted_jobs)
+            || !(1..=1024).contains(&self.maximum_command_owners)
             || !(1..=self.workers).contains(&self.per_tenant_jobs)
             || self.queued_jobs > self.accepted_jobs
             || self.workers > self.accepted_jobs
@@ -70,6 +77,7 @@ impl DispatcherConfig {
 
     pub(super) fn worker_limits(&self) -> StoreIoLimits {
         StoreIoLimits {
+            recovery: None,
             workers: self.workers,
             queued_jobs: self.queued_jobs,
             accepted_jobs: self.accepted_jobs,

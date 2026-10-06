@@ -7,7 +7,7 @@ use latent_core::transaction_contract::{
 };
 use sha2::{Digest, Sha256};
 
-use crate::authority::{AuthorityError, DurableEffectAuthority};
+use crate::authority::{AuthorityError, DispatchGrant, DurableEffectAuthority};
 use crate::effect_identity;
 
 mod decode;
@@ -61,6 +61,26 @@ impl PayloadRecord {
     #[must_use]
     pub fn value(&self) -> &Value {
         &self.value
+    }
+
+    /// Concrete adapters validate the exact immutable payload against their
+    /// sealed final delegation before accepting any physical transport work.
+    pub fn verify_grant(&self, grant: &DispatchGrant) -> Result<(), AuthorityError> {
+        if self.effect != grant.effect()
+            || u64::try_from(self.value.bytes.len()).map_err(|_| AuthorityError::Capacity)?
+                != grant.payload_bytes()
+            || payload_digest(&self.value)? != grant.payload_digest()
+        {
+            return Err(AuthorityError::Invalid);
+        }
+        Ok(())
+    }
+
+    /// Move the already verified payload into its physical transport owner
+    /// without an extra request-body allocation.
+    #[must_use]
+    pub fn into_value(self) -> Value {
+        self.value
     }
 
     #[must_use]
