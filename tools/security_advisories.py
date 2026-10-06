@@ -10,7 +10,7 @@ import time
 import tomllib
 import urllib.request
 
-from tools.security_common import decode_json, digest, read_file, require, run, tracked_paths
+from tools.security_common import POLICY, decode_json, digest, read_file, require, run, tracked_paths
 from tools.security_findings import Finding, finding
 from tools.security_install import verify_tool
 from tools.security_inventory import Package, inventory
@@ -125,6 +125,7 @@ def query_osv(packages: list[Package], transport=osv_transport) -> tuple[list[Fi
         document = decode_json(response)
         require(isinstance(document, dict) and isinstance(document.get("results"), list), "invalid-osv-result")
         require(len(document["results"]) == len(batch), "incomplete-osv-result")
+        advisories = []
         for package, result in zip(batch, document["results"], strict=True):
             require(isinstance(result, dict) and not result.get("next_page_token"), "incomplete-osv-page")
             require(set(result) <= {"vulns", "next_page_token"}, "unknown-osv-result-field")
@@ -132,14 +133,24 @@ def query_osv(packages: list[Package], transport=osv_transport) -> tuple[list[Fi
             require(isinstance(vulnerabilities, list), "invalid-osv-findings")
             for vulnerability in vulnerabilities:
                 require(isinstance(vulnerability, dict) and "modified" in vulnerability, "invalid-osv-advisory")
+                advisories.append({"package": package.public(), "id": vulnerability["id"],
+                                   "modified": vulnerability["modified"]})
                 findings.append(finding("osv", vulnerability["id"], package.path,
                                         f"{package.ecosystem}:{package.name}@{package.version}"))
         receipts.append({"url": OSV_URL, "http_date": header_date, "observed_at": now.isoformat(),
-                         "request_sha256": digest(request), "response_sha256": digest(response), "packages": len(batch)})
+                         "request_sha256": digest(request), "response_sha256": digest(response), "packages": len(batch),
+                         "advisories": advisories})
     return findings, receipts
 
 
 def dependencies(repo: Path) -> tuple[list[Finding], dict]:
+    from tools.security_npm_sources import resolve_findings, verify_sources
+
     packages, records = inventory(repo)
     findings, observations = query_osv(packages)
-    return findings, {"manifests": records, "packages": len(packages), "osv_observations": observations}
+    configuration = decode_json(read_file(POLICY, "inventory.json"))
+    repairs = verify_sources(repo, packages, configuration)
+    remaining, remediated = resolve_findings(findings, observations, repairs)
+    return remaining, {"manifests": records, "packages": len(packages), "osv_observations": observations,
+                       "osv_finding_count": len(findings), "source_repairs": repairs,
+                       "source_remediated_findings": [item.public() for item in remediated]}

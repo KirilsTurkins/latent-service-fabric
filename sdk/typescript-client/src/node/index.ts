@@ -49,6 +49,8 @@ export class RpcClient implements profile.ClientProfile, transactionClient.Trans
   invoke(request: profile.InvokeRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.InvokeResponse>> { return this.call("invoke", request, options); }
   cancel(request: profile.CancelRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.CancelResponse>> { return this.call("cancel", request, options); }
   getActivation(request: profile.GetActivationRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.ActivationStatus>> { return this.call("getActivation", request, options); }
+  inspectActivationTree(request: profile.InspectActivationTreeRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.InspectActivationTreeResponse>> { return this.call("inspectActivationTree", request, options); }
+  inspectHttpTarget(request: profile.InspectHttpTargetRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.InspectHttpTargetResponse>> { return this.call("inspectHttpTarget", request, options); }
   getPolicy(request: profile.GetPolicyRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.GetPolicyResponse>> { return this.call("getPolicy", request, options); }
   listPolicies(request: profile.ListPoliciesRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.ListPoliciesResponse>> { return this.call("listPolicies", request, options); }
   listCapabilities(request: profile.ListCapabilitiesRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.ListCapabilitiesResponse>> { return this.call("listCapabilities", request, options); }
@@ -125,8 +127,9 @@ export class RpcClient implements profile.ClientProfile, transactionClient.Trans
       }
     }
     if (performance.now() >= deadline) return Promise.reject(local(profile.FailureCategory.Deadline));
-    const maximumRequest = Math.min(this.#limits.maximumRequestBytes, transactional ? 2 * 1024 * 1024 : this.#limits.maximumRequestBytes);
-    const maximumResponse = Math.min(this.#limits.maximumResponseBytes, transactional ? 2 * 1024 * 1024 : this.#limits.maximumResponseBytes);
+    const inspection = operation === "inspectActivationTree" || operation === "inspectHttpTarget";
+    const maximumRequest = Math.min(this.#limits.maximumRequestBytes, transactional ? 2 * 1024 * 1024 : inspection ? 8192 : this.#limits.maximumRequestBytes);
+    const maximumResponse = Math.min(this.#limits.maximumResponseBytes, transactional ? 2 * 1024 * 1024 : inspection ? 65536 : this.#limits.maximumResponseBytes);
     const reserved = 2 * (maximumRequest + maximumResponse) + 65536 + (transactional ? 8 * 1024 * 1024 + 384 * 1024 : 0);
     if (this.#calls >= this.#limits.maximumCalls || reserved > this.#limits.maximumReservedBytes - this.#bytes) return Promise.reject(local(profile.FailureCategory.Limit));
     this.#calls++;
@@ -149,12 +152,18 @@ export class RpcClient implements profile.ClientProfile, transactionClient.Trans
         recovery = transactions.identity(operation, snapshot);
         context = transactions.context(operation, snapshot);
       } else {
-      const value = request as Record<string, unknown>;
-      context = {
-        ...recovery,
-        ...(value.page === undefined ? {} : { page: { pageSize: (value.page as profile.PageRequest).pageSize } }),
-        ...(value.policy === undefined ? {} : { policy: { id: (value.policy as profile.Policy).id } }),
-      };
+        const value = request as Record<string, unknown>;
+        context = {
+          ...recovery,
+          ...(value.page === undefined ? {} : { page: { pageSize: (value.page as profile.PageRequest).pageSize } }),
+          ...(value.policy === undefined ? {} : { policy: { id: (value.policy as profile.Policy).id } }),
+        };
+        if (operation === "inspectHttpTarget") {
+          const publication = value.publication as profile.PublicationRef | undefined;
+          context = { service: value.service, contract: value.contract, function: value.function, route: value.route,
+            revisionId: value.revisionId, routingKey: value.routingKey, includePreparation: value.includePreparation,
+            ...(publication === undefined ? {} : { publication: { id: publication.id, tenant: publication.tenant } }) };
+        }
       }
     } catch {
       retire();

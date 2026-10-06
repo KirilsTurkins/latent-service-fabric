@@ -28,6 +28,7 @@ type Client struct {
 	invocation         invocationv1.InvocationServiceClient
 	policy             controlv1.PolicyServiceClient
 	capability         controlv1.CapabilityServiceClient
+	node               controlv1.NodeServiceClient
 	stateService       statev1.StateServiceClient
 	dispatcherService  statev1.DispatcherServiceClient
 	transactionService transactionv1.TransactionServiceClient
@@ -182,6 +183,7 @@ func newClient(ctx context.Context, config Config, supplied *net.TCPConn, adopt 
 	client.invocation = invocationv1.NewInvocationServiceClient(wire)
 	client.policy = controlv1.NewPolicyServiceClient(wire)
 	client.capability = controlv1.NewCapabilityServiceClient(wire)
+	client.node = controlv1.NewNodeServiceClient(wire)
 	client.stateService = statev1.NewStateServiceClient(wire)
 	client.dispatcherService = statev1.NewDispatcherServiceClient(wire)
 	client.transactionService = transactionv1.NewTransactionServiceClient(wire)

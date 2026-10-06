@@ -435,6 +435,7 @@ jobs:
         timeout-minutes: 15
         shell: bash
         run: |
+          python3 website/toolchain/prepare.py
           npm ci --prefix examples/framework-compatibility --ignore-scripts
           framework_root="${RUNNER_TEMP}/framework-sites"
           mkdir -p "$framework_root" "${RUNNER_TEMP}/phase2-gate"
