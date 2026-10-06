@@ -94,8 +94,11 @@ fn v1_upgrade_preserves_original_rows_and_existing_read_views() {
     assert_eq!(store.views.load(Ordering::Acquire), 0);
     drop(store);
     let reopened = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
-    assert_eq!(disk_format::inspect(&reopened.db), Ok(State::Current));
-    assert!(description(&reopened.db)
+    assert_eq!(
+        disk_format::inspect(&reopened.database().unwrap()),
+        Ok(State::Current)
+    );
+    assert!(description(&reopened.database().unwrap())
         .iter()
         .all(|(key, _)| key != "upgrade"));
 }
@@ -340,7 +343,10 @@ fn backend_sync_failure_during_upgrade_refuses_readiness_and_requires_exact_reop
     assert!(matches!(result, Err(StoreError::CommitUncertain)));
     assert!(status.close_observed());
     let reopened = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
-    assert_eq!(disk_format::inspect(&reopened.db), Ok(State::Current));
+    assert_eq!(
+        disk_format::inspect(&reopened.database().unwrap()),
+        Ok(State::Current)
+    );
     let view = reopened.snapshot().unwrap();
     for family in [Family::State, Family::Command, Family::Outbox] {
         assert_eq!(
