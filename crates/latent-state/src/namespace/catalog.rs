@@ -212,6 +212,20 @@ pub struct NamespaceOperationReceipt {
 }
 
 impl NamespaceOperationReceipt {
+    /// The immutable original mutation, including its original generation.
+    pub fn mutation(&self) -> Result<NamespaceMutation, NamespaceError> {
+        NamespaceMutation::decode_canonical(&self.request)
+    }
+
+    /// Opaque receipt identity over the exact persisted bytes, not authority.
+    pub fn digest(&self) -> Result<[u8; 32], NamespaceError> {
+        use sha2::{Digest, Sha256};
+        let mut digest = Sha256::new();
+        digest.update(b"lsf-namespace-receipt-v1\0");
+        digest.update(self.encode()?);
+        Ok(digest.finalize().into())
+    }
+
     fn encode(&self) -> Result<Vec<u8>, NamespaceError> {
         identity(&self.context.actor)?;
         identity(&self.context.operation_id)?;
@@ -335,26 +349,70 @@ impl NamespaceCatalog {
     /// Register this bounded decoder with the protected owner's startup scan.
     /// Other families require their own decoder; unknown keys/formats fail closed.
     pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), NamespaceError> {
+        Self::row_scope(key, bytes).map(|_| ())
+    }
+
+    /// Original ownership from the same bounded namespace, operation-receipt or
+    /// history decoder and canonical row key used at startup. This descriptive
+    /// association grants no inspection, snapshot, migration or restore access.
+    pub fn row_scope(
+        key: &RowKey,
+        bytes: &[u8],
+    ) -> Result<(TenantId, StateNamespaceId, u64), NamespaceError> {
         if key.family != Family::Namespace {
             return Err(NamespaceError::UnsupportedFormat);
         }
-        let expected = if key.key.starts_with(b"ns-v1\0") {
+        let (expected, scope) = if key.key.starts_with(super::history::HISTORY_PREFIX) {
+            let history = super::history::NamespaceHistory::decode(bytes)?;
+            let expected = super::history::history_key(
+                &history.tenant,
+                &history.namespace,
+                history.incarnation,
+            )?
+            .key;
+            (
+                expected,
+                (history.tenant, history.namespace, history.incarnation),
+            )
+        } else if key.key.starts_with(b"ns-v1\0") {
             let record = NamespaceRecord::decode(bytes)?;
-            namespace_record_key(&record.tenant, &record.id)?
+            (
+                namespace_record_key(&record.tenant, &record.id)?,
+                (record.tenant, record.id, record.version.incarnation),
+            )
         } else if key.key.starts_with(b"ns-op-v1\0") {
             let receipt = NamespaceOperationReceipt::decode(bytes)?;
-            namespace_operation_key(
-                &receipt.context.tenant,
-                &receipt.context.actor,
-                &receipt.context.operation_id,
-            )?
+            (
+                namespace_operation_key(
+                    &receipt.context.tenant,
+                    &receipt.context.actor,
+                    &receipt.context.operation_id,
+                )?,
+                (
+                    receipt.record.tenant,
+                    receipt.record.id,
+                    receipt.record.version.incarnation,
+                ),
+            )
         } else {
             return Err(NamespaceError::UnsupportedFormat);
         };
         if key.key != expected {
             return Err(NamespaceError::Corrupt);
         }
-        Ok(())
+        Ok(scope)
+    }
+
+    /// Descriptive startup ownership after the original closed key/codec check.
+    pub fn tenant_for_row(key: &RowKey, bytes: &[u8]) -> Result<TenantId, NamespaceError> {
+        Self::validate_row(key, bytes)?;
+        if key.key.starts_with(super::history::HISTORY_PREFIX) {
+            Ok(super::history::NamespaceHistory::decode(bytes)?.tenant)
+        } else if key.key.starts_with(b"ns-v1\0") {
+            Ok(NamespaceRecord::decode(bytes)?.tenant)
+        } else {
+            Ok(NamespaceOperationReceipt::decode(bytes)?.context.tenant)
+        }
     }
 
     pub fn inspect(
@@ -399,15 +457,20 @@ impl NamespaceCatalog {
         store: &EmbeddedStore,
         context: &NamespaceOperationContext,
     ) -> Result<Option<NamespaceOperationReceipt>, NamespaceError> {
+        Self::outcome_in(&store.snapshot().map_err(storage)?, context)
+    }
+
+    /// Read the original actor-scoped receipt from the same native view as the
+    /// currently authorized namespace metadata. No lookup ID grants access.
+    pub fn outcome_in(
+        view: &ReadView,
+        context: &NamespaceOperationContext,
+    ) -> Result<Option<NamespaceOperationReceipt>, NamespaceError> {
         let key = RowKey {
             family: Family::Namespace,
             key: namespace_operation_key(&context.tenant, &context.actor, &context.operation_id)?,
         };
-        let bytes = store
-            .snapshot()
-            .map_err(storage)?
-            .get(&key)
-            .map_err(storage)?;
+        let bytes = view.get(&key).map_err(storage)?;
         let receipt = bytes
             .map(|bytes| NamespaceOperationReceipt::decode(&bytes))
             .transpose()?;
@@ -479,6 +542,8 @@ impl NamespaceCatalog {
                     &context.tenant,
                     id,
                 )?;
+                crate::recovery::migration::require_no_incomplete(&view, &record)
+                    .map_err(storage)?;
                 record.transition(*expected, action, active_commits)?
             }
         };
@@ -489,7 +554,7 @@ impl NamespaceCatalog {
         };
         let encoded_record = receipt.record.encode()?;
         let encoded_receipt = receipt.encode()?;
-        let batch = AtomicBatch {
+        let mut batch = AtomicBatch {
             expectations: vec![
                 ExpectedRow {
                     key: namespace_key.clone(),
@@ -511,6 +576,9 @@ impl NamespaceCatalog {
                 },
             ],
         };
+        crate::tenant::prepare_metadata_update(&view, &receipt.context.tenant, &batch)
+            .and_then(|accounting| accounting.append_to(&mut batch))
+            .map_err(storage)?;
         Ok(PreparedNamespaceMutation {
             batch,
             receipt,

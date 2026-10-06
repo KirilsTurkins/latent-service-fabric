@@ -13,10 +13,14 @@ use latent_core::ActivationClock;
 use super::*;
 use crate::embedded::{Family, RowKey, RowMutation};
 
+mod checkpoint;
 mod lifecycle;
+mod migration;
 mod native_capacity;
 mod recovery;
 mod reserved;
+mod resource;
+mod snapshot;
 mod validation;
 
 fn wait<T>(future: impl Future<Output = T>) -> T {

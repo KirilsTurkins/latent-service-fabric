@@ -1,25 +1,31 @@
 //! Host-internal atomic record storage. This is neither a guest API nor a
 //! multi-backend abstraction. A caller supplies an already protected descriptor.
 use redb::{
-    Database, Durability, ReadTransaction, ReadableDatabase, ReadableTable, TableDefinition,
+    Database, Durability, ReadTransaction, ReadableDatabase, ReadableTable, ReadableTableMetadata,
+    TableDefinition,
 };
 use std::{
     collections::BTreeSet,
     fs::File,
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
-        Arc,
+        Arc, RwLock, RwLockReadGuard, TryLockError,
     },
     time::{Duration, Instant},
 };
 
+/// Logical records-v1 snapshot identity. Startup metadata is independently
+/// upgraded through the bounded v1-to-v2 transition without changing these rows.
+pub const STORE_FORMAT: &str = "latent.transaction-store.v1";
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
 static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
 
 mod bounded_file;
-mod format;
 pub use bounded_file::StoreFileStatus;
+mod compaction;
+mod format;
+pub use compaction::{CompactionLimits, CompactionReport, CompactionStop};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StoreError {
@@ -147,10 +153,12 @@ pub struct AtomicBatch {
 }
 
 pub struct EmbeddedStore {
-    db: Database,
+    db: RwLock<Database>,
+    file_status: Option<StoreFileStatus>,
     limits: StoreLimits,
     views: Arc<AtomicUsize>,
     quarantined: AtomicBool,
+    reclamation: AtomicBool,
 }
 impl EmbeddedStore {
     /// Must run on the node's bounded physical I/O owner. Never truncate or reset
@@ -161,7 +169,7 @@ impl EmbeddedStore {
         let mut builder = Database::builder();
         builder.set_cache_size(limits.cache_bytes);
         let db = builder.create_file(file).map_err(|_| StoreError::Corrupt)?;
-        Self::open_database(db, limits, was_empty)
+        Self::open_database(db, limits, was_empty, None)
     }
 
     /// The production owner additionally caps every physical growth/write.
@@ -179,21 +187,36 @@ impl EmbeddedStore {
         let db = builder
             .create_with_backend(backend)
             .map_err(|_| StoreError::Corrupt)?;
-        Ok((Self::open_database(db, limits, was_empty)?, status))
+        Ok((
+            Self::open_database(db, limits, was_empty, Some(status.clone()))?,
+            status,
+        ))
     }
 
     fn open_database(
         db: Database,
         limits: StoreLimits,
         was_empty: bool,
+        file_status: Option<StoreFileStatus>,
     ) -> Result<Self, StoreError> {
-        Self::open_database_with_checkpoint(db, limits, was_empty, |_| {})
+        Self::open_database_with_status_and_checkpoint(db, limits, was_empty, file_status, |_| {})
     }
 
+    #[cfg(test)]
     fn open_database_with_checkpoint(
         db: Database,
         limits: StoreLimits,
         was_empty: bool,
+        checkpoint: impl FnMut(format::Checkpoint),
+    ) -> Result<Self, StoreError> {
+        Self::open_database_with_status_and_checkpoint(db, limits, was_empty, None, checkpoint)
+    }
+
+    fn open_database_with_status_and_checkpoint(
+        db: Database,
+        limits: StoreLimits,
+        was_empty: bool,
+        file_status: Option<StoreFileStatus>,
         mut checkpoint: impl FnMut(format::Checkpoint),
     ) -> Result<Self, StoreError> {
         if was_empty {
@@ -202,23 +225,40 @@ impl EmbeddedStore {
             checkpoint(format::Checkpoint::InitialSchemaDurable);
         }
         let store = Self {
-            db,
+            db: RwLock::new(db),
+            file_status,
             limits,
             views: Arc::new(AtomicUsize::new(0)),
             quarantined: AtomicBool::new(false),
+            reclamation: AtomicBool::new(false),
         };
-        // Validate the original row framing and configured limits before any
-        // metadata promotion. No business row is transformed or recopied.
+        // Original row limits, reservation coverage and selected page layout
+        // must pass before metadata-only promotion on this same private engine.
         store.verify()?;
-        format::upgrade(&store.db, &mut checkpoint)?;
+        {
+            let database = store.database()?;
+            format::upgrade(&database, &mut checkpoint)?;
+        }
         store.verify()?;
         Ok(store)
     }
+
     fn verify(&self) -> Result<(), StoreError> {
-        format::inspect(&self.db)?;
-        let tx = self.db.begin_read().map_err(|_| StoreError::Unavailable)?;
+        let database = self.database()?;
+        format::inspect(&database)?;
+        let tx = database.begin_read().map_err(|_| StoreError::Unavailable)?;
         let table = tx.open_table(ROWS).map_err(|_| StoreError::Corrupt)?;
         self.charge_table(&table)?;
+        drop(table);
+        drop(tx);
+        let check = database
+            .begin_write()
+            .map_err(|_| StoreError::Unavailable)?;
+        let page_size = check.stats().map_err(|_| StoreError::Corrupt)?.page_size();
+        check.abort().map_err(|_| StoreError::Unavailable)?;
+        if page_size != 4096 {
+            return Err(StoreError::UnsupportedFormat);
+        }
         Ok(())
     }
     fn charge_table(
@@ -227,6 +267,7 @@ impl EmbeddedStore {
     ) -> Result<(), StoreError> {
         let mut count = 0usize;
         let mut bytes = 0usize;
+        let mut reservations = crate::reservation::ReservationCoverage::default();
         for row in table.iter().map_err(|_| StoreError::Corrupt)? {
             let (k, v) = row.map_err(|_| StoreError::Corrupt)?;
             let k = k.value();
@@ -240,6 +281,7 @@ impl EmbeddedStore {
             }
             count = count.checked_add(1).ok_or(StoreError::Capacity)?;
             let reserved = crate::reservation::reserved_bytes(k, v)?;
+            reservations.observe(k, v, reserved)?;
             bytes = bytes
                 .checked_add(k.len() + v.len())
                 .and_then(|bytes| bytes.checked_add(reserved))
@@ -248,11 +290,14 @@ impl EmbeddedStore {
                 return Err(StoreError::Capacity);
             }
         }
-        Ok(())
+        reservations.verify()
     }
     pub fn snapshot(&self) -> Result<ReadView, StoreError> {
         if self.quarantined.load(Ordering::Acquire) {
             return Err(StoreError::Unavailable);
+        }
+        if self.reclamation.load(Ordering::SeqCst) {
+            return Err(StoreError::Capacity);
         }
         let identity = NEXT_VIEW_ID
             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
@@ -260,21 +305,32 @@ impl EmbeddedStore {
             })
             .map_err(|_| StoreError::Capacity)?;
         self.views
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |v| {
+            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| {
                 (v < self.limits.maximum_read_views).then_some(v + 1)
             })
             .map_err(|_| StoreError::Capacity)?;
-        if let Ok(tx) = self.db.begin_read() {
-            Ok(ReadView {
+        // Admission can race with the short exclusive reclamation gate. Count
+        // the prospective native view first, then refuse before opening it if
+        // the gate won. Reclamation observes this same retained-owner count.
+        if self.reclamation.load(Ordering::SeqCst) {
+            self.views.fetch_sub(1, Ordering::AcqRel);
+            return Err(StoreError::Capacity);
+        }
+        let opened = self
+            .database()
+            .and_then(|database| database.begin_read().map_err(|_| StoreError::Unavailable));
+        match opened {
+            Ok(tx) => Ok(ReadView {
                 tx: Some(tx),
                 limits: self.limits,
                 views: Arc::clone(&self.views),
                 opened: Instant::now(),
                 identity,
-            })
-        } else {
-            self.views.fetch_sub(1, Ordering::AcqRel);
-            Err(StoreError::Unavailable)
+            }),
+            Err(error) => {
+                self.views.fetch_sub(1, Ordering::AcqRel);
+                Err(error)
+            }
         }
     }
     /// Checks and every family mutation commit together. Pre-commit failures
@@ -296,6 +352,31 @@ impl EmbeddedStore {
         self.apply_inner(batch, accept, |_| {})
     }
 
+    /// Destructive maintenance uses the original native view owner. No read
+    /// transaction may remain alive or be admitted through the actual durable
+    /// writer fence. The caller drops its bounded planning view first; exact
+    /// row expectations still protect that plan. Expired views count until
+    /// their native transaction is physically destroyed. This never waits,
+    /// cancels readers, refunds their permits or infers retirement from time.
+    pub fn apply_reclamation_fenced<E>(
+        &self,
+        batch: AtomicBatch,
+        accept: impl FnOnce() -> Result<(), E>,
+    ) -> Result<(), FencedStoreError<E>> {
+        if self
+            .reclamation
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return Err(FencedStoreError::Store(StoreError::Capacity));
+        }
+        let _gate = ReclamationGate(&self.reclamation);
+        if self.views.load(Ordering::SeqCst) != 0 {
+            return Err(FencedStoreError::Store(StoreError::Capacity));
+        }
+        self.apply_fenced(batch, accept)
+    }
+
     fn apply_with_checkpoint(
         &self,
         batch: AtomicBatch,
@@ -310,7 +391,7 @@ impl EmbeddedStore {
 
     fn apply_inner<E>(
         &self,
-        batch: AtomicBatch,
+        mut batch: AtomicBatch,
         accept: impl FnOnce() -> Result<(), E>,
         mut checkpoint: impl FnMut(bool),
     ) -> Result<(), FencedStoreError<E>> {
@@ -320,6 +401,27 @@ impl EmbeddedStore {
         let maximum = self.limits.maximum_batch_rows;
         if batch.expectations.len() > maximum || batch.mutations.len() > maximum {
             return Err(FencedStoreError::Store(StoreError::Capacity));
+        }
+        // Legacy catalog callers may compose independent creates. Their one
+        // read-only installation-absence fence is shared; preserve that CAS
+        // without admitting duplicate business keys or installation writes.
+        let tenant_guard = crate::tenant::guard_key();
+        if !batch.mutations.iter().any(|row| row.key == tenant_guard)
+            && batch
+                .expectations
+                .iter()
+                .filter(|row| row.key == tenant_guard)
+                .all(|row| row.value.is_none())
+        {
+            let mut observed = false;
+            batch.expectations.retain(|row| {
+                if row.key != tenant_guard {
+                    return true;
+                }
+                let first = !observed;
+                observed = true;
+                first
+            });
         }
         let mut checks = BTreeSet::new();
         let mut mutations = BTreeSet::new();
@@ -335,7 +437,10 @@ impl EmbeddedStore {
                 &mut bytes,
             )?;
         }
-        let mut tx = self.db.begin_write().map_err(|_| StoreError::Unavailable)?;
+        let database = self.database()?;
+        let mut tx = database
+            .begin_write()
+            .map_err(|_| StoreError::Unavailable)?;
         tx.set_durability(Durability::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
         {
@@ -398,13 +503,38 @@ impl EmbeddedStore {
         self.views.load(Ordering::Acquire)
     }
     pub fn compact(&mut self) -> Result<bool, StoreError> {
+        // The bare qualification engine retains its historical helper. The
+        // protected bounded backend requires explicit physical/scratch limits
+        // and the host fence, including when it is not yet installed in a worker.
+        if self.file_status.is_some() {
+            return Err(StoreError::Invalid);
+        }
         if self.quarantined.load(Ordering::Acquire) {
             return Err(StoreError::Unavailable);
         }
         if self.live_views() != 0 {
             return Err(StoreError::Capacity);
         }
-        self.db.compact().map_err(|_| StoreError::Unavailable)
+        self.db
+            .get_mut()
+            .map_err(|_| StoreError::Unavailable)?
+            .compact()
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    fn database(&self) -> Result<RwLockReadGuard<'_, Database>, StoreError> {
+        match self.db.try_read() {
+            Ok(database) => Ok(database),
+            Err(TryLockError::WouldBlock) => Err(StoreError::Capacity),
+            Err(TryLockError::Poisoned(_)) => Err(StoreError::Unavailable),
+        }
+    }
+}
+
+struct ReclamationGate<'a>(&'a AtomicBool);
+impl Drop for ReclamationGate<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::SeqCst);
     }
 }
 pub struct ReadView {
@@ -426,6 +556,21 @@ pub struct ReadPage {
 }
 
 impl ReadView {
+    /// The actual shared records table contains no row in any fixed family.
+    /// This observes engine state only and establishes no initialization grant.
+    pub fn is_empty(&self) -> Result<bool, StoreError> {
+        if self.opened.elapsed() > self.limits.maximum_view_age {
+            return Err(StoreError::SnapshotExpired);
+        }
+        self.tx
+            .as_ref()
+            .expect("retained view")
+            .open_table(ROWS)
+            .map_err(|_| StoreError::Corrupt)?
+            .is_empty()
+            .map_err(|_| StoreError::Corrupt)
+    }
+
     /// Process-local descriptive identity, never caller or namespace authority.
     /// Allocation does not wrap; external cursors also need activation/boot scope.
     #[must_use]
@@ -434,6 +579,19 @@ impl ReadView {
     }
 
     pub fn get(&self, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
+        self.get_bounded(key, self.limits.maximum_value_bytes)
+    }
+
+    /// Refuse a hostile oversized value before copying it into the caller's
+    /// finite typed buffer. This does not acquire another physical read view.
+    pub fn get_bounded(
+        &self,
+        key: &RowKey,
+        maximum_bytes: usize,
+    ) -> Result<Option<Vec<u8>>, StoreError> {
+        if maximum_bytes == 0 || maximum_bytes > self.limits.maximum_value_bytes {
+            return Err(StoreError::Invalid);
+        }
         if self.opened.elapsed() > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);
         }
@@ -447,11 +605,63 @@ impl ReadView {
         let value = table.get(key.as_slice()).map_err(|_| StoreError::Corrupt)?;
         if value
             .as_ref()
-            .is_some_and(|v| v.value().len() > self.limits.maximum_value_bytes)
+            .is_some_and(|v| v.value().len() > maximum_bytes)
         {
             return Err(StoreError::Corrupt);
         }
         Ok(value.map(|v| v.value().to_vec()))
+    }
+
+    /// Closed recovery readback comparison. The native row stays borrowed from
+    /// this finite view, avoiding a second maximum-size owned value beside the
+    /// authenticated stream row. No transaction/guard/native slice escapes.
+    pub(crate) fn matches_row(&self, key: &RowKey, expected: &[u8]) -> Result<bool, StoreError> {
+        if self.opened.elapsed() > self.limits.maximum_view_age {
+            return Err(StoreError::SnapshotExpired);
+        }
+        if expected.len() > self.limits.maximum_value_bytes {
+            return Err(StoreError::Capacity);
+        }
+        let key = key.encoded(self.limits)?;
+        let table = self
+            .tx
+            .as_ref()
+            .expect("retained view")
+            .open_table(ROWS)
+            .map_err(|_| StoreError::Corrupt)?;
+        let value = table.get(key.as_slice()).map_err(|_| StoreError::Corrupt)?;
+        if value
+            .as_ref()
+            .is_some_and(|row| row.value().len() > self.limits.maximum_value_bytes)
+        {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(value.is_some_and(|row| row.value() == expected))
+    }
+
+    /// One indexed existence observation without copying an arbitrary stored
+    /// value. Setup uses this to refuse legacy business rows under its fixed
+    /// buffer reservation, rather than loading a whole first record.
+    pub fn contains_prefix(&self, family: Family, prefix: &[u8]) -> Result<bool, StoreError> {
+        if self.opened.elapsed() > self.limits.maximum_view_age {
+            return Err(StoreError::SnapshotExpired);
+        }
+        if prefix.len() > self.limits.maximum_key_bytes {
+            return Err(StoreError::Invalid);
+        }
+        let mut start = vec![family as u8];
+        start.extend_from_slice(prefix);
+        let table = self
+            .tx
+            .as_ref()
+            .expect("retained view")
+            .open_table(ROWS)
+            .map_err(|_| StoreError::Corrupt)?;
+        let mut range = table
+            .range::<&[u8]>(start.as_slice()..)
+            .map_err(|_| StoreError::Corrupt)?;
+        let first = range.next().transpose().map_err(|_| StoreError::Corrupt)?;
+        Ok(first.is_some_and(|(key, _)| key.value().starts_with(&start)))
     }
     pub fn scan(
         &self,
