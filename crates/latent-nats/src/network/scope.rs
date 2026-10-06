@@ -1,6 +1,7 @@
 use crate::{EventError, Result};
 use latent_capabilities::broker::pools::{
-    ConnectionReservation, IngressRequest, PoolCall, PooledConnection, ProviderClient,
+    ConnectionReservation, DeferredRequest, IngressRequest, PoolCall, PooledConnection,
+    ProviderClient,
 };
 use std::{future::Future, sync::Arc};
 
@@ -10,6 +11,7 @@ use std::{future::Future, sync::Arc};
 pub(crate) enum Scope<'a> {
     Invocation(&'a PoolCall),
     Ingress(&'a IngressRequest),
+    Deferred(&'a DeferredRequest),
 }
 impl<'a> From<&'a PoolCall> for Scope<'a> {
     fn from(call: &'a PoolCall) -> Self {
@@ -21,11 +23,17 @@ impl<'a> From<&'a IngressRequest> for Scope<'a> {
         Self::Ingress(call)
     }
 }
+impl<'a> From<&'a DeferredRequest> for Scope<'a> {
+    fn from(call: &'a DeferredRequest) -> Self {
+        Self::Deferred(call)
+    }
+}
 impl Scope<'_> {
     pub(crate) fn checkpoint(self) -> Result<()> {
         match self {
             Self::Invocation(call) => call.io().checkpoint(),
             Self::Ingress(call) => call.checkpoint(),
+            Self::Deferred(call) => call.checkpoint(),
         }
         .map_err(Into::into)
     }
@@ -33,6 +41,7 @@ impl Scope<'_> {
         match self {
             Self::Invocation(call) => call.io().wait_for(future).await,
             Self::Ingress(call) => call.wait_for(future).await,
+            Self::Deferred(call) => call.wait_for(future).await,
         }
         .map_err(EventError::from)
     }
@@ -43,6 +52,7 @@ impl Scope<'_> {
         match self {
             Self::Invocation(call) => client.checkout(call),
             Self::Ingress(call) => client.checkout_ingress(call),
+            Self::Deferred(call) => client.checkout_deferred(call),
         }
         .map_err(Into::into)
     }
@@ -53,6 +63,7 @@ impl Scope<'_> {
         match self {
             Self::Invocation(call) => client.reserve_connection(call),
             Self::Ingress(call) => client.reserve_ingress_connection(call),
+            Self::Deferred(call) => client.reserve_deferred_connection(call),
         }
         .map_err(Into::into)
     }
