@@ -1,1 +1,101 @@
-{"schemaVersion":"latent.ci.contracts.v1","kind":"python","reviewReason":"Add paired fixed fixture and exact policy/native-host/component refusal cases; preserve all original campaign bounds and default selectors. Add two exact TLS inventory/link refusals; review only added os/reviewed_tls module imports, retaining every existing case body, class fixture, decorator and skip.","module":"tools/tests/test_java_transaction_fixed_environment.py","cases":["ReviewedEnvironment.test_changed_guest_or_compiler_identity_cannot_borrow_reviewed_publication_authority","ReviewedEnvironment.test_default_selection_has_no_review_or_fixed_environment","ReviewedEnvironment.test_default_tls_and_closed_original_native_three_file_selection","ReviewedEnvironment.test_exact_review_pins_ports_incarnation_and_rejects_manifest_byte_drift","ReviewedEnvironment.test_host_tool_and_policy_programme_drift_refuse_before_mutation","ReviewedEnvironment.test_selected_environment_cannot_widen_bounds_alias_ports_or_supply_bool_counters","ReviewedEnvironment.test_tls_hardlinks_and_extra_records_cannot_borrow_native_fixture_identity"],"guards":{"ReviewedEnvironment.test_default_tls_and_closed_original_native_three_file_selection":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},"ReviewedEnvironment.test_tls_hardlinks_and_extra_records_cannot_borrow_native_fixture_identity":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},"ReviewedEnvironment.test_default_selection_has_no_review_or_fixed_environment":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},"ReviewedEnvironment.test_exact_review_pins_ports_incarnation_and_rejects_manifest_byte_drift":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},"ReviewedEnvironment.test_host_tool_and_policy_programme_drift_refuse_before_mutation":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},"ReviewedEnvironment.test_selected_environment_cannot_widen_bounds_alias_ports_or_supply_bool_counters":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},"ReviewedEnvironment.test_changed_guest_or_compiler_identity_cannot_borrow_reviewed_publication_authority":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}}}
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Add paired fixed fixture and exact policy/native-host/component refusal cases; preserve all original campaign bounds and default selectors. Add two exact TLS inventory/link refusals; review only added os/reviewed_tls module imports, retaining every existing case body, class fixture, decorator and skip.",
+  "module": "tools/tests/test_java_transaction_fixed_environment.py",
+  "cases": [
+    "ReviewedEnvironment.test_changed_guest_or_compiler_identity_cannot_borrow_reviewed_publication_authority",
+    "ReviewedEnvironment.test_default_selection_has_no_review_or_fixed_environment",
+    "ReviewedEnvironment.test_default_tls_and_closed_original_native_three_file_selection",
+    "ReviewedEnvironment.test_exact_review_pins_ports_incarnation_and_rejects_manifest_byte_drift",
+    "ReviewedEnvironment.test_host_tool_and_policy_programme_drift_refuse_before_mutation",
+    "ReviewedEnvironment.test_selected_environment_cannot_widen_bounds_alias_ports_or_supply_bool_counters",
+    "ReviewedEnvironment.test_tls_hardlinks_and_extra_records_cannot_borrow_native_fixture_identity"
+  ],
+  "guards": {
+    "ReviewedEnvironment.test_default_tls_and_closed_original_native_three_file_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "ReviewedEnvironment.test_tls_hardlinks_and_extra_records_cannot_borrow_native_fixture_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "ReviewedEnvironment.test_default_selection_has_no_review_or_fixed_environment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "ReviewedEnvironment.test_exact_review_pins_ports_incarnation_and_rejects_manifest_byte_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "ReviewedEnvironment.test_host_tool_and_policy_programme_drift_refuse_before_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "ReviewedEnvironment.test_selected_environment_cannot_widen_bounds_alias_ports_or_supply_bool_counters": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "ReviewedEnvironment.test_changed_guest_or_compiler_identity_cannot_borrow_reviewed_publication_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a16c0079ea31526d668b91b2c50181eb8e807d30a892195f8d1016e1c0b84ca",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    }
+  }
+}
