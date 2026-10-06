@@ -8,20 +8,24 @@ use std::sync::atomic::{AtomicBool, Ordering};
 /// bounded current metadata; the fixed worker retains the affine physical
 /// `DispatchContext` until the accepted provider operation actually retires.
 pub struct DispatchGrant {
-    owner: Arc<Owner>,
-    live: Arc<AtomicBool>,
-    scope: EffectScope,
-    profile: DispatchProfile,
-    effect: String,
-    payload_digest: String,
-    payload_bytes: u64,
-    committed_at_millis: u64,
-    expires_at_millis: u64,
-    attempt: u32,
-    ceiling: DispatchCeiling,
-    credential_epoch: u64,
-    reference: String,
-    deadline: Instant,
+    pub(super) owner: Arc<Owner>,
+    pub(super) live: Arc<AtomicBool>,
+    pub(super) scope: EffectScope,
+    pub(super) profile: DispatchProfile,
+    pub(super) effect: String,
+    pub(super) payload_digest: String,
+    pub(super) payload_bytes: u64,
+    pub(super) committed_at_millis: u64,
+    pub(super) expires_at_millis: u64,
+    pub(super) attempt: u32,
+    pub(super) ceiling: DispatchCeiling,
+    pub(super) credential_epoch: u64,
+    pub(super) reference: String,
+    pub(super) deadline: Instant,
+    pub(super) lookup: Option<Arc<dyn super::ProviderLookupAuthorization>>,
+    // Drop after every grant description. Actual provider cleanup retains this
+    // same original owner through DeferredRequest; this creates no admission.
+    pub(super) _retained_owner: Option<Arc<dyn std::any::Any + Send + Sync>>,
 }
 
 impl DispatchGrant {
@@ -31,6 +35,9 @@ impl DispatchGrant {
     /// ceiling or deadline. Call outside `accept_with`'s held acceptance fence.
     /// The provider request must also check its original installed epoch.
     pub fn check_current(&self, time: EffectTime) -> Result<(), AuthorityError> {
+        if self.lookup.is_some() {
+            return super::lookup::check_current(self, time);
+        }
         let mut state = self
             .owner
             .state
@@ -68,6 +75,25 @@ impl DispatchGrant {
             return Err(AuthorityError::Expired);
         }
         Ok(())
+    }
+
+    #[must_use]
+    pub fn purpose(&self) -> super::DispatchPurpose {
+        if self.lookup.is_some() {
+            super::DispatchPurpose::ReconcileOnly
+        } else {
+            super::DispatchPurpose::Execute
+        }
+    }
+
+    /// Every mutating provider adapter checks this before accepting or
+    /// allocating a request. Fresh operator lookup cannot become send authority.
+    pub fn require_execution(&self) -> Result<(), AuthorityError> {
+        if self.purpose() == super::DispatchPurpose::Execute {
+            Ok(())
+        } else {
+            Err(AuthorityError::PolicyBlocked)
+        }
     }
 
     #[must_use]
@@ -132,6 +158,19 @@ impl DispatchGrant {
 }
 
 impl DispatchContext {
+    /// Narrow the original physical deadline before handing out a grant. A
+    /// queued node reservation cannot gain lifetime when its worker starts.
+    pub fn restrict_deadline(&mut self, deadline: Instant) -> Result<(), AuthorityError> {
+        if self.grant_issued || self.retired {
+            return Err(AuthorityError::Stale);
+        }
+        self.deadline = self.deadline.min(deadline);
+        if Instant::now() >= self.deadline {
+            return Err(AuthorityError::Expired);
+        }
+        Ok(())
+    }
+
     /// Linearize reviewed adapter admission with current rule publication.
     /// `accept` is a short synchronous admission callback: no storage, network
     /// or blocking credential lookup under this fence. It returns an owned
@@ -146,6 +185,9 @@ impl DispatchContext {
         time: EffectTime,
         accept: impl FnOnce(DispatchGrant) -> T,
     ) -> Result<T, AuthorityError> {
+        if self.lookup.is_some() {
+            return super::lookup::accept_with(self, authority, attempt, time, accept);
+        }
         if authority.scope != self.scope
             || authority.profile != self.profile
             || authority.link.effect != self.effect
@@ -186,6 +228,7 @@ impl DispatchContext {
         self.credential_epoch = rule.credential_epoch;
         self.reference
             .clone_from(&rule.protected_credential_reference);
+        self.grant_issued = true;
         let result = accept(DispatchGrant {
             owner: Arc::clone(&self.owner),
             live: Arc::clone(&self.live),
@@ -201,6 +244,8 @@ impl DispatchContext {
             credential_epoch: self.credential_epoch,
             reference: self.reference.clone(),
             deadline,
+            lookup: None,
+            _retained_owner: self.retained_owner.as_ref().map(Arc::clone),
         });
         drop(state);
         Ok(result)

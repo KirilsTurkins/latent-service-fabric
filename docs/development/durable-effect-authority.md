@@ -105,3 +105,49 @@ all-target/all-feature effect Clippy passed. The exact Linux inventory is now
 73 cases. New native transport execution remains separately qualified by the
 owned provider fixture; these metadata tests do not establish broker or HTTP
 endpoint qualification.
+
+`DispatchContext::retain_owner` binds one already reserved original request or
+global owner before any grant is issued. Refused replacement or late retention
+returns the exact owner unchanged. Every issued grant retains the same opaque
+keeper as its last field, so the existing provider request carries it through
+actual payload, socket and response cleanup. Returned management confirmations
+and transport responses retain it independently. This adds no reservation,
+worker, retry authority or renewed deadline.
+
+Explicit context retirement releases its own keeper after positive physical
+cleanup. Unexpected context drop instead preserves the exact keeper with the
+already quarantined physical permit, bounded by the existing physical/global
+capacity limits. Dropping all grants or response waiters cannot refund that
+unresolved capacity; process loss remains the conservative recovery boundary.
+
+The original management port milestone recorded 97 effect cases and strict
+all-target/all-feature Clippy on pinned Linux Rust 1.97.1. Provider branch
+validation is recorded separately. The two new cases use real shared native
+reservations to check replacement refusal, retained grant capacity after
+positive context retirement, and exact owner quarantine after unexpected drop.
+
+## Fresh provider receipt lookup
+
+`accept_lookup` retains current management operator/publication/result-read
+authorization and the original finite request deadline separately from the old
+execution decision. It creates the immutable `ReconcileOnly` purpose. A regular
+provider send must call `require_execution` before allocating or admitting work;
+lookup permission never supplies redrive, absence or nonexecution proof.
+
+The retained provider rule must still describe the exact original profile,
+destination, payload and attempt. Original credential rotation, decoder changes,
+current byte limits, clock continuity and management permission are rechecked
+before acceptance and protocol I/O. Execution expiry remains descriptive original
+history and is never extended. A positive lookup depends on the provider's own
+finite original receipt-retention contract; absent/expired/ambiguous status
+remains uncertain. The current gate uses Policy -> Namespace -> Effects -> Native
+order, without disk/network I/O, audit flush or await inside the fence.
+
+Four authority schedules verify revoked/expired execution versus fresh lookup,
+original management withdrawal/native expiry, exact provider/credential/payload
+association and missing current-fence rejection. These are authority schedules;
+the concrete authenticated management and native provider schedules establish
+their separate production boundaries.
+
+All 101 effect library cases and strict all-target/all-feature effect Clippy
+passed on the pinned Linux Rust 1.97.1 image after this source addition.

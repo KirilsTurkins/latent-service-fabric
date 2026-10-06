@@ -304,3 +304,51 @@ qualified native environment.
 The same exact source also passed all 95 portable Windows state library cases
 with zero ignored or filtered cases, plus strict all-target/all-feature state
 Clippy. UTF8 CI coverage and all seven suite inventory cases passed.
+
+## Original capacity retained by accepted storage work
+
+`with_store_retaining` binds an original request or global reservation keeper
+before the same fixed worker accepts storage work. Its keeper survives callback
+completion, the protected-root checks, and destruction of an unclaimed response.
+Callback errors and detached waiters therefore cannot refund the original global
+reservation while physical storage work or its buffers remain live. The generic
+storage owner and its initialized handle expose the same `submit_retaining`
+contract. Keeper metadata is included in the existing native job accounting;
+the caller must pre-reserve the actual keeper and payload bytes.
+
+The completion destroys its result before dropping the keeper, then releases
+the existing storage bytes and accepted slot. Keeper destruction runs outside
+the storage bookkeeping lock. A caller that claims a response must retain the
+same original owner independently in that typed response and its physical
+transport frames; this submission port does not replace response ownership.
+
+The deterministic schedule
+`original_job_capacity_survives_callback_completion_and_detached_buffer_destruction`
+uses a real recovery `NativeReservation`, detaches the accepted job, and pauses
+both its callback and actual response destructor. The original global slot
+remains charged at both boundaries. The keeper observes buffer destruction
+before storage-slot refund, and fresh global admission becomes possible only
+after actual retirement.
+
+On the pinned Linux Rust 1.97.1 image, all 117 state library cases passed with
+zero ignored or filtered cases, including this schedule and the original native
+view keeper schedule. Strict all-target/all-feature state Clippy also passed.
+
+## Physical recovery operation retirement
+
+`reserve_recovery_operation_retaining` reserves an affine operation pin in the
+same protected engine's recovery partition and binds the original request
+keeper before provider work starts. Its destruction is queued to the existing
+reserved worker. Ordinary native destructors and accepted slots cannot occupy
+that worker or the recovery retirement slots. An unexpected operation drop still
+quarantines the protected root and retains the original owner; no timeout
+provides physical completion evidence.
+
+The underlying `reserve_recovery_retained` uses separate preallocated retirement
+slots within the existing recovery limits. The deterministic schedule
+`recovery_native_owner_retires_on_reserved_worker_when_ordinary_capacity_is_full`
+fills both ordinary workers and their accepted quota, then proves actual recovery
+native destruction and pin retirement on the reserved worker. All 118 state
+library cases and strict all-target/all-feature state Clippy passed on the pinned
+Linux Rust 1.97.1 image. This establishes finite native recovery ownership, not
+progress through a stalled device or proof for an unretired provider operation.

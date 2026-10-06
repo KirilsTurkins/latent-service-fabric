@@ -33,6 +33,89 @@ impl Drop for OriginalKeeper {
     }
 }
 
+struct OriginalJobKeeper {
+    _capacity: NativeReservation,
+    destroyed: Arc<AtomicBool>,
+    io: StoreIoOwner<Store>,
+    notice: mpsc::Sender<usize>,
+}
+impl Drop for OriginalJobKeeper {
+    fn drop(&mut self) {
+        assert!(self.destroyed.load(Ordering::SeqCst));
+        self.notice
+            .send(self.io.snapshot().unwrap().accepted)
+            .unwrap();
+    }
+}
+
+#[test]
+fn original_job_capacity_survives_callback_completion_and_detached_buffer_destruction() {
+    let (physical, _, _) = store();
+    let owner = StoreIoOwner::new(physical, limits(), |_| Ok(())).unwrap();
+    let mut global_limits = latent_core::native_capacity::NativeCapacityLimits::default();
+    global_limits.recovery.slots = 1;
+    let global = NativeCapacityOwner::new(global_limits).unwrap();
+    let request = NativeReservationRequest {
+        request_bytes: 128,
+        work_bytes: 512,
+        response_bytes: 1024,
+    };
+    let deadline = Instant::now() + WATCHDOG;
+    let capacity = global
+        .reserve(NativeAdmissionClass::Recovery, request, deadline)
+        .unwrap();
+    let destroyed = Arc::new(AtomicBool::new(false));
+    let (retired_notice, retired) = mpsc::channel();
+    let keeper = Arc::new(OriginalJobKeeper {
+        _capacity: capacity,
+        destroyed: Arc::clone(&destroyed),
+        io: owner.clone(),
+        notice: retired_notice,
+    });
+    let weak = Arc::downgrade(&keeper);
+    let callback = Rendezvous::new(1);
+    let worker_callback = callback.clone();
+    let destructor = Rendezvous::new(1);
+    let worker_destructor = destructor.clone();
+    let (callback_notice, callback_receiver) = mpsc::channel();
+    let (destructor_notice, destructor_receiver) = mpsc::channel();
+    let worker_destroyed = Arc::clone(&destroyed);
+    let job = owner
+        .submit_retaining(StoreIoKind::Write, 512, keeper, move |_| {
+            pause(&worker_callback, &callback_notice, ());
+            KeptNative {
+                pause: worker_destructor,
+                notice: destructor_notice,
+                bytes: vec![0; 512],
+                destroyed: worker_destroyed,
+            }
+        })
+        .unwrap();
+    let (_, ticket) = ready(&callback_receiver);
+    drop(job);
+    assert!(weak.upgrade().is_some());
+    assert!(matches!(
+        global.reserve(NativeAdmissionClass::Recovery, request, deadline),
+        Err(NativeCapacityError::SlotsFull)
+    ));
+    callback.release(ticket).unwrap();
+    let (_, ticket) = ready(&destructor_receiver);
+    assert!(!destroyed.load(Ordering::SeqCst));
+    assert!(weak.upgrade().is_some());
+    assert!(matches!(
+        global.reserve(NativeAdmissionClass::Recovery, request, deadline),
+        Err(NativeCapacityError::SlotsFull)
+    ));
+    destructor.release(ticket).unwrap();
+    assert!(finish(&owner).clean);
+    assert_eq!(retired.recv_timeout(WATCHDOG).unwrap(), 1);
+    assert!(weak.upgrade().is_none());
+    assert!(destroyed.load(Ordering::SeqCst));
+    assert!(global
+        .reserve(NativeAdmissionClass::Recovery, request, deadline)
+        .is_ok());
+}
+
 #[test]
 fn original_capacity_keeper_survives_detached_native_retirement_until_actual_destruction() {
     let (physical, _, closed) = store();

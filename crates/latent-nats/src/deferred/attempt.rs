@@ -25,9 +25,10 @@ pub(super) struct AcceptedPublish {
     pub credential: usize,
     pub time: Arc<dyn EffectTimeSource>,
     pub event: Event,
-    pub request: DeferredRequest,
     pub attempt: AttemptIdentity,
     pub horizon: u64,
+    // Drop last: its grant may retain the original global management owner.
+    pub request: DeferredRequest,
 }
 
 impl AcceptedPublish {

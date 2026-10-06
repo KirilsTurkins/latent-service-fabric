@@ -3,6 +3,7 @@
 
 mod attempt;
 mod qualification;
+mod redrive;
 pub use qualification::JetStreamQualification;
 
 use crate::{network::Connection, request, EventError, NatsPublisher};
@@ -15,9 +16,11 @@ use latent_effects::{
     authority::{
         AuthorityError, DispatchCeiling, DispatchGrant, DispatchProfile, EffectRule, EffectScope,
     },
-    dispatch::AttemptIdentity,
+    dispatch::{AttemptIdentity, RetryProof},
     payload::PayloadRecord,
-    runtime::{AdapterOutcome, DeferredEffectAdapter, EffectTimeSource},
+    runtime::{
+        AdapterOutcome, DeferredEffectAdapter, EffectTimeSource, ProviderReconciliationRequest,
+    },
 };
 use sha2::{Digest, Sha256};
 use std::{io, sync::Arc};
@@ -113,6 +116,7 @@ impl DeferredEffectAdapter for JetStreamEffectAdapter {
         payload: PayloadRecord,
         attempt: AttemptIdentity,
     ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
+        grant.require_execution()?;
         let horizon = self.check_grant(&grant, &payload, &attempt)?;
         let inner = &self.publisher.inner;
         let event = event(payload, &grant, &inner.config.topics[self.row].topic)?;
@@ -138,6 +142,14 @@ impl DeferredEffectAdapter for JetStreamEffectAdapter {
             horizon,
         };
         Ok(Box::pin(accepted.run()))
+    }
+
+    fn qualify_redrive(
+        &self,
+        request: &ProviderReconciliationRequest,
+        time: latent_effects::authority::EffectTime,
+    ) -> Result<RetryProof, AuthorityError> {
+        self.redrive_qualification(request, time)
     }
 }
 
@@ -199,20 +211,17 @@ impl JetStreamEffectAdapter {
             return Err(AuthorityError::Invalid);
         }
         payload.verify_grant(grant)?;
-        let now = self.time.observe();
-        if !now.continuity_proven || now.unix_millis < grant.committed_at_millis() {
-            return Err(AuthorityError::ClockDiscontinuity);
-        }
-        if now.unix_millis >= grant.expires_at_millis() {
-            return Err(AuthorityError::Expired);
-        }
         let horizon = grant
             .committed_at_millis()
             .checked_add(mapping.duplicate_window_millis)
-            .ok_or(AuthorityError::Invalid)?;
+            .ok_or(AuthorityError::Invalid)?
+            .min(grant.expires_at_millis());
+        // accept_with already owns the effect time/currentness fence. Calling
+        // a role-owning clock here would reverse the Role -> Effect lock order.
+        // The original clock/grant are rechecked on first poll and before send.
         if attempt
             .retry_horizon_millis()
-            .is_some_and(|approved| approved > horizon || now.unix_millis >= approved)
+            .is_some_and(|approved| approved > horizon)
         {
             return Err(AuthorityError::PolicyBlocked);
         }
