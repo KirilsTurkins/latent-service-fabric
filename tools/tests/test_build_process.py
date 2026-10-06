@@ -100,6 +100,18 @@ class BuildProcessTests(unittest.TestCase):
         with self.assertRaisesRegex(BuildProcessError, "^command-failed$"):
             run_bounded([str(self.root / "PRIVATE-nonexistent.exe")], self.root, dict(os.environ), 1, 32)
 
+    def test_source_archive_allowance_is_accepted_by_the_process_reader(self):
+        from tools.build_snapshot import SnapshotLimits
+
+        limits = SnapshotLimits()
+        self.assertEqual(limits.max_total_bytes, 64 * 1024 * 1024)
+        self.assertEqual(limits.max_archive_bytes, 72 * 1024 * 1024)
+        self.assertEqual(build_process.MAX_OUTPUT_BYTES, limits.max_archive_bytes)
+        result = self.run_python("import os; os.write(1,b'archive')", maximum=limits.max_archive_bytes)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, b"archive")
+        self.assertEqual(result.stderr, b"")
+
     def test_limits_reject_before_spawning(self):
         cases = [(0, 32), (True, 32), (float("nan"), 32), (float("inf"), 32),
                  (10 ** 1000, 32), (3601, 32), (1, 0), (1, True),

@@ -7,7 +7,7 @@ from tools.java_guest.model import Graph
 from tools.rust_capsule_project import digest, inventory, read_file
 
 
-def generate(run, source: Path, world: str, destination: Path) -> dict:
+def generate(run, source: Path, world: str, destination: Path, *, activation_profile: bool = False) -> dict:
     destination.mkdir(parents=True, exist_ok=False)
     graph = json.loads(run("wit-graph", "wasm-tools", "component", "wit", source, "--json"))
     try:
@@ -26,7 +26,7 @@ def generate(run, source: Path, world: str, destination: Path) -> dict:
     # as valid component types. Check the maintained generator's real metadata
     # before invoking javac/TeaVM, not only after compiling the core module.
     run("bindings-metadata", "wasm-tools", "component", "wit", destination / "probe_component_type.o")
-    for name, text in (("Bindings.java", java.generate(model)), ("bridge.c", c.generate(model))):
+    for name, text in (("Bindings.java", java.generate(model, activation_profile=activation_profile)), ("bridge.c", c.generate(model))):
         value = text.encode()
         if len(value) > 4 * 1024 * 1024:
             raise ValueError("java-generated-code: binding output exceeds its finite four MiB limit")
