@@ -119,7 +119,7 @@ class CapturedInputs(unittest.TestCase):
     def test_real_chunk_receiver_associates_only_verified_capture_and_rejects_later_tamper(self):
         from tools.dev_workflow import helper
         workspace = self.root / 'workspace'
-        workspace.mkdir()
+        paths.new_directory(workspace)
         class Receiver:
             def call(inner, operation, arguments, **options):
                 self.assertTrue(operation.startswith('capture-'))
@@ -147,7 +147,7 @@ class CapturedInputs(unittest.TestCase):
     def test_incomplete_or_wrong_domain_transfer_preserves_last_good_project(self):
         from tools.dev_workflow import helper
         workspace = self.root / 'workspace'
-        workspace.mkdir()
+        paths.new_directory(workspace)
         prior = {'snapshot': 'previous-good'}
         state.atomic(workspace, 'project.json', prior)
         arguments = {'snapshot': self.record, 'project': self.descriptor,
