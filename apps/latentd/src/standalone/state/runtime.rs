@@ -104,6 +104,15 @@ impl StateRuntime {
             ),
         )?;
         let (store, startup_deadline) = open_validated_store(settings, Arc::clone(&clock)).await?;
+        if let Err(reason) = store.bind_native_capacity(&native) {
+            record(Stage::NativeCapacity, reason);
+            retire_startup_store(
+                &store,
+                std::time::Instant::now() + settings.shutdown_grace(),
+            )
+            .await;
+            return Err(super::unavailable());
+        }
         let effects = super::super::EffectRuntime::start(
             DispatcherConfig::default(),
             Arc::clone(&store),

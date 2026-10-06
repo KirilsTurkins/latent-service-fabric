@@ -3,6 +3,7 @@
 
 mod config;
 mod dispatcher;
+mod native_capacity;
 mod operation;
 mod physical;
 mod startup;
@@ -47,6 +48,7 @@ pub struct ProtectedStoreOwner {
     ready: StoreIoReady<PhysicalStore>,
     failure: Arc<FailureLatch>,
     limits: StoreLimits,
+    native_capacity: Arc<native_capacity::NativeBinding>,
 }
 
 /// One original protected startup may initialize a wholly empty new database.
@@ -70,6 +72,7 @@ impl Clone for ProtectedStoreOwner {
             ready: self.ready.clone(),
             failure: Arc::clone(&self.failure),
             limits: self.limits,
+            native_capacity: Arc::clone(&self.native_capacity),
         }
     }
 }
@@ -168,6 +171,26 @@ impl ProtectedStoreOwner {
             .map_err(ProtectedStoreError::Io)
     }
 
+    /// Retain an original global request owner through protected native file
+    /// checks and unclaimed result destruction. Claimed responses keep that same
+    /// owner in their typed delivery/frame guard. This installs no new capacity.
+    pub fn with_store_retaining<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_payload_bytes: u64,
+        keeper: Arc<dyn std::any::Any + Send + Sync>,
+        operation: impl FnOnce(&crate::embedded::EmbeddedStore) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit_retaining(kind, retained_payload_bytes, keeper, move |store| {
+                store.with_store(kind, operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
     /// Reserve captured batch bytes and intermediate encoded rows before queue
     /// allocation. The immutable owned batch executes once if accepted.
     pub fn apply(
@@ -241,6 +264,7 @@ impl ProtectedStoreOwner {
     }
 
     fn available(&self) -> Result<(), ProtectedStoreError> {
+        self.native_capacity.seal()?;
         self.failure.get().map_or(Ok(()), Err)
     }
 }

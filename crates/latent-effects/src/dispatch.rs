@@ -6,6 +6,9 @@
 use crate::authority::{AuthorityError, DurableEffectAuthority, EffectTime};
 use serde::{Deserialize, Serialize};
 
+mod management;
+pub use management::{effect_record_version, EffectManagementFact, EffectManagementStamp};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Disposition {
     Pending,
@@ -110,6 +113,8 @@ pub struct EffectRecord {
     last_clock_millis: u64,
     history_sequence: u64,
     latest: Option<AttemptReceipt>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    management: Option<EffectManagementStamp>,
 }
 
 impl EffectRecord {
@@ -133,6 +138,7 @@ impl EffectRecord {
             last_clock_millis: authority.committed_at_millis(),
             history_sequence: 0,
             latest: None,
+            management: None,
         })
     }
 
@@ -214,6 +220,11 @@ impl EffectRecord {
             self.disposition = Disposition::Expired;
         }
         Ok(())
+    }
+
+    #[must_use]
+    pub fn management(&self) -> Option<&EffectManagementStamp> {
+        self.management.as_ref()
     }
 
     pub(crate) fn active_attempt(&self) -> Result<AttemptIdentity, AuthorityError> {
@@ -437,7 +448,11 @@ impl EffectRecord {
         if body.len() > 65_536 || body.len() > initial.len().saturating_add(4096) {
             return Err(AuthorityError::Capacity);
         }
-        let mut bytes = b"LER\0\x01".to_vec();
+        let mut bytes = if self.management.is_some() {
+            b"LER\0\x02".to_vec()
+        } else {
+            b"LER\0\x01".to_vec()
+        };
         bytes.extend(body);
         Ok(bytes)
     }
@@ -446,17 +461,24 @@ impl EffectRecord {
         if bytes.len() > 65_541 {
             return Err(AuthorityError::Capacity);
         }
-        if !bytes.starts_with(b"LER\0\x01") {
+        let managed_format = bytes.starts_with(b"LER\0\x02");
+        if !managed_format && !bytes.starts_with(b"LER\0\x01") {
             return Err(AuthorityError::UnsupportedFormat);
         }
         let record: Self =
             serde_json::from_slice(&bytes[5..]).map_err(|_| AuthorityError::Invalid)?;
+        if record.management.is_some() != managed_format {
+            return Err(AuthorityError::UnsupportedFormat);
+        }
         record.validate()?;
         Ok(record)
     }
 
     fn validate(&self) -> Result<(), AuthorityError> {
         let authority = self.authority()?;
+        if let Some(stamp) = &self.management {
+            stamp.validate(self)?;
+        }
         if self.attempt > authority.ceiling().maximum_attempts
             || self.last_clock_millis < authority.committed_at_millis()
             || self.history_sequence > u64::from(self.attempt)
@@ -480,7 +502,11 @@ impl EffectRecord {
             }
             Disposition::Dispatching => self.attempt > 0,
             Disposition::ProviderAcknowledged => {
-                self.send_started && has_receipt(Disposition::ProviderAcknowledged)
+                self.send_started
+                    && (has_receipt(Disposition::ProviderAcknowledged)
+                        || self.management.as_ref().is_some_and(|stamp| {
+                            stamp.fact() == EffectManagementFact::ProviderConfirmed
+                        }))
             }
             Disposition::KnownFailed => has_receipt(Disposition::KnownFailed),
             Disposition::Uncertain => self.send_started && has_receipt(Disposition::Uncertain),
@@ -490,9 +516,12 @@ impl EffectRecord {
                         || has_receipt(Disposition::Uncertain))
             }
             Disposition::DeadLettered => {
-                self.attempt == authority.ceiling().maximum_attempts
+                (self.attempt == authority.ceiling().maximum_attempts
                     && (has_receipt(Disposition::KnownFailed)
-                        || has_receipt(Disposition::Uncertain))
+                        || has_receipt(Disposition::Uncertain)))
+                    || self.management.as_ref().is_some_and(|stamp| {
+                        stamp.fact() == EffectManagementFact::AdministratorTerminated
+                    })
             }
             Disposition::PolicyBlocked | Disposition::Expired => true,
         };

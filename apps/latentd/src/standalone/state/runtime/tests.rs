@@ -144,11 +144,21 @@ async fn actual_state_open_initializes_epoch_before_tenant_rows_and_reopens_orig
     assert!(state.0.installed.is_empty() && state.0.intents.is_empty());
     assert!(state.0.native.snapshot().unwrap().physically_retired());
     let admission = effects.command_admission_source();
+    assert!(state.0.store.uses_native_capacity(&state.0.native));
+    assert!(admission.uses_native_capacity(&state.0.native));
+    assert!(admission
+        .native_capacity()
+        .unwrap()
+        .is_same_owner(&state.0.native));
     finish(&state, &mut effects).await;
     assert!(admission.capture().is_err());
     drop((state, effects));
     fixture.settings.state.as_mut().unwrap().create_if_missing = false;
     let (state, mut effects) = fixture.open().await;
+    assert!(state.0.store.uses_native_capacity(&state.0.native));
+    assert!(effects
+        .command_admission_source()
+        .uses_native_capacity(&state.0.native));
     let reopened = observation(&state.0.store).await;
     assert_eq!(reopened.0 .0, 2);
     assert!(reopened.0 .1 >= original.0 .1);

@@ -40,6 +40,7 @@ pub(super) struct State<S> {
     pub active_recovery_reads: usize,
     pub active_recovery_writes: usize,
     pub retirements: VecDeque<Box<dyn Retirement>>,
+    pub recovery_retirements: VecDeque<Box<dyn Retirement>>,
     pub physical_owners: usize,
     pub accepted: usize,
     pub retained_bytes: u64,
@@ -64,9 +65,9 @@ impl<S> State<S> {
     pub fn new(limits: StoreIoLimits, finalizer: Finalizer<S>) -> Self {
         let queue = VecDeque::with_capacity(limits.queued_jobs);
         let recovery_queue = VecDeque::with_capacity(limits.recovery.map_or(0, |r| r.queued_jobs));
-        let retirements = VecDeque::with_capacity(
-            limits.accepted_jobs + limits.recovery.map_or(0, |r| r.accepted_jobs),
-        );
+        let retirements = VecDeque::with_capacity(limits.accepted_jobs);
+        let recovery_retirements =
+            VecDeque::with_capacity(limits.recovery.map_or(0, |r| r.accepted_jobs));
         let retained_bytes = limits.resident_bytes;
         Self {
             limits,
@@ -77,6 +78,7 @@ impl<S> State<S> {
             active_recovery_reads: 0,
             active_recovery_writes: 0,
             retirements,
+            recovery_retirements,
             physical_owners: 0,
             accepted: 0,
             retained_bytes,
@@ -207,7 +209,7 @@ impl<S> State<S> {
             accepted: self.accepted,
             retained_bytes: self.retained_bytes,
             physical_owners: self.physical_owners,
-            queued_retirements: self.retirements.len(),
+            queued_retirements: self.retirements.len() + self.recovery_retirements.len(),
             live_workers: self.live_workers,
             admission_closed: self.closed,
             engine_phase: self.engine_phase,
