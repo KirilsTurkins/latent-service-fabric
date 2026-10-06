@@ -30,6 +30,7 @@ latent-control-store = { path = "../../crates/latent-control-store" }
 latent-core = { path = "../../crates/latent-core" }
 latent-capabilities = { path = "../../crates/latent-capabilities" }
 latent-executor = { path = "../../crates/latent-executor" }
+latent-effects = { path = "../../crates/latent-effects" }
 latent-ingress = { path = "../../crates/latent-ingress" }
 latent-http = { path = "../../crates/latent-http" }
 latent-manifest = { path = "../../crates/latent-manifest" }
@@ -41,6 +42,7 @@ latent-routing = { path = "../../crates/latent-routing" }
 latent-rollout = { path = "../../crates/latent-rollout" }
 latent-scheduler = { path = "../../crates/latent-scheduler" }
 latent-secrets = { path = "../../crates/latent-secrets" }
+latent-state = { path = "../../crates/latent-state" }
 latent-telemetry = { path = "../../crates/latent-telemetry" }
 latent-wasmtime = { path = "../../crates/latent-wasmtime" }
 latent-wire = { path = "../../crates/latent-wire" }
