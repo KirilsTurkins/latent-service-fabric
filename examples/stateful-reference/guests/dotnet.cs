@@ -46,9 +46,8 @@ public class ApiExportsImpl : IApiExports
         BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(8), request.units);
         var value = new Raw.Value(bytes, Media, []);
         _ = command.Put(keys.Value.Item1, value).AsOk; _ = command.Put(keys.Value.Item2, value).AsOk;
-        var id = Encoding.UTF8.GetBytes(request.draftId);
-        byte[] eventBytes = new byte[id.Length + 13]; id.CopyTo(eventBytes, 0); bytes.CopyTo(eventBytes, id.Length + 1);
-        var payload = new Raw.Value(eventBytes, Media, []);
+        byte[] eventBytes = Encoding.UTF8.GetBytes("draft-change-v1:" + request.draftId);
+        var payload = new Raw.Value(eventBytes, "application/octet-stream", []);
         _ = new Intent("draft-change", "event", payload).Stage(command).AsOk;
         _ = new Intent("draft-http", "put-once", payload).Stage(command).AsOk;
         if (request.reject) return Result<IApiExports.Draft, IApiExports.BusinessError>.Err(IApiExports.BusinessError.REJECTED);

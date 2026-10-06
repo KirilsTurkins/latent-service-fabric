@@ -49,10 +49,8 @@ public final class Capsule implements Bindings.Exports {
             for (int i = 0; i < 4; i++) bytes[8 + i] = (byte)(request.units() >>> (8 * i));
             var value = new Bindings.LatentStateKeyValueValue(bytes, MEDIA, List.of());
             command.put(keys[0], value).value(); command.put(keys[1], value).value();
-            byte[] id = request.draftId().getBytes(StandardCharsets.UTF_8);
-            byte[] event = new byte[id.length + 13];
-            System.arraycopy(id, 0, event, 0, id.length); System.arraycopy(bytes, 0, event, id.length + 1, 12);
-            var payload = new Bindings.LatentStateKeyValueValue(event, MEDIA, List.of());
+            byte[] event = ("draft-change-v1:" + request.draftId()).getBytes(StandardCharsets.UTF_8);
+            var payload = new Bindings.LatentStateKeyValueValue(event, "application/octet-stream", List.of());
             new Intent("draft-change", "event", payload).stage(command).value();
             new Intent("draft-http", "put-once", payload).stage(command).value();
             if (request.reject()) return Result.err(Bindings.ExamplesOrderDraftApiBusinessError.Rejected);

@@ -54,8 +54,8 @@ func Edit(request api.EditRequest) wit.Result[api.Draft, api.BusinessError] {
     binary.LittleEndian.PutUint32(valueBytes[8:], request.Units)
     value := state.Value{Bytes: valueBytes, MediaType: media, Metadata: nil}
     command.Put(a, value).Ok(); command.Put(b, value).Ok()
-    event := append([]byte(request.DraftId), 0); event = append(event, valueBytes...)
-    payload := state.Value{Bytes: event, MediaType: media, Metadata: nil}
+    event := append([]byte("draft-change-v1:"), []byte(request.DraftId)...)
+    payload := state.Value{Bytes: event, MediaType: "application/octet-stream", Metadata: nil}
     intents.New("draft-change", "event", payload).Stage(command).Ok()
     intents.New("draft-http", "put-once", payload).Stage(command).Ok()
     if request.Reject { return wit.Err[api.Draft, api.BusinessError](api.BusinessErrorRejected) }

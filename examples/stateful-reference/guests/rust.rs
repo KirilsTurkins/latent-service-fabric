@@ -120,13 +120,12 @@ impl Guest for Capsule {
             .put(summary_key, value)
             .await
             .expect("stage summary");
-        let mut event = Vec::with_capacity(request.draft_id.len() + 13);
+        let mut event = Vec::with_capacity(request.draft_id.len() + 16);
+        event.extend_from_slice(b"draft-change-v1:");
         event.extend_from_slice(request.draft_id.as_bytes());
-        event.push(0);
-        event.extend_from_slice(&bytes);
         let payload = Value {
             bytes: event,
-            media_type: MEDIA.into(),
+            media_type: "application/octet-stream".into(),
             metadata: vec![],
         };
         Intent::new("draft-change".into(), "event".into(), payload.clone())

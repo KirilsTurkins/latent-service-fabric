@@ -107,6 +107,9 @@ def create(output: Path, language: str, name: str | None = None, draft_id: str =
     declaration_path.write_text(json.dumps(declaration, indent=2) + "\n", encoding="utf8", newline="\n")
     from tools.dev_workflow.transaction_binding import validate
     validate(declaration_path.read_bytes(), capsule=project["service"], deployment=project["name"], binding=project["name"])
+    from tools.transaction_guest_project import HTTP_REQUIREMENTS, put_once_requirements
+    requirements = put_once_requirements(project, declaration_path.read_bytes())
+    (project_root / HTTP_REQUIREMENTS).write_text(json.dumps(requirements, indent=2) + "\n", encoding="utf8", newline="\n")
     # The original SDK lock retains its original template provenance. Edited
     # application source is captured by the normal language build observation.
     authored = {"formatVersion": 1, "application": "order-draft-v1", "language": language, "world": WORLD,

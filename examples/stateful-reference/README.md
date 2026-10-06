@@ -25,6 +25,12 @@ returns the original pre-write observations; its changed business revision
 does not pretend to be a committed view token. HTTP acknowledgement supplies
 the host-owned committed token for the next query.
 
+Both effects carry the exact per-draft notification `draft-change-v1:<draft-id>`
+as `application/octet-stream`, with empty metadata. The project captures its
+bounded HTTP requirements alongside the signed transaction companion. A recipient
+can use a fresh authorized query to obtain current state after a notification;
+the notification's original effect identity remains attached to its commitment.
+
 Create an application outside the checkout through the existing captured SDK
 creators:
 

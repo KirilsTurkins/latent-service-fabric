@@ -50,10 +50,8 @@ export const api: typeof Contract = {
       const value = {bytes, mediaType: media, metadata: [] as [string, string][]};
       host(command.put(primaryKey, value));
       host(command.put(summaryKey, value));
-      const identity = encoder.encode(request.draftId);
-      const event = new Uint8Array(identity.length + 1 + bytes.length);
-      event.set(identity); event.set(bytes, identity.length + 1);
-      const payload = {bytes: event, mediaType: media, metadata: [] as [string, string][]};
+      const event = encoder.encode('draft-change-v1:' + request.draftId);
+      const payload = {bytes: event, mediaType: 'application/octet-stream', metadata: [] as [string, string][]};
       host(new Intent('draft-change', 'event', payload).stage(command));
       host(new Intent('draft-http', 'put-once', payload).stage(command));
       if (request.reject) throw 'rejected' satisfies Contract.BusinessError;

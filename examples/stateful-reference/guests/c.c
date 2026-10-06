@@ -15,7 +15,7 @@ struct frame {
     uint64_t expected, revision;
     uint32_t units;
     probe_string_t id;
-    uint8_t primary_key[46], summary_key[48], bytes[12], event[45];
+    uint8_t primary_key[46], summary_key[48], bytes[12], event[48];
     size_t primary_size, summary_size;
     latent_state_key_value_result_option_versioned_value_state_error_t primary, summary;
     latent_state_key_value_result_void_state_error_t write;
@@ -118,8 +118,8 @@ static probe_callback_code_t pump(struct frame *f, lsf_async_result_t state) {
             for (size_t i = 0; i < 8; i++) f->bytes[i] = (uint8_t)(f->revision >> (8 * i));
             for (size_t i = 0; i < 4; i++) f->bytes[8 + i] = (uint8_t)(f->units >> (8 * i));
             f->value = (latent_state_key_value_value_t){.bytes = {f->bytes, 12}, .media_type = LSF_LITERAL("application/vnd.lsf.order-draft-v1")};
-            memcpy(f->event, f->id.ptr, f->id.len); f->event[f->id.len] = 0; memcpy(f->event + f->id.len + 1, f->bytes, 12);
-            f->payload = (latent_state_key_value_value_t){.bytes = {f->event, f->id.len + 13}, .media_type = LSF_LITERAL("application/vnd.lsf.order-draft-v1")};
+            memcpy(f->event, "draft-change-v1:", 16); memcpy(f->event + 16, f->id.ptr, f->id.len);
+            f->payload = (latent_state_key_value_value_t){.bytes = {f->event, f->id.len + 16}, .media_type = LSF_LITERAL("application/octet-stream")};
             f->phase = WRITE_PRIMARY;
             status = lsf_state_put(&f->call, &f->command, primary_key(f), f->value, &f->write); break;
         case WRITE_PRIMARY:
