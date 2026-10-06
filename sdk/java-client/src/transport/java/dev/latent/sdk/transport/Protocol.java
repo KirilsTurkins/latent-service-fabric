@@ -93,6 +93,7 @@ final class Protocol {
 
     static void request(Object value, String tenant) {
         switch (value) {
+            case Management.InspectHttpTargetRequest request -> TargetInspection.request(request, tenant);
             case Management.InvokeRequest request -> {
                 require(request.target().isPresent());
                 var target = request.target().get();
@@ -106,6 +107,17 @@ final class Protocol {
             }
             case Management.CancelRequest request -> require(identity(request.activationId()) && request.reason().length() <= 4096);
             case Management.GetActivationRequest request -> require(identity(request.activationId()));
+            case Management.InspectActivationTreeRequest request -> {
+                if (request.service().isPresent()) {
+                    require(request.activationId().isEmpty() && treeIdentity(request.service().get()));
+                } else {
+                    require(request.fromUnixMillis().isEmpty() && treeIdentity(request.activationId()));
+                }
+                request.page().ifPresent(page -> {
+                    require(Integer.compareUnsigned(page.pageSize(), 128) <= 0);
+                    page.pageToken().ifPresent(token -> require(token.length() <= 160));
+                });
+            }
             case Management.GetPolicyRequest request -> require(identity(request.id()));
             case Management.GetPolicyOperationRequest request -> require(identity(request.operationId()));
             case Management.ListPoliciesRequest request -> requestPage(request.page(), true);
@@ -130,6 +142,11 @@ final class Protocol {
 
     static void filter(String value) {
         require(!value.isEmpty() && value.length() <= 128 && value.chars().allMatch(character -> character >= 33 && character <= 126));
+    }
+
+    static boolean treeIdentity(String value) {
+        return value != null && !value.isEmpty() && value.getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 512
+                && value.codePoints().noneMatch(c -> Character.isISOControl(c) || Character.isWhitespace(c));
     }
 
     static void requestPage(Optional<Management.PageRequest> page, boolean policy) {
@@ -188,6 +205,7 @@ final class Protocol {
     static boolean response(Object value, Object request, String tenant, Management.RequestIdentity recovery) {
         activation(value).ifPresent(identity -> require(recovery.activationId().map(identity::equals).orElse(true)));
         switch (value) {
+            case Management.InspectHttpTargetResponse response -> TargetInspection.response(response, (Management.InspectHttpTargetRequest)request, tenant);
             case Management.InvokeResponse response -> {
                 require(identity(response.activationId()) && response.consumption().isPresent());
                 require((response.success().isPresent() ? 1 : 0) + (response.declaredError().isPresent() ? 1 : 0)
@@ -221,6 +239,29 @@ final class Protocol {
             }
             case Management.GetPolicyResponse response -> response.policy().ifPresent(policy ->
                     policy(policy, tenant, Optional.of(((Management.GetPolicyRequest) request).id()), ((Management.GetPolicyRequest) request).recordKind()));
+            case Management.InspectActivationTreeResponse response -> {
+                var selector = (Management.InspectActivationTreeRequest) request;
+                int maximum = ((Management.InspectActivationTreeRequest) request).page().map(Management.PageRequest::pageSize).orElse(0);
+                if (maximum == 0) maximum = 32;
+                require(response.schemaVersion() == 1 && response.retainedHistoryOnly() && response.page().isPresent() && response.nodes().size() <= maximum);
+                var page = response.page().get();
+                page.nextPageToken().ifPresent(token -> require(!token.isEmpty() && token.length() <= 160));
+                require(response.historyAvailable() || response.nodes().isEmpty() && page.nextPageToken().isEmpty());
+                response.nodes().forEach(node -> {
+                    require(node.targetService().length() <= 512);
+                    selector.service().ifPresent(service -> require(node.targetService().equals(service)
+                        && node.parentActivationId().isEmpty() && node.activationId().equals(node.rootActivationId())
+                        && (selector.fromUnixMillis().isEmpty() || Long.compareUnsigned(node.receivedAtUnixMillis(), selector.fromUnixMillis().get()) >= 0)));
+                    require(treeIdentity(node.activationId()) && treeIdentity(node.rootActivationId()) && node.phase().length() <= 64 && node.principalKind().length() <= 64);
+                    node.parentActivationId().ifPresent(id -> require(treeIdentity(id)));
+                    node.callerService().ifPresent(id -> require(treeIdentity(id)));
+                    node.terminalState().ifPresent(state -> require(state.length() <= 64));
+                    node.diagnostic().ifPresent(diagnostic -> {
+                        require(diagnostic.schemaVersion() == 1);
+                        diagnostic.profileDigest().ifPresent(digest -> require(digest.matches("[0-9a-f]{64}")));
+                    });
+                });
+            }
             case Management.ListPoliciesResponse response -> {
                 responsePage(response.page(), response.policies().size(), ((Management.ListPoliciesRequest) request).page(), true);
                 response.policies().forEach(policy -> policy(policy, tenant, Optional.empty(), ((Management.ListPoliciesRequest) request).recordKind()));

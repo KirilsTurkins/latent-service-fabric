@@ -14,5 +14,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--tools", type=Path, required=True)
+    parser.add_argument("--application-dependencies", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(qualify(args.output, language="typescript", typescript_tools=args.tools)))
+    print(json.dumps(qualify(args.output, language="typescript", typescript_tools=args.tools,
+                             application_dependencies=args.application_dependencies)))

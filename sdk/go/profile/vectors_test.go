@@ -9,6 +9,342 @@ func fixturePointer[Value any](value Value) *Value { return &value }
 
 func TestSharedProfileVectors(tester *testing.T) {
 	{
+		value := ActivationDiagnostic{SchemaVersion: uint32(1), Stage: DiagnosticStage(3), Reason: DiagnosticReason(1)}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.schema_version")
+		}
+		if !(int32(value.Stage) == 3) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.stage")
+		}
+		if !(int32(value.Reason) == 1) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.reason")
+		}
+		if !(!(value.Profile != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.profile.presence")
+		}
+		if !(!(value.ProfileDigest != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.profile_digest.presence")
+		}
+		if !(!(value.ConfiguredBound != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.configured_bound.presence")
+		}
+		if !(!(value.CalculatedRequirement != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.calculated_requirement.presence")
+		}
+		if !(!(value.FixedBytes != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.fixed_bytes.presence")
+		}
+		if !(!(value.LiftingFuel != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.lifting_fuel.presence")
+		}
+		if !(!(value.LiftMultiplier != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.lift_multiplier.presence")
+		}
+	}
+	{
+		value := ActivationDiagnostic{SchemaVersion: uint32(1), Stage: DiagnosticStage(2147483647), Reason: DiagnosticReason(-1), Profile: fixturePointer(DiagnosticProfile(999)), ProfileDigest: fixturePointer("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ConfiguredBound: fixturePointer(uint64(0)), CalculatedRequirement: fixturePointer(uint64(18446744073709551615)), FixedBytes: fixturePointer(uint64(9223372036854775808)), LiftingFuel: fixturePointer(uint64(0)), LiftMultiplier: fixturePointer(uint64(18446744073709551615))}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.schema_version")
+		}
+		if !(int32(value.Stage) == 2147483647) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.stage")
+		}
+		if !(int32(value.Reason) == -1) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.reason")
+		}
+		if !(value.Profile != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.profile.presence")
+		}
+		if !(int32((*value.Profile)) == 999) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.profile")
+		}
+		if !(value.ProfileDigest != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.profile_digest.presence")
+		}
+		if !((*value.ProfileDigest) == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.profile_digest")
+		}
+		if !(value.ConfiguredBound != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.configured_bound.presence")
+		}
+		if !((*value.ConfiguredBound) == uint64(0)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.configured_bound")
+		}
+		if !(value.CalculatedRequirement != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.calculated_requirement.presence")
+		}
+		if !((*value.CalculatedRequirement) == uint64(18446744073709551615)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.calculated_requirement")
+		}
+		if !(value.FixedBytes != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.fixed_bytes.presence")
+		}
+		if !((*value.FixedBytes) == uint64(9223372036854775808)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.fixed_bytes")
+		}
+		if !(value.LiftingFuel != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.lifting_fuel.presence")
+		}
+		if !((*value.LiftingFuel) == uint64(0)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.lifting_fuel")
+		}
+		if !(value.LiftMultiplier != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.lift_multiplier.presence")
+		}
+		if !((*value.LiftMultiplier) == uint64(18446744073709551615)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.lift_multiplier")
+		}
+	}
+	{
+		value := InspectActivationTreeRequest{ActivationId: "activation-a"}
+		if !(value.ActivationId == "activation-a") {
+			tester.Fatal("activation-tree-default-page.activation_id")
+		}
+		if !(!(value.Page != nil)) {
+			tester.Fatal("activation-tree-default-page.page.presence")
+		}
+		if !(!(value.Service != nil)) {
+			tester.Fatal("activation-tree-default-page.service.presence")
+		}
+		if !(!(value.FromUnixMillis != nil)) {
+			tester.Fatal("activation-tree-default-page.from_unix_millis.presence")
+		}
+	}
+	{
+		value := InspectActivationTreeRequest{ActivationId: "", Page: fixturePointer(PageRequest{PageSize: uint32(128)}), Service: fixturePointer("examples/java-http-adapter"), FromUnixMillis: fixturePointer(uint64(18446744073709551615))}
+		if !(value.ActivationId == "") {
+			tester.Fatal("activation-roots-service-time-selector.activation_id")
+		}
+		if !(value.Page != nil) {
+			tester.Fatal("activation-roots-service-time-selector.page.presence")
+		}
+		if !((*value.Page).PageSize == uint32(128)) {
+			tester.Fatal("activation-roots-service-time-selector.page.page_size")
+		}
+		if !(!((*value.Page).PageToken != nil)) {
+			tester.Fatal("activation-roots-service-time-selector.page.page_token.presence")
+		}
+		if !(value.Service != nil) {
+			tester.Fatal("activation-roots-service-time-selector.service.presence")
+		}
+		if !((*value.Service) == "examples/java-http-adapter") {
+			tester.Fatal("activation-roots-service-time-selector.service")
+		}
+		if !(value.FromUnixMillis != nil) {
+			tester.Fatal("activation-roots-service-time-selector.from_unix_millis.presence")
+		}
+		if !((*value.FromUnixMillis) == uint64(18446744073709551615)) {
+			tester.Fatal("activation-roots-service-time-selector.from_unix_millis")
+		}
+	}
+	{
+		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{ActivationTreeNode{ActivationId: "host-generated-root", RootActivationId: "host-generated-root", Phase: "running", LastUpdatedUnixMillis: uint64(0), PrincipalKind: "trigger", DiagnosticIsTerminal: false, TargetService: "examples/java-http-adapter", ReceivedAtUnixMillis: uint64(18446744073709551615)}}, Page: fixturePointer(PageResponse{}), HistoryAvailable: true, CursorExpired: false, RetainedHistoryOnly: true}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-root-real-ingress-identity.schema_version")
+		}
+		if !(len(value.Nodes) == 1) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.count")
+		}
+		if !(value.Nodes[0].ActivationId == "host-generated-root") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.activation_id")
+		}
+		if !(!(value.Nodes[0].ParentActivationId != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.parent_activation_id.presence")
+		}
+		if !(value.Nodes[0].RootActivationId == "host-generated-root") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.root_activation_id")
+		}
+		if !(value.Nodes[0].Phase == "running") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.phase")
+		}
+		if !(!(value.Nodes[0].TerminalState != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.terminal_state.presence")
+		}
+		if !(value.Nodes[0].LastUpdatedUnixMillis == uint64(0)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.last_updated_unix_millis")
+		}
+		if !(!(value.Nodes[0].Diagnostic != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.diagnostic.presence")
+		}
+		if !(value.Nodes[0].PrincipalKind == "trigger") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.principal_kind")
+		}
+		if !(!(value.Nodes[0].CallerService != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.caller_service.presence")
+		}
+		if !(!(value.Nodes[0].GrantedBudget != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.granted_budget.presence")
+		}
+		if !(!(value.Nodes[0].EffectiveDeadlineUnixMillis != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.effective_deadline_unix_millis.presence")
+		}
+		if !(value.Nodes[0].DiagnosticIsTerminal == false) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal")
+		}
+		if !(value.Nodes[0].TargetService == "examples/java-http-adapter") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.target_service")
+		}
+		if !(value.Nodes[0].ReceivedAtUnixMillis == uint64(18446744073709551615)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.received_at_unix_millis")
+		}
+		if !(value.Page != nil) {
+			tester.Fatal("activation-root-real-ingress-identity.page.presence")
+		}
+		if !(!((*value.Page).NextPageToken != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.page.next_page_token.presence")
+		}
+		if !(value.HistoryAvailable == true) {
+			tester.Fatal("activation-root-real-ingress-identity.history_available")
+		}
+		if !(value.CursorExpired == false) {
+			tester.Fatal("activation-root-real-ingress-identity.cursor_expired")
+		}
+		if !(value.RetainedHistoryOnly == true) {
+			tester.Fatal("activation-root-real-ingress-identity.retained_history_only")
+		}
+	}
+	{
+		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{}, Page: fixturePointer(PageResponse{}), HistoryAvailable: false, CursorExpired: true, RetainedHistoryOnly: true}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.schema_version")
+		}
+		if !(len(value.Nodes) == 0) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.nodes.count")
+		}
+		if !(value.Page != nil) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.page.presence")
+		}
+		if !(!((*value.Page).NextPageToken != nil)) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.page.next_page_token.presence")
+		}
+		if !(value.HistoryAvailable == false) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.history_available")
+		}
+		if !(value.CursorExpired == true) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.cursor_expired")
+		}
+		if !(value.RetainedHistoryOnly == true) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.retained_history_only")
+		}
+	}
+	{
+		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{ActivationTreeNode{ActivationId: "child-a", ParentActivationId: fixturePointer("root-a"), RootActivationId: "root-a", Phase: "received", TerminalState: fixturePointer("resource_exhausted"), LastUpdatedUnixMillis: uint64(18446744073709551615), Diagnostic: fixturePointer(ActivationDiagnostic{SchemaVersion: uint32(1), Stage: DiagnosticStage(3), Reason: DiagnosticReason(1), Profile: fixturePointer(DiagnosticProfile(1)), ConfiguredBound: fixturePointer(uint64(16777216)), CalculatedRequirement: fixturePointer(uint64(67108864))}), PrincipalKind: "service", CallerService: fixturePointer("adapter"), DiagnosticIsTerminal: true, TargetService: "", ReceivedAtUnixMillis: uint64(0)}}, Page: fixturePointer(PageResponse{NextPageToken: fixturePointer("opaque-scoped-cursor")}), HistoryAvailable: true, CursorExpired: false, RetainedHistoryOnly: true}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.schema_version")
+		}
+		if !(len(value.Nodes) == 1) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.count")
+		}
+		if !(value.Nodes[0].ActivationId == "child-a") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.activation_id")
+		}
+		if !(value.Nodes[0].ParentActivationId != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id.presence")
+		}
+		if !((*value.Nodes[0].ParentActivationId) == "root-a") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id")
+		}
+		if !(value.Nodes[0].RootActivationId == "root-a") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.root_activation_id")
+		}
+		if !(value.Nodes[0].Phase == "received") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.phase")
+		}
+		if !(value.Nodes[0].TerminalState != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.terminal_state.presence")
+		}
+		if !((*value.Nodes[0].TerminalState) == "resource_exhausted") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.terminal_state")
+		}
+		if !(value.Nodes[0].LastUpdatedUnixMillis == uint64(18446744073709551615)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.last_updated_unix_millis")
+		}
+		if !(value.Nodes[0].Diagnostic != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.presence")
+		}
+		if !((*value.Nodes[0].Diagnostic).SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.schema_version")
+		}
+		if !(int32((*value.Nodes[0].Diagnostic).Stage) == 3) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.stage")
+		}
+		if !(int32((*value.Nodes[0].Diagnostic).Reason) == 1) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.reason")
+		}
+		if !((*value.Nodes[0].Diagnostic).Profile != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile.presence")
+		}
+		if !(int32((*(*value.Nodes[0].Diagnostic).Profile)) == 1) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile")
+		}
+		if !(!((*value.Nodes[0].Diagnostic).ProfileDigest != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile_digest.presence")
+		}
+		if !((*value.Nodes[0].Diagnostic).ConfiguredBound != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound.presence")
+		}
+		if !((*(*value.Nodes[0].Diagnostic).ConfiguredBound) == uint64(16777216)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound")
+		}
+		if !((*value.Nodes[0].Diagnostic).CalculatedRequirement != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement.presence")
+		}
+		if !((*(*value.Nodes[0].Diagnostic).CalculatedRequirement) == uint64(67108864)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement")
+		}
+		if !(!((*value.Nodes[0].Diagnostic).FixedBytes != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.fixed_bytes.presence")
+		}
+		if !(!((*value.Nodes[0].Diagnostic).LiftingFuel != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lifting_fuel.presence")
+		}
+		if !(!((*value.Nodes[0].Diagnostic).LiftMultiplier != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lift_multiplier.presence")
+		}
+		if !(value.Nodes[0].PrincipalKind == "service") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.principal_kind")
+		}
+		if !(value.Nodes[0].CallerService != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.caller_service.presence")
+		}
+		if !((*value.Nodes[0].CallerService) == "adapter") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.caller_service")
+		}
+		if !(!(value.Nodes[0].GrantedBudget != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence")
+		}
+		if !(!(value.Nodes[0].EffectiveDeadlineUnixMillis != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence")
+		}
+		if !(value.Nodes[0].DiagnosticIsTerminal == true) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal")
+		}
+		if !(value.Nodes[0].TargetService == "") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.target_service")
+		}
+		if !(value.Nodes[0].ReceivedAtUnixMillis == uint64(0)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis")
+		}
+		if !(value.Page != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.page.presence")
+		}
+		if !((*value.Page).NextPageToken != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.page.next_page_token.presence")
+		}
+		if !((*(*value.Page).NextPageToken) == "opaque-scoped-cursor") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.page.next_page_token")
+		}
+		if !(value.HistoryAvailable == true) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.history_available")
+		}
+		if !(value.CursorExpired == false) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.cursor_expired")
+		}
+		if !(value.RetainedHistoryOnly == true) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.retained_history_only")
+		}
+	}
+	{
 		value := InvokeRequest{Target: fixturePointer(InvocationTarget{Tenant: "tenant-a", Service: "echo", Contract: "example:echo/api@1.0.0", Function: "echo"}), Payload: []byte{0, 1, 2, 255}, MediaType: "application/octet-stream", Priority: uint32(0), Budget: fixturePointer(ResourceBudget{CpuFuel: uint64(18446744073709551615), MemoryBytes: uint64(9223372036854775808), ChildCalls: uint32(0), OutboundRequests: uint32(0), StateReadBytes: uint64(0), StateWriteBytes: uint64(0), BlobReadBytes: uint64(0), BlobWriteBytes: uint64(0), LogBytes: uint64(0), EffectCount: uint32(0)}), Metadata: map[string]string{"trace": "redacted"}}
 		if !(!(value.ActivationId != nil)) {
 			tester.Fatal("invoke-absent-identity-and-deadlines.activation_id.presence")
@@ -2289,6 +2625,552 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 		if !(value.PackageDigest == "sha256:2222222222222222222222222222222222222222222222222222222222222222") {
 			tester.Fatal("publication-other-tenant-same-package.package_digest")
+		}
+	}
+	{
+		value := InspectHttpTargetRequest{Service: "service-a", Contract: "latent:web/application@0.1.0", Function: "handle", Route: fixturePointer("web"), RevisionId: fixturePointer("revision-a"), Publication: fixturePointer(PublicationRef{Id: "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", Tenant: "tenant-a"}), RoutingKey: fixturePointer("reviewed-key"), IncludePreparation: true, MaximumWaitMillis: uint64(30000)}
+		if !(value.Service == "service-a") {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.service")
+		}
+		if !(value.Contract == "latent:web/application@0.1.0") {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.contract")
+		}
+		if !(value.Function == "handle") {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.function")
+		}
+		if !(value.Route != nil) {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.route.presence")
+		}
+		if !((*value.Route) == "web") {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.route")
+		}
+		if !(value.RevisionId != nil) {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.revision_id.presence")
+		}
+		if !((*value.RevisionId) == "revision-a") {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.revision_id")
+		}
+		if !(value.Publication != nil) {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.publication.presence")
+		}
+		if !((*value.Publication).Id == "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb") {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.publication.id")
+		}
+		if !((*value.Publication).Tenant == "tenant-a") {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.publication.tenant")
+		}
+		if !(value.RoutingKey != nil) {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.routing_key.presence")
+		}
+		if !((*value.RoutingKey) == "reviewed-key") {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.routing_key")
+		}
+		if !(value.IncludePreparation == true) {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.include_preparation")
+		}
+		if !(value.MaximumWaitMillis == uint64(30000)) {
+			tester.Fatal("target-inspection-exact-bounded-publication-selector.maximum_wait_millis")
+		}
+	}
+	{
+		value := InspectHttpTargetResponse{SchemaVersion: uint32(1), Tenant: "tenant-a", Service: "service-a", Contract: "latent:web/application@0.1.0", Function: "handle", Route: "web", State: TargetObservationState(1), CatalogTransaction: uint64(18446744073709551615), RouteGeneration: uint64(18446744073709551615), BindingGeneration: uint64(18446744073709551615), PolicyStoreGeneration: fixturePointer(uint64(0)), Candidates: []TargetCandidate{TargetCandidate{DeploymentId: "deployment-a", DeploymentGeneration: uint64(18446744073709551615), RevisionId: "revision-a", ComponentDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Publication: fixturePointer(PublicationRef{Id: "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", Tenant: "tenant-a"}), RequestedPublication: fixturePointer(PublicationRef{Id: "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", Tenant: "tenant-a"}), PackageDigest: fixturePointer("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), PublicationGeneration: fixturePointer(uint64(18446744073709551615)), RoutingWeight: uint32(100), ExportCompatible: true, HttpCompatible: true, Eligible: true, Reasons: []TargetReason{TargetReason(1)}, Dependencies: []TargetDependency{TargetDependency{Capability: "latent:runtime/clocks@0.1.0", State: "configured-current", PolicyIdentityDigest: "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", ProviderConfigurationEpoch: uint64(18446744073709551615), Binding: fixturePointer(TargetDependencyRevision{Id: "binding-a", Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Revision: uint64(18446744073709551615)}), Policies: []TargetDependencyRevision{TargetDependencyRevision{Id: "policy-a", Digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Revision: uint64(0)}}, ProviderProfile: "host-runtime-v1", ConfigurationDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}, Preparation: fixturePointer(TargetPreparation{State: TargetPreparationState(1), Profile: fixturePointer(DiagnosticProfile(2)), EngineVersion: fixturePointer("wasmtime-42"), EngineConfigurationDigest: fixturePointer("blake3:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"), TargetTriple: fixturePointer("x86_64-unknown-linux-gnu"), CpuFeatureSet: fixturePointer("baseline"), SealedMetadataFingerprint: fixturePointer("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"), ImportCount: fixturePointer(uint64(2)), FunctionCount: fixturePointer(uint64(1)), HostcallFuel: fixturePointer(uint64(18446744073709551615)), MaximumLiftedBytes: fixturePointer(uint64(67108864)), MaximumTypeNodes: fixturePointer(uint64(65536)), DeclaredBudget: fixturePointer(ResourceBudget{CpuFuel: uint64(18446744073709551615), MemoryBytes: uint64(18446744073709551615), ChildCalls: uint32(4294967295), OutboundRequests: uint32(0), StateReadBytes: uint64(18446744073709551615), StateWriteBytes: uint64(0), BlobReadBytes: uint64(0), BlobWriteBytes: uint64(0), LogBytes: uint64(0), EffectCount: uint32(0), WallTimeLimitMillis: fixturePointer(uint64(0))}), Imports: []string{"latent:runtime/clocks@0.1.0"}, Exports: []PreparedTargetExport{PreparedTargetExport{Contract: "latent:web/application@0.1.0", Function: "handle"}}, TypeImports: []string{"examples:java-http-domain/types@1.0.0"}}), PublicationKind: fixturePointer("capsule"), HttpBindings: []InspectedHttpBinding{InspectedHttpBinding{Id: "trigger-a", Generation: uint64(18446744073709551615), SelectedDeploymentGeneration: uint64(18446744073709551615), State: "configured-current"}}}}, SelectedRevisionId: fixturePointer("revision-a"), LiveGrantsChecked: false}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.schema_version")
+		}
+		if !(value.Tenant == "tenant-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.tenant")
+		}
+		if !(value.Service == "service-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.service")
+		}
+		if !(value.Contract == "latent:web/application@0.1.0") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.contract")
+		}
+		if !(value.Function == "handle") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.function")
+		}
+		if !(value.Route == "web") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.route")
+		}
+		if !(int32(value.State) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.state")
+		}
+		if !(value.CatalogTransaction == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.catalog_transaction")
+		}
+		if !(value.RouteGeneration == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.route_generation")
+		}
+		if !(value.BindingGeneration == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.binding_generation")
+		}
+		if !(value.PolicyStoreGeneration != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.policy_store_generation.presence")
+		}
+		if !((*value.PolicyStoreGeneration) == uint64(0)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.policy_store_generation")
+		}
+		if !(len(value.Candidates) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.count")
+		}
+		if !(value.Candidates[0].DeploymentId == "deployment-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.deployment_id")
+		}
+		if !(value.Candidates[0].DeploymentGeneration == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.deployment_generation")
+		}
+		if !(value.Candidates[0].RevisionId == "revision-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.revision_id")
+		}
+		if !(value.Candidates[0].ComponentDigest == "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.component_digest")
+		}
+		if !(value.Candidates[0].Publication != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication.presence")
+		}
+		if !((*value.Candidates[0].Publication).Id == "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication.id")
+		}
+		if !((*value.Candidates[0].Publication).Tenant == "tenant-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication.tenant")
+		}
+		if !(value.Candidates[0].RequestedPublication != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.requested_publication.presence")
+		}
+		if !((*value.Candidates[0].RequestedPublication).Id == "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.requested_publication.id")
+		}
+		if !((*value.Candidates[0].RequestedPublication).Tenant == "tenant-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.requested_publication.tenant")
+		}
+		if !(value.Candidates[0].PackageDigest != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.package_digest.presence")
+		}
+		if !((*value.Candidates[0].PackageDigest) == "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.package_digest")
+		}
+		if !(value.Candidates[0].PublicationGeneration != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication_generation.presence")
+		}
+		if !((*value.Candidates[0].PublicationGeneration) == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication_generation")
+		}
+		if !(value.Candidates[0].RoutingWeight == uint32(100)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.routing_weight")
+		}
+		if !(value.Candidates[0].ExportCompatible == true) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.export_compatible")
+		}
+		if !(value.Candidates[0].HttpCompatible == true) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_compatible")
+		}
+		if !(value.Candidates[0].Eligible == true) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.eligible")
+		}
+		if !(len(value.Candidates[0].Reasons) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.reasons.count")
+		}
+		if !(int32(value.Candidates[0].Reasons[0]) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.reasons.0")
+		}
+		if !(len(value.Candidates[0].Dependencies) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.count")
+		}
+		if !(value.Candidates[0].Dependencies[0].Capability == "latent:runtime/clocks@0.1.0") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.capability")
+		}
+		if !(value.Candidates[0].Dependencies[0].State == "configured-current") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.state")
+		}
+		if !(value.Candidates[0].Dependencies[0].PolicyIdentityDigest == "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policy_identity_digest")
+		}
+		if !(value.Candidates[0].Dependencies[0].ProviderConfigurationEpoch == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.provider_configuration_epoch")
+		}
+		if !(value.Candidates[0].Dependencies[0].Binding != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.binding.presence")
+		}
+		if !((*value.Candidates[0].Dependencies[0].Binding).Id == "binding-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.binding.id")
+		}
+		if !((*value.Candidates[0].Dependencies[0].Binding).Digest == "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.binding.digest")
+		}
+		if !((*value.Candidates[0].Dependencies[0].Binding).Revision == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.binding.revision")
+		}
+		if !(len(value.Candidates[0].Dependencies[0].Policies) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policies.count")
+		}
+		if !(value.Candidates[0].Dependencies[0].Policies[0].Id == "policy-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policies.0.id")
+		}
+		if !(value.Candidates[0].Dependencies[0].Policies[0].Digest == "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policies.0.digest")
+		}
+		if !(value.Candidates[0].Dependencies[0].Policies[0].Revision == uint64(0)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policies.0.revision")
+		}
+		if !(value.Candidates[0].Dependencies[0].ProviderProfile == "host-runtime-v1") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.provider_profile")
+		}
+		if !(value.Candidates[0].Dependencies[0].ConfigurationDigest == "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.configuration_digest")
+		}
+		if !(value.Candidates[0].Preparation != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.presence")
+		}
+		if !(int32((*value.Candidates[0].Preparation).State) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.state")
+		}
+		if !(!((*value.Candidates[0].Preparation).Diagnostic != nil)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.diagnostic.presence")
+		}
+		if !((*value.Candidates[0].Preparation).Profile != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.profile.presence")
+		}
+		if !(int32((*(*value.Candidates[0].Preparation).Profile)) == 2) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.profile")
+		}
+		if !((*value.Candidates[0].Preparation).EngineVersion != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.engine_version.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).EngineVersion) == "wasmtime-42") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.engine_version")
+		}
+		if !((*value.Candidates[0].Preparation).EngineConfigurationDigest != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.engine_configuration_digest.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).EngineConfigurationDigest) == "blake3:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.engine_configuration_digest")
+		}
+		if !((*value.Candidates[0].Preparation).TargetTriple != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.target_triple.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).TargetTriple) == "x86_64-unknown-linux-gnu") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.target_triple")
+		}
+		if !((*value.Candidates[0].Preparation).CpuFeatureSet != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.cpu_feature_set.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).CpuFeatureSet) == "baseline") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.cpu_feature_set")
+		}
+		if !((*value.Candidates[0].Preparation).SealedMetadataFingerprint != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.sealed_metadata_fingerprint.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).SealedMetadataFingerprint) == "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.sealed_metadata_fingerprint")
+		}
+		if !((*value.Candidates[0].Preparation).ImportCount != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.import_count.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).ImportCount) == uint64(2)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.import_count")
+		}
+		if !((*value.Candidates[0].Preparation).FunctionCount != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.function_count.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).FunctionCount) == uint64(1)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.function_count")
+		}
+		if !((*value.Candidates[0].Preparation).HostcallFuel != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.hostcall_fuel.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).HostcallFuel) == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.hostcall_fuel")
+		}
+		if !((*value.Candidates[0].Preparation).MaximumLiftedBytes != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.maximum_lifted_bytes.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).MaximumLiftedBytes) == uint64(67108864)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.maximum_lifted_bytes")
+		}
+		if !((*value.Candidates[0].Preparation).MaximumTypeNodes != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.maximum_type_nodes.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).MaximumTypeNodes) == uint64(65536)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.maximum_type_nodes")
+		}
+		if !((*value.Candidates[0].Preparation).DeclaredBudget != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).CpuFuel == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.cpu_fuel")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).MemoryBytes == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.memory_bytes")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).ChildCalls == uint32(4294967295)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.child_calls")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).OutboundRequests == uint32(0)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.outbound_requests")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).StateReadBytes == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.state_read_bytes")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).StateWriteBytes == uint64(0)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.state_write_bytes")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).BlobReadBytes == uint64(0)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.blob_read_bytes")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).BlobWriteBytes == uint64(0)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.blob_write_bytes")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).LogBytes == uint64(0)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.log_bytes")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).EffectCount == uint32(0)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.effect_count")
+		}
+		if !((*(*value.Candidates[0].Preparation).DeclaredBudget).WallTimeLimitMillis != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.wall_time_limit_millis.presence")
+		}
+		if !((*(*(*value.Candidates[0].Preparation).DeclaredBudget).WallTimeLimitMillis) == uint64(0)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.wall_time_limit_millis")
+		}
+		if !(len((*value.Candidates[0].Preparation).Imports) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.imports.count")
+		}
+		if !((*value.Candidates[0].Preparation).Imports[0] == "latent:runtime/clocks@0.1.0") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.imports.0")
+		}
+		if !(len((*value.Candidates[0].Preparation).Exports) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.exports.count")
+		}
+		if !((*value.Candidates[0].Preparation).Exports[0].Contract == "latent:web/application@0.1.0") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.exports.0.contract")
+		}
+		if !((*value.Candidates[0].Preparation).Exports[0].Function == "handle") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.exports.0.function")
+		}
+		if !(len((*value.Candidates[0].Preparation).TypeImports) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.type_imports.count")
+		}
+		if !((*value.Candidates[0].Preparation).TypeImports[0] == "examples:java-http-domain/types@1.0.0") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.type_imports.0")
+		}
+		if !(value.Candidates[0].PublicationKind != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication_kind.presence")
+		}
+		if !((*value.Candidates[0].PublicationKind) == "capsule") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication_kind")
+		}
+		if !(len(value.Candidates[0].HttpBindings) == 1) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.count")
+		}
+		if !(value.Candidates[0].HttpBindings[0].Id == "trigger-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.0.id")
+		}
+		if !(value.Candidates[0].HttpBindings[0].Generation == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.0.generation")
+		}
+		if !(value.Candidates[0].HttpBindings[0].SelectedDeploymentGeneration == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.0.selected_deployment_generation")
+		}
+		if !(value.Candidates[0].HttpBindings[0].State == "configured-current") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.0.state")
+		}
+		if !(value.SelectedRevisionId != nil) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.selected_revision_id.presence")
+		}
+		if !((*value.SelectedRevisionId) == "revision-a") {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.selected_revision_id")
+		}
+		if !(value.LiveGrantsChecked == false) {
+			tester.Fatal("target-inspection-ready-keeps-full-width-owner-identities.live_grants_checked")
+		}
+	}
+	{
+		value := InspectHttpTargetResponse{SchemaVersion: uint32(1), Tenant: "tenant-a", Service: "service-a", Contract: "domain:application/api@1.0.0", Function: "get", Route: "domain", State: TargetObservationState(777), CatalogTransaction: uint64(0), RouteGeneration: uint64(0), BindingGeneration: uint64(0), Candidates: []TargetCandidate{TargetCandidate{DeploymentId: "deployment-a", DeploymentGeneration: uint64(0), RevisionId: "revision-a", ComponentDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", RoutingWeight: uint32(0), ExportCompatible: false, HttpCompatible: false, Eligible: false, Reasons: []TargetReason{TargetReason(-2147483648), TargetReason(778)}, Dependencies: []TargetDependency{}, Preparation: fixturePointer(TargetPreparation{State: TargetPreparationState(779), Diagnostic: fixturePointer(ActivationDiagnostic{SchemaVersion: uint32(1), Stage: DiagnosticStage(780), Reason: DiagnosticReason(781), ConfiguredBound: fixturePointer(uint64(0)), CalculatedRequirement: fixturePointer(uint64(18446744073709551615))}), Imports: []string{}, Exports: []PreparedTargetExport{}, TypeImports: []string{}}), HttpBindings: []InspectedHttpBinding{}}}, LiveGrantsChecked: false}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.schema_version")
+		}
+		if !(value.Tenant == "tenant-a") {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.tenant")
+		}
+		if !(value.Service == "service-a") {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.service")
+		}
+		if !(value.Contract == "domain:application/api@1.0.0") {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.contract")
+		}
+		if !(value.Function == "get") {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.function")
+		}
+		if !(value.Route == "domain") {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.route")
+		}
+		if !(int32(value.State) == 777) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.state")
+		}
+		if !(value.CatalogTransaction == uint64(0)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.catalog_transaction")
+		}
+		if !(value.RouteGeneration == uint64(0)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.route_generation")
+		}
+		if !(value.BindingGeneration == uint64(0)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.binding_generation")
+		}
+		if !(!(value.PolicyStoreGeneration != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.policy_store_generation.presence")
+		}
+		if !(len(value.Candidates) == 1) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.count")
+		}
+		if !(value.Candidates[0].DeploymentId == "deployment-a") {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.deployment_id")
+		}
+		if !(value.Candidates[0].DeploymentGeneration == uint64(0)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.deployment_generation")
+		}
+		if !(value.Candidates[0].RevisionId == "revision-a") {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.revision_id")
+		}
+		if !(value.Candidates[0].ComponentDigest == "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.component_digest")
+		}
+		if !(!(value.Candidates[0].Publication != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.publication.presence")
+		}
+		if !(!(value.Candidates[0].RequestedPublication != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.requested_publication.presence")
+		}
+		if !(!(value.Candidates[0].PackageDigest != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.package_digest.presence")
+		}
+		if !(!(value.Candidates[0].PublicationGeneration != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.publication_generation.presence")
+		}
+		if !(value.Candidates[0].RoutingWeight == uint32(0)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.routing_weight")
+		}
+		if !(value.Candidates[0].ExportCompatible == false) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.export_compatible")
+		}
+		if !(value.Candidates[0].HttpCompatible == false) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.http_compatible")
+		}
+		if !(value.Candidates[0].Eligible == false) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.eligible")
+		}
+		if !(len(value.Candidates[0].Reasons) == 2) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.reasons.count")
+		}
+		if !(int32(value.Candidates[0].Reasons[0]) == -2147483648) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.reasons.0")
+		}
+		if !(int32(value.Candidates[0].Reasons[1]) == 778) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.reasons.1")
+		}
+		if !(len(value.Candidates[0].Dependencies) == 0) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.dependencies.count")
+		}
+		if !(value.Candidates[0].Preparation != nil) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.presence")
+		}
+		if !(int32((*value.Candidates[0].Preparation).State) == 779) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.state")
+		}
+		if !((*value.Candidates[0].Preparation).Diagnostic != nil) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).Diagnostic).SchemaVersion == uint32(1)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.schema_version")
+		}
+		if !(int32((*(*value.Candidates[0].Preparation).Diagnostic).Stage) == 780) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.stage")
+		}
+		if !(int32((*(*value.Candidates[0].Preparation).Diagnostic).Reason) == 781) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.reason")
+		}
+		if !(!((*(*value.Candidates[0].Preparation).Diagnostic).Profile != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.profile.presence")
+		}
+		if !(!((*(*value.Candidates[0].Preparation).Diagnostic).ProfileDigest != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.profile_digest.presence")
+		}
+		if !((*(*value.Candidates[0].Preparation).Diagnostic).ConfiguredBound != nil) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.configured_bound.presence")
+		}
+		if !((*(*(*value.Candidates[0].Preparation).Diagnostic).ConfiguredBound) == uint64(0)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.configured_bound")
+		}
+		if !((*(*value.Candidates[0].Preparation).Diagnostic).CalculatedRequirement != nil) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.calculated_requirement.presence")
+		}
+		if !((*(*(*value.Candidates[0].Preparation).Diagnostic).CalculatedRequirement) == uint64(18446744073709551615)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.calculated_requirement")
+		}
+		if !(!((*(*value.Candidates[0].Preparation).Diagnostic).FixedBytes != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.fixed_bytes.presence")
+		}
+		if !(!((*(*value.Candidates[0].Preparation).Diagnostic).LiftingFuel != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.lifting_fuel.presence")
+		}
+		if !(!((*(*value.Candidates[0].Preparation).Diagnostic).LiftMultiplier != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.lift_multiplier.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).Profile != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.profile.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).EngineVersion != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.engine_version.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).EngineConfigurationDigest != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.engine_configuration_digest.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).TargetTriple != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.target_triple.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).CpuFeatureSet != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.cpu_feature_set.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).SealedMetadataFingerprint != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.sealed_metadata_fingerprint.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).ImportCount != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.import_count.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).FunctionCount != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.function_count.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).HostcallFuel != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.hostcall_fuel.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).MaximumLiftedBytes != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.maximum_lifted_bytes.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).MaximumTypeNodes != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.maximum_type_nodes.presence")
+		}
+		if !(!((*value.Candidates[0].Preparation).DeclaredBudget != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.declared_budget.presence")
+		}
+		if !(len((*value.Candidates[0].Preparation).Imports) == 0) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.imports.count")
+		}
+		if !(len((*value.Candidates[0].Preparation).Exports) == 0) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.exports.count")
+		}
+		if !(len((*value.Candidates[0].Preparation).TypeImports) == 0) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.preparation.type_imports.count")
+		}
+		if !(!(value.Candidates[0].PublicationKind != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.publication_kind.presence")
+		}
+		if !(len(value.Candidates[0].HttpBindings) == 0) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.candidates.0.http_bindings.count")
+		}
+		if !(!(value.SelectedRevisionId != nil)) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.selected_revision_id.presence")
+		}
+		if !(value.LiveGrantsChecked == false) {
+			tester.Fatal("target-inspection-future-states-remain-descriptive.live_grants_checked")
 		}
 	}
 	{
