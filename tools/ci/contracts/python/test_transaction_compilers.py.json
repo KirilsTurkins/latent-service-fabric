@@ -1,1 +1,20 @@
-{"cases":["TransactionCompilerTests.test_actual_shape_requires_canonical_resources_async_operations_and_no_extra_authority","TransactionCompilerTests.test_public_dotnet_checksum_projection_preserves_original_inventory_and_other_evidence","TransactionCompilerTests.test_public_dotnet_checksum_projection_rejects_unidentified_or_malformed_digests","TransactionCompilerTests.test_reserved_delete_declaration_projection_is_exact_and_rejects_drift"],"guards":{"TransactionCompilerTests.test_actual_shape_requires_canonical_resources_async_operations_and_no_extra_authority":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f9911b6ece7259d8de1d27167f4da0418d5ef024ab66d687d312a69ab3a6b1bf","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},"TransactionCompilerTests.test_public_dotnet_checksum_projection_preserves_original_inventory_and_other_evidence":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f9911b6ece7259d8de1d27167f4da0418d5ef024ab66d687d312a69ab3a6b1bf","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},"TransactionCompilerTests.test_public_dotnet_checksum_projection_rejects_unidentified_or_malformed_digests":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f9911b6ece7259d8de1d27167f4da0418d5ef024ab66d687d312a69ab3a6b1bf","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},"TransactionCompilerTests.test_reserved_delete_declaration_projection_is_exact_and_rejects_drift":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f9911b6ece7259d8de1d27167f4da0418d5ef024ab66d687d312a69ab3a6b1bf","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}},"kind":"python","module":"tools/tests/test_transaction_compilers.py","reviewReason":"Reconcile development812 source while retaining all sixteen typed RPCs, both parent cases/decorators/skips, raw workflow commands, matrices/deadlines and verified neutral process delegation.","schemaVersion":"latent.ci.contracts.v1"}
+{
+  "cases":["TransactionCompilerTests.test_actual_shape_requires_canonical_resources_async_operations_and_no_extra_authority","TransactionCompilerTests.test_public_dotnet_checksum_projection_preserves_original_inventory_and_other_evidence","TransactionCompilerTests.test_public_dotnet_checksum_projection_rejects_unidentified_or_malformed_digests","TransactionCompilerTests.test_reserved_delete_declaration_projection_is_exact_and_rejects_drift"],
+  "guards":{
+    "TransactionCompilerTests.test_actual_shape_requires_canonical_resources_async_operations_and_no_extra_authority":
+      "e8e357c72e5f2fb0673edd718dfa69b37b876c03aba0bc10004a125b69e9f9fc",
+    "TransactionCompilerTests.test_public_dotnet_checksum_projection_preserves_original_inventory_and_other_evidence":
+      "e8e357c72e5f2fb0673edd718dfa69b37b876c03aba0bc10004a125b69e9f9fc",
+    "TransactionCompilerTests.test_public_dotnet_checksum_projection_rejects_unidentified_or_malformed_digests":
+      "e8e357c72e5f2fb0673edd718dfa69b37b876c03aba0bc10004a125b69e9f9fc",
+    "TransactionCompilerTests.test_reserved_delete_declaration_projection_is_exact_and_rejects_drift":
+      "e8e357c72e5f2fb0673edd718dfa69b37b876c03aba0bc10004a125b69e9f9fc"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_transaction_compilers.py",
+  "reviewReason":"Reconcile development812 source while retaining all sixteen typed RPCs, both parent cases/decorators/skips, raw workflow commands, matrices/deadlines and verified neutral process delegation.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "e8e357c72e5f2fb0673edd718dfa69b37b876c03aba0bc10004a125b69e9f9fc":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f9911b6ece7259d8de1d27167f4da0418d5ef024ab66d687d312a69ab3a6b1bf","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+  }
+}
