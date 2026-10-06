@@ -62,7 +62,7 @@ class DependencyWorkflow(unittest.TestCase):
         selected = self.selected()
         self.assertEqual(selected["dependencyInputs"]["applicationLock"], common.digest((self.source / LOCK).read_bytes()))
         self.assertEqual(selected["dependencyInputs"]["selection"], self.manifest["selection"])
-        self.assertEqual(selected["inputRoots"], ["src", MANIFEST, LOCK, "native.lock", dependencies.OBJECTS])
+        self.assertEqual(selected["inputRoots"], ["src", "latent.project.json", MANIFEST, LOCK, "native.lock", dependencies.OBJECTS])
         self.assertEqual((self.source / "latent.project.json").read_bytes(), before)
         dependencies.verify(self.source, selected)
 
