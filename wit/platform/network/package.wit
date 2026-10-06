@@ -1,0 +1,43 @@
+package latent:network@0.1.0;
+
+// ADR-0061 comparison contract. Not installed or recognized by production hosts.
+interface streams {
+    resource connection;
+    resource chunk;
+    enum transport { tcp, host-tls }
+    enum state { open, read-eof, write-shut, read-eof-write-shut, stopping, closed, failed }
+    enum interest { readable, writable, either }
+    enum shutdown-mode { send, receive, both }
+    enum error-code {
+        invalid-input, invalid-state, unsupported, denied, revoked, exhausted,
+        dns-failed, tls-failed, connect-failed, timeout, cancelled, io-failed, uncertain,
+    }
+    record stream-error {
+        code: error-code,
+        accepted-prefix-bytes: u32,
+        may-have-applied: bool,
+    }
+    record observation {
+        state: state,
+        accepted-write-bytes: u64,
+        delivered-read-bytes: u64,
+        application-write-attempted: bool,
+    }
+    record connect-request {
+        host: string,
+        port: u16,
+        transport: transport,
+        timeout-millis: option<u32>,
+    }
+    record readiness { readable: bool, writable: bool }
+    connect: async func(request: connect-request) -> result<connection, stream-error>;
+    read: async func(source: borrow<connection>, maximum-bytes: u32, timeout-millis: option<u32>) -> result<option<chunk>, stream-error>;
+    write: async func(target: borrow<connection>, bytes: list<u8>, timeout-millis: option<u32>) -> result<u32, stream-error>;
+    ready: async func(target: borrow<connection>, interest: interest, timeout-millis: option<u32>) -> result<readiness, stream-error>;
+    chunk-bytes: async func(value: borrow<chunk>) -> result<list<u8>, stream-error>;
+    inspect: func(target: borrow<connection>) -> observation;
+    shutdown: async func(target: borrow<connection>, how: shutdown-mode) -> result<observation, stream-error>;
+    close: async func(target: connection) -> result<observation, stream-error>;
+}
+
+world contract-probe { import streams; }
