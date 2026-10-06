@@ -15,6 +15,7 @@ use super::{
 
 #[cfg(test)]
 mod tests;
+mod validation;
 mod write;
 
 /// Captured process fence, distinct from business namespace incarnation.
@@ -49,7 +50,7 @@ pub struct HistoryPage {
     pub resume: Option<Vec<u8>>,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
 pub struct DispatchCounts {
     pub pending: u64,
     pub active: u64,
@@ -152,6 +153,19 @@ impl DispatchCatalog {
         due: &DueRecord,
         time: EffectTime,
     ) -> Result<ClaimedEffect, DispatchStoreError> {
+        Self::claim_fenced(store, epoch, due, time, || Ok(()))
+    }
+
+    /// The physical owner performs its original short admission fence only
+    /// after OCC/capacity preparation, immediately before acceptance. A failed
+    /// fence leaves the exact due record and payload unclaimed.
+    pub fn claim_fenced(
+        store: &EmbeddedStore,
+        epoch: DispatchEpoch,
+        due: &DueRecord,
+        time: EffectTime,
+        accept: impl FnOnce() -> Result<(), crate::authority::AuthorityError>,
+    ) -> Result<ClaimedEffect, DispatchStoreError> {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, &due.effect)?;
@@ -172,7 +186,7 @@ impl DispatchCatalog {
                 ) {
                     writer.replace(loaded)?;
                     drop(view);
-                    writer.apply(store)?;
+                    writer.apply_fenced(store, accept)?;
                 }
                 return Err(error.into());
             }
@@ -181,7 +195,7 @@ impl DispatchCatalog {
         writer.reserve_attempt(&loaded.record)?;
         writer.replace(loaded)?;
         drop(view);
-        writer.apply(store)?;
+        writer.apply_fenced(store, accept)?;
         Ok(ClaimedEffect {
             authority,
             attempt,
@@ -195,6 +209,18 @@ impl DispatchCatalog {
         claim: &AttemptIdentity,
         time: EffectTime,
     ) -> Result<(), DispatchStoreError> {
+        Self::begin_send_fenced(store, epoch, claim, time, || Ok(()))
+    }
+
+    /// A provider future remains unpolled until this same original native
+    /// deadline/role acceptance succeeds; no lock remains held during flush.
+    pub fn begin_send_fenced(
+        store: &EmbeddedStore,
+        epoch: DispatchEpoch,
+        claim: &AttemptIdentity,
+        time: EffectTime,
+        accept: impl FnOnce() -> Result<(), crate::authority::AuthorityError>,
+    ) -> Result<(), DispatchStoreError> {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, claim.effect())?;
@@ -203,7 +229,7 @@ impl DispatchCatalog {
         loaded.record.begin_send(claim)?;
         writer.replace(loaded)?;
         drop(view);
-        writer.apply(store)
+        writer.apply_fenced(store, accept)
     }
 
     pub fn complete(
