@@ -102,7 +102,7 @@
             "version": "4.3.0"
           }
         },
-        "lock_sha256": "b5753d219595f5d9340a9c2496afc92f50d2a3ef2c6dbc88244a11097f3519ac",
+        "lock_sha256": "1051e125413d8bb9330ebae3f2bdf4c604d21851a703ad83b8d4d0db13b6b8a4",
         "source_sha256": "3b6c5617dc5418b52718647f65bdfde0462de0966a31afe5441476b9975f20d3"
       },
       "kind": "npm",
@@ -115,7 +115,7 @@
       "derived_bundle": {
         "builder_sha256": "2e82bbcf3883a9c7e887296085ea8b664b2e93778f1a8600dae43cd208203b61",
         "integrity": "sha512-4FbPtex+HUbSDyWaA4h/uEiACFUrc7edyxxEzZzSxB4h78eZlgzhWG1BvGyRcd8aisS+9i4RCJ72ajQaBFCLGw==",
-        "lock_sha256": "a7db0c3d077d742f70a8895a0e9117a2e419a1332ced5a620f46d0bf0e5603c9",
+        "lock_sha256": "4c8481d3c1e1b0ed947d7fdd1ad2f250280764c79050b15ab0fea276f39d2f95",
         "source_sha256": "3b6c5617dc5418b52718647f65bdfde0462de0966a31afe5441476b9975f20d3"
       },
       "kind": "npm",
