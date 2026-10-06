@@ -55,6 +55,19 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
     # Validate every private fixture before deleting any owned runtime or build
     # state. Reject an existing foreign file or link before the first removal.
     fixtures = fixture_cleanup.plan(root)
+    snapshots = root / 'snapshots'
+    snapshot_entries = list(snapshots.iterdir()) if snapshots.exists() else []
+    require(len(snapshot_entries) <= 4, 'snapshot-retention-inventory-invalid')
+    snapshot_maximum = sum(snapshot_bound(path) for path in snapshot_entries) + 4
+    captures = root / 'captures'
+    capture_entries = list(captures.iterdir()) if captures.exists() else []
+    require(len(capture_entries) <= 4, 'captured-input-retention-inventory-invalid')
+    if capture_entries:
+        from . import assets as transfers, captured_inputs
+        for path in capture_entries:
+            value = transfers.manifest(state.load(path, 'transfer.json'))
+            require(value.get('domain') == captured_inputs.DOMAIN and value['identity'] == 'sha256:' + path.name,
+                    'captured-input-cleanup-owner')
     from . import local_service_fixture
     local_service_fixture.purge(root)
     builds = root / "builds"
@@ -75,25 +88,14 @@ def purge(root: Path, workspace: str, confirmation: str) -> dict:
         if installed["status"] not in {"removed", "purged"}:
             lifecycle.remove(layout)
         receipt = lifecycle.remove(layout, purge=installed["installationId"])
-    snapshots = root / "snapshots"
     if snapshots.exists():
-        entries = list(snapshots.iterdir())
-        require(len(entries) <= 4, 'snapshot-retention-inventory-invalid')
-        files.remove_tree(snapshots, maximum=sum(snapshot_bound(path) for path in entries) + 4)
+        files.remove_tree(snapshots, maximum=snapshot_maximum)
     from .tool_install import purge as purge_tools
     purge_tools(root)
     assets = root / "assets"
     if assets.exists():
         files.remove_tree(assets, maximum=256)
-    captures = root / 'captures'
     if captures.exists():
-        from . import assets as transfers, captured_inputs
-        entries = list(captures.iterdir())
-        require(len(entries) <= 4, 'captured-input-retention-inventory-invalid')
-        for path in entries:
-            value = transfers.manifest(state.load(path, 'transfer.json'))
-            require(value.get('domain') == captured_inputs.DOMAIN and value['identity'] == 'sha256:' + path.name,
-                    'captured-input-cleanup-owner')
         files.remove_tree(captures, maximum=64)
     if (root / "test-profile-plan.json").exists():
         paths.read(root, "test-profile-plan.json")
