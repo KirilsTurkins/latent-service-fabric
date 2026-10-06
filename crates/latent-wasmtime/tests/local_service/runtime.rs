@@ -55,6 +55,25 @@ async fn signed_runtime(
     caller: latent_packaging::PackageBundle,
     source_input: &[u8],
 ) -> Fixture {
+    signed_runtime_with_limits(
+        root,
+        cells,
+        call_wall_millis,
+        caller,
+        source_input,
+        limits(),
+    )
+    .await
+}
+
+async fn signed_runtime_with_limits(
+    root: &std::path::Path,
+    cells: u32,
+    call_wall_millis: u64,
+    caller: latent_packaging::PackageBundle,
+    source_input: &[u8],
+    runtime_limits: RuntimeLimits,
+) -> Fixture {
     let callee = packages::callee(42);
     let signers = package::Signers::new(latent_signing::PROVENANCE_BUILD_TYPE);
     let mut uploads = vec![];
@@ -87,8 +106,13 @@ async fn signed_runtime(
             .await
             .unwrap();
     }
-    Fixture::with_activation_runtime(cells, (catalog, caller, callee), limits(), call_wall_millis)
-        .await
+    Fixture::with_activation_runtime(
+        cells,
+        (catalog, caller, callee),
+        runtime_limits,
+        call_wall_millis,
+    )
+    .await
 }
 
 /// The normal suite does not build a toolchain. Run the explicit compiler
@@ -103,7 +127,7 @@ async fn signed_java_threads_spin_join_and_thread_local_use_real_activation_fibe
     let prepared = std::path::PathBuf::from(
         std::env::var_os("LSF_JAVA_FIBER_FIXTURE").expect("prepare the pinned Java fiber fixture"),
     );
-    let source = std::fs::read(prepared.join("src/dev/latent/app/Capsule.java")).unwrap();
+    let source = std::fs::read(prepared.join("src/Capsule.java")).unwrap();
     assert_eq!(
         source,
         include_bytes!("../../../../sdk/java-guest/fibers/conformance/Capsule.java")
@@ -122,28 +146,45 @@ async fn signed_java_threads_spin_join_and_thread_local_use_real_activation_fibe
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
     assert_eq!(record["reference"].as_array().unwrap().len(), 3);
+    for control in record["reference"].as_array().unwrap() {
+        assert_eq!(control["modes"], serde_json::json!([0, 1, 2]));
+        assert_eq!(control["results"], serde_json::json!([42, 42, 42]));
+    }
     let wit = std::fs::read_to_string(prepared.join("wit/service.wit")).unwrap();
     let caller = packages::java_activation_runtime(bytes, &wit);
     let root = tempfile::tempdir().unwrap();
-    let f = signed_runtime(root.path(), 1, 120_000, caller, &source).await;
+    // Declared fixture ceiling: root plus four independent pool workers, three
+    // executors, and the pending batches/rendezvous. No product default is added.
+    let java_limits = RuntimeLimits {
+        tasks: 5,
+        executors: 3,
+        queued_work: 8,
+        waits: 8,
+        timers: 2,
+        results: 8,
+        native_owners: 2,
+    };
+    let f = signed_runtime_with_limits(root.path(), 1, 120_000, caller, &source, java_limits).await;
     for iteration in 0..3 {
-        let receipt = success(
-            f.manager
-                .start(f.request(&format!("java-fibers-{iteration}"), 0))
-                .unwrap()
-                .await,
-        );
-        assert_eq!(
-            serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
-            [42]
-        );
-        assert!(receipt.consumption.cpu_fuel > 0);
-        assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
-        eprintln!(
-            "teavm-activation-fibers-v1 iteration={iteration} consumption={:?}",
-            receipt.consumption
-        );
-        f.idle().await;
+        for mode in 0..3 {
+            let receipt = success(
+                f.manager
+                    .start(f.request(&format!("java-fibers-{iteration}-{mode}"), mode))
+                    .unwrap()
+                    .await,
+            );
+            assert_eq!(
+                serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+                [42]
+            );
+            assert!(receipt.consumption.cpu_fuel > 0);
+            assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+            eprintln!(
+                "teavm-activation-fibers-v1 iteration={iteration} mode={mode} consumption={:?}",
+                receipt.consumption
+            );
+            f.idle().await;
+        }
     }
 }
 fn success(receipt: latent_node::ActivationReceipt) -> latent_activation::ActivationSuccess {

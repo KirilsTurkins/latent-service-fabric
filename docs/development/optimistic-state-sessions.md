@@ -51,7 +51,9 @@ Sealing consumes the session and returns a private validated `StatePlan`.
 Only the complete host command/result/intent/inbox coordinator appends it to an
 atomic envelope and applies the final authority/cancellation fence. There is
 no guest or session commit method. The original prototype independent
-`StateBackend::commit` is deprecated because it cannot establish this boundary.
+`StateBackend::commit` has been removed from the unused legacy host port because
+it cannot establish this boundary. Read/staging and rollback remain available;
+Phase 4 commitment always uses the complete host envelope.
 Query mode rejects staging and sealing and creates no durable command, result,
 inbox or outbox records, or state generation changes.
 
