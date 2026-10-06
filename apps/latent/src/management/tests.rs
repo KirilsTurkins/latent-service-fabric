@@ -28,6 +28,62 @@ fn release() -> proto::ReleaseDescriptor {
     }
 }
 
+#[test]
+fn activation_tree_preserves_future_enums_numeric_presence_and_history_gaps() {
+    let reply = proto::InspectActivationTreeResponse {
+        schema_version: 1,
+        retained_history_only: true,
+        history_available: true,
+        page: Some(proto::PageResponse::default()),
+        nodes: vec![proto::ActivationTreeNode {
+            activation_id: "child".into(),
+            root_activation_id: "root".into(),
+            parent_activation_id: Some("root".into()),
+            phase: "materializing".into(),
+            principal_kind: "service".into(),
+            last_updated_unix_millis: u64::MAX,
+            diagnostic: Some(proto::ActivationDiagnostic {
+                schema_version: 1,
+                stage: 777,
+                reason: 778,
+                profile: Some(779),
+                configured_bound: Some(0),
+                calculated_requirement: Some(u64::MAX),
+                ..proto::ActivationDiagnostic::default()
+            }),
+            ..proto::ActivationTreeNode::default()
+        }],
+        ..proto::InspectActivationTreeResponse::default()
+    };
+    bounds::checked(&reply, 64 * 1024).unwrap();
+    let value = response::activation_tree(reply).unwrap().data;
+    assert_eq!(value["externalCompletion"], "unknown");
+    let node = &value["nodes"][0];
+    assert_eq!(node["lastUpdatedUnixMillis"], u64::MAX.to_string());
+    assert!(node["grantedBudget"].is_null());
+    assert!(!node["diagnosticIsTerminal"].as_bool().unwrap());
+    let diagnostic = &node["diagnostic"];
+    assert_eq!(diagnostic["stage"], 777);
+    assert!(diagnostic["stageName"].is_null());
+    assert_eq!(diagnostic["reason"], 778);
+    assert_eq!(diagnostic["profile"], 779);
+    assert_eq!(diagnostic["configuredBound"], "0");
+    assert_eq!(diagnostic["calculatedRequirement"], u64::MAX.to_string());
+    assert!(diagnostic["fixedBytes"].is_null());
+    let gap = response::activation_tree(proto::InspectActivationTreeResponse {
+        schema_version: 1,
+        page: Some(proto::PageResponse::default()),
+        retained_history_only: true,
+        cursor_expired: true,
+        ..proto::InspectActivationTreeResponse::default()
+    })
+    .unwrap()
+    .data;
+    assert_eq!(gap["historyAvailable"], false);
+    assert_eq!(gap["cursorExpired"], true);
+    assert_eq!(gap["externalCompletion"], "unknown");
+}
+
 fn deployment() -> proto::Deployment {
     let manifest = prepare::codec()
         .decode_deployment(include_bytes!(
