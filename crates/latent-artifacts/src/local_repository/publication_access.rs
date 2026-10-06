@@ -125,6 +125,39 @@ impl DirectoryArtifactRepository {
         Ok(Some(entry.value.clone()))
     }
 
+    /// Bounded metadata-only projection from the same exact scoped catalog
+    /// index. It clones neither annotations nor manifests and reads no file.
+    /// The caller supplies its authenticated scope; identifiers confer no right.
+    pub fn inspect_publication_identity(
+        &self,
+        publication: &PublicationRef,
+    ) -> Result<Option<crate::PublicationInspectionIdentity>, PlatformError> {
+        let index = self.index.try_read().map_err(|_| {
+            error(
+                PlatformErrorCode::Unavailable,
+                "publication-inspection-unavailable",
+            )
+        })?;
+        let Some(entry) = index.exact(publication)? else {
+            return Ok(None);
+        };
+        let component = &entry.value.descriptor.release_digest;
+        if component.0.len() > 71 {
+            return Err(corrupt("publication-component-identity"));
+        }
+        Ok(Some(crate::PublicationInspectionIdentity {
+            component: component.clone(),
+            package: entry.value.package.clone(),
+            // This index only adopts verified executable capsule packages.
+            // A package-free legacy capsule supplies no package kind claim.
+            kind: entry
+                .value
+                .package
+                .as_ref()
+                .map(|_| crate::package::PackageKind::Capsule),
+        }))
+    }
+
     pub(super) fn require_legacy_publication(
         &self,
         scope: Option<&LifecycleScope>,

@@ -838,6 +838,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
         reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
+        reviewed_framework_archives = ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications"
         reviewed_deferred_owners = ".github/workflows/ci.yml:rust:integration_lanes"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
@@ -870,7 +871,13 @@ class RepositoryMigrationTests(unittest.TestCase):
                         '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
-            if key == reviewed_narrow_fixture:
+            if key == reviewed_framework_archives:
+                # Materialize the already authenticated locked archives before
+                # the original framework install. Preserve every existing
+                # command, qualification guard and step field byte for byte.
+                self.assertEqual(data["after"][key],
+                                 dict(value, run="python3 website/toolchain/prepare.py\n" + value["run"]), key)
+            elif key == reviewed_narrow_fixture:
                 self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
                                  {k: v for k, v in value.items() if k != "run"})
                 # Only the fixture path changes: real state dependencies now

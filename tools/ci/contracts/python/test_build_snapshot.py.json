@@ -18,7 +18,7 @@
   },
   "kind":"python",
   "module":"tools/tests/test_build_snapshot.py",
-  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason":"Retain the original aggregate/entry/file/archive refusal case and every guard; its invalid aggregate configuration is exactly one byte above the reviewed current source ceiling rather than the obsolete33MiB profile. Incoming reviewed obligation: Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced. Lossless parent case and exact guard union. Store identical case-owned guards using the authenticated shared v2 representation; retain every original case and execution control.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "714a34127017c975c83aeccde885d2a6f56d5f1b00f35e919ee726f45168b90d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:39e7e35aac82b90c2563deb8ae7825c6cd2b775b83f94190a9b1eeb9e4c2954f","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
