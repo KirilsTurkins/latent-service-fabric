@@ -477,6 +477,78 @@ mod tests {
     }
 
     #[test]
+    fn backend_trap_labels_match_the_public_closed_classification() {
+        use latent_core::error::GuestTrapKind;
+
+        for (engine_trap, kind) in [
+            (Trap::StackOverflow, GuestTrapKind::StackOverflow),
+            (Trap::MemoryOutOfBounds, GuestTrapKind::MemoryOutOfBounds),
+            (Trap::HeapMisaligned, GuestTrapKind::HeapMisaligned),
+            (Trap::TableOutOfBounds, GuestTrapKind::TableOutOfBounds),
+            (Trap::IndirectCallToNull, GuestTrapKind::IndirectCallToNull),
+            (Trap::BadSignature, GuestTrapKind::BadSignature),
+            (Trap::IntegerOverflow, GuestTrapKind::IntegerOverflow),
+            (
+                Trap::IntegerDivisionByZero,
+                GuestTrapKind::IntegerDivisionByZero,
+            ),
+            (
+                Trap::BadConversionToInteger,
+                GuestTrapKind::BadConversionToInteger,
+            ),
+            (Trap::UnreachableCodeReached, GuestTrapKind::UnreachableCode),
+            (Trap::AllocationTooLarge, GuestTrapKind::AllocationTooLarge),
+        ] {
+            let outcome =
+                classify_runtime_failure(None, false, Some(&engine_trap), consumption()).unwrap();
+            let GuestOutcome::Trapped {
+                trap,
+                consumption: actual,
+            } = outcome
+            else {
+                panic!("ordinary engine trap must preserve the trapped outcome");
+            };
+            assert_eq!(trap.code, "guest-trap");
+            assert_eq!(
+                trap.metadata,
+                Metadata::from([("trap".into(), kind.wire_name().into())])
+            );
+            assert_eq!(
+                GuestTrapKind::from_wire_name(&trap.metadata["trap"]),
+                Some(kind)
+            );
+            assert!(trap.guest_backtrace.is_empty());
+            assert_eq!(actual, consumption());
+        }
+    }
+
+    #[test]
+    fn runtime_error_kind_does_not_forward_untyped_engine_context() {
+        let error = wasmtime::Error::msg("private-request secret-token private-engine-frame")
+            .context("private-context");
+        let outcome =
+            classify_runtime_error(&error, &StopControl::new(None, None), false, consumption())
+                .unwrap();
+        let GuestOutcome::Trapped {
+            trap,
+            consumption: actual,
+        } = outcome
+        else {
+            panic!("untyped runtime failure must preserve the trapped outcome");
+        };
+        assert_eq!(trap.code, "guest-runtime-error");
+        assert_eq!(trap.message, "guest execution failed");
+        assert_eq!(
+            trap.metadata,
+            Metadata::from([("classification".into(), "runtime-error".into())])
+        );
+        assert!(trap.guest_backtrace.is_empty());
+        assert_eq!(actual, consumption());
+        assert!(!format!("{trap:?}").contains("private"));
+        assert!(!format!("{trap:?}").contains("secret-token"));
+    }
+
+    #[test]
     fn first_stop_cause_is_sticky_across_repeated_epoch_observations() {
         let probe = Arc::new(TestCancellationProbe::new(false));
         let stop = StopControl::new(

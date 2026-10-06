@@ -26,6 +26,7 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/go_application_dependencies.py",
            "tools/go_dependency_authoring.py", "tools/captured_compiler_isolation.py")
+RECIPE += ("tools/go_generator_authoring.py",)
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
@@ -114,6 +115,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("source-snapshot", source_inputs), ("build-recipe", recipe_inputs), ("package-inputs", package_inventory),
                 ("toolchain-config", files["vendor/lsf/sdk/go-guest/toolchain.lock.json"]),
                 ("dependency-lock", files["vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json"])))
+            if 'go-generated-inputs.json' in files:
+                materials.append({'name': 'go-generator-inputs', 'role': 'generated',
+                                  'digest': digest(files['go-generated-inputs.json']),
+                                  'size': len(files['go-generated-inputs.json'])})
             if closure is not None:
                 for name in ("application-dependencies.json", "compiler-containment.json", "go-module-build-inputs.json"):
                     data = read_file(output / name, 16 * 1024 * 1024)

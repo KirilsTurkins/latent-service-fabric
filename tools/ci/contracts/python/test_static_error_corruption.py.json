@@ -1,0 +1,150 @@
+{
+  "cases": [
+    "StaticErrorCorruptionTests.test_active_root_comes_from_exact_existing_restored_process_configuration",
+    "StaticErrorCorruptionTests.test_actual_shared_inode_is_corrupted_without_resizing_then_restored",
+    "StaticErrorCorruptionTests.test_cancellation_and_expired_workflow_do_not_skip_physical_restoration",
+    "StaticErrorCorruptionTests.test_concurrent_unknown_content_is_refused_without_overwriting_it",
+    "StaticErrorCorruptionTests.test_exact_size_and_original_per_asset_bound_are_required",
+    "StaticErrorCorruptionTests.test_exception_in_browser_or_socket_campaign_restores_original_bytes",
+    "StaticErrorCorruptionTests.test_mismatched_signed_hash_refuses_fault_before_writing",
+    "StaticErrorCorruptionTests.test_only_fixed_signed_html_error_member_and_canonical_digest_are_selected",
+    "StaticErrorCorruptionTests.test_replaced_path_is_refused_and_foreign_replacement_is_not_written",
+    "StaticErrorCorruptionTests.test_symbolic_blob_and_parent_paths_are_refused_before_writing"
+  ],
+  "guards": {
+    "StaticErrorCorruptionTests.test_active_root_comes_from_exact_existing_restored_process_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": []
+    },
+    "StaticErrorCorruptionTests.test_actual_shared_inode_is_corrupted_without_resizing_then_restored": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": []
+    },
+    "StaticErrorCorruptionTests.test_cancellation_and_expired_workflow_do_not_skip_physical_restoration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": []
+    },
+    "StaticErrorCorruptionTests.test_concurrent_unknown_content_is_refused_without_overwriting_it": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": []
+    },
+    "StaticErrorCorruptionTests.test_exact_size_and_original_per_asset_bound_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": []
+    },
+    "StaticErrorCorruptionTests.test_exception_in_browser_or_socket_campaign_restores_original_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": []
+    },
+    "StaticErrorCorruptionTests.test_mismatched_signed_hash_refuses_fault_before_writing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": []
+    },
+    "StaticErrorCorruptionTests.test_only_fixed_signed_html_error_member_and_canonical_digest_are_selected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": []
+    },
+    "StaticErrorCorruptionTests.test_replaced_path_is_refused_and_foreign_replacement_is_not_written": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'Linux fixture path and held-inode ownership')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": [
+        "skip-control-sha256:42435e15b3ac59719080aaada2c0badee4aae7f15bb93150ee9dda7a5b91cdf1",
+        "unittest.skipUnless(os.name == 'posix', 'Linux fixture path and held-inode ownership')"
+      ]
+    },
+    "StaticErrorCorruptionTests.test_symbolic_blob_and_parent_paths_are_refused_before_writing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'Linux no-follow fixture path')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:2631f846974a1c8ef92c7a4c400983d3f5c888ffdfbe0aea2dcc5bd6e3cea321",
+        "class:setup-sha256:5be70405676a6a9417547f14428ea159628ae368861c08b053ae44f10c95c7ab"
+      ],
+      "skipSites": [
+        "skip-control-sha256:335b93ab1044fa2e307129db3edba2cb8624e11c7bd092748fce62e5f478ca4b",
+        "unittest.skipUnless(os.name == 'posix', 'Linux no-follow fixture path')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_static_error_corruption.py",
+  "reviewReason": "Add actual bounded shared-inode corruption/restoration, cancellation, signed-byte/path refusal and active restored-process selection; keep every existing Python case and guard, with two explicit Linux physical-path cases",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
