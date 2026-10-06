@@ -29,6 +29,20 @@ const CLOCKS: [(&str, &str, &str); 2] = [
     ),
 ];
 const RANDOM: &str = "latent:random/random@0.1.0";
+pub const ACTIVATION: &str = "latent:runtime/activation@0.1.0";
+const ACTIVATION_OPERATIONS: [&str; 11] = [
+    "register",
+    "park",
+    "wake",
+    "settle",
+    "close",
+    "observe",
+    "wait-for",
+    "wait-until",
+    "timer-start",
+    "timer-next",
+    "timer-stop",
+];
 
 pub fn enabled() -> bool {
     matches!(
@@ -185,7 +199,46 @@ impl Runtime {
             owner.add(random.reference(), "u64-value");
             owner.random = Some(random);
         }
-        for entry in &owner.entries {
+        owner.authorize(policies, tenant, scopes, 5000);
+        owner
+    }
+
+    /// Explicit shared-runtime installation for real node ownership tests. This
+    /// does not opt in any unchanged language SDK or its ordinary applications.
+    pub fn activation_scoped(
+        broker: &ActivationCapabilityBroker,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+    ) -> Self {
+        let mut owner = Self::default();
+        let profile = latent_core::activation_runtime::PROFILE;
+        let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
+        let registration = broker
+            .register_provider(ProviderConfiguration {
+                capability: ACTIVATION,
+                profile,
+                configuration_digest: digest.as_str(),
+                configuration_epoch: 1,
+                restriction_json: br#"{"operations":[]}"#,
+                minimum_call_charges: &[],
+            })
+            .unwrap();
+        owner.add_operations(registration.reference(), &ACTIVATION_OPERATIONS);
+        owner.clocks.push(registration);
+        owner.authorize(policies, tenant, scopes, call_wall_millis);
+        owner
+    }
+
+    fn authorize(
+        &self,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+    ) {
+        for entry in &self.entries {
             let capability = entry.reference.capability();
             let rules: Vec<_> = scopes.iter().enumerate().map(|(index, scope)| json!({
                 "id":format!("runtime-{index}"),"effect":"allow",
@@ -193,7 +246,7 @@ impl Runtime {
                 "services":scope.services,"publications":scope.publications.iter().map(PublicationId::as_str).collect::<Vec<_>>(),
                 "capability":capability,"operations":entry.operation,
                 "resources":{"kind":if capability == RANDOM {"random"} else {"clock"}},
-                "ceiling":{"operations":4096,"inputBytes":if capability == RANDOM {8} else {0},"outputBytes":32768,"wallTimeMillis":5000}
+                "ceiling":{"operations":4096,"inputBytes":if capability == RANDOM {8} else {0},"outputBytes":32768,"wallTimeMillis":call_wall_millis}
             })).collect();
             for (id, kind, document) in [
                 (
@@ -229,17 +282,25 @@ impl Runtime {
                     .unwrap();
             }
         }
-        owner
     }
 
     fn add(&mut self, reference: ProviderReference, operation: &str) {
+        self.add_operations(reference, &[operation]);
+    }
+
+    fn add_operations(&mut self, reference: ProviderReference, operations: &[&str]) {
         let id = self.entries.len();
         self.entries.push(Entry {
             reference,
-            operation: vec![operation.into()],
+            operation: operations
+                .iter()
+                .map(|operation| (*operation).into())
+                .collect(),
             policy: vec![format!("sdk-runtime-policy-{id}")],
             binding: format!("sdk-runtime-binding-{id}"),
-            definition: latent_artifacts::package::artifact_blob_digest(operation.as_bytes()),
+            definition: latent_artifacts::package::artifact_blob_digest(
+                operations.join("\0").as_bytes(),
+            ),
         });
     }
 
@@ -272,6 +333,18 @@ impl Runtime {
         if let Some(random) = &self.random {
             runtime.install_random(random.clone()).unwrap();
         }
+    }
+
+    pub fn explicit_grants(&self) -> Vec<CapabilityGrantSpec> {
+        self.entries
+            .iter()
+            .map(|entry| {
+                CapabilityGrantSpec::new(
+                    CapabilityId(entry.reference.capability().into()),
+                    PolicyId(entry.policy[0].clone()),
+                )
+            })
+            .collect()
     }
 
     pub fn definitions(
