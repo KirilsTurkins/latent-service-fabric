@@ -412,7 +412,7 @@ class JavaDiagnosticReviewTests(unittest.TestCase):
                 result = program._current(client, node, targets, prepared, Path("releases"), "localhost:23456",
                                           12345, Path("peer"), output, None)
                 self.assertEqual(result["status"], "passed")
-                owner.assert_called_once_with(client, targets, "localhost:23456", output)
+                owner.assert_called_once_with(client, targets, Path("releases"), prepared["publications"], "localhost:23456", output)
                 self.assertIs(result["initialMissingGrant"], missing)
                 self.assertEqual(service.call_count, 2)
                 self.assertEqual(route.call_count, 3)

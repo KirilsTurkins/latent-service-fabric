@@ -290,7 +290,7 @@ def _current(client, node, targets, prepared, releases, host, port, peer_root, o
     result = {"initialMissingGrant": missing,
         "directAndComposedSuccess": fresh_status(client, targets, host, "java-diagnostic-direct-success"),
         "targetAuthority": inspection.authority(client),
-        "context": context.qualify(client, targets, host, output)}
+        "context": context.qualify(client, targets, releases, publications, host, output)}
     result["guestFuel"] = resource_diagnostics.fuel(client, targets, host)
     result["queuePressure"] = resource_diagnostics.queue(client, targets, host)
     result["providerTimeout"] = provider_timeout.qualify(client, host, peer_root, port)
