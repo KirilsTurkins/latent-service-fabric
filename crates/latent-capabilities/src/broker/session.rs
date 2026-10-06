@@ -108,6 +108,7 @@ pub(super) struct SessionCore {
     pub state: Mutex<SessionState>,
     pub random_bytes: AtomicUsize,
     pub metrics: Mutex<super::metrics::SessionUsage>,
+    pub(super) network: super::network::NetworkUsage,
     web_context: bool,
     _metadata: Charge,
     _slot: Charge,
@@ -300,6 +301,7 @@ impl ActivationCapabilityBroker {
         let metadata = self.inner.counters.acquire(
             Kind::Metadata,
             4096 + size_of::<super::metrics::SessionUsage>()
+                + size_of::<super::network::NetworkUsage>()
                 + self.inner.limits.maximum_handles_per_session
                     * std::mem::size_of::<Option<Arc<HandleEntry>>>(),
         )?;
@@ -340,6 +342,7 @@ impl ActivationCapabilityBroker {
             stats,
             random_bytes: AtomicUsize::new(0),
             metrics: Mutex::new(super::metrics::SessionUsage::default()),
+            network: super::network::NetworkUsage::default(),
             web_context: publication.web_projection().is_some(),
             state: Mutex::new(SessionState {
                 slots: (0..self.inner.limits.maximum_handles_per_session)
@@ -701,6 +704,9 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
             origin: origin.clone(),
             method: method.to_owned(),
             path: path.to_owned(),
+        },
+        ResourceTarget::Stream { endpoint } => ResourceRequest::Stream {
+            endpoint: endpoint.clone(),
         },
         ResourceTarget::Blob { namespace } => ResourceRequest::Blob {
             namespace: namespace.to_owned(),
