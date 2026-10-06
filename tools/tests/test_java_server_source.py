@@ -14,6 +14,26 @@ from tools.tests.test_server_source import fixture
 
 
 class JavaServerSource(unittest.TestCase):
+    def test_refused_and_uncertain_route_results_remain_in_evidence_without_retry(self):
+        import json
+        import time
+        from unittest.mock import patch
+        from tools.dev_workflow.client import Client
+        from tools.java_server_node import RecordedRouteClient
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            recorded = RecordedRouteClient(root / "binary", root / "config", root,
+                evidence=root / "evidence", deadline=time.monotonic() + 30)
+            for number, known in enumerate((True, False), 1):
+                reply = {"category": "conflict" if known else "uncertain", "outcomeKnown": known,
+                    "command": "trigger delete", "data": {"originalOperation": "operation-a"},
+                    "error": {"code": "refused" if known else "outcome-unknown"}}
+                with patch.object(Client, "call", return_value=reply) as original:
+                    self.assertIs(recorded.call("trigger", "delete", "original-trigger", timeout=7), reply)
+                    original.assert_called_once_with("trigger", "delete", "original-trigger", timeout=7, check=None)
+                self.assertEqual(json.loads((root / "evidence" / f"{number:03}.json").read_bytes()), reply)
+            self.assertEqual(recorded.record_count, 2)
+
     def test_new_project_uses_ordinary_source_and_no_application_adapter(self):
         with tempfile.TemporaryDirectory() as temporary:
             project = create_server(Path(temporary) / "outside", "independent-server")

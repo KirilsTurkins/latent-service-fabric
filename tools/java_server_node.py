@@ -30,6 +30,28 @@ IDLE_OWNERS = {
 }
 
 
+class RecordedRouteClient(RouteClient):
+    """Retain bounded decoded route outcomes outside the temporary workspace."""
+
+    def __init__(self, binary: Path, config: Path, directory: Path, *, evidence: Path, deadline: float):
+        super().__init__(binary, config, directory, deadline=deadline)
+        self.evidence = fresh(evidence)
+        self.record_count = 0
+        self.record_bytes = 0
+
+    def call(self, *arguments: str, timeout: float = 30, check=None) -> dict:
+        require(self.record_count < 512 and self.record_bytes + 1048576 <= 16 * 1024 * 1024,
+                "java-server-route-evidence-capacity")
+        result = super().call(*arguments, timeout=timeout, check=check)
+        raw = (json.dumps(result, ensure_ascii=False, separators=(",", ":"), allow_nan=False) + "\n").encode()
+        require(len(raw) <= 1048576, "java-server-route-evidence-response-bound")
+        with (self.evidence / f"{self.record_count + 1:03}.json").open("xb") as output:
+            output.write(raw)
+        self.record_count += 1
+        self.record_bytes += len(raw)
+        return result
+
+
 def runtime_config(settings: dict, service: str) -> None:
     settings["providers"] = {"formatVersion": 1, "bindings": []}
     for name, (capability, _profile, _operation, _kind) in {**profiles("java"), "context": CONTEXT}.items():
@@ -219,7 +241,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             declaration = read_file(build / "server-source.json")
             profile = read_file(build / "server-profile.json")
             source = read_file(build / "source-inputs.json", 4 * 1024 * 1024)
-            route_cli = RouteClient(binary, client.config, root / "routes", deadline=client.deadline)
+            route_cli = RecordedRouteClient(binary, client.config, root / "routes",
+                evidence=evidence / "route-control", deadline=client.deadline)
             selected = server_routes.observed_pin(route_cli, "examples", deployed["name"], record["componentDigest"])
             mounts = {"schemaVersion": server_source.CONFIGURATION, "profileDigest": digest(profile), "mounts": [{
                 "endpoint": "server", "name": "java-server", "scheme": scheme, "host": "java.server.test", "path": "/",
