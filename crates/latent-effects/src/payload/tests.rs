@@ -67,6 +67,55 @@ pub(crate) fn authority(value: &Value, effect: &str) -> DurableEffectAuthority {
 }
 
 #[test]
+fn sealed_adapter_grant_rejects_changed_payload_identity_media_metadata_and_bytes() {
+    let original = value();
+    let authority = authority(&original, &"a".repeat(64));
+    let owner = EffectAuthorityOwner::new(1, 1, 100).unwrap();
+    owner
+        .publish(EffectRule {
+            scope: authority.scope().clone(),
+            profile: authority.profile().clone(),
+            policy_revision: 1,
+            credential_epoch: 1,
+            protected_credential_reference: "provider-a-secret".into(),
+            ceiling: authority.ceiling(),
+            enabled: true,
+        })
+        .unwrap();
+    let record = PayloadRecord::new(&authority, original).unwrap();
+    let time = EffectTime {
+        unix_millis: 101,
+        continuity_proven: true,
+    };
+    let mut context = owner.accept(&authority, 1, time).unwrap();
+    context
+        .accept_with(&authority, 1, time, |grant| {
+            assert_eq!(grant.payload_digest(), authority.payload_digest());
+            assert_eq!(grant.payload_bytes(), authority.payload_bytes());
+            assert_eq!(grant.committed_at_millis(), authority.committed_at_millis());
+            assert_eq!(grant.expires_at_millis(), authority.expires_at_millis());
+            record.verify_grant(&grant).unwrap();
+            for field in 0..4 {
+                let mut changed = record.clone();
+                match field {
+                    0 => changed.effect = "b".repeat(64),
+                    1 => changed.value.media_type = "text/plain".into(),
+                    2 => changed.value.metadata[0].1 = "changed".into(),
+                    3 => changed.value.bytes[0] ^= 1,
+                    _ => unreachable!(),
+                }
+                assert_eq!(changed.verify_grant(&grant), Err(AuthorityError::Invalid));
+            }
+            let pointer = record.value().bytes.as_ptr();
+            let transferred = record.into_value();
+            assert_eq!(transferred.bytes.as_ptr(), pointer);
+        })
+        .unwrap();
+    context.retire().unwrap();
+    assert_eq!(owner.owners().unwrap().physical, 0);
+}
+
+#[test]
 fn canonical_payload_identity_sorts_metadata_and_binds_media_and_binary_bytes() {
     let original = value();
     let digest = payload_digest(&original).unwrap();
