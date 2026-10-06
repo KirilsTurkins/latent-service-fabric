@@ -32,6 +32,11 @@ future keeps its pending-result owner until the callable's physical `finally`
 finishes. Completed results and returned queued tasks stay inside the accounted
 Java heap. All logical ceilings come from the explicit host runtime configuration.
 
+The activation-owned default `CompletableFuture` facility grows workers lazily
+under those same task and queue ceilings. Its idle workers use untimed waits
+and retire during root drain, leaving finite timer slots for application waits.
+Explicit cached executors retain their standard 60-second idle expiration.
+
 `FutureTask` supports runnable/callable construction, pending get, timed get,
 completion/error/cancellation, readable result state, subclass `done` callbacks,
 and protected `runAndReset` without completing a successfully reset future.
