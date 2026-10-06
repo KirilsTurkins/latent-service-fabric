@@ -356,3 +356,6 @@ SDK binding drift means the SDK and generator pins disagree; do not edit the loc
 to bypass it. A denied publication commonly means the policy expired, the exact
 source approval differs, or an evidence file is missing. A denied HTTP call
 requires checking the deployment grant, provider binding and allowed destination.
+
+
+For separately approved source generation, follow the [Go generator workflow](go-generators.md).
