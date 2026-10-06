@@ -59,7 +59,9 @@ def selected(root: Path, language: str) -> tuple[dict, list[str]]:
                             "selection": manifest["selection"], "executableInputs": executables})
     except DependencyError as error:
         raise DevError(str(error)) from None
-    inputs = [capture.MANIFEST, capture.LOCK, *manifest["nativeLocks"]]
+    # The application recipe must retain its authenticated outer association.
+    # Otherwise an app/ compiler invocation silently misses the reviewed lock.
+    inputs = ["latent.project.json", capture.MANIFEST, capture.LOCK, *manifest["nativeLocks"]]
     if manifest["artifacts"] or manifest["nativeLocks"]:
         inputs.append(OBJECTS)
     for name in inputs:
