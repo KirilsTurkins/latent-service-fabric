@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "latent.dotnet.http-helper.security-inventory.v1",
+  "testedAt": "2026-10-02T04:35:28.396921+00:00",
+  "platform": "win32",
+  "pythonVersion": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+  "status": "passed-source-controls-only",
+  "failedSourceHead": "56d791fdfa928dcc55894ddc4e02ee60f61805c5",
+  "baselineSourceHead": "f31aa964234658af6396d83afeac6f9813f2a4fe",
+  "originalPolicy": {
+    "size": 8068,
+    "sha256": "adf0ee27119fb6eea4c51c2115e4c653f26d58c3b33a38aab59d7c7d0e46c7b0"
+  },
+  "repairedPolicy": {
+    "size": 8877,
+    "sha256": "b24047edb47bc782fe463a1942d528048afe99d5119c46d871cbda6cd92fff23"
+  },
+  "originalInventoryFailure": {
+    "unreviewed": [
+      "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
+      "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"
+    ],
+    "missing": [],
+    "closedReason": "unreviewed-or-missing-dependency-manifest"
+  },
+  "exactAddedManifestEntries": [
+    {
+      "path": "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
+      "kind": "no-external-packages",
+      "sha256": "766809881ad0b7ff2ce3a59edf7a24de0a86d4869b455e27d3f3e9368fde1546",
+      "absent_when_directory_missing": "sdk/dotnet-guest/probes/http-errors",
+      "reason": "SDK error-message probe; no PackageReference or separate resolver graph."
+    },
+    {
+      "path": "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj",
+      "kind": "no-external-packages",
+      "sha256": "ac7f14d0c3a2b03f2fd8486d974f065100b94d4c66d1bd6b249215f47362feed",
+      "absent_when_directory_missing": "sdk/dotnet-guest/tools/http-errors",
+      "reason": "Compiler-only helper with no PackageReference; its digest-pinned Mono.Cecil assembly belongs to the scanned Microsoft.NET.ILLink.Tasks 10.0.0 graph in sdk/dotnet-guest/probes/smoke/packages.lock.json."
+    }
+  ],
+  "existingManifestEntriesRetained": 28,
+  "originalScannerDiscoveryAndEqualityGuardUnchanged": true,
+  "resolvedPackages": 3341,
+  "inventoryRecords": 31,
+  "lockedCompilerOwner": {
+    "package": "Microsoft.NET.ILLink.Tasks",
+    "version": "10.0.0",
+    "role": "compiler-only",
+    "path": "sdk/dotnet-guest/probes/smoke/packages.lock.json",
+    "lock": {
+      "size": 2475,
+      "sha256": "c52f3ff2af8396c543f93063caf0a36ff41fed9e47f20383ae51fd432f74ad82"
+    },
+    "additionalCecilAssemblyDigest": "2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7"
+  },
+  "retainedInventoryReceipt": {
+    "size": 534449,
+    "sha256": "38cd7fbf76ac5d55d31a33ca7f9a23dedb39d15d1ac29965cbfa8e658c9dd097"
+  },
+  "command": [
+    "python3.13",
+    "-B",
+    "-X",
+    "utf8",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/tests",
+    "-p",
+    "test_security*.py"
+  ],
+  "exitCode": 0,
+  "sourceTestCases": 71,
+  "historicalPlatformSkips": 1,
+  "stdout": {
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "size": 188,
+    "sha256": "0902d53fe4796315e62c81be49b6d3207e65cff76c4a2c3266b75debde3ad6ec"
+  },
+  "originalCanaryCasesAndGuardsRetained": true,
+  "newCanaryCases": 3,
+  "liveAdvisoryScannersInvoked": false,
+  "linuxSourceControlsQualified": false,
+  "completeSecurityWorkflowQualified": false,
+  "nativeCompilerOrDockerInvoked": false,
+  "retainedOriginalSourceControlReceipt": {
+    "size": 3375,
+    "sha256": "11bd342a4f13342c985e4035bb505e75eb47ff87c081da3e99c4821bf159c438"
+  }
+}

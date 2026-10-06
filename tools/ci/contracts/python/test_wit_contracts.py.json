@@ -1,1 +1,32 @@
-{"cases":["WitContractTests.test_duplicate_detector_catches_type_function_collision","WitContractTests.test_example_package_is_staged_with_platform_dependencies","WitContractTests.test_interface_item_names_are_unique","WitContractTests.test_staging_rejects_source_and_platform_overlaps_before_mutation","WitContractTests.test_type_use_preserves_dotted_prerelease_and_build_version_identity","WitContractTests.test_type_use_selector_stages_the_exact_state_dependency","WitContractTests.test_type_use_selector_stages_the_real_intents_state_dependency","WitContractTests.test_versioned_runtime_worlds_stage_only_their_selected_package_versions","WitContractTests.test_versioned_type_uses_stage_exact_transitive_state_dependency"],"guards":{"WitContractTests.test_duplicate_detector_catches_type_function_collision":"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10","WitContractTests.test_example_package_is_staged_with_platform_dependencies":"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10","WitContractTests.test_interface_item_names_are_unique":"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10","WitContractTests.test_staging_rejects_source_and_platform_overlaps_before_mutation":"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10","WitContractTests.test_type_use_preserves_dotted_prerelease_and_build_version_identity":"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10","WitContractTests.test_type_use_selector_stages_the_exact_state_dependency":"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10","WitContractTests.test_type_use_selector_stages_the_real_intents_state_dependency":"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10","WitContractTests.test_versioned_runtime_worlds_stage_only_their_selected_package_versions":"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10","WitContractTests.test_versioned_type_uses_stage_exact_transitive_state_dependency":"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10"},"kind":"python","module":"tools/tests/test_wit_contracts.py","reviewReason":"Preserve every original WIT dependency case and unchanged guard while retaining the incoming transitive selector schedule. Preserve the exact union of both source case inventories and unchanged reviewed guards; retain original deadlines, atomic compiler readiness, all reaping assertions, and exact WIT package closure.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:13db9647c538b30255e3abf158bab7456f3e054547d4ac65e06c2fe76b41bb41","class:setup-sha256:e5947d82f663d2200b2be4ceec9653519360a794b744f8bef4d64fc7834f159f"],"skipSites":[]}}}
+{
+  "cases":["WitContractTests.test_duplicate_detector_catches_type_function_collision","WitContractTests.test_example_package_is_staged_with_platform_dependencies","WitContractTests.test_interface_item_names_are_unique","WitContractTests.test_same_label_profiles_stage_distinct_exact_worlds_and_dependencies","WitContractTests.test_staging_rejects_source_and_platform_overlaps_before_mutation","WitContractTests.test_type_use_preserves_dotted_prerelease_and_build_version_identity","WitContractTests.test_type_use_selector_stages_the_exact_state_dependency","WitContractTests.test_type_use_selector_stages_the_real_intents_state_dependency","WitContractTests.test_versioned_runtime_worlds_stage_only_their_selected_package_versions","WitContractTests.test_versioned_type_uses_stage_exact_transitive_state_dependency"],
+  "guards":{
+    "WitContractTests.test_duplicate_detector_catches_type_function_collision":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
+    "WitContractTests.test_example_package_is_staged_with_platform_dependencies":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
+    "WitContractTests.test_interface_item_names_are_unique":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
+    "WitContractTests.test_same_label_profiles_stage_distinct_exact_worlds_and_dependencies":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
+    "WitContractTests.test_staging_rejects_source_and_platform_overlaps_before_mutation":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
+    "WitContractTests.test_type_use_preserves_dotted_prerelease_and_build_version_identity":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
+    "WitContractTests.test_type_use_selector_stages_the_exact_state_dependency":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
+    "WitContractTests.test_type_use_selector_stages_the_real_intents_state_dependency":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
+    "WitContractTests.test_versioned_runtime_worlds_stage_only_their_selected_package_versions":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
+    "WitContractTests.test_versioned_type_uses_stage_exact_transitive_state_dependency":
+      "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_wit_contracts.py",
+  "reviewReason":"Preserve every original WIT dependency case and unchanged guard while retaining the incoming transitive selector schedule. Preserve the exact union of both source case inventories and unchanged reviewed guards; retain original deadlines, atomic compiler readiness, all reaping assertions, and exact WIT package closure. Retain every original case body and execution guard; add closed alternative-world package rejection and independent exact staging controls.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:13db9647c538b30255e3abf158bab7456f3e054547d4ac65e06c2fe76b41bb41","class:setup-sha256:e5947d82f663d2200b2be4ceec9653519360a794b744f8bef4d64fc7834f159f"],"skipSites":[]}
+  }
+}
