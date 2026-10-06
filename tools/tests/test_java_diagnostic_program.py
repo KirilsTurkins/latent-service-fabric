@@ -266,6 +266,70 @@ class JavaDiagnosticMaterialTests(unittest.TestCase):
             self.assertEqual(record["guestInvocations"], 0)
             self.assertFalse((output / "candidate.json").exists())
 
+    def test_preparation_port_refuses_invalid_selection_and_preserves_bounded_peer_owner(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for index, port in enumerate((False, True, -1, 1, 1023, 65536, "12345", None)):
+                output = root / f"invalid-{index}"
+                with patch.object(program, "clock") as clock, patch.object(program, "start_provider") as peer, \
+                     self.subTest(port=port), self.assertRaisesRegex(WorkflowError, "unprivileged-loopback-port"):
+                    program.prepare(Path("native"), Path("receipt"), Path("builds"), Path("releases"),
+                                    output, provider_port=port)
+                clock.assert_not_called(); peer.assert_not_called()
+                self.assertFalse(output.exists())
+            for selected_port in (0, 1024, 12345, 65535):
+                output = root / f"selected-{selected_port}"
+                actual_port = selected_port or 12345
+                owner = object()
+                with patch.object(program, "clock", return_value={"original": True}), \
+                     patch.object(program, "deadline", return_value=150), \
+                     patch.object(program, "inputs", return_value=({"latent": Path("cli")}, {})), \
+                     patch.object(program, "RecordingClient", return_value=owner), \
+                     patch.object(program, "start_provider", return_value=(owner, actual_port)) as peer, \
+                     patch.object(program, "configure", side_effect=WorkflowError("original-node-refused")), \
+                     patch.object(program, "session") as node, \
+                     patch.object(program, "close_failed_provider", return_value={"closed": True}) as cleanup, \
+                     self.subTest(port=selected_port), self.assertRaisesRegex(WorkflowError, "original-node-refused"):
+                    program.prepare(Path("native"), Path("receipt"), Path("builds"), Path("releases"),
+                                    output, provider_port=selected_port)
+                peer.assert_called_once_with(owner, output / "prepare-peer", maximum_seconds=1200,
+                                             port=selected_port or None)
+                cleanup.assert_called_once_with(owner); node.assert_not_called()
+                record = json.loads((output / "PREPARE-FAILED.json").read_bytes())
+                self.assertEqual(record["recipientPort"], actual_port)
+                self.assertEqual(record["clock"], {"original": True})
+                self.assertEqual([record[key] for key in (
+                    "applicationCapabilityPolicyMutations", "guestInvocations", "providerRequests")], [0, 0, 0])
+                self.assertFalse((output / "candidate.json").exists())
+
+    def test_cli_forwards_prepare_port_and_refuses_execution_override(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+        import sys
+        from tools import qualify_java_preparation_diagnostics as entrypoint
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary)
+            arguments = []
+            for name in ("native-directory", "native-receipt", "builds", "releases", "output"):
+                arguments += ["--" + name, str(source)]
+            for flags, port in (([], 0), (["--provider-port", "12345"], 12345)):
+                with patch.object(sys, "argv", ["diagnostics", "prepare", *arguments, *flags]), \
+                     patch.object(program, "prepare") as prepare:
+                    entrypoint.main()
+                prepare.assert_called_once_with(source.resolve(), source.resolve(), source.resolve(),
+                    source.resolve(), source.resolve(), former_child=True, provider_port=port)
+            for flags in (["--provider-port", "1023"], ["--provider-port", "65536"],
+                          ["--provider-port", "invalid"]):
+                with patch.object(sys, "argv", ["diagnostics", "prepare", *arguments, *flags]), \
+                     patch.object(program, "prepare") as prepare, redirect_stderr(StringIO()), self.assertRaises(SystemExit):
+                    entrypoint.main()
+                prepare.assert_not_called()
+            with patch.object(sys, "argv", ["diagnostics", "execute", *arguments, "--provider-port", "12345",
+                                           "--approved-candidate-sha256", "0" * 64]), \
+                 patch.object(program, "execute") as execute, redirect_stderr(StringIO()), self.assertRaises(SystemExit):
+                entrypoint.main()
+            execute.assert_not_called()
+
 
 class JavaDiagnosticReviewTests(unittest.TestCase):
     def test_prepared_execution_creates_each_session_output_once_and_retires_both_owners(self):

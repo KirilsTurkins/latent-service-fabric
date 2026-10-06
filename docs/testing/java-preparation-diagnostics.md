@@ -66,6 +66,11 @@ python3 tools/qualify_java_preparation_diagnostics.py prepare \
   --output /work/diagnostics
 ```
 
+Preparation accepts `--provider-port 1024..65535` to select an explicit
+unprivileged loopback port. The default `0` lets the existing peer select a port.
+Execution always reuses the port retained in the reviewed candidate; a busy
+selected port refuses preparation rather than silently selecting another port.
+
 Preparation uses at most one live node and the original shared bounded provider
 peer. It publishes the supplied signed fixtures using ordinary receipt-bearing
 operations, reads their original catalog records and actual installed provider

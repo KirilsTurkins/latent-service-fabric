@@ -155,8 +155,10 @@ def _write_proposals(output, program):
     return reviewed
 
 
-def prepare(native_directory, native_receipt, builds, releases, output, *, former_child=True):
+def prepare(native_directory, native_receipt, builds, releases, output, *, former_child=True, provider_port=0):
     require(type(former_child) is bool, "java-diagnostic-former-selection")
+    require(type(provider_port) is int and (provider_port == 0 or 1024 <= provider_port <= 65535),
+            "java-diagnostic-unprivileged-loopback-port")
     output = fresh(output)
     result = {"schemaVersion": SCHEMA, "status": "in-progress", "clock": None, "inputs": None,
         "applicationCapabilityPolicyMutations": 0, "guestInvocations": 0, "providerRequests": 0,
@@ -171,7 +173,7 @@ def prepare(native_directory, native_receipt, builds, releases, output, *, forme
             peer_root = fresh(output / "prepare-peer")
             owner = RecordingClient(binaries["latent"], peer_root, cancellation, deadline(original),
                                     evidence=peer_root / "controls", invocation_timeout_millis=120000)
-            peer, port = start_provider(owner, peer_root, maximum_seconds=1200)
+            peer, port = start_provider(owner, peer_root, maximum_seconds=1200, port=provider_port or None)
             result["recipientPort"] = port
             for name in (("former", "current") if former_child else ("current",)):
                 work = fresh(output / (name + "-node"))
