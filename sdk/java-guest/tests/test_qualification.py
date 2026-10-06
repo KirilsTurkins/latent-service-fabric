@@ -188,7 +188,11 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                 "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
                 "actual-platform-order;async-lowered-owned-pairs;platform-first-negative;"
                 "shape-and-repeat-negatives;application-identity;"
-                "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative\n")]
+                "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative\n"),
+                ("QUEUE_DEADLINE_MODEL_CONTROL PASS actual-locked-queue;first-sample-delays;"
+                 "second-sample-comparison;owned-clock-hooks=2;negative-shapes=4\n"), "",
+                ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback\n")]
             report = fibers.wait_frame_model_control(compiler, root / "model")
             self.assertEqual(report["nativeCallbackPairs"], 2)
             self.assertEqual(report["pluginOrder"], ["runtime", "platform"])
@@ -196,19 +200,27 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(report["coroutineWrappers"], 6)
             self.assertEqual(report["coroutineMonitors"], 2)
             self.assertEqual(report["coroutineNativePairs"], 2)
+            self.assertEqual(report["queueClockSamples"], 2)
+            self.assertEqual(report["queueShapeNegatives"], 4)
+            self.assertEqual(report["timerReadinessSourceControl"],
+                             "passed-private-source-ledger-not-guest-qualification")
             self.assertEqual(len(report["jarDigests"]), 10)
-            compile_call, model_call = compiler.run.call_args_list
+            compile_call, model_call, queue_call, timer_compile, timer_call = compiler.run.call_args_list
             self.assertEqual(compile_call.args[:3], ("wait-frame-model-compile", "javac", "-proc:none"))
-            self.assertEqual(compile_call.args[-4:], tuple(compiler.sdk / source for source in (
+            self.assertEqual(compile_call.args[-5:], tuple(compiler.sdk / source for source in (
                 "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
                 "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java",
                 "fibers/conformance/compiler/WaitFramePluginOrder.java",
-                "fibers/conformance/compiler/WaitFrameModelControl.java")))
+                "fibers/conformance/compiler/WaitFrameModelControl.java",
+                "fibers/conformance/compiler/QueueDeadlineModelControl.java")))
             self.assertIn(compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
                           compile_call.args)
             self.assertIn(compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java",
                           compile_call.args)
             self.assertEqual(model_call.args[-1], "dev.latent.guest.runtime.compiler.WaitFrameModelControl")
+            self.assertEqual(queue_call.args[-1], "dev.latent.guest.runtime.compiler.QueueDeadlineModelControl")
+            self.assertEqual(timer_compile.args[:3], ("timer-readiness-source-compile", "javac", "-proc:none"))
+            self.assertEqual(timer_call.args[-1], "TimerReadinessSourceControl")
 
     def test_changed_platform_processor_is_rejected_before_model_loading(self):
         with tempfile.TemporaryDirectory() as directory:
