@@ -12,7 +12,7 @@ use latent_capabilities::broker::{
     io::{IoLimits, IoRuntime},
     pools::{ProviderPoolLimits, ProviderPools},
 };
-use latent_policy::capability::{MutationRequest, RecordKind};
+use latent_policy::capability::{MutationRequest, RecordKind, ResourceTarget};
 use latent_state::{
     store_identity::StoreIdentity,
     tenant::{TenantQuota, TenantUsage},
@@ -27,7 +27,7 @@ pub struct Fixture {
     pub authority: authority::Fixture,
     pub provider: LocalBlobProvider,
     pub state: EmbeddedStore,
-    pub blob: latent_core::BlobReference,
+    pub blob: latent_blobs::BlobReference,
     pub session: CapabilitySession,
     pub effects: EffectAuthorityOwner,
     pub root: tempfile::TempDir,
@@ -139,7 +139,7 @@ impl Fixture {
             (
                 "payload-binding",
                 RecordKind::ProviderBinding,
-                json!({"formatVersion":1,"tenant":"a","capability":"latent:blob/blob@0.2.0","providerProfile":"linux-immutable-blobs-v1","configurationDigest":provider.store().configuration_digest().unwrap(),"configurationEpoch":1,"restriction":{"operations":[]}}),
+                json!({"formatVersion":1,"tenant":"a","capability":"latent:blob/blob@0.2.0","providerProfile":"linux-immutable-blobs-v1","configurationDigest":reference.configuration_digest(),"configurationEpoch":1,"restriction":{"operations":[]}}),
             ),
         ] {
             let raw = serde_json::to_vec(&value).unwrap();
