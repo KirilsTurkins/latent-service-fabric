@@ -19,6 +19,12 @@ public final class Executors {
         // and queue ceilings, without introducing a second product-wide cap.
         return new ManagedExecutor(Integer.MAX_VALUE, factory, true);
     }
+    static ExecutorService newDefaultAsyncPool() {
+        // The activation-owned default facility grows lazily under the host's
+        // original task/queue ceilings and retires its workers at root drain.
+        // Untimed idle waits leave finite timer slots for application waits.
+        return new ManagedExecutor(Integer.MAX_VALUE, defaultThreadFactory(), true, false);
+    }
     public static ThreadFactory defaultThreadFactory() {
         int pool = ++nextPool;
         return new ThreadFactory() {
