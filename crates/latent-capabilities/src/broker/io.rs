@@ -148,7 +148,7 @@ struct Execution {
 }
 enum Authority {
     Waiting(WaitingCall),
-    Running(ProviderCall),
+    Running(Box<ProviderCall>),
 }
 struct Operation {
     execution: Mutex<Execution>,
@@ -162,6 +162,14 @@ struct Operation {
     _metadata: Charge,
     _slot: Charge,
 }
+// Admission prepays the complete operation shell and its affine running call.
+// Boxing changes placement, not the original metadata charge or physical owner.
+const _: () = assert!(
+    std::mem::size_of::<Operation>()
+        + std::mem::size_of::<ProviderCall>()
+        + 2 * std::mem::size_of::<usize>()
+        <= OPERATION_METADATA
+);
 impl Operation {
     fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
         let core = {
@@ -417,7 +425,7 @@ impl IoReady {
             {
                 return Err(denied());
             }
-            std::mem::replace(&mut state.authority, Authority::Running(call))
+            std::mem::replace(&mut state.authority, Authority::Running(Box::new(call)))
         };
         // No temporary gap in activation ownership at the waiting -> running edge.
         drop(old);
