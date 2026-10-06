@@ -248,6 +248,8 @@ def review(project: Path, candidate: Path, expected: str) -> dict:
 
 def status(project: Path) -> dict:
     owner, app, sdk = seal(project)
+    from tools.java_generator_authoring import validate_generated_inputs
+    validate_generated_inputs(snapshot(app))
     verified = inputs.verify_inputs(owner, 'java')
     if verified is not None:
         current_application(app, verified.lock)

@@ -1,0 +1,192 @@
+{
+  "cases": [
+    "JavaAnnotationProcessorNative.test_actual_selected_annotation_processor_is_contained_and_output_is_captured_once",
+    "JavaGeneratorApproval.test_changed_generated_bytes_fail_normal_build_and_frontend_before_compiler",
+    "JavaGeneratorApproval.test_changed_source_tool_and_input_reject_previous_approval_before_dispatch",
+    "JavaGeneratorApproval.test_cli_request_binds_tool_inputs_source_sdk_arguments_and_limits_without_execution",
+    "JavaGeneratorApproval.test_missing_wrong_or_tampered_request_approval_never_executes",
+    "JavaGeneratorApproval.test_outer_descriptor_change_invalidates_exact_nested_application_approval",
+    "JavaGeneratorApproval.test_requests_cannot_replace_source_sdk_or_existing_directory_or_widen_limits",
+    "JavaGeneratorNative.test_actual_approved_generator_reuses_captured_java_offline_without_original_tool",
+    "JavaGeneratorNative.test_actual_deadline_reaps_descendants_retains_failure_and_preserves_source",
+    "JavaGeneratorNative.test_binary_nonportable_linked_and_empty_outputs_never_enter_java_source",
+    "JavaGeneratorNative.test_failed_manifest_write_rolls_back_only_the_fresh_adopted_subtree",
+    "JavaGeneratorNative.test_oversized_generated_source_is_rejected_at_original_project_file_bound"
+  ],
+  "guards": {
+    "JavaAnnotationProcessorNative.test_actual_selected_annotation_processor_is_contained_and_output_is_captured_once": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:raise:raise unittest.SkipTest('actual processor needs explicitly selected pinned public JDK')",
+        "class:setup-sha256:7432865e65469b3ac255a886c100a2b594e1e6d5d15c990b7195d9b3decddbbc",
+        "class:skip:unittest.SkipTest('actual processor needs explicitly selected pinned public JDK')"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorApproval.test_changed_generated_bytes_fail_normal_build_and_frontend_before_compiler": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorApproval.test_changed_source_tool_and_input_reject_previous_approval_before_dispatch": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorApproval.test_cli_request_binds_tool_inputs_source_sdk_arguments_and_limits_without_execution": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorApproval.test_missing_wrong_or_tampered_request_approval_never_executes": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorApproval.test_outer_descriptor_change_invalidates_exact_nested_application_approval": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorApproval.test_requests_cannot_replace_source_sdk_or_existing_directory_or_widen_limits": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorNative.test_actual_approved_generator_reuses_captured_java_offline_without_original_tool": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorNative.test_actual_deadline_reaps_descendants_retains_failure_and_preserves_source": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorNative.test_binary_nonportable_linked_and_empty_outputs_never_enter_java_source": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorNative.test_failed_manifest_write_rolls_back_only_the_fresh_adopted_subtree": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "JavaGeneratorNative.test_oversized_generated_source_is_rejected_at_original_project_file_bound": {
+      "bases": [
+        "JavaGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:1294406b402c25a94d81d0cd774702755f7800bef5c797958564f9b711ca15cb",
+        "module:skip:unittest.SkipTest('actual Java source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_generator_authoring.py",
+  "reviewReason": "Add explicit Java generator and processor approval, immutable output and actual containment controls without changing existing cases",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
