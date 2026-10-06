@@ -2270,6 +2270,7 @@ dependencies = [
  "latent-scheduler",
  "latent-state",
  "latent-telemetry",
+ "latent-wasmtime",
  "prost",
  "serde",
  "serde_json",
