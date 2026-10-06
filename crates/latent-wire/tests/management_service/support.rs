@@ -133,6 +133,13 @@ impl Harness {
         };
         let adapter = ManagementServiceAdapter::new(services, limits)
             .unwrap()
+            .with_activation_journal(
+                latent_node::LocalActivationJournal::new(
+                    latent_node::LocalActivationJournalConfig::default(),
+                    Arc::new(SystemActivationClock),
+                )
+                .unwrap(),
+            )
             .with_http_control(deployments.clone())
             .unwrap();
         let (adapter, policy_control, capability_broker) = if capabilities {

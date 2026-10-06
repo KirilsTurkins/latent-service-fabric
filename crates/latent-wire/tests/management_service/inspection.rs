@@ -1,9 +1,13 @@
+#[path = "inspection/activations.rs"]
+mod activations;
 #[path = "inspection/capabilities.rs"]
 mod capabilities;
 #[path = "inspection/nodes.rs"]
 mod nodes;
 #[path = "inspection/routes.rs"]
 mod routes;
+#[path = "inspection/targets.rs"]
+mod targets;
 
 use latent_wire::management::{proto, ManagementLimits};
 use tonic::Code;

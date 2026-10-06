@@ -30,6 +30,73 @@ public final class Management {
         public static final CapabilityPolicyRecordKind PROVIDER_BINDING = new CapabilityPolicyRecordKind(2);
     }
 
+    public record DiagnosticStage(int value) {
+        public static final DiagnosticStage UNSPECIFIED = new DiagnosticStage(0);
+        public static final DiagnosticStage ADMISSION = new DiagnosticStage(1);
+        public static final DiagnosticStage QUEUE = new DiagnosticStage(2);
+        public static final DiagnosticStage PREPARATION = new DiagnosticStage(3);
+        public static final DiagnosticStage BINDING = new DiagnosticStage(4);
+        public static final DiagnosticStage EXECUTION = new DiagnosticStage(5);
+        public static final DiagnosticStage PROVIDER = new DiagnosticStage(6);
+        public static final DiagnosticStage CLEANUP = new DiagnosticStage(7);
+        public static final DiagnosticStage OUTPUT_VALIDATION = new DiagnosticStage(8);
+    }
+
+    public record DiagnosticReason(int value) {
+        public static final DiagnosticReason UNSPECIFIED = new DiagnosticReason(0);
+        public static final DiagnosticReason SIGNATURE_ALLOCATION_LIMIT = new DiagnosticReason(1);
+        public static final DiagnosticReason VALUE_ALLOCATION_LIMIT = new DiagnosticReason(2);
+        public static final DiagnosticReason UNSUPPORTED_COMPONENT_SURFACE = new DiagnosticReason(3);
+        public static final DiagnosticReason UNSUPPORTED_ENGINE_PROFILE = new DiagnosticReason(4);
+        public static final DiagnosticReason PROVIDER_ABSENT = new DiagnosticReason(5);
+        public static final DiagnosticReason BINDING_ABSENT = new DiagnosticReason(6);
+        public static final DiagnosticReason ADMISSION_DENIED = new DiagnosticReason(7);
+        public static final DiagnosticReason GRANT_DENIED = new DiagnosticReason(8);
+        public static final DiagnosticReason QUEUE_PRESSURE = new DiagnosticReason(9);
+        public static final DiagnosticReason GUEST_MEMORY_EXHAUSTED = new DiagnosticReason(10);
+        public static final DiagnosticReason GUEST_FUEL_EXHAUSTED = new DiagnosticReason(11);
+        public static final DiagnosticReason GUEST_RESOURCE_EXHAUSTED = new DiagnosticReason(12);
+        public static final DiagnosticReason PROVIDER_TIMEOUT = new DiagnosticReason(13);
+        public static final DiagnosticReason DEADLINE_EXCEEDED = new DiagnosticReason(14);
+        public static final DiagnosticReason CANCELLED = new DiagnosticReason(15);
+        public static final DiagnosticReason HTTP_RESPONSE_REJECTED = new DiagnosticReason(16);
+    }
+
+    public record DiagnosticProfile(int value) {
+        public static final DiagnosticProfile UNSPECIFIED = new DiagnosticProfile(0);
+        public static final DiagnosticProfile WASMTIME_SERVICE_VALUES_V1 = new DiagnosticProfile(1);
+        public static final DiagnosticProfile WASMTIME_BUFFERED_WEB_VALUES_V1 = new DiagnosticProfile(2);
+    }
+
+    public record TargetObservationState(int value) {
+        public static final TargetObservationState UNSPECIFIED = new TargetObservationState(0);
+        public static final TargetObservationState COHERENT = new TargetObservationState(1);
+        public static final TargetObservationState STALE = new TargetObservationState(2);
+        public static final TargetObservationState UNAVAILABLE = new TargetObservationState(3);
+    }
+
+    public record TargetReason(int value) {
+        public static final TargetReason UNSPECIFIED = new TargetReason(0);
+        public static final TargetReason CURRENT = new TargetReason(1);
+        public static final TargetReason EXPORT_ABSENT = new TargetReason(2);
+        public static final TargetReason ZERO_ROUTING_WEIGHT = new TargetReason(3);
+        public static final TargetReason PUBLICATION_UNAVAILABLE = new TargetReason(4);
+        public static final TargetReason BINDING_PLAN_UNAVAILABLE = new TargetReason(5);
+        public static final TargetReason POLICY_CHANGED = new TargetReason(6);
+        public static final TargetReason PROVIDER_UNAVAILABLE = new TargetReason(7);
+        public static final TargetReason INSPECTION_UNAVAILABLE = new TargetReason(8);
+        public static final TargetReason UNMANAGED_PUBLICATION = new TargetReason(9);
+        public static final TargetReason HTTP_INCOMPATIBLE = new TargetReason(10);
+    }
+
+    public record TargetPreparationState(int value) {
+        public static final TargetPreparationState UNSPECIFIED = new TargetPreparationState(0);
+        public static final TargetPreparationState READY = new TargetPreparationState(1);
+        public static final TargetPreparationState REJECTED = new TargetPreparationState(2);
+        public static final TargetPreparationState UNAVAILABLE = new TargetPreparationState(3);
+        public static final TargetPreparationState NOT_REQUESTED = new TargetPreparationState(4);
+    }
+
     public record FailureCategory(int value) {
         public static final FailureCategory UNSPECIFIED = new FailureCategory(0);
         public static final FailureCategory LOCAL_CANCELLED = new FailureCategory(1);
@@ -285,6 +352,138 @@ public final class Management {
             String id,
             String tenant) { }
 
+    public record ActivationDiagnostic(
+            int schemaVersion,
+            DiagnosticStage stage,
+            DiagnosticReason reason,
+            Optional<DiagnosticProfile> profile,
+            Optional<String> profileDigest,
+            Optional<Long> configuredBound,
+            Optional<Long> calculatedRequirement,
+            Optional<Long> fixedBytes,
+            Optional<Long> liftingFuel,
+            Optional<Long> liftMultiplier) { }
+
+    public record ActivationTreeNode(
+            String activationId,
+            Optional<String> parentActivationId,
+            String rootActivationId,
+            String phase,
+            Optional<String> terminalState,
+            long lastUpdatedUnixMillis,
+            Optional<ActivationDiagnostic> diagnostic,
+            String principalKind,
+            Optional<String> callerService,
+            Optional<ResourceBudget> grantedBudget,
+            Optional<Long> effectiveDeadlineUnixMillis,
+            boolean diagnosticIsTerminal,
+            String targetService,
+            long receivedAtUnixMillis) { }
+
+    public record InspectActivationTreeRequest(
+            String activationId,
+            Optional<PageRequest> page,
+            Optional<String> service,
+            Optional<Long> fromUnixMillis) { }
+
+    public record InspectActivationTreeResponse(
+            int schemaVersion,
+            List<ActivationTreeNode> nodes,
+            Optional<PageResponse> page,
+            boolean historyAvailable,
+            boolean cursorExpired,
+            boolean retainedHistoryOnly) { }
+
+    public record InspectHttpTargetRequest(
+            String service,
+            String contract,
+            String function,
+            Optional<String> route,
+            Optional<String> revisionId,
+            Optional<PublicationRef> publication,
+            Optional<String> routingKey,
+            boolean includePreparation,
+            long maximumWaitMillis) { }
+
+    public record TargetDependencyRevision(
+            String id,
+            String digest,
+            long revision) { }
+
+    public record TargetDependency(
+            String capability,
+            String state,
+            String policyIdentityDigest,
+            long providerConfigurationEpoch,
+            Optional<TargetDependencyRevision> binding,
+            List<TargetDependencyRevision> policies,
+            String providerProfile,
+            String configurationDigest) { }
+
+    public record PreparedTargetExport(
+            String contract,
+            String function) { }
+
+    public record TargetPreparation(
+            TargetPreparationState state,
+            Optional<ActivationDiagnostic> diagnostic,
+            Optional<DiagnosticProfile> profile,
+            Optional<String> engineVersion,
+            Optional<String> engineConfigurationDigest,
+            Optional<String> targetTriple,
+            Optional<String> cpuFeatureSet,
+            Optional<String> sealedMetadataFingerprint,
+            Optional<Long> importCount,
+            Optional<Long> functionCount,
+            Optional<Long> hostcallFuel,
+            Optional<Long> maximumLiftedBytes,
+            Optional<Long> maximumTypeNodes,
+            Optional<ResourceBudget> declaredBudget,
+            List<String> imports,
+            List<PreparedTargetExport> exports,
+            List<String> typeImports) { }
+
+    public record InspectedHttpBinding(
+            String id,
+            long generation,
+            long selectedDeploymentGeneration,
+            String state) { }
+
+    public record TargetCandidate(
+            String deploymentId,
+            long deploymentGeneration,
+            String revisionId,
+            String componentDigest,
+            Optional<PublicationRef> publication,
+            Optional<PublicationRef> requestedPublication,
+            Optional<String> packageDigest,
+            Optional<Long> publicationGeneration,
+            int routingWeight,
+            boolean exportCompatible,
+            boolean httpCompatible,
+            boolean eligible,
+            List<TargetReason> reasons,
+            List<TargetDependency> dependencies,
+            Optional<TargetPreparation> preparation,
+            Optional<String> publicationKind,
+            List<InspectedHttpBinding> httpBindings) { }
+
+    public record InspectHttpTargetResponse(
+            int schemaVersion,
+            String tenant,
+            String service,
+            String contract,
+            String function,
+            String route,
+            TargetObservationState state,
+            long catalogTransaction,
+            long routeGeneration,
+            long bindingGeneration,
+            Optional<Long> policyStoreGeneration,
+            List<TargetCandidate> candidates,
+            Optional<String> selectedRevisionId,
+            boolean liveGrantsChecked) { }
+
     public record PublicationIdentity(
             PublicationRef publication,
             String componentDigest,
@@ -333,6 +532,9 @@ public final class Management {
         CompletableFuture<ClientResponse<ActivationStatus>> getActivation(
                 GetActivationRequest request, CallOptions options);
 
+        CompletableFuture<ClientResponse<InspectActivationTreeResponse>> inspectActivationTree(
+                InspectActivationTreeRequest request, CallOptions options);
+
         CompletableFuture<ClientResponse<GetPolicyResponse>> getPolicy(
                 GetPolicyRequest request, CallOptions options);
 
@@ -347,6 +549,9 @@ public final class Management {
 
         CompletableFuture<ClientResponse<GetPolicyOperationResponse>> getPolicyOperation(
                 GetPolicyOperationRequest request, CallOptions options);
+
+        CompletableFuture<ClientResponse<InspectHttpTargetResponse>> inspectHttpTarget(
+                InspectHttpTargetRequest request, CallOptions options);
 
     }
 

@@ -212,12 +212,31 @@ impl super::super::PreparationContext {
                 random: self.random().is_some(),
                 metrics: self.metrics().is_some(),
             },
-        )?;
+        )
+        .map_err(|mut error| {
+            // Bind the selected surface observation to the original trusted
+            // engine/cache profile, including both finite transfer policies.
+            for detail in &mut error.details {
+                if let Some(mut observation) =
+                    latent_core::diagnostic::ActivationDiagnostic::from_detail(detail)
+                {
+                    observation.profile_digest = self
+                        .profile
+                        .configuration
+                        .get("configuration-digest")
+                        .and_then(|value| value.strip_prefix("blake3:"))
+                        .and_then(|value| blake3::Hash::from_hex(value).ok())
+                        .map(|value| *value.as_bytes());
+                    *detail = observation.detail();
+                }
+            }
+            error
+        })?;
         let metadata_bytes = input
             .metadata_bytes
             .checked_add(surface.retained_bytes)
             .ok_or_else(metadata_overflow)?;
-        let pre = self.link_component(component)?;
+        let pre = self.link_component(component, &surface.type_imports)?;
         if self.profile.id == PHASE0_BACKEND_ID {
             crate::phase0::validate_prepared(&pre)?;
         }
