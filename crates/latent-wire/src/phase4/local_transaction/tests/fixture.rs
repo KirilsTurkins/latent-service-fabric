@@ -21,7 +21,6 @@ use latent_node::{
     LocalActivationDependencies, LocalActivationManager, LocalActivationManagerConfig,
 };
 use latent_policy::capability::{PolicyStore, PolicyStoreLimits};
-use latent_routing::ActivationCatalogSource;
 use latent_scheduler::{CellClass, LocalScheduler, LocalSchedulerConfig};
 use latent_state::namespace::{
     catalog::{NamespaceCatalog, NamespaceMutation, NamespaceOperationContext},
@@ -204,7 +203,10 @@ impl Fixture {
             DirectoryDeploymentRepository::open_with_catalog(
                 root.path().join("routes"),
                 catalog.clone(),
-                DirectoryDeploymentRepositoryConfig::default(),
+                DirectoryDeploymentRepositoryConfig {
+                    manifest_profile,
+                    ..DirectoryDeploymentRepositoryConfig::default()
+                },
                 catalog.lifecycle_authority(),
                 Arc::new(runtime_config.detected_runtime_profile().unwrap()),
             )
@@ -444,7 +446,6 @@ impl Fixture {
         // revision while preserving the command's immutable business inputs.
         self.deployment.resources.cpu_fuel -= 1;
         self.routes.apply(self.deployment.clone()).await.unwrap();
-        use latent_routing::RouteResolver;
         let resolved = self
             .routes
             .pin()
