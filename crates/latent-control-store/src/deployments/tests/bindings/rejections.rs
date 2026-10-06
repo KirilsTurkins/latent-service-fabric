@@ -63,6 +63,87 @@ fn selection_denies_missing_cross_tenant_ambiguous_and_unsupported_providers() {
 }
 
 #[test]
+fn absent_deployment_grant_retains_scoped_producer_reason_and_recovers() {
+    use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
+    let f = Fixture::new();
+    f.install();
+    let original = f
+        .store
+        .read_catalog()
+        .record_by_id(&DeploymentId("consumer".into()))
+        .unwrap()
+        .deployment
+        .clone();
+    let mut missing = (*original).clone();
+    missing.grants.clear();
+    run(crate::DeploymentStore::apply(&f.store, missing)).unwrap();
+    let revision = f.store.pin().unwrap().resolve(&target(), None).unwrap();
+    let failure = f
+        .store
+        .plan(&revision)
+        .err()
+        .expect("missing grant denies the real catalog plan");
+    assert_eq!(
+        failure.code,
+        latent_core::PlatformErrorCode::PermissionDenied
+    );
+    assert_eq!(failure.message, "binding-denied");
+    assert!(!failure.retryable);
+    assert_eq!(
+        ActivationDiagnostic::from_error(&failure),
+        Some(ActivationDiagnostic::new(
+            DiagnosticStage::Binding,
+            DiagnosticReason::GrantDenied
+        ))
+    );
+    for field in 0..5 {
+        let mut foreign = revision.clone();
+        match field {
+            0 => foreign.target.tenant = TenantId("foreign".into()),
+            1 => foreign.target.service = ServiceId("foreign".into()),
+            2 => foreign.revision.0.push_str("foreign"),
+            3 => foreign.release.0.push_str("foreign"),
+            _ => foreign.publication = None,
+        }
+        let denied = f.store.plan(&foreign).err().expect("foreign tuple denied");
+        assert!(ActivationDiagnostic::from_error(&denied).is_none());
+    }
+    // A restored unavailable catalog has no trusted compiler witness. Absence
+    // alone cannot fabricate the reason, even with the same desired grant data.
+    let Fixture {
+        store,
+        releases,
+        broker,
+        provider,
+        roots,
+        ..
+    } = f;
+    drop(store);
+    let restored = open(&roots[1], &releases);
+    let unknown = restored.pin().unwrap().resolve(&target(), None).unwrap();
+    let failure = restored
+        .plan(&unknown)
+        .err()
+        .expect("uninstalled owner denied");
+    assert!(ActivationDiagnostic::from_error(&failure).is_none());
+    run(crate::DeploymentStore::apply(
+        &restored,
+        (*original).clone(),
+    ))
+    .unwrap();
+    let prepared = prepare(
+        &restored,
+        broker,
+        &provider,
+        restored.binding_definitions().unwrap(),
+    )
+    .unwrap();
+    restored.commit_binding_update(prepared).unwrap();
+    let fresh = restored.pin().unwrap().resolve(&target(), None).unwrap();
+    assert!(restored.plan(&fresh).is_ok());
+}
+
+#[test]
 fn auto_cannot_widen_explicit_host_only_modes() {
     let f = Fixture::with_local();
     let mut d = definition();
