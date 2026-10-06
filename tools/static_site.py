@@ -124,7 +124,7 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
     require(not destination.exists() and root != destination and root not in destination.parents, 'output-root')
     require(destination.parent.is_dir() and not any(is_reparse(p) for p in [destination.parent, *destination.parent.parents]), 'output-link')
     fields(config, {'formatVersion', 'profile', 'name', 'version', 'assets', 'entryDocument',
-                    'directoryIndex', 'fallback', 'excluded', 'observations'}, {'styleHashes'})
+                    'directoryIndex', 'fallback', 'excluded', 'observations'}, {'styleHashes', 'errorDocument'})
     styles = config.get('styleHashes', [])
     require(isinstance(styles, list) and len(styles) <= 64
             and all(isinstance(value, str) and re.fullmatch(r'sha256:[0-9a-f]{64}', value) for value in styles)
@@ -175,6 +175,11 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
     require((fallback['mode'] == 'spa') == ('document' in fallback), 'fallback-document')
     if fallback['mode'] == 'spa':
         html(fallback['document'])
+    error_document = config.get('errorDocument')
+    if 'errorDocument' in config:
+        fields(error_document, {'profile', 'document'})
+        require(error_document['profile'] == 'html-not-found-v1', 'error-document-profile')
+        html(error_document['document'])
     declared = config['observations']
     require(isinstance(declared, list) and 3 <= len(declared) <= 8, 'observation-count')
     observations, seen = [], set()
@@ -192,6 +197,8 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
             and sum(row['kind'] == 'source' for row in observations) == 1, 'observation-kinds')
     routing = {'profile': 'static-site-v1', 'entryDocument': entry,
                'directoryIndex': index['mode'], 'directoryIndexDocument': index['document'], 'fallback': fallback}
+    if error_document is not None:
+        routing['errorDocument'] = error_document
     routes = [{'path': '/', 'mode': 'client', 'asset': entry}] if index['mode'] == 'disabled' else []
     web = {'formatVersion': 1, 'profile': 'lsf.web-release.v1', 'assetsDigest': asset_digest(table),
            'assets': table, 'routes': routes, 'staticRouting': routing}

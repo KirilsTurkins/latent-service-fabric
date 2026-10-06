@@ -19,6 +19,13 @@
     {"decimal": "1\r\n", "valid": false}
   ],
   "cases": [
+    {"name":"diagnostic-absent-profile-and-bound", "type":"ActivationDiagnostic", "value":{"schema_version":1,"stage":3,"reason":1}},
+    {"name":"diagnostic-unknown-enums-and-present-zero", "type":"ActivationDiagnostic", "value":{"schema_version":1,"stage":2147483647,"reason":-1,"profile":999,"configured_bound":"0","calculated_requirement":"18446744073709551615","fixed_bytes":"9223372036854775808","lifting_fuel":"0","lift_multiplier":"18446744073709551615","profile_digest":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}},
+    {"name":"activation-tree-default-page", "type":"InspectActivationTreeRequest", "value":{"activation_id":"activation-a"}},
+    {"name":"activation-roots-service-time-selector", "type":"InspectActivationTreeRequest", "value":{"service":"examples/java-http-adapter","from_unix_millis":"18446744073709551615","page":{"page_size":128}}},
+    {"name":"activation-root-real-ingress-identity", "type":"InspectActivationTreeResponse", "value":{"schema_version":1,"nodes":[{"activation_id":"host-generated-root","root_activation_id":"host-generated-root","target_service":"examples/java-http-adapter","received_at_unix_millis":"18446744073709551615","phase":"running","principal_kind":"trigger"}],"page":{},"history_available":true,"retained_history_only":true}},
+    {"name":"activation-tree-expired-is-not-absence-proof", "type":"InspectActivationTreeResponse", "value":{"schema_version":1,"nodes":[],"page":{},"history_available":false,"cursor_expired":true,"retained_history_only":true}},
+    {"name":"activation-tree-failed-preparation-before-guest", "type":"InspectActivationTreeResponse", "value":{"schema_version":1,"nodes":[{"activation_id":"child-a","parent_activation_id":"root-a","root_activation_id":"root-a","phase":"received","terminal_state":"resource_exhausted","last_updated_unix_millis":"18446744073709551615","diagnostic":{"schema_version":1,"stage":3,"reason":1,"profile":1,"configured_bound":"16777216","calculated_requirement":"67108864"},"diagnostic_is_terminal":true,"principal_kind":"service","caller_service":"adapter"}],"page":{"next_page_token":"opaque-scoped-cursor"},"history_available":true,"retained_history_only":true}},
     {
       "name": "invoke-absent-identity-and-deadlines",
       "type": "InvokeRequest",
@@ -135,6 +142,166 @@
     {"name": "publication-reference-tenant-scope", "type": "PublicationRef", "value": {"id": "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant": "tenant-b"}},
     {"name": "publication-original-package", "type": "PublicationIdentity", "value": {"publication": {"id": "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant": "tenant-a"}, "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "package_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"}},
     {"name": "publication-corrected-package-same-component", "type": "PublicationIdentity", "value": {"publication": {"id": "publication:sha256:2222222222222222222222222222222222222222222222222222222222222222", "tenant": "tenant-a"}, "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "package_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"}},
-    {"name": "publication-other-tenant-same-package", "type": "PublicationIdentity", "value": {"publication": {"id": "publication:sha256:3333333333333333333333333333333333333333333333333333333333333333", "tenant": "tenant-b"}, "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "package_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"}}
+    {"name": "publication-other-tenant-same-package", "type": "PublicationIdentity", "value": {"publication": {"id": "publication:sha256:3333333333333333333333333333333333333333333333333333333333333333", "tenant": "tenant-b"}, "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "package_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"}},
+    {
+      "name": "target-inspection-exact-bounded-publication-selector",
+      "type": "InspectHttpTargetRequest",
+      "value": {
+        "service": "service-a",
+        "contract": "latent:web/application@0.1.0",
+        "function": "handle",
+        "route": "web",
+        "revision_id": "revision-a",
+        "publication": {
+          "id": "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tenant": "tenant-a"
+        },
+        "routing_key": "reviewed-key",
+        "include_preparation": true,
+        "maximum_wait_millis": "30000"
+      }
+    },
+    {
+      "name": "target-inspection-ready-keeps-full-width-owner-identities",
+      "type": "InspectHttpTargetResponse",
+      "value": {
+        "schema_version": 1,
+        "tenant": "tenant-a",
+        "service": "service-a",
+        "contract": "latent:web/application@0.1.0",
+        "function": "handle",
+        "route": "web",
+        "state": 1,
+        "catalog_transaction": "18446744073709551615",
+        "route_generation": "18446744073709551615",
+        "binding_generation": "18446744073709551615",
+        "policy_store_generation": "0",
+        "selected_revision_id": "revision-a",
+        "live_grants_checked": false,
+        "candidates": [
+          {
+            "deployment_id": "deployment-a",
+            "deployment_generation": "18446744073709551615",
+            "revision_id": "revision-a",
+            "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "publication": {
+              "id": "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "tenant": "tenant-a"
+            },
+            "requested_publication": {
+              "id": "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "tenant": "tenant-a"
+            },
+            "package_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "publication_generation": "18446744073709551615",
+            "routing_weight": 100,
+            "export_compatible": true,
+            "http_compatible": true,
+            "eligible": true,
+            "reasons": [
+              1
+            ],
+            "dependencies": [
+              {
+                "capability": "latent:runtime/clocks@0.1.0",
+                "state": "configured-current",
+                "policy_identity_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                "provider_configuration_epoch": "18446744073709551615",
+                "binding": {
+                  "id": "binding-a",
+                  "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "revision": "18446744073709551615"
+                },
+                "policies": [
+                  {
+                    "id": "policy-a",
+                    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "revision": "0"
+                  }
+                ],
+                "provider_profile": "host-runtime-v1",
+                "configuration_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "preparation": {
+              "state": 1,
+              "profile": 2,
+              "engine_version": "wasmtime-42",
+              "engine_configuration_digest": "blake3:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "target_triple": "x86_64-unknown-linux-gnu",
+              "cpu_feature_set": "baseline",
+              "sealed_metadata_fingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "import_count": "2",
+              "function_count": "1",
+              "hostcall_fuel": "18446744073709551615",
+              "maximum_lifted_bytes": "67108864",
+              "maximum_type_nodes": "65536",
+              "declared_budget": {
+                "cpu_fuel": "18446744073709551615",
+                "memory_bytes": "18446744073709551615",
+                "wall_time_limit_millis": "0",
+                "child_calls": 4294967295,
+                "state_read_bytes": "18446744073709551615"
+              },
+              "imports": [
+                "latent:runtime/clocks@0.1.0"
+              ],
+              "exports": [
+                {
+                  "contract": "latent:web/application@0.1.0",
+                  "function": "handle"
+                }
+              ],
+              "type_imports": [
+                "examples:java-http-domain/types@1.0.0"
+              ]
+            },
+            "publication_kind": "capsule",
+            "http_bindings": [
+              {
+                "id": "trigger-a",
+                "generation": "18446744073709551615",
+                "selected_deployment_generation": "18446744073709551615",
+                "state": "configured-current"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "target-inspection-future-states-remain-descriptive",
+      "type": "InspectHttpTargetResponse",
+      "value": {
+        "schema_version": 1,
+        "tenant": "tenant-a",
+        "service": "service-a",
+        "contract": "domain:application/api@1.0.0",
+        "function": "get",
+        "route": "domain",
+        "state": 777,
+        "candidates": [
+          {
+            "deployment_id": "deployment-a",
+            "revision_id": "revision-a",
+            "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "reasons": [
+              -2147483648,
+              778
+            ],
+            "preparation": {
+              "state": 779,
+              "diagnostic": {
+                "schema_version": 1,
+                "stage": 780,
+                "reason": 781,
+                "configured_bound": "0",
+                "calculated_requirement": "18446744073709551615"
+              }
+            }
+          }
+        ]
+      }
+    }
   ]
 }

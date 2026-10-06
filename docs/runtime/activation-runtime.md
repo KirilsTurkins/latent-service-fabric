@@ -4,7 +4,7 @@ The opt-in `activation-owned-v1` host support profile supplies
 `latent:runtime/activation@0.1.0` beneath maintained language runtimes. It is
 recognized by the V5 host ABI profile. Recognition does not install the bridge,
 grant its operations, or qualify any language runtime. Existing direct guest
-bindings and frozen V1–V4 sources remain available.
+bindings and frozen V1â€“V4 sources remain available.
 
 `WasmtimeConfig.activation_runtime` selects explicit finite limits for tasks,
 executors, queued work, waits, timers, results and native owners. `None` preserves
@@ -127,6 +127,19 @@ passed all ten runtime cases with the fixture enforcing the installed profile's
 The prior signed Java executor failure and its closed `resource-exhausted`
 receipt are retained; these host cases do not qualify the expanded Java profile.
 Native execution on this combined source remains pending.
+
+The complete 27-case `local_service` matrix passed on pinned Linux Rust 1.97.1
+and Wasmtime 48.0.3 at source `b5c376422d23a5fe9b0825ffc5449e3675a21a7c`.
+Completed loops execute 123, 203 and 83 original imports. A pending wait keeps
+exactly one call, one result and 128 output bytes charged. Explicit cancellation
+permits fresh admission after cleanup; dropping the outer manager future still
+quarantines its cell because it cannot publish a reusable cleanup proof. The
+first native attempt and its incorrect fresh-cell expectation remain retained.
+The corrected run log has SHA-256
+`9e5c4c8cbdee7e15b8f3df22a9e5b1f67a9d64227012cf609971582a8113c93a`.
+The prior signed Java executor failure and its closed `resource-exhausted`
+receipt are also retained. This host matrix does not qualify the expanded Java
+profile.
 
 These checks are implementation evidence for #736. Remaining requirements
 include the complete signed cross-tenant, late-wake and node-stop matrix,

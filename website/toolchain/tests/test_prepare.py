@@ -1,5 +1,6 @@
 """Offline fixtures for the package-manager derivation; no package code executes."""
 import importlib.util
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -42,14 +43,22 @@ class PreparationTests(unittest.TestCase):
                      ('package/node_modules/brace-expansion/package.json', {'name': 'brace-expansion', 'version': '5.0.9',
                          'dependencies': {'balanced-match': '^4.0.2'}}),
                      ('package/node_modules/brace-expansion/obsolete.js', b'old removed brace bytes'),
-                     ('package/node_modules/balanced-match/package.json', {'name': 'balanced-match', 'version': '4.0.4'})]
+                     ('package/node_modules/balanced-match/package.json', {'name': 'balanced-match', 'version': '4.0.4'}),
+                     ('package/node_modules/postcss-selector-parser/package.json', {'name': 'postcss-selector-parser',
+                         'version': '7.1.4', 'dependencies': {'cssesc': '^3.0.0', 'util-deprecate': '^1.0.2'}}),
+                     ('package/node_modules/postcss-selector-parser/obsolete.js', b'old removed selector bytes'),
+                     ('package/node_modules/cssesc/package.json', {'name': 'cssesc', 'version': '3.0.0'}),
+                     ('package/node_modules/util-deprecate/package.json', {'name': 'util-deprecate', 'version': '1.0.2'})]
         self.patches = []
         for name, old, new in [('ip-address', '10.5.0', '10.7.2'), ('undici', '6.28.0', '6.28.1'),
                                ('http-cache-semantics', '4.2.0', '4.3.0'),
+                               ('postcss-selector-parser', '7.1.4', '7.1.6'),
                                ('brace-expansion', '5.0.9', '5.0.12')]:
             manifest = {'name': name, 'version': new}
             if name == 'brace-expansion':
                 manifest['dependencies'] = {'balanced-match': '^4.0.2'}
+            elif name == 'postcss-selector-parser':
+                manifest['dependencies'] = {'cssesc': '^3.0.0', 'util-deprecate': '^1.0.2'}
             raw = archive([('package/package.json', manifest),
                            ('package/index.js', b'patched bytes')])
             self.patches.append(({'name': name, 'from': old, 'version': new, 'integrity': prepare.integrity(raw)}, raw))
@@ -65,6 +74,7 @@ class PreparationTests(unittest.TestCase):
             self.assertNotIn('package/node_modules/ip-address/obsolete.js', reader.getnames())
             self.assertNotIn('package/node_modules/brace-expansion/obsolete.js', reader.getnames())
             self.assertNotIn('package/node_modules/http-cache-semantics/obsolete.js', reader.getnames())
+            self.assertNotIn('package/node_modules/postcss-selector-parser/obsolete.js', reader.getnames())
             balanced = json.loads(reader.extractfile('package/node_modules/balanced-match/package.json').read())
             self.assertEqual(balanced['version'], '4.0.4')
             self.assertEqual(reader.extractfile('package/bin/npm-cli.js').read(), b'never executed')
@@ -115,6 +125,52 @@ class PreparationTests(unittest.TestCase):
             replacement = json.loads(reader.extractfile('package/node_modules/brace-expansion/package.json').read())
             self.assertEqual(replacement['dependencies'], {'balanced-match': '^4.0.2'})
 
+    def test_selector_uses_only_the_exact_existing_reviewed_dependencies(self):
+        raw = prepare.compose(archive(self.base), self.patches)
+        with tarfile.open(fileobj=io.BytesIO(raw), mode='r:') as reader:
+            for name, version in [('cssesc', '3.0.0'), ('util-deprecate', '1.0.2')]:
+                dependency = json.loads(reader.extractfile(f'package/node_modules/{name}/package.json').read())
+                self.assertEqual(dependency, {'name': name, 'version': version})
+            replacement = json.loads(reader.extractfile('package/node_modules/postcss-selector-parser/package.json').read())
+            self.assertEqual(replacement['dependencies'], {'cssesc': '^3.0.0', 'util-deprecate': '^1.0.2'})
+
+    def test_selector_rejects_changed_dependencies_and_shadowed_resolution(self):
+        for name, version in [('cssesc', '3.0.0'), ('util-deprecate', '1.0.2')]:
+            path = f'package/node_modules/{name}/package.json'
+            for manifest in [{'name': name, 'version': '99.0.0'}, {'name': name, 'version': '0.0.0'},
+                             {'name': 'different', 'version': version},
+                             {'name': name, 'version': version, 'dependencies': {'other': '1.0.0'}},
+                             {'name': name, 'version': version, 'optionalDependencies': {'other': '1.0.0'}},
+                             {'name': name, 'version': version, 'peerDependencies': {'other': '1.0.0'}},
+                             {'name': name, 'version': version, 'bundleDependencies': ['other']},
+                             {'name': name, 'version': version, 'bundledDependencies': ['other']}]:
+                changed = [(key, manifest if key == path else value) for key, value in self.base]
+                with self.subTest(name=name, manifest=manifest), self.assertRaisesRegex(ValueError, 'dependency graph'):
+                    prepare.compose(archive(changed), self.patches)
+            shadow = self.base + [(f'package/node_modules/postcss-selector-parser/node_modules/{name}/package.json',
+                                  {'name': name, 'version': version})]
+            with self.subTest(shadow=name), self.assertRaisesRegex(ValueError, 'dependency graph'):
+                prepare.compose(archive(shadow), self.patches)
+        with self.assertRaisesRegex(ValueError, 'incomplete bundle replacement'):
+            prepare.compose(archive(self.base), [row for row in self.patches if row[0]['name'] != 'postcss-selector-parser'])
+
+    def test_selector_rejects_unreviewed_replacement_graphs(self):
+        selected, _ = next(row for row in self.patches if row[0]['name'] == 'postcss-selector-parser')
+        expected = {'cssesc': '^3.0.0', 'util-deprecate': '^1.0.2'}
+        manifest = {'name': selected['name'], 'version': selected['version'], 'dependencies': expected}
+        for field, value in [('dependencies', {'cssesc': '*', 'util-deprecate': '^1.0.2'}),
+                             ('dependencies', {'cssesc': '^3.0.0'}), ('optionalDependencies', {'other': '1.0.0'}),
+                             ('peerDependencies', {'other': '1.0.0'}), ('bundleDependencies', ['other']),
+                             ('bundledDependencies', ['other'])]:
+            raw = archive([('package/package.json', {**manifest, field: value})])
+            replacements = [(pin, raw if pin['name'] == selected['name'] else original) for pin, original in self.patches]
+            with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, 'graph requires review'):
+                prepare.compose(archive(self.base), replacements)
+        raw = archive([('package/package.json', manifest), ('package/node_modules/hidden/index.js', b'not allowed')])
+        with self.assertRaisesRegex(ValueError, 'graph requires review'):
+            prepare.compose(archive(self.base), [(pin, raw if pin['name'] == selected['name'] else original)
+                                                for pin, original in self.patches])
+
     def test_brace_rejects_dependency_changes_and_shadowed_resolution(self):
         name = 'package/node_modules/balanced-match/package.json'
         for manifest in [{'name': 'balanced-match', 'version': '4.0.3'},
@@ -127,6 +183,16 @@ class PreparationTests(unittest.TestCase):
                               {'name': 'balanced-match', 'version': '4.0.3'})]
         with self.assertRaisesRegex(ValueError, 'shadowed'):
             prepare.compose(archive(shadow), self.patches)
+
+    def test_selector_uses_only_the_existing_exact_dependencies(self):
+        raw = prepare.compose(archive(self.base), self.patches)
+        with tarfile.open(fileobj=io.BytesIO(raw), mode='r:') as reader:
+            for name, version in [('cssesc', '3.0.0'), ('util-deprecate', '1.0.2')]:
+                dependency = json.loads(reader.extractfile(f'package/node_modules/{name}/package.json').read())
+                self.assertEqual(dependency, {'name': name, 'version': version})
+            replacement = json.loads(reader.extractfile('package/node_modules/postcss-selector-parser/package.json').read())
+            self.assertEqual(replacement['version'], '7.1.6')
+            self.assertEqual(replacement['dependencies'], {'cssesc': '^3.0.0', 'util-deprecate': '^1.0.2'})
 
     def test_replacements_reject_unreviewed_requirements_and_hidden_package_graphs(self):
         pin, _ = self.patches[-1]
@@ -193,17 +259,52 @@ class PreparationTests(unittest.TestCase):
             (cache / 'npm-11.19.1.tgz').write_bytes(base)
             for pin, raw in self.patches:
                 (cache / f'{pin["name"]}-{pin["version"]}.tgz').write_bytes(raw)
+            repairs = []
+            library = None
+            for name, version, profile, names, dependencies in [
+                ('braces', '3.0.3', 'braces-3.0.3-lsf-depth-v1',
+                 ['lib/utils.js', 'lib/compile.js', 'lib/expand.js', 'lib/stringify.js', 'lib/parse.js'],
+                 {'fill-range': '^7.1.1'}),
+                ('http-cache-semantics', '4.3.0', 'http-cache-semantics-4.3.0-lsf-cache-v1', ['index.js'], {})]:
+                pin, raw = next(((pin, raw) for pin, raw in self.patches if pin['name'] == name), (None, None))
+                if pin is None:
+                    raw = archive([('package/package.json', {'name': name, 'version': version, 'dependencies': dependencies})]
+                                  + [('package/' + path, b'patched bytes') for path in names])
+                    pin = {'name': name, 'version': version, 'integrity': prepare.integrity(raw)}
+                    library = pin
+                    (cache / f'{name}-{version}.tgz').write_bytes(raw)
+                document = {'schema': 1, 'profile': profile, 'name': name, 'version': version,
+                            'upstreamIntegrity': pin['integrity'], 'files': [
+                                {'path': path, 'beforeSha256': hashlib.sha256(b'patched bytes').hexdigest(),
+                                 'afterSha256': hashlib.sha256(b'repaired bytes').hexdigest(),
+                                 'edits': [{'before': 'patched bytes', 'after': 'repaired bytes', 'count': 1}]}
+                                for path in names]}
+                encoded = (json.dumps(document) + '\n').encode()
+                repair_path = root / 'repairs' / (name + '.json')
+                repair_path.parent.mkdir(exist_ok=True)
+                repair_path.write_bytes(encoded)
+                repairs.append({'path': 'repairs/' + name + '.json', 'sha256': hashlib.sha256(encoded).hexdigest()})
             config = {'schema': 1, 'profile': prepare.PROFILE,
                       'base': {'name': 'npm', 'version': '11.19.1', 'integrity': prepare.integrity(base)},
-                      'patches': [pin for pin, _ in self.patches]}
+                      'patches': [pin for pin, _ in self.patches], 'libraries': [library], 'repairs': repairs}
             (root / 'source.json').write_text(json.dumps(config))
             target = root / 'generated.tar'
-            with patch.multiple(prepare, HERE=root, CACHE=cache, OUTPUT=target):
+            with patch.multiple(prepare, ROOT=root, HERE=root, CACHE=cache, OUTPUT=target):
                 actual = prepare.prepare(offline=True, refresh=True)
                 original = target.read_bytes()
                 row = {'resolved': 'file:../../target/website-package-manager/' + prepare.PROFILE + '.tar',
                        'integrity': actual}
                 (root / 'package-lock.json').write_text(json.dumps({'packages': {'node_modules/npm': row}}))
+                for directory, relative in [('website', '../'), ('examples/framework-compatibility', '../../')]:
+                    path = root / directory / 'package-lock.json'
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    rows = {f'node_modules/{document["name"]}': {
+                                'version': document['version'],
+                                'resolved': 'file:' + relative + 'target/website-package-manager/' + document['profile'] + '.tar',
+                                'integrity': prepare.integrity((root / (document['profile'] + '.tar')).read_bytes())}
+                            for repair in repairs
+                            for document in [json.loads((root / repair['path']).read_bytes())]}
+                    path.write_text(json.dumps({'packages': rows}))
                 self.assertEqual(prepare.prepare(offline=True), actual)
                 row['integrity'] = 'invalid'
                 (root / 'package-lock.json').write_text(json.dumps({'packages': {'node_modules/npm': row}}))
