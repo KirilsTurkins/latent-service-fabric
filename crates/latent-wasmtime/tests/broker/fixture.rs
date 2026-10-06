@@ -49,13 +49,15 @@ impl ActivationClock for Clock {
     }
 }
 pub type PlanLookupHook = Arc<Mutex<Option<Box<dyn FnOnce() + Send>>>>;
+type PlanHook = PlanLookupHook;
 struct Plans {
     plan: Arc<CompiledCapabilityPlan>,
     hook: PlanLookupHook,
 }
 impl CapabilityPlanSource for Plans {
     fn plan(&self, _: &ResolvedRevision) -> Result<Arc<CompiledCapabilityPlan>, PlatformError> {
-        if let Some(hook) = self.hook.lock().unwrap().take() {
+        let hook = self.hook.lock().unwrap().take();
+        if let Some(hook) = hook {
             hook();
         }
         Ok(self.plan.clone())
@@ -101,6 +103,7 @@ pub struct Fixture {
     pub broker: Arc<ActivationCapabilityBroker>,
     pub runtime: Arc<ActivationCapabilityRuntime>,
     pub clock: Arc<Clock>,
+    pub plan_hook: PlanHook,
     pub plan_lookup_hook: PlanLookupHook,
     pub revision: ResolvedRevision,
     _provider: ProviderRegistration,
@@ -234,6 +237,7 @@ impl Fixture {
             )
             .unwrap();
         let plan_lookup_hook = Arc::new(Mutex::new(None));
+        let plan_hook = Arc::clone(&plan_lookup_hook);
         let runtime = Arc::new(ActivationCapabilityRuntime::new(
             broker.clone(),
             Arc::new(Plans {
@@ -272,6 +276,7 @@ impl Fixture {
             broker,
             runtime,
             clock,
+            plan_hook,
             plan_lookup_hook,
             revision,
             _provider: provider,
