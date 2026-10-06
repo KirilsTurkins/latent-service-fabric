@@ -202,6 +202,7 @@ impl StateRuntime {
                 conditions,
                 business_metadata,
                 retry,
+                inbox,
             } => {
                 if installed.mode() != latent_manifest::TransactionOperationMode::StrictCommand {
                     return Err(super::denied());
@@ -214,6 +215,7 @@ impl StateRuntime {
                         conditions,
                         metadata: business_metadata,
                         retry,
+                        inbox,
                     },
                     codec,
                     time: time.clone(),

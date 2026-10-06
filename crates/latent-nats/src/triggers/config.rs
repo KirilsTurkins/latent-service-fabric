@@ -50,6 +50,20 @@ pub struct TriggerBinding {
     pub consumer: String,
     pub filter_subject: String,
     pub budget: RootBudget,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transaction: Option<super::inbox::TransactionalBinding>,
+}
+impl TriggerBinding {
+    #[must_use]
+    pub fn activation_budget(&self) -> ResourceBudget {
+        let mut budget = self.budget.budget();
+        if let Some(transaction) = &self.transaction {
+            budget.state_read_bytes = transaction.state_read_bytes;
+            budget.state_write_bytes = transaction.state_write_bytes;
+            budget.effect_count = transaction.effect_count;
+        }
+        budget
+    }
 }
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -147,8 +161,14 @@ impl TriggerConfig {
             {
                 return Err(EventError::InvalidEvent);
             }
-            latent_core::BudgetProfile::Phase3
-                .validate_request(&binding.budget.budget())
+            let profile = if let Some(transaction) = &binding.transaction {
+                transaction.validate(binding, self)?;
+                latent_core::BudgetProfile::Phase4
+            } else {
+                latent_core::BudgetProfile::Phase3
+            };
+            profile
+                .validate_request(&binding.activation_budget())
                 .map_err(|_| EventError::InvalidEvent)?;
             if !tenants.contains(&binding.tenant.as_str()) {
                 if tenants.len() == 8 {

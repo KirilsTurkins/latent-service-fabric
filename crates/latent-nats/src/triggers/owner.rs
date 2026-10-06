@@ -35,6 +35,7 @@ pub struct NatsTriggers {
     pub(super) installed: InstalledProvider,
     pub(super) pools: Arc<ProviderPools>,
     pub(super) monitor: TriggerMonitor,
+    pub(super) transaction_admission: Option<Arc<dyn super::InboxAdmissionFactory>>,
 }
 impl NatsTriggers {
     pub fn install(
@@ -45,7 +46,57 @@ impl NatsTriggers {
         config: TriggerConfig,
         credentials: Vec<NatsCredential>,
     ) -> Result<Self> {
+        Self::install_inner(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            credentials,
+            None,
+        )
+    }
+
+    /// The installed host supplies its normal command runtime on the original
+    /// poller, provider pools, credentials and fixed installation capacities.
+    pub fn install_with_transaction_admission(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: TriggerConfig,
+        credentials: Vec<NatsCredential>,
+        admission: Arc<dyn super::InboxAdmissionFactory>,
+    ) -> Result<Self> {
+        Self::install_inner(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            credentials,
+            Some(admission),
+        )
+    }
+
+    fn install_inner(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: TriggerConfig,
+        credentials: Vec<NatsCredential>,
+        transaction_admission: Option<Arc<dyn super::InboxAdmissionFactory>>,
+    ) -> Result<Self> {
         config.validate()?;
+        if config
+            .bindings
+            .iter()
+            .any(|binding| binding.transaction.is_some())
+            && transaction_admission.is_none()
+        {
+            return Err(EventError::PermissionDenied);
+        }
         if credentials.is_empty() || credentials.capacity() > 8 {
             return Err(EventError::InvalidEvent);
         }
@@ -146,6 +197,7 @@ impl NatsTriggers {
             installed,
             pools,
             monitor,
+            transaction_admission,
         })
     }
     #[must_use]

@@ -26,6 +26,7 @@ pub(super) struct Request {
     pub conditions: Vec<Precondition>,
     pub metadata: Vec<(String, String)>,
     pub retry: Option<CommandRetry>,
+    pub inbox: Option<latent_nats::triggers::InboxDelivery>,
 }
 pub(super) struct Factory {
     pub runtime: StateRuntime,
@@ -42,6 +43,7 @@ impl CommandAdmissionFactory for Factory {
     ) -> BoxFuture<'a, Result<(), PlatformError>> {
         Box::pin(async move {
             self.runtime.accepts(&self.installed, envelope, budget)?;
+            self.check_inbox(envelope)?;
             self.time.retain_admission(envelope, budget)?;
             let command =
                 self.runtime
@@ -82,6 +84,7 @@ impl Factory {
         budget: &ActivationBudget,
     ) -> Result<CommandAdmissionSelection, PlatformError> {
         self.runtime.accepts(&self.installed, envelope, budget)?;
+        self.check_inbox(envelope)?;
         self.time.retain_admission(envelope, budget)?;
         let command = self
             .runtime
@@ -140,7 +143,11 @@ impl Factory {
                     identity_millis: 604_800_000,
                     maximum_attempts: 16,
                 },
-                inbox: None,
+                inbox: self
+                    .request
+                    .inbox
+                    .as_ref()
+                    .map(|delivery| delivery.identity().clone()),
                 owner_epoch,
             },
             self.request.conditions.clone(),
@@ -175,6 +182,27 @@ impl Factory {
         }
         built
     }
+    fn check_inbox(&self, envelope: &ActivationEnvelope) -> Result<(), PlatformError> {
+        if let Some(delivery) = &self.request.inbox {
+            if envelope.principal.kind != latent_core::PrincipalKind::Trigger
+                || envelope
+                    .principal
+                    .tenant
+                    .as_ref()
+                    .map(|tenant| tenant.0.as_str())
+                    != Some(delivery.tenant())
+                || self.installed.target.tenant.0 != delivery.tenant()
+                || self.installed.namespace() != delivery.namespace()
+                || self.installed.incarnation != delivery.incarnation()
+                || self.request.client_id != delivery.client_id()
+                || self.request.retry.is_some()
+            {
+                return Err(super::denied());
+            }
+        }
+        Ok(())
+    }
+
     fn source(&self, envelope: &ActivationEnvelope) -> Result<SourceIdentity, PlatformError> {
         let revision = envelope
             .resolved_revision

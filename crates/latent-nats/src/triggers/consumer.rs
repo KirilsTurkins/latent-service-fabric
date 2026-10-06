@@ -171,6 +171,7 @@ pub(super) enum Ack {
     Success,
     Retry,
     Terminate,
+    Hold,
 }
 pub(super) async fn acknowledge(
     connection: &mut Connection,
@@ -187,6 +188,7 @@ pub(super) async fn acknowledge(
         Ack::Success => "+ACK".into(),
         Ack::Terminate => "+TERM".into(),
         Ack::Retry => format!("-NAK {{\"delay\":{}}}", delay_millis * 1_000_000),
+        Ack::Hold => return Err(EventError::PermissionDenied),
     };
     // A broker reply is used only after identity() verifies the configured
     // stream/consumer and the closed acknowledgement subject grammar.
