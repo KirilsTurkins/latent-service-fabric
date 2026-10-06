@@ -293,23 +293,33 @@ fn historical_receipt_survives_restart_later_pause_and_current_read_refusal() {
 
 #[test]
 fn original_expiry_and_exact_tenant_metadata_high_water_refuse_before_activation() {
-    let mut fixture = Fixture::new(AggregateMigrationRecipe::Count, true);
-    complete(&fixture);
-    let view = fixture.store.snapshot().unwrap();
-    let mut quota = fixture.quota.as_ref().unwrap().clone();
-    let occupied = crate::tenant::inspect(&view, &quota.tenant)
+    let observed = Fixture::new(AggregateMigrationRecipe::Count, true);
+    complete(&observed);
+    let view = observed.store.snapshot().unwrap();
+    let occupied = crate::tenant::inspect(&view, &observed.quota.as_ref().unwrap().tenant)
         .unwrap()
         .unwrap()
         .usage
         .metadata_rows;
-    assert!(occupied > 0 && occupied < quota.limits.metadata_rows);
-    quota.limits.metadata_rows = occupied;
-    let narrowed = crate::tenant::prepare_install(&view, std::slice::from_ref(&quota)).unwrap();
+    assert!(occupied > 0 && occupied < observed.quota.as_ref().unwrap().limits.metadata_rows);
     drop(view);
-    narrowed
-        .publish(&fixture.store, || Ok::<(), StoreError>(()))
-        .unwrap();
-    fixture.quota = Some(quota);
+    observed.require_census();
+    drop(observed);
+    // Quotas are sealed during installation. Seed the exact supported high-water
+    // configuration before migration instead of rewriting an installed quota.
+    let fixture = Fixture::selected(AggregateMigrationRecipe::Count, true, occupied, None);
+    complete(&fixture);
+    assert_eq!(
+        crate::tenant::inspect(
+            &fixture.store.snapshot().unwrap(),
+            &fixture.quota.as_ref().unwrap().tenant,
+        )
+        .unwrap()
+        .unwrap()
+        .usage
+        .metadata_rows,
+        occupied
+    );
     let request = request(&fixture);
     assert!(matches!(
         MigrationResumePlan::prepare(
