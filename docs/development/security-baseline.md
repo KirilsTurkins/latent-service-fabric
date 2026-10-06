@@ -106,7 +106,7 @@ normalized file digest to one of two reviewed historical trees; adding transport
 code cannot silently preserve that allowance. NuGet source configuration files
 and custom `dependencies.lock.json` files participate in manifest discovery.
 
-The documentation package manager's `npm-11.19.1-lsf-bundle-v3` distribution and
+The documentation package manager's `npm-11.19.1-lsf-bundle-v4` distribution and
 the two application locks select explicit maintained source repairs for
 `http-cache-semantics` 4.3.0 and `braces` 3.0.3. The
 [repair policy](../../.github/security/npm-source-repairs.json) pins the upstream
@@ -115,6 +115,11 @@ deterministic archives. The [independent verifier](../../tools/security_npm_sour
 reads fresh authenticated registry archives as bounded data; it imports neither
 the source builder nor downloaded package code. It checks both complete library
 archives and the complete npm bundle against all three reviewed locks.
+
+The v4 bundle additionally replaces the complete selector parser with upstream
+7.1.6 while retaining its exact existing dependency graph. Current frontend
+locks pin tinypool 2.1.2, source-map-js 1.2.2 and KaTeX 0.18.2 alongside the
+selector update. Every resolved upstream package remains visible to OSV.
 
 The cache repair retains legitimate public freshness and permitted stale reuse,
 while preventing security-zeroed private, non-storable, cookie-bearing or
