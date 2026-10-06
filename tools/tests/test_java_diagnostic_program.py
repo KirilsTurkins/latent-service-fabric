@@ -268,6 +268,50 @@ class JavaDiagnosticMaterialTests(unittest.TestCase):
 
 
 class JavaDiagnosticReviewTests(unittest.TestCase):
+    def test_prepared_execution_creates_each_session_output_once_and_retires_both_owners(self):
+        from contextlib import ExitStack
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            prepared = {}
+            for name in ("former", "current"):
+                work = output / (name + "-node"); work.mkdir()
+                config = work / "node.json"; write_json(config, {})
+                prepared[name] = {"configFile": "node.json", "configSha256": file_identity(config, 262144),
+                                  "host": "localhost"}
+            candidate = {"clock": {"original": True}, "inputs": {}, "recipientPort": 12345, "cases": prepared}
+            client = SimpleNamespace(node=None)
+            node = SimpleNamespace(buffers=[bytearray(), bytearray()], close=Mock())
+            with ExitStack() as stack:
+                stack.enter_context(patch.object(program, "_review", return_value=candidate))
+                stack.enter_context(patch.object(program, "deadline", return_value=150))
+                stack.enter_context(patch.object(program, "inputs", return_value=(
+                    {"latent": Path("cli"), "latentd": Path("node")}, {})))
+                stack.enter_context(patch.object(program, "RecordingClient", return_value=client))
+                stack.enter_context(patch.object(program, "start_provider", return_value=(object(), 12345)))
+                stack.enter_context(patch.object(program, "close_failed_provider", return_value={"closed": True}))
+                connect = stack.enter_context(patch.object(program, "connect", return_value=node))
+                stop = stack.enter_context(patch.object(program, "stop"))
+                stack.enter_context(patch.object(program, "idle"))
+                stack.enter_context(patch.object(program, "stopped_record", return_value={"closed": True}))
+                stack.enter_context(patch.object(provider_timeout, "verify_shutdown"))
+                stack.enter_context(patch.object(provider_timeout, "stop_peer", return_value={"closed": True}))
+                stack.enter_context(patch.object(program, "_admit", return_value=({}, None)))
+                stack.enter_context(patch.object(program, "_former", return_value={"status": "passed"}))
+                stack.enter_context(patch.object(program, "_current", return_value={"status": "passed"}))
+                result = program.execute(Path("native"), Path("receipt"), Path("builds"), Path("releases"),
+                                         output, approved_sha256="0" * 64)
+            self.assertEqual(result["status"], "passed")
+            self.assertEqual(set(result["cases"]), {"former", "current"})
+            self.assertEqual(connect.call_count, 2)
+            self.assertEqual(stop.call_count, 2)
+            self.assertEqual(node.close.call_count, 2)
+            for name in ("former", "current"):
+                self.assertTrue((output / (name + "-execute") / "physical-retirement.json").is_file())
+                self.assertTrue(result["cases"][name]["physical"]["cleanPhysicalRetirement"])
+            self.assertFalse(result["allAcceptanceCriteriaPassed"])
+            self.assertFalse(result["packagedDistributionQualified"])
+
     def test_original_boot_and_deadline_cannot_be_extended_or_expired(self):
         original = {"bootId": "original", "deadlineMonotonicNanos": "150000000000"}
         with patch.object(Path, "read_text", return_value="original"), patch.object(program.time, "monotonic", return_value=100):

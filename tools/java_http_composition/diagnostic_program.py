@@ -324,7 +324,7 @@ def execute(native_directory, native_receipt, builds, releases, output, *, appro
                 require(prepared["configFile"] == "node.json", "java-diagnostic-original-config-name")
                 config = work / prepared["configFile"]
                 require(file_identity(config, 262144) == prepared["configSha256"], "java-diagnostic-retained-config-drift")
-                observed_output = fresh(output / (name + "-execute"))
+                observed_output = output / (name + "-execute")
                 with session(binaries["latentd"], binaries["latent"], work, config, observed_output,
                              candidate["clock"], ordinal=2) as (client, node, physical):
                     targets, generation = _admit(client, node, releases, prepared, port, service_required=name == "former")
