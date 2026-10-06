@@ -1348,6 +1348,7 @@
       "expectedCases": [
         "broker::clock::window::tests::one_checked_window_never_extends_the_original_deadline",
         "broker::clock::window::tests::only_the_exact_busy_constructor_can_wait",
+        "broker::currentness::tests::only_exact_authority_bookkeeping_contention_is_waitable",
         "broker::io::tests::all_limit_dimensions_have_finite_hard_ceilings",
         "broker::io::tests::an_unbounded_store_deadline_cannot_admit_host_io",
         "broker::io::tests::bounded_ring_backpressures_without_spawning_and_preserves_order",
@@ -1503,7 +1504,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 151,
+      "minimumCases": 152,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -1915,9 +1916,9 @@
       ],
       "prerequisites": [
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
         "proc-vmhwm",
-        "real-writable-filesystem"
+        "real-writable-filesystem",
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -1952,10 +1953,16 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "activation_runtime::tests::close_allows_bounded_live_continuations_and_rejects_independent_work",
+        "activation_runtime::tests::foreign_store_token_and_opaque_sleeping_work_cannot_establish_quiescence",
+        "activation_runtime::tests::lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits",
+        "activation_runtime::tests::recurring_timer_coalesces_storms_and_cancelled_waits_keep_physical_ownership",
+        "activation_runtime::tests::waking_a_parked_thread_leaves_runnable_sibling_and_fences_reused_slots",
         "budget::descendants::tests::abandoned_accepted_child_consumes_its_grant_without_a_completion_claim",
         "budget::descendants::tests::admission_cannot_restart_the_parents_absolute_child_deadline",
         "budget::descendants::tests::child_reservations_retire_only_after_execution_and_retained_provider_owners",
         "budget::descendants::tests::depth_fanout_and_global_retained_frames_are_finite",
+        "budget::descendants::tests::explicit_scope_cancellation_signals_children_without_finalization_or_refund",
         "budget::descendants::tests::failed_admission_and_invalid_deadline_refund_once_without_spending_child_call",
         "budget::descendants::tests::global_tree_limit_is_independent_of_depth_and_fanout",
         "budget::descendants::tests::independent_memory_reservations_and_observed_peaks_stay_within_parent_grant",
@@ -2016,8 +2023,11 @@
         "digest::tests::digest_bytes_keep_leading_zeroes_and_lowercase_hex",
         "digest::tests::noncanonical_and_malformed_digests_are_rejected_without_normalization",
         "digest::tests::validated_identities_support_deterministic_keys_and_deduplication",
+        "error::guest_trap_kind::tests::arbitrary_trap_text_is_not_a_classification",
+        "error::guest_trap_kind::tests::fixed_trap_kinds_round_trip_without_duplicate_tokens",
         "host_profile::tests::canonical_identity_changes_with_version_and_bounds_its_data",
         "host_profile::tests::current_v4_preserves_every_frozen_v3_interface_and_adds_only_blob_v2",
+        "host_profile::tests::current_v5_preserves_v4_and_recognizes_only_exact_opt_in_runtime_and_streams",
         "host_profile::tests::lookup_does_not_accept_wrong_or_missing_versions",
         "host_profile::tests::phase3_v1_is_exact_versioned_and_unique",
         "host_profile::tests::v2_preserves_every_builtin_and_selects_only_explicit_async_interfaces",
@@ -2064,7 +2074,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 106,
+      "minimumCases": 115,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -2898,8 +2908,10 @@
         "activation_manager::transport_stop::tests::raw_disconnect_stops_both_probes_without_accepting_explicit_cancellation",
         "activation_runner::diagnostics::tests::codec_metadata_alone_never_classifies_guest_traps",
         "activation_runner::diagnostics::tests::currentness_detail_keeps_guest_trap_terminal_semantics",
+        "activation_runner::diagnostics::tests::fixed_trap_kinds_survive_mapping_without_private_context",
         "activation_runner::diagnostics::tests::host_failure_codes_keep_terminal_semantics_without_private_metadata",
         "activation_runner::diagnostics::tests::host_failure_metadata_requires_exact_known_code_and_runtime_trap",
+        "activation_runner::diagnostics::tests::unknown_or_contradictory_trap_kinds_remain_unclassified",
         "activation_runner::diagnostics::tests::unknown_or_mismatched_trap_metadata_stays_unclassified",
         "activation_runner::tests::early_and_running_cancellation_use_the_same_terminal_error_shape",
         "activation_runner::tests::early_and_running_deadline_use_the_same_terminal_error_shape",
@@ -2970,7 +2982,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 90,
+      "minimumCases": 92,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -4059,6 +4071,9 @@
       "expectedCases": [
         "capability::control::tests::cancelled_waiter_keeps_queued_or_running_work_charged_until_actual_completion",
         "capability::control::tests::shutdown_timeout_reports_owned_work_and_rejects_new_submissions",
+        "capability::resources::stream_tests::endpoint_scope_is_exact_and_cannot_be_derived_from_http_authority",
+        "capability::resources::stream_tests::malformed_ambiguous_and_wildcard_endpoints_fail_closed",
+        "capability::store::authority::owned::tests::owned_stream_target_retains_exact_endpoint_without_borrowed_authority",
         "capability::store::tests::authority::held_policy_snapshots_reject_later_calls_after_revocation_and_owner_retirement",
         "capability::store::tests::authority::principal_policy_and_binding_revisions_narrow_and_invalidate_independently",
         "capability::store::tests::authority::publication::final_admission_checks_real_catalog_owner_publication_and_every_narrowing",
@@ -4082,6 +4097,7 @@
         "capability::tests::matching_allow_rules_intersect_every_ceiling_instead_of_building_a_union",
         "capability::tests::normalized_http_scope_has_exact_origins_and_segment_prefixes",
         "capability::tests::required_audit_is_monotonic_and_old_canonical_documents_are_unchanged",
+        "capability::tests::runtime_timer_policy_requires_its_exact_contract_and_clock_scope",
         "capability::tests::state::same_tenant_subjects_require_current_entity_and_result_policy_grants",
         "capability::tests::state::state_and_intent_opt_ins_preserve_stateless_linking_and_closed_bounded_decoding",
         "capability::tests::state::state_policy_matches_exact_tuples_without_cross_product_or_incarnation_revival",
@@ -4108,11 +4124,18 @@
         "supply_chain::tests::clock::mutation_renewal_persists_a_full_window_even_before_the_sampler_margin",
         "supply_chain::tests::clock::renewal_post_sync_regression_cannot_forget_newly_covered_observation",
         "supply_chain::tests::clock::renewal_without_persistence_retains_covered_clock_observation",
+        "supply_chain::tests::clock_renewal::current_grant_checkpoints_share_a_read_only_authority_epoch",
         "supply_chain::tests::clock_renewal::current_grants_remain_available_during_clock_floor_persistence",
+        "supply_chain::tests::clock_renewal::current_grants_remain_available_during_trusted_clock_renewal_sample",
         "supply_chain::tests::clock_renewal::failed_clock_persistence_halts_grants_without_restoring_the_old_floor",
+        "supply_chain::tests::clock_renewal::failed_durable_renewal_invalidates_a_reader_paused_in_the_trusted_clock",
+        "supply_chain::tests::clock_renewal::final_publication_remains_available_during_read_only_grant_clock_sample",
+        "supply_chain::tests::clock_renewal::final_publication_remains_available_during_trusted_clock_renewal_sample",
+        "supply_chain::tests::clock_renewal::out_of_order_readers_preserve_the_clock_high_water_mark_and_detect_later_rollback",
         "supply_chain::tests::clock_renewal::pending_clock_floor_never_extends_a_grant_before_durable_publication",
         "supply_chain::tests::clock_renewal::policy_replacement_cannot_overtake_a_pending_clock_floor_write",
         "supply_chain::tests::clock_renewal::retirement_waits_for_the_pending_floor_and_never_revives_held_grants",
+        "supply_chain::tests::clock_renewal::retiring_the_owner_invalidates_a_reader_paused_in_the_trusted_clock",
         "supply_chain::tests::closed_policy_rejects_duplicates_bounds_and_unbound_snapshots",
         "supply_chain::tests::history::canonical_wrong_receipt_identities_are_corruption_even_after_expiry",
         "supply_chain::tests::history::supplied_detached_sbom_must_be_the_historical_exact_association",
@@ -4122,6 +4145,7 @@
         "supply_chain::tests::lifecycle::renewal_replaces_only_selected_evidence_and_invalidates_old_execution_generation",
         "supply_chain::tests::lock_diagnostics::held_authority_fence_reports_busy_and_recovers_after_release",
         "supply_chain::tests::lock_diagnostics::poisoned_authority_fence_stays_fail_closed_across_retries",
+        "supply_chain::tests::lock_diagnostics::unwinding_shared_reader_retires_currentness_for_readers_and_writers",
         "supply_chain::tests::preparation::capsule_preparation_retains_one_slot_and_renews_after_work_exceeds_the_lease",
         "supply_chain::tests::preparation::invalid_capsule_preparation_releases_ownership_without_renewing_the_floor",
         "supply_chain::tests::preparation::prepared_capsules_recheck_policy_replacement_and_both_role_revocations",
@@ -4184,7 +4208,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 105,
+      "minimumCases": 117,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -5085,6 +5109,13 @@
         "embedded::tests::conflicting_and_over_budget_batches_abort_all_families",
         "embedded::tests::corrupt_bytes_and_concurrent_process_ownership_never_reset_the_store",
         "embedded::tests::final_acceptance_rejection_aborts_every_staged_family_before_flush",
+        "embedded::tests::format::backend_sync_failure_during_upgrade_refuses_readiness_and_requires_exact_reopen",
+        "embedded::tests::format::interrupted_first_creation_refuses_unseeded_engine_and_recovers_durable_stages",
+        "embedded::tests::format::interrupted_v1_upgrade_reopens_same_business_rows_and_never_downgrades",
+        "embedded::tests::format::malformed_inconsistent_and_unknown_upgrade_metadata_refuses_without_rewriting_rows",
+        "embedded::tests::format::original_row_ceiling_is_checked_before_any_upgrade_intent",
+        "embedded::tests::format::owned_format_upgrade_child",
+        "embedded::tests::format::v1_upgrade_preserves_original_rows_and_existing_read_views",
         "embedded::tests::malformed_or_unsupported_reservations_never_publish_or_enable_readiness",
         "embedded::tests::measurement::finite_engine_qualification_records_actual_commit_conflict_snapshot_and_recovery_costs",
         "embedded::tests::occ_and_capacity_failures_do_not_consume_final_commit_acceptance",
@@ -5204,7 +5235,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 118,
+      "minimumCases": 125,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
@@ -6315,6 +6346,7 @@
         "backend::readiness::worker_wait::tests::worker_window_retries_only_exact_busy_and_preserves_other_error_allocations",
         "backend::result_lifetime_tests::native_errors_release_while_the_actual_cleanup_helper_still_owns_runtime_and_permit",
         "backend::result_lifetime_tests::successful_classification_and_unwind_keep_the_same_final_drop_order",
+        "bindings::compatibility_tests::activation_runtime_linker_preserves_exact_shape_and_unknown_profile_denial",
         "bindings::compatibility_tests::blob_preparation_requires_exact_owned_chunk_and_async_shapes",
         "bindings::compatibility_tests::frozen_schema_matrix_matches_host_shapes_identity_and_generated_sdk_baseline",
         "bindings::compatibility_tests::generated_async_provider_binding_accepts_only_its_exact_interface",
@@ -6393,6 +6425,7 @@
         "config::tests::security_advisories::fixed_length_lists_remain_outside_the_closed_engine_profile",
         "containment::currentness_tests::currentness_diagnostics_never_override_memory_deadline_or_untyped_errors",
         "containment::currentness_tests::validated_currentness_keeps_the_existing_runtime_trap_and_consumption",
+        "containment::tests::backend_trap_labels_match_the_public_closed_classification",
         "containment::tests::bounded_text_preserves_utf8_boundaries",
         "containment::tests::cancellation_and_deadline_precede_fuel_exhaustion",
         "containment::tests::cancellation_wins_when_cancellation_and_deadline_are_first_visible_together",
@@ -6400,6 +6433,7 @@
         "containment::tests::fuel_exhaustion_precedes_generic_guest_trap_classification",
         "containment::tests::injected_monotonic_clock_controls_deadline_without_wall_clock_or_sleep",
         "containment::tests::memory_precedes_fuel_and_guest_trap_classification",
+        "containment::tests::runtime_error_kind_does_not_forward_untyped_engine_context",
         "containment::tests::typed_capability_failure_retains_only_its_closed_code",
         "factory::tests::busy_shutdown_preserves_backend_epoch_progress_until_last_owner_drop",
         "factory::tests::explicit_ticker_stop_wakes_a_long_interval_and_is_idempotent",
@@ -6544,7 +6578,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 347,
+      "minimumCases": 350,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -6767,10 +6801,10 @@
         "linux-x86_64"
       ],
       "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
         "Linux x86_64 unprivileged child and kernel sandbox support",
-        "Python 3 (aot_sandbox syscall fixture)"
+        "Python 3 (aot_sandbox syscall fixture)",
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -6779,7 +6813,9 @@
       "sourceSha256": "2715e19a626446efff35a2c03623b2d2f78fa4143eab62422e1f265181b4c83f",
       "successMarker": "AOT sandbox: 12 unprivileged real-entry probes and exact-policy syscall probe passed",
       "target": "aot_sandbox",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
@@ -6915,10 +6951,10 @@
         "linux-x86_64"
       ],
       "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
         "Linux x86_64 unprivileged child and kernel sandbox support",
-        "Python 3 (aot_sandbox syscall fixture)"
+        "Python 3 (aot_sandbox syscall fixture)",
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -6927,7 +6963,9 @@
       "sourceSha256": "4c1a85079da0baefb6178caa493f15aed5a528e6cc88808d2e75c56fc91149fb",
       "successMarker": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
       "target": "aot_supervisor",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
@@ -7158,9 +7196,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -7618,14 +7656,29 @@
         "load::fresh_per_admission_fixture_load_admits_the_real_parent_and_child_once",
         "load::stale_child_load_fails_closed_before_admission_without_consumption_or_retry",
         "load::synthetic_profile_is_unchanged_and_observed_on_each_read",
+        "runtime::cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell",
+        "runtime::canonical_timer_allows_sibling_work_and_bounds_recurrence_cancellation_and_storms",
+        "runtime::completed_fixed_results_release_original_calls_before_the_next_import",
+        "runtime::malformed_fixed_result_destinations_reclaim_original_calls",
+        "runtime::narrower_timer_policy_deadline_preserves_root_and_allows_owner_settlement",
+        "runtime::pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanly",
+        "runtime::policy_revocation_at_real_timer_barrier_stops_original_work_and_reclaims_owners",
+        "runtime::root_deadline_does_not_complete_long_timer_and_cpu_loop_remains_contained",
+        "runtime::root_result_idle_worker_and_trap_never_skip_runtime_retirement",
+        "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
+        "runtime::signed_runtime_limits_closing_and_generation_fences_use_normal_node_admission",
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
-      "expectedIgnored": [],
+      "expectedIgnored": [
+        "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers"
+      ],
       "id": "latent-wasmtime.test.local-service",
-      "ignoredLeaves": [],
+      "ignoredLeaves": [
+        "signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers"
+      ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 17,
+      "minimumCases": 28,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -7859,9 +7912,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "Linux procfs and loopback provider fixtures",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "Linux procfs and loopback provider fixtures"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -8052,6 +8105,10 @@
         "invocation::conversion::tests::platform_terminal_inference_matches_the_current_lifecycle_for_every_code",
         "invocation::conversion::tests::publications::present_invalid_publications_never_become_absent_or_create_a_missing_pin",
         "invocation::conversion::tests::publications::publication_receipts_preserve_all_outcomes_and_legacy_component_meaning",
+        "invocation::conversion::tests::trap_kinds::arbitrary_trap_kinds_and_secret_fields_are_removed_from_public_outcomes",
+        "invocation::conversion::tests::trap_kinds::known_trap_kinds_survive_public_invocation_encoding_without_private_fields",
+        "invocation::conversion::tests::trap_kinds::known_trap_kinds_survive_retained_status_encoding_without_private_fields",
+        "invocation::conversion::tests::trap_kinds::trap_kind_projection_keeps_original_error_and_detail_bounds",
         "invocation::conversion::tests::trusted_platform_error_round_trip_preserves_distinct_detail_items_and_unknown_fields",
         "invocation::conversion::tests::trusted_request_round_trip_preserves_optional_identity_and_every_budget_dimension",
         "invocation::deadline::tests::pinned_arrival_expiry_survives_body_delay_and_wall_clock_movement",
@@ -8071,6 +8128,7 @@
         "invocation::validation::tests::unsupported_budgets_and_missing_targets_fail_before_authorization",
         "management::audit::lease::tests::page_lease_follows_unpolled_body_and_transport_retained_bytes",
         "management::audit::tests::audit_authorization_requires_admin_and_existing_operator_claim_for_node_scope",
+        "management::audit::tests::audit_resource_class_wire_numbers_remain_stable_and_stream_is_distinct",
         "management::audit::tests::query_bounds_reject_hidden_capacity_unknown_kind_bad_time_and_oversized_cursor",
         "management::audit::tests::typed_query_requires_an_explicit_scope",
         "management::audit::tests::typed_scopes_cannot_select_foreign_tenant_even_for_an_operator",
@@ -8156,7 +8214,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 129,
+      "minimumCases": 134,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -8395,6 +8453,7 @@
         "error::tests::bare_client_limit_codes_are_ambiguous_but_typed_limits_are_platform_failures",
         "error::tests::currentness_diagnostic_never_changes_mutation_certainty_or_exposes_peer_text",
         "error::tests::definitive_bare_application_rejections_remain_known_without_remote_text",
+        "error::tests::fixed_trap_kinds_survive_public_invocation_without_private_text",
         "error::tests::guest_host_failure_drops_unknown_codes_arbitrary_fields_and_oversized_details",
         "error::tests::guest_host_failure_never_makes_ambiguous_transport_outcome_known",
         "error::tests::guest_host_failure_projects_only_closed_code_without_changing_known_outcome",
@@ -8404,7 +8463,9 @@
         "error::tests::malformed_commit_details_cannot_turn_an_ambiguous_failure_into_known_commit",
         "error::tests::malformed_unknown_and_inconsistent_typed_errors_are_protocol_failures",
         "error::tests::status_text_is_never_a_diagnostic_and_ambiguity_is_explicit",
+        "error::tests::trap_kind_cannot_expand_transport_certainty_or_detail_bounds",
         "error::tests::typed_committed_receipt_survives_without_private_diagnostics",
+        "error::tests::unknown_or_unbounded_trap_kinds_are_dropped_by_public_projection",
         "input::tests::file_reads_and_stdin_ownership_are_explicit",
         "input::tests::reader_checks_actual_bytes_and_stops_after_one_sentinel_byte",
         "invocation::tests::prepare::absent_identity_defaults_and_explicit_lineage_zero_overrides_are_lossless",
@@ -8515,7 +8576,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 147,
+      "minimumCases": 150,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
@@ -8553,9 +8614,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "Bash and Fish installed for actual offline shell execution",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "Bash and Fish installed for actual offline shell execution"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -9041,9 +9102,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "actual Angular build",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "actual Angular build"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -9103,9 +9164,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "actual static-site reference builds and a fresh private fixture root",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "actual static-site reference builds and a fresh private fixture root"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
