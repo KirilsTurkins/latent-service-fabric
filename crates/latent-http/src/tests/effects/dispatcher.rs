@@ -1,5 +1,6 @@
 //! The actual protected state owner and fixed dispatcher, not a second outbox.
 use super::*;
+use latent_core::native_capacity::{NativeCapacityLimits, NativeCapacityOwner};
 use latent_effects::{
     dispatch_store::{effect_payload_key, effect_row_key, initial_due_mutation, DispatchCatalog},
     runtime::{DispatcherConfig, DispatcherOwner},
@@ -15,6 +16,7 @@ struct Store {
     _root: tempfile::TempDir,
     config: ProtectedStoreConfig,
     owner: Arc<ProtectedStoreOwner>,
+    capacity: NativeCapacityOwner,
 }
 
 impl Store {
@@ -33,10 +35,13 @@ impl Store {
         .unwrap()
         .await
         .unwrap();
+        let capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+        owner.bind_native_capacity(&capacity).unwrap();
         Self {
             _root: root,
             config,
             owner: Arc::new(owner),
+            capacity,
         }
     }
 
@@ -107,6 +112,7 @@ impl Store {
             .await
             .unwrap(),
         );
+        self.owner.bind_native_capacity(&self.capacity).unwrap();
     }
 }
 
@@ -139,6 +145,9 @@ async fn durable_dispatcher_writes_send_marker_then_recovers_actual_lost_tls_res
     )
     .await
     .unwrap();
+    assert!(dispatcher
+        .command_admission_source()
+        .uses_native_capacity(&store.capacity));
     // Description and adapter installation alone create no network attempt.
     assert_eq!(endpoint.attempts(), (0, 0));
     store.seed(&authority, &payload, &record).await;
