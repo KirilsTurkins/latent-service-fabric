@@ -68,6 +68,18 @@ impl Fixture {
     }
 
     async fn with_capacity(capacity: NativeCapacityOwner) -> Self {
+        Self::with_store_binding(capacity, true).await
+    }
+
+    async fn unbound() -> Self {
+        Self::with_store_binding(
+            NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap(),
+            false,
+        )
+        .await
+    }
+
+    async fn with_store_binding(capacity: NativeCapacityOwner, bind_store: bool) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
@@ -75,7 +87,9 @@ impl Fixture {
         let mut config = ProtectedStoreConfig::bounded_linux(root.path().to_path_buf());
         config.create_if_missing = true;
         let store = Arc::new(Self::open(config.clone()).await);
-        store.bind_native_capacity(&capacity).unwrap();
+        if bind_store {
+            store.bind_native_capacity(&capacity).unwrap();
+        }
         Self {
             _root: root,
             config,
