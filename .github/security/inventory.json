@@ -212,7 +212,7 @@
       ],
       "kind": "nuget-locked",
       "lock": "sdk/dotnet/Latent.Sdk.Transport/packages.lock.json",
-      "manifest_sha256": "474469be203d1ca3077645bdf99128b604408654096b6f309685e9705b4f5055",
+      "manifest_sha256": "bb70ba1a37d593096898a8d40eeff33503570c86a6792c93cf42058e8fd8a618",
       "path": "sdk/dotnet/Latent.Sdk.Transport/Latent.Sdk.Transport.csproj",
       "runtime_identifier": "linux-x64"
     },

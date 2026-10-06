@@ -254,6 +254,18 @@ impl ResponseProfile for control::InspectActivationTreeResponse {
             return Err(invalid());
         }
         for node in &self.nodes {
+            if node.target_service.len() > 512
+                || context.inspection_service.as_ref().is_some_and(|service| {
+                    &node.target_service != service
+                        || node.parent_activation_id.is_some()
+                        || node.activation_id != node.root_activation_id
+                        || context
+                            .inspection_from
+                            .is_some_and(|from| node.received_at_unix_millis < from)
+                })
+            {
+                return Err(invalid());
+            }
             for id in [&node.activation_id, &node.root_activation_id]
                 .into_iter()
                 .chain(node.parent_activation_id.iter())

@@ -47,6 +47,17 @@ function walk(schema: DescMessage, bytes: Uint8Array, depth: number, work: Work)
     } else if (field.message) {
       if (wire !== WireType.LengthDelimited) throw new ShapeError();
       walk(field.message, reader.bytes(), depth + 1, work);
+    } else if (field.fieldKind === "list" && wire === WireType.LengthDelimited
+      && (field.enum !== undefined || [ScalarType.INT32, ScalarType.UINT32, ScalarType.UINT64, ScalarType.BOOL].includes(field.scalar!))) {
+      // Protobuf encoders pack repeated numeric fields. Charge each value and
+      // share the same collection bound across packed and unpacked segments.
+      const packed = new BinaryReader(reader.bytes());
+      let elements = count - 1;
+      while (packed.pos < packed.len) {
+        if (--work.fields < 0 || ++elements > maximum) throw new ShapeError();
+        scalar(field.scalar, field.enum !== undefined, packed, WireType.Varint);
+      }
+      counts.set(number, elements);
     } else {
       scalar(field.scalar, field.enum !== undefined, reader, wire);
     }

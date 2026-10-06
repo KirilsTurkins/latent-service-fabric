@@ -4,6 +4,33 @@ import { inspect } from "node:util";
 import { peer, policy, request, until } from "./peer.mjs";
 import { FailureCategory as Category, OutcomeKnowledge as Knowledge } from "../../dist/management.js";
 
+test("target inspection captures exact selectors, rejects foreign and unmeasured replies, and preserves future descriptive enums", async () => {
+  const server = await peer(), client = server.client();
+  const request = { service: "service-a", contract: "domain:api/contract@1.0.0", function: "get", revisionId: "revision-a", includePreparation: true,
+    maximumWaitMillis: 0n, publication: { tenant: "tests", id: `publication:sha256:${"b".repeat(64)}` } };
+  try {
+    const pending = client.inspectHttpTarget(request);
+    request.service = "caller-mutated";
+    request.publication.id = `publication:sha256:${"c".repeat(64)}`;
+    const result = await pending;
+    assert.equal(result.value.service, "service-a");
+    assert.equal(result.value.catalogTransaction, 18446744073709551615n);
+    assert.equal(result.value.candidates[0].publication.id, `publication:sha256:${"b".repeat(64)}`);
+    assert.equal(result.value.candidates[0].reasons[0], 777);
+    for (const functionName of ["foreign", "drift", "unmeasured"]) {
+      await assert.rejects(client.inspectHttpTarget({ ...request, function: functionName }), error => error.failure.category === Category.Decode && error.failure.dispatched);
+    }
+    const future = await client.inspectHttpTarget({ ...request, function: "future" });
+    assert.equal(future.value.state, 777);
+    assert.equal(future.value.candidates[0].preparation.state, 779);
+    assert.equal(future.value.candidates[0].eligible, false);
+    await assert.rejects(client.inspectHttpTarget({ ...request, maximumWaitMillis: 30001n }), error => error.failure.category === Category.InvalidRequest && !error.failure.dispatched);
+    assert.equal(server.state.connections, 1);
+    assert.equal(server.state.calls, 0);
+    assert.equal(server.state.mutations, 0);
+  } finally { await client.shutdown(); await server.stop(); }
+});
+
 test("one real HTTP2 connection, exact full-width values, distinct outcomes and physical shutdown", async () => {
   const server = await peer();
   const client = server.client();

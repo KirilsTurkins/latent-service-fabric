@@ -43,6 +43,9 @@ class FixtureClient implements Profile.ClientProfile {
   inspectActivationTree(_request: Profile.InspectActivationTreeRequest): Promise<Profile.ClientResponse<Profile.InspectActivationTreeResponse>> {
     return this.response({ schemaVersion: 1, retainedHistoryOnly: true, historyAvailable: false, cursorExpired: false, nodes: [], page: {} });
   }
+  inspectHttpTarget(_request: Profile.InspectHttpTargetRequest): Promise<Profile.ClientResponse<Profile.InspectHttpTargetResponse>> {
+    throw new Error("target inspection is not used by the lifetime fixture");
+  }
 
   listPolicies(_request: Profile.ListPoliciesRequest): Promise<Profile.ClientResponse<Profile.ListPoliciesResponse>> {
     this.pageCalls++;
