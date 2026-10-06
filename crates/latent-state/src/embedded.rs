@@ -613,7 +613,7 @@ impl ReadView {
             .as_ref()
             .is_some_and(|v| v.value().len() > maximum_bytes)
         {
-            return Err(StoreError::Capacity);
+            return Err(StoreError::Corrupt);
         }
         Ok(value.map(|v| v.value().to_vec()))
     }

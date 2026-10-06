@@ -227,7 +227,7 @@ fn corrupt_or_missing_primary_is_a_recovery_error_and_never_a_reclamation_grant(
     let view = database.snapshot().unwrap();
     assert_eq!(
         view.get_bounded(&owner.owner_key().unwrap(), MAX_REFERENCE_BYTES),
-        Err(StoreError::Capacity)
+        Err(StoreError::Corrupt)
     );
     assert_eq!(
         view.get(&owner.owner_key().unwrap()).unwrap(),
