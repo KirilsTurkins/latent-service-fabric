@@ -20,7 +20,7 @@ pub use verification::{
     PackageVerificationRequest, WebPackageVerificationReport,
 };
 
-pub use clock::{SupplyChainClock, SystemSupplyChainClock};
+pub use clock::{CoveredClock, CoveredClockSource, SupplyChainClock, SystemSupplyChainClock};
 pub use config::SupplyChainPolicy;
 
 use latent_artifacts::{
