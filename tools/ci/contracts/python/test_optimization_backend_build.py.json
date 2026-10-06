@@ -1,1 +1,22 @@
-{"cases":["BackendBuildTests.test_cpu_source_is_required_only_for_cold_experiment","BackendBuildTests.test_default_build_parent_is_owned_external_and_removed","BackendBuildTests.test_failed_build_removes_worktree_without_claiming_completed_inputs","BackendBuildTests.test_non_sha_and_dirty_harness_fail_before_owned_build","BackendBuildTests.test_only_two_collectors_and_one_echo_share_exact_owned_paths"],"guards":{"BackendBuildTests.test_cpu_source_is_required_only_for_cold_experiment":"1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40","BackendBuildTests.test_default_build_parent_is_owned_external_and_removed":"1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40","BackendBuildTests.test_failed_build_removes_worktree_without_claiming_completed_inputs":"1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40","BackendBuildTests.test_non_sha_and_dirty_harness_fail_before_owned_build":"1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40","BackendBuildTests.test_only_two_collectors_and_one_echo_share_exact_owned_paths":"1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40"},"kind":"python","module":"tools/tests/test_optimization_backend_build.py","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v2","guardDefinitions":{"1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:60fdd13dd604c474c18742b24e824b34585354ea57a676d89bafe225a34e597c","class:setup-sha256:23335014c4a8bf397a0664c6629d83daaebde3e39c2e829266011ad5bdc06769"],"skipSites":[]}}}
+{
+  "cases":["BackendBuildTests.test_cpu_source_is_required_only_for_cold_experiment","BackendBuildTests.test_default_build_parent_is_owned_external_and_removed","BackendBuildTests.test_failed_build_removes_worktree_without_claiming_completed_inputs","BackendBuildTests.test_non_sha_and_dirty_harness_fail_before_owned_build","BackendBuildTests.test_only_two_collectors_and_one_echo_share_exact_owned_paths"],
+  "guards":{
+    "BackendBuildTests.test_cpu_source_is_required_only_for_cold_experiment":
+      "1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40",
+    "BackendBuildTests.test_default_build_parent_is_owned_external_and_removed":
+      "1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40",
+    "BackendBuildTests.test_failed_build_removes_worktree_without_claiming_completed_inputs":
+      "1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40",
+    "BackendBuildTests.test_non_sha_and_dirty_harness_fail_before_owned_build":
+      "1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40",
+    "BackendBuildTests.test_only_two_collectors_and_one_echo_share_exact_owned_paths":
+      "1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40"
+  },
+  "kind":"python",
+  "module":"tools/tests/test_optimization_backend_build.py",
+  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "1845e7bcd5f0c34cf28227268c7741656f275cff82f96e7ce317514d3ec6db40":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:60fdd13dd604c474c18742b24e824b34585354ea57a676d89bafe225a34e597c","class:setup-sha256:23335014c4a8bf397a0664c6629d83daaebde3e39c2e829266011ad5bdc06769"],"skipSites":[]}
+  }
+}
