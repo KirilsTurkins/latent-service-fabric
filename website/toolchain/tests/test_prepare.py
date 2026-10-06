@@ -57,7 +57,7 @@ class PreparationTests(unittest.TestCase):
             manifest = {'name': name, 'version': new}
             if name == 'brace-expansion':
                 manifest['dependencies'] = {'balanced-match': '^4.0.2'}
-            if name == 'postcss-selector-parser':
+            elif name == 'postcss-selector-parser':
                 manifest['dependencies'] = {'cssesc': '^3.0.0', 'util-deprecate': '^1.0.2'}
             raw = archive([('package/package.json', manifest),
                            ('package/index.js', b'patched bytes')])
@@ -137,7 +137,8 @@ class PreparationTests(unittest.TestCase):
     def test_selector_rejects_changed_dependencies_and_shadowed_resolution(self):
         for name, version in [('cssesc', '3.0.0'), ('util-deprecate', '1.0.2')]:
             path = f'package/node_modules/{name}/package.json'
-            for manifest in [{'name': name, 'version': '99.0.0'}, {'name': 'different', 'version': version},
+            for manifest in [{'name': name, 'version': '99.0.0'}, {'name': name, 'version': '0.0.0'},
+                             {'name': 'different', 'version': version},
                              {'name': name, 'version': version, 'dependencies': {'other': '1.0.0'}},
                              {'name': name, 'version': version, 'optionalDependencies': {'other': '1.0.0'}},
                              {'name': name, 'version': version, 'peerDependencies': {'other': '1.0.0'}},
@@ -182,6 +183,16 @@ class PreparationTests(unittest.TestCase):
                               {'name': 'balanced-match', 'version': '4.0.3'})]
         with self.assertRaisesRegex(ValueError, 'shadowed'):
             prepare.compose(archive(shadow), self.patches)
+
+    def test_selector_uses_only_the_existing_exact_dependencies(self):
+        raw = prepare.compose(archive(self.base), self.patches)
+        with tarfile.open(fileobj=io.BytesIO(raw), mode='r:') as reader:
+            for name, version in [('cssesc', '3.0.0'), ('util-deprecate', '1.0.2')]:
+                dependency = json.loads(reader.extractfile(f'package/node_modules/{name}/package.json').read())
+                self.assertEqual(dependency, {'name': name, 'version': version})
+            replacement = json.loads(reader.extractfile('package/node_modules/postcss-selector-parser/package.json').read())
+            self.assertEqual(replacement['version'], '7.1.6')
+            self.assertEqual(replacement['dependencies'], {'cssesc': '^3.0.0', 'util-deprecate': '^1.0.2'})
 
     def test_replacements_reject_unreviewed_requirements_and_hidden_package_graphs(self):
         pin, _ = self.patches[-1]
