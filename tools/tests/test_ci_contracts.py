@@ -838,6 +838,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
         reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
+        reviewed_deferred_owners = ".github/workflows/ci.yml:rust:integration_lanes"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -877,6 +878,22 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(data["after"][key]["run"].rstrip("\n"),
                                  value["run"].replace("crates/latent-state/src/lib.rs",
                                                       "crates/latent-workflows/src/lib.rs"))
+            elif key == reviewed_deferred_owners:
+                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
+                                 {k: v for k, v in value.items() if k != "run"})
+                # The reviewed native workflow selects one explicit lane. Keep
+                # the remaining command bytes and every historical owner exact.
+                selector = '--workers "$CI_LANE_WORKERS" --output'
+                self.assertEqual(value["run"].count(selector), 1)
+                selected = value["run"].replace(
+                    selector, '--workers "$CI_LANE_WORKERS" --lane "$CI_NATIVE_LANE" --output')
+                # Register only the new owned deferred broker runner. Every
+                # existing command, flag, owner and execution fence is exact.
+                extended = selected.replace(
+                    "# tools/build_angular_package.py",
+                    "# tools/run_nats_deferred_tests.py tools/nats_deferred_support.py\n"
+                    "# tools/build_angular_package.py")
+                self.assertIn(data["after"][key]["run"].rstrip("\n"), (selected, extended))
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:
