@@ -1,0 +1,3 @@
+workspace: 5 packages, unconditional dependency graph is acyclic
+workspace: 50 packages, unconditional dependency graph is acyclic
+latent-core: 2 dependency nodes, no forbidden runtime/provider dependencies
