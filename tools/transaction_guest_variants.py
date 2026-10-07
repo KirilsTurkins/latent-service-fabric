@@ -21,6 +21,7 @@ LANGUAGES = ("rust", "c", "typescript", "go", "java", "dotnet")
 VARIANTS = ("forbidden-http",)
 URL = "http://127.0.0.1:1/forbidden-transaction-effect"
 HTTP = "latent:http/client@0.2.0"
+CHILD = "latent:service/invoke@0.1.0"
 SOURCES = {
     "rust": "src/lib.rs", "c": "src/main.c", "typescript": "src/main.ts",
     "go": "src/main.go", "java": "src/dev/latent/app/Capsule.java", "dotnet": "src/Main.cs",
@@ -115,8 +116,20 @@ def forbidden_http(source: str, language: str) -> str:
         '        latent_http_client_send(&frame->http_request, &frame->http_result)));')
 
 
+def forbidden_child(source: str) -> str:
+    """Retain an actual synchronous Java facade call inside the command view."""
+    return replace_once(source, "        try (var command = State.acquireCommand().value()) {\n",
+        "        try (var command = State.acquireCommand().value()) {\n"
+        "            var forbidden = Bindings.LatentServiceInvoke.call(\n"
+        '                new Bindings.LatentServiceInvokeTarget(Option.none(), "callee", "tests:local/api@1.0.0", "answer", Option.some("callee")),\n'
+        '                new byte[]{91,93}, "application/vnd.latent.wit-values.v1+json",\n'
+        "                new Bindings.LatentServiceInvokeCallOptions(Option.none(), (short) 0, Option.none(), List.of()));\n"
+        '            if (forbidden.tag() != 0) throw new IllegalStateException("forbidden-command-child-refused");\n')
+
+
 def create(directory: Path, language: str, variant: str, name: str | None = None) -> Path:
-    if language not in LANGUAGES or variant not in VARIANTS:
+    child = variant == "forbidden-child"
+    if language not in LANGUAGES or (variant not in VARIANTS and not (child and language == "java")):
         raise ValueError("unknown controlled transaction guest variant")
     if language == "rust":
         from tools.rust_capsule_project import create as author
@@ -133,17 +146,20 @@ def create(directory: Path, language: str, variant: str, name: str | None = None
     project = author(directory, TEMPLATE, name or "transaction-" + language + "-" + variant)
     files = snapshot(project)
     world = files["wit/world.wit"].decode()
-    if HTTP in world:
-        raise ValueError("controlled transaction world unexpectedly permits HTTP")
-    world = replace_once(world, "world service {", "world service {\n    import " + HTTP + ";")
-    code = forbidden_http(files[SOURCES[language]].decode(), language)
+    selected = CHILD if child else HTTP
+    if selected in world:
+        raise ValueError("controlled transaction world unexpectedly permits selected immediate operation")
+    world = replace_once(world, "world service {", "world service {\n    import " + selected + ";")
+    code = (forbidden_child(files[SOURCES[language]].decode()) if child
+            else forbidden_http(files[SOURCES[language]].decode(), language))
     # Read from the captured SDK, not mutable installed tools or ambient WIT.
-    dependency = read_file(project / "vendor/lsf/wit/platform/http-v2/package.wit")
+    package = "invocation" if child else "http-v2"
+    dependency = read_file(project / ("vendor/lsf/wit/platform/" + package + "/package.wit"))
     (project / SOURCES[language]).write_bytes(code.encode())
     (project / "wit/world.wit").write_bytes(world.encode())
     # Match the maintained compiler's dependency directory. A second directory
     # for the same nominal package makes the real WIT parser reject the fixture.
-    target = project / "wit/deps/http-v2/package.wit"
+    target = project / ("wit/deps/" + package + "/package.wit")
     target.parent.mkdir(parents=True, exist_ok=False)
     with target.open("xb") as output:
         output.write(dependency)
@@ -153,7 +169,7 @@ def create(directory: Path, language: str, variant: str, name: str | None = None
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", required=True, choices=LANGUAGES)
-    parser.add_argument("--variant", required=True, choices=VARIANTS)
+    parser.add_argument("--variant", required=True, choices=(*VARIANTS, "forbidden-child"))
     parser.add_argument("--project", required=True, type=Path)
     parser.add_argument("--name")
     arguments = parser.parse_args()
