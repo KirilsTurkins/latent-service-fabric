@@ -283,12 +283,13 @@ async fn install_protected_credentials(
         fs::Permissions::from_mode(0o600),
     )
     .unwrap();
-    let secrets = LocalSecretStore::open(
+    let secrets = LocalSecretStore::open_before(
         pools,
         secret_root,
         SecretLimits::default(),
         vec![],
         Arc::new(SystemSecretClock),
+        Instant::now() + WATCHDOG,
     )
     .unwrap()
     .await
