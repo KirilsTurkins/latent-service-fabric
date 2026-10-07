@@ -1,0 +1,20 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Add reviewed captured public rustls source preimage/postimage transaction, no shared-cache mutation or TLS success qualification",
+  "module":"tools/tests/test_host_stream_tls_patch.py",
+  "cases":["CapturedTlsPatch.test_bad_public_archive_hash_fails_before_destination_creation","CapturedTlsPatch.test_duplicate_or_link_archive_entries_are_rejected","CapturedTlsPatch.test_only_exact_reviewed_preimage_changes_and_existing_output_is_never_overwritten","CapturedTlsPatch.test_unreviewed_modified_bytes_or_preimage_fail_in_captured_owner"],
+  "guards":{
+    "CapturedTlsPatch.test_only_exact_reviewed_preimage_changes_and_existing_output_is_never_overwritten":
+      "0701b46a9cda715b11e8dd2f49ffdc6da32c239af7cd633241853fe67787215f",
+    "CapturedTlsPatch.test_bad_public_archive_hash_fails_before_destination_creation":
+      "0701b46a9cda715b11e8dd2f49ffdc6da32c239af7cd633241853fe67787215f",
+    "CapturedTlsPatch.test_unreviewed_modified_bytes_or_preimage_fail_in_captured_owner":
+      "0701b46a9cda715b11e8dd2f49ffdc6da32c239af7cd633241853fe67787215f",
+    "CapturedTlsPatch.test_duplicate_or_link_archive_entries_are_rejected":
+      "0701b46a9cda715b11e8dd2f49ffdc6da32c239af7cd633241853fe67787215f"
+  },
+  "guardDefinitions":{
+    "0701b46a9cda715b11e8dd2f49ffdc6da32c239af7cd633241853fe67787215f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:9744992fe3d584bb60fd7a65a9a9bb4c37609dd95bd361c579702672a03810c2","class:setup-sha256:7656b2fd90c3f442388efccd22d020f763d7f63f08fc411025c0bc284fbb678b"]}
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "lsf.captured.host-tls-parser-patch.v1",
+  "upstream": {
+    "crate": "rustls",
+    "version": "0.23.45",
+    "archiveSha256": "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634",
+    "license": "Apache-2.0 OR ISC OR MIT"
+  },
+  "profile": "lsf-outbound-streams-v1 direct host-tls finite parser candidate",
+  "patchSha256": "1aac2f5e29add8493f9791605c8c959cebe2fe861945e841b664a52aba72dd22",
+  "files": [
+    {
+      "path": "src/msgs/codec.rs",
+      "beforeSha256": "fa53201ef4387a453c626c37138a6a2de2d2ff13d85c0ec34f8b13ee20daeeaf",
+      "afterSha256": "b2dc9c497a91b50a17daf21f6ffec7d5b181311d87fac9e7d273ca255e2f08c5",
+      "beforeBytes": 12999,
+      "afterBytes": 13497
+    },
+    {
+      "path": "src/msgs/handshake.rs",
+      "beforeSha256": "9f9d9d4686e4a3f4433edf5fcc17c224155fa3eef747363bfa53802fd67dda7d",
+      "afterSha256": "fbad994e7492a6b49471d61cbd8fb372f4bead0e558c60e37cf02afef00e24e3",
+      "beforeBytes": 102660,
+      "afterBytes": 102848
+    },
+    {
+      "path": "src/msgs/deframer/handshake.rs",
+      "beforeSha256": "8b72e2864ef0de161b47c23c1c7bd50d4d39c2354813be920af66f13139b638d",
+      "afterSha256": "d5062691e3c7addd5c853d553836d8ec92a888cfbf06be212e427a1306f6934f",
+      "beforeBytes": 17568,
+      "afterBytes": 17954
+    },
+    {
+      "path": "src/conn.rs",
+      "beforeSha256": "a8866f067c993bc5591b36c1428ee529764eda77ec486b9740f4b3d811fc18cd",
+      "afterSha256": "edd12934adc078a8ae1076430b556de1a90a2214af01ad350ec6143974c57142",
+      "beforeBytes": 50053,
+      "afterBytes": 50054
+    }
+  ],
+  "bounds": {
+    "genericListElements": 64,
+    "certificateEntries": 8,
+    "certificateAuthorityNames": 16,
+    "ownedCertificateExtensionBytesPerEntry": 4096,
+    "handshakeFragmentSpans": 32,
+    "encryptedHandshakeBytesPerDirection": 32768,
+    "originalConnectionReservationBytes": 262144,
+    "originalTrustReservationBytes": 65536
+  },
+  "accountingQualified": false,
+  "nativeReferenceExecuted": false,
+  "doesNotModifySharedRegistry": true
+}

@@ -1,0 +1,153 @@
+--- a/src/msgs/codec.rs
++++ b/src/msgs/codec.rs
+@@ -241,6 +241,7 @@
+ /// until the last element.
+ pub(crate) struct TlsListIter<'a, T: Codec<'a> + TlsListElement + Debug> {
+     sub: Reader<'a>,
++    remaining: usize,
+     _t: PhantomData<T>,
+ }
+ 
+@@ -250,6 +251,7 @@
+         let sub = r.sub(len)?;
+         Ok(Self {
+             sub,
++            remaining: T::MAX_ELEMENTS,
+             _t: PhantomData,
+         })
+     }
+@@ -260,7 +262,14 @@
+ 
+     fn next(&mut self) -> Option<Self::Item> {
+         match self.sub.any_left() {
+-            true => Some(T::read(&mut self.sub)),
++            true => {
++                if self.remaining == 0 {
++                    self.sub.rest();
++                    return Some(Err(InvalidMessage::HandshakePayloadTooLarge));
++                }
++                self.remaining -= 1;
++                Some(T::read(&mut self.sub))
++            },
+             false => None,
+         }
+     }
+@@ -282,6 +291,9 @@
+ /// for its element type `T`.
+ pub(crate) trait TlsListElement {
+     const SIZE_LEN: ListLength;
++    // LSF captured direct TLS profile: bound objects before decoding/copying
++    // the next entry; generic signature/extension lists also remain finite.
++    const MAX_ELEMENTS: usize = 64;
+ }
+ 
+ /// The length of the length prefix for a list.
+--- a/src/msgs/handshake.rs
++++ b/src/msgs/handshake.rs
+@@ -1712,6 +1712,7 @@
+ }
+ 
+ impl TlsListElement for CertificateDer<'_> {
++    const MAX_ELEMENTS: usize = 8;
+     const SIZE_LEN: ListLength = ListLength::U24 {
+         max: CERTIFICATE_MAX_SIZE_LIMIT,
+         error: InvalidMessage::CertificatePayloadTooLarge,
+@@ -1753,6 +1754,7 @@
+         let mut out = Self::default();
+ 
+         let len = usize::from(u16::read(r)?);
++        if len > 4096 { return Err(InvalidMessage::CertificatePayloadTooLarge); }
+         let mut sub = r.sub(len)?;
+ 
+         while sub.any_left() {
+@@ -1802,6 +1804,7 @@
+ }
+ 
+ impl TlsListElement for CertificateEntry<'_> {
++    const MAX_ELEMENTS: usize = 8;
+     const SIZE_LEN: ListLength = ListLength::U24 {
+         max: CERTIFICATE_MAX_SIZE_LIMIT,
+         error: InvalidMessage::CertificatePayloadTooLarge,
+@@ -2249,6 +2252,7 @@
+ /// RFC8446: `DistinguishedName authorities<3..2^16-1>;` however,
+ /// RFC5246: `DistinguishedName certificate_authorities<0..2^16-1>;`
+ impl TlsListElement for DistinguishedName {
++    const MAX_ELEMENTS: usize = 16;
+     const SIZE_LEN: ListLength = ListLength::U16;
+ }
+ 
+--- a/src/msgs/deframer/handshake.rs
++++ b/src/msgs/deframer/handshake.rs
+@@ -38,7 +38,7 @@
+         msg: InboundPlainMessage<'_>,
+         containing_buffer: &Locator,
+         outer_discard: usize,
+-    ) {
++    ) -> Result<(), InvalidMessage> {
+         debug_assert_eq!(msg.typ, ContentType::Handshake);
+         debug_assert!(containing_buffer.fully_contains(msg.payload));
+         debug_assert!(self.outer_discard <= outer_discard);
+@@ -58,19 +58,22 @@
+             .last()
+             .filter(|span| !span.is_complete())
+         {
++            if self.spans.len() == 32 { return Err(InvalidMessage::HandshakePayloadTooLarge); }
+             self.spans.push(FragmentSpan {
+                 version: msg.version,
+                 size: None,
+                 bounds: containing_buffer.locate(msg.payload),
+             });
+-            return;
++            return Ok(());
+         }
+ 
+         // otherwise, we can expect `msg` to contain a handshake header introducing
+         // a new message (and perhaps several of them.)
+         for span in DissectHandshakeIter::new(msg, containing_buffer) {
++            if self.spans.len() == 32 { return Err(InvalidMessage::HandshakePayloadTooLarge); }
+             self.spans.push(span);
+         }
++        Ok(())
+     }
+ 
+     /// Returns a `BufferProgress` that skips over unprocessed handshake data.
+@@ -166,7 +169,7 @@
+         // for a pair where the first is not complete.  move
+         // the second down towards the first, then reparse the contents.
+         while let Some(i) = self.requires_coalesce() {
+-            self.coalesce_one(i, Coalescer::new(containing_buffer));
++            self.coalesce_one(i, Coalescer::new(containing_buffer))?;
+         }
+ 
+         // check resulting spans pass our imposed length limit
+@@ -182,7 +185,7 @@
+ 
+     /// Within `containing_buffer`, move `span[index+1]` to be contiguous
+     /// with `span[index]`.
+-    fn coalesce_one(&mut self, index: usize, mut containing_buffer: Coalescer<'_>) {
++    fn coalesce_one(&mut self, index: usize, mut containing_buffer: Coalescer<'_>) -> Result<(), InvalidMessage> {
+         let second = self.spans.remove(index + 1);
+         let mut first = self.spans.remove(index);
+ 
+@@ -207,8 +210,10 @@
+         };
+ 
+         for (i, span) in DissectHandshakeIter::new(msg, &delocator.locator()).enumerate() {
++            if self.spans.len() == 32 { return Err(InvalidMessage::HandshakePayloadTooLarge); }
+             self.spans.insert(index + i, span);
+         }
++        Ok(())
+     }
+ 
+     /// We require coalescing if any span except the last is not complete.
+--- a/src/conn.rs
++++ b/src/conn.rs
+@@ -1098,7 +1098,7 @@
+ 
+             let message = unborrowed.reborrow(&Delocator::new(buffer));
+             self.hs_deframer
+-                .input_message(message, &locator, buffer_progress.processed());
++                .input_message(message, &locator, buffer_progress.processed())?;
+             self.hs_deframer.coalesce(buffer)?;
+ 
+             self.common_state.aligned_handshake = self.hs_deframer.is_aligned();
