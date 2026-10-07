@@ -309,13 +309,28 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
             // execution cell instead of inferring permission to reuse it.
             let error = failure(fresh);
             assert_eq!(error.code, PlatformErrorCode::Unavailable);
-            assert_eq!(error.details.len(), 1);
+            assert_eq!(error.details.len(), 2);
             assert_eq!(error.details[0].kind, "scheduler.limit");
             assert_eq!(error.details[0].fields.len(), 1);
             assert_eq!(
                 error.details[0].fields.get("reason").map(String::as_str),
                 Some("all-cells-quarantined")
             );
+            assert_eq!(
+                error
+                    .details
+                    .iter()
+                    .filter(|detail| detail.kind == "scheduler.limit")
+                    .count(),
+                1
+            );
+            use latent_core::diagnostic::{
+                ActivationDiagnostic, DiagnosticReason, DiagnosticStage,
+            };
+            let diagnostic =
+                ActivationDiagnostic::new(DiagnosticStage::Queue, DiagnosticReason::QueuePressure);
+            assert_eq!(error.details[1], diagnostic.detail());
+            assert_eq!(ActivationDiagnostic::from_error(&error), Some(diagnostic));
         }
         f.idle().await;
     }
