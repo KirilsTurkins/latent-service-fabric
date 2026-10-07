@@ -216,9 +216,13 @@ class Compiler:
         if actual != projection(binding_graph):
             raise ValueError("stackful projection changed the authoritative type graph")
         generated = work / "generated"
-        command.run("generate-types", self.node, self.jco, "types", projected, "--world-name", binding_world, "--name", "capsule", "--out-dir", generated)
+        # The selected engine genuinely returns ordinary Promises. Generate
+        # source declarations from the original async contract; only the
+        # compiler's core binding ABI uses the established projection.
+        declaration_wit = work / 'wit' if self.runtime_profile == runtime.ASYNC_PROFILE else projected
+        command.run("generate-types", self.node, self.jco, "types", declaration_wit, "--world-name", binding_world, "--name", "capsule", "--out-dir", generated)
         second = output / "generated-check"
-        command.run("regenerate-types", self.node, self.jco, "types", projected, "--world-name", binding_world, "--name", "capsule", "--out-dir", second)
+        command.run("regenerate-types", self.node, self.jco, "types", declaration_wit, "--world-name", binding_world, "--name", "capsule", "--out-dir", second)
         # Preserve raw generated declarations separately from the reviewed
         # compiler spelling projection and compare both independent outputs.
         write_json(output / "raw-generated-bindings.json", tree_identity(generated))
