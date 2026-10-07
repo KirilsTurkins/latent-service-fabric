@@ -7,7 +7,7 @@ use latent_activation::{ActivationOutcome, ActivationSuccess};
 use latent_core::{
     ActivationTerminalState, BudgetConsumption, CancelDisposition, PlatformError, PlatformErrorCode,
 };
-use latent_executor::transaction::{Mode, TransactionHost};
+use latent_executor::transaction::Mode;
 use latent_state::{
     embedded::{Family, RowKey},
     store_io::StoreIoKind,
@@ -217,7 +217,8 @@ async fn original_registered_cancellation_removes_only_the_queued_command_and_pu
     assert_eq!(
         fixture
             .cancellations
-            .cancel(second.registration.activation_id(), "queued cancellation"),
+            .cancel(second.registration.activation_id(), "queued cancellation")
+            .unwrap(),
         CancelDisposition::Accepted
     );
     let TransactionAdmission::Existing(completed) = tokio::time::timeout(WATCHDOG, waiting)
@@ -385,7 +386,8 @@ async fn original_cancellation_gate_rejects_final_write_with_current_entity_and_
     assert_eq!(
         fixture
             .cancellations
-            .cancel(call.registration.activation_id(), "before final acceptance"),
+            .cancel(call.registration.activation_id(), "before final acceptance")
+            .unwrap(),
         CancelDisposition::Accepted
     );
     let completed = finish(&execution, success()).await;
