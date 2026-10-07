@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "module": "tools/tests/test_typescript_event_ownership.py",
+  "reviewReason": "Eight exact upstream owned Abort/Event graph preadmission, physical finalization, original algorithm preservation and source closure controls; no runtime or signed qualification claim; add lazy global event graph snapshot isolation control, all original8 execution guards unchanged",
+  "cases": [
+    "TypeScriptEventOwnershipTests.test_abort_finalizer_physically_destroys_all_three_containers_without_host_calls",
+    "TypeScriptEventOwnershipTests.test_all_new_native_and_derivation_inputs_are_captured_by_builder",
+    "TypeScriptEventOwnershipTests.test_each_abort_container_is_admitted_before_publication",
+    "TypeScriptEventOwnershipTests.test_global_listener_graph_is_lazy_and_not_frozen_during_compiler_snapshot",
+    "TypeScriptEventOwnershipTests.test_listener_and_abort_algorithm_admission_precedes_all_native_captures",
+    "TypeScriptEventOwnershipTests.test_listener_vector_views_preserve_original_elements_and_gc_trace",
+    "TypeScriptEventOwnershipTests.test_original_declaration_or_native_source_drift_is_rejected",
+    "TypeScriptEventOwnershipTests.test_original_listener_order_callback_once_and_abort_reason_bodies_are_unchanged",
+    "TypeScriptEventOwnershipTests.test_owned_graph_changes_remain_unqualified_and_snapshot_mutation_is_denied"
+  ],
+  "guards": {
+    "TypeScriptEventOwnershipTests.test_original_declaration_or_native_source_drift_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78061c2d959e461b345ef3b063e019b2972020b1e8f5d0db4153116fec98ae38",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptEventOwnershipTests.test_each_abort_container_is_admitted_before_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78061c2d959e461b345ef3b063e019b2972020b1e8f5d0db4153116fec98ae38",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptEventOwnershipTests.test_abort_finalizer_physically_destroys_all_three_containers_without_host_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78061c2d959e461b345ef3b063e019b2972020b1e8f5d0db4153116fec98ae38",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptEventOwnershipTests.test_listener_vector_views_preserve_original_elements_and_gc_trace": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78061c2d959e461b345ef3b063e019b2972020b1e8f5d0db4153116fec98ae38",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptEventOwnershipTests.test_listener_and_abort_algorithm_admission_precedes_all_native_captures": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78061c2d959e461b345ef3b063e019b2972020b1e8f5d0db4153116fec98ae38",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptEventOwnershipTests.test_original_listener_order_callback_once_and_abort_reason_bodies_are_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78061c2d959e461b345ef3b063e019b2972020b1e8f5d0db4153116fec98ae38",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptEventOwnershipTests.test_owned_graph_changes_remain_unqualified_and_snapshot_mutation_is_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78061c2d959e461b345ef3b063e019b2972020b1e8f5d0db4153116fec98ae38",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptEventOwnershipTests.test_global_listener_graph_is_lazy_and_not_frozen_during_compiler_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78061c2d959e461b345ef3b063e019b2972020b1e8f5d0db4153116fec98ae38",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptEventOwnershipTests.test_all_new_native_and_derivation_inputs_are_captured_by_builder": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78061c2d959e461b345ef3b063e019b2972020b1e8f5d0db4153116fec98ae38",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    }
+  }
+}

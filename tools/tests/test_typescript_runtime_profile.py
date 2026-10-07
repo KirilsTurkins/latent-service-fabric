@@ -254,7 +254,7 @@ class TypeScriptAbortSourceTests(unittest.TestCase):
         self.assertEqual(set(engine_input_paths()),
             {'sdk/typescript-guest/activation/'+name for name in NATIVE_SOURCES} |
             {'tools/typescript_guest/'+name for name in (
-                'activation_engine.py', 'promise_engine.py', 'timer_engine.py', 'abort_engine.py')})
+                'activation_engine.py', 'promise_engine.py', 'timer_engine.py', 'abort_engine.py', 'event_engine.py')})
         for name in NATIVE_SOURCES:
             self.assertIn('sdk/typescript-guest/activation/'+name, RECIPE)
 

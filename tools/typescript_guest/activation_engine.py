@@ -27,9 +27,11 @@ NATIVE_SOURCES = (
     "native_job_queue.h", "broker_accounting.h", "native_engine.h", "native_engine.cpp",
     "promise_hooks.h", "promise_records.h", "promise_accounting.h",
     "reaction_records.h", "native_readiness.h", "native_timers.h", "native_timeout.h",
+    "native_retirement.h", "native_objects.h",
 )
 DERIVATION_SOURCES = (
     "activation_engine.py", "promise_engine.py", "timer_engine.py", "abort_engine.py",
+    "event_engine.py",
 )
 
 
@@ -88,7 +90,10 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
     result.update(timer_sources)
     from tools.typescript_guest.abort_engine import derive_abort_timeout
     abort_source, abort_receipt = derive_abort_timeout(original['StarlingMonkey/builtins/web/abort/abort-signal.cpp'])
-    result['StarlingMonkey/builtins/web/abort/abort-signal.cpp'] = abort_source
+    from tools.typescript_guest.event_engine import derive_event_ownership, PREIMAGES as EVENT_PREIMAGES
+    event_sources, event_receipt = derive_event_ownership(
+        {name: original[name] for name in EVENT_PREIMAGES}, abort_source)
+    result.update(event_sources)
     engine = result["StarlingMonkey/runtime/engine.cpp"]
     engine = replace_once(engine, b'#include "event_loop.h"',
                           b'#include "event_loop.h"\n#include "native_engine.h"', "include")
@@ -201,6 +206,7 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         "nativeQueueSource": identity(native), "generatedActivationABI": identity(generated),
         "selectedTimerDerivation": timer_receipt,
         "selectedAbortDerivation": abort_receipt,
+        "selectedEventDerivation": event_receipt,
         "ordinaryCompilerSelectionChanged": False,
         "supportedAsyncProfile": False,
         "qualification": "pending-real-engine-and-signed-component-controls",

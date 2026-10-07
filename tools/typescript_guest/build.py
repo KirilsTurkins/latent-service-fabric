@@ -39,6 +39,7 @@ RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += ('tools/typescript_guest/runtime_profile.py', 'tools/typescript_guest/activation_engine.py',
            'tools/typescript_guest/promise_engine.py', 'tools/typescript_guest/timer_engine.py', 'tools/typescript_guest/abort_engine.py',
+           'tools/typescript_guest/event_engine.py',
            'sdk/typescript-guest/activation/runtime-globals.d.ts')
 from tools.typescript_guest.activation_engine import NATIVE_SOURCES
 RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in NATIVE_SOURCES)

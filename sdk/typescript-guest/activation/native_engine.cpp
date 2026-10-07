@@ -6,6 +6,7 @@
 #include "promise_hooks.h"
 #include "reaction_records.h"
 #include "native_timers.h"
+#include "native_objects.h"
 #include "extension-api.h"
 #include "js/Prefs.h"
 #include "jsfriendapi.h"
@@ -42,15 +43,16 @@ BrokerAccounting accounting(effects_allowed, compiler_snapshot_allowed);
 BrokerPromiseAccounting promise_accounting(promise_phase, accounting);
 PromiseRecords promises(promise_accounting);
 ReactionRecords reactions(promise_accounting, accounting);
+NativeObjectRecords native_objects;
 Timers timers(accounting, promise_accounting);
 std::unique_ptr<JobQueue> queue;
 
 bool before_promise_allocate(JSContext* cx, void** output) {
-  return reactions.checkpoint(cx) && promises.checkpoint(cx) &&
+  return acknowledge_promise_retirement(cx) &&
          promises.beforeAllocate(cx, output);
 }
 bool before_reaction_allocate(JSContext* cx, void** output) {
-  return reactions.checkpoint(cx) && promises.checkpoint(cx) &&
+  return acknowledge_promise_retirement(cx) &&
          reactions.beforeAllocate(cx, output);
 }
 void settled_promise(JSContext* cx, JSObject* promise) {
@@ -67,6 +69,7 @@ void complete_owned_collection(JS::GCContext*, JSFinalizeStatus status, void*) {
   if (status != JSFINALIZE_COLLECTION_END) return;
   promises.collectionCompleted();
   reactions.collectionCompleted();
+  native_objects.collectionCompleted();
 }
 bool transfer_reaction(JSContext* cx, JS::HandleObject job, JobOwners& owners,
                        bool& transferred) {
@@ -115,6 +118,7 @@ bool snapshot_jobs_empty(JSContext* cx) {
   if (!queue || !queue->empty() || queue->isDrainingStopped() ||
       api::Engine::has_pending_async_tasks() || timers.hasPending() || promises.hasPendingPromises() ||
       api::Engine::has_unhandled_promise_rejections() ||
+      native_objects.hasRetained() ||
       reactions.hasPendingReactions() || !reactions.checkpoint(cx) ||
       !promises.checkpoint(cx)) {
     JS_ReportErrorASCII(cx, "activation-runtime-pending-work-during-snapshot-denied");
@@ -124,7 +128,32 @@ bool snapshot_jobs_empty(JSContext* cx) {
 }
 
 bool acknowledge_promise_retirement(JSContext* cx) {
-  return reactions.checkpoint(cx) && promises.checkpoint(cx);
+  return native_objects.checkpoint([cx](NativeOwner& owner) {
+           return promise_accounting.acknowledgeRetirement(cx, owner) && !owner.live;
+         }) && reactions.checkpoint(cx) && promises.checkpoint(cx);
+}
+
+bool admit_native_object(JSContext* cx, NativeObjectLease& lease) {
+  // Mutable Abort/Event graphs carry invocation-local listeners/weak links.
+  // They are never admitted while creating a shared compiler snapshot.
+  if (!effects_allowed(cx) || native_objects.stopped()) {
+    JS_ReportErrorASCII(cx, "activation-runtime-native-object-phase-or-admission-denied");
+    return false;
+  }
+  if (!acknowledge_promise_retirement(cx)) return false;
+  NativeOwner owner;
+  if (!promise_accounting.beforeAllocate(cx, owner) || !owner.live) return false;
+  NativeObjectRecords::Record* record = nullptr;
+  if (!native_objects.track(owner, record)) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+  if (!lease.bind(record)) {
+    NativeObjectRecords::physicallyRetired(record);
+    JS_ReportErrorASCII(cx, "activation-runtime-native-object-lease-reused");
+    return false;
+  }
+  return true;
 }
 
 bool has_pending_promises() {
@@ -188,6 +217,10 @@ bool root_work_drained(JSContext* cx) {
   JS::PrepareForFullGC(cx);
   JS::NonIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::API);
   if (!acknowledge_promise_retirement(cx)) return false;
+  if (native_objects.hasUnacknowledgedRetirement()) {
+    JS_ReportErrorASCII(cx, "activation-runtime-native-object-retirement-not-acknowledged");
+    return false;
+  }
   if (promises.hasPendingPromises() || reactions.hasPendingReactions() ||
       api::Engine::has_pending_async_tasks()) {
     JS_ReportErrorASCII(cx, "activation-runtime-opaque-pending-work-on-close");

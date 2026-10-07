@@ -120,7 +120,7 @@
       },
       {
         "name": "Validate explicit TypeScript runtime selection and preserved public contracts",
-        "run": "python3 -m unittest tools.tests.test_typescript_runtime_profile\n"
+        "run": "python3 -m unittest tools.tests.test_typescript_runtime_profile tools.tests.test_typescript_event_ownership\n"
       },
       {
         "name": "Preserve attempted runtime test evidence",
@@ -137,7 +137,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Retain both parents complete compiler, transaction, namespace, capture, runtime and node obligations; add only the new21 explicit candidate/source-world controls.",
+  "reviewReason": "Retain both parents complete compiler, transaction, namespace, capture, runtime and node obligations; add only the new21 explicit candidate/source-world controls.; extend only the new private runtime profile command with eight owned-event source controls, preserve all baseline commands/definitions/skips",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
