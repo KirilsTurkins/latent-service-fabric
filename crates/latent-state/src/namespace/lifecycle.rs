@@ -105,6 +105,16 @@ impl NamespaceLifecycleRegistry {
         &self,
         after: &NamespaceRecord,
     ) -> Result<NamespaceLifecycleCompletion, NamespaceError> {
+        self.begin_create_with(after, || Ok(()))
+    }
+    /// Final short gate runs with the lifecycle bookkeeping locked, after every
+    /// fallible lifecycle check and immediately before logical acceptance.
+    /// Retain the returned guard through the metadata update; drop it before I/O.
+    pub fn begin_create_with<R>(
+        &self,
+        after: &NamespaceRecord,
+        accept: impl FnOnce() -> Result<R, NamespaceError>,
+    ) -> Result<NamespaceLifecycleCompletion, NamespaceError> {
         let _fence = self
             .owner
             .fence
@@ -135,6 +145,7 @@ impl NamespaceLifecycleRegistry {
         if entries.len() >= self.maximum {
             return Err(NamespaceError::Capacity);
         }
+        let accepted = accept()?;
         let epoch = 1;
         let stamp = Arc::new(Stamp {
             state: Mutex::new(State {
@@ -145,6 +156,7 @@ impl NamespaceLifecycleRegistry {
             pins: AtomicUsize::new(0),
         });
         entries.push(Arc::clone(&stamp));
+        drop(accepted);
         Ok(NamespaceLifecycleCompletion {
             owner: Arc::clone(&self.owner),
             stamp,
@@ -159,6 +171,16 @@ impl NamespaceLifecycleRegistry {
         before: &NamespaceRead,
         after: &NamespaceRecord,
         requires_drain: bool,
+    ) -> Result<NamespaceLifecycleCompletion, NamespaceError> {
+        self.begin_transition_with(before, after, requires_drain, || Ok(()))
+    }
+    /// The final no-I/O gate follows exact lifecycle and real owner checks.
+    pub fn begin_transition_with<R>(
+        &self,
+        before: &NamespaceRead,
+        after: &NamespaceRecord,
+        requires_drain: bool,
+        accept: impl FnOnce() -> Result<R, NamespaceError>,
     ) -> Result<NamespaceLifecycleCompletion, NamespaceError> {
         let _fence = self
             .owner
@@ -184,9 +206,11 @@ impl NamespaceLifecycleRegistry {
         if requires_drain && stamp.pins.load(Ordering::Acquire) != 0 {
             return Err(NamespaceError::InUse);
         }
-        state.epoch = state.epoch.checked_add(1).ok_or(NamespaceError::Capacity)?;
+        let epoch = state.epoch.checked_add(1).ok_or(NamespaceError::Capacity)?;
+        let accepted = accept()?;
+        state.epoch = epoch;
         state.pending = Some(after.clone());
-        let epoch = state.epoch;
+        drop(accepted);
         drop(state);
         Ok(NamespaceLifecycleCompletion {
             owner: Arc::clone(&self.owner),
@@ -198,6 +222,13 @@ impl NamespaceLifecycleRegistry {
     #[must_use]
     pub fn retained_owners(&self) -> usize {
         self.owner.pins.load(Ordering::Acquire)
+    }
+
+    /// Descriptive owner identity only. A matching handle still needs current
+    /// policy and its own lifecycle fence before any resource is exposed.
+    #[must_use]
+    pub fn owns_handle(&self, handle: &NamespaceLifecycleHandle) -> bool {
+        Arc::ptr_eq(&self.owner, &handle.owner)
     }
 
     /// Current metadata inspection also checks pending lifecycle acceptance.

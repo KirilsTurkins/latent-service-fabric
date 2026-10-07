@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind reviewed explicit runtime selection and exact source-bound engine inputs while retaining ordinary CLI and approved generator/frontend paths.",
+  "reviewReason": "Preserve all current dependency, generator, transaction and frontend CLI obligations while adding only explicit unqualified runtime selection and exact engine input forwarding.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f957df80c3897402a8239b258e4f4b72c63ac7b4fb3cfdb2df87eb397b94d637"
+  "sha256": "d3e35a10ffdc8c1e7c3e758f115cc0bc10b7a6b578ec311e7b64c837d0de89b3"
 }

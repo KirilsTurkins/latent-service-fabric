@@ -28,7 +28,7 @@ class DotnetFrontendDependencies(unittest.TestCase):
             test.assertTrue(json.loads(Path(wit).read_bytes())['sources'])
             Path(derived).mkdir()
             for filename in ('contracts.json', 'wit-lock.json', 'surface.json'):
-                (Path(derived) / filename).write_bytes(b'{}')
+                (Path(derived) / filename).write_bytes(b'{"imports":[]}' if filename == 'surface.json' else b'{}')
             return b''
         def verify(owner, language):
             verified = application_dependencies.verify_inputs(owner, language)

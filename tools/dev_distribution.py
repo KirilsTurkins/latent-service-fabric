@@ -9,7 +9,7 @@ import stat
 import zipfile
 
 from tools.dev_workflow import bundle, paths
-from tools.dev_workflow.common import HOST_ABI, PROTOCOL, encode, require
+from tools.dev_workflow.common import HOST_ABI, PROTOCOL, encode, guest_host_abi, require
 
 
 def file_digest(path: Path) -> tuple[str, int]:
@@ -46,7 +46,8 @@ def frontend_files(root: Path) -> dict:
 
 
 def assemble(payload: Path, output: Path, *, commit: str, version: str, target: str, epoch: int,
-             executables: set[str], archive_name: str | None = None) -> dict:
+             executables: set[str], archive_name: str | None = None, host_abi: str = HOST_ABI) -> dict:
+    guest_host_abi(host_abi)
     require(not output.exists(), "new-candidate-directory-required")
     entries = []
     for root, directories, names in os.walk(payload, followlinks=False):
@@ -82,7 +83,7 @@ def assemble(payload: Path, output: Path, *, commit: str, version: str, target: 
                         "distribution-input-changed")
     checksum, size = file_digest(output / name)
     value = {"schemaVersion": "latent.dev.bundle.v1", "version": version, "sourceCommit": commit,
-             "target": target, "hostAbi": HOST_ABI, "protocol": PROTOCOL,
+             "target": target, "hostAbi": host_abi, "protocol": PROTOCOL,
              "archive": {"name": name, "sha256": checksum, "size": size}, "files": entries,
              "licenses": [entry["path"] for entry in entries if entry["path"].startswith("licenses/")],
              "sbom": "sbom.spdx.json"}

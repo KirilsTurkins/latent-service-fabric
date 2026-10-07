@@ -4,14 +4,14 @@ import json
 from pathlib import Path
 import re
 import tomllib
-from tools.rust_capsule_project import (ROOT, TEMPLATES, TUTORIALS, decode_json, digest,
+from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TUTORIALS, decode_json, digest,
     fresh, inventory, read_file, snapshot)
 
 
 def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None) -> Path:
     from tools.typescript_guest.runtime_profile import ASYNC_PROFILE, selected_profile
     profile = selected_profile({'runtimeProfile': runtime_profile} if runtime_profile is not None else {})
-    if template not in TEMPLATES:
+    if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown TypeScript capsule template")
     name = name or "my-" + template
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", name) or len(name) > 64:
@@ -46,6 +46,9 @@ def create(directory: Path, template: str, name: str | None = None, *, runtime_p
             "template": {"name": template, "sourceDigest": digest(files["src/main.ts"]),
                          "witDigest": digest(files["wit/world.wit"])}}
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
+    if template == "transactional-aggregate":
+        from tools.transaction_guest_project import augment
+        augment(files, project)
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/main.ts` and `wit/world.wit`. Keep `vendor/lsf` unchanged.\n"
         "`tools/typescript_capsule.py build` generates authoritative typed bindings,\n"
