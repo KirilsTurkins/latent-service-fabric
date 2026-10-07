@@ -31,6 +31,20 @@ def parser() -> argparse.ArgumentParser:
     review.add_argument("--expect", required=True, help="Exact sha256:<64 hex> of reviewed candidate bytes")
     status = commands.add_parser("dependencies", help="Verify captured Go inputs offline")
     status.add_argument("project", type=Path)
+    generator = commands.add_parser('generator-request', help='Capture an exact request for an explicitly selected source generator')
+    generator.add_argument('project', type=Path)
+    generator.add_argument('--candidate', type=Path, required=True)
+    generator.add_argument('--tool', type=Path, required=True)
+    generator.add_argument('--tool-version', required=True)
+    generator.add_argument('--inputs', type=Path, required=True)
+    generator.add_argument('--arg', action='append', default=[])
+    generator.add_argument('--destination', default='src/generated')
+    generator.add_argument('--timeout', type=float, default=60)
+    generator.add_argument('--maximum-output-bytes', type=int, default=1024 * 1024)
+    execute_generator = commands.add_parser('generate', help='Execute an exact approved request and capture its new source files')
+    execute_generator.add_argument('project', type=Path)
+    execute_generator.add_argument('--candidate', type=Path, required=True)
+    execute_generator.add_argument('--expect', required=True, help='Exact sha256:<64 hex> request identity approved for execution')
     for operation in ("test", "watch"):
         command = commands.add_parser(operation, help="Delegate reviewed inputs to the maintained frontend")
         command.add_argument("project", type=Path)
@@ -55,7 +69,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    authoring = args.command in {'resolve', 'review-lock', 'dependencies', 'test', 'watch'}
+    authoring = args.command in {'resolve', 'review-lock', 'dependencies', 'test', 'watch', 'generator-request', 'generate'}
     try:
         if authoring:
             from tools import go_dependency_authoring as dependencies
@@ -77,7 +91,15 @@ def main(argv: list[str] | None = None) -> int:
                 except (ValueError, OSError):
                     print('Go dependency frontend receipt unavailable; inspect workspace status.', file=sys.stderr)
                 return outcome.exit_code
-            if args.command == 'resolve':
+            if args.command in {'generator-request', 'generate'}:
+                from tools import go_generator_authoring as generator
+                result = (generator.request(args.project, args.candidate, tool=args.tool,
+                            arguments=args.arg, inputs=args.inputs, destination=args.destination,
+                            tool_version=args.tool_version, timeout_seconds=args.timeout,
+                            maximum_output_bytes=args.maximum_output_bytes)
+                          if args.command == 'generator-request'
+                          else generator.run(args.project, args.candidate, args.expect))
+            elif args.command == 'resolve':
                 import os
                 from tools.application_dependency_store import DependencyError
                 from tools.go_application_dependencies import resolve
