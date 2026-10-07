@@ -29,16 +29,24 @@ async fn owner() -> (
         fs::Permissions::from_mode(0o600),
     )
     .unwrap();
-    let config: NodeConfig = serde_json::from_value(serde_json::json!({
+    let document = serde_json::json!({
         "formatVersion":1,"dataDirectory":root.path().join("node"),"nodeId":"input-control",
         "bind":"127.0.0.1:0","credentials":[{"token":"LSF-PUBLIC-INPUT-CONTROL-TEST-ONLY",
             "subject":"operator","tenant":"tests","role":"operator"}],
         "budgetProfile":{"mode":"phase3","maximumOutboundRequests":8,
             "maximumBlobReadBytes":65536,"maximumBlobWriteBytes":65536},
         "audit":{"mode":"durable"},"capabilityPolicies":{"formatVersion":1},
-        "providers":{"formatVersion":1,"bindings":[]}
-    }))
-    .unwrap();
+        "providers":{"formatVersion":1,
+            "context":{"identity":{"id":"context","tenant":"tests",
+                "service":"runtime-host","epoch":1}},
+            "bindings":[{"name":"context-binding","tenant":"tests",
+                "consumerService":"server","providerService":"runtime-host",
+                "contract":"latent:context/context@0.1.0","providerBinding":"context-installed"}]}
+    });
+    let config_path = root.path().join("node.json");
+    fs::write(&config_path, serde_json::to_vec(&document).unwrap()).unwrap();
+    fs::set_permissions(&config_path, fs::Permissions::from_mode(0o600)).unwrap();
+    let config = NodeConfig::load(&config_path).unwrap();
     let mut node = StandaloneNode::start(
         config.derive().unwrap(),
         tokio::runtime::Handle::current(),
