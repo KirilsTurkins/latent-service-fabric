@@ -83,7 +83,7 @@ fn assert_supported_schema(schema: &Value, path: &str) {
                     assert_supported_schema(child, &format!("{path}.{keyword}.{name}"));
                 }
             }
-            "oneOf" => {
+            "oneOf" | "allOf" => {
                 let children = value.as_array().unwrap_or_else(|| {
                     panic!("embedded schema keyword `{path}.{keyword}` must be an array")
                 });
@@ -129,6 +129,22 @@ fn validate_node(
         }
         if violations.len() >= max_violations {
             return;
+        }
+    }
+
+    if let Some(requirements) = schema.get("allOf").and_then(Value::as_array) {
+        for requirement in requirements {
+            validate_node(
+                requirement,
+                instance,
+                path,
+                root,
+                violations,
+                max_violations,
+            );
+            if violations.len() >= max_violations {
+                return;
+            }
         }
     }
 

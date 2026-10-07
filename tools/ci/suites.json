@@ -2891,14 +2891,15 @@
         "fresh_query_ceiling_allows_zero_mutation_and_intent_capacity",
         "transaction_bounds_reject_immediate_operations_children_and_overflowing_ceilings",
         "transaction_ceilings_require_explicit_phase4_validation_and_preserve_unsigned_width",
-        "transaction_validation_preserves_guest_scope_identity_and_deployment_fences"
+        "transaction_validation_preserves_guest_scope_identity_and_deployment_fences",
+        "transaction_trigger_schema_enforces_every_allof_method_and_precondition_constraint"
       ],
       "expectedIgnored": [],
       "id": "latent-manifest.test.phase4-validation",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-manifest/Cargo.toml",
-      "minimumCases": 5,
+      "minimumCases": 6,
       "mode": "libtest",
       "package": "latent-manifest",
       "platforms": [

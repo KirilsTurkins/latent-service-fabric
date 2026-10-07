@@ -44,6 +44,52 @@ fn violation(result: ManifestResult<()>, code: &str) {
 }
 
 #[test]
+fn transaction_trigger_schema_enforces_every_allof_method_and_precondition_constraint() {
+    let codec = JsonManifestCodec::default();
+    let original = serde_json::json!({
+        "apiVersion":"latent.dev/v1alpha1", "kind":"HttpTrigger",
+        "metadata":{"name":"transaction","tenant":"examples"},
+        "spec":{"target":{"service":"examples/echo","contract":"examples:echo/api@1.0.0",
+            "function":"update","route":"echo","publication":format!("publication:sha256:{}","a".repeat(64)),
+            "revision":"revision-1","deploymentGeneration":1},
+            "configuration":{"profile":"transaction-http-v1","scheme":"http","host":"localhost:8080",
+                "path":"/transaction","pathMatch":"exact","method":"POST","transactionMode":"command",
+                "namespace":"aggregate","incarnation":"1","stateSchema":format!("sha256:{}","1".repeat(64)),
+                "companionDigest":format!("sha256:{}","2".repeat(64)),"stateBinding":"echo","resultPolicy":"visible"}}
+    });
+    for (mode, method, valid) in [
+        ("command", "POST", true),
+        ("command", "PUT", true),
+        ("command", "GET", false),
+        ("query", "GET", true),
+        ("query", "HEAD", true),
+        ("query", "POST", false),
+        ("result", "GET", true),
+        ("result", "HEAD", false),
+        ("result", "DELETE", false),
+    ] {
+        let mut selected = original.clone();
+        selected["spec"]["configuration"]["transactionMode"] = mode.into();
+        selected["spec"]["configuration"]["method"] = method.into();
+        assert_eq!(
+            codec
+                .decode_trigger(&serde_json::to_vec(&selected).unwrap())
+                .is_ok(),
+            valid,
+            "each declared transaction method constraint must be enforced: {mode}/{method}"
+        );
+        selected["spec"]["configuration"]["preconditionKey"] = "YQ==".into();
+        assert_eq!(
+            codec
+                .decode_trigger(&serde_json::to_vec(&selected).unwrap())
+                .is_ok(),
+            valid && mode == "command",
+            "precondition keys remain command-only: {mode}/{method}"
+        );
+    }
+}
+
+#[test]
 fn transaction_ceilings_require_explicit_phase4_validation_and_preserve_unsigned_width() {
     let (mut capsule, mut deployment) = transaction();
     Phase4TransactionManifestValidator
