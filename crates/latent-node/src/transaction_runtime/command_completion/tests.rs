@@ -146,12 +146,23 @@ async fn actual_full_read_queue_refusal_retires_only_never_started_work_and_keep
     let full = fixture.owners.store.snapshot().unwrap();
     assert_eq!(full.active_reads, 2);
     assert_eq!(full.queued, 8);
-    let (refused, proof) = completion.refused_read_observation().await;
+    let (refused, proof, rejected_callback) = completion.refused_read_observation().await;
+    assert!(
+        rejected_callback,
+        "actual guarded callback must refuse before entry"
+    );
     assert!(matches!(refused, Err(error) if error.code == PlatformErrorCode::Unavailable));
     assert!(matches!(
         proof,
         Err(latent_commit::atomic::AtomicError::RecoveryRequired)
     ));
+    tokio::time::timeout(WATCHDOG, async {
+        while fixture.owners.store.snapshot().unwrap().physical_owners != full.physical_owners {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
     let after = fixture.owners.store.snapshot().unwrap();
     assert_eq!(after.active_reads, full.active_reads);
     assert_eq!(after.queued, full.queued);
@@ -167,6 +178,13 @@ async fn actual_full_read_queue_refusal_retires_only_never_started_work_and_keep
             .unwrap()
             .unwrap();
     }
+    tokio::time::timeout(WATCHDOG, async {
+        while fixture.owners.store.snapshot().unwrap().physical_owners != original.physical_owners {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
     assert_eq!(
         fixture.owners.store.snapshot().unwrap().physical_owners,
         original.physical_owners

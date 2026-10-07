@@ -59,9 +59,42 @@ impl CommandCompletion {
     #[cfg(test)]
     pub(super) async fn refused_read_observation(
         &self,
-    ) -> (Result<(), PlatformError>, Result<(), AtomicError>) {
+    ) -> (Result<(), PlatformError>, Result<(), AtomicError>, bool) {
         let attempt = self.attempt.lock().unwrap().take().unwrap();
         let retired = attempt.claim.retirement();
+        // Reserve a real original guard in the untouched recovery partition,
+        // then offer its actual read callback to the saturated ordinary queue.
+        // This exercises closure rejection after guard creation, separately
+        // from the production reserve-first refusal below.
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((Arc::clone(&self.host), self.host.retain_entity().unwrap()));
+        let operation = self
+            .coordinator
+            .store
+            .reserve_recovery_operation_retaining(keeper)
+            .unwrap();
+        let mut native = NativeCommandWork::new(
+            operation,
+            Some(attempt.claim.physical_work().unwrap()),
+            None,
+        );
+        let rejected = matches!(
+            self.coordinator
+                .store
+                .with_store(StoreIoKind::Read, 4096, move |store| {
+                    native.enter();
+                    let result = (|| {
+                        let view = store.snapshot()?;
+                        drop(view);
+                        Ok(())
+                    })();
+                    native.complete();
+                    result
+                }),
+            Err(latent_state::protected_store::ProtectedStoreError::Io(
+                latent_state::store_io::StoreIoError::QueueFull
+            ))
+        );
         let result = self
             .coordinator
             .read_current_claim_namespace(
@@ -77,7 +110,7 @@ impl CommandCompletion {
         let mut retained = self.attempt.lock().unwrap();
         assert!(retained.is_none());
         *retained = Some(attempt);
-        (result, proof)
+        (result, proof, rejected)
     }
 
     #[allow(
