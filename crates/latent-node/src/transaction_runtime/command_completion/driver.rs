@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use latent_activation::ActivationOutcome;
 use latent_commit::atomic::{
     AdmittedCommand, AtomicError, AttemptRetirement, CapturedIntent, CommandRecord, CommandTime,
-    CompleteEnvelope, PreparedDisposition, RetiredAttempt,
+    CompleteEnvelope, PreparedDisposition,
 };
 use latent_core::{BoxFuture, HostMemoryReservation, PlatformError};
 use latent_effects::authority::EffectAuthorityOwner;
@@ -14,7 +14,9 @@ use latent_state::{
     store_io::StoreIoKind,
 };
 
-use super::super::{StateAuthorization, StateHandoff, StateTransactionHost};
+use super::super::{
+    authorization::TerminalAbortPurpose, StateAuthorization, StateHandoff, StateTransactionHost,
+};
 use super::{
     errors, lookup::failed, native::NativeCommandWork, CommandCoordinator, CommandObservation,
     CommandOutput, CommandResultCodec, TransactionCompletion,
@@ -543,21 +545,29 @@ impl CommandCoordinator {
         memory: Arc<HostMemoryReservation>,
         entity: Option<super::super::entity::EntityOwner>,
     ) -> TransactionCompletion {
-        let Ok(attempt) = retirement.proven_noncommit() else {
-            return self
-                .observation(
-                    record,
-                    outcome,
-                    CommandObservation::RecoveryRequired,
-                    &read,
-                    memory,
-                )
-                .await;
+        let purpose = match retirement
+            .proven_noncommit()
+            .map_err(errors::atomic)
+            .and_then(|attempt| {
+                TerminalAbortPurpose::new(Arc::clone(&read), record.clone(), attempt)
+            }) {
+            Ok(purpose) => Arc::new(purpose),
+            Err(_) => {
+                return self
+                    .observation(
+                        record,
+                        outcome,
+                        CommandObservation::RecoveryRequired,
+                        &read,
+                        memory,
+                    )
+                    .await;
+            }
         };
         let current = match self
-            .read_namespace_owned(&read, entity.clone())
+            .read_namespace_for_abort(Arc::clone(&purpose), entity.clone())
             .await
-            .and_then(|row| read.rebind_result_read(row))
+            .and_then(|row| purpose.rebind(row))
         {
             Ok(current) => Arc::new(current),
             Err(_) => {
@@ -600,8 +610,7 @@ impl CommandCoordinator {
             .with_store(StoreIoKind::Write, WRITER_JOB_BYTES, move |store| {
                 native.enter();
                 let view = store.snapshot()?;
-                let disposition =
-                    prepare_abort(&view, store, attempt, code, &current, &*time, entity_fence);
+                let disposition = prepare_abort(&view, store, code, &current, &*time, entity_fence);
                 native.complete();
                 disposition
             });
@@ -743,13 +752,12 @@ fn prepare_handoff(
 fn prepare_abort(
     view: &ReadView,
     store: &EmbeddedStore,
-    attempt: RetiredAttempt,
     code: String,
-    current: &StateAuthorization,
+    current: &TerminalAbortPurpose,
     time: &dyn super::super::CommandTimeSource,
     entity: Option<super::super::entity::EntityCommitFence>,
 ) -> Result<Result<PreparedDisposition, AtomicError>, StoreError> {
-    let prepared = match CompleteEnvelope::technical_abort(view, attempt, code, time.sample()) {
+    let prepared = match current.prepare(view, code, time.sample()) {
         Ok(value) => value,
         Err(error) => return errors::storage(error).map(Err),
     };
@@ -759,8 +767,8 @@ fn prepare_abort(
     };
     Ok(Ok(prepared.publish(store, |_| {
         time.with_acceptance(&mut |_| match &entity {
-            Some(entity) => entity.with_current(|| current.accept_abort(&fence))?,
-            None => current.accept_abort(&fence),
+            Some(entity) => entity.with_current(|| current.accept(&fence))?,
+            None => current.accept(&fence),
         })
         .map_err(|_| AtomicError::PermissionDenied)
     })))

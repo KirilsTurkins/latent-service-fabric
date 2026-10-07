@@ -36,6 +36,14 @@ pub struct RetiredAttempt {
     pub(super) record: CommandRecord,
     pub(super) expected: Vec<u8>,
 }
+impl RetiredAttempt {
+    /// Association with the exact original record is descriptive only. This
+    /// cannot create retirement, resume work, prove a commit or grant a retry.
+    #[must_use]
+    pub fn matches_original(&self, record: &CommandRecord) -> bool {
+        &self.record == record
+    }
+}
 pub struct PhysicalAttemptWork {
     state: Arc<AttemptState>,
     retired: bool,

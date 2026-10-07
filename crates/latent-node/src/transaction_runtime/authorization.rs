@@ -9,6 +9,14 @@ use latent_policy::capability::{
 use latent_state::namespace::catalog::NamespaceRead;
 use std::{sync::Arc, time::Instant};
 
+mod terminal_abort;
+pub(super) use terminal_abort::TerminalAbortPurpose;
+
+enum DecisionPurpose {
+    Operation,
+    RetiredAbort,
+}
+
 /// Descriptive installed binding constraints; the actual policy owner must
 /// match every profile/configuration/revision before granting an operation.
 pub struct PolicyCallBinding {
@@ -332,21 +340,30 @@ impl StateAuthorization {
         })
     }
 
-    pub(super) fn accept_abort(
-        &self,
-        envelope: &latent_commit::atomic::EnvelopeNamespaceExpectation,
-    ) -> Result<(), PlatformError> {
-        self.with_current_decision("cancel-command", 0, 0, |decision| {
-            self.authority
-                .accept_terminal_abort(&self.policy, decision, &self.namespace, envelope)
-        })
-    }
-
     fn with_current_decision<R>(
         &self,
         operation: &str,
         input_bytes: usize,
         output_bytes: usize,
+        action: impl FnOnce(
+            &latent_policy::capability::SealedPolicyDecision<'_>,
+        ) -> Result<R, PlatformError>,
+    ) -> Result<R, PlatformError> {
+        self.with_decision(
+            operation,
+            input_bytes,
+            output_bytes,
+            DecisionPurpose::Operation,
+            action,
+        )
+    }
+
+    fn with_decision<R>(
+        &self,
+        operation: &str,
+        input_bytes: usize,
+        output_bytes: usize,
+        purpose: DecisionPurpose,
         action: impl FnOnce(
             &latent_policy::capability::SealedPolicyDecision<'_>,
         ) -> Result<R, PlatformError>,
@@ -358,7 +375,15 @@ impl StateAuthorization {
             &self.state
         };
         let now = Instant::now();
-        if self.budget.deadline().is_expired_at(now) || self.budget.descendant_is_cancelled() {
+        if self.budget.deadline().is_expired_at(now)
+            || (matches!(purpose, DecisionPurpose::Operation)
+                && self.budget.descendant_is_cancelled())
+            || (matches!(purpose, DecisionPurpose::RetiredAbort)
+                && (operation != "cancel-command"
+                    || input_bytes != 0
+                    || output_bytes != 0
+                    || self.budget.descendant_snapshot().is_err()))
+        {
             return Err(denied());
         }
         // Current data permission also fences already-owned terminal buffers

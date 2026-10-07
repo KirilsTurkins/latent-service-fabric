@@ -50,18 +50,28 @@ impl Call {
 
 impl Fixture {
     pub fn call(&self, client_key: &str, entity: &str) -> Call {
-        self.call_with_lineage(client_key, entity, true)
+        self.call_with_lineage(client_key, entity, true, 10_000)
     }
 
     pub fn unbound_call(&self, client_key: &str, entity: &str) -> Call {
-        self.call_with_lineage(client_key, entity, false)
+        self.call_with_lineage(client_key, entity, false, 10_000)
     }
 
-    fn call_with_lineage(&self, client_key: &str, entity: &str, bind_lineage: bool) -> Call {
+    pub fn short_original_deadline_call(&self, client_key: &str, entity: &str) -> Call {
+        self.call_with_lineage(client_key, entity, true, 1000)
+    }
+
+    fn call_with_lineage(
+        &self,
+        client_key: &str,
+        entity: &str,
+        bind_lineage: bool,
+        wall_millis: u64,
+    ) -> Call {
         let resources = ResourceBudget {
             cpu_fuel: 1_000_000,
             memory_bytes: 64 * 1024 * 1024,
-            wall_time_limit_millis: Some(10_000),
+            wall_time_limit_millis: Some(wall_millis),
             child_calls: 0,
             outbound_requests: 0,
             state_read_bytes: 4 * 1024 * 1024,

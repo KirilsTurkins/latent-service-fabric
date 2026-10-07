@@ -101,6 +101,112 @@ async fn unbound_original_budget_refuses_current_authorization_before_pending_or
 }
 
 #[tokio::test]
+async fn actual_retired_cancelled_command_records_abort_without_restoring_state_or_result_delivery()
+{
+    let fixture = Fixture::new().await;
+    let call = fixture.call("metadata-only-abort", "hot");
+    let execution = execute(call.admit().await);
+    let host = call.admission.observed_host();
+    let deadline = call.budget.deadline().monotonic();
+    assert_eq!(
+        fixture
+            .cancellations
+            .cancel(call.registration.activation_id(), "original stop")
+            .unwrap(),
+        CancelDisposition::Accepted
+    );
+    for operation in ["get", "put", "stage", "commit", "read-result"] {
+        assert!(host
+            .authorization
+            .authorize(operation, 0, 0, || {
+                panic!(
+                    "stopped original budget must never enter application or delivery permission"
+                )
+            })
+            .is_err());
+    }
+    let completed = finish(&execution, unstarted_failure()).await;
+    assert_eq!(
+        completed.durable_command().unwrap().outcome(),
+        latent_commit::atomic::Outcome::Aborted
+    );
+    assert!(!completed.disposition().unwrap().read_authorized());
+    assert!(completed.delivery_fence().is_none());
+    assert!(host
+        .authorization
+        .authorize("read-result", 0, 0, || panic!(
+            "no result grant after technical abort"
+        ))
+        .is_err());
+    assert_eq!(call.budget.deadline().monotonic(), deadline);
+    assert_eq!(fixture.lanes.snapshot().unwrap(), Default::default());
+    drop((completed, host, execution, call));
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
+async fn retired_original_deadline_cannot_be_extended_for_terminal_metadata_or_result_delivery() {
+    let fixture = Fixture::new().await;
+    let call = fixture.short_original_deadline_call("expired-metadata", "hot");
+    let execution = execute(call.admit().await);
+    let deadline = call.budget.deadline().monotonic().unwrap();
+    tokio::time::timeout(WATCHDOG, tokio::time::sleep_until(deadline.into()))
+        .await
+        .unwrap();
+    let completed = finish(&execution, unstarted_failure()).await;
+    assert!(completed.durable_command().is_none());
+    assert!(completed.disposition().unwrap().requires_recovery());
+    assert_eq!(
+        completed
+            .disposition()
+            .unwrap()
+            .original_command()
+            .outcome(),
+        latent_commit::atomic::Outcome::Pending
+    );
+    assert!(!completed.disposition().unwrap().read_authorized());
+    assert!(completed.delivery_fence().is_none());
+    assert_eq!(call.budget.deadline().monotonic(), Some(deadline));
+    assert_eq!(fixture.lanes.snapshot().unwrap(), Default::default());
+    drop((completed, execution, call));
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
+async fn current_policy_revocation_refuses_retired_stopped_terminal_metadata_and_keeps_pending() {
+    let fixture = Fixture::new().await;
+    let call = fixture.call("revoked-terminal-metadata", "hot");
+    let execution = execute(call.admit().await);
+    assert_eq!(
+        fixture
+            .cancellations
+            .cancel(
+                call.registration.activation_id(),
+                "stopped before revocation"
+            )
+            .unwrap(),
+        CancelDisposition::Accepted
+    );
+    fixture.revoke_policy();
+    let completed = finish(&execution, unstarted_failure()).await;
+    assert!(completed.durable_command().is_none());
+    assert!(completed.disposition().unwrap().requires_recovery());
+    assert_eq!(
+        completed
+            .disposition()
+            .unwrap()
+            .original_command()
+            .outcome(),
+        latent_commit::atomic::Outcome::Pending
+    );
+    assert!(!completed.disposition().unwrap().read_authorized());
+    assert!(completed.delivery_fence().is_none());
+    assert_eq!(fixture.lanes.snapshot().unwrap(), Default::default());
+    drop((completed, execution, call));
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
 async fn actual_registered_root_cancellation_refuses_claim_before_any_lane_or_host() {
     let fixture = Fixture::new().await;
     let call = fixture.call("cancel-before-claim", "hot");

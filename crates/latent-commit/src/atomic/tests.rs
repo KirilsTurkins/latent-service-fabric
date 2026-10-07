@@ -560,6 +560,33 @@ fn physical_retirement_required_before_durable_abort_and_concurrent_explicit_ret
 }
 
 #[test]
+fn opaque_retired_attempt_matches_only_its_exact_original_command_and_source() {
+    let (_dir, store, _effects) = setup();
+    let original = claim(&store, input("retirement-association"));
+    let record = original.record().clone();
+    let retirement = original.retirement();
+    let physical = original.physical_work().unwrap();
+    drop(original);
+    assert!(retirement.proven_noncommit().is_err());
+    physical.retire();
+    let proof = retirement.proven_noncommit().unwrap();
+    assert!(proof.matches_original(&record));
+    let foreign = claim(&store, input("foreign-retirement-association"));
+    assert!(!proof.matches_original(foreign.record()));
+    drop(foreign);
+    for changed in 0..4 {
+        let mut other = record.clone();
+        match changed {
+            0 => other.key.client_key = "another-command".into(),
+            1 => other.attempt += 1,
+            2 => other.owner_epoch += 1,
+            _ => other.source.publication = "another-publication".into(),
+        }
+        assert!(!proof.matches_original(&other));
+    }
+}
+
+#[test]
 fn dropped_physical_guard_and_unknown_clock_never_authorize_a_retry() {
     let (_dir, store, _effects) = setup();
     let owner = claim(&store, input("uncertain"));

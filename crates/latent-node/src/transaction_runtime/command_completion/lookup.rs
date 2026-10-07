@@ -14,7 +14,7 @@ use latent_state::{
     store_io::StoreIoKind,
 };
 
-use super::super::StateAuthorization;
+use super::super::{authorization::TerminalAbortPurpose, StateAuthorization};
 use super::{
     errors, CommandCoordinator, CommandObservation, CommandResultCodec, ResultDeliveryFence,
     TransactionCompletion,
@@ -31,7 +31,7 @@ impl CommandCoordinator {
         &self,
         auth: &Arc<StateAuthorization>,
     ) -> Result<NamespaceRead, PlatformError> {
-        self.read_namespace_observed(auth, None, None).await
+        self.read_namespace_observed(auth, None, None, None).await
     }
 
     pub(super) async fn read_namespace_owned(
@@ -39,7 +39,17 @@ impl CommandCoordinator {
         auth: &Arc<StateAuthorization>,
         entity: Option<super::super::entity::EntityOwner>,
     ) -> Result<NamespaceRead, PlatformError> {
-        self.read_namespace_observed(auth, None, entity).await
+        self.read_namespace_observed(auth, None, entity, None).await
+    }
+
+    pub(super) async fn read_namespace_for_abort(
+        &self,
+        purpose: Arc<TerminalAbortPurpose>,
+        entity: Option<super::super::entity::EntityOwner>,
+    ) -> Result<NamespaceRead, PlatformError> {
+        let auth = Arc::clone(purpose.authorization());
+        self.read_namespace_observed(&auth, None, entity, Some(purpose))
+            .await
     }
 
     async fn read_namespace_observed(
@@ -47,6 +57,7 @@ impl CommandCoordinator {
         auth: &Arc<StateAuthorization>,
         original: Option<CommandRecord>,
         entity: Option<super::super::entity::EntityOwner>,
+        terminal: Option<Arc<TerminalAbortPurpose>>,
     ) -> Result<NamespaceRead, PlatformError> {
         let operation = if auth.authority_mode() == latent_capabilities::namespace::Mode::Inspection
         {
@@ -54,11 +65,15 @@ impl CommandCoordinator {
         } else {
             "acquire-command"
         };
-        auth.authorize(operation, 0, 0, || Ok(()))?;
+        if let Some(purpose) = &terminal {
+            purpose.authorize_metadata()?;
+        } else {
+            auth.authorize(operation, 0, 0, || Ok(()))?;
+        }
         let auth = Arc::clone(auth);
         let time = Arc::clone(&self.time);
         let keeper: Arc<dyn std::any::Any + Send + Sync> =
-            Arc::new((Arc::clone(&auth), Arc::clone(&time), entity));
+            Arc::new((Arc::clone(&auth), Arc::clone(&time), entity, terminal));
         let job = self
             .store
             .with_store_retaining(StoreIoKind::Read, 8192, keeper, move |store| {
@@ -295,7 +310,7 @@ impl CommandCoordinator {
         record: &CommandRecord,
     ) -> Result<ResultDeliveryFence, PlatformError> {
         let current = read.rebind_result_read(
-            self.read_namespace_observed(read, Some(record.clone()), None)
+            self.read_namespace_observed(read, Some(record.clone()), None, None)
                 .await?,
         )?;
         ResultDeliveryFence::command(Arc::new(current), record, Arc::clone(&self.time))
