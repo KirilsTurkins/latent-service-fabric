@@ -51,6 +51,20 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--environment", choices=("node", "portable"), default="node")
         else:
             command.add_argument("--tool-root")
+    generator = commands.add_parser("generator-request", help="Review a contained C source or header generator")
+    generator.add_argument("project", type=Path)
+    generator.add_argument("--candidate", type=Path, required=True)
+    generator.add_argument("--tool", type=Path, required=True)
+    generator.add_argument("--tool-version", required=True)
+    generator.add_argument("--inputs", type=Path, required=True)
+    generator.add_argument("--arg", action="append", default=[])
+    generator.add_argument("--destination", default="src/generated")
+    generator.add_argument("--timeout", type=float, default=60)
+    generator.add_argument("--maximum-output-bytes", type=int, default=1024 * 1024)
+    generate = commands.add_parser("generate", help="Adopt source from the exact approved generator request")
+    generate.add_argument("project", type=Path)
+    generate.add_argument("--candidate", type=Path, required=True)
+    generate.add_argument("--expect", required=True)
     compile_ = commands.add_parser("build", help="Compile, validate and package captured C sources")
     compile_.add_argument("project", type=Path)
     compile_.add_argument("--output", type=Path, required=True)
@@ -68,7 +82,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    authoring = args.command in {"add", "update", "remove", "resolve", "review-lock", "dependencies", "test", "watch"}
+    authoring = args.command in {"add", "update", "remove", "resolve", "review-lock", "dependencies", "test", "watch", "generator-request", "generate"}
     try:
         if args.command == "new":
             result = create(args.directory, args.template, args.name)
@@ -77,6 +91,16 @@ def main(argv: list[str] | None = None) -> int:
             from tools.application_dependencies import document
             from tools.build_snapshot import canonical
             from tools.dev_workflow import paths
+            if args.command in {"generator-request", "generate"}:
+                from tools import c_generator_authoring as generators
+                if args.command == "generator-request":
+                    result = generators.request(args.project, args.candidate, tool=args.tool, arguments=args.arg,
+                        inputs=args.inputs, destination=args.destination, tool_version=args.tool_version,
+                        timeout_seconds=args.timeout, maximum_output_bytes=args.maximum_output_bytes)
+                else:
+                    result = generators.run(args.project, args.candidate, args.expect)
+                print(canonical({**result, "receipt": str(dependencies.record(args.project, result))}).decode())
+                return 0
             if args.command in {"test", "watch"}:
                 from tools import guest_authoring_frontend
                 delegated = dependencies.frontend(args.project, args.command, workspace=args.workspace,

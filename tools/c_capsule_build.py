@@ -36,6 +36,7 @@ RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += guest_resources.RECIPE
+RECIPE += ("tools/c_generator_authoring.py",)
 
 
 def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -> str:
@@ -152,6 +153,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
                 data = read_file(output / "compiler-inputs.json", 8 * 1024 * 1024)
                 materials.append({"name": "c-compiler-sysroot-and-isolation", "digest": digest(data), "size": len(data)})
+            if "c-generated-inputs.json" in files:
+                data = files["c-generated-inputs.json"]
+                materials.append({"name": "c-generator-inputs", "role": "generated",
+                                  "digest": digest(data), "size": len(data)})
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("C build clock or overall deadline invalid")
