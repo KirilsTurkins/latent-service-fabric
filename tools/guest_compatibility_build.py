@@ -194,7 +194,9 @@ def inspect(commands, wasm: Path, output: Path, declared: dict,
         findings.append(compatibility.finding("surface-mismatch", "link", "final-component"))
     result = {"componentDigest": digest(read_file(output / "component.wasm", 64 * 1024 * 1024)),
               "hostAbiDigest": digest(encode(host)), "imports": names["imports"],
-              "typeImports": names["typeImports"], "findings": findings}
+              "findings": findings}
+    if names["typeImports"]:
+        result["typeImports"] = names["typeImports"]
     if host_abi_profile != DEFAULT_PROFILE:
         result["hostAbiProfile"] = host_abi_profile
     write_json(output / "compatibility-inspection.json", result)
