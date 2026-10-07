@@ -49,7 +49,11 @@ impl Fixture {
             false,
         )
     }
-    fn create(local: bool, limits: latent_capabilities::broker::CapabilityBrokerLimits, structural_values: bool) -> Self {
+    fn create(
+        local: bool,
+        limits: latent_capabilities::broker::CapabilityBrokerLimits,
+        structural_values: bool,
+    ) -> Self {
         Self::create_selected(local, limits, false, structural_values)
     }
     pub fn transactional() -> Self {
