@@ -77,6 +77,30 @@ fn private_directory() -> TempDir {
     directory
 }
 
+#[test]
+fn strict_secret_leaf_rejects_readable_modes_even_below_a_private_ancestor() {
+    let root = private_directory();
+    let path = root.path().join("tls-key");
+    write(&path, b"synthetic-private-key", 0o600);
+    assert_eq!(
+        read(&path, 32, ProtectedFilePolicy::SecretLeaf, "test").unwrap(),
+        b"synthetic-private-key"
+    );
+    for mode in [0o640, 0o644, 0o660, 0o666] {
+        fs::set_permissions(&path, fs::Permissions::from_mode(mode)).unwrap();
+        assert!(read(&path, 32, ProtectedFilePolicy::SecretLeaf, "test").is_err());
+    }
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+    assert_eq!(
+        read(&path, 32, ProtectedFilePolicy::Secret, "test").unwrap(),
+        b"synthetic-private-key"
+    );
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    let link = root.path().join("tls-key-link");
+    std::os::unix::fs::symlink(&path, &link).unwrap();
+    assert!(read(&link, 32, ProtectedFilePolicy::SecretLeaf, "test").is_err());
+}
+
 fn write(path: &Path, bytes: &[u8], mode: u32) {
     fs::write(path, bytes).expect("write protected fixture");
     fs::set_permissions(path, fs::Permissions::from_mode(mode)).expect("set protected mode");

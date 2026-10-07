@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "latent.java-http.original-receipts.v1",
+  "files": [
+    {
+      "path": "original-fresh-guests-failed.json",
+      "bytes": 94596,
+      "sha256": "sha256:f0522c2d87e48c2415bc5e417bb2ed05510e79e4fd941b2b16afeb5c7749905c",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/FRESH-GUESTS-QUALIFICATION.json"
+    },
+    {
+      "path": "actual-http-campaign-passed.json",
+      "bytes": 147454,
+      "sha256": "sha256:702847e1d8d16cdd947733415a40e77ca6505786985b2116b10739869aa547ce",
+      "originalPath": "/store/java712-reused-c4-canary-3b7d579e-r1/REUSED-COMPONENTS-QUALIFICATION.json"
+    },
+    {
+      "path": "paired-trust.json",
+      "bytes": 41408,
+      "sha256": "sha256:c7e2549d5f8f2965af447ad8c385665dc139ca53adbacd7ce9108cd3c8b47c6c",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/paired-trust/paired-trust.json"
+    },
+    {
+      "path": "standalone.json",
+      "bytes": 9721,
+      "sha256": "sha256:9ace791df147787958e823a533476667eff13d5c800d0cd4444bc9f100325967",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/standalone/workflow.json"
+    },
+    {
+      "path": "former-profile.json",
+      "bytes": 13850,
+      "sha256": "sha256:32a86f40714a9228a1d340be439f62e458a5ae07e094ada7b40c1ba14b3b01a2",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/former-profile/workflow.json"
+    },
+    {
+      "path": "release-set.json",
+      "bytes": 3380,
+      "sha256": "sha256:a02cce2ce693f428e511c9a830e4df734776a5f71fdfb1d95b9cb237491d91d9",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/releases/release-set.json"
+    },
+    {
+      "path": "approved-ephemeral-policy.json",
+      "bytes": 3398,
+      "sha256": "sha256:7f90c83f53ac8c566ab46743f99426249f3e9891e9ebef9b628aef5fa36accb4",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/releases/policy.json"
+    }
+  ]
+}

@@ -621,6 +621,8 @@ class CapturedCompilerSelection(unittest.TestCase):
             # Member names model the selected WIT; signatures remain WAC's check.
             symbol = {
                 'latent:clock/monotonic': 'now-nanos',
+                'latent:runtime/activation': 'observe',
+                'latent:http/streaming': 'open',
                 'latent:random/random': 'u64-value',
                 'latent:secrets/reader': 'read',
                 'wasi:random/random': 'get-random-bytes',
