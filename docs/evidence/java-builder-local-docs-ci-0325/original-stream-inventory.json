@@ -1,0 +1,35 @@
+{
+  "sourceHead": "0325b746ce89f6268d3b441257715adc96c35740",
+  "files": [
+    {
+      "name": "original-run-block-1.stdout.txt",
+      "bytes": 85,
+      "sha256": "sha256:dc21c3c8bd82e8c26198cf98f6f4cb805fa5104910b9988e83c72715b39c2e8b"
+    },
+    {
+      "name": "original-run-block-1.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "original-run-block-2.stdout.txt",
+      "bytes": 291,
+      "sha256": "sha256:1d127087c8d4b3c206fd8ff8e6fc827851a2bc3cd0c01a4bb782c69be9f80ee2"
+    },
+    {
+      "name": "original-run-block-2.stderr.txt",
+      "bytes": 2818,
+      "sha256": "sha256:1ca9a297c021eefd8046a938226c5f8906b0ad5a69059a379fd29cc6e72f3413"
+    },
+    {
+      "name": "original-run-block-4.stdout.txt",
+      "bytes": 207,
+      "sha256": "sha256:b09b408c56b6731a77eb16166ab221e7e6c8e3a6e66ed90d6af645fdf49b9823"
+    },
+    {
+      "name": "original-run-block-4.stderr.txt",
+      "bytes": 113,
+      "sha256": "sha256:49bd09ec2f6b1522c86c6ceed0da52885057a7a7be53a509181a1a338b801e4c"
+    }
+  ]
+}

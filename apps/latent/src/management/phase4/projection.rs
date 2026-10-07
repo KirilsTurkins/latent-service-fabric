@@ -1,6 +1,10 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use latent_rpc::{control::v1 as c, invocation::v1 as i, phase4::Response, transaction::v1 as t};
 use serde_json::{json, Value};
+mod dispatcher;
+mod effect_management;
+pub(super) use dispatcher::generation as dispatcher_generation;
+pub(super) use effect_management::plan as effect_plan;
 
 pub(super) fn bytes(value: &[u8]) -> Value {
     json!({"encoding":"base64","data":STANDARD.encode(value)})
@@ -84,7 +88,8 @@ fn state_receipt(value: &c::StateOperationReceipt) -> Value {
         "namespace":value.namespace.as_ref().map(namespace),"authenticatedOperator":value.authenticated_operator,"beforeVersion":bytes(&value.before_version),
         "afterVersion":bytes(&value.after_version),"completedAtUnixMillis":value.completed_at_unix_millis.to_string(),
         "recordId":value.record_id,"policyDigest":value.policy_digest,
-        "disposition":c::StateOperationDisposition::try_from(value.disposition).expect("validated enum").as_str_name()})
+        "disposition":c::StateOperationDisposition::try_from(value.disposition).expect("validated enum").as_str_name(),
+        "effect":value.effect.as_ref().map(effect_management::receipt)})
 }
 fn audit(value: &c::AuditAck) -> Value {
     json!({"status":c::AuditAckStatus::try_from(value.status).expect("validated enum").as_str_name(),"attemptSequence":value.attempt_sequence.map(|v|v.to_string())})
@@ -93,7 +98,8 @@ fn effect(value: &t::EffectReceipt) -> Value {
     json!({"effectId":value.effect_id,"commandId":value.command_id,"commandAttemptId":value.command_attempt_id,"dispatchAttempt":value.dispatch_attempt,
         "disposition":t::EffectDisposition::try_from(value.disposition).expect("validated enum").as_str_name(),"providerReceipt":value.provider_receipt,
         "failureCode":value.failure_code,"occurredAtUnixMillis":value.occurred_at_unix_millis.to_string(),"retention":value.retention.as_ref().map(retention),
-        "managementOperationReceiptId":value.management_operation_receipt_id,"providerProfile":value.provider_profile})
+        "managementOperationReceiptId":value.management_operation_receipt_id,"providerProfile":value.provider_profile,
+        "recordVersion":bytes(&value.record_version),"ownerEpoch":value.owner_epoch.map(|v|v.to_string()),"claimGeneration":value.claim_generation.map(|v|v.to_string())})
 }
 fn page(value: &t::PageResponse) -> Value {
     json!({"nextCursor":value.next_cursor.as_ref().map(|v|bytes(v)),"returnedCount":value.returned_count,"encodedBytes":value.encoded_bytes.to_string(),
@@ -120,20 +126,36 @@ fn invocation(value: &i::InvokeResponse) -> Value {
 }
 pub(super) fn response(value: &Response) -> Value {
     match value {
+        Response::InspectDispatcher(value) => {
+            json!({"dispatcher":value.dispatcher.as_ref().map(dispatcher::snapshot),
+            "auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+        }
+        Response::ControlDispatcher(value) => {
+            json!({"receipt":value.receipt.as_ref().map(dispatcher::receipt),
+            "replayed":value.replayed,"published":value.published,"paused":value.paused,
+            "auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+        }
+        Response::GetDispatcherOperation(value) => {
+            json!({"receipt":value.receipt.as_ref().map(dispatcher::receipt),
+            "auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+        }
         Response::InspectNamespace(value) => {
             json!({"namespace":value.namespace.as_ref().map(|v|json!({"view":v.view.as_ref().map(view),
             "encodedStateBytes":v.encoded_state_bytes.to_string(),"commandCount":v.command_count.to_string(),"pendingEffectCount":v.pending_effect_count.to_string(),
             "retainedFormats":v.retained_formats.iter().map(retention).collect::<Vec<_>>(),"engineProfile":v.engine_profile,"engineProfileDigest":v.engine_profile_digest,
-            "status":c::NamespaceStatus::try_from(v.status).expect("validated enum").as_str_name(),"quota":v.quota.as_ref().map(quota),"generation":v.generation.to_string()}))})
+            "status":c::NamespaceStatus::try_from(v.status).expect("validated enum").as_str_name(),"quota":v.quota.as_ref().map(quota),"generation":v.generation.to_string(),"namespacePolicyDigest":v.namespace_policy_digest}))})
         }
         Response::MutateNamespace(value) => {
             json!({"receipt":value.receipt.as_ref().map(namespace_receipt),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
         }
         Response::MutateState(value) => {
-            json!({"receipt":value.receipt.as_ref().map(state_receipt),"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+            json!({"receipt":value.receipt.as_ref().map(state_receipt),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+        }
+        Response::PlanEffectMutation(value) => {
+            json!({"plan":value.plan.as_ref().map(effect_management::plan),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
         }
         Response::GetStateOperationReceipt(value) => {
-            json!({"stateReceipt":value.receipt.as_ref().map(state_receipt),"namespaceReceipt":value.namespace_receipt.as_ref().map(namespace_receipt)})
+            json!({"stateReceipt":value.receipt.as_ref().map(state_receipt),"namespaceReceipt":value.namespace_receipt.as_ref().map(namespace_receipt),"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
         }
         Response::SelectEntity(value) => {
             json!({"entities":value.entities.iter().map(|v|json!({"entity":v.entity,"version":bytes(&v.version)})).collect::<Vec<_>>(),"page":value.page.as_ref().map(page)})
