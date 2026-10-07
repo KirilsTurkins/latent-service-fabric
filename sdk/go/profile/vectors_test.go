@@ -187,6 +187,9 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !(value.Nodes[0].ReceivedAtUnixMillis == uint64(18446744073709551615)) {
 			tester.Fatal("activation-root-real-ingress-identity.nodes.0.received_at_unix_millis")
 		}
+		if !(!(value.Nodes[0].TransactionStaging != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.transaction_staging.presence")
+		}
 		if !(value.Page != nil) {
 			tester.Fatal("activation-root-real-ingress-identity.page.presence")
 		}
@@ -324,6 +327,9 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 		if !(value.Nodes[0].ReceivedAtUnixMillis == uint64(0)) {
 			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis")
+		}
+		if !(!(value.Nodes[0].TransactionStaging != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.transaction_staging.presence")
 		}
 		if !(value.Page != nil) {
 			tester.Fatal("activation-tree-failed-preparation-before-guest.page.presence")
