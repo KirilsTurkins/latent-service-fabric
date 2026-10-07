@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -179,6 +180,26 @@ class StreamOperator(unittest.TestCase):
         self.assertEqual(self.client.calls, [])
         with self.assertRaises(DevError):
             self.operator(publication="another-publication")
+
+    def test_linked_private_client_configuration_is_rejected_before_rpc(self):
+        alias = self.config_root / "alias.json"
+        os.link(self.config, alias)
+        with self.assertRaises(DevError):
+            self.operator()
+        self.assertEqual(self.client.calls, [])
+
+    def test_oversized_private_configuration_is_rejected_before_rpc(self):
+        self.config.write_bytes(b"X" * 65537)
+        with self.assertRaises(DevError):
+            self.operator()
+        self.assertEqual(self.client.calls, [])
+
+    @unittest.skipUnless(os.name == "posix", "POSIX file mode protection; Windows uses maintained ACL checks")
+    def test_group_readable_private_configuration_is_rejected_before_rpc(self):
+        self.config.chmod(0o640)
+        with self.assertRaisesRegex(DevError, "file-protection"):
+            self.operator()
+        self.assertEqual(self.client.calls, [])
 
     def test_http_only_cross_tenant_noncanonical_and_host_tls_inputs_cannot_build_grant(self):
         for changes in ({"provider": {**self.options["provider"], "capability": "latent:http/client@0.2.0"}},

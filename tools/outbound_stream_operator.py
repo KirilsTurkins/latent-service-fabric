@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import copy
 import ipaddress
+import os
 from pathlib import Path
 import re
+import stat
 
 if __package__ in {None, ""}:
     import sys
@@ -26,6 +28,30 @@ OPERATIONS = ["connect", "read", "write", "ready", "inspect", "shutdown", "close
 MAXIMUM_RECORDS = 32
 CEILING = {"operations": 128, "inputBytes": 1048576, "outputBytes": 1048576, "wallTimeMillis": 10000}
 STAMP_FIELDS = ("tenant", "id", "recordKind", "generation", "contentDigest", "revoked")
+
+
+def _private_read(path, maximum=65536):
+    path = Path(path).absolute()
+    paths.private_root(path.parent)
+    with paths.opened(path.parent, path.name) as descriptor:
+        before = os.fstat(descriptor)
+        if os.name == "posix":
+            require(before.st_uid == os.geteuid() and stat.S_IMODE(before.st_mode) in {0o400, 0o600},
+                    "stream-operator-file-protection")
+        require(before.st_size <= maximum, "stream-operator-file-byte-bound")
+        chunks, used = [], 0
+        while True:
+            raw = os.read(descriptor, min(65536, maximum + 1 - used))
+            if not raw:
+                break
+            used += len(raw)
+            require(used <= maximum, "stream-operator-file-byte-bound")
+            chunks.append(raw)
+        after = os.fstat(descriptor)
+        require((before.st_size, before.st_mtime_ns, before.st_ctime_ns, before.st_mode, before.st_uid)
+                == (after.st_size, after.st_mtime_ns, after.st_ctime_ns, after.st_mode, after.st_uid),
+                "stream-operator-file-changed-during-read")
+        return b"".join(chunks)
 
 
 def configure(settings, installation, bindings, *, development_profile=False):
@@ -158,8 +184,7 @@ class StreamOperator:
             _token(value)
         require(binding_id != policy_id, "stream-operator-distinct-record-identities")
         config = Path(client.config).absolute()
-        paths.private_root(config.parent)
-        config_digest = digest(paths.read(config.parent, config.name, 65536))
+        config_digest = digest(_private_read(config))
         self.root, self.client = root, client
         self.owner = {
             "schemaVersion": "latent.outbound-stream.operator.v1", "node": node, "tenant": tenant,
@@ -182,8 +207,7 @@ class StreamOperator:
         require(state.load(self.root, "stream-operator-owner.json") == self.owner,
                 "stream-operator-owner-changed")
         config = Path(self.client.config).absolute()
-        paths.private_root(config.parent)
-        require(digest(paths.read(config.parent, config.name, 65536))
+        require(digest(_private_read(config))
                 == self.owner["clientConfigurationDigest"], "stream-operator-client-identity-changed")
 
     def _records(self):
@@ -300,8 +324,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         source = args.specification.absolute()
-        paths.private_root(source.parent)
-        specification = decode(paths.read(source.parent, source.name, 65536), 65536)
+        specification = decode(_private_read(source), 65536)
         members(specification, {"node", "tenant", "provider", "consumer", "publication", "principal",
                                 "destination", "bindingId", "policyId"})
         root = args.state_dir.absolute()
