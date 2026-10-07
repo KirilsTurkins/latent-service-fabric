@@ -137,6 +137,9 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
             method: method.into(),
             path: path.into(),
         },
+        ResourceTarget::Stream { endpoint } => ResourceRequest::Stream {
+            endpoint: endpoint.clone(),
+        },
         ResourceTarget::Blob { namespace } => ResourceRequest::Blob {
             namespace: namespace.into(),
         },
@@ -169,5 +172,63 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
             recovery_scope: recovery_scope.into(),
             result_policy: result_policy.into(),
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::own_resource;
+    use crate::capability::{
+        ResourceConstraint, ResourceRequest, ResourceTarget, StreamEndpoint, StreamTransport,
+    };
+
+    #[test]
+    fn owned_stream_target_retains_exact_endpoint_without_borrowed_authority() {
+        let mut original = StreamEndpoint {
+            host: "mail.example".into(),
+            port: 587,
+            transport: StreamTransport::Tcp,
+        };
+        let captured = own_resource(ResourceTarget::Stream {
+            endpoint: &original,
+        });
+        let ResourceRequest::Stream { endpoint: retained } = captured else {
+            panic!("retained stream authority must remain a stream target");
+        };
+        assert_eq!(retained, original);
+        let scope = ResourceConstraint::Stream {
+            endpoints: vec![retained.clone()],
+        };
+        assert!(scope.covers(&ResourceTarget::Stream {
+            endpoint: &retained
+        }));
+        for alternate in [
+            StreamEndpoint {
+                host: "other.example".into(),
+                ..retained.clone()
+            },
+            StreamEndpoint {
+                port: 465,
+                ..retained.clone()
+            },
+            StreamEndpoint {
+                transport: StreamTransport::HostTls,
+                ..retained.clone()
+            },
+        ] {
+            assert!(!scope.covers(&ResourceTarget::Stream {
+                endpoint: &alternate
+            }));
+        }
+        original.host = "changed.example".into();
+        original.port = 465;
+        original.transport = StreamTransport::HostTls;
+        drop(original);
+        assert_eq!(retained.host, "mail.example");
+        assert_eq!(retained.port, 587);
+        assert_eq!(retained.transport, StreamTransport::Tcp);
+        assert!(scope.covers(&ResourceTarget::Stream {
+            endpoint: &retained
+        }));
     }
 }

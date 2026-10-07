@@ -163,7 +163,7 @@ impl Inner {
         );
         let mut envelope = self.local_envelope(call, request, &target, grant)?;
         let activation_id = envelope.activation_id.clone();
-        let (journal, cancellation) = self.journal.begin_with(&envelope, || {
+        let (journal, cancellation) = self.journal.begin_broker_child(&envelope, call, || {
             self.cancellations.register(activation_id.clone())
         })?;
         let transport_stop = Arc::new(TransportStop::default());

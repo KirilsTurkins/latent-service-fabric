@@ -1,5 +1,7 @@
 # TypeScript compiler and runtime profile
 
+Ordinary application npm graphs use the [captured dependency workflow](typescript-dependencies.md), separately from the pinned SDK compiler lock.
+
 For application development, use [Creating a capsule](creating-a-capsule.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,
 `deploy` and `test`. You do not need the source-build commands below for it.
@@ -281,6 +283,9 @@ printf 'Saved project and results: %s\n' "$LSF_TYPESCRIPT_PROJECTS"
 
 Your source and results remain at that path. Edit the greeting, create a new
 build directory, and repeat signing and delivery to try a change. The
+[application library guide](typescript-library-authoring.md) adds reviewed npm
+capture, private inputs and maintained frontend test/watch commands.
+The
 [delivery and recovery](../learn/deliver-and-recover-a-capsule.md) guide explains
 update and recovery principles using a separate Rust tutorial project and node.
 Follow that tutorial's prerequisites and variables when using its commands;

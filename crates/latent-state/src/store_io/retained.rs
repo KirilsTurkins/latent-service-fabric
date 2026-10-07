@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::sync::Arc;
 
 use super::job::Reservation;
@@ -24,6 +25,7 @@ impl<S> Drop for PhysicalReservation<S> {
 
 struct Retained<S, T> {
     value: Option<T>,
+    owner: Option<Arc<dyn Any + Send + Sync>>,
     reservation: PhysicalReservation<S>,
     retired: Arc<RetirementSignal>,
     witness_issued: bool,
@@ -33,12 +35,14 @@ impl<S: Send + 'static, T: Send + 'static> Retirement for Retained<S, T> {
     fn retire(self: Box<Self>) {
         let Self {
             value,
+            owner,
             reservation,
             retired,
             witness_issued: _,
         } = *self;
         // Native handle destruction precedes physical ownership/byte refund.
         drop(value);
+        drop(owner);
         drop(reservation);
         retired.complete();
     }
@@ -58,6 +62,24 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         &self,
         retained_bytes: u64,
     ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
+        self.reserve_in(false, retained_bytes)
+    }
+
+    /// The same affine physical owner, admitted and retired exclusively in the
+    /// existing recovery partition. Ordinary native cleanup cannot consume its
+    /// reserved fixed worker or preallocated retirement slots.
+    pub fn reserve_recovery_retained<T: Send + 'static>(
+        &self,
+        retained_bytes: u64,
+    ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
+        self.reserve_in(true, retained_bytes)
+    }
+
+    fn reserve_in<T: Send + 'static>(
+        &self,
+        recovery: bool,
+        retained_bytes: u64,
+    ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
         let control = &self.inner.control;
         let mut state = control.state.lock().map_err(|_| StoreIoError::Poisoned)?;
         let metadata = std::mem::size_of::<Retained<S, T>>()
@@ -68,15 +90,17 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         let bytes = retained_bytes
             .checked_add(metadata)
             .ok_or(StoreIoError::Exhausted)?;
-        state.admit(bytes)?;
-        state.accepted += 1;
+        state.admit(recovery, bytes)?;
+        state.reserve(recovery, bytes);
         state.physical_owners += 1;
-        state.retained_bytes += bytes;
         let retained = Box::new(Retained {
             value: None,
+            owner: None,
             reservation: PhysicalReservation(Reservation {
                 control: Arc::clone(control),
                 bytes,
+                recovery,
+                keeper: None,
             }),
             retired: Arc::new(RetirementSignal::default()),
             witness_issued: false,
@@ -89,6 +113,23 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
 }
 
 impl<S: Send + 'static, T: Send + 'static> StoreIoRetained<S, T> {
+    /// Bind one original capacity/authority keeper before native allocation and
+    /// submission. The caller pre-reserves its own keeper metadata. Retirement
+    /// destroys the actual native value before dropping this owner, then releases
+    /// the storage reservation and completes the existing retirement signal.
+    /// A rejected keeper is returned unchanged and cannot replace an earlier one.
+    pub fn retain_owner(
+        &mut self,
+        owner: Arc<dyn Any + Send + Sync>,
+    ) -> Result<(), Arc<dyn Any + Send + Sync>> {
+        let retained = self.retained.as_mut().expect("affine resource owner");
+        if retained.value.is_some() || retained.owner.is_some() {
+            return Err(owner);
+        }
+        retained.owner = Some(owner);
+        Ok(())
+    }
+
     /// Issue at most one non-clone observer across all moves of this resource.
     /// It shares pre-reserved metadata and leaves the single receipt waiter free.
     pub fn retirement_witness(&mut self) -> Option<StoreIoRetirementWitness> {
@@ -122,7 +163,11 @@ impl<S: Send + 'static, T: Send + 'static> StoreIoRetained<S, T> {
                     .state
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner);
-                state.retirements.push_back(retained);
+                if retained.reservation.0.recovery {
+                    state.recovery_retirements.push_back(retained);
+                } else {
+                    state.retirements.push_back(retained);
+                }
             }
             self.control.notify();
         }

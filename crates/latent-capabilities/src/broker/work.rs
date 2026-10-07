@@ -147,6 +147,9 @@ struct Work {
 }
 impl Work {
     fn recheck_dispatch(&mut self) -> Result<(), PlatformError> {
+        self.recheck_authority(true)
+    }
+    fn recheck_authority(&mut self, require_audit: bool) -> Result<(), PlatformError> {
         let core = Arc::clone(&self.session);
         let row = Arc::clone(&self.row);
         let live = core.owner.live.try_read().map_err(|_| busy())?;
@@ -155,11 +158,12 @@ impl Work {
         let state = core.state.try_lock().map_err(|_| busy())?;
         if !*live
             || !*installed
-            || state
-                .slots
-                .get(usize::from(row.id.wire_parts().0))
-                .and_then(Option::as_ref)
-                .is_none_or(|current| !Arc::ptr_eq(current, &row))
+            || (require_audit
+                && state
+                    .slots
+                    .get(usize::from(row.id.wire_parts().0))
+                    .and_then(Option::as_ref)
+                    .is_none_or(|current| !Arc::ptr_eq(current, &row)))
         {
             return Err(denied());
         }
@@ -175,7 +179,7 @@ impl Work {
             dimensions,
             self.stream_budget.is_some(),
         )?;
-        if !decision.requires_audit() {
+        if require_audit && !decision.requires_audit() {
             return Err(denied());
         }
         core.plan.with_routes(&mut || {
@@ -294,6 +298,16 @@ impl OwnedCapabilityResponse {
     }
 }
 impl ProviderCall {
+    /// Revalidate the accepted call's original pinned publication, provider and
+    /// policy dependencies immediately before a later physical operation. This
+    /// cannot widen its resource, mint charges, or replay an earlier dispatch.
+    pub fn recheck_authority(&mut self) -> Result<(), PlatformError> {
+        self.check()?;
+        self.work
+            .as_mut()
+            .expect("affine call")
+            .recheck_authority(false)
+    }
     pub(super) fn stream_budget(&self) -> Option<super::CapabilityStreamBudget> {
         self.work.as_ref().expect("affine call").stream_budget
     }
@@ -408,6 +422,15 @@ impl ProviderCall {
             service: Some(source.service.clone()),
             claims: latent_core::Metadata::new(),
         }
+    }
+
+    /// Original broker-selected source tenant and service, for trusted child
+    /// registration. This identity grants no independent journal authority; the
+    /// adapter must retain this live call and its original activation ledger.
+    #[must_use]
+    pub fn local_invocation_source(&self) -> (&latent_core::TenantId, &latent_core::ServiceId) {
+        let source = &self.work.as_ref().expect("affine call").session.plan.target;
+        (&source.tenant, &source.service)
     }
 
     #[must_use]
