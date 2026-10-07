@@ -320,12 +320,22 @@ async fn installed_dispatcher_only_backend_cannot_resolve_application_namespace_
     .with_recovery_bindings(vec![])
     .unwrap();
     tokio::time::timeout_at(deadline().into(), async {
-        while fixture.store.snapshot().unwrap().accepted != 0 {
+        loop {
+            let store = fixture.store.snapshot().unwrap();
+            if store.accepted == 1
+                && store.physical_owners == 1
+                && store.active_reads == 0
+                && store.active_writes == 0
+                && store.recovery_accepted == 0
+            {
+                break;
+            }
             tokio::task::yield_now().await;
         }
     })
     .await
     .unwrap();
+    assert_eq!(fixture.store.snapshot().unwrap().physical_owners, 1);
 
     assert_eq!(
         backend
@@ -343,9 +353,13 @@ async fn installed_dispatcher_only_backend_cannot_resolve_application_namespace_
             .load(std::sync::atomic::Ordering::Relaxed),
         0
     );
-    assert_eq!(fixture.store.snapshot().unwrap().accepted, 0);
+    // One unchanged physical dispatcher registration remains charged; the
+    // refused application selector admitted no extra native or recovery job.
+    assert_eq!(fixture.store.snapshot().unwrap().accepted, 1);
     drop(backend);
     assert!(dispatcher.shutdown(deadline()).await.unwrap().clean);
+    assert_eq!(fixture.store.snapshot().unwrap().accepted, 0);
+    assert_eq!(fixture.store.snapshot().unwrap().physical_owners, 0);
     fixture.finish().await;
 }
 

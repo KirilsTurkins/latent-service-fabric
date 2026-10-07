@@ -115,15 +115,26 @@ async fn installed_empty_state_host_exposes_the_original_audited_dispatcher_and_
     drop(page);
     drop(adapter);
     drop(backend);
-    // The real audit/dispatcher bootstrap may still own a completed storage
-    // callback. Keep the original cutoff and require its physical retirement.
+    // The live dispatcher owns one affine store registration until shutdown.
+    // Transient completed jobs retire under the original cutoff; the retained
+    // registration must remain charged rather than being refunded early.
     tokio::time::timeout_at((Instant::now() + WATCHDOG).into(), async {
-        while state.0.store.snapshot().unwrap().accepted != 0 {
+        loop {
+            let store = state.0.store.snapshot().unwrap();
+            if store.accepted == 1
+                && store.physical_owners == 1
+                && store.active_reads == 0
+                && store.active_writes == 0
+                && store.recovery_accepted == 0
+            {
+                break;
+            }
             tokio::task::yield_now().await;
         }
     })
     .await
     .unwrap();
+    assert_eq!(state.0.store.snapshot().unwrap().physical_owners, 1);
     finish(&state, &mut effects).await;
     audit.close();
     assert!(worker.join_until(Instant::now() + WATCHDOG).unwrap());

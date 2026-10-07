@@ -128,6 +128,8 @@ async fn finish(state: &StateRuntime, effects: &mut super::super::super::EffectR
     assert_eq!(effect.worker_threads_joined.checked_sub(1), Some(2));
     assert_eq!(effect.worker_threads_joined, 3);
     assert_eq!(effect.worker_threads_remaining, 0);
+    assert_eq!(state.0.store.snapshot().unwrap().accepted, 0);
+    assert_eq!(state.0.store.snapshot().unwrap().physical_owners, 0);
     let store = state.shutdown(deadline).await.unwrap();
     assert!(store.clean && !store.store_quarantined && !store.native_quarantined);
     assert!(matches!(
