@@ -141,6 +141,13 @@ The prior signed Java executor failure and its closed `resource-exhausted`
 receipt are also retained. This host matrix does not qualify the expanded Java
 profile.
 
+The [normal native required-cost controls](../testing/evidence/activation-runtime-required-cost-native-2026-10-02.json)
+passed all ten runtime cases with the fixture enforcing the installed profile's
+100-fuel minimum for every operation. This receipt identifies the integrated
+`acb79889` source, all 7,402 input bodies, normal binaries and unchanged limits.
+The prior signed Java executor failure and its closed `resource-exhausted`
+receipt are retained; these host cases do not qualify the expanded Java profile.
+
 These checks are implementation evidence for #736. Remaining requirements
 include the complete signed cross-tenant, late-wake and node-stop matrix,
 measured cold/active/parked physical owner plateaus, tenant/node fairness,
