@@ -1,5 +1,7 @@
 """Capture, compile and package actual Java source; never sign or grant authority."""
 from __future__ import annotations
+
+from tools import guest_compatibility_context_build
 import json
 from pathlib import Path
 import tempfile
@@ -32,6 +34,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
           "examples/echo-contract/deployment.json")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
@@ -69,7 +72,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         files = observed.files
         project, _lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
+        recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
+        recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
         with tempfile.TemporaryDirectory(prefix="lsf-java-capsule-") as owned:
@@ -137,7 +141,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
                 surface = read_json(derived / "surface.json")
                 stage = "compatibility"
-                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+                recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
+                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
+                    host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
                 additional_assets = []
                 if server_plan is not None:
                     actual_web = server_source.inspect(commands, compiler.paths["wasm-tools"], component_path,
@@ -161,7 +167,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for path, item in zip(application_jars, application_inventory["artifacts"]):
                         if digest(read_file(path, 64 * 1024 * 1024)) != item["selectedDigest"]:
                             raise ValueError("selected Java classpath changed during compilation")
-                if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
+                if inventory({path: read_file(ROOT / path) for path in recipe_files}) != recipe_inputs:
                     raise ValueError("Java authoring recipe changed during the build")
                 compiler.check_unchanged()
                 for name, path in paths.items():
@@ -181,6 +187,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     data = files['java-generated-inputs.json']
                     materials.append({"name": "java-generator-inputs", "role": "generated",
                                       "digest": digest(data), "size": len(data)})
+                if (output / 'runtime-profile.json').exists():
+                    runtime_receipt = read_file(output / 'runtime-profile.json', 4 * 1024 * 1024)
+                    materials.append({'name': 'runtime-profile', 'digest': digest(runtime_receipt), 'size': len(runtime_receipt)})
                 if closure is not None:
                     data = read_file(output / "application-dependencies.json", 8 * 1024 * 1024)
                     materials.extend([{"name": "application-dependency-closure", "digest": digest(data), "size": len(data)},
@@ -197,6 +206,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                    "bindings": "lsf-java-wit-v1", "optimization": "O2", "javaHeapBytes": 4_194_304},
                     "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                     "dependencyCompleteness": "declared-inputs-incomplete"})
+                guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
                 write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
                     "packageAssembled": packager is not None,
                     "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),

@@ -1,6 +1,8 @@
 """Observe one actual C source build; never sign, execute or grant authority."""
 from __future__ import annotations
 
+from tools import guest_compatibility_context_build
+
 import json
 from pathlib import Path
 import tempfile
@@ -33,6 +35,7 @@ RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_b
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
           "examples/echo-contract/deployment.json")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += guest_resources.RECIPE
@@ -68,7 +71,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         files, dependency_root = build_inputs(project_path)
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
+        recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
+        recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
         with tempfile.TemporaryDirectory(prefix="lsf-c-capsule-") as owned:
@@ -122,7 +126,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+            recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
+            guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
+                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
@@ -133,7 +139,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 raise ValueError("project changed during the observed C build")
             if closure is not None:
                 closure.check_unchanged()
-            if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
+            if inventory({path: read_file(ROOT / path) for path in recipe_files}) != recipe_inputs:
                 raise ValueError("C authoring recipe changed during the build")
             compiler.check_unchanged()
             for name, path in paths.items():
@@ -167,6 +173,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "parameters": {"compiler": "zig-cc", "fixture": "application", "target": "wasm32-wasi", "optimization": "O2"},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
+            guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                 "componentDigest": digest(component), "sdkBindingDigest": binding_digest,

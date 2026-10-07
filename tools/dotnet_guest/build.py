@@ -1,5 +1,7 @@
 """Observe the actual editable C# project, compiler closure and package inputs."""
 from __future__ import annotations
+
+from tools import guest_compatibility_context_build
 import json
 from pathlib import Path
 import tempfile
@@ -29,6 +31,7 @@ RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_st
            'tools/application_dependency_approval.py', 'tools/captured_compiler_isolation.py', 'tools/dotnet_compiler_isolation.py',
            'tools/dotnet_application_dependencies.py')
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 
@@ -50,7 +53,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         files = observed.files
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe = inventory({name: read_file(ROOT / name) for name in RECIPE})
+        recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
+        recipe = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe)
         with tempfile.TemporaryDirectory(prefix="lsf-dotnet-capsule-") as owned:
@@ -114,7 +118,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             write_json(output / "bindings.json", generated)
             surface = read_json(derived / "surface.json")
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, compiler.wasm, output, surface)
+            recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
+            guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,
+                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
@@ -124,7 +130,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             observed.check_unchanged()
             if snapshot(work, exclude=('dependencies', 'application-vendor') if closure else ()) != files:
                 raise ValueError("captured C# project changed during compilation")
-            if inventory({name: read_file(ROOT / name) for name in RECIPE}) != recipe:
+            if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe:
                 raise ValueError("C# authoring recipe changed during compilation")
             compiler.check_unchanged()
             if closure:
@@ -164,6 +170,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                "target": "wasi-wasm", "runtime": "native-aot", "locked": True, "ambientWasi": False},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
+            guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
                 "packageAssembled": packager is not None,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
