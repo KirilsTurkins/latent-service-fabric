@@ -58,6 +58,18 @@ class OwnerSelection(unittest.TestCase):
         value = runtime.read((output / 'standard-runtime-selection.json').read_bytes())
         return output, files, graph, configuration, material, value
 
+    def test_explicit_runtime_owner_contract_and_captured_sdk_scope(self):
+        expected = {'rust': 743, 'go': 742, 'c': 744, 'typescript': 745}
+        self.assertEqual(runtime.OWNER_ISSUES, expected)
+        for language, issue in expected.items():
+            with self.subTest(language=language):
+                value = self.emit(language)[5]
+                self.assertEqual(value['ownerIssue'], issue)
+                self.assertEqual(value['originalRuntimeInputsScope'], 'captured-sdk-inputs')
+                self.assertIn('compiler', {row['name'] for row in value['toolAndCompilerInputs']})
+                value['originalRuntimeInputsScope'] = 'entire-standard-library'; rehash(value)
+                with self.assertRaisesRegex(DevError, 'source-scope'): runtime.validate(value)
+
     def test_four_owners_capture_actual_sources_profiles_and_binding_transformation(self):
         for language in ('rust', 'go', 'c', 'typescript'):
             with self.subTest(language=language):

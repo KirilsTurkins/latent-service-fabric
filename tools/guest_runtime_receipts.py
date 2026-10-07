@@ -9,7 +9,7 @@ from tools.rust_capsule_project import inventory, read_file, write_json
 
 SCHEMA = 'latent.guest.runtime-selection.v1'
 MAX_BYTES = 65536
-OWNER_ISSUES = {'rust': 743, 'go': 742, 'c': 741, 'typescript': 745}
+OWNER_ISSUES = {'rust': 743, 'go': 742, 'c': 744, 'typescript': 745}
 PROFILES = {'rust': 'wasm32-unknown-unknown-panic-abort-v1', 'go': 'go-component-async-v1',
             'c': 'closed-synchronous-v1', 'typescript': 'spidermonkey-public-sync-v1'}
 PREFIXES = {
@@ -74,6 +74,7 @@ def emit(output: Path, language: str, profile: str, files: dict[str, bytes], sou
              'graphDigest': digest(encode(graph)) if graph is not None else None,
              'graphState': 'captured' if graph is not None else 'absent',
              'originalRuntimeInputsDigest': original_identity, 'originalRuntimeInputCount': len(original),
+             'originalRuntimeInputsScope': 'captured-sdk-inputs',
              'bindingInputsDigest': binding_preimage,
              'toolAndCompilerInputs': inputs,
              'transformations': [transform], 'ownerIssue': OWNER_ISSUES[language],
@@ -93,7 +94,8 @@ def emit(output: Path, language: str, profile: str, files: dict[str, bytes], sou
 def validate(value, *, source=None, component=None, original=None, binding_preimage=None,
              profile=None, language=None, graph=..., result=None, materials=None, configuration=None):
     members(value, {'schemaVersion', 'language', 'profile', 'sourceDigest', 'componentDigest',
-        'graphDigest', 'graphState', 'originalRuntimeInputsDigest', 'originalRuntimeInputCount', 'bindingInputsDigest',
+        'graphDigest', 'graphState', 'originalRuntimeInputsDigest', 'originalRuntimeInputCount',
+        'originalRuntimeInputsScope', 'bindingInputsDigest',
         'toolAndCompilerInputs', 'transformations', 'ownerIssue', 'qualification', 'apiSupport', 'authority', 'identity'})
     require(value['schemaVersion'] == SCHEMA and value['language'] in OWNER_ISSUES, 'runtime-selection-version')
     compatibility.token(value['profile'])
@@ -104,6 +106,10 @@ def validate(value, *, source=None, component=None, original=None, binding_preim
     if value['graphDigest'] is not None: sha(value['graphDigest'])
     require(type(value['originalRuntimeInputCount']) is int and 1 <= value['originalRuntimeInputCount'] <= 4096,
             'runtime-selection-source-limit')
+    # This scope covers the captured SDK source inputs. Compiler distributions,
+    # sysroots and the transitive graph retain their separate material identities;
+    # the SDK source digest is not an inventory of an entire standard library.
+    require(value['originalRuntimeInputsScope'] == 'captured-sdk-inputs', 'runtime-selection-source-scope')
     inputs = value['toolAndCompilerInputs']
     require(isinstance(inputs, list) and len(inputs) <= 63, 'runtime-selection-material-limit')
     seen = set()
