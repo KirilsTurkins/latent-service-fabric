@@ -45,7 +45,7 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
-    new.add_argument('--runtime-profile', choices=('spidermonkey-public-sync-v1', 'spidermonkey-activation-promises-v1'),
+    new.add_argument('--runtime-profile', choices=('spidermonkey-public-sync-v1', 'spidermonkey-activation-promises-v1', 'spidermonkey-activation-promises-clocks-v1'),
                      help='Explicit compiler runtime selection; the Promise candidate remains unqualified')
     capture = commands.add_parser("resolve", help="Explicitly fetch a native application npm lock without package lifecycle scripts")
     capture.add_argument("project", type=Path)

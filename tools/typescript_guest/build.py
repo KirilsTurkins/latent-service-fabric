@@ -39,10 +39,13 @@ RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += ('tools/typescript_guest/runtime_profile.py', 'tools/typescript_guest/activation_engine.py',
            'tools/typescript_guest/promise_engine.py', 'tools/typescript_guest/timer_engine.py', 'tools/typescript_guest/abort_engine.py',
-           'tools/typescript_guest/event_engine.py',
+           'tools/typescript_guest/event_engine.py', 'tools/typescript_guest/clock_engine.py',
            'sdk/typescript-guest/activation/runtime-globals.d.ts')
 from tools.typescript_guest.activation_engine import NATIVE_SOURCES
 RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in NATIVE_SOURCES)
+from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
+RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in CLOCK_NATIVE_SOURCES)
+RECIPE += ('sdk/typescript-guest/activation/clock-globals.d.ts',)
 RECIPE += ("tools/typescript_generator_authoring.py",)
 
 
@@ -100,7 +103,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 (output / name).write_bytes(read_file(derived / name))
             stage = "compiler-inputs"
             options = {'isolated_workspace': temporary if closure is not None else None}
-            if runtime_profile == runtime.ASYNC_PROFILE:
+            if runtime_profile in runtime.NATIVE_PROFILES:
                 options.update(isolated_workspace=temporary, runtime_profile=runtime_profile,
                                engine=runtime_engine, engine_receipt=runtime_engine_receipt)
             elif runtime_engine is not None or runtime_engine_receipt is not None:
@@ -118,7 +121,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             package_project = project
             runtime_assets = ()
             runtime_materials = []
-            if runtime_profile == runtime.ASYNC_PROFILE:
+            if runtime_profile in runtime.NATIVE_PROFILES:
                 for name in ('contracts.json', 'wit-lock.json', 'surface.json'):
                     (output/('original-'+name)).write_bytes(read_file(output/name))
                 selected_contracts = temporary/'selected-contracts'

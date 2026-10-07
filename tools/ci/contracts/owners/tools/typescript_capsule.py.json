@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all current dependency, generator, transaction and frontend CLI obligations while adding only explicit unqualified runtime selection and exact engine input forwarding.",
+  "reviewReason": "Preserve all current dependency, generator, transaction and frontend CLI obligations while adding only explicit unqualified runtime selection and exact engine input forwarding.; add exact explicit unqualified scopedclock candidate choice only; originalCLI commands/defaults retained",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d3e35a10ffdc8c1e7c3e758f115cc0bc10b7a6b578ec311e7b64c837d0de89b3"
+  "sha256": "d5d417912f2b8bd65070412a32defa860d2b8cdbac0f303679ee885db77d19a2"
 }

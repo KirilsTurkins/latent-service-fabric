@@ -50,7 +50,7 @@ class Compiler:
     def __init__(self, tools: Path, commands, expected: dict[str, bytes], *, isolated_workspace: Path | None = None,
                  runtime_profile: str = 'spidermonkey-public-sync-v1', engine: Path | None = None,
                  engine_receipt: Path | None = None):
-        from tools.typescript_guest.runtime_profile import ASYNC_PROFILE, SYNC_PROFILE, selection, validate_engine
+        from tools.typescript_guest.runtime_profile import NATIVE_PROFILES, SYNC_PROFILE, selection, validate_engine
         from tools.typescript_guest.activation_engine import engine_input_paths
         selection(runtime_profile)
         self.runtime_profile = runtime_profile
@@ -59,14 +59,14 @@ class Compiler:
         self.runtime_observation = None
         if runtime_profile == SYNC_PROFILE and (engine is not None or engine_receipt is not None):
             raise ValueError('native engine input requires an explicit TypeScript runtime selection')
-        if runtime_profile == ASYNC_PROFILE:
+        if runtime_profile in NATIVE_PROFILES:
             if engine is None or engine_receipt is None:
                 raise ValueError('selected TypeScript Promise candidate requires actual source-bound engine inputs')
             engine, engine_receipt = map(checked_path, (engine, engine_receipt))
             core, envelope = read_file(engine, 64*1024*1024), read_file(engine_receipt, 65536)
-            sdk = {name: read_file(ROOT/name) for name in engine_input_paths()}
+            sdk = {name: read_file(ROOT/name) for name in engine_input_paths(runtime_profile)}
             self.engine_metadata = validate_engine(json.loads(envelope), core, sdk,
-                read_file(ROOT/'wit/platform/activation-runtime/package.wit'))
+                read_file(ROOT/'wit/platform/activation-runtime/package.wit'), profile=runtime_profile)
             self.engine_original = (engine, engine_receipt)
             self.engine_before = (core, envelope)
             self.engine = engine
@@ -171,10 +171,13 @@ class Compiler:
         graph = semantic(json.loads(command.run("authoritative-types", wasm, "component", "wit", source, "--json")))
         application_graph, application_world = graph, world
         application_canonical = canonical
-        if self.runtime_profile == runtime.ASYNC_PROFILE:
-            runtime.check_application_bindings(application_graph, application_world)
+        if self.runtime_profile in runtime.NATIVE_PROFILES:
+            runtime.check_application_bindings(application_graph, application_world, profile=self.runtime_profile)
             from tools.typescript_guest.activation_engine import NATIVE_SOURCES
-            for name in (*NATIVE_SOURCES, 'runtime-globals.d.ts'):
+            from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
+            selected_native = NATIVE_SOURCES + (CLOCK_NATIVE_SOURCES if self.runtime_profile == runtime.CLOCK_PROFILE else ())
+            declarations = ('runtime-globals.d.ts',) + (('clock-globals.d.ts',) if self.runtime_profile == runtime.CLOCK_PROFILE else ())
+            for name in (*selected_native, *declarations):
                 path = 'sdk/typescript-guest/activation/'+name
                 if read_file(work/'vendor/lsf'/path) != read_file(ROOT/path):
                     raise ValueError('captured TypeScript native runtime differs from the selected engine')
@@ -186,7 +189,14 @@ class Compiler:
                 raise ValueError('captured TypeScript activation interface differs from the selected engine')
             selected = output/'selected-wit'
             selected.mkdir()
-            files = runtime.derive_world(canonical.encode(), graph, world, runtime_wit)
+            if self.runtime_profile == runtime.CLOCK_PROFILE:
+                from tools.typescript_guest.clock_engine import derive_clock_world
+                clock_wit = read_file(work/'vendor/lsf/wit/platform/clock/package.wit')
+                if clock_wit != read_file(ROOT/'wit/platform/clock/package.wit'):
+                    raise ValueError('captured TypeScript clock interface differs from the selected engine')
+                files = derive_clock_world(canonical.encode(), graph, world, runtime_wit, clock_wit)
+            else:
+                files = runtime.derive_world(canonical.encode(), graph, world, runtime_wit)
             for name, raw in files.items():
                 target = selected/name
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -197,7 +207,16 @@ class Compiler:
             (activation/'world.wit').write_text('package lsf:typescript-abi@1.0.0;\nworld abi { import latent:runtime/activation@0.1.0; }\n', encoding='utf-8')
             actual = semantic(json.loads(command.run('selected-runtime-types', wasm, 'component', 'wit', selected, '--json')))
             abi = semantic(json.loads(command.run('selected-activation-types', wasm, 'component', 'wit', activation, '--json')))
-            self.runtime_observation = runtime.check_derived_world(graph, actual, abi, world)
+            if self.runtime_profile == runtime.CLOCK_PROFILE:
+                from tools.typescript_guest.clock_engine import check_clock_world
+                clocks = output/'clock-wit'
+                (clocks/'deps/clock').mkdir(parents=True)
+                (clocks/'deps/clock/package.wit').write_bytes(clock_wit)
+                (clocks/'world.wit').write_text('package lsf:clock-abi@1.0.0;\nworld abi { import latent:clock/monotonic@0.1.0; import latent:clock/wall@0.1.0; }\n',encoding='utf-8')
+                clock_graph = semantic(json.loads(command.run('selected-clock-types', wasm, 'component', 'wit', clocks, '--json')))
+                self.runtime_observation = check_clock_world(graph, actual, abi, clock_graph, world)
+            else:
+                self.runtime_observation = runtime.check_derived_world(graph, actual, abi, world)
             self.runtime_observation['engineInput'] = self.engine_metadata
             write_json(output/'typescript-runtime-selection.json', self.runtime_observation)
             write_json(output/'selected-wit-inputs.json', {'world': runtime.SELECTED_WORLD, 'sources': [
@@ -209,7 +228,7 @@ class Compiler:
         # be replaced by synchronous generated JS wrappers during world merge.
         binding_canonical, binding_graph, binding_world = (
             (application_canonical, application_graph, application_world)
-            if self.runtime_profile == runtime.ASYNC_PROFILE else (canonical, graph, world))
+            if self.runtime_profile in runtime.NATIVE_PROFILES else (canonical, graph, world))
         projected = output / "stackful.wit"
         projected.write_text(re.sub(r"\basync\s+func\b", "func", binding_canonical), encoding="utf-8")
         actual = semantic(json.loads(command.run("projected-types", wasm, "component", "wit", projected, "--json")))
@@ -219,7 +238,7 @@ class Compiler:
         # The selected engine genuinely returns ordinary Promises. Generate
         # source declarations from the original async contract; only the
         # compiler's core binding ABI uses the established projection.
-        declaration_wit = work / 'wit' if self.runtime_profile == runtime.ASYNC_PROFILE else projected
+        declaration_wit = work / 'wit' if self.runtime_profile in runtime.NATIVE_PROFILES else projected
         command.run("generate-types", self.node, self.jco, "types", declaration_wit, "--world-name", binding_world, "--name", "capsule", "--out-dir", generated)
         second = output / "generated-check"
         command.run("regenerate-types", self.node, self.jco, "types", declaration_wit, "--world-name", binding_world, "--name", "capsule", "--out-dir", second)
@@ -232,9 +251,12 @@ class Compiler:
                 adapted = declaration_aliases(original)
                 if adapted != original:
                     path.write_text(adapted, encoding="utf-8")
-            if self.runtime_profile == runtime.ASYNC_PROFILE:
+            if self.runtime_profile in runtime.NATIVE_PROFILES:
                 (directory/'activation-runtime-globals.d.ts').write_bytes(
                     read_file(ROOT/'sdk/typescript-guest/activation/runtime-globals.d.ts'))
+                if self.runtime_profile == runtime.CLOCK_PROFILE:
+                    (directory/'clock-runtime-globals.d.ts').write_bytes(
+                        read_file(ROOT/'sdk/typescript-guest/activation/clock-globals.d.ts'))
         first_identity = tree_identity(generated)
         if first_identity != tree_identity(second):
             raise ValueError("generated binding drift between identical inputs")
@@ -280,7 +302,7 @@ class Compiler:
         if "import wasi:" in surface:
             raise ValueError("ambient WASI import survived compilation")
         (output / "component.wit").write_text(surface, encoding="utf-8")
-        if self.runtime_profile == runtime.ASYNC_PROFILE:
+        if self.runtime_profile in runtime.NATIVE_PROFILES:
             # Bind an independently decoded final component, not just generated
             # metadata. The existing projection path remains the sync contract.
             final = semantic(json.loads(command.run('final-runtime-types', wasm, 'component', 'wit', component, '--json')))

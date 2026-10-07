@@ -9,7 +9,7 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
 
 
 def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None) -> Path:
-    from tools.typescript_guest.runtime_profile import ASYNC_PROFILE, selected_profile
+    from tools.typescript_guest.runtime_profile import NATIVE_PROFILES, selected_profile
     profile = selected_profile({'runtimeProfile': runtime_profile} if runtime_profile is not None else {})
     if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown TypeScript capsule template")
@@ -21,7 +21,7 @@ def create(directory: Path, template: str, name: str | None = None, *, runtime_p
     vendor = {}
     for folder in ("sdk/typescript-guest/runtime", "sdk/typescript-guest/capabilities", "wit/platform"):
         vendor.update({folder + "/" + path: data for path, data in snapshot(ROOT / folder).items()})
-    if profile == ASYNC_PROFILE:
+    if profile in NATIVE_PROFILES:
         folder = 'sdk/typescript-guest/activation'
         vendor.update({folder+'/'+path: data for path, data in snapshot(ROOT/folder).items()})
     for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE",
@@ -84,7 +84,7 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if (not isinstance(project, dict) or set(project) - {'runtimeProfile'} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
-    from tools.typescript_guest.runtime_profile import ASYNC_PROFILE, selected_profile
+    from tools.typescript_guest.runtime_profile import NATIVE_PROFILES, selected_profile
     profile = selected_profile(project)
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid TypeScript capsule name")
@@ -93,9 +93,12 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if project["tenant"] is not None and not (isinstance(project["tenant"], str) and 0 < len(project["tenant"]) <= 512):
         raise ValueError("invalid optional tenant identity")
     lock, _vendor, pins = validate_sdk_inputs(files)
-    if profile == ASYNC_PROFILE:
+    if profile in NATIVE_PROFILES:
         from tools.typescript_guest.activation_engine import NATIVE_SOURCES
-        for name in (*NATIVE_SOURCES, 'runtime-globals.d.ts'):
+        from tools.typescript_guest.clock_engine import CLOCK_PROFILE, CLOCK_NATIVE_SOURCES
+        selected_native = NATIVE_SOURCES + (CLOCK_NATIVE_SOURCES if profile == CLOCK_PROFILE else ())
+        declarations = ('runtime-globals.d.ts',) + (('clock-globals.d.ts',) if profile == CLOCK_PROFILE else ())
+        for name in (*selected_native, *declarations):
             path = 'sdk/typescript-guest/activation/'+name
             if _vendor.get(path) != read_file(ROOT/path):
                 raise ValueError('captured TypeScript native runtime source differs from the maintained selection')

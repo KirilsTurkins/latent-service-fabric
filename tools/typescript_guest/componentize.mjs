@@ -42,7 +42,7 @@ if (engine || selectionPath) {
   const selection = JSON.parse(await readFile(selectionPath, 'utf8'));
   const raw = await readFile(engine);
   const actual = 'sha256:' + createHash('sha256').update(raw).digest('hex');
-  if (selection.profile !== 'spidermonkey-activation-promises-v1' ||
+  if (!['spidermonkey-activation-promises-v1','spidermonkey-activation-promises-clocks-v1'].includes(selection.profile) ||
       selection.qualification !== 'unknown' || selection.apiSupport !== 'not-evaluated' ||
       selection.engineInput.coreDigest !== actual || selection.engineInput.coreBytes !== raw.byteLength) {
     throw new Error('selected-native-engine-identity-or-qualification-changed');

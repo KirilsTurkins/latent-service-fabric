@@ -13,6 +13,8 @@ import re
 
 SYNC_PROFILE = 'spidermonkey-public-sync-v1'
 ASYNC_PROFILE = 'spidermonkey-activation-promises-v1'
+CLOCK_PROFILE = 'spidermonkey-activation-promises-clocks-v1'
+NATIVE_PROFILES = (ASYNC_PROFILE, CLOCK_PROFILE)
 ACTIVATION_INTERFACE = 'latent:runtime/activation@0.1.0'
 SELECTED_WORLD = 'lsf:typescript-activation/selected@1.0.0'
 ENGINE_SCHEMA = 'latent.typescript.native-engine-input.v1'
@@ -35,9 +37,9 @@ def selected_profile(project: dict, graph: dict | None = None) -> str:
     """A captured explicit selection, never package-name or Host-ABI inference."""
     explicit = project.get('runtimeProfile')
     captured = graph.get('selection', {}).get('runtimeProfile') if graph is not None else None
-    if 'runtimeProfile' in project and explicit not in (SYNC_PROFILE, ASYNC_PROFILE):
+    if 'runtimeProfile' in project and explicit not in (SYNC_PROFILE, *NATIVE_PROFILES):
         raise ValueError('unsupported-typescript-runtime-profile')
-    if graph is not None and 'runtimeProfile' in graph.get('selection', {}) and captured not in (SYNC_PROFILE, ASYNC_PROFILE):
+    if graph is not None and 'runtimeProfile' in graph.get('selection', {}) and captured not in (SYNC_PROFILE, *NATIVE_PROFILES):
         raise ValueError('unsupported-captured-typescript-runtime-profile')
     if explicit is not None and captured is not None and explicit != captured:
         raise ValueError('typescript-runtime-profile-capture-mismatch')
@@ -45,31 +47,35 @@ def selected_profile(project: dict, graph: dict | None = None) -> str:
 
 
 def selection(profile: str) -> dict:
-    if profile not in (SYNC_PROFILE, ASYNC_PROFILE):
+    if profile not in (SYNC_PROFILE, *NATIVE_PROFILES):
         raise ValueError('unsupported-typescript-runtime-profile')
     return {'profile': profile, 'ownerIssue': 745, 'qualification': 'unknown',
             'apiSupport': 'not-evaluated', 'authority': 'none'}
 
 
-def check_application_bindings(original_graph: dict, world: str) -> None:
+def check_application_bindings(original_graph: dict, world: str, *, profile: str = ASYNC_PROFILE) -> None:
     """The native activation ABI is engine-owned, never a JavaScript adapter.
 
     The compiler may project ordinary application imports/exports through its
     established stackful ABI. It must not synthesize a second synchronous copy
     of the selected engine's real async-lower readiness imports.
     """
-    if ACTIVATION_INTERFACE in public_graph(original_graph, world)['imports']:
+    imports = public_graph(original_graph, world)['imports']
+    owned = {ACTIVATION_INTERFACE}
+    if profile == CLOCK_PROFILE:
+        owned.update(('latent:clock/monotonic@0.1.0','latent:clock/wall@0.1.0'))
+    if owned.intersection(imports):
         raise ValueError('typescript-engine-owned-activation-interface-not-an-application-module')
 
 
-def validate_engine(value: dict, core: bytes, sdk_inputs: dict[str, bytes], runtime_wit: bytes) -> dict:
+def validate_engine(value: dict, core: bytes, sdk_inputs: dict[str, bytes], runtime_wit: bytes, *, profile: str = ASYNC_PROFILE) -> dict:
     """Bind an explicitly supplied compiler input; no publisher trust is inferred."""
     expected = {'schemaVersion', 'profile', 'coreDigest', 'coreBytes', 'sdkInputs',
                 'runtimeWitDigest', 'upstream', 'sourceDerivationDigest', 'buildReceiptDigest',
                 'qualification', 'apiSupport', 'inputTrust'}
     if not isinstance(value, dict) or set(value) != expected:
         raise ValueError('typescript-native-engine-input-schema')
-    if value['schemaVersion'] != ENGINE_SCHEMA or value['profile'] != ASYNC_PROFILE:
+    if profile not in NATIVE_PROFILES or value['schemaVersion'] != ENGINE_SCHEMA or value['profile'] != profile:
         raise ValueError('typescript-native-engine-input-version')
     if value['upstream'] != SOURCE_PINS:
         raise ValueError('typescript-native-engine-upstream-mismatch')

@@ -94,6 +94,37 @@ class TypeScriptClockSourceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'full-contract-changed'):
             check_clock_world(*graphs,'tests:typescript-async/capsule@1.0.0')
 
+    def test_explicit_project_clock_selection_preserves_application_and_invocation_limits(self):
+        import json
+        import tempfile
+        from tools.typescript_guest.project import create, validate
+        from tools.typescript_guest.runtime_profile import CLOCK_PROFILE, ASYNC_PROFILE, selection
+        from tools.rust_capsule_project import snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            before=create(root/'timers','greeting','same-name',runtime_profile=ASYNC_PROFILE)
+            after=create(root/'clocks','greeting','same-name',runtime_profile=CLOCK_PROFILE)
+            old,new=snapshot(before),snapshot(after)
+            self.assertEqual(old['src/main.ts'],new['src/main.ts'])
+            self.assertEqual(old['wit/world.wit'],new['wit/world.wit'])
+            self.assertEqual(json.loads(old['capsule-project.json'])['limits'],json.loads(new['capsule-project.json'])['limits'])
+            self.assertEqual(validate(new)[0]['runtimeProfile'],CLOCK_PROFILE)
+            self.assertEqual(selection(CLOCK_PROFILE)['qualification'],'unknown')
+            new['vendor/lsf/sdk/typescript-guest/activation/native_clocks.h']+=b'changed'
+            with self.assertRaisesRegex(ValueError,'vendored SDK changed'):
+                validate(new)
+
+    def test_new_clock_engine_inputs_are_distinct_and_no_declared_profile_certifies_support(self):
+        from tools.typescript_guest.activation_engine import engine_input_paths
+        from tools.typescript_guest.runtime_profile import CLOCK_PROFILE, ASYNC_PROFILE, selection
+        clocks=set(engine_input_paths(CLOCK_PROFILE));old=set(engine_input_paths(ASYNC_PROFILE))
+        self.assertLess(old,clocks)
+        self.assertIn('wit/platform/clock/package.wit',clocks)
+        self.assertIn('tools/typescript_guest/clock_engine.py',clocks)
+        self.assertIn('sdk/typescript-guest/activation/native_clock_engine.cpp',clocks)
+        self.assertEqual(selection(CLOCK_PROFILE)['apiSupport'],'not-evaluated')
+        self.assertEqual(selection(CLOCK_PROFILE)['authority'],'none')
+
 
 if __name__ == '__main__':
     unittest.main()
