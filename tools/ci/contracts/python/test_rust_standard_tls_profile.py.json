@@ -1,0 +1,34 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Register exact pinned std TLS selector/preimage, canonical ABI source and tool/runtime drift checks. This is an unqualified infrastructure source profile; retain original unsupported threading/mutex behavior and all existing cases/guards.",
+  "module":"tools/tests/test_rust_standard_tls_profile.py",
+  "cases":["StandardTlsSource.test_canonical_return_area_matches_real_pinned_generator_reference","StandardTlsSource.test_changed_upstream_tls_or_runtime_cleanup_preimage_rejects_before_selection","StandardTlsSource.test_current_selected_compiler_engine_and_bindgen_pins_are_required","StandardTlsSource.test_exact_pinned_preimages_and_three_selectors_preserve_all_other_target_bytes","StandardTlsSource.test_missing_original_cannot_emit_a_partial_profile","StandardTlsSource.test_other_target_or_compiler_rejects_before_read_or_output","StandardTlsSource.test_process_global_no_threads_storage_is_not_selected_for_maintained_profile","StandardTlsSource.test_runtime_wit_change_invalidates_the_observed_canonical_abi_contract","StandardTlsSource.test_thread_creation_and_single_thread_mutex_remain_explicitly_unqualified","StandardTlsSource.test_unapproved_archive_never_creates_an_overlay_or_installs_sysroot","StandardTlsSource.test_unchanged_os_storage_preserves_alignment_initializer_and_destroying_rules"],
+  "guards":{
+    "StandardTlsSource.test_exact_pinned_preimages_and_three_selectors_preserve_all_other_target_bytes":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_changed_upstream_tls_or_runtime_cleanup_preimage_rejects_before_selection":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_missing_original_cannot_emit_a_partial_profile":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_unchanged_os_storage_preserves_alignment_initializer_and_destroying_rules":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_process_global_no_threads_storage_is_not_selected_for_maintained_profile":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_current_selected_compiler_engine_and_bindgen_pins_are_required":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_runtime_wit_change_invalidates_the_observed_canonical_abi_contract":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_canonical_return_area_matches_real_pinned_generator_reference":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_other_target_or_compiler_rejects_before_read_or_output":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_unapproved_archive_never_creates_an_overlay_or_installs_sysroot":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee",
+    "StandardTlsSource.test_thread_creation_and_single_thread_mutex_remain_explicitly_unqualified":
+      "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee"
+  },
+  "guardDefinitions":{
+    "d7b75bbca27fbde87170eaa1326f875a1ac2a715de10d8a244c7fc474a55b5ee":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:d1a6d0d343277b3cae25f41dd756766ba1dd159faa3182bedc652d640b25dee5","class:setup-sha256:e037d19c0838ce22d34e19d7a532ea793a6085e9aa03246abb25dca6fafc4555"]}
+  }
+}

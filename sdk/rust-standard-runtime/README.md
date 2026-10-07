@@ -26,6 +26,34 @@ The original failed thread creation and sleep behavior remains intact; the
 single-thread `Cell` mutex is preserved and never described as concurrent.
 No signed component or default Tokio/Rayon compatibility is claimed.
 
+The next source slice in `tls.rs` selects the unchanged pinned key-based std
+TLS storage beneath ordinary `thread_local!`, including its alignment,
+initializers, recursive initialization and destructor sentinel rules. The
+backend uses canonical per-thread context slot 1; wit-bindgen's slot 0 stays
+owned by its original implementation. Each lazily admitted context/key entry
+holds an original activation Native owner, while its guest bytes retain the
+original linear-memory limit. An accepted thread prepares its context with
+the existing task continuation before start; closure does not authorize new
+independent work. Physical entries/contexts free before settlement. Bounded
+destructor cycles, destroying sentinels and nested retirement stay fail closed.
+
+`tools/rust_standard_tls_profile.py` preserves the exact official std originals
+and stages only the target selector and TLS backend. The canonical register
+and settle layouts come from an actual pinned wit-bindgen 0.62.0 generation;
+`activation-abi.json` binds that public source observation to the original WIT.
+No installed sysroot or thread implementation is selected by this source stage.
+The runtime provider/grant, owned thread/export lifecycle, shadow-stack
+save/restore on every suspension, engine resource admission and actual signed
+std/thread/TLS proof are required before selection. Canonical thread primitives
+alone do not establish those requirements or safe compiler preemption.
+
 `tests/clock_native.rs` exercises this actual PAL source using explicit fake
 host clock imports. Run that native reference harness with one test thread;
 its evidence does not qualify a guest sysroot, component or runtime.
+
+Run each `tests/tls_native.rs` reference case in its own native process with
+one test thread and an aggregate bounded deadline. The deliberately retained
+destructor-cycle/sentinel cases assert that owners remain charged on failure;
+they are not reset, retried or reported as successful runtime retirement. The
+native allocator trace delegates to the real `System` allocator and records
+ordering, not guest allocator/RSS measurements or scheduling qualification.
