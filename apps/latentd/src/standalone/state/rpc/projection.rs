@@ -166,7 +166,7 @@ fn source(record: &CommandRecord) -> t::SourceIdentity {
         result_format: value.result_format.clone(),
     }
 }
-fn inspection(
+pub(super) fn inspection(
     record: &CommandRecord,
     observation: CommandObservation,
     selector: &t::CommandSelector,
@@ -267,4 +267,63 @@ fn inspection(
             .as_ref()
             .map(latent_wire::invocation::platform_error_to_proto),
     })
+}
+
+pub(super) fn lookup_response(
+    receipt: ActivationReceipt,
+    command: &t::CommandSelector,
+    attempt: Option<&str>,
+    commit: Option<&str>,
+    limits: &InvocationLimits,
+) -> Result<OwnedPhase4Response, PlatformError> {
+    if matches!(
+        receipt.outcome,
+        latent_activation::ActivationOutcome::Succeeded(_)
+            | latent_activation::ActivationOutcome::DeclaredError { .. }
+    ) {
+        super::bounded_result(&receipt.outcome)?;
+    }
+    let disposition = receipt.transaction.as_ref().ok_or_else(unavailable)?;
+    if !disposition.read_authorized() {
+        return Err(denied());
+    }
+    let record = disposition.original_command();
+    if attempt.is_some_and(|id| id != record.attempt_id().hex()) {
+        return Err(denied());
+    }
+    let fence = receipt
+        .result_delivery_fence
+        .as_ref()
+        .ok_or_else(unavailable)?
+        .clone();
+    let inspected = inspection(record, disposition.observation(), command, &receipt, limits)?;
+    let response = if let Some(commit) = commit {
+        if inspected
+            .commit
+            .as_ref()
+            .is_none_or(|value| value.receipt_id != commit)
+        {
+            return Err(denied());
+        }
+        contract::Response::from(t::LookupCommitResponse {
+            command: Some(inspected),
+        })
+    } else {
+        contract::Response::from(t::LookupCommandResponse {
+            command: Some(inspected),
+        })
+    };
+    let bytes = response
+        .encoded_len()
+        .checked_mul(4)
+        .and_then(|value| value.checked_add(16384))
+        .ok_or_else(unavailable)?;
+    if bytes > usize::try_from(fence.reserved_response_bytes()).unwrap_or(0) {
+        return Err(unavailable());
+    }
+    fence.with_current(bytes, || Ok(()))?;
+    Ok(OwnedPhase4Response::new(
+        response,
+        Arc::new(Owner { fence, bytes }),
+    ))
 }

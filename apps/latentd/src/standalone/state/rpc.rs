@@ -1,4 +1,5 @@
 //! Typed private RPCs reuse the installed transaction and activation owners.
+mod lookup;
 mod projection;
 mod selection;
 use super::{StateRequest, StateRuntime};
@@ -122,6 +123,15 @@ impl Phase4Runtime for InstalledTransactionRpc {
         &self,
         call: Phase4Call,
     ) -> BoxFuture<'_, Result<OwnedPhase4Response, PlatformError>> {
+        if matches!(
+            call.request(),
+            contract::Request::LookupCommand(_) | contract::Request::LookupCommit(_)
+        ) {
+            return match self.start_lookup(call) {
+                Ok(future) => future,
+                Err(error) => Box::pin(std::future::ready(Err(error))),
+            };
+        }
         if !matches!(
             call.request(),
             contract::Request::InvokeCommand(_) | contract::Request::Query(_)

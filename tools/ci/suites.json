@@ -9396,6 +9396,7 @@
         "standalone::state::recovery::scope::tests::malformed_owned_namespace_rows_do_not_become_foreign_scope_refusals",
         "standalone::state::request::tests::command_ids_and_business_metadata_exclude_credentials_and_duplicates",
         "standalone::state::request::tests::query_preserves_absence_and_full_original_view_bytes",
+        "standalone::state::rpc::lookup::tests::result_lookup_request_keeps_arrival_deadline_and_has_no_execution_input_or_write_budget",
         "standalone::state::rpc::selection::tests::command_rpc_selection_preserves_original_preconditions_and_refuses_scope_authority_from_metadata",
         "standalone::state::rpc::tests::rpc_result_codec_refuses_unrepresentable_output_before_the_business_writer",
         "standalone::state::runtime::tests::actual_state_open_initializes_epoch_before_tenant_rows_and_reopens_original_accounting",
@@ -9500,7 +9501,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 307,
+      "minimumCases": 308,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
