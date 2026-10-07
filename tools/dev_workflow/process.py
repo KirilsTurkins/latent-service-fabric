@@ -48,6 +48,8 @@ def run(command: list[str], cwd: Path, *, timeout: float = 30, maximum: int = MA
                         check()
                 def defer(self):
                     return cancellation.defer()
+                def check_after_exit(self):
+                    cancellation.check()
             output, errors = build_process._capture(owner, deadline, maximum, Observation())
             result = subprocess.CompletedProcess(argv, owner.process.returncode, output, errors)
         except BaseException as error:
@@ -56,7 +58,8 @@ def run(command: list[str], cwd: Path, *, timeout: float = 30, maximum: int = MA
             if owner is not None:
                 with cancellation.defer():
                     try:
-                        if failure is not None and graceful and os.name == "posix" and owner.process is not None:
+                        if (failure is not None and graceful and os.name == "posix"
+                                and owner.process is not None and not owner.finished):
                             # Maintained language recipes own nested process groups.
                             # Give their signal handlers time to reap those children
                             # before the outer owner performs its final group sweep.
