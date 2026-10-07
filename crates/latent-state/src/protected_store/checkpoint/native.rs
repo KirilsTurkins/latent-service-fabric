@@ -40,14 +40,18 @@ pub(in crate::protected_store) struct CheckpointFile {
 }
 
 impl CheckpointFile {
+    #[cfg_attr(
+        not(all(target_os = "linux", target_arch = "x86_64")),
+        allow(clippy::unused_self)
+    )]
     pub(in crate::protected_store) fn restore_fence(
         &self,
     ) -> Result<crate::protected_store::restore_adoption::RestoredRootFence, StoreError> {
-        self.original
-            .with_live(|| ())
-            .map_err(|_| StoreError::SnapshotExpired)?;
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
+            self.original
+                .with_live(|| ())
+                .map_err(|_| StoreError::SnapshotExpired)?;
             self.check()?;
             Ok(
                 crate::protected_store::restore_adoption::RestoredRootFence {
@@ -301,7 +305,7 @@ impl CheckpointFile {
     }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
-    pub(super) fn open(
+    pub(in crate::protected_store) fn open(
         _: &PhysicalStore,
         _: ProtectedCheckpointConfig,
         _: StoreIdentity,
@@ -372,7 +376,7 @@ impl CheckpointFile {
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
     #[allow(clippy::unused_self)]
-    pub(super) fn inspect(
+    pub(in crate::protected_store) fn inspect(
         &self,
         _: &ReadView,
         _: Option<(u64, u64)>,
