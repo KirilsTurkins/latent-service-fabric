@@ -42,3 +42,6 @@ mod inbound;
 
 #[path = "activation_lifecycle/admission_wait.rs"]
 mod admission_wait;
+
+#[path = "activation_lifecycle/transaction.rs"]
+mod transaction;

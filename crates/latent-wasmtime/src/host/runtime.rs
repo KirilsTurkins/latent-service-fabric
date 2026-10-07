@@ -2,7 +2,7 @@
 //! each maintained language runtime. Store access is bounded and never spans
 //! the executor-neutral timer await; no thread sleeps for a guest timer.
 use super::HostState;
-use latent_capabilities::broker::{AuditProviderOutcome, ProviderCall};
+use latent_capabilities::broker::{AuditProviderOutcome, CapabilityCallCost, ProviderCall};
 use latent_component_bindings::host::activation::latent::runtime::activation as wit;
 use latent_core::{
     activation_runtime::{
@@ -110,9 +110,14 @@ fn authorize(state: &HostState, operation: &str) -> Result<ProviderCall, Platfor
     }
     // This exact capability/operation requires its own binding and grant.
     // Permission for either clock-read interface does not match this contract.
+    // Match the installed activation-owned-v1 profile's mandatory host-call
+    // charge before dispatch. Logical runtime work keeps its separate charges
+    // on the same original ledger; ownership limits do not fund a host call.
+    let cost =
+        CapabilityCallCost::new(128).with_charge(latent_core::BudgetDimension::CpuFuel, 100)?;
     state
         .capabilities
-        .begin(CAPABILITY, operation, ResourceTarget::Clock, &[], 128)?
+        .begin_typed(CAPABILITY, operation, ResourceTarget::Clock, &[], cost)?
         .ok_or_else(|| {
             failure(
                 PlatformErrorCode::PermissionDenied,

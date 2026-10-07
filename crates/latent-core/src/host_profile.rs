@@ -48,6 +48,7 @@ impl HostInterfaceSpec {
             "latent:blob/blob@0.2.0" => &["chunk"],
             "latent:network/streams@0.1.0" => &["connection", "chunk"],
             "latent:state/key-value@0.2.0" => &["transaction", "query-view", "page"],
+            "latent:intents/staging@0.1.0" => &["transaction"],
             _ => &[],
         }
     }
