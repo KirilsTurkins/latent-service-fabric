@@ -351,6 +351,12 @@ impl ProviderRuntime {
         adapters
     }
 
+    /// Read-only test observation of the actual provider I/O owner after stop.
+    #[cfg(test)]
+    pub(in crate::standalone) fn io_observer(&self) -> Arc<IoRuntime> {
+        Arc::clone(&self.io)
+    }
+
     pub fn descriptors(&self) -> &[ProviderDescriptor] {
         &self.descriptors
     }
