@@ -306,6 +306,18 @@ fn validate_imports(
     providers: Providers,
 ) -> Result<(BTreeSet<String>, BTreeSet<String>), PlatformError> {
     let mut imports = BTreeSet::new();
+    let transactional = component_type
+        .imports(engine)
+        .any(|(name, _)| name == transaction::STATE || name == transaction::INTENTS);
+    if transactional && !config.transactional_state {
+        return Err(incompatible("scoped transaction host is unavailable"));
+    }
+    let profile = if transactional {
+        latent_core::PHASE4_HOST_ABI_V1
+    } else {
+        latent_core::PHASE3_HOST_ABI_CURRENT
+    };
+    let transaction_resource = transaction::command_resource(component_type, engine);
     let mut type_imports = BTreeSet::new();
     let transactional = component_type
         .imports(engine)

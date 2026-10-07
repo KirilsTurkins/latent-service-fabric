@@ -85,7 +85,7 @@ pub(super) async fn mutate(
     // Returning early would leave the original critical slot pending when the
     // caller immediately makes its next authenticated request.
     let ack = audit::ack(finish).await;
-    let (read, receipt, _) = result.map_err(|error| {
+    let (read, receipt, replayed) = result.map_err(|error| {
         protected_error(latent_state::protected_store::ProtectedStoreError::Store(
             error,
         ))
@@ -100,6 +100,7 @@ pub(super) async fn mutate(
         c::MutateStateResponse {
             receipt: Some(receipt.public),
             audit_ack: Some(ack),
+            replayed,
         }
         .into(),
     )

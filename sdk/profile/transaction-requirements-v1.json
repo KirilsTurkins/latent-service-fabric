@@ -103,7 +103,7 @@
       {
         "service": "latent.transaction.v1.TransactionService",
         "source": "api/proto/latent/transaction/v1/transaction.proto",
-        "sourceSha256": "sha256:bd84dd30f70d9281d3ef067b61eece0a56d65f6494d3e6fcb599b79cf0011db3",
+        "sourceSha256": "sha256:d6ec8c0bc77c032933a0d2bf01807f3bc91bed360197e371a739ecc90b8b4620",
         "operations": [
           {
             "name": "InvokeCommand",
@@ -181,7 +181,7 @@
       {
         "service": "latent.control.v1.StateService",
         "source": "api/proto/latent/control/v1/state.proto",
-        "sourceSha256": "sha256:33d4d81bd7dbd98365c76e4a6650d5ec5a20ea9548bac31460b78838a39126f9",
+        "sourceSha256": "sha256:ae33602d42ee97bfa25abcc8cae8b721471c688871349cad19e9b8620432550f",
         "operations": [
           {
             "name": "MutateNamespace",
@@ -204,6 +204,11 @@
             "response": "MutateStateResponse"
           },
           {
+            "name": "PlanEffectMutation",
+            "request": "PlanEffectMutationRequest",
+            "response": "PlanEffectMutationResponse"
+          },
+          {
             "name": "GetStateOperationReceipt",
             "request": "GetStateOperationReceiptRequest",
             "response": "GetStateOperationReceiptResponse"
@@ -220,6 +225,10 @@
           "SelectEntityRequest",
           "EntityInspection",
           "SelectEntityResponse",
+          "PlanEffectMutationRequest",
+          "EffectManagementPlan",
+          "PlanEffectMutationResponse",
+          "EffectManagementReceiptDetails",
           "MutateStateRequest",
           "StateOperationReceipt",
           "GetStateOperationReceiptRequest",
@@ -231,7 +240,9 @@
           "NamespaceStatus",
           "NamespaceMutationKind",
           "StateOperationDisposition",
-          "StateMutationKind"
+          "StateMutationKind",
+          "EffectPlanSafety",
+          "EffectManagementFact"
         ]
       },
       {
@@ -280,7 +291,7 @@
       },
       {
         "source": "api/proto/latent/control/v1/audit.proto",
-        "sourceSha256": "sha256:b47fd566129f25451f1dcd18b74568a27c1fa3a8e17364698d889e44a74bf36e"
+        "sourceSha256": "sha256:ffa5301491c7c7cdae77c296e02ac3b0360cd8b1df738a7d7144924fc32d5805"
       }
     ],
     "requiredHttpEnvelopes": [

@@ -570,521 +570,527 @@
         }
       },
       "allOf": [
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:context/context@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "activation-id",
-                    "root-activation-id",
-                    "parent-activation-id",
-                    "principal",
-                    "trace",
-                    "deadline-unix-millis",
-                    "remaining-budget",
-                    "metadata"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/context"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:log/log@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "write"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/log"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:clock/monotonic@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "now-nanos"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/clock"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:clock/wall@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "now-unix-millis"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/clock"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:random/random@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "bytes",
-                    "u64-value"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/random"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:blob/blob@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "create",
-                    "open",
-                    "write",
-                    "read",
-                    "seal",
-                    "close"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/blob"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:secrets/reader@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "read"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/secrets"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:events/publisher@0.2.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "publish"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/events"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:http/client@0.2.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "send"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/http"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:http/streaming@0.3.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "open",
-                    "write",
-                    "finish",
-                    "read",
-                    "chunk-bytes",
-                    "trailers",
-                    "abort-upload",
-                    "abort-body"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/http"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:telemetry/custom@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "emit-metric"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/telemetry"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:service/invoke@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "call"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/service"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:blob/blob@0.2.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "create",
-                    "open",
-                    "write",
-                    "read",
-                    "seal",
-                    "close",
-                    "chunk-bytes"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/blob"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:state/key-value@0.2.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "acquire-command",
-                    "acquire-query",
-                    "info",
-                    "query-info",
-                    "get",
-                    "get-query",
-                    "scan",
-                    "scan-query",
-                    "describe-page",
-                    "page-next",
-                    "put",
-                    "delete",
-                    "commit",
-                    "read-result",
-                    "inspect-effect",
-                    "cancel-command",
-                    "namespace-create",
-                    "namespace-inspect",
-                    "namespace-list",
-                    "namespace-quiesce",
-                    "namespace-retire",
-                    "namespace-destroy",
-                    "namespace-recreate",
-                    "namespace-snapshot",
-                    "namespace-inspect-restore",
-                    "namespace-restore",
-                    "namespace-schema-migrate",
-                    "namespace-review-recovery",
-                    "namespace-resume"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/state"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:intents/staging@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "stage",
-                    "dispatch"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/state"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:runtime/activation@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "register",
-                    "park",
-                    "wake",
-                    "settle",
-                    "close",
-                    "observe",
-                    "wait-for",
-                    "wait-until",
-                    "timer-start",
-                    "timer-next",
-                    "timer-stop"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/clock"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "capability": {
-                "const": "latent:network/streams@0.1.0"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "operations": {
-                "type": "array",
-                "maxItems": 16,
-                "uniqueItems": true,
-                "items": {
-                  "enum": [
-                    "connect",
-                    "read",
-                    "write",
-                    "ready",
-                    "chunk-bytes",
-                    "inspect",
-                    "shutdown",
-                    "close"
-                  ]
-                }
-              },
-              "resources": {
-                "$ref": "#/$defs/stream"
-              }
-            }
-          }
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:context/context@0.1.0"
         }
-      ]
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "activation-id",
+              "root-activation-id",
+              "parent-activation-id",
+              "principal",
+              "trace",
+              "deadline-unix-millis",
+              "remaining-budget",
+              "metadata"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/context"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:log/log@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "write"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/log"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:clock/monotonic@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "now-nanos"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/clock"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:clock/wall@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "now-unix-millis"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/clock"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:random/random@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "bytes",
+              "u64-value"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/random"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:blob/blob@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "create",
+              "open",
+              "write",
+              "read",
+              "seal",
+              "close"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/blob"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:secrets/reader@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "read"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/secrets"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:events/publisher@0.2.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "publish"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/events"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:http/client@0.2.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "send"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/http"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:http/streaming@0.3.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "open",
+              "write",
+              "finish",
+              "read",
+              "chunk-bytes",
+              "trailers",
+              "abort-upload",
+              "abort-body"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/http"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:telemetry/custom@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "emit-metric"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/telemetry"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:service/invoke@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "call"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/service"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:blob/blob@0.2.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "create",
+              "open",
+              "write",
+              "read",
+              "seal",
+              "close",
+              "chunk-bytes"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/blob"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:state/key-value@0.2.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "acquire-command",
+              "acquire-query",
+              "cancel-command",
+              "commit",
+              "delete",
+              "describe-page",
+              "effect-plan",
+              "effect-reconcile",
+              "effect-redrive",
+              "effect-terminate",
+              "get",
+              "get-query",
+              "info",
+              "inspect-effect",
+              "namespace-create",
+              "namespace-destroy",
+              "namespace-inspect",
+              "namespace-inspect-restore",
+              "namespace-list",
+              "namespace-quiesce",
+              "namespace-recreate",
+              "namespace-restore",
+              "namespace-resume",
+              "namespace-retire",
+              "namespace-review-recovery",
+              "namespace-schema-migrate",
+              "namespace-snapshot",
+              "page-next",
+              "purge-expired-payload",
+              "put",
+              "query-info",
+              "read-result",
+              "scan",
+              "scan-query",
+              "state-checkpoint"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/state"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:intents/staging@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "dispatch",
+              "stage"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/state"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:runtime/activation@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "register",
+              "park",
+              "wake",
+              "settle",
+              "close",
+              "observe",
+              "wait-for",
+              "wait-until",
+              "timer-start",
+              "timer-next",
+              "timer-stop"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/clock"
+        }
+      }
+    }
+  },
+  {
+    "if": {
+      "properties": {
+        "capability": {
+          "const": "latent:network/streams@0.1.0"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "operations": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "connect",
+              "read",
+              "write",
+              "ready",
+              "chunk-bytes",
+              "inspect",
+              "shutdown",
+              "close"
+            ]
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/stream"
+        }
+      }
+    }
+  }
+]
     },
     "stateScope": {
       "type": "object",

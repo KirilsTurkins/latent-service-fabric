@@ -519,7 +519,13 @@
                     "namespace-restore",
                     "namespace-schema-migrate",
                     "namespace-review-recovery",
-                    "namespace-resume"
+                    "namespace-resume",
+                    "effect-plan",
+                    "effect-reconcile",
+                    "effect-redrive",
+                    "effect-terminate",
+                    "state-checkpoint",
+                    "purge-expired-payload"
                   ]
                 }
               },

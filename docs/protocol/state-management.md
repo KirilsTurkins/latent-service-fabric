@@ -195,9 +195,29 @@ charge held by its byte frame. Detached queued writes retain their global
 capacity until native retirement; an expired original request creates no receipt,
 and an accepted lost response is recovered after a clean engine reopen.
 These tests qualify finite admission and worker progress, not recovery from an
-unreadable device or a complete standalone CLI workflow. Entity pages,
-maintenance jobs and command/effect operations
+unreadable device or a complete standalone CLI workflow. Maintenance jobs and command/effect operations
 must be supplied by the corresponding owning runtime ports.
+
+`SelectEntity` uses a coherent native snapshot on that same reserved Recovery
+worker and requires both current `namespace-list` and `namespace-inspect`
+decisions. It parses the canonical stored state scope and validates cells even
+when their entity does not match the requested prefix. Retained tombstones keep
+an entity discoverable; a command identity alone does not create entity state.
+The bounded scan refuses incomplete results at 65,536 physical rows, 128 MiB
+scanned bytes or 2,048 matching entity identities. Each response has at most 128
+entities and 1 MiB of complete protobuf page bytes. Exceeding a scan bound fails
+explicitly rather than reporting a false exhausted page.
+
+Entity continuations are descriptive RPC data bound to the original caller,
+prefix, current publication and policy constraints, namespace generation, durable
+schema epoch and recovery epoch. They do not reuse a guest session's affine
+cursor or grant data access. Each subsequent RPC acquires fresh current authority
+and a fresh physical view; a changed bound refuses the old continuation.
+The response retains the exact native view, original global Recovery reservation
+and real namespace lifecycle handle through encoding and retained byte-frame
+destruction. Read authority is checked again before publication. Destructive
+lifecycle drain cannot treat a detached response or body Drop as physical view
+retirement.
 
 The separate structural boundary tests establish preflight, authenticated
 association, original receipt identity and lossless projection. Full issue #400
@@ -205,3 +225,48 @@ closure additionally requires actual node composition, command invocation,
 dispatcher pause/resume and authorized reconciliation, migration/backup/restore
 jobs, typed audit/metrics, and the prescribed real CLI/node recovery and reserved
 lane tests against those owning domain implementations.
+
+## Explicit effect-management CLI calls
+
+`latent state plan-effect` requires the original command/effect selectors,
+management operation ID, one closed action (`redrive`, `reconcile` or
+`terminate`), exact base64 effect record version, namespace policy digest and
+bounded review reason. Redrive additionally requires an unsigned delay from
+1 through 60000 milliseconds. Reconciliation and termination reject a supplied
+retry delay. Planning itself contacts no provider and grants no permission to
+execute the action.
+
+The response includes the full human/JSON plan plus `encodedPlan`, a bounded
+canonical base64 Protobuf value. `latent state apply-effect --plan ...` preserves
+that original action, actor-scoped operation ID, CAS, policy digest and current
+publication selector. It makes one explicit RPC. Changed selectors and naked
+effect mutations fail preflight; the CLI never refreshes a precondition or
+automatically resends a mutation.
+
+`latent state effect-operation --plan ...` recovers the original receipt with
+current read authorization. Its explicit current authorization publication may
+be newer than the historical plan's selector, while the entire original plan
+and its expired deadline remain intact. Provider confirmation, administrator
+declaration, durable disposition and the new read's audit acknowledgement are
+projected separately. A missing historical receipt remains unknown rather than
+an abort or permission to retry.
+
+All 143 CLI library cases passed on the pinned Linux Rust 1.97.1 image,
+including full original plan/current-selector association, bounded canonical
+plan decoding, malformed CAS/unknown fields and expired historical recovery.
+CLI library Clippy completed without CLI warnings; dependencies retain their
+existing warnings. This does not qualify an end-to-end standalone manual
+provider action before that domain adapter is installed.
+
+
+The native management backend requires its recovery admission port to project
+the actual installed `NativeCapacityOwner`. Construction checks that the protected
+store and optional dispatcher share that exact owner; matching limits or paths
+cannot replace the identity. Each returned affine request reservation must also
+belong to that owner before any native lookup is submitted. An unbound or foreign
+owner is refused before readiness, without creating another pool. The native
+namespace/control fixtures retain their existing original memory-budget checks
+and now bind real recovery reservations before the first published store job.
+The Linux Wire library passes all 150 cases, including three explicit owner
+mismatch schedules. Existing unrelated Wire/dependency lint diagnostics remain
+separate from the warning-free owned management modules.

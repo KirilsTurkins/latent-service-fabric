@@ -871,36 +871,35 @@ class RepositoryMigrationTests(unittest.TestCase):
                         '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
                         '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
-            host_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
-            if key == reviewed_framework_archives:
-                # Preserve the original locked framework install and all fields.
-                self.assertEqual(data["after"][key],
-                                 dict(value, run="python3 website/toolchain/prepare.py\n" + value["run"]), key)
-            elif key == host_fixture:
-                # State now has real engine consumers. Preserve its original
-                # selected subset and runner, and explicitly prove full CI is
-                # still selected alongside this smaller host qualification.
+            if key == reviewed_narrow_fixture:
                 expected = dict(value)
                 expected["run"] = value["run"].replace(
                     "selection = classify_paths(['crates/latent-state/src/lib.rs'])\n"
                     "assert selection.profile == 'fast'\n",
                     "from tools import ci_suite_inventory as registry\n"
                     "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
-                    "assert state.profile == 'full'\n"
+                    "assert state.profile == 'full' and state.renderer\n"
+                    "identity = classify_paths(['crates/latent-identity/src/lib.rs'])\n"
+                    "assert identity.profile == 'full' and identity.renderer\n"
                     "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
-                    "assert selection.profile == 'full'\n"
+                    "assert selection.profile == 'full' and not selection.renderer\n"
                     "assert selection.fast_packages\n"
                     "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
+                ).replace(
+                    "print(selection.outputs()['fast_packages'])\n",
+                    "# Production dependency closure remains full; the controlled graph\n"
+                    "# separately proves the preserved offline fast-profile selection.\n"
+                    "from tools.tests.test_ci_suite_inventory import qualify_narrow_fixture\n"
+                    "qualify_narrow_fixture()\n"
+                    "print(selection.outputs()['fast_packages'])\n",
                 )
                 self.assertEqual(data["after"][key], expected, key)
-            elif key == reviewed_narrow_fixture:
-                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
-                                 {k: v for k, v in value.items() if k != "run"})
-                # Only the fixture path changes: real state dependencies now
-                # select the full profile. Keep every command and assertion.
-                self.assertEqual(data["after"][key]["run"].rstrip("\n"),
-                                 value["run"].replace("crates/latent-state/src/lib.rs",
-                                                      "crates/latent-workflows/src/lib.rs"))
+            elif key == reviewed_framework_archives:
+                # Materialize the already authenticated locked archives before
+                # the original framework install. Preserve every existing
+                # command, qualification guard and step field byte for byte.
+                self.assertEqual(data["after"][key],
+                                 dict(value, run="python3 website/toolchain/prepare.py\n" + value["run"]), key)
             elif key == reviewed_deferred_owners:
                 self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
                                  {k: v for k, v in value.items() if k != "run"})

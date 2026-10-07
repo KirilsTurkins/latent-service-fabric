@@ -578,7 +578,7 @@ their separate meanings. Live grant checks are explicitly absent; an inspection
 does not grant execution or mutation authority. Public invocation and browser
 error projections retain their existing disclosure rules.
 
-## Additive Phase 4 transaction definitions
+## Phase 4 transaction and management descriptor additions
 
 Issue #709 adds `NodeService.InspectActivationTree` and its four messages and
 three closed diagnostic enums. Every earlier declaration, field number and RPC
@@ -615,14 +615,14 @@ error projections retain their existing disclosure rules.
 
 The descriptor golden includes `latent/transaction/v1/transaction.proto` and
 the control `state.proto` and `dispatcher.proto` files. Their seven application
-transaction methods, five namespace/state methods and three dispatcher methods
+transaction methods, six namespace/state methods and three dispatcher methods
 use separate typed services. All thirteen earlier files preserve their message
 shapes, field numbers, optional presence, enum values and RPC signatures.
 
 The audit contract adds `AuditIdentities.state` at field 25 and `dispatcher` at
 field 26 with their bounded target messages. `AuditControlAction` adds namespace
-actions 13 through 18, dispatcher actions 19 through 22 and command-floor release
-23. `AuditCapabilityResourceClass` adds state at value 11. Earlier audit values
+actions 13 through 18, dispatcher actions 19 through 22, effect actions 23 through 29 and command-floor release
+30. `AuditCapabilityResourceClass` adds state at value 11. Earlier audit values
 retain their numbers and meanings.
 
 These descriptors preserve complete transaction profiles, original operation
@@ -631,7 +631,7 @@ targets and explicit recovery preconditions. Command, commit, retained response,
 effect and cleanup outcomes remain distinct. Namespace/state mutation receipts
 and audit acknowledgement remain separate; dispatcher admission and physical
 retirement remain separate. The state mutation discriminator includes bounded
-expired command-floor release at value 5 without renumbering the earlier values.
+expired command-floor release at value 6 without renumbering the earlier values.
 
 Schema generation and descriptor validation do not install a transaction engine,
 grant application or management authority, enable restored effect dispatch or
@@ -657,3 +657,26 @@ paging, byte and retention limits. Public invocation status and browser response
 expose no witness. A witness does not establish commitment, abort, physical
 retirement, retry authority or external completion. See
 [activation inspection](../reference/activation-inspection.md).
+
+The Buf 1.72.0 descriptor baseline adds `latent/transaction/v1/transaction.proto`,
+`latent/control/v1/state.proto` and `latent/control/v1/dispatcher.proto`. The seven
+transaction, six state and three dispatcher methods use independent bounded
+messages. Every prior file, field, enum value and service signature is preserved.
+The audit descriptor adds state and dispatcher targets at fields 25 and 26,
+state resource class 11 and control actions 13 through 29; all prior audit rows
+remain exact.
+
+`PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
+reconciliation and termination require that complete original plan when calling
+`MutateState`. Receipt recovery preserves the original action, record version,
+policy digest and operation ID while requesting a separately current read
+publication. An expired historical plan can describe an already completed
+operation. It supplies neither a grant nor provider proof. Provider confirmation,
+administrator declaration and scheduled redrive remain separate typed facts.
+Historical effect records without the new record version remain readable and
+cannot authorize a new mutation.
+
+The golden matches the frozen sixteen-operation client descriptor and was
+reviewed against every prior named row using actual Buf output. The
+[transaction reference](transactions.md) describes the separate guest ABI,
+durable-format, authority and production qualification boundaries.

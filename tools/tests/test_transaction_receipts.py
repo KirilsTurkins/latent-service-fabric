@@ -156,13 +156,14 @@ class TransactionReceiptTests(unittest.TestCase):
         self.assertFalse(value["guest"]["executionQualified"])
         self.assertFalse(value["externalClient"]["transportExecutionQualified"])
         self.assertEqual(sum(len(item["operations"]) for item in value["guest"]["requiredInterfaces"]), 13)
-        self.assertEqual(sum(len(item["operations"]) for item in value["externalClient"]["requiredServices"]), 15)
-        operations = {operation["name"] for item in value["externalClient"]["requiredServices"] for operation in item["operations"]}
-        self.assertEqual(operations, {
-            "InvokeCommand", "Query", "LookupCommand", "LookupCommit", "GetEffect",
-            "ListEffectHistory", "CancelCommand", "MutateNamespace", "InspectNamespace",
-            "SelectEntity", "MutateState", "GetStateOperationReceipt", "InspectDispatcher",
-            "ControlDispatcher", "GetDispatcherOperation",
+        self.assertEqual(sum(len(item["operations"]) for item in value["externalClient"]["requiredServices"]), 16)
+        self.assertEqual({item["service"]: {operation["name"] for operation in item["operations"]}
+                          for item in value["externalClient"]["requiredServices"]}, {
+            "latent.transaction.v1.TransactionService": {"InvokeCommand", "Query", "LookupCommand",
+                "LookupCommit", "GetEffect", "ListEffectHistory", "CancelCommand"},
+            "latent.control.v1.StateService": {"MutateNamespace", "InspectNamespace", "SelectEntity",
+                "MutateState", "PlanEffectMutation", "GetStateOperationReceipt"},
+            "latent.control.v1.DispatcherService": {"InspectDispatcher", "ControlDispatcher", "GetDispatcherOperation"},
         })
         self.assertNotEqual(value["guest"]["profile"], value["externalClient"]["profile"])
 

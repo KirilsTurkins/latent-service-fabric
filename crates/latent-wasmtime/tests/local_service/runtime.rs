@@ -332,6 +332,14 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
                 ActivationDiagnostic::new(DiagnosticStage::Queue, DiagnosticReason::QueuePressure);
             assert_eq!(error.details[1], diagnostic.detail());
             assert_eq!(ActivationDiagnostic::from_error(&error), Some(diagnostic));
+            assert_eq!(error.details[1].kind, "activation.diagnostic.v1");
+            assert_eq!(
+                error.details[1].fields,
+                latent_core::Metadata::from([
+                    ("reason".into(), "9".into()),
+                    ("stage".into(), "2".into()),
+                ])
+            );
         }
         f.idle().await;
     }

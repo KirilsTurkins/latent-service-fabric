@@ -30,7 +30,10 @@ impl Access {
         }
     }
     pub(super) fn host(&self) -> Result<Arc<dyn port::TransactionHost>, wit::StateError> {
-        self.host.clone().ok_or(wit::StateError::PermissionDenied)
+        self.host
+            .as_ref()
+            .cloned()
+            .ok_or(wit::StateError::PermissionDenied)
     }
     pub(super) fn acquire(&mut self, mode: port::Mode) -> Result<u32, wit::StateError> {
         let host = self.host()?;

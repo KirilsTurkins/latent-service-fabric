@@ -211,6 +211,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
                            "`docs/component-development/rust-authoring.md` in the SDK checkout.\n"
                            "No provider or capability grant is installed by this project.\n").encode()}
     files.update({"vendor/lsf/" + path: data for path, data in vendor.items()})
+    transaction_features = ', features = ["transaction"]' if template == "transactional-aggregate" else ""
     files["Cargo.toml"] = f'''[package]
 name = "{name}"
 version = "1.0.0"
@@ -226,7 +227,7 @@ crate-type = ["cdylib"]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wit-bindgen = "={pins['rust']['dependencies']['wit-bindgen']}"
-latent-guest = {{ path = "vendor/lsf/sdk/rust-guest" }}
+latent-guest = {{ path = "vendor/lsf/sdk/rust-guest"{transaction_features} }}
 
 [profile.release]
 opt-level = "s"

@@ -9,6 +9,11 @@ pub(super) fn validate(request: &Request) -> Result<(), ValidationError> {
     let mut b = Budget::new::<Request>(MAX_REQUEST_BYTES)?;
     b.charge(request.native_message_bytes())?;
     match request {
+        Request::InspectDispatcher(value) => super::dispatcher::inspect(&mut b, value),
+        Request::ControlDispatcher(value) => super::dispatcher::control(&mut b, value),
+        Request::GetDispatcherOperation(value) => {
+            super::dispatcher::control(&mut b, required(value.original.as_ref())?)
+        }
         Request::InspectNamespace(value) => inspect(&mut b, value),
         Request::MutateNamespace(value) => validate_namespace_mutation(&mut b, value),
         Request::SelectEntity(value) => {
@@ -26,24 +31,11 @@ pub(super) fn validate(request: &Request) -> Result<(), ValidationError> {
             b.string(&value.expected_policy_digest, 71)?;
             digest(&value.expected_policy_digest)?;
             reason(&mut b, &value.reason)?;
+            if let Some(plan) = &value.effect_plan {
+                super::effect_management::plan(&mut b, plan)?;
+                return super::effect_management::mutation_association(value, plan);
+            }
             match c::StateMutationKind::try_from(value.mutation) {
-                Ok(c::StateMutationKind::ReleaseExpiredCommandFloor) => {
-                    let id = required(value.record_id.as_ref())?;
-                    if id.len() != 64
-                        || !id
-                            .bytes()
-                            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
-                        || id.bytes().all(|byte| byte == b'0')
-                    {
-                        Err(ValidationError::Shape)
-                    } else {
-                        namespace_view_generation(
-                            &value.expected_version,
-                            required(required(value.namespace.as_ref())?.namespace.as_ref())?,
-                        )
-                        .map(|_| ())
-                    }
-                }
                 Ok(c::StateMutationKind::CheckpointNamespace) => {
                     if value.record_id.is_some() {
                         Err(ValidationError::Shape)
@@ -51,11 +43,18 @@ pub(super) fn validate(request: &Request) -> Result<(), ValidationError> {
                         Ok(())
                     }
                 }
-                Ok(
-                    c::StateMutationKind::RetryKnownFailedEffect
-                    | c::StateMutationKind::TerminateEffect
-                    | c::StateMutationKind::PurgeExpiredPayload,
-                ) => {
+                Ok(c::StateMutationKind::ReleaseExpiredCommandFloor) => {
+                    let record = required(value.record_id.as_ref())?;
+                    if record.len() != 64
+                        || !record.bytes().all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+                        || record.bytes().all(|byte| byte == b'0')
+                    {
+                        Err(ValidationError::Shape)
+                    } else {
+                        Ok(())
+                    }
+                }
+                Ok(c::StateMutationKind::PurgeExpiredPayload) => {
                     if value.record_id.is_none() {
                         Err(ValidationError::Shape)
                     } else {
@@ -65,9 +64,15 @@ pub(super) fn validate(request: &Request) -> Result<(), ValidationError> {
                 _ => Err(ValidationError::Shape),
             }
         }
+        Request::PlanEffectMutation(value) => super::effect_management::request(&mut b, value),
         Request::GetStateOperationReceipt(value) => {
             inspect(&mut b, required(value.namespace.as_ref())?)?;
-            b.id(&value.operation_id)
+            b.id(&value.operation_id)?;
+            if let Some(plan) = &value.original_effect_plan {
+                super::effect_management::plan(&mut b, plan)?;
+                super::effect_management::recovery_association(value, plan)?;
+            }
+            Ok(())
         }
         Request::LookupCommand(value) => lookup(&mut b, value),
         Request::LookupCommit(value) => {
@@ -115,10 +120,18 @@ pub(super) fn tenant(request: &Request) -> Option<&str> {
         value.namespace.as_ref()
     }
     let namespace = match request {
+        Request::InspectDispatcher(_)
+        | Request::ControlDispatcher(_)
+        | Request::GetDispatcherOperation(_) => None,
         Request::InspectNamespace(v) => inspect(v),
         Request::MutateNamespace(v) => v.namespace.as_ref().and_then(inspect),
         Request::SelectEntity(v) => v.namespace.as_ref().and_then(inspect),
         Request::MutateState(v) => v.namespace.as_ref().and_then(inspect),
+        Request::PlanEffectMutation(v) => v
+            .effect
+            .as_ref()
+            .and_then(|v| v.command.as_ref())
+            .and_then(|v| v.namespace.as_ref()),
         Request::GetStateOperationReceipt(v) => v.namespace.as_ref().and_then(inspect),
         Request::InvokeCommand(v) => v.command.as_ref().and_then(|v| v.namespace.as_ref()),
         Request::Query(v) => v.namespace.as_ref(),
@@ -160,32 +173,6 @@ pub(super) fn namespace(
     b.string(&value.incarnation, 20)?;
     decimal(&value.incarnation, true)?;
     Ok(())
-}
-
-/// Structural NV2 association only. The native state owner separately verifies
-/// the actual scope digest, retained history and exact durable generation.
-pub(super) fn namespace_view_generation(
-    token: &[u8],
-    namespace: &t::NamespaceSelector,
-) -> Result<u64, ValidationError> {
-    if token.len() != 67 || !token.starts_with(b"NV\x02") {
-        return Err(ValidationError::Shape);
-    }
-    let numbers: [u64; 4] = std::array::from_fn(|index| {
-        let offset = 35 + index * 8;
-        u64::from_le_bytes(
-            token[offset..offset + 8]
-                .try_into()
-                .expect("fixed NV2 word"),
-        )
-    });
-    if numbers.contains(&0) {
-        return Err(ValidationError::Shape);
-    }
-    if numbers[0].to_string() != namespace.incarnation {
-        return Err(ValidationError::Association);
-    }
-    Ok(numbers[1])
 }
 pub(super) fn publication(
     b: &mut Budget,
@@ -266,7 +253,7 @@ pub(super) fn abort_fence(b: &mut Budget, value: &t::AbortFence) -> Result<(), V
     b.id(&value.transaction_id)?;
     b.opaque(&value.owner_fence)
 }
-fn reason(b: &mut Budget, value: &String) -> Result<(), ValidationError> {
+pub(super) fn reason(b: &mut Budget, value: &String) -> Result<(), ValidationError> {
     b.string(value, 1024)?;
     if value.is_empty() || value.chars().any(char::is_control) {
         return Err(ValidationError::Shape);
