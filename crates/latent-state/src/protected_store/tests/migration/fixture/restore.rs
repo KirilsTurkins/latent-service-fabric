@@ -26,6 +26,7 @@ pub(in crate::protected_store::tests::migration) struct StageOwners {
     dispatch_epoch: AtomicU64,
     floor: u64,
     pause: Mutex<Option<(RestoreWriteKind, Rendezvous, mpsc::Sender<PauseTicket>)>>,
+    receipt_pause: Mutex<Option<(Rendezvous, mpsc::Sender<PauseTicket>)>>,
 }
 
 impl StageOwners {
@@ -46,6 +47,7 @@ impl StageOwners {
             dispatch_epoch: AtomicU64::new(7),
             floor: setup.clock.sample().unix_millis(),
             pause: Mutex::new(None),
+            receipt_pause: Mutex::new(None),
         }
     }
 
@@ -57,6 +59,20 @@ impl StageOwners {
             .lock()
             .unwrap()
             .replace((kind, gates.clone(), notice))
+            .is_none());
+        (gates, receiver)
+    }
+
+    pub(in crate::protected_store::tests::migration) fn pause_receipt_review(
+        &self,
+    ) -> (Rendezvous, mpsc::Receiver<PauseTicket>) {
+        let gates = Rendezvous::new(1);
+        let (notice, receiver) = mpsc::channel();
+        assert!(self
+            .receipt_pause
+            .lock()
+            .unwrap()
+            .replace((gates.clone(), notice))
             .is_none());
         (gates, receiver)
     }
@@ -301,6 +317,10 @@ impl RestoreStageOwners for StageOwners {
         input: &ProtectedRestoreInput,
         request: &RestoreStageRequest,
     ) -> Result<(), StoreError> {
+        let pause = self.receipt_pause.lock().unwrap().take();
+        if let Some((gates, notice)) = pause {
+            pause_review(&gates, notice);
+        }
         self.verify_view(
             staged,
             input,

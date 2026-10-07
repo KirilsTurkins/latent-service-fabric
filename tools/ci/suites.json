@@ -5307,6 +5307,7 @@
         "protected_store::tests::migration::restore_adoption::restored_root_adoption_rejects_byte_identical_replacement_engine_and_checkpoint_files",
         "protected_store::tests::migration::restore_adoption::restored_root_adoption_waits_for_both_physical_owners_and_publishes_only_paused_state",
         "protected_store::tests::migration::restore_input_ignored_native_gate_and_stale_digest_refuse_with_healthy_reusable_owner",
+        "protected_store::tests::migration::restore_receipt::detached_receipt_reader_keeps_real_views_custody_and_original_capacity_until_retirement",
         "protected_store::tests::migration::restore_receipt::incomplete_stage_cannot_recover_a_receipt_or_seal_an_interrupted_checkpoint",
         "protected_store::tests::migration::restore_receipt::lost_stage_receipt_is_recovered_without_reimport_or_checkpoint_advance_and_retains_original",
         "protected_store::tests::migration::restore_receipt::recovered_stage_receipt_rechecks_each_current_owner_without_mutation",
@@ -5532,7 +5533,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 328,
+      "minimumCases": 329,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
