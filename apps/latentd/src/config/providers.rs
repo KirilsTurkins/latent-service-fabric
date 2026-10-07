@@ -19,6 +19,8 @@ pub use local_service::LocalServiceInstallation;
 #[path = "providers/events.rs"]
 mod events;
 pub use events::EventInstallation;
+#[path = "providers/http.rs"]
+mod http;
 #[path = "providers/http_streaming.rs"]
 mod http_streaming;
 pub use http_streaming::HttpStreamingInstallation;
@@ -80,6 +82,8 @@ pub struct HttpInstallation {
     pub credential_directory: Option<PathBuf>,
     #[serde(default)]
     pub credentials: Vec<ProviderSecretFile>,
+    #[serde(default)]
+    pub deferred: Vec<latent_http::deferred::QualifiedHttpEndpoint>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -136,16 +140,7 @@ pub(super) fn derive(
         return Err(invalid("providers"));
     }
     if let Some(http) = &providers.http {
-        http.identity.validate()?;
-        http.configuration
-            .validate()
-            .map_err(|_| invalid("providers.http"))?;
-        validate_http_credentials(
-            &http.configuration,
-            http.credential_directory.is_some(),
-            &http.credentials,
-            "providers.http.credentials",
-        )?;
+        http.validate_installation()?;
     }
     if let Some(http) = &providers.http_streaming {
         http.validate_installation(providers)?;

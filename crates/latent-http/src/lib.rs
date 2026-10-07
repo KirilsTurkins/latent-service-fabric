@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 mod config;
 mod credentials;
+pub mod deferred;
 mod destination;
 mod dns;
 pub mod effects;
