@@ -18,6 +18,7 @@ pub(super) struct DispatchPolicy {
     profile: String,
     configuration_digest: String,
     result_policy: String,
+    pub policy_revision: u64,
 }
 impl DispatchPolicy {
     pub fn install(fixture: &Fixture, rule: &latent_effects::authority::EffectRule) -> Self {
@@ -45,6 +46,7 @@ impl DispatchPolicy {
         let provider = serde_json::json!({"formatVersion":1,"tenant":rule.scope.tenant,"capability":INTENT_CONTRACT,
             "providerProfile":rule.profile.adapter,"configurationDigest":configuration_digest,"configurationEpoch":1,
             "restriction":{"operations":["dispatch"],"resources":scope}});
+        let mut policy_revision = None;
         for (kind, id, value) in [
             (RecordKind::Policy, "controlled-dispatch", document),
             (
@@ -53,7 +55,7 @@ impl DispatchPolicy {
                 provider,
             ),
         ] {
-            fixture
+            let receipt = fixture
                 .policy
                 .mutate(
                     MutationRequest {
@@ -69,6 +71,9 @@ impl DispatchPolicy {
                     |_| Ok(()),
                 )
                 .unwrap();
+            if kind == RecordKind::Policy {
+                policy_revision = Some(receipt.value().revision);
+            }
         }
         let publication = fixture
             .backend
@@ -87,6 +92,7 @@ impl DispatchPolicy {
             profile: rule.profile.adapter.clone(),
             configuration_digest,
             result_policy: binding.result_policy.clone(),
+            policy_revision: policy_revision.unwrap(),
         }
     }
     pub fn with_current(

@@ -57,7 +57,7 @@ async fn controlled_dispatch_requires_the_actual_current_policy_and_source_befor
                 kind: latent_policy::capability::RecordKind::Policy,
                 id: "controlled-dispatch",
                 operation_id: "withdraw-controlled-dispatch",
-                expected_revision: 1,
+                expected_revision: provider.dispatch.policy_revision,
                 document: None,
             },
             deadline(),
