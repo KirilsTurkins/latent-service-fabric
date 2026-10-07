@@ -558,7 +558,7 @@ impl Fixture {
             _root: root,
         }
     }
-    pub fn request(id: &str, which: u32) -> ActivationRequest {
+    pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
         let mut request = admission_fixture::request(id);
         request.target.service = ServiceId("caller".into());
         request.target.contract = ContractId(component::CALLER.into());
