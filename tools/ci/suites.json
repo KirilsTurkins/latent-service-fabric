@@ -4524,6 +4524,7 @@
         "fixed_pool::tests::races::task_abort_single_thread",
         "fixed_pool::tests::transitions::observer_reports_committed_active_and_queue_transitions",
         "local::lifetime_tests::final_cancellation_owner_can_reenter_after_cell_and_quota_disposition",
+        "local::lifetime_tests::publication::published_parent_can_immediately_use_the_other_available_cell",
         "local::measurement::input::tests::allocation_is_only_the_fixed_many_tenant_storm",
         "local::measurement::input::tests::fixed_full_and_smoke_populations_include_every_warmup_and_storm_offer",
         "local::measurement::phase1_scheduler_collector",
@@ -4547,7 +4548,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-scheduler/Cargo.toml",
-      "minimumCases": 44,
+      "minimumCases": 45,
       "mode": "libtest",
       "package": "latent-scheduler",
       "platforms": [
