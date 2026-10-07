@@ -120,7 +120,7 @@ def interface_id(graph: dict, index: int) -> str:
     return base+'/'+interface['name']+'@'+version
 
 
-def public_graph(graph: dict, identity: str) -> dict:
+def public_graph(graph: dict, identity: str, *, _component_root: bool = False) -> dict:
     """Compare actual parser graphs across relocated numeric IDs.
 
     Every function kind, parameter/result, resource ownership and type body is
@@ -225,8 +225,25 @@ def public_graph(graph: dict, identity: str) -> dict:
             result[key] = body
         return result
 
-    world = find_world(graph, identity)
+    if _component_root:
+        roots = [item for item in graph['worlds'] if item['name'] == 'root'
+                 and graph['packages'][item['package']]['name'] == 'root:component']
+        if len(roots) != 1 or len(graph['worlds']) != 1:
+            raise ValueError('typescript-runtime-exact-parser-component-root-required')
+        world = roots[0]
+    else:
+        world = find_world(graph, identity)
     return {direction: items(world[direction]) for direction in ('imports', 'exports')}
+
+
+def public_component_graph(graph: dict) -> dict:
+    """Read only the parser's exact synthetic root, not a versioned app world.
+
+    All imported/exported interfaces and their complete type bodies still use
+    their authoritative package versions. This wrapper is decoder metadata;
+    it cannot become a selectable application or runtime contract identity.
+    """
+    return public_graph(graph, '', _component_root=True)
 
 
 def derive_world(canonical_original: bytes, original_graph: dict, world: str,

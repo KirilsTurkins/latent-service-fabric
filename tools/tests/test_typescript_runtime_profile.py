@@ -214,6 +214,30 @@ class TypeScriptRuntimeProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'engine-owned-activation-interface'):
             runtime.check_application_bindings(actual_graph('derived'), runtime.SELECTED_WORLD)
 
+    def test_actual_component_synthetic_root_keeps_versioned_interfaces_and_types(self):
+        value = json.loads((FIXTURES/'actual-component-root.json').read_bytes())
+        self.assertEqual(value['parser'], 'wasm-tools1.254.0')
+        result = runtime.public_component_graph(value['graph'])
+        self.assertEqual(set(result['imports']), {runtime.ACTIVATION_INTERFACE})
+        self.assertEqual(set(result['exports']), {'tests:typescript-async/ordinary@1.0.0'})
+        self.assertEqual(result['exports']['tests:typescript-async/ordinary@1.0.0']['functions']['run']['kind'], 'async-freestanding')
+        graph = copy.deepcopy(value['graph'])
+        next(item for item in graph['interfaces'] if item['name'] == 'ordinary')['functions']['run']['result'] = 'u64'
+        self.assertNotEqual(result, runtime.public_component_graph(graph))
+
+    def test_unversioned_app_world_and_noncanonical_component_root_still_fail_closed(self):
+        value = json.loads((FIXTURES/'actual-component-root.json').read_bytes())['graph']
+        with self.assertRaisesRegex(ValueError, 'world-version-required'):
+            runtime.world_id(value, value['worlds'][0])
+        changed = copy.deepcopy(value)
+        changed['worlds'][0]['name'] = 'application'
+        with self.assertRaisesRegex(ValueError, 'exact-parser-component-root'):
+            runtime.public_component_graph(changed)
+        changed = copy.deepcopy(value)
+        changed['packages'][changed['worlds'][0]['package']]['name'] = 'untrusted:wrapper'
+        with self.assertRaisesRegex(ValueError, 'exact-parser-component-root'):
+            runtime.public_component_graph(changed)
+
 
 class TypeScriptAbortSourceTests(unittest.TestCase):
     def test_pinned_timeout_conversion_precedes_signal_graph_allocation(self):
