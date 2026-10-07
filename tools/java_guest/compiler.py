@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import importlib.util
 import os
+import re
 from pathlib import Path
 import re
 import shutil
@@ -49,6 +50,8 @@ def sdk_snapshot(root: Path) -> dict:
     for folder in ("runtime", "templates", "wit", "fibers", "server", "resources"):
         if folder in ("fibers", "server", "resources") and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
+    if (root / "client").exists():
+        files.update({"client/" + name: data for name, data in snapshot(root / "client").items()})
     return dict(sorted(files.items()))
 
 
@@ -190,11 +193,14 @@ class Compiler:
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
                 activation_profile: bool = False, server_profile: bool = False,
-                server_bridge: bytes | None = None) -> tuple[Path, dict]:
+                server_bridge: bytes | None = None,
+                http_client_profile: bool = False) -> tuple[Path, dict]:
         if type(activation_profile) is not bool:
             raise ValueError("Java activation profile requires an explicit boolean selection")
         if type(server_profile) is not bool or server_bridge is not None and not server_profile:
             raise ValueError("automatic server bridge requires an explicitly selected profile")
+        if type(http_client_profile) is not bool:
+            raise ValueError("Java standard HTTP requires an explicitly selected profile")
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
@@ -245,6 +251,21 @@ class Compiler:
         if activation_profile or server_profile:
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
+        if http_client_profile:
+            for folder in ("client/dev", "client/compiler/dev"):
+                for relative, data in snapshot(self.sdk / folder).items():
+                    target = java_root / "dev" / relative
+                    if target.exists(): raise ValueError("standard HTTP SDK overrides runtime source")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+            # The same selected project can contain both server and client
+            # profiles. Append distinct SDK providers rather than replacing
+            # either service list or accepting an application-owned plugin.
+            for relative, data in snapshot(self.sdk / "client/services").items():
+                stage_sdk_service(project / "src/main/resources" / relative, relative, data)
+            if not (activation_profile or server_profile):
+                with (project / "build.gradle").open("a", encoding="utf-8") as build:
+                    build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         application_source_names = set()
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")

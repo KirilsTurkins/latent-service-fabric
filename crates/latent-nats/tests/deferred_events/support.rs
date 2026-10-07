@@ -283,13 +283,14 @@ async fn install_protected_credentials(
         fs::Permissions::from_mode(0o600),
     )
     .unwrap();
+    let deadline = Instant::now() + WATCHDOG;
     let secrets = LocalSecretStore::open_before(
         pools,
         secret_root,
         SecretLimits::default(),
         vec![],
         Arc::new(SystemSecretClock),
-        Instant::now() + WATCHDOG,
+        deadline,
     )
     .unwrap()
     .await
@@ -311,7 +312,7 @@ async fn install_protected_credentials(
                 version: "1".into(),
                 expires_at_unix_millis: None,
             }],
-            Instant::now() + WATCHDOG,
+            deadline,
         )
         .unwrap()
         .await
