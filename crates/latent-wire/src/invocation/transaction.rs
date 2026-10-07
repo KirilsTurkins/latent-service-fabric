@@ -142,10 +142,17 @@ mod tests {
     }
     fn ceiling() -> ResourceBudget {
         ResourceBudget {
+            cpu_fuel: 100,
+            memory_bytes: 4096,
+            wall_time_limit_millis: Some(500),
+            child_calls: 0,
+            outbound_requests: 0,
             state_read_bytes: 4 * 1024 * 1024,
             state_write_bytes: 2 * 1024 * 1024,
+            blob_read_bytes: 0,
+            blob_write_bytes: 0,
+            log_bytes: 0,
             effect_count: 1,
-            ..Default::default()
         }
     }
     #[test]
