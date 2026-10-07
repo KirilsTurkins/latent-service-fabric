@@ -117,10 +117,15 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 write_json(output / "diagnostic-source.json", {
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
+                profile_selection = {}
+                if server_plan is not None:
+                    profile_selection.update(server_profile=True, server_bridge=automatic_bridge)
+                if application_resources is not None:
+                    profile_selection["application_resources"] = application_resources
+                if "httpClient" in project:
+                    profile_selection["http_client_profile"] = True
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
-                    application_classpath=application_jars, application_resources=application_resources,
-                    server_profile=server_plan is not None, server_bridge=automatic_bridge,
-                    **({"http_client_profile": True} if "httpClient" in project else {}))
+                    application_classpath=application_jars, **profile_selection)
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
                 write_json(output / "bindings.json", generated)

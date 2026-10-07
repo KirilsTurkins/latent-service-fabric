@@ -1815,6 +1815,7 @@ dependencies = [
  "hickory-proto",
  "ipnet",
  "serde",
+ "socket2",
  "tokio",
 ]
 
@@ -2106,6 +2107,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-streams"
+version = "0.1.0-alpha.5"
+dependencies = [
+ "hickory-proto",
+ "latent-activation",
+ "latent-artifacts",
+ "latent-audit",
+ "latent-capabilities",
+ "latent-core",
+ "latent-executor",
+ "latent-manifest",
+ "latent-network",
+ "latent-policy",
+ "latent-routing",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "socket2",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "latent-telemetry"
 version = "0.1.0-alpha.5"
 dependencies = [
@@ -2214,6 +2238,7 @@ dependencies = [
  "latent-ingress",
  "latent-manifest",
  "latent-nats",
+ "latent-network",
  "latent-node",
  "latent-packaging",
  "latent-policy",
@@ -2221,6 +2246,7 @@ dependencies = [
  "latent-scheduler",
  "latent-secrets",
  "latent-signing",
+ "latent-streams",
  "latent-telemetry",
  "latent-vault",
  "libc",
@@ -2236,6 +2262,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "wasm-encoder 0.259.0",
+ "wasmparser 0.259.0",
  "wasmtime",
  "wit-parser 0.259.0",
  "zeroize",
@@ -2265,6 +2292,7 @@ dependencies = [
  "latent-rpc",
  "latent-scheduler",
  "latent-state",
+ "latent-streams",
  "latent-telemetry",
  "prost",
  "serde",
@@ -2327,6 +2355,7 @@ dependencies = [
  "latent-secrets",
  "latent-signing",
  "latent-state",
+ "latent-streams",
  "latent-telemetry",
  "latent-testkit",
  "latent-wasmtime",

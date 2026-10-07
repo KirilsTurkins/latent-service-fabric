@@ -54,6 +54,56 @@ async fn outbound_proposal_and_wasi_sockets_are_not_ambient_authority() {
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn exact_wasi_tcp_poll_and_stream_resource_types_do_not_install_ambient_ports() {
+    let directory = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../research/standard-outbound/wasi-sockets-v0.2.0/wit");
+    let mut resolve = wit_parser::Resolve::default();
+    resolve.push_dir(&directory).unwrap();
+    // These are the original upstream methods/resources, not an empty namespace
+    // or a renamed LSF interface. No adaptation or socket execution is claimed.
+    let (_, tcp) = resolve
+        .interfaces
+        .iter()
+        .find(|(id, _)| resolve.id_of(*id).as_deref() == Some("wasi:sockets/tcp@0.2.0"))
+        .unwrap();
+    for name in [
+        "[method]tcp-socket.start-connect",
+        "[method]tcp-socket.finish-connect",
+        "[method]tcp-socket.subscribe",
+        "[method]tcp-socket.shutdown",
+    ] {
+        assert!(tcp.functions.contains_key(name), "{name}");
+    }
+    let factory = WasmtimeComponentEngineFactory::new(config()).unwrap();
+    let backend = factory.create_backend_instance();
+    for name in [
+        "wasi:sockets/tcp@0.2.0",
+        "wasi:sockets/network@0.2.0",
+        "wasi:sockets/ip-name-lookup@0.2.0",
+        "wasi:io/streams@0.2.0",
+        "wasi:io/poll@0.2.0",
+    ] {
+        let interface = host_fixture::interface_from_directory(&directory, name, None);
+        let bytes = fixture::with_host(fixture::Options::default(), name, &interface);
+        let mut artifact = artifact_bytes(bytes, &[fixture::CONTRACT]);
+        artifact.manifest.imports = vec![ContractImport {
+            contract: ContractId(name.into()),
+            optional: false,
+        }];
+        let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
+        let error = backend.prepare(&artifact, &key).await.unwrap_err();
+        assert_eq!(
+            error.code,
+            PlatformErrorCode::IncompatibleContract,
+            "{name}"
+        );
+        assert_eq!(backend.resource_snapshot().stores_created, 0, "{name}");
+        assert_eq!(backend.cache_snapshot().entries, 0, "{name}");
+        idle(&backend);
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn recognized_provider_imports_fail_preparation_without_installed_owners() {
     let factory = WasmtimeComponentEngineFactory::new(config()).unwrap();
     let backend = factory.create_backend_instance();

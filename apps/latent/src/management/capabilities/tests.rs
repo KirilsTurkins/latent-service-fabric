@@ -169,4 +169,38 @@ fn usage_reports_only_fixed_owner_counters_and_preserves_unavailable() {
     let mut wrong = usage;
     wrong.counters.insert("credential_file".into(), 0);
     assert!(projection::checked(&wrong, 4096).is_err());
+    let mut streams = proto::CapabilityResourceUsage {
+        scope: "node".into(),
+        counters: HashMap::from([
+            ("stream_configuration_epoch".into(), 2),
+            ("stream_retired_generations".into(), 1),
+            ("stream_stopped".into(), 0),
+            ("stream_owners".into(), 3),
+            ("stream_connections".into(), 1),
+            ("stream_pending_operations".into(), 1),
+            ("stream_retained_chunks".into(), 2),
+            ("stream_maintenance_owners".into(), 1),
+            ("stream_live_accepted_write_bytes".into(), u64::MAX),
+            ("stream_live_delivered_read_bytes".into(), 5),
+        ]),
+        unavailable: vec![],
+    };
+    let decoded =
+        proto::CapabilityResourceUsage::decode(streams.encode_to_vec().as_slice()).unwrap();
+    projection::checked(&decoded, 4096).unwrap();
+    assert_eq!(
+        decoded.project()["counters"]["stream_live_accepted_write_bytes"],
+        u64::MAX.to_string()
+    );
+    streams.counters.insert("stream_credential_file".into(), 0);
+    assert!(projection::checked(&streams, 4096).is_err());
+    streams.counters.clear();
+    streams.unavailable = vec!["outbound-streams-no-retained-observation".into()];
+    projection::checked(&streams, 4096).unwrap();
+    assert_eq!(
+        streams.clone().project()["unavailable"],
+        json!(["outbound-streams-no-retained-observation"])
+    );
+    streams.unavailable = vec!["outbound-streams-raw-provider-error".into()];
+    assert!(projection::checked(&streams, 4096).is_err());
 }
