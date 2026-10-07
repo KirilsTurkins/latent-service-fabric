@@ -25,13 +25,27 @@ struct Retained {
 pub(super) struct AdmissionTime {
     source: CommandAdmissionSource,
     capacity: NativeCapacityOwner,
+    class: NativeAdmissionClass,
     retained: Mutex<Retained>,
 }
 impl AdmissionTime {
     pub fn new(source: CommandAdmissionSource, capacity: NativeCapacityOwner) -> Arc<Self> {
+        Self::with_class(source, capacity, NativeAdmissionClass::Ordinary)
+    }
+    /// Only the installed result admission chooses the existing recovery lane.
+    /// Selection changes capacity ownership, never result-read authority.
+    pub fn recovery(source: CommandAdmissionSource, capacity: NativeCapacityOwner) -> Arc<Self> {
+        Self::with_class(source, capacity, NativeAdmissionClass::Recovery)
+    }
+    fn with_class(
+        source: CommandAdmissionSource,
+        capacity: NativeCapacityOwner,
+        class: NativeAdmissionClass,
+    ) -> Arc<Self> {
         Arc::new(Self {
             source,
             capacity,
+            class,
             retained: Mutex::new(Retained::default()),
         })
     }
@@ -115,7 +129,7 @@ impl CommandTimeSource for AdmissionTime {
         let native = self
             .capacity
             .reserve(
-                NativeAdmissionClass::Ordinary,
+                self.class,
                 NativeReservationRequest {
                     request_bytes: 2 * 1_048_576,
                     work_bytes: 24 * 1_048_576,

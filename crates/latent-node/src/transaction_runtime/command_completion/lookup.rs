@@ -48,9 +48,11 @@ impl CommandCoordinator {
         auth.authorize(operation, 0, 0, || Ok(()))?;
         let auth = Arc::clone(auth);
         let time = Arc::clone(&self.time);
+        // Result authority still seals the current namespace and original history;
+        // metadata reads share the already reserved recovery worker lane.
         let job = self
             .store
-            .with_store(StoreIoKind::Read, 8192, move |store| {
+            .with_store(StoreIoKind::RecoveryRead, 8192, move |store| {
                 let result = (|| {
                     let view = store.snapshot()?;
                     let ownership = auth.authority.ownership();
@@ -209,7 +211,7 @@ impl CommandCoordinator {
         let time = Arc::clone(&self.time);
         let job = self
             .store
-            .with_store(StoreIoKind::Read, LOOKUP_BYTES, move |store| {
+            .with_store(StoreIoKind::RecoveryRead, LOOKUP_BYTES, move |store| {
                 let result = (|| {
                     let view = store.snapshot()?;
                     if !same_namespace(&view, &read)? {
