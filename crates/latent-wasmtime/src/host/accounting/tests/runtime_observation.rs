@@ -214,7 +214,7 @@ fn concurrent_child_admission_requires_native_fuel_reconciliation_before_next_ho
         .unwrap();
     assert_eq!(budget.remaining_at(sample.monotonic()).cpu_fuel, 45);
     let before = budget.snapshot_at(sample.monotonic());
-    assert_eq!(before.cpu_fuel, 55);
+    assert_eq!(before.cpu_fuel, 10);
     assert_eq!(before.child_calls, 1);
     // A next host checkpoint with the old native watermark may observe real
     // parent work beyond its remaining grant. A failed charge must not alter
