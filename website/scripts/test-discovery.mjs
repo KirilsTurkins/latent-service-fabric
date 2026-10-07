@@ -156,7 +156,9 @@ try {
         await page.setViewportSize({width: 1280, height: 900});
       }
       await page.goto(`${prefix}docs/component-development/creating-a-capsule/`, {waitUntil: 'networkidle'});
-      assert.equal(await page.locator('.theme-doc-sidebar-menu a[href*="-authoring/"]').count(), 0);
+      const learnAuthoring = page.locator('.theme-doc-sidebar-menu a[href*="-authoring/"]');
+      assert.deepEqual(await learnAuthoring.evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname)),
+        [new URL(`${prefix}docs/component-development/transactional-authoring/`).pathname]);
       const greeting = page.locator('[data-example="guest/tutorial-greeting"]');
       assert.equal(await greeting.getByRole('tab').count(), 6);
       await greeting.getByRole('tab', {name: 'Go', exact: true}).click();
