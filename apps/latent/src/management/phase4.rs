@@ -5,7 +5,7 @@ mod projection;
 #[cfg(test)]
 mod tests;
 pub use execute::execute;
-pub use prepare::{prepare_state, prepare_transaction};
+pub use prepare::{prepare_dispatcher, prepare_state, prepare_transaction};
 
 use crate::error::Failure;
 pub(super) fn invalid() -> Failure {
@@ -19,6 +19,11 @@ pub(crate) fn recovery(request: &latent_rpc::phase4::Request) -> Option<serde_js
     use latent_rpc::phase4::Request;
     use serde_json::json;
     match request {
+        Request::ControlDispatcher(value) => Some(json!({"family":"dispatcher",
+            "scope":"node","operationId":value.operation_id,
+            "action":latent_rpc::control::v1::DispatcherAction::try_from(value.action).ok().map(|v|v.as_str_name()),
+            "expectedGeneration":value.expected_generation.as_ref().map(projection::dispatcher_generation),
+            "automaticRetry":false})),
         Request::MutateNamespace(value) => Some(
             json!({"family":"namespace","operationId":value.operation_id,
             "namespace":value.namespace.as_ref().and_then(|v|v.namespace.as_ref()).map(projection::namespace),
@@ -28,7 +33,9 @@ pub(crate) fn recovery(request: &latent_rpc::phase4::Request) -> Option<serde_js
         Request::MutateState(value) => {
             Some(json!({"family":"state","operationId":value.operation_id,
             "namespace":value.namespace.as_ref().and_then(|v|v.namespace.as_ref()).map(projection::namespace),
-            "expectedVersion":projection::bytes(&value.expected_version),"expectedPolicyDigest":value.expected_policy_digest}))
+            "expectedVersion":projection::bytes(&value.expected_version),"expectedPolicyDigest":value.expected_policy_digest,
+            "action":latent_rpc::control::v1::StateMutationKind::try_from(value.mutation).ok().map(|v|v.as_str_name()),
+            "originalEffectPlan":value.effect_plan.as_ref().map(projection::effect_plan),"automaticRetry":false}))
         }
         Request::InvokeCommand(value) => Some(
             json!({"family":"command","command":value.command.as_ref().map(projection::selector),

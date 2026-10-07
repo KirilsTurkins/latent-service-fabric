@@ -8,7 +8,7 @@ import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
 from tools import (guest_compatibility_build, guest_resources, guest_dependency_inputs,
-                   guest_authoring_frontend, java_server_source, server_source)
+                   guest_authoring_frontend, java_http_client, java_server_source, server_source)
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.java_guest import resources as java_resources
@@ -31,12 +31,14 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
-          "examples/echo-contract/deployment.json")
+          "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py", "tools/java_guest/sdk.py",
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += java_server_source.RECIPE
+RECIPE += java_http_client.RECIPE
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -124,6 +126,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     profile_selection.update(server_profile=True, server_bridge=automatic_bridge)
                 if application_resources is not None:
                     profile_selection["application_resources"] = application_resources
+                if "httpClient" in project:
+                    profile_selection["http_client_profile"] = True
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
                     application_classpath=application_jars, **profile_selection)
                 component = read_file(component_path, 64 * 1024 * 1024)
@@ -159,13 +163,17 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
                     host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
                 additional_assets = []
+                if "httpClient" in project:
+                    (output / "http-client-profile.json").write_bytes(java_http_client.profile(
+                        compiler.sdk, recipe_inputs, source_inputs, component))
+                    additional_assets.append(("http-client-profile.json", "asset", "application/vnd.latent.java.http.profile.v1+json"))
                 if server_plan is not None:
                     actual_web = server_source.inspect(commands, compiler.paths["wasm-tools"], component_path,
                                                        temporary / "compiled/wit", world=project["world"])
                     declaration = server_source.emit(files, component, read_file(output / "server-profile.json"), server_plan,
                                                      actual_web, source_inputs=source_inputs)
-                    additional_assets = [server_source.package(output, declaration),
-                        ("server-profile.json", "asset", "application/vnd.latent.server.source.profile.v1+json")]
+                    additional_assets.extend([server_source.package(output, declaration),
+                        ("server-profile.json", "asset", "application/vnd.latent.server.source.profile.v1+json")])
                 package_inputs(output, project, surface, package_files, component,
                                additional_resources=additional_resources, additional_assets=additional_assets)
                 if packager is not None:

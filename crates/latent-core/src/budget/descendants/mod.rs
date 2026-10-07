@@ -129,6 +129,12 @@ pub struct DescendantBudgetSnapshot {
     pub closed: bool,
 }
 impl ActivationBudget {
+    pub(in crate::budget) fn has_budget_parent(&self) -> bool {
+        self.inner
+            .lineage
+            .get()
+            .is_some_and(|lineage| lineage.parent.is_some())
+    }
     /// Cancel delegation and accepted descendant work under this original
     /// ledger. This only closes authority and wakes its bounded owner signals;
     /// it does not finalize consumption, refund capacity or retire any owner.
@@ -176,7 +182,7 @@ impl ActivationBudget {
         cancellation: Arc<dyn BudgetCancellationProbe>,
     ) -> Result<(), PlatformError> {
         limits.validate()?;
-        if self.profile() != BudgetProfile::Phase3
+        if !self.profile().supports_descendants()
             || self.inner.closed.load(Ordering::Acquire)
             || self.deadline().monotonic().is_none()
         {
