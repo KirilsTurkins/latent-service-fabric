@@ -157,6 +157,51 @@ class WitContractTests(unittest.TestCase):
             self.assertFalse((destination / "stale.txt").exists())
             self.assertTrue((destination / "deps" / "context" / "package.wit").is_file())
 
+    def test_type_use_selector_stages_the_real_intents_state_dependency(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "intents"
+            stager.stage(destination, ROOT / "wit/platform/intents")
+            self.assertEqual(
+                {path.name for path in (destination / "deps").iterdir()}, {"state"}
+            )
+            self.assertEqual(
+                (destination / "deps/state/package.wit").read_bytes(),
+                (ROOT / "wit/platform/state/package.wit").read_bytes(),
+            )
+
+    def test_type_use_preserves_dotted_prerelease_and_build_version_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            source.mkdir()
+            platform = root / "platform"
+            for directory, version in (
+                ("selected", "2.3.4-rc.2+build.9"), ("unselected", "2.3.4")
+            ):
+                package = platform / directory
+                package.mkdir(parents=True)
+                (package / "package.wit").write_text(
+                    f"package example:values@{version};\n"
+                    "interface items { type value = u32; }\n", encoding="utf-8"
+                )
+            (source / "package.wit").write_text(
+                "package example:source@1.0.0;\n"
+                "interface use-values {\n"
+                "    use example:values/items@2.3.4-rc.2+build.9.{value};\n"
+                "}\n", encoding="utf-8"
+            )
+            destination = root / "staged"
+            with mock.patch.object(stager, "PLATFORM_WIT", platform):
+                stager.stage(destination, source)
+            self.assertEqual(
+                {path.name for path in (destination / "deps").iterdir()}, {"selected"}
+            )
+            self.assertEqual(
+                (destination / "deps/selected/package.wit").read_bytes(),
+                (platform / "selected/package.wit").read_bytes(),
+            )
+
+
     def test_type_use_selector_stages_the_exact_state_dependency(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             platform = Path(temporary) / "platform"
