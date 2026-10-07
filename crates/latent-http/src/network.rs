@@ -181,7 +181,9 @@ async fn checkout_for(
     Ok(match scope {
         crate::protocol::ProtocolScope::Invocation(call) => client.checkout_wait(call).await?,
         crate::protocol::ProtocolScope::Maintenance(_) => None,
-        crate::protocol::ProtocolScope::Deferred(request) => client.checkout_deferred(request)?,
+        crate::protocol::ProtocolScope::Deferred(request) => {
+            client.checkout_deferred_wait(request).await?
+        }
     })
 }
 
@@ -197,7 +199,7 @@ async fn reserve_for(
             client.reserve_maintenance_connection(request)?
         }
         crate::protocol::ProtocolScope::Deferred(request) => {
-            client.reserve_deferred_connection(request)?
+            client.reserve_deferred_connection_wait(request).await?
         }
     })
 }

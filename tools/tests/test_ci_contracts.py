@@ -892,6 +892,8 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "assert state.profile == 'full' and state.renderer\n"
                     "identity = classify_paths(['crates/latent-identity/src/lib.rs'])\n"
                     "assert identity.profile == 'full'\n"
+                    "assert identity.fast_packages\n"
+                    "assert set(identity.fast_packages) < set(registry.load()['fastPackages'])\n"
                     "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
                     "assert selection.profile == 'fast'\n"
                     "assert selection.fast_packages\n"

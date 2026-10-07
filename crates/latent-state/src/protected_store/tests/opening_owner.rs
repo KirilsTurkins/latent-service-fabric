@@ -58,7 +58,10 @@ fn rejected_opening_keeps_send_only_owner_until_actual_worker_retirement() {
         dropped: Arc::clone(&dropped),
         native_worker: Arc::clone(&native_worker),
     });
-    let refused = matches!(result, Err(ProtectedStoreError::Io(StoreIoError::QueueFull)));
+    let refused = matches!(
+        result,
+        Err(ProtectedStoreError::Io(StoreIoError::QueueFull))
+    );
     let dropped_before_retirement = dropped.load(Ordering::SeqCst);
     let physically_owned = owner.snapshot().unwrap().physical_owners;
     // Release every real worker before asserting, including on the old source
