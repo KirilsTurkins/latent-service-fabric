@@ -48,13 +48,31 @@ def one_new_root(client, service, before):
     return selected[0]["activationId"]
 
 
-def status(client, activation, selected, *, terminal=None):
+def execution_pin(client, selected):
+    """Record the current catalog generation independently of deployment CAS."""
+    snapshot = server_routes.known(client.call("route", "get"))["snapshot"]
+    require(snapshot.get("tenant") == selected["tenant"], "server-lifecycle-snapshot-tenant")
+    server_routes.counter(snapshot["generation"], positive=True)
+    candidates = [row for row in snapshot["services"] if row["tenant"] == selected["tenant"]
+        and row["routeId"] == selected["route"] and row["service"] == selected["service"]]
+    require(len(candidates) == 1 and len(candidates[0]["revisions"]) == 1,
+            "server-lifecycle-current-execution-revision")
+    revision = candidates[0]["revisions"][0]
+    require(revision["revisionId"] == selected["revision"]
+            and revision["releaseDigest"] == selected["componentDigest"] and revision["weight"] == 10000,
+            "server-lifecycle-current-execution-revision")
+    return {"selected": copy.deepcopy(selected), "catalogGeneration": snapshot["generation"],
+            "snapshotDigest": snapshot["snapshotDigest"]}
+
+
+def status(client, activation, expected, *, terminal=None):
     observed = client.call("activation", "get", activation)["data"]
     metadata = observed["metadata"]
+    selected = expected["selected"]
     require(observed["activationId"] == activation
             and metadata.get("revision") == selected["revision"]
             and metadata.get("release") == selected["componentDigest"]
-            and metadata.get("route-generation") == selected["deploymentGeneration"],
+            and metadata.get("route-generation") == expected["catalogGeneration"],
             "server-lifecycle-original-resolved-pin-changed")
     if terminal is not None:
         require(observed["terminalState"] == terminal and observed["finalConsumption"] is not None,
@@ -262,12 +280,13 @@ class RevisionControls:
             routes.apply(initial_routes)
         check("GET", "/hey", 200, b"Hey!")
         prior_roots = {row["activationId"] for row in roots(client, record["service"])}
+        initial_execution_pin = execution_pin(client, initial_pin)
         with GatePeer(min(client.deadline, time.monotonic() + 125), port=self.peer_port) as peer:
             pending = HeldIngress(node.startup_record["httpEndpoint"], tls_context, client.deadline)
             try:
                 peer.wait(peer.started)
                 activation = one_new_root(client, record["service"], prior_roots)
-                before_cutover = status(client, activation, initial_pin)
+                before_cutover = status(client, activation, initial_execution_pin)
                 require(before_cutover["terminalState"] is None, "server-lifecycle-inflight-not-live")
                 changed = deploy(client, self.fixture / second["name"] / "deployment.json", second_publication,
                                  generation=str(current["generation"]), grants=second_grants)
@@ -277,7 +296,7 @@ class RevisionControls:
                     source_digest=digest(inputs), profile_digest=digest(profile))
                 with state.lock(routes.root, "server-routes.lock"):
                     routes.apply(updated)
-                after_cutover = status(client, activation, initial_pin)
+                after_cutover = status(client, activation, initial_execution_pin)
                 peer.release.set()
                 response = pending.finish()
                 require(response == {"status": 200, "body": b"Hey!".hex()},
@@ -286,9 +305,9 @@ class RevisionControls:
                 pending.close()
         from tools.java_server_node import observe_idle
         retirement = observe_idle(client, evidence, "lifecycle-inflight-cutover-retired")
-        completed = status(client, activation, initial_pin, terminal="completed")
+        completed = status(client, activation, initial_execution_pin, terminal="completed")
         case("real-inflight-revision-remains-pinned-across-redeployment", {
-            "originalPin": initial_pin, "newPin": selected, "before": before_cutover,
+            "originalPin": initial_execution_pin, "newDeploymentPin": selected, "before": before_cutover,
             "after": after_cutover, "terminal": completed, "peer": peer.snapshot(), "retirement": retirement})
         check("GET", "/hey", 200, self.second_body)
         case("real-redeployment-pins-new-publication", {"pin": selected})
@@ -373,12 +392,13 @@ class RevisionControls:
             check("GET", "/fresh", 200, b"1")
             case("ordinary-static-state-is-fresh-per-invocation", {})
             before = {row["activationId"] for row in roots(client, record["service"])}
+            disconnect_pin = execution_pin(client, restored_pin)
             with GatePeer(min(client.deadline, time.monotonic() + 125), port=self.peer_port) as peer:
                 pending = HeldIngress(node.startup_record["httpEndpoint"], tls_context, client.deadline)
                 try:
                     peer.wait(peer.started)
                     activation = one_new_root(client, record["service"], before)
-                    status(client, activation, restored_pin)
+                    status(client, activation, disconnect_pin)
                     pending.disconnect()
                     peer.wait(peer.closed)
                     try:
@@ -390,14 +410,15 @@ class RevisionControls:
                 finally:
                     pending.close()
             retirement = observe_idle(client, evidence, "lifecycle-disconnect-retired")
-            canceled = status(client, activation, restored_pin, terminal="cancelled")
+            canceled = status(client, activation, disconnect_pin, terminal="cancelled")
             case("actual-client-disconnect-retires-original-http-owner", {
                 "terminal": canceled, "peer": peer.snapshot(), "retirement": retirement})
             check("GET", "/hey", 200, b"Hey!")
             before = {row["activationId"] for row in roots(client, record["service"])}
+            fuel_pin = execution_pin(client, restored_pin)
             check("GET", "/fuel", 503)
             activation = one_new_root(client, record["service"], before)
-            exhausted = status(client, activation, restored_pin, terminal="resource_exhausted")
+            exhausted = status(client, activation, fuel_pin, terminal="resource_exhausted")
             require(exhausted["terminalOutcome"]["kind"] == "platform-failure"
                     and exhausted["terminalOutcome"]["error"]["code"] == "resource-exhausted",
                     "server-lifecycle-fuel-not-real-platform-exhaustion")
@@ -423,6 +444,7 @@ class RevisionControls:
             with state.lock(routes.root, "server-routes.lock"):
                 routes.apply(limited_routes)
             before = {row["activationId"] for row in roots(client, record["service"])}
+            deadline_pin = execution_pin(client, limited_pin)
             with GatePeer(min(client.deadline, time.monotonic() + 125), port=self.peer_port) as peer:
                 pending = HeldIngress(node.startup_record["httpEndpoint"], tls_context, client.deadline)
                 try:
@@ -437,7 +459,7 @@ class RevisionControls:
                 finally:
                     pending.close()
             activation = one_new_root(client, record["service"], before)
-            expired = status(client, activation, limited_pin, terminal="deadline_exceeded")
+            expired = status(client, activation, deadline_pin, terminal="deadline_exceeded")
             case("narrower-root-deadline-closes-original-peer", {
                 "explicitWallTimeMillis": 750, "originalWallTimeMillis": deployment["budget"]["wallTimeLimitMillis"],
                 "terminal": expired, "peer": peer.snapshot(),

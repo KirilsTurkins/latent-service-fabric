@@ -55,6 +55,37 @@ class ServerLifecycleInputs(unittest.TestCase):
             self.assertEqual(second["src/outside/developer/routes/LifecycleRoutes.java"],
                 first["src/outside/developer/routes/LifecycleRoutes.java"].replace(b'"Hey!"', b'"Revision-two"'))
 
+    def test_journal_pin_uses_actual_catalog_generation_independently_of_deployment_stamp(self):
+        from copy import deepcopy
+        from tools.java_server_lifecycle import execution_pin, status
+        from tools.tests.test_server_source import fixture
+        selected = fixture()[-1]
+        self.assertEqual(selected["deploymentGeneration"], "17")
+        class Catalog:
+            generation = "42"
+            observed_generation = "42"
+            def call(inner, *args):
+                if args == ("route", "get"):
+                    data = {"snapshot": {"tenant": selected["tenant"], "generation": inner.generation,
+                        "snapshotDigest": "sha256:" + "9" * 64, "services": [{"tenant": selected["tenant"],
+                        "routeId": selected["route"], "service": selected["service"], "revisions": [{
+                            "revisionId": selected["revision"], "releaseDigest": selected["componentDigest"], "weight": 10000}]}]}}
+                else:
+                    data = {"activationId": "actual-http-root", "metadata": {"revision": selected["revision"],
+                        "release": selected["componentDigest"], "route-generation": inner.observed_generation},
+                        "terminalState": "completed", "finalConsumption": {"cpuFuel": "100"}}
+                return {"category": "success", "outcomeKnown": True, "data": deepcopy(data)}
+        catalog = Catalog()
+        expected = execution_pin(catalog, selected)
+        self.assertEqual(expected["catalogGeneration"], "42")
+        self.assertEqual(expected["selected"]["deploymentGeneration"], "17")
+        catalog.generation = "61"  # Later catalog writes must not replace the accepted pin.
+        self.assertEqual(status(catalog, "actual-http-root", expected, terminal="completed")["metadata"]["route-generation"], "42")
+        for bad in ("17", "61"):
+            catalog.observed_generation = bad
+            with self.assertRaisesRegex(ValueError, "original-resolved-pin-changed"):
+                status(catalog, "actual-http-root", expected, terminal="completed")
+
     def test_unreviewed_revision_and_peer_are_rejected_before_project_write(self):
         with tempfile.TemporaryDirectory() as temporary:
             destination = Path(temporary) / "outside"

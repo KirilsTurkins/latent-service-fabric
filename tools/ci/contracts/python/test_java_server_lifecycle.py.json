@@ -1,13 +1,15 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Add ordinary source budget/SDK preservation and physical one-request peer lifecycle controls; no signed-node qualification claim; new module imports reviewed for configured HTTP provider and strict native tuple checks; retain exact original ordinary Server/Router bodies and restrict second revision to reviewed reply constants",
+  "reviewReason":"Add ordinary source budget/SDK preservation and physical one-request peer lifecycle controls; no signed-node qualification claim; new module imports reviewed for configured HTTP provider and strict native tuple checks; retain exact original ordinary Server/Router bodies and restrict second revision to reviewed reply constants; bind journal route-generation to independently observed current catalog, preserve per-deployment stamp separately",
   "module":"tools/tests/test_java_server_lifecycle.py",
-  "cases":["ServerLifecycleInputs.test_node_configuration_keeps_existing_limits_and_requires_exact_http_owner","ServerLifecycleInputs.test_original_helper_routes_and_every_body_case_are_retained_with_exact_revision_delta","ServerLifecycleInputs.test_outside_source_declares_http_explicitly_without_sdk_or_budget_changes","ServerLifecycleInputs.test_qualifier_rejects_development_tuple_and_changed_native_product_before_node","ServerLifecycleInputs.test_unreviewed_revision_and_peer_are_rejected_before_project_write","ServerLifecyclePeer.test_explicit_release_sends_one_reply_without_claiming_receipt","ServerLifecyclePeer.test_owned_stop_reaps_pending_listener_without_accepted_work","ServerLifecyclePeer.test_remote_disconnect_retires_original_peer_without_reply_or_retry"],
+  "cases":["ServerLifecycleInputs.test_journal_pin_uses_actual_catalog_generation_independently_of_deployment_stamp","ServerLifecycleInputs.test_node_configuration_keeps_existing_limits_and_requires_exact_http_owner","ServerLifecycleInputs.test_original_helper_routes_and_every_body_case_are_retained_with_exact_revision_delta","ServerLifecycleInputs.test_outside_source_declares_http_explicitly_without_sdk_or_budget_changes","ServerLifecycleInputs.test_qualifier_rejects_development_tuple_and_changed_native_product_before_node","ServerLifecycleInputs.test_unreviewed_revision_and_peer_are_rejected_before_project_write","ServerLifecyclePeer.test_explicit_release_sends_one_reply_without_claiming_receipt","ServerLifecyclePeer.test_owned_stop_reaps_pending_listener_without_accepted_work","ServerLifecyclePeer.test_remote_disconnect_retires_original_peer_without_reply_or_retry"],
   "guards":{
     "ServerLifecycleInputs.test_outside_source_declares_http_explicitly_without_sdk_or_budget_changes":
       "6d20c79f5e624199d75c301385648a49bdff933d123017a55901593a75b42ded",
     "ServerLifecycleInputs.test_original_helper_routes_and_every_body_case_are_retained_with_exact_revision_delta":
+      "6d20c79f5e624199d75c301385648a49bdff933d123017a55901593a75b42ded",
+    "ServerLifecycleInputs.test_journal_pin_uses_actual_catalog_generation_independently_of_deployment_stamp":
       "6d20c79f5e624199d75c301385648a49bdff933d123017a55901593a75b42ded",
     "ServerLifecycleInputs.test_unreviewed_revision_and_peer_are_rejected_before_project_write":
       "6d20c79f5e624199d75c301385648a49bdff933d123017a55901593a75b42ded",
