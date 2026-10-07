@@ -57,11 +57,13 @@ function walk(schema: DescMessage, bytes: Uint8Array, depth: number, work: Work)
       && (field.enum !== undefined || [ScalarType.INT32, ScalarType.UINT32, ScalarType.UINT64, ScalarType.BOOL].includes(field.scalar!))) {
       // Protobuf encoders pack repeated numeric fields. Charge each value and
       // share the same collection bound across packed and unpacked segments.
-      const packed = new BinaryReader(reader.bytes());
+      const packedBytes = reader.bytes();
+      const packed = new BinaryReader(packedBytes);
       let elements = count - 1;
       while (packed.pos < packed.len) {
         if (--work.fields < 0 || ++elements > maximum) throw new ShapeError();
-        scalar(field.scalar, field.enum !== undefined, packed, WireType.Varint);
+        charge(work, 48);
+        scalar(field.scalar, field.enum !== undefined, packed, WireType.Varint, work, packedBytes);
       }
       counts.set(number, elements);
     } else {
