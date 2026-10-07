@@ -8,6 +8,9 @@ use latent_node::LocalActivationManager;
 use std::time::Instant;
 use tokio::{sync::watch, task::JoinHandle};
 
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod tests;
+
 #[derive(Clone, Copy, Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TriggerStatus {
@@ -45,6 +48,22 @@ impl TriggerOwner {
             monitor,
             task: Some(tokio::spawn(run(poller, manager, ready, stopped))),
         }
+    }
+    /// Pause between bounded poll steps. The current accepted delivery and its
+    /// original socket, reservation and ACK future keep their actual owners.
+    pub fn pause(&self) -> TriggerStatus {
+        self.stop_accepting();
+        self.snapshot()
+    }
+    pub fn resume(&self) -> Result<TriggerStatus, PlatformError> {
+        if *self.stop.borrow() || self.is_finished() {
+            return Err(error(
+                PlatformErrorCode::Unavailable,
+                "transactional-input-owner-stopped",
+            ));
+        }
+        self.start_accepting();
+        Ok(self.snapshot())
     }
     pub fn start_accepting(&self) {
         self.accepting.send_replace(true);

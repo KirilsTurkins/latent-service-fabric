@@ -123,6 +123,38 @@ impl StandaloneNode {
         self.triggers.as_ref().map(triggers::TriggerOwner::snapshot)
     }
 
+    /// Trusted host control, separate from outgoing EffectRuntime pause.
+    /// Authenticated management must authorize the actual configured shared
+    /// incoming scope before calling this port; status never grants permission.
+    pub fn pause_transactional_triggers(&self) -> Result<TriggerStatus, PlatformError> {
+        self.triggers
+            .as_ref()
+            .map(triggers::TriggerOwner::pause)
+            .ok_or_else(|| {
+                error(
+                    PlatformErrorCode::NotFound,
+                    "transactional-input-owner-not-configured",
+                )
+            })
+    }
+    pub fn resume_transactional_triggers(&self) -> Result<TriggerStatus, PlatformError> {
+        if !self.is_running() {
+            return Err(error(
+                PlatformErrorCode::Unavailable,
+                "transactional-input-node-stopped",
+            ));
+        }
+        self.triggers
+            .as_ref()
+            .ok_or_else(|| {
+                error(
+                    PlatformErrorCode::NotFound,
+                    "transactional-input-owner-not-configured",
+                )
+            })?
+            .resume()
+    }
+
     /// The installed composition retains the single protected state owner.
     #[must_use]
     pub fn state_runtime(&self) -> Option<Arc<state::StateRuntime>> {

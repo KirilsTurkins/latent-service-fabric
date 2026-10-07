@@ -57,6 +57,79 @@ pub(in crate::standalone) struct ProviderRuntime {
 }
 
 impl ProviderRuntime {
+    #[cfg(test)]
+    pub(in crate::standalone) async fn install_control_test_poller(
+        &self,
+        directory: std::path::PathBuf,
+        configuration: latent_nats::triggers::TriggerConfig,
+    ) -> (
+        latent_nats::triggers::NatsTriggers,
+        latent_secrets::LocalSecretStore,
+    ) {
+        use latent_capabilities::broker::secrets::TlsCredentialScope;
+        use latent_secrets::{
+            SecretLimits, SecretPurpose, SecretSource, SecretSpec, SystemSecretClock,
+        };
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let store = latent_secrets::LocalSecretStore::open_before(
+            Arc::clone(&self.pools),
+            directory,
+            SecretLimits::default(),
+            Vec::new(),
+            Arc::new(SystemSecretClock),
+            deadline,
+        )
+        .unwrap()
+        .await
+        .unwrap();
+        let destination = configuration.endpoint.credential_destination();
+        store
+            .reload_before(
+                0,
+                vec![SecretSpec {
+                    tenant: TenantId("tests".into()),
+                    reference: "input-control".into(),
+                    source: SecretSource::File {
+                        name: "credential".into(),
+                    },
+                    purpose: SecretPurpose::TlsProviderCredential {
+                        provider_id: "input-control".into(),
+                        destination: destination.clone(),
+                    },
+                    media_type: "text/plain".into(),
+                    version: "1".into(),
+                    expires_at_unix_millis: None,
+                }],
+                deadline,
+            )
+            .unwrap()
+            .await
+            .unwrap();
+        let secret = store
+            .bind_tls_credential(
+                TlsCredentialScope {
+                    tenant: TenantId("tests".into()),
+                    provider_id: "input-control".into(),
+                    destination,
+                },
+                "input-control".into(),
+            )
+            .unwrap();
+        let poller = latent_nats::triggers::NatsTriggers::install(
+            Arc::clone(&self.pools),
+            "input-control",
+            1,
+            0,
+            configuration,
+            vec![latent_nats::NatsCredential {
+                username: None,
+                secret,
+            }],
+        )
+        .unwrap();
+        (poller, store)
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "bounded provider owners are installed and rolled back in one transaction"
