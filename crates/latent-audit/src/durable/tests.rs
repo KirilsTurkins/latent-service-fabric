@@ -2,6 +2,8 @@ use super::*;
 #[cfg(unix)]
 mod capability;
 #[cfg(unix)]
+mod effect_management;
+#[cfg(unix)]
 mod namespace;
 #[cfg(unix)]
 mod static_trigger;

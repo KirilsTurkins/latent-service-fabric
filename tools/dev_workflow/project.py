@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 from . import dependencies, paths, resource_inputs, snapshot
-from .common import TRANSACTION_HOST_ABI, MAX_DOCUMENT, decode, digest, encode, guest_host_abi, identifier, integer, members, require, sha
+from .common import HOST_ABI, TRANSACTION_HOST_ABI, MAX_DOCUMENT, decode, digest, encode, guest_host_abi, identifier, integer, members, require, sha
 
 LANGUAGES = {"rust": 544, "c": 545, "typescript": 546, "go": 547, "java": 548, "dotnet": 549}
 

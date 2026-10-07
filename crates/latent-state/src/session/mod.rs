@@ -6,6 +6,7 @@
 mod accounting;
 mod codec;
 pub(crate) mod offline;
+pub mod entities;
 mod validation;
 pub mod version;
 use crate::{

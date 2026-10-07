@@ -20,12 +20,11 @@ BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
           "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
           "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
-          "tools/stage_runtime_wit.py")
-RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
-           "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
+          "tools/stage_runtime_wit.py", "tools/transaction_guest_project.py",
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ("tools/rust_dependency_authoring.py", "tools/rust_capsule.lock") + guest_authoring_frontend.RECIPE
 RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
-           "tools/dev_workflow/common.py", "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
+           "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
            "tools/dev_workflow/resource_inputs.py",
            "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
            "tools/dev_workflow/windows.py")

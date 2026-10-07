@@ -213,11 +213,12 @@ fn request(
     c::MutateStateRequest {
         namespace: Some(fixture.target()),
         operation_id: "floor-release-original".into(),
-        mutation: c::StateMutationKind::ReleaseExpiredCommandFloor as i32,
+                original_effect_plan: None,        mutation: c::StateMutationKind::ReleaseExpiredCommandFloor as i32,
         record_id: Some(floor.hex()),
         expected_version: namespace.view.as_ref().unwrap().version.clone(),
         expected_policy_digest: namespace.policy_digest.clone().unwrap(),
         reason: "approved fixture retention cleanup".into(),
+        effect_plan: None,
     }
 }
 fn outcome(response: &OwnedPhase4Response) -> &c::StateOperationReceipt {
@@ -238,7 +239,7 @@ async fn get(fixture: &Fixture, caller: &str) -> Result<OwnedPhase4Response, Pla
             c::GetStateOperationReceiptRequest {
                 namespace: Some(fixture.target()),
                 operation_id: "floor-release-original".into(),
-            }
+                original_effect_plan: None,            }
             .into(),
         )
         .await
@@ -508,7 +509,7 @@ async fn another_namespace_current_permission_cannot_disclose_original_floor_ope
                 c::GetStateOperationReceiptRequest {
                     namespace: Some(other),
                     operation_id: "floor-release-original".into(),
-                }
+                original_effect_plan: None,                }
                 .into()
             )
             .await

@@ -58,6 +58,7 @@ impl Receipt {
             record_id: request.record_id.clone(),
             policy_digest: request.expected_policy_digest.clone(),
             disposition: c::StateOperationDisposition::Committed as i32,
+            effect: None,
         };
         let value = Self {
             request,
@@ -137,6 +138,7 @@ impl Receipt {
         contract::Response::from(c::MutateStateResponse {
             receipt: Some(self.public.clone()),
             audit_ack: None,
+            replayed: false,
         })
         .validate_for(&original)
         .map_err(|_| StoreError::Corrupt)?;

@@ -112,6 +112,7 @@ fn inspect_in(
         quota: Some(response::quota(read.record().quota)),
         generation: read.record().version.generation,
         policy_digest: Some(access.policy_digest.clone()),
+        namespace_policy_digest: super::authorization::policy_precondition(access),
     };
     Ok(Ok((read, value)))
 }
@@ -187,6 +188,7 @@ pub(super) async fn receipt(
                         c::GetStateOperationReceiptResponse {
                             receipt: Some(state_receipt.public),
                             namespace_receipt: None,
+                            audit_ack: None,
                         },
                     )));
                 }
@@ -203,6 +205,7 @@ pub(super) async fn receipt(
                     c::GetStateOperationReceiptResponse {
                         receipt: None,
                         namespace_receipt: Some(public),
+                        audit_ack: None,
                     },
                 )))
             })();
@@ -227,7 +230,9 @@ pub(super) async fn receipt(
             error,
         ))
     })??;
-    acknowledgement?;
+    let ack = acknowledgement?;
+    let mut public = public;
+    public.audit_ack = Some(ack);
     response::owned(
         inner,
         worker_permit,
@@ -294,7 +299,7 @@ pub(super) fn native_namespace(error: NamespaceError) -> StoreError {
         _ => StoreError::Corrupt,
     }
 }
-async fn read_ack(finish: audit::Finish) -> Result<(), PlatformError> {
+pub(super) async fn read_ack(finish: audit::Finish) -> Result<c::AuditAck, PlatformError> {
     let ack = audit::ack(finish).await;
     if ack.status == c::AuditAckStatus::OutcomeUnknown as i32 {
         return Err(error(
@@ -302,7 +307,7 @@ async fn read_ack(finish: audit::Finish) -> Result<(), PlatformError> {
             "namespace-audit-outcome-unknown",
         ));
     }
-    Ok(())
+    Ok(ack)
 }
 fn inventory(
     inner: &Inner,
