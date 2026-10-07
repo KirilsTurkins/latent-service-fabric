@@ -1,0 +1,70 @@
+{
+  "parser": "wasm-tools1.254.0",
+  "graph": {
+    "worlds": [
+      {
+        "name": "abi",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          },
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          }
+        },
+        "exports": {},
+        "package": 1
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "monotonic",
+        "types": {},
+        "functions": {
+          "now-nanos": {
+            "name": "now-nanos",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "wall",
+        "types": {},
+        "functions": {
+          "now-unix-millis": {
+            "name": "now-unix-millis",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 0
+      }
+    ],
+    "types": [],
+    "packages": [
+      {
+        "name": "latent:clock@0.1.0",
+        "interfaces": {
+          "monotonic": 0,
+          "wall": 1
+        },
+        "worlds": {}
+      },
+      {
+        "name": "lsf:clock-types@1.0.0",
+        "interfaces": {},
+        "worlds": {
+          "abi": 0
+        }
+      }
+    ]
+  }
+}

@@ -76,6 +76,24 @@ class TypeScriptClockSourceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'already-extended'):
             extend_selected_engine_source(result,native,source[2],source[3])
 
+    def test_actual_parser_preserves_full_public_and_requested_clock_contracts(self):
+        import json
+        from tools.typescript_guest.clock_engine import check_clock_world
+        graphs = [json.loads((FIXTURE/(name+'-graph.json')).read_bytes()) for name in ('original','selected','runtime','clock')]
+        self.assertTrue(all(value['parser']=='wasm-tools1.254.0' for value in graphs))
+        value = check_clock_world(*(value['graph'] for value in graphs),'tests:typescript-async/capsule@1.0.0')
+        self.assertTrue(value['fullPublicTypesAndMaintainedModuleTypesPreserved'])
+        self.assertFalse(value['clockAuthorityGranted'])
+        self.assertEqual(value['qualification'],'unknown')
+
+    def test_changed_clock_function_type_cannot_pass_as_same_interface_name(self):
+        import json
+        from tools.typescript_guest.clock_engine import check_clock_world
+        graphs = [json.loads((FIXTURE/(name+'-graph.json')).read_bytes())['graph'] for name in ('original','selected','runtime','clock')]
+        next(value for value in graphs[1]['interfaces'] if value['name']=='wall')['functions']['now-unix-millis']['result']='u32'
+        with self.assertRaisesRegex(ValueError,'full-contract-changed'):
+            check_clock_world(*graphs,'tests:typescript-async/capsule@1.0.0')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -77,3 +77,45 @@ def extend_selected_engine_source(base_source: dict[str, bytes], native_clock: d
         originalSynchronousCompilerSelectionChanged=False, clockAuthorityGranted=False,
         qualification='unknown', supportedAsyncProfile=False, signedLSFComponentQualified=False)
     return result, receipt
+
+
+def derive_clock_world(canonical_original: bytes, original_graph: dict, world: str,
+                       activation_wit: bytes, clock_wit: bytes) -> dict[str, bytes]:
+    """Declare scoped clock interfaces without changing the original contract."""
+    from tools.typescript_guest.runtime_profile import derive_world, public_graph
+    if hashlib.sha256(clock_wit).hexdigest() != CLOCK_WIT_SHA256:
+        raise ValueError('unreviewed-maintained-clock-interface')
+    original = public_graph(original_graph, world)
+    files = derive_world(canonical_original, original_graph, world, activation_wit)
+    root = files['world.wit']
+    missing = [name for name in CLOCK_INTERFACES if name not in original['imports']]
+    for name in missing:
+        root = replace_once(root, b'}\n', ('    import '+name+';\n}\n').encode(), 'explicit-clock-world-import')
+    files['world.wit'] = root
+    if missing:
+        files['deps/clock/package.wit'] = clock_wit
+    return files
+
+
+def check_clock_world(original: dict, selected: dict, activation: dict, clock: dict, world: str) -> dict:
+    """Use full maintained parser graphs for both requested runtime modules."""
+    from tools.typescript_guest.runtime_profile import public_graph, world_id, SELECTED_WORLD, ACTIVATION_INTERFACE
+    before = public_graph(original, world)
+    after = public_graph(selected, SELECTED_WORLD)
+    runtime_world = next(world_id(activation,item) for item in activation['worlds'])
+    clock_world = next(world_id(clock,item) for item in clock['worlds'])
+    runtime = public_graph(activation,runtime_world)['imports']
+    clocks = public_graph(clock,clock_world)['imports']
+    if set(runtime) != {ACTIVATION_INTERFACE} or set(clocks) != set(CLOCK_INTERFACES):
+        raise ValueError('exact-maintained-clock-and-activation-modules-required')
+    expected = dict(before['imports'])
+    for name, body in (runtime | clocks).items():
+        if name in expected and expected[name] != body:
+            raise ValueError('shadowed-maintained-clock-or-runtime-interface')
+        expected[name] = body
+    if after['exports'] != before['exports'] or after['imports'] != expected:
+        raise ValueError('clock-selected-world-full-contract-changed')
+    return {'profile':CLOCK_PROFILE,'originalWorld':world,'selectedWorld':SELECTED_WORLD,
+        'declaredClockInterfaces':list(CLOCK_INTERFACES),'fullPublicTypesAndMaintainedModuleTypesPreserved':True,
+        'clockAuthorityGranted':False,'qualification':'unknown','apiSupport':'not-evaluated',
+        'supportedAsyncProfile':False,'signedLSFComponentQualified':False}
