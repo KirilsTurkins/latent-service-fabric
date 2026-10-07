@@ -261,6 +261,21 @@ message ActivationDiagnostic {
   optional uint64 lift_multiplier = 10;
 }
 
+// Privileged host observation after actual captured-intent insertion. It is
+// descriptive only: neither persistence, abort, retry authority nor cleanup.
+message TransactionStagingWitness {
+  uint32 schema_version = 1;
+  uint64 activation_serial = 2;
+  string command_id = 3;
+  string attempt_id = 4;
+  string transaction_id = 5;
+  string publication_id = 6;
+  uint32 staged_mutations = 7;
+  uint32 captured_intents = 8;
+  uint64 state_write_bytes = 9;
+  uint64 observed_at_unix_millis = 10;
+}
+
 message ActivationTreeNode {
   string activation_id = 1;
   optional string parent_activation_id = 2;
@@ -281,6 +296,9 @@ message ActivationTreeNode {
   // Accepted target service, including failures before admission/preparation.
   string target_service = 13;
   uint64 received_at_unix_millis = 14;
+  // Absent until the original trusted host inserts a captured intent. Guest
+  // metadata cannot supply this field. Available only through tenant inspection.
+  optional TransactionStagingWitness transaction_staging = 15;
 }
 
 message InspectActivationTreeRequest {
