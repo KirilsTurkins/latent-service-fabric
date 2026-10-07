@@ -34,7 +34,11 @@ def main() -> int:
         command.add_argument("--profile", type=Path, required=True)
         command.add_argument("--mounts", type=Path, required=True)
     for name in ("remove", "rollback"):
-        commands.add_parser(name).add_argument("names", nargs="+")
+        command = commands.add_parser(name)
+        command.add_argument("names", nargs="+")
+        if name == "rollback":
+            command.add_argument("--current-deployment", action="store_true",
+                help="Rebind retained mounts after explicitly redeploying their original publication")
     commands.add_parser("recover")
     commands.add_parser("inspect")
     args = parser.parse_args()
@@ -70,7 +74,8 @@ def main() -> int:
             elif args.command == "remove":
                 result = routes.remove(args.names)
             elif args.command == "rollback":
-                result = routes.rollback(args.names)
+                result = (routes.rollback_current(args.names) if args.current_deployment
+                          else routes.rollback(args.names))
             elif args.command == "recover":
                 result = routes.recover()
             else:

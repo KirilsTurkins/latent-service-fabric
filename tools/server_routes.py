@@ -160,7 +160,7 @@ class Routes:
             self.mutate("delete", name, value["routes"][name]["manifest"], observed, value)
         return self.read()
 
-    def rollback(self, names: list[str]) -> dict:
+    def rollback(self, names: list[str], *, current_pin: dict | None = None) -> dict:
         value = self.read()
         require(value["pending"] is None and isinstance(names, list) and 0 < len(names) <= MAX_TRIGGERS
                 and len(set(names)) == len(names), "server-route-rollback-selection")
@@ -168,7 +168,28 @@ class Routes:
         for name in names:
             prior = value["routes"].get(name)
             require(isinstance(prior, dict) and prior.get("previous") is not None, "server-route-no-retained-rollback")
-            manifests.append(prior["previous"])
+            manifest = copy.deepcopy(prior["previous"])
+            if current_pin is not None:
+                selected = pin(current_pin)
+                target = manifest["spec"]["target"]
+                # The operator must first explicitly redeploy the retained
+                # publication. Refresh only its current revision/generation;
+                # another publication or service is never a rollback target.
+                require(selected["tenant"] == self.owner["tenant"]
+                        and selected["route"] == self.owner["route"]
+                        and target["route"] == self.owner["route"]
+                        and manifest["metadata"] == {"name": name, "tenant": self.owner["tenant"]}
+                        and selected["service"] == target["service"]
+                        and selected["publication"] == target["publication"]
+                        and target["contract"] == source.WEB and target["function"] == "handle",
+                        "server-route-rollback-publication-not-current")
+                target.update(revision=selected["revision"],
+                              deploymentGeneration=int(selected["deploymentGeneration"]))
+            manifests.append(manifest)
+        if current_pin is not None:
+            for manifest in manifests:
+                name = manifest["metadata"]["name"]
+                self.check_owned(name, self.observe(name), value)
         # Rollback is a new CAS mutation. The server independently denies a
         # revoked/missing old publication or revision; no replay grants authority.
         for manifest in manifests:
@@ -178,6 +199,22 @@ class Routes:
             self.check_owned(name, observed, current)
             self.mutate("apply", name, manifest, observed, current)
         return self.read()
+
+    def rollback_current(self, names: list[str]) -> dict:
+        """Rebind a retained mount after an explicit old-publication redeploy.
+
+        Catalog reads grant no authority. The existing trigger CAS still
+        validates the exact current publication/revision/generation at commit.
+        This command never deploys, publishes, grants or retries a mutation.
+        """
+        deployment = known(self.cli.call("deployment", "get", self.owner["route"]))["deployment"]
+        require(isinstance(deployment, dict), "server-route-deployment-missing")
+        manifest = deployment["manifest"]
+        require(manifest["metadata"]["tenant"] == self.owner["tenant"]
+                and manifest["metadata"]["name"] == self.owner["route"], "server-route-deployment-association")
+        selected = observed_pin(self.cli, self.owner["tenant"], self.owner["route"],
+                                manifest["spec"]["release"])
+        return self.rollback(names, current_pin=selected)
 
     def mutate(self, action: str, name: str, manifest: dict, observed: dict, value: dict) -> None:
         require(value["pending"] is None, "server-route-recover-original-operation-first")

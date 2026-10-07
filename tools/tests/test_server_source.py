@@ -358,6 +358,86 @@ class ServerRoutes(unittest.TestCase):
         self.assertTrue(all(row["reachability"] == "not-observed" for row in inspection["routes"]))
         self.assertTrue(all(row["published"] is not None for row in inspection["routes"]))
 
+    def test_rollback_rebinds_original_publication_to_explicit_current_generation(self):
+        self.routes.apply(self.manifests)
+        newer = copy.deepcopy(self.manifests)
+        for row in newer:
+            row["spec"]["target"].update(publication="publication:" + digest(b"second-publication"),
+                revision="revision-v1:" + digest(b"second-revision"), deploymentGeneration=22)
+        self.routes.apply(newer)
+        selected = fixture()[-1]
+        selected.update(revision="revision-v1:" + digest(b"explicit-old-publication-redeployment"),
+                        deploymentGeneration="24")
+        self.routes.rollback(["independent-get", "independent-head"], current_pin=selected)
+        for original in self.manifests:
+            actual = self.cli.triggers[original["metadata"]["name"]]["manifest"]
+            expected = copy.deepcopy(original)
+            expected["spec"]["target"].update(revision=selected["revision"], deploymentGeneration=24)
+            self.assertEqual(actual, expected)
+        self.assertIsNone(self.routes.read()["pending"])
+
+    def test_rollback_current_pin_mismatch_rejects_entire_selection_before_any_write(self):
+        self.routes.apply(self.manifests)
+        newer = copy.deepcopy(self.manifests)
+        for row in newer:
+            row["spec"]["target"]["publication"] = "publication:" + digest(b"second-publication")
+        self.routes.apply(newer)
+        before = copy.deepcopy(self.routes.read())
+        count = len(self.cli.mutations)
+        original = fixture()[-1]
+        for field, wrong in (("tenant", "foreign"), ("route", "other-route"),
+                             ("service", "other-service"),
+                             ("publication", "publication:" + digest(b"second-publication"))):
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(DevError, "rollback-publication-not-current"):
+                    self.routes.rollback(["independent-get", "independent-head"],
+                                         current_pin={**original, field: wrong})
+                self.assertEqual(self.routes.read(), before)
+                self.assertEqual(len(self.cli.mutations), count)
+
+    def test_rollback_current_reads_actual_catalog_before_rebinding_retained_mounts(self):
+        self.routes.apply(self.manifests)
+        newer = copy.deepcopy(self.manifests)
+        for row in newer:
+            row["spec"]["target"]["publication"] = "publication:" + digest(b"second-publication")
+        self.routes.apply(newer)
+        selected = fixture()[-1]
+        selected.update(revision="revision-v1:" + digest(b"explicit-current-revision"), deploymentGeneration="29")
+        original_call = self.cli.call
+        def actual_catalog(*arguments):
+            if arguments[:2] == ("deployment", "get"):
+                return self.cli.result({"deployment": {"generation": "29",
+                    "publication": {"tenant": selected["tenant"], "id": selected["publication"]},
+                    "manifest": {"metadata": {"name": "server", "tenant": "examples"},
+                        "spec": {"service": selected["service"], "publication": selected["publication"],
+                                 "release": selected["componentDigest"]}}}})
+            if arguments[:2] == ("route", "get"):
+                return self.cli.result({"snapshot": {"services": [{"tenant": "examples", "routeId": "server",
+                    "service": selected["service"], "revisions": [{"revisionId": selected["revision"],
+                    "releaseDigest": selected["componentDigest"], "weight": 10000}]}]}})
+            return original_call(*arguments)
+        self.cli.call = actual_catalog
+        self.routes.rollback_current(["independent-get", "independent-head"])
+        for original in self.manifests:
+            actual = self.cli.triggers[original["metadata"]["name"]]["manifest"]["spec"]["target"]
+            self.assertEqual(actual["publication"], selected["publication"])
+            self.assertEqual(actual["revision"], selected["revision"])
+            self.assertEqual(actual["deploymentGeneration"], 29)
+
+    def test_current_rollback_detects_later_contested_mount_before_first_mutation(self):
+        self.routes.apply(self.manifests)
+        newer = copy.deepcopy(self.manifests)
+        for row in newer:
+            row["spec"]["target"]["publication"] = "publication:" + digest(b"second-publication")
+        self.routes.apply(newer)
+        prior = copy.deepcopy(self.routes.read())
+        count = len(self.cli.mutations)
+        self.cli.triggers["independent-head"]["generation"] = "999"
+        with self.assertRaisesRegex(DevError, "concurrent-change-no-overwrite"):
+            self.routes.rollback(["independent-get", "independent-head"], current_pin=fixture()[-1])
+        self.assertEqual(self.routes.read(), prior)
+        self.assertEqual(len(self.cli.mutations), count)
+
 
 if __name__ == "__main__":
     unittest.main()

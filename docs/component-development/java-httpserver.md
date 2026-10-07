@@ -157,6 +157,17 @@ own receipt and audit observations. A passing native/source check or the additio
 of this lane is not evidence that the complete signed-node lane passed; use the
 actual `node-my-server*/conformance.json` artifacts from that exact CI source.
 
+The separate `tools/qualify_java_server_lifecycle.py` gate consumes two signed
+ordinary-source builds and a recorded ordinary-default native tuple. It checks
+explicit redeployment/rollback, an in-flight request's actual journal revision
+pin, a competing route CAS, fresh static state, real disconnect retirement,
+fuel exhaustion and a separately narrowed root deadline. Its fixture's outbound
+`HttpURLConnection` rendezvous has its own explicit typed HTTP provider and grant;
+it adds no ambient network authority. Run the unchanged helper's 52 ingress
+vectors separately. Source/socket tests and a prepared command do not establish
+that these lifecycle gates passed; retain the actual `lifecycle-conformance.json`
+and the enclosing node receipt, including failed attempts, before qualification.
+
 A literal `ServerSocket.accept` loop returns a byte connection, not a handler
 registration. This profile cannot identify an arbitrary protocol boundary or
 retain/escape an unmodified infinite accept loop without changing its observable
