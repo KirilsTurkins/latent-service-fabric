@@ -7,6 +7,7 @@
 #include "reaction_records.h"
 #include "native_timers.h"
 #include "native_objects.h"
+#include "native_imports.h"
 #include "extension-api.h"
 #include "js/Prefs.h"
 #include "jsfriendapi.h"
@@ -44,7 +45,9 @@ BrokerPromiseAccounting promise_accounting(promise_phase, accounting);
 PromiseRecords promises(promise_accounting);
 ReactionRecords reactions(promise_accounting, accounting);
 NativeObjectRecords native_objects;
-Timers timers(accounting, promise_accounting);
+ReadinessSet readiness(promise_accounting);
+Timers timers(accounting, promise_accounting, readiness);
+Imports imports(accounting, promise_accounting, readiness);
 std::unique_ptr<JobQueue> queue;
 
 bool before_promise_allocate(JSContext* cx, void** output) {
@@ -118,7 +121,7 @@ bool snapshot_jobs_empty(JSContext* cx) {
   if (!queue || !queue->empty() || queue->isDrainingStopped() ||
       api::Engine::has_pending_async_tasks() || timers.hasPending() || promises.hasPendingPromises() ||
       api::Engine::has_unhandled_promise_rejections() ||
-      native_objects.hasRetained() ||
+      native_objects.hasRetained() || imports.hasPending() || readiness.physical() ||
       reactions.hasPendingReactions() || !reactions.checkpoint(cx) ||
       !promises.checkpoint(cx)) {
     JS_ReportErrorASCII(cx, "activation-runtime-pending-work-during-snapshot-denied");
@@ -163,7 +166,8 @@ bool has_pending_promises() {
 bool cancel_job_dispatch(JSContext* cx) {
   const bool jobs_retired = queue && queue->cancelQueued(cx);
   const bool timers_retired = timers.cancel(cx);
-  return jobs_retired && timers_retired;
+  const bool imports_retired = imports.cancelAll(cx);
+  return jobs_retired && timers_retired && imports_retired && readiness.retire(cx);
 }
 
 bool start_timer(JSContext* cx, JS::HandleObject callback,
@@ -186,14 +190,21 @@ bool start_timeout_nanoseconds(JSContext* cx, JS::HandleObject callback,
   }
   return timers.startNanoseconds(cx, callback, arguments, nanos, nullptr, id);
 }
-bool has_pending_timer_work() { return timers.hasPending(); }
+bool has_pending_timer_work() { return timers.hasPending() || imports.hasPending(); }
 
 bool run_timer_turn(JSContext* cx) {
   if (!effects_allowed(cx) || !queue || !queue->empty() || queue->isDrainingStopped()) {
     JS_ReportErrorASCII(cx, "activation-runtime-timer-pump-with-eligible-jobs-denied");
     return false;
   }
-  return timers.turn(cx, true);
+  if (!imports.turn(cx) || !timers.turn(cx, false, false)) return false;
+  if (!queue->empty() || imports.hasReady() || timers.callbackDispatched()) return true;
+  if (readiness.hasJoined()) return readiness.dispatch(cx, true);
+  if (imports.hasPending() || timers.hasPendingRecords()) {
+    JS_ReportErrorASCII(cx, "activation-runtime-import-or-timer-without-readiness");
+    return false;
+  }
+  return readiness.retire(cx);
 }
 
 bool begin_root(JSContext* cx) { return accounting.beginRoot(cx); }
@@ -207,7 +218,7 @@ bool root_work_drained(JSContext* cx) {
     return false;
   }
   if (!queue || !queue->empty() || queue->isDrainingStopped() ||
-      timers.hasPending() || !accounting.rootSettled()) {
+      timers.hasPending() || imports.hasPending() || !accounting.rootSettled()) {
     JS_ReportErrorASCII(cx, "activation-runtime-root-or-accepted-jobs-still-live");
     return false;
   }
@@ -228,6 +239,27 @@ bool root_work_drained(JSContext* cx) {
   }
   return true;
 }
+
+bool reserve_import(JSContext* cx, uint32_t result_size, uint32_t parameter_size,
+                    JS::HandleValue captures, uint32_t* id, void** result, void** parameters) {
+  if (!effects_allowed(cx) || !acknowledge_promise_retirement(cx)) {
+    JS_ReportErrorASCII(cx, "activation-runtime-import-during-snapshot-denied");
+    return false;
+  }
+  if (!imports.reserve(cx, result_size, parameter_size, captures, *id)) return false;
+  *result = imports.resultBuffer(*id);
+  *parameters = imports.parameterBuffer(*id);
+  return true;
+}
+bool begin_import_lowering(JSContext* cx, uint32_t id) { return imports.beginLowering(cx, id); }
+bool start_import(JSContext* cx, uint32_t id, uint32_t status, JS::MutableHandleObject promise) {
+  return imports.started(cx, id, status, promise);
+}
+bool lift_import(JSContext* cx, uint32_t id, void** result) {
+  return imports.beginLifting(cx, id, *result);
+}
+bool finish_import(JSContext* cx, uint32_t id) { return imports.liftCompleted(cx, id); }
+bool cancel_import(JSContext* cx, uint32_t id) { return imports.cancel(cx, id); }
 
 bool acknowledge_result_retirement(JSContext* cx) {
   // The original post_call has released lowering buffers and the call's native

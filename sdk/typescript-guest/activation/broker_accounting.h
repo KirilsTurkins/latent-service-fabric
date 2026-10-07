@@ -121,6 +121,23 @@ public:
     return admitWithParent(cx, owners, &parent);
   }
 
+  bool parkAccepted(JSContext* cx, JobOwners& owners) {
+    if (!owners.task_live || !owners.queued_live || owners.compiler_snapshot)
+      return failure(cx, "import-park", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+    auto task = native(owners.task);
+    latent_runtime_activation_error_t error{};
+    if (!latent_runtime_activation_park(&task, &error)) return failure(cx, "import-park", error);
+    return settle(cx, owners.queued, owners.queued_live);
+  }
+
+  bool retireAcceptedImport(JSContext* cx, JobOwners& owners) {
+    // This import's lowering frame has already returned; retiring it does not
+    // enter or replace the independent reaction frame that performs lifting.
+    if (owners.compiler_snapshot)
+      return failure(cx, "import-retirement", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+    return release(cx, owners);
+  }
+
 private:
   bool admitWithParent(JSContext* cx, JobOwners& owners, const Token* inherited) {
     if (owners.task_live || owners.queued_live || owners.compiler_snapshot)

@@ -1,22 +1,11 @@
 #pragma once
-#include "native_job_queue.h"
+#include "native_ownership.h"
+#include "jsapi.h"
 #include "js/GCAPI.h"
+#include <memory>
+#include <new>
 
 namespace lsf::typescript::activation {
-
-struct NativeOwner {
-  Token token{};
-  bool live = false;
-};
-
-class PromiseAccounting {
-public:
-  virtual ~PromiseAccounting() = default;
-  // Compiler snapshot observations carry no tenant owner. Runtime admission
-  // uses the same configured native-owner ceiling and original ledger.
-  virtual bool beforeAllocate(JSContext*, NativeOwner&) = 0;
-  virtual bool acknowledgeRetirement(JSContext*, NativeOwner&) = 0;
-};
 
 class PromiseRecords final {
   struct Record {

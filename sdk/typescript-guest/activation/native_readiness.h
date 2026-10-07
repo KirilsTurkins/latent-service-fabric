@@ -2,7 +2,7 @@
 #pragma once
 #include "jobs.h"
 #include "jsapi.h"
-#include "promise_records.h"
+#include "native_ownership.h"
 
 namespace lsf::typescript::activation {
 class ReadinessSet;
@@ -154,6 +154,23 @@ public:
     else jobs_waitable_set_poll(set_, &event);
     return true;
   }
+  bool dispatch(JSContext* cx, bool idle) {
+    jobs_event_t event{};
+    if (!next(cx, idle, event)) return false;
+    if (event.event == JOBS_EVENT_NONE && !idle) return true;
+    if (event.event != JOBS_EVENT_SUBTASK) {
+      JS_ReportErrorASCII(cx, "activation-runtime-readiness-event-invalid");
+      return false;
+    }
+    // Every producer registers its stable record in this one set. Dispatch
+    // only advances the matching subtask; application code runs on a later
+    // ordinary event-loop turn, never inside a host import or this traversal.
+    for (auto* subtask = joined_; subtask; subtask = subtask->next_in_set_) {
+      if (subtask->matches(event)) return subtask->observed(cx, event);
+    }
+    JS_ReportErrorASCII(cx, "activation-runtime-readiness-unknown-subtask");
+    return false;
+  }
   bool retire(JSContext* cx) {
     if (joined_) {
       JS_ReportErrorASCII(cx, "activation-runtime-readiness-subtasks-still-owned");
@@ -166,6 +183,7 @@ public:
     return accounting_.acknowledgeRetirement(cx, native_) && !native_.live;
   }
   bool physical() const { return physical_ || native_.live; }
+  bool hasJoined() const { return joined_ != nullptr; }
 };
 
 inline bool Subtask::drop(JSContext* cx) {

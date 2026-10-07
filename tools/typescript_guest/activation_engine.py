@@ -27,7 +27,8 @@ NATIVE_SOURCES = (
     "native_job_queue.h", "broker_accounting.h", "native_engine.h", "native_engine.cpp",
     "promise_hooks.h", "promise_records.h", "promise_accounting.h",
     "reaction_records.h", "native_readiness.h", "native_timers.h", "native_timeout.h",
-    "native_retirement.h", "native_objects.h",
+    "native_retirement.h", "native_objects.h", "native_ownership.h",
+    "native_import_lifecycle.h", "native_imports.h", "broker_import_accounting.h",
 )
 DERIVATION_SOURCES = (
     "activation_engine.py", "promise_engine.py", "timer_engine.py", "abort_engine.py",

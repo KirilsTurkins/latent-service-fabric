@@ -33,13 +33,15 @@ class Timers final {
 
   BrokerAccounting& jobs_;
   PromiseAccounting& native_;
-  ReadinessSet readiness_;
+  ReadinessSet local_readiness_;
+  ReadinessSet& readiness_;
   std::unique_ptr<Record> records_;
   Record* tail_ = nullptr;
   NativeOwner retired_native_{};
   int32_t next_id_ = 1;
   bool exhausted_ids_ = false;
   bool stopped_ = false;
+  bool callback_dispatched_ = false;
 
   static bool fail(JSContext* cx, const char* operation,
                    latent_runtime_activation_error_t error) {
@@ -143,7 +145,9 @@ class Timers final {
 
 public:
   Timers(BrokerAccounting& jobs, PromiseAccounting& native)
-      : jobs_(jobs), native_(native), readiness_(native) {}
+      : jobs_(jobs), native_(native), local_readiness_(native), readiness_(local_readiness_) {}
+  Timers(BrokerAccounting& jobs, PromiseAccounting& native, ReadinessSet& shared)
+      : jobs_(jobs), native_(native), local_readiness_(native), readiness_(shared) {}
 
   bool start(JSContext* cx, JS::HandleObject callback,
              const JS::HandleValueArray& arguments, int32_t delay_ms,
@@ -226,14 +230,15 @@ public:
     return true; // stale/unknown IDs are the standard no-op
   }
 
-  bool hasPending() const {
-    return records_ || retired_native_.live || readiness_.physical();
-  }
+  bool hasPendingRecords() const { return records_ || retired_native_.live; }
+  bool hasPending() const { return hasPendingRecords() || readiness_.physical(); }
+  bool callbackDispatched() const { return callback_dispatched_; }
 
   // One macrotask per native event-loop turn. Caller runs the genuine Promise
   // queue checkpoint before invoking this pump again. idle only permits a
   // canonical wait when no eligible ECMAScript continuation is executing.
-  bool turn(JSContext* cx, bool idle) {
+  bool turn(JSContext* cx, bool idle, bool dispatch = true) {
+    callback_dispatched_ = false;
     if (stopped_) return fail(cx, "pump-stopped", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
     if (!collect(cx)) return false;
     for (auto* record = records_.get(); record; record = record->following.get()) {
@@ -244,20 +249,13 @@ public:
         if (record->outcome.is_err)
           return fail(cx, "next", record->outcome.val.err);
         const bool result = invoke(cx, *record);
+        callback_dispatched_ = true;
         if (!result) stopped_ = true;
         return result;
       }
     }
-    if (!records_) return readiness_.retire(cx);
-    jobs_event_t event{};
-    if (!readiness_.next(cx, idle, event)) return false;
-    if (event.event == JOBS_EVENT_NONE && !idle) return true;
-    if (event.event != JOBS_EVENT_SUBTASK)
-      return fail(cx, "unexpected-readiness", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
-    for (auto* record = records_.get(); record; record = record->following.get()) {
-      if (record->next.matches(event)) return record->next.observed(cx, event);
-    }
-    return fail(cx, "unknown-readiness", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+    if (!records_ && !readiness_.hasJoined()) return readiness_.retire(cx);
+    return !dispatch || readiness_.dispatch(cx, idle);
   }
 
   bool cancel(JSContext* cx) {
@@ -272,6 +270,7 @@ public:
     if (retired_native_.live &&
         (!native_.acknowledgeRetirement(cx, retired_native_) || retired_native_.live))
       return false;
+    if (&readiness_ != &local_readiness_) return true;
     return readiness_.retire(cx);
   }
 };

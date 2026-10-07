@@ -23,4 +23,11 @@ bool start_timeout_nanoseconds(JSContext* cx, JS::HandleObject callback,
                                uint64_t nanos, int32_t* id);
 bool has_pending_timer_work();
 bool run_timer_turn(JSContext* cx);
+bool reserve_import(JSContext* cx, uint32_t result_size, uint32_t parameter_size,
+                    JS::HandleValue captures, uint32_t* id, void** result, void** parameters);
+bool begin_import_lowering(JSContext* cx, uint32_t id);
+bool start_import(JSContext* cx, uint32_t id, uint32_t status, JS::MutableHandleObject promise);
+bool lift_import(JSContext* cx, uint32_t id, void** result);
+bool finish_import(JSContext* cx, uint32_t id);
+bool cancel_import(JSContext* cx, uint32_t id);
 } // namespace lsf::typescript::activation

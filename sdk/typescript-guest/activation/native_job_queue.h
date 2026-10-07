@@ -2,6 +2,7 @@
 // The original Promise intrinsics enqueue here; no Promise.then replacement is
 // involved. Accounting implementations must use the admitted activation broker.
 #pragma once
+#include "native_ownership.h"
 
 #include "js/CallAndConstruct.h"
 #include "js/Promise.h"
@@ -14,21 +15,6 @@
 #include <new>
 
 namespace lsf::typescript::activation {
-
-struct Token {
-  uint64_t generation;
-  uint64_t id;
-};
-
-struct JobOwners {
-  Token task{};
-  Token queued{};
-  bool task_live = false;
-  bool queued_live = false;
-  // Pure compiler initialization has no tenant/runtime tokens. It cannot
-  // survive the checked empty-queue boundary into an activation.
-  bool compiler_snapshot = false;
-};
 
 // These are mandatory native entry/exit hooks, not a second budget ledger.
 // admit reserves both records before queue allocation. The mutable live flags
