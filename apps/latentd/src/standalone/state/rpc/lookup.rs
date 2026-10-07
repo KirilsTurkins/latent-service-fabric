@@ -1,7 +1,12 @@
 //! Read-only typed recovery retains the actual installed source and result owner.
-use super::*;
+use super::{
+    contract, denied, projection, unavailable, Arc, BoxFuture, InstalledTransactionRpc,
+    InvocationLimits, LocalPrincipalPolicy, OwnedPhase4Response, Phase4Call, PlatformError,
+    PrincipalPolicy, RpcResultCodec,
+};
 use latent_activation::ActivationRequest;
 use latent_core::{IncomingDeadline, ResourceBudget};
+use latent_wire::invocation::InvocationTraceSource;
 use latent_wire::phase4::transaction as t;
 
 struct Selection {
@@ -88,7 +93,7 @@ impl InstalledTransactionRpc {
         Ok(Box::pin(async move {
             let (receipt, _) = retained.await;
             projection::lookup_response(
-                receipt,
+                &receipt,
                 &selection.command,
                 selection.attempt.as_deref(),
                 selection.commit.as_deref(),
@@ -152,7 +157,8 @@ fn request(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{request, InvocationLimits, ResourceBudget};
+    use latent_wire::invocation::{InvocationTraceSource, SystemInvocationTraceSource};
     #[test]
     fn result_lookup_request_keeps_arrival_deadline_and_has_no_execution_input_or_write_budget() {
         let sample = latent_core::ClockSample::new(10_000, std::time::Instant::now());

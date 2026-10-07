@@ -270,7 +270,7 @@ pub(super) fn inspection(
 }
 
 pub(super) fn lookup_response(
-    receipt: ActivationReceipt,
+    receipt: &ActivationReceipt,
     command: &t::CommandSelector,
     attempt: Option<&str>,
     commit: Option<&str>,
@@ -296,7 +296,7 @@ pub(super) fn lookup_response(
         .as_ref()
         .ok_or_else(unavailable)?
         .clone();
-    let inspected = inspection(record, disposition.observation(), command, &receipt, limits)?;
+    let inspected = inspection(record, disposition.observation(), command, receipt, limits)?;
     let response = if let Some(commit) = commit {
         if inspected
             .commit
