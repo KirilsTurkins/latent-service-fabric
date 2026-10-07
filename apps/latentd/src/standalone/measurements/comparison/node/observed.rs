@@ -45,10 +45,7 @@ impl ObservedStart {
             "error":result.as_ref().err().map(observation::error),
             "allocation_frame":self.profile_reopen.then(|| json!({"case":"reopen","poll_calls":polls.to_string(),"drop_calls":"0","catalog_moved_to_node":result.is_ok()}))});
         let catalogs = result.map_err(platform)?;
-        let node = {
-            let finishing = std::pin::pin!(self.finish(settings, catalogs, finished - started));
-            finishing.await?
-        };
+        let node = Box::pin(self.finish(settings, catalogs, finished - started)).await?;
         let mut opening = opening;
         opening["verification_after"] = observation::verification(&node)?;
         Ok((node, opening))

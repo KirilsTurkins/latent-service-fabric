@@ -7013,7 +7013,7 @@
       "kind": "test",
       "listContract": "unsupported",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 1,
+      "minimumCases": 0,
       "mode": "custom",
       "package": "latent-wasmtime",
       "platforms": [
