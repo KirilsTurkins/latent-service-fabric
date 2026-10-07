@@ -53,9 +53,10 @@ impl IntentPayloadConstraint {
     pub(super) fn require_binding(&self, binding: &PolicyCallBinding) -> Result<(), PlatformError> {
         match &self.0 {
             Constraint::ExactDigest(value)
-                if value.len() != 71
-                    || !value.starts_with("sha256:")
-                    || !value[7..]
+                // Payload identity uses the maintained effect digest format;
+                // prefixed artifact/provider digests are a different contract.
+                if value.len() != 64
+                    || !value
                         .bytes()
                         .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')) =>
             {

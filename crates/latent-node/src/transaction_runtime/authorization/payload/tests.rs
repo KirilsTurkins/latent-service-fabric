@@ -151,11 +151,17 @@ async fn original_http_payload_filter_retains_exact_digest_and_never_accepts_an_
         assert!(constraint.check(&captured, &value).is_err());
     }
     assert!(constraint.check(&captured, &aggregate(1)).is_err());
-    assert!(
-        IntentPayloadConstraint::exact_digest("sha256:unknown".into())
+    for malformed in [
+        "sha256:unknown".into(),
+        format!("sha256:{}", "a".repeat(64)),
+        "A".repeat(64),
+        "a".repeat(63),
+        "a".repeat(65),
+    ] {
+        assert!(IntentPayloadConstraint::exact_digest(malformed)
             .require_binding(&captured)
-            .is_err()
-    );
+            .is_err());
+    }
     drop((constraint, captured, registration, broker));
     fixture.shutdown().await;
 }
