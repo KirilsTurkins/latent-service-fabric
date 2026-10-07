@@ -127,3 +127,5 @@ async fn deferred_authority_cannot_select_another_provider_or_refund_live_rotate
     second_context.retire().unwrap();
     clean(&setup.pools).await;
 }
+
+mod admission;

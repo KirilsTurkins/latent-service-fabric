@@ -1,4 +1,5 @@
 //! Wait only for bookkeeping access, before any socket or dial is allocated.
+use super::super::DeferredRequest;
 use super::{
     Arc, ConnectionReservation, PlatformError, PoolCall, PooledConnection, ProviderClient,
 };
@@ -73,6 +74,53 @@ impl<T: Send + 'static> ProviderClient<T> {
                 Err(ClientAccessError::Failed(error)) => return Err(error),
                 Err(ClientAccessError::Contended) => {
                     call.io
+                        .wait_for(tokio::time::sleep(Duration::from_millis(1)))
+                        .await?;
+                }
+            }
+        }
+    }
+}
+
+impl<T: Send + 'static> ProviderClient<T> {
+    /// Wait only for unacquired idle bookkeeping under the original request.
+    /// Fresh reconciliation never borrows an idle guest connection.
+    pub async fn checkout_deferred_wait(
+        self: &Arc<Self>,
+        request: &DeferredRequest,
+    ) -> Result<Option<PooledConnection<T>>, PlatformError> {
+        loop {
+            let (maintenance, ingress) = request.connection_owners(&self.core)?;
+            if maintenance.is_some() {
+                return Ok(None);
+            }
+            match self.checkout_owned(None, ingress) {
+                Ok(value) => return Ok(value),
+                Err(ClientAccessError::Failed(error)) => return Err(error),
+                Err(ClientAccessError::Contended) => {
+                    request
+                        .wait_for(tokio::time::sleep(Duration::from_millis(1)))
+                        .await?;
+                }
+            }
+        }
+    }
+
+    /// Reuse the accepted request's immutable deadline while bookkeeping is
+    /// held by maintenance/status inspection. Reserve once after access; actual
+    /// capacity, active dial, backoff and poison retain their immediate refusals.
+    /// This never repeats any protocol operation or allocates another request.
+    pub async fn reserve_deferred_connection_wait(
+        self: &Arc<Self>,
+        request: &DeferredRequest,
+    ) -> Result<ConnectionReservation<T>, PlatformError> {
+        loop {
+            let (maintenance, ingress) = request.connection_owners(&self.core)?;
+            match self.reserve_owned(None, maintenance, ingress) {
+                Ok(value) => return Ok(value),
+                Err(ClientAccessError::Failed(error)) => return Err(error),
+                Err(ClientAccessError::Contended) => {
+                    request
                         .wait_for(tokio::time::sleep(Duration::from_millis(1)))
                         .await?;
                 }
