@@ -1,0 +1,346 @@
+{
+  "worlds": [
+    {
+      "name": "root",
+      "imports": {
+        "interface-0": {
+          "interface": {
+            "id": 0
+          }
+        },
+        "interface-1": {
+          "interface": {
+            "id": 1
+          }
+        },
+        "interface-2": {
+          "interface": {
+            "id": 2
+          }
+        }
+      },
+      "exports": {
+        "interface-3": {
+          "interface": {
+            "id": 3
+          }
+        }
+      },
+      "package": 2
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "monotonic",
+      "types": {},
+      "functions": {
+        "now-nanos": {
+          "name": "now-nanos",
+          "kind": "freestanding",
+          "params": [],
+          "result": "u64"
+        }
+      },
+      "package": 0
+    },
+    {
+      "name": "wall",
+      "types": {},
+      "functions": {
+        "now-unix-millis": {
+          "name": "now-unix-millis",
+          "kind": "freestanding",
+          "params": [],
+          "result": "u64"
+        }
+      },
+      "package": 0
+    },
+    {
+      "name": "types",
+      "types": {
+        "sequence-number": 0,
+        "wide": 1,
+        "nested": 4
+      },
+      "functions": {},
+      "package": 1
+    },
+    {
+      "name": "api",
+      "types": {
+        "wide": 5,
+        "nested": 6
+      },
+      "functions": {
+        "status": {
+          "name": "status",
+          "kind": "freestanding",
+          "params": [],
+          "result": 7
+        },
+        "echo": {
+          "name": "echo",
+          "kind": "freestanding",
+          "params": [
+            {
+              "name": "value",
+              "type": 5
+            }
+          ],
+          "result": 5
+        },
+        "echo-nested": {
+          "name": "echo-nested",
+          "kind": "freestanding",
+          "params": [
+            {
+              "name": "value",
+              "type": 6
+            }
+          ],
+          "result": 6
+        },
+        "text": {
+          "name": "text",
+          "kind": "freestanding",
+          "params": [
+            {
+              "name": "value",
+              "type": "string"
+            }
+          ],
+          "result": "string"
+        },
+        "items": {
+          "name": "items",
+          "kind": "freestanding",
+          "params": [
+            {
+              "name": "value",
+              "type": 8
+            }
+          ],
+          "result": 8
+        },
+        "fail": {
+          "name": "fail",
+          "kind": "freestanding",
+          "params": [],
+          "result": 9
+        },
+        "throw-error": {
+          "name": "throw-error",
+          "kind": "freestanding",
+          "params": [],
+          "result": "string"
+        },
+        "spin": {
+          "name": "spin",
+          "kind": "freestanding",
+          "params": [],
+          "result": "u32"
+        },
+        "private-admin": {
+          "name": "private-admin",
+          "kind": "freestanding",
+          "params": [],
+          "result": "string"
+        },
+        "publishing": {
+          "name": "publishing",
+          "kind": "freestanding",
+          "params": [],
+          "result": "string"
+        },
+        "provider-event": {
+          "name": "provider-event",
+          "kind": "freestanding",
+          "params": [],
+          "result": "string"
+        }
+      },
+      "package": 1
+    }
+  ],
+  "types": [
+    {
+      "name": "sequence-number",
+      "kind": {
+        "type": "u64"
+      },
+      "owner": {
+        "interface": 2
+      }
+    },
+    {
+      "name": "wide",
+      "kind": {
+        "record": {
+          "fields": [
+            {
+              "name": "a",
+              "type": "string"
+            },
+            {
+              "name": "b",
+              "type": "string"
+            },
+            {
+              "name": "c",
+              "type": "string"
+            },
+            {
+              "name": "d",
+              "type": "string"
+            },
+            {
+              "name": "e",
+              "type": "string"
+            },
+            {
+              "name": "f",
+              "type": "string"
+            },
+            {
+              "name": "g",
+              "type": "string"
+            },
+            {
+              "name": "h",
+              "type": "string"
+            },
+            {
+              "name": "i",
+              "type": "string"
+            },
+            {
+              "name": "j",
+              "type": "string"
+            },
+            {
+              "name": "k",
+              "type": "string"
+            },
+            {
+              "name": "l",
+              "type": "string"
+            },
+            {
+              "name": "sequence",
+              "type": 0
+            }
+          ]
+        }
+      },
+      "owner": {
+        "interface": 2
+      }
+    },
+    {
+      "name": null,
+      "kind": {
+        "option": 1
+      },
+      "owner": null
+    },
+    {
+      "name": null,
+      "kind": {
+        "list": "string"
+      },
+      "owner": null
+    },
+    {
+      "name": "nested",
+      "kind": {
+        "record": {
+          "fields": [
+            {
+              "name": "value",
+              "type": 1
+            },
+            {
+              "name": "optional",
+              "type": 2
+            },
+            {
+              "name": "labels",
+              "type": 3
+            }
+          ]
+        }
+      },
+      "owner": {
+        "interface": 2
+      }
+    },
+    {
+      "name": "wide",
+      "kind": {
+        "type": 1
+      },
+      "owner": {
+        "interface": 3
+      }
+    },
+    {
+      "name": "nested",
+      "kind": {
+        "type": 4
+      },
+      "owner": {
+        "interface": 3
+      }
+    },
+    {
+      "name": null,
+      "kind": {
+        "list": 5
+      },
+      "owner": null
+    },
+    {
+      "name": null,
+      "kind": {
+        "list": "string"
+      },
+      "owner": null
+    },
+    {
+      "name": null,
+      "kind": {
+        "result": {
+          "ok": "string",
+          "err": "string"
+        }
+      },
+      "owner": null
+    }
+  ],
+  "packages": [
+    {
+      "name": "latent:clock@0.1.0",
+      "interfaces": {
+        "monotonic": 0,
+        "wall": 1
+      },
+      "worlds": {}
+    },
+    {
+      "name": "examples:java-http-domain@1.0.0",
+      "interfaces": {
+        "types": 2,
+        "api": 3
+      },
+      "worlds": {}
+    },
+    {
+      "name": "root:component",
+      "interfaces": {},
+      "worlds": {
+        "root": 0
+      }
+    }
+  ]
+}

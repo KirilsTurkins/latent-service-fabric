@@ -183,7 +183,7 @@ class JavaResourceRuntime(unittest.TestCase):
             # The current binding producer also emits the C bridge consumed by
             # the canonical SDK import detector. This fixture's empty world
             # has no imported state/intent resources, so neither facade applies.
-            (destination / 'probe.c').write_bytes(b'/* controlled empty-world bridge */\n')
+            (destination / 'probe.c').write_bytes(b'/* controlled empty-world C binding boundary */\n')
             return {'source': 'controlled-binding'}
 
         class CompileBoundary(Exception):

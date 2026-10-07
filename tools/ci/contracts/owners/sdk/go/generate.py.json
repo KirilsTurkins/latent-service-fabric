@@ -1,1 +1,8 @@
-{"kind":"owner","path":"sdk/go/generate.py","reviewBoundary":"committed-fingerprint","reviewReason":"Generate all eight authoritative services with private state owner to prevent control and transaction import cycles while retaining stateless owners Add release.proto for the bounded tenth read-only NodeService operation; retain every prior generated source and native transport obligation Incoming reviewed obligation: Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced. Exact merged owner bytes reviewed.","schemaVersion":"latent.ci.contracts.v1","sha256":"41b5edeeaf646f262a7c4fcc9e9543d8370254dec15859fb76a7f75e191ff94c"}
+{
+  "kind": "owner",
+  "path": "sdk/go/generate.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve every transaction SDK source, exact protobuf generation, transport case and current canonical signing prerequisite after reviewed development integration.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "41b5edeeaf646f262a7c4fcc9e9543d8370254dec15859fb76a7f75e191ff94c"
+}
