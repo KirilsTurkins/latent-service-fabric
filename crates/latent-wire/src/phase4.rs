@@ -10,7 +10,8 @@ mod public_error;
 mod state_management;
 pub use state_management::{
     StateManagementAdmission, StateManagementBackend, StateManagementBinding,
-    StateManagementReservation, StateManagementServices,
+    StateManagementRecoveryAdmission, StateManagementRecoveryBinding, StateManagementReservation,
+    StateManagementServices,
 };
 #[cfg(test)]
 mod tests;
@@ -155,6 +156,24 @@ impl Phase4ServiceAdapter {
             .min(contract::MAX_RESPONSE_BYTES);
         Phase4ResponseService::new(
             t::transaction_service_server::TransactionServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
+    }
+    #[must_use]
+    pub fn dispatcher_server(
+        self,
+    ) -> Phase4ResponseService<c::dispatcher_service_server::DispatcherServiceServer<Self>> {
+        let input = self
+            .limits
+            .max_request_bytes
+            .min(contract::MAX_REQUEST_BYTES);
+        let output = self
+            .limits
+            .max_response_bytes
+            .min(contract::MAX_RESPONSE_BYTES);
+        Phase4ResponseService::new(
+            c::dispatcher_service_server::DispatcherServiceServer::new(self)
                 .max_decoding_message_size(input)
                 .max_encoding_message_size(output),
         )

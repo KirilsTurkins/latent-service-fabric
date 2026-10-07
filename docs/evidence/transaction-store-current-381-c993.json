@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "latent.storage.current-finite-observation.v1",
+  "issue": 381,
+  "sourceRevision": "c99365fce5309f5dc215ff1b1d2dcba37e94478d",
+  "sourceTree": "abc1721fc071e1611d8101080aab9ceed18cb7b1",
+  "sources": [
+    {
+      "path": "Cargo.toml",
+      "sha256": "a3935d9913d707e35d4fdabcec4aa10b8be75bc49d2278f5597bfd5629d8c685",
+      "bytes": 3634
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "088a6e0a8592d652da6afb4f33f13bf976e171ff976c139352e88a89c1521352",
+      "bytes": 110523
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "sha256": "7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc",
+      "bytes": 140
+    },
+    {
+      "path": "crates/latent-state/Cargo.toml",
+      "sha256": "0e8b7a2819ba6864c30afb4391576917569ec942d12ec38f6487df0ee32a8d10",
+      "bytes": 672
+    },
+    {
+      "path": "crates/latent-state/src/embedded.rs",
+      "sha256": "1c641c05bbd64b01b46a6e08af7034538a3cebfb77caee145947c65e1a5f3c0e",
+      "bytes": 19458
+    },
+    {
+      "path": "crates/latent-state/src/embedded/format.rs",
+      "sha256": "9f72288a945328be6efb0d4ce3fa266cf55f8109e09cfe3f351d9e42c89ff024",
+      "bytes": 5227
+    },
+    {
+      "path": "crates/latent-state/src/embedded/tests.rs",
+      "sha256": "1efc04f830d9268f2e04cc385e863be0f36cb92b36bf999041a537e9379f7642",
+      "bytes": 18912
+    },
+    {
+      "path": "crates/latent-state/src/embedded/tests/measurement.rs",
+      "sha256": "b4e8aa3e2c3a29e42ab191ca465f6266ac315b6555413cd45e0c886f314b88c5",
+      "bytes": 3266
+    },
+    {
+      "path": "crates/latent-state/src/embedded/tests/writers.rs",
+      "sha256": "d729b0c60a6a0ee680fe948fed304f29ef86637464f851249325cb9531a8d3be",
+      "bytes": 2195
+    },
+    {
+      "path": "crates/latent-state/src/embedded/tests/format.rs",
+      "sha256": "e35f6b1d607f9c90a0b857d9f0831cc55de8cb283b1d3d04c178e6b374f53085",
+      "bytes": 12928
+    }
+  ],
+  "environment": {
+    "at": "2026-10-06T21:31:41.762834+00:00",
+    "head": "c99365fce5309f5dc215ff1b1d2dcba37e94478d",
+    "tree": "abc1721fc071e1611d8101080aab9ceed18cb7b1",
+    "sourceArchiveDigest": "sha256:d46833ba7598ab2fc880cde8d713f75e0b6f76d6b4f7c3dec967284180ffd2b6",
+    "sourceArchiveBytes": 231418,
+    "sourceArchivePaths": [
+      "Cargo.toml",
+      "Cargo.lock",
+      "rust-toolchain.toml",
+      "crates/latent-state",
+      "crates/latent-core",
+      "crates/latent-protected-files",
+      "crates/latent-test-process",
+      "crates/latent-testkit"
+    ],
+    "imageDigest": "sha256:43674fadce05913d6a84616329336975e209d7cf0cd7024ba216be3fe7bb5d86",
+    "filesystemProfile": "local-ext4",
+    "filesystemObserved": "ext2/ext3",
+    "fixtureTemporaryRoot": "/var/lib/docker/volumes/latent-p4-root-native-20261004-v1/_data/tmp",
+    "fixtureDevice": 2096,
+    "mount": {
+      "mountpoint": "/var/lib/docker/volumes/latent-p4-root-native-20261004-v1/_data",
+      "device": "8:48",
+      "root": "/data/docker/volumes/latent-p4-root-native-20261004-v1/_data",
+      "options": "rw,relatime",
+      "filesystem": "ext4",
+      "source": "/dev/sdd",
+      "superOptions": "rw"
+    },
+    "cpuModel": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz",
+    "visibleCpuCount": 16,
+    "containerCpuLimit": 2,
+    "containerMemoryLimitBytes": 8589934592,
+    "kernel": {
+      "system": "Linux",
+      "node": "1ea48eb95ab9",
+      "release": "6.18.33.2-microsoft-standard-WSL2",
+      "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026",
+      "machine": "x86_64",
+      "processor": ""
+    },
+    "sourceCleanBefore": true,
+    "sourceCleanAfter": true,
+    "headUnchanged": true,
+    "sharedHostLoadUncertainty": "Other milestone sessions share this Windows/WSL Docker host; observed finite timing is not a throughput target.",
+    "powerLossQualified": false,
+    "networkFilesystemQualified": false,
+    "completeCI": false,
+    "originalProcessesReaped": true,
+    "rustVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "nativeReceiptPassed": true
+  },
+  "qualification": {
+    "backupBytes": 40960,
+    "cacheBytes": 8388608,
+    "closedBackupMicros": 2715,
+    "compactionMicros": 21825,
+    "conflictMicros": 36,
+    "durability": "immediate",
+    "engine": "redb",
+    "engineVersion": "4.3.0",
+    "initializeMicros": 10840,
+    "networkFilesystemQualified": false,
+    "powerLossQualified": false,
+    "processCrashTests": 2,
+    "productionStoreOwnerQualified": false,
+    "reopenMicros": 1493,
+    "resources": {
+      "openFileDescriptors": "7",
+      "processId": 75121,
+      "residentMemoryBytes": "10125312",
+      "socketCount": "2",
+      "threadCount": "2"
+    },
+    "schemaVersion": "latent.storage.qualification.v1",
+    "sequentialCommits": 32,
+    "sequentialMicros": 56634,
+    "snapshotAgeBoundMillis": 20,
+    "writerWithReadViewMicros": 1167
+  },
+  "concurrentWriters": {
+    "conflicts": 1,
+    "elapsedMicros": 8746,
+    "independentCommits": 2,
+    "winningCommits": 1,
+    "workers": 2
+  },
+  "command": [
+    "cargo",
+    "+1.97.1",
+    "test",
+    "-p",
+    "latent-state",
+    "--lib",
+    "embedded::tests",
+    "--locked",
+    "--offline",
+    "--",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "caseSummary": "test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 103 filtered out; finished in 1.07s",
+  "rawLogSha256": "6c7ca20c01679d55a6238c61c72b3759f0766711d242fca885c94093454b474a",
+  "nativeReceiptSha256": "776cd003fa20ded32839e460c91ded076d660ec6ff5d00aa14be5711c0632873",
+  "environmentSha256": "b69e2b24f091b4d3b80554602c98f71ba8380d1d57fe1eb81b2a2905c42633a2",
+  "originalProcessesReaped": true,
+  "powerLossQualified": false,
+  "networkFilesystemQualified": false,
+  "completeNodeQualified": false,
+  "nativePackageQualified": false,
+  "historicalEvidenceUnmodified": true
+}

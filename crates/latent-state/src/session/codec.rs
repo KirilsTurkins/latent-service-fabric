@@ -143,16 +143,20 @@ pub(super) fn version(
     scope: &StateScope,
     key: &[u8],
     generation: u64,
+    epochs: crate::namespace::history::HistoryEpochs,
 ) -> Result<Vec<u8>, StateError> {
+    epochs.validate().map_err(|_| StateError::Corrupt)?;
     let mut hash = Sha256::new();
-    hash.update(b"lsf-state-version-v1\0");
+    hash.update(b"lsf-state-version-v2\0");
     hash.update(key_prefix(scope)?);
     hash.update((key.len() as u64).to_le_bytes());
     hash.update(key);
-    let mut token = b"SV\x01".to_vec();
+    let mut token = b"SV\x02".to_vec();
     token.extend_from_slice(&hash.finalize());
     token.extend_from_slice(&scope.incarnation.to_le_bytes());
     token.extend_from_slice(&generation.to_le_bytes());
+    token.extend_from_slice(&epochs.schema.to_le_bytes());
+    token.extend_from_slice(&epochs.recovery.to_le_bytes());
     Ok(token)
 }
 

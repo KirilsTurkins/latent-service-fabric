@@ -85,7 +85,6 @@ impl ProtectedStoreOwner {
         digest.update(self.limits.maximum_view_age.as_nanos().to_le_bytes());
         ("protected-redb-immediate-ext4-v1", digest.finalize().into())
     }
-
     /// Compares sealed physical ownership, including clones of this same owner.
     /// Paths, epochs and caller descriptions cannot establish this identity.
     #[must_use]

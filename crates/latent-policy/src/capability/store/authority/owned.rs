@@ -44,6 +44,40 @@ impl OwnedPolicyDecision {
         self.require_audit
     }
 
+    /// Descriptive digest of the original configured rows and exact consumer
+    /// publication. Operation, payload and remaining budget are excluded so a
+    /// current inspection and approved action share a configuration precondition.
+    /// This does not recheck currentness, acquire a lease, or supply a grant.
+    #[must_use]
+    pub fn configuration_digest(&self) -> [u8; 32] {
+        let mut hash = blake3::Hasher::new();
+        hash.update(b"lsf-retained-policy-configuration-v1\0");
+        let mut field = |bytes: &[u8]| {
+            hash.update(&(bytes.len() as u64).to_be_bytes());
+            hash.update(bytes);
+        };
+        for text in [
+            &self.snapshot.tenant.0,
+            &self.input.service,
+            &self.input.publication,
+            &self.input.capability,
+        ] {
+            field(text.as_bytes());
+        }
+        let mut rows: Vec<_> = self.snapshot.policy_revisions().collect();
+        rows.sort_by(|left, right| left.id.cmp(right.id));
+        field(&(rows.len() as u64).to_be_bytes());
+        for row in rows
+            .into_iter()
+            .chain(std::iter::once(self.snapshot.binding_revision()))
+        {
+            field(row.id.as_bytes());
+            field(&row.revision.to_be_bytes());
+            field(row.digest.as_bytes());
+        }
+        *hash.finalize().as_bytes()
+    }
+
     fn borrowed(&self) -> SealedPolicyDecision<'_> {
         SealedPolicyDecision {
             snapshot: &self.snapshot,

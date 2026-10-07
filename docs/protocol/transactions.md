@@ -197,7 +197,7 @@ state/query/intent operations for #389/#718, and all external transactional RPCs
 plus authenticated management inspection/writes for #401. Client generation
 cannot qualify guest lowering; guest compilation cannot qualify a client transport.
 [The generated requirements](../../sdk/profile/transaction-requirements-v1.json)
-enumerate all 13 guest operations and 12 external/management RPCs. Guest profile
+enumerate all 13 guest operations and 16 external/management RPCs. Guest profile
 `latent.guest.transaction.v1` and client profile `latent.client.transaction.v1`
 both consume the single `lsf-transaction-v1` wire contract and retain independent
 execution evidence; neither becomes qualified by generating the other.

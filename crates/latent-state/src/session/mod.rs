@@ -4,10 +4,13 @@
 //! Scope descriptors and cursors never grant policy or commit authority.
 
 mod codec;
+pub mod entities;
 mod validation;
+pub mod version;
 use crate::{
     embedded::{AtomicBatch, ExpectedRow, Family, ReadView, RowKey, RowMutation, StoreError},
     namespace::{
+        history::{history_key, HistoryStatus, NamespaceHistory},
         namespace_record_key, NamespacePins, NamespaceRecord, NamespaceStatus, NamespaceVersion,
     },
 };
@@ -181,6 +184,8 @@ pub struct StateSession {
     scope: StateScope,
     namespace: NamespaceRecord,
     namespace_bytes: Vec<u8>,
+    history: NamespaceHistory,
+    history_bytes: Option<Vec<u8>>,
     usage: Usage,
     usage_bytes: Option<Vec<u8>>,
     view: usize,
@@ -227,6 +232,10 @@ impl StateSession {
         {
             return Err(StateError::PermissionDenied);
         }
+        let (history, history_bytes) = NamespaceHistory::capture(view, &namespace)?;
+        if history.status != HistoryStatus::Ready {
+            return Err(StateError::RecoveryRequired);
+        }
         let usage_bytes = view.get(&usage_key(&scope)?)?;
         let usage = usage_bytes
             .as_deref()
@@ -236,6 +245,7 @@ impl StateSession {
         let read_charge = namespace_bytes
             .len()
             .checked_add(usage_bytes.as_ref().map_or(0, Vec::len))
+            .and_then(|bytes| bytes.checked_add(history.encode().ok()?.len()))
             .and_then(|bytes| bytes.checked_mul(2))
             .ok_or(StateError::Limit)?;
         if read_charge > limits.read_bytes
@@ -254,6 +264,8 @@ impl StateSession {
             scope,
             namespace,
             namespace_bytes,
+            history,
+            history_bytes,
             usage,
             usage_bytes,
             view: view.identity(),
@@ -279,6 +291,23 @@ impl StateSession {
     #[must_use]
     pub fn view_version(&self) -> NamespaceVersion {
         self.namespace.version
+    }
+    #[must_use]
+    pub fn view_identity(&self) -> version::ViewIdentity {
+        version::ViewIdentity {
+            namespace: self.namespace.version,
+            epochs: self.history.epochs,
+        }
+    }
+    pub fn view_token(&self) -> Result<Vec<u8>, StateError> {
+        self.view_identity().token(&self.scope)
+    }
+    /// Actual cumulative native read/staging costs, including repeated reads
+    /// and failed attempts. The runtime charges their deltas on the original
+    /// activation ledger before releasing any guest-visible response.
+    #[must_use]
+    pub fn charged_bytes(&self) -> (usize, usize) {
+        (self.read_charge, self.stage_charge)
     }
     fn access(
         &mut self,
@@ -374,6 +403,7 @@ impl StateSession {
                                 .generation
                                 .checked_add(1)
                                 .ok_or(StateError::Limit)?,
+                            self.history.epochs,
                         )?,
                     })
                 })
@@ -386,7 +416,12 @@ impl StateSession {
             .map(|(cell, value)| {
                 Ok(ReadValue {
                     value: value.clone(),
-                    version: codec::version(&self.scope, key, cell.generation)?,
+                    version: codec::version(
+                        &self.scope,
+                        key,
+                        cell.generation,
+                        self.history.epochs,
+                    )?,
                 })
             })
             .transpose()
@@ -753,6 +788,15 @@ impl StateSession {
             key: usage_key(&self.scope)?,
             value: self.usage_bytes,
         };
+        let history_expectation = ExpectedRow {
+            key: history_key(
+                &self.scope.tenant,
+                &self.scope.namespace,
+                self.scope.incarnation,
+            )
+            .map_err(|_| StateError::Corrupt)?,
+            value: self.history_bytes,
+        };
         let mut namespace = self.namespace;
         namespace.version.generation = next_generation;
         Ok(StatePlan {
@@ -760,6 +804,8 @@ impl StateSession {
             namespace,
             expectation,
             usage_expectation,
+            history_expectation,
+            epochs: self.history.epochs,
             usage: usage.encode(),
             mutations,
         })
@@ -772,6 +818,8 @@ pub struct StatePlan {
     namespace: NamespaceRecord,
     expectation: ExpectedRow,
     usage_expectation: ExpectedRow,
+    history_expectation: ExpectedRow,
+    epochs: crate::namespace::history::HistoryEpochs,
     usage: Vec<u8>,
     mutations: Vec<RowMutation>,
 }
@@ -783,6 +831,18 @@ impl StatePlan {
     #[must_use]
     pub fn version(&self) -> NamespaceVersion {
         self.namespace.version
+    }
+    #[must_use]
+    pub fn view_identity(&self) -> version::ViewIdentity {
+        version::ViewIdentity {
+            namespace: self.namespace.version,
+            epochs: self.epochs,
+        }
+    }
+    /// Original post-commit view identity. Persist it with the promised durable
+    /// result; later recovery must never replace it with a current read token.
+    pub fn view_token(&self) -> Result<Vec<u8>, StateError> {
+        self.view_identity().token(&self.scope)
     }
     #[must_use]
     pub fn pins(&self) -> NamespacePins {
@@ -805,6 +865,7 @@ impl StatePlan {
         let namespace = self.namespace.encode().map_err(|_| StateError::Corrupt)?;
         batch.expectations.push(self.expectation.clone());
         batch.expectations.push(self.usage_expectation.clone());
+        batch.expectations.push(self.history_expectation);
         batch.mutations.push(RowMutation {
             key: self.expectation.key,
             value: Some(namespace),

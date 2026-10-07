@@ -11,8 +11,10 @@ use latent_state::{
     embedded::{EmbeddedStore, Family, ReadView, StoreError},
     namespace::{
         catalog::{NamespaceOperationContext, NamespaceRead},
+        history::NamespaceHistory,
         NamespaceRecord,
     },
+    session::{version::ViewIdentity, StateMode, StateScope},
     store_io::StoreIoKind,
 };
 
@@ -29,27 +31,34 @@ pub(super) async fn inspect(
     let job = inner
         .services
         .store
-        .with_store(StoreIoKind::Read, WORK_BYTES as u64, move |engine| {
-            let result = inspect_in(&worker, engine, &access, deadline, retained.as_ref());
-            let finish = pending.finish(
-                if result.as_ref().is_ok_and(Result::is_ok) {
-                    AuditOperationResult::Committed
-                } else {
-                    AuditOperationResult::Rejected
-                },
-                AuditReason::Verified,
-                None,
-                false,
-            );
-            result.map(|value| (value, access.inspect, finish))
-        })
+        .with_store(
+            StoreIoKind::RecoveryRead,
+            WORK_BYTES as u64,
+            move |engine| {
+                let result = inspect_in(&worker, engine, &access, deadline, retained.as_ref());
+                let finish = pending.finish(
+                    if result.as_ref().is_ok_and(Result::is_ok) {
+                        AuditOperationResult::Committed
+                    } else {
+                        AuditOperationResult::Rejected
+                    },
+                    AuditReason::Verified,
+                    None,
+                    false,
+                );
+                // Keep global capacity in the unclaimed native completion as well
+                // as the waiter. Its bytes retire after that completion's values.
+                result.map(|value| (value, access.inspect, finish, retained))
+            },
+        )
         .map_err(protected_error)?;
-    let (result, decision, finish) = job.await.map_err(io_error)?.map_err(protected_error)?;
+    let (result, decision, finish, worker_permit) =
+        job.await.map_err(io_error)?.map_err(protected_error)?;
     let (read, namespace) = result?;
     read_ack(finish).await?;
     response::owned(
         inner,
-        permit,
+        worker_permit,
         decision,
         read,
         None,
@@ -78,14 +87,29 @@ fn inspect_in(
     if let Err(error) = inspection_gate(inner, access, &read, None) {
         return Ok(Err(error));
     }
+    // Inspection describes the captured history, including paused restoration.
+    // It does not acquire command/query execution readiness or repair epochs.
+    let namespace = read.record();
+    let (history, _) = NamespaceHistory::capture(&view, namespace)?;
+    let scope = StateScope {
+        tenant: namespace.tenant.clone(),
+        namespace: namespace.id.clone(),
+        incarnation: namespace.version.incarnation,
+        state_schema: namespace.state_schema.clone(),
+        entity: None,
+        mode: StateMode::Query,
+    };
+    let version = ViewIdentity {
+        namespace: namespace.version,
+        epochs: history.epochs,
+    }
+    .token(&scope)
+    .map_err(|_| StoreError::Corrupt)?;
     let usage = latent_state::session::inspect_usage(&view, read.record())
         .map_err(|error| error.storage_error().unwrap_or(StoreError::Corrupt))?;
     let (commands, pending_effects, retention) =
         inventory(inner, &view, access, read.record(), deadline)?;
     let (profile, digest) = inner.services.store.inspection_profile();
-    let mut version = b"NSV\x01".to_vec();
-    version.extend_from_slice(&read.record().version.incarnation.to_le_bytes());
-    version.extend_from_slice(&read.record().version.generation.to_le_bytes());
     let value = c::NamespaceInspection {
         view: Some(t::ViewIdentity {
             namespace: Some(response::selector(read.record())),
@@ -101,7 +125,7 @@ fn inspect_in(
         status: response::status(read.record().status) as i32,
         quota: Some(response::quota(read.record().quota)),
         generation: read.record().version.generation,
-        namespace_policy_digest: access.binding.state.configuration_digest.clone(),
+        namespace_policy_digest: super::authorization::policy_precondition(access),
     };
     Ok(Ok((read, value)))
 }
@@ -119,7 +143,7 @@ pub(super) async fn receipt(
     let job = inner
         .services
         .store
-        .with_store(StoreIoKind::Read, 65536, move |engine| {
+        .with_store(StoreIoKind::RecoveryRead, 65536, move |engine| {
             let result = (|| {
                 if let Err(error) = before_lookup(&worker, &access, deadline, retained.as_ref()) {
                     return Ok(Err(error));
@@ -158,15 +182,16 @@ pub(super) async fn receipt(
                 None,
                 true,
             );
-            result.map(|value| (value, access.inspect, finish))
+            result.map(|value| (value, access.inspect, finish, retained))
         })
         .map_err(protected_error)?;
-    let (result, decision, finish) = job.await.map_err(io_error)?.map_err(protected_error)?;
+    let (result, decision, finish, worker_permit) =
+        job.await.map_err(io_error)?.map_err(protected_error)?;
     let (read, receipt, public) = result?;
-    read_ack(finish).await?;
+    let ack = audit::ack(finish).await;
     response::owned(
         inner,
-        permit,
+        worker_permit,
         decision,
         read,
         Some(receipt),
@@ -174,7 +199,7 @@ pub(super) async fn receipt(
         c::GetStateOperationReceiptResponse {
             receipt: None,
             namespace_receipt: Some(public),
-            audit_ack: None,
+            audit_ack: Some(ack),
         }
         .into(),
     )
@@ -235,7 +260,7 @@ pub(super) fn native_namespace(error: NamespaceError) -> StoreError {
         _ => StoreError::Corrupt,
     }
 }
-async fn read_ack(finish: audit::Finish) -> Result<(), PlatformError> {
+pub(super) async fn read_ack(finish: audit::Finish) -> Result<(), PlatformError> {
     let ack = audit::ack(finish).await;
     if ack.status == c::AuditAckStatus::OutcomeUnknown as i32 {
         return Err(error(

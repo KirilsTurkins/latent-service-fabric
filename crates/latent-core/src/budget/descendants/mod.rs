@@ -135,7 +135,6 @@ impl ActivationBudget {
             .get()
             .is_some_and(|lineage| lineage.parent.is_some())
     }
-
     /// Cancel delegation and accepted descendant work under this original
     /// ledger. This only closes authority and wakes its bounded owner signals;
     /// it does not finalize consumption, refund capacity or retire any owner.

@@ -598,11 +598,7 @@ administrator declaration and scheduled redrive remain separate typed facts.
 Historical effect records without the new record version remain readable and
 cannot authorize a new mutation.
 
-The checked-in golden was generated from the actual current Buf descriptor and
-reviewed against every prior named row, rather than inferred from the source
-messages. The [transaction client reference](../development/transaction-clients.md)
-describes transport ownership and the outstanding real-node qualification gates.
-
-These definitions describe [transaction and recovery contracts](transactions.md).
-They confer no authority from namespace, command, effect or receipt identifiers;
-WIT ABI and durable-format compatibility remain independent.
+The golden matches the frozen sixteen-operation client descriptor and was
+reviewed against every prior named row using actual Buf output. The
+[transaction reference](transactions.md) describes the separate guest ABI,
+durable-format, authority and production qualification boundaries.

@@ -53,21 +53,13 @@ pub fn inspect_usage(
 pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     match key.family {
         Family::State if key.key.starts_with(b"state-v1\0") => {
-            let mut input = KeyInput(&key.key[b"state-v1\0".len()..]);
-            let tenant = TenantId(input.text()?);
-            let namespace = StateNamespaceId(input.text()?);
-            let incarnation = input.number()?;
-            match input.byte()? {
-                0 => {}
-                1 => {
-                    input.text()?;
-                }
-                _ => return Err(StoreError::Corrupt),
-            }
-            if input.0.is_empty() || input.0.len() > contract::KEY_BYTES {
-                return Err(StoreError::Corrupt);
-            }
-            let namespace = namespace_in(view, &tenant, &namespace, incarnation)?;
+            let identity = cell_identity(&key.key)?;
+            let namespace = namespace_in(
+                view,
+                &identity.tenant,
+                &identity.namespace,
+                identity.incarnation,
+            )?;
             codec::Cell::decode(bytes, namespace.version.generation).map_err(storage)?;
         }
         Family::Maintenance if key.key.starts_with(b"state-usage-v1\0") => {
@@ -92,6 +84,39 @@ pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
         _ => return Err(StoreError::UnsupportedFormat),
     }
     Ok(())
+}
+
+/// The same closed physical key decoder serves startup and host inspection.
+/// These values describe persisted scope and cannot supply a grant or session.
+pub(super) struct CellIdentity {
+    pub tenant: TenantId,
+    pub namespace: StateNamespaceId,
+    pub incarnation: u64,
+    pub entity: Option<String>,
+}
+
+pub(super) fn cell_identity(key: &[u8]) -> Result<CellIdentity, StoreError> {
+    let mut input = KeyInput(
+        key.strip_prefix(b"state-v1\0")
+            .ok_or(StoreError::UnsupportedFormat)?,
+    );
+    let tenant = TenantId(input.text()?);
+    let namespace = StateNamespaceId(input.text()?);
+    let incarnation = input.number()?;
+    let entity = match input.byte()? {
+        0 => None,
+        1 => Some(input.text()?),
+        _ => return Err(StoreError::Corrupt),
+    };
+    if incarnation == 0 || input.0.is_empty() || input.0.len() > contract::KEY_BYTES {
+        return Err(StoreError::Corrupt);
+    }
+    Ok(CellIdentity {
+        tenant,
+        namespace,
+        incarnation,
+        entity,
+    })
 }
 
 fn namespace_in(

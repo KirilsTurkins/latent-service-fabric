@@ -143,6 +143,7 @@ pub(super) fn actor(v: &AuditActorIdentity) -> Result<()> {
     token(&v.subject, 512)
 }
 pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
+    state_target(v)?;
     if let Some(dispatcher) = &v.dispatcher {
         token(&dispatcher.actor_tenant, 256)?;
         if dispatcher.owner_epoch == 0
@@ -151,18 +152,6 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
                     dispatcher: Some(dispatcher.clone()),
                     ..Default::default()
                 })
-        {
-            return Err(invalid());
-        }
-    }
-    if let Some(state) = &v.state {
-        token(&state.namespace, 256)?;
-        if state.incarnation == 0
-            || v.publication.is_none()
-            || v.component.is_none()
-            || v.capability.is_some()
-            || v.static_web.is_some()
-            || v.trigger.is_some()
         {
             return Err(invalid());
         }
@@ -245,12 +234,28 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
     }
     Ok(())
 }
+fn state_target(v: &AuditIdentities) -> Result<()> {
+    if let Some(state) = &v.state {
+        token(&state.namespace, 256)?;
+        if state.incarnation == 0
+            || v.publication.is_none()
+            || v.component.is_none()
+            || v.capability.is_some()
+            || v.static_web.is_some()
+            || v.trigger.is_some()
+        {
+            return Err(invalid());
+        }
+    }
+    Ok(())
+}
 pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     scope(&v.scope)?;
     actor(&v.actor)?;
     token(&v.operation_id, 256)?;
     namespace_attempt(v)?;
     dispatcher_attempt(v)?;
+    capability_attempt(v)?;
     let trigger = matches!(
         v.action,
         AuditControlAction::TriggerApply | AuditControlAction::TriggerDelete
@@ -279,29 +284,6 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
             return Err(invalid());
         }
     } else if v.identities.trigger.is_some() {
-        return Err(invalid());
-    }
-    if v.action == AuditControlAction::CapabilityCall {
-        let context = v.identities.capability.as_ref().ok_or_else(invalid)?;
-        if !context.required
-            || context.provider_outcome.is_some()
-            || !context.request.as_ref().is_some_and(|request| {
-                request.scope == super::AuditCapabilityDigestScope::ProviderRequest
-                    && request.digest == v.request_digest
-            })
-            || !matches!(v.scope, AuditScope::Tenant(_))
-            || v.identities.deployment.is_none()
-            || v.replay
-            || v.preview_receipt_digest.is_some()
-            || v.expected_generation.is_some()
-            || v.expected_deployment_generation.is_some()
-            || v.expected_rollout_revision.is_some()
-            || v.expected_state_version.is_some()
-            || v.expected_rollback_target_generation.is_some()
-        {
-            return Err(invalid());
-        }
-    } else if v.identities.capability.is_some() {
         return Err(invalid());
     }
     if !trigger
@@ -348,7 +330,41 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     }
     identities(&v.identities)
 }
+fn capability_attempt(v: &AuditOperationAttempt) -> Result<()> {
+    if v.action == AuditControlAction::CapabilityCall {
+        let context = v.identities.capability.as_ref().ok_or_else(invalid)?;
+        if !context.required
+            || context.provider_outcome.is_some()
+            || !context.request.as_ref().is_some_and(|request| {
+                request.scope == super::AuditCapabilityDigestScope::ProviderRequest
+                    && request.digest == v.request_digest
+            })
+            || !matches!(v.scope, AuditScope::Tenant(_))
+            || v.identities.deployment.is_none()
+            || v.replay
+            || v.preview_receipt_digest.is_some()
+            || v.expected_generation.is_some()
+            || v.expected_deployment_generation.is_some()
+            || v.expected_rollout_revision.is_some()
+            || v.expected_state_version.is_some()
+            || v.expected_rollback_target_generation.is_some()
+        {
+            return Err(invalid());
+        }
+    } else if v.identities.capability.is_some() {
+        return Err(invalid());
+    }
+    Ok(())
+}
 fn namespace_attempt(v: &AuditOperationAttempt) -> Result<()> {
+    let effect = matches!(
+        v.action,
+        AuditControlAction::EffectPlan
+            | AuditControlAction::EffectReconcile
+            | AuditControlAction::EffectRedrive
+            | AuditControlAction::EffectTerminate
+            | AuditControlAction::StateOperationRead
+    );
     let namespace = matches!(
         v.action,
         AuditControlAction::NamespaceCreate
@@ -358,16 +374,19 @@ fn namespace_attempt(v: &AuditOperationAttempt) -> Result<()> {
             | AuditControlAction::NamespaceRecreate
             | AuditControlAction::NamespaceInspect
     );
-    if namespace != v.identities.state.is_some()
-        || namespace
+    if (namespace || effect) != v.identities.state.is_some()
+        || (namespace || effect)
             && (!matches!(v.scope, AuditScope::Tenant(_))
                 || v.expected_deployment_generation.is_some()
                 || v.expected_rollout_revision.is_some()
                 || v.expected_state_version.is_some()
                 || v.expected_rollback_target_generation.is_some()
                 || v.preview_receipt_digest.is_some()
-                || v.action != AuditControlAction::NamespaceInspect
-                    && v.expected_generation.is_none())
+                || namespace && v.action != AuditControlAction::NamespaceInspect
+                    && v.expected_generation.is_none()
+                // Effect row versions are opaque request preconditions; they
+                // must not be fabricated as namespace/deployment generations.
+                || effect && v.expected_generation.is_some())
     {
         return Err(invalid());
     }
