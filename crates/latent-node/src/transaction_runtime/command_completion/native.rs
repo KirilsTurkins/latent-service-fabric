@@ -25,6 +25,12 @@ impl NativeCommandWork {
             entered: false,
         }
     }
+    pub fn attempt(&self) -> Result<&PhysicalAttemptWork, latent_state::embedded::StoreError> {
+        self.attempt
+            .as_ref()
+            .ok_or(latent_state::embedded::StoreError::Unavailable)
+    }
+
     pub fn enter(&mut self) {
         self.entered = true;
     }

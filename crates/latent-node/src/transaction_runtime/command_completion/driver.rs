@@ -56,6 +56,30 @@ pub(super) struct CommandCompletion {
     codec: Arc<dyn CommandResultCodec>,
 }
 impl CommandCompletion {
+    #[cfg(test)]
+    pub(super) async fn refused_read_observation(
+        &self,
+    ) -> (Result<(), PlatformError>, Result<(), AtomicError>) {
+        let attempt = self.attempt.lock().unwrap().take().unwrap();
+        let retired = attempt.claim.retirement();
+        let result = self
+            .coordinator
+            .read_current_claim_namespace(
+                &self.host.authorization,
+                &attempt.claim,
+                self.host.retain_entity().unwrap(),
+            )
+            .await
+            .map(|_| ());
+        // A live original claim must still refuse a retirement proof; quarantine
+        // instead of that refusal would also prevent its later real abort.
+        let proof = retired.proven_noncommit().map(drop);
+        let mut retained = self.attempt.lock().unwrap();
+        assert!(retained.is_none());
+        *retained = Some(attempt);
+        (result, proof)
+    }
+
     #[allow(
         clippy::too_many_arguments,
         reason = "Every affine owner is retained from the same admitted attempt"

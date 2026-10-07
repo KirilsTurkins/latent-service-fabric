@@ -16,8 +16,8 @@ use latent_state::{
 
 use super::super::{authorization::TerminalAbortPurpose, StateAuthorization};
 use super::{
-    errors, CommandCoordinator, CommandObservation, CommandResultCodec, ResultDeliveryFence,
-    TransactionCompletion,
+    errors, native::NativeCommandWork, CommandCoordinator, CommandObservation, CommandResultCodec,
+    ResultDeliveryFence, TransactionCompletion,
 };
 use crate::{
     command_waiters::{CommandWaiterDecision, CommandWaiterError},
@@ -34,15 +34,27 @@ impl CommandCoordinator {
         entity: Option<super::super::entity::EntityOwner>,
     ) -> Result<atomic::CurrentClaimNamespace, PlatformError> {
         auth.authorize("acquire-command", 0, 0, || Ok(()))?;
-        let work = claim.physical_work().map_err(errors::atomic)?;
-        let retained = work.namespace_observation_bytes();
         let auth = Arc::clone(auth);
         let time = Arc::clone(&self.time);
         let keeper: Arc<dyn std::any::Any + Send + Sync> =
             Arc::new((Arc::clone(&auth), Arc::clone(&time), entity));
+        let operation = self
+            .store
+            .reserve_operation_retaining(Arc::clone(&keeper))
+            .map_err(errors::protected)?;
+        let work = match claim.physical_work() {
+            Ok(work) => work,
+            Err(error) => {
+                operation.retire().await;
+                return Err(errors::atomic(error));
+            }
+        };
+        let retained = work.namespace_observation_bytes();
+        let mut native = NativeCommandWork::new(operation, Some(work), None);
         let job = self
             .store
             .with_store_retaining(StoreIoKind::Read, retained, keeper, move |store| {
+                native.enter();
                 let result = (|| {
                     let view = store.snapshot()?;
                     let ownership = auth.authority.ownership();
@@ -52,11 +64,11 @@ impl CommandCoordinator {
                         &latent_core::StateNamespaceId(ownership.namespace.clone()),
                         ownership.incarnation,
                     )?;
-                    Ok(work.observe_claim_namespace(&view))
+                    Ok(native.attempt()?.observe_claim_namespace(&view))
                 })();
                 // The real view is destroyed before its affine physical attempt
                 // guard retires. A dropped waiter or panic cannot retire this guard.
-                work.retire();
+                native.complete();
                 Ok((result, time))
             })
             .map_err(errors::protected)?;

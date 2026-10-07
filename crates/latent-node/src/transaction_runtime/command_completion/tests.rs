@@ -100,6 +100,88 @@ async fn unbound_original_budget_refuses_current_authorization_before_pending_or
     fixture.shutdown().await;
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn actual_full_read_queue_refusal_retires_only_never_started_work_and_keeps_live_owners() {
+    let fixture = Fixture::new().await;
+    let call = fixture.call("read-queue-refusal", "hot");
+    let execution = execute(call.admit().await);
+    let completion = call.admission.observed_completion();
+    let original = fixture.owners.store.snapshot().unwrap();
+    let mut running = Vec::new();
+    let mut releases = Vec::new();
+    for _ in 0..2 {
+        let (entered, ready) = tokio::sync::oneshot::channel();
+        let (release, released) = std::sync::mpsc::channel();
+        running.push(
+            fixture
+                .owners
+                .store
+                .with_store(StoreIoKind::Read, 4096, move |store| {
+                    let view = store.snapshot()?;
+                    entered.send(()).unwrap();
+                    released.recv_timeout(WATCHDOG).unwrap();
+                    drop(view);
+                    Ok(())
+                })
+                .unwrap(),
+        );
+        releases.push(release);
+        tokio::time::timeout(WATCHDOG, ready)
+            .await
+            .unwrap()
+            .unwrap();
+    }
+    let queued: Vec<_> = (0..8)
+        .map(|_| {
+            fixture
+                .owners
+                .store
+                .with_store(StoreIoKind::Read, 4096, |store| {
+                    drop(store.snapshot()?);
+                    Ok(())
+                })
+                .unwrap()
+        })
+        .collect();
+    let full = fixture.owners.store.snapshot().unwrap();
+    assert_eq!(full.active_reads, 2);
+    assert_eq!(full.queued, 8);
+    let (refused, proof) = completion.refused_read_observation().await;
+    assert!(matches!(refused, Err(error) if error.code == PlatformErrorCode::Unavailable));
+    assert!(matches!(
+        proof,
+        Err(latent_commit::atomic::AtomicError::RecoveryRequired)
+    ));
+    let after = fixture.owners.store.snapshot().unwrap();
+    assert_eq!(after.active_reads, full.active_reads);
+    assert_eq!(after.queued, full.queued);
+    assert_eq!(after.physical_owners, full.physical_owners);
+    assert_eq!(fixture.lanes.snapshot().unwrap().active, 1);
+    for release in releases {
+        release.send(()).unwrap();
+    }
+    for job in running.into_iter().chain(queued) {
+        tokio::time::timeout(WATCHDOG, job)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+    }
+    assert_eq!(
+        fixture.owners.store.snapshot().unwrap().physical_owners,
+        original.physical_owners
+    );
+    let completed = finish(&execution, unstarted_failure()).await;
+    assert_eq!(
+        completed.durable_command().unwrap().outcome(),
+        latent_commit::atomic::Outcome::Aborted
+    );
+    assert!(!completed.disposition().unwrap().requires_recovery());
+    assert_eq!(fixture.lanes.snapshot().unwrap(), Default::default());
+    drop((completed, completion, execution, call));
+    fixture.shutdown().await;
+}
+
 async fn refuse_changed_namespace_control(return_active: bool) {
     let fixture = Fixture::new().await;
     let first = fixture.call("first", "hot");

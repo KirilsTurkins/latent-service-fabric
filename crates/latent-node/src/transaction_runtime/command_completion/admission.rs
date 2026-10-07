@@ -253,6 +253,8 @@ impl CommandCoordinator {
             admitted: AtomicBool::new(false),
             #[cfg(test)]
             host_observation: Mutex::new(std::sync::Weak::new()),
+            #[cfg(test)]
+            completion_observation: Mutex::new(std::sync::Weak::new()),
         })
     }
 }
@@ -263,6 +265,8 @@ pub struct CommandAdmission {
     admitted: AtomicBool,
     #[cfg(test)]
     host_observation: Mutex<std::sync::Weak<StateTransactionHost>>,
+    #[cfg(test)]
+    completion_observation: Mutex<std::sync::Weak<CommandCompletion>>,
 }
 impl TransactionActivationAdmission for CommandAdmission {
     fn preflight<'a>(
@@ -296,6 +300,15 @@ impl CommandAdmission {
     #[cfg(test)]
     pub(super) fn observed_host(&self) -> Arc<StateTransactionHost> {
         self.host_observation.lock().unwrap().upgrade().unwrap()
+    }
+
+    #[cfg(test)]
+    pub(super) fn observed_completion(&self) -> Arc<CommandCompletion> {
+        self.completion_observation
+            .lock()
+            .unwrap()
+            .upgrade()
+            .unwrap()
     }
 
     async fn admit_owned(
@@ -629,6 +642,7 @@ impl CommandAdmission {
         #[cfg(test)]
         {
             *self.host_observation.lock().unwrap() = Arc::downgrade(&host);
+            *self.completion_observation.lock().unwrap() = Arc::downgrade(&completion);
         }
         Ok(TransactionAdmission::Execute(TransactionExecution {
             host,
