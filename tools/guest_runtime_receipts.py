@@ -5,6 +5,7 @@ from pathlib import Path
 
 from tools import guest_compatibility as compatibility
 from tools.dev_workflow.common import decode, digest, encode, integer, members, require, sha
+from tools.dev_workflow.dependencies import capture_document
 from tools.rust_capsule_project import inventory, read_file, write_json
 
 SCHEMA = 'latent.guest.runtime-selection.v1'
@@ -20,6 +21,14 @@ PREFIXES = {
 }
 
 
+def captured_graph(files: dict[str, bytes]):
+    raw = files.get('latent.dependencies.lock.json')
+    # The owner already verified this lock against the original capture limits.
+    # Reuse that document domain for identity/currentness; controller control
+    # documents retain their separate, unchanged smaller complexity limits.
+    return capture_document(raw) if raw is not None else None
+
+
 def captured_inputs(language: str, files: dict[str, bytes], source_inputs: bytes):
     require(language in PREFIXES, 'runtime-selection-language')
     require(source_inputs == inventory(files), 'runtime-selection-detached-source-inventory')
@@ -30,9 +39,7 @@ def captured_inputs(language: str, files: dict[str, bytes], source_inputs: bytes
     bindings = {name: raw for name, raw in files.items()
                 if name.endswith('.wit') and (name.startswith('wit/') or name.startswith('vendor/lsf/wit/'))}
     require(bindings and len(bindings) <= 4096, 'runtime-selection-binding-preimage-required')
-    raw_graph = files.get('latent.dependencies.lock.json')
-    graph = decode(raw_graph, 8 * 1024 * 1024) if raw_graph is not None else None
-    require(graph is None or isinstance(graph, dict), 'runtime-selection-graph-object')
+    graph = captured_graph(files)
     return original, bindings, graph
 
 

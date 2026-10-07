@@ -85,6 +85,44 @@ class OwnerSelection(unittest.TestCase):
         with self.assertRaisesRegex(DevError, 'stale-runtime-preimage'):
             runtime.verify_build(value, 'rust', files, inventory(files), COMPONENT, materials())
 
+    def test_large_valid_captured_file_graph_uses_capture_domain_without_widening_controller_limits(self):
+        from tools.application_dependencies import MAX_CLOSURE_FILES, MAX_LOCK
+        from tools.dev_workflow.common import decode
+        files, _ = inputs('rust')
+        rows = [{'path': 'src/file' + str(index) + '.rs', 'digest': digest(b'x'), 'size': 1} for index in range(9000)]
+        self.assertLess(len(rows), MAX_CLOSURE_FILES)
+        graph = {'formatVersion': 1, 'language': 'rust', 'manifestDigest': digest(b'manifest'),
+            'selection': {'runtimeProfile': 'wasm32-unknown-unknown-panic-abort-v1'}, 'nativeLocks': [],
+            'artifacts': [{'id': 'library', 'role': 'application', 'format': 'directory',
+                'mount': 'application-vendor/library', 'dependencies': [], 'metadata': {},
+                'source': {'type': 'captured-local'}, 'original': {'digest': digest(b'original'), 'size': 1},
+                'files': rows, 'treeDigest': digest(encode(rows))}], 'transformations': [],
+            'completeness': 'selected-declared-closure', 'executableInputs': []}
+        raw = encode(graph); self.assertLess(len(raw), MAX_LOCK)
+        with self.assertRaisesRegex(DevError, 'document-complexity-limit'): decode(raw, MAX_LOCK)
+        files['latent.dependencies.lock.json'] = raw
+        runtime.emit(self.output, 'rust', 'wasm32-unknown-unknown-panic-abort-v1', files, inventory(files),
+            COMPONENT, materials(), graph=graph, binding_digest=BINDINGS, configuration={})
+        value = runtime.read((self.output / 'standard-runtime-selection.json').read_bytes())
+        self.assertEqual(value['graphDigest'], digest(raw))
+        runtime.verify_build(value, 'rust', files, inventory(files), COMPONENT, materials())
+        report = compatibility.report('rust', digest(inventory(files)), digest(COMPONENT),
+            'lsf-host-abi-phase3-v5', [], [])
+        (self.output / 'compatibility-report.json').write_bytes(encode(report))
+        sidecar = (self.output / 'standard-runtime-selection.json').read_bytes()
+        selected = builder.finish(self.output, files, inventory(files), COMPONENT, materials() +
+            [{'name': 'standard-runtime-selection', 'digest': digest(sidecar), 'size': len(sidecar)}])
+        self.assertEqual(selected['standardRuntime']['state'], 'selected-unqualified')
+
+    def test_capture_graph_still_rejects_duplicate_fields_nonfinite_nesting_and_original_byte_limit(self):
+        from tools.application_dependencies import MAX_LOCK
+        files, _ = inputs('rust')
+        for raw in (b'{"selection":{},"selection":{}}', b'{"selection":NaN}',
+                    b'{"nested":' + b'[' * 65 + b'0' + b']' * 65 + b'}', b' ' * (MAX_LOCK + 1)):
+            files['latent.dependencies.lock.json'] = raw
+            with self.subTest(bytes=len(raw)), self.assertRaises(ValueError):
+                runtime.captured_inputs('rust', files, inventory(files))
+
     def test_four_owners_capture_actual_sources_profiles_and_binding_transformation(self):
         for language in ('rust', 'go', 'c', 'typescript'):
             with self.subTest(language=language):
@@ -267,6 +305,15 @@ class OwnerSelection(unittest.TestCase):
 
 
 class MaintainedRecipeOwnership(unittest.TestCase):
+    def test_runtime_receipt_helper_is_captured_in_all_six_transitive_owner_recipes(self):
+        from tools import rust_capsule_build, c_capsule_build, java_capsule_build, go_capsule_build
+        from tools.dotnet_guest import build as dotnet
+        from tools.typescript_guest import build as typescript
+        for owner in (rust_capsule_build, c_capsule_build, java_capsule_build, go_capsule_build, dotnet, typescript):
+            with self.subTest(owner=owner.__name__):
+                self.assertIn('tools/guest_runtime_receipts.py', owner.RECIPE)
+                self.assertIn('tools/dev_workflow/dependencies.py', owner.RECIPE)
+
     def test_four_owner_hooks_follow_input_rechecks_and_precede_completed_observation(self):
         for name in ('rust_capsule_build.py', 'go_capsule_build.py', 'c_capsule_build.py', 'typescript_guest/build.py'):
             raw = (ROOT / 'tools' / name).read_text(encoding='utf-8')
