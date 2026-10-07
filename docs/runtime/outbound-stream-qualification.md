@@ -16,17 +16,14 @@ credentials, trust roots and client keys require the selected language runtime's
 implementation and independent secret grants. No stream configuration accepts
 application credentials or host key paths.
 
-| Evidence | Maintained source boundary | Current authenticated execution |
+| Evidence | Source and authenticated execution | Remaining boundary |
 | --- | --- | --- |
-| Native TCP/DNS owners | `latent-streams` real loopback sockets and UDP DNS peer, original sealed policy/catalog/budget  Pending current-source execution and a linked source/artifact/receipt record. |
-| Existing broker behavior | Existing `latent-capabilities` library suite  Pending current-source execution and a linked source/artifact/receipt record. |
-| Bounded DNS | `latent-network` real UDP/TCP resolver peers  Pending current-source execution and a linked source/artifact/receipt record. |
-| Canonical component | Maintained encoded Component Model guest, package/WIT evidence, ordinary Wasmtime backend and actual TCP peer  Pending current-source execution and a linked source/artifact/receipt record. |
-| Signed node execution | Real signatures, SBOM/provenance, enforced package catalog, compiled deployment binding, normal local node admission/manager and actual TCP peers  Pending current-source execution and a linked source/artifact/receipt record. |
-| Protected node configuration | Normal Linux node configuration loading and derivation, explicit development feature  Pending current-source execution and a linked source/artifact/receipt record. |
-| Normal node lifecycle | Protected configuration, ordinary standalone node startup and shutdown  Pending current-source execution and a linked source/artifact/receipt record. |
-| Authenticated management | Existing capability RPC transport, original broker and actual maintained control future  Pending current-source execution and a linked source/artifact/receipt record. |
-| Declarative configuration | Maintained node-provider schema and local stream-schema reference  Pending current-source execution and a linked source/artifact/receipt record. |
+| Native TCP/DNS owners | Maintained `latent-streams` and `latent-network` suites; current-source receipts remain pending. | No count-only success claim. |
+| Existing broker behavior | Maintained `latent-capabilities` library suite; current complete execution remains pending. | The focused provider controls below are distinct. |
+| Canonical and signed TCP components | Exact source `55906321f5bd7e9cf156674945d808cda91f18b2`: four actual signed TCP tests passed through normal node admission and physical retirement; [native report](outbound-stream-current-native-2026-10-07.json). | Ordinary language clients and packaged operator workflows remain pending. |
+| Protected configuration and owner lifecycle | Twelve protected reload/physical-owner controls, five activation installation controls, three stream configuration controls and the original 32-repeat stream startup test passed on that exact source; [native report](outbound-stream-current-native-2026-10-07.json). | Future source joins require fresh checks and keep this receipt's original attribution. |
+| Full local service and ABI negatives | All 33 local-service cases retained: 31 passed and two existing Java cases ignored. All 48 generic cases retained: nine passed and 39 existing ignores; four exact host ABI negatives passed, including the official full WASI TCP/network/lookup/stream/poll type graph; [native report](outbound-stream-current-native-2026-10-07.json). | A negative import rejection supplies no ambient adapter or production authorization. |
+| Authenticated management and schema | Twenty-one operator source controls and thirteen schema controls passed on Linux; real native reload/publish/drain controls use actual node owners. | Full external CLI/rotation/grant/standard-API acceptance remains pending. |
 
 The earlier narrative named Rust 1.97.1 image
 `rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97`
