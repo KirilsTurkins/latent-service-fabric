@@ -2,7 +2,7 @@
 mod projection;
 mod selection;
 use super::{StateRequest, StateRuntime};
-use latent_core::{ActivationClock, BoxFuture, IncomingDeadline, PlatformError};
+use latent_core::{ActivationClock, BoxFuture, PlatformError};
 use latent_node::{
     transaction_runtime::command_completion::{CanonicalCommandResult, CommandResultCodec},
     LocalActivationManager,
@@ -22,6 +22,7 @@ pub(super) struct InstalledTransactionRpc {
     cleanup: ActivationCleanupHandle,
     management: Arc<dyn Phase4Runtime>,
     limits: InvocationLimits,
+    transaction_ceiling: latent_core::ResourceBudget,
     clock: Arc<dyn ActivationClock>,
     traces: SystemInvocationTraceSource,
 }
@@ -31,6 +32,7 @@ impl StateRuntime {
         manager: LocalActivationManager,
         cleanup: ActivationCleanupHandle,
         limits: InvocationLimits,
+        transaction_ceiling: latent_core::ResourceBudget,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Arc<dyn Phase4Runtime>, PlatformError> {
         limits.validate()?;
@@ -44,6 +46,7 @@ impl StateRuntime {
             cleanup,
             management: Arc::new(management),
             limits,
+            transaction_ceiling,
             clock,
             traces: SystemInvocationTraceSource::default(),
         }))
@@ -58,7 +61,7 @@ impl InstalledTransactionRpc {
         let (context, message) = call.into_parts();
         LocalPrincipalPolicy.authenticate(context.principal())?;
         let expires = context.transport_expires_at().ok_or_else(denied)?;
-        let unix = context
+        context
             .transport_deadline_unix_millis()
             .ok_or_else(denied)?;
         if expires <= self.clock.monotonic_now() {
@@ -66,11 +69,13 @@ impl InstalledTransactionRpc {
         }
         let mut selected = selection::select(message)?;
         let invocation = std::mem::take(&mut selected.invocation);
-        let mut request = latent_wire::invocation::transaction_activation_request(
+        let (mut request, incoming) = latent_wire::invocation::transaction_activation_request(
             invocation,
             &context,
             self.traces.next_trace()?,
             &self.limits,
+            &self.transaction_ceiling,
+            self.clock.sample(),
             &LocalPrincipalPolicy,
         )?;
         let payload = std::mem::take(&mut request.input);
@@ -78,11 +83,9 @@ impl InstalledTransactionRpc {
             return Err(denied());
         }
         let slot = self.cleanup.reserve_activation()?;
-        let mut reservation = self.manager.reserve_inbound(
-            request,
-            payload.len(),
-            IncomingDeadline::new(expires, unix),
-        )?;
+        let mut reservation = self
+            .manager
+            .reserve_inbound(request, payload.len(), incoming)?;
         let proof = reservation.publication_eligibility()?;
         let installed = self
             .state

@@ -36,6 +36,11 @@ pub(super) fn response(
     limits: &InvocationLimits,
     clock: &dyn ActivationClock,
 ) -> Result<OwnedPhase4Response, PlatformError> {
+    // Query outcomes also use the original finite response reservation. Check
+    // before typed projection clones any owned payload or metadata.
+    if query {
+        super::bounded_result(&receipt.outcome)?;
+    }
     let fence = receipt
         .result_delivery_fence
         .as_ref()

@@ -646,6 +646,7 @@ impl StandaloneNode {
                         self.manager.clone(),
                         cleanup.clone(),
                         settings.invocation.clone(),
+                        settings.admission.budget_ceiling.clone(),
                         Arc::clone(&self.clock),
                     )
                 })

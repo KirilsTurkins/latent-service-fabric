@@ -119,3 +119,21 @@ The initial direct RPC slice uses original-caller application scopes and a
 reservation. Management remains on its original backend. Command/effect lookup
 and shared/delegated application RPC scopes need their separate current-read
 integration and execution evidence before #387/#400/#401 close.
+
+The transaction conversion receives the node's configured admission ceiling
+for state reads, writes and staged effects. The generic invocation endpoint
+continues to reject these dimensions. Both paths keep the normal authenticated
+target, lineage, retained-message bounds and original arrival deadline. Query
+and command RPC payloads are checked before projection against the 64 KiB
+representation limit and the original native response reservation.
+
+`latentd`'s `transaction_rpc_probe` example consumes an already signed,
+installed Java aggregate on a private loopback endpoint. Protected credential
+files identify the actual original caller and a foreign tenant caller. It
+checks missing/foreign identity refusal for both query and command, a fresh
+query, one command with the original absent-key precondition, explicit replay
+of that unchanged command, and a final query at the acknowledged commit view.
+It requires exactly one original durable command/effect and a final count of
+one. The probe provisions no authority and runs no compiler. Its success
+receipt is produced only after those assertions execute; building the example
+or running source checks supplies no signed runtime qualification.
