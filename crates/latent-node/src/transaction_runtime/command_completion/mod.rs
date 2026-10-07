@@ -7,6 +7,7 @@ use latent_activation::ActivationOutcome;
 mod admission;
 mod delivery;
 mod driver;
+mod effects;
 mod errors;
 mod history;
 mod lookup;
@@ -18,6 +19,9 @@ pub use admission::{
     CommandAdmission, CommandAdmissionFactory, CommandAdmissionSelection, CommandCoordinator,
 };
 pub use delivery::ResultDeliveryFence;
+#[cfg(test)]
+pub(crate) use effects::verify_link as verify_effect_link_for_test;
+pub use effects::CommandEffectInspection;
 pub use original::OriginalCommandMetadata;
 pub use output::{CanonicalCommandResult, CommandOutput, CommandResultCodec};
 pub use retry::CommandRetry;

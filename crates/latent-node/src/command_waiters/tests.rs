@@ -202,3 +202,28 @@ fn owner_drop_and_untracked_pending_only_require_authorized_recovery() {
     physical.retire();
     assert!(retirement.proven_noncommit().is_ok());
 }
+
+#[test]
+fn original_effect_inspection_rejects_foreign_command_links_without_rewriting_rows() {
+    let fixture = Fixture::new();
+    let first = fixture.commit(fixture.claim("effect-original"), true);
+    let second = fixture.commit(fixture.claim("effect-foreign"), true);
+    let effect = first.effect_ids()[0].hex();
+    let row = latent_effects::dispatch_store::effect_row_key(&effect).unwrap();
+    let view = fixture.store.snapshot().unwrap();
+    let bytes = view.get(&row).unwrap().unwrap();
+    let record = latent_effects::dispatch::EffectRecord::decode(&bytes).unwrap();
+    let validate = crate::transaction_runtime::command_completion::verify_effect_link_for_test;
+    validate(&first, &effect, &record).unwrap();
+    assert_eq!(
+        validate(&second, &effect, &record),
+        Err(latent_state::embedded::StoreError::Corrupt)
+    );
+    assert_eq!(
+        validate(&first, &second.effect_ids()[0].hex(), &record),
+        Err(latent_state::embedded::StoreError::Corrupt)
+    );
+    assert_eq!(view.get(&row).unwrap().unwrap(), bytes);
+    assert_eq!(fixture.lookup("effect-original").0, first);
+    assert_eq!(fixture.lookup("effect-foreign").0, second);
+}

@@ -3140,6 +3140,7 @@
         "command_waiters::tests::bounds::per_attempt_capacity_and_reused_slots_keep_late_delivery_handles_isolated",
         "command_waiters::tests::bounds::reentrant_or_panicking_wake_callbacks_cannot_hold_locks_or_lose_other_hints",
         "command_waiters::tests::dropping_duplicate_delivery_never_retires_or_cancels_physical_work",
+        "command_waiters::tests::original_effect_inspection_rejects_foreign_command_links_without_rewriting_rows",
         "command_waiters::tests::owner_drop_and_untracked_pending_only_require_authorized_recovery",
         "command_waiters::tests::recovery::current_caller_and_result_authorization_precede_every_notification_observation",
         "command_waiters::tests::recovery::durable_rejection_and_expired_result_never_become_new_work",
@@ -3196,7 +3197,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 115,
+      "minimumCases": 116,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [

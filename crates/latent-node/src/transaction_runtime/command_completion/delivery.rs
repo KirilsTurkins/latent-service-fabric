@@ -59,6 +59,25 @@ impl ResultDeliveryFence {
         Ok(fence)
     }
 
+    pub(super) fn effect(
+        authorization: Arc<StateAuthorization>,
+        command: &CommandRecord,
+        time: Arc<dyn super::super::CommandTimeSource>,
+    ) -> Result<Self, PlatformError> {
+        if authorization.authority_mode() != Mode::Inspection {
+            return Err(denied());
+        }
+        authorization.accepts_record(command)?;
+        let fence = Self {
+            authorization,
+            operation: "inspect-effect",
+            command: Some(command.clone()),
+            time,
+        };
+        fence.with_current(0, || Ok(()))?;
+        Ok(fence)
+    }
+
     /// Observe the original retained physical byte reservation without
     /// allocating, refreshing permission or accepting another operation.
     #[must_use]
