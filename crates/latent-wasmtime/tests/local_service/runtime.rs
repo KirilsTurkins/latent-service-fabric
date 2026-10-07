@@ -173,7 +173,10 @@ async fn signed_java_threads_spin_join_and_thread_local_use_real_activation_fibe
         for mode in 0..3 {
             let receipt = success(
                 f.manager
-                    .start(f.request(&format!("java-fibers-{iteration}-{mode}"), mode))
+                    .start(Fixture::request(
+                        &format!("java-fibers-{iteration}-{mode}"),
+                        mode,
+                    ))
                     .unwrap()
                     .await,
             );
@@ -241,7 +244,7 @@ async fn completed_fixed_results_release_original_calls_before_the_next_import()
     assert!(usize::try_from(component::COMPLETED_CYCLES).unwrap() > f.maximum_calls_per_session);
     for (mode, per_cycle) in [(26, 3_u64), (27, 5_u64), (32, 2_u64)] {
         let id = format!("fixed-completion-{mode}");
-        let receipt = success(f.manager.start(f.request(&id, mode)).unwrap().await);
+        let receipt = success(f.manager.start(Fixture::request(&id, mode)).unwrap().await);
         assert_eq!(
             serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
             [42]
@@ -268,13 +271,18 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
     let root = tempfile::tempdir().unwrap();
     let f = configured(root.path(), 1).await;
     assert_eq!(
-        value(f.manager.start(f.request("fixed-warm", 0)).unwrap().await),
+        value(
+            f.manager
+                .start(Fixture::request("fixed-warm", 0))
+                .unwrap()
+                .await
+        ),
         42
     );
     f.idle().await;
     for cancel in [true, false] {
         let id = ActivationId(format!("fixed-pending-{cancel}"));
-        let mut invocation = Box::pin(f.manager.start(f.request(&id.0, 28)).unwrap());
+        let mut invocation = Box::pin(f.manager.start(Fixture::request(&id.0, 28)).unwrap());
         pending_timer(invocation.as_mut(), &f).await;
         let broker = f.broker.snapshot();
         assert_eq!(
@@ -301,7 +309,7 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
         assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
         let fresh = f
             .manager
-            .start(f.request(&format!("fixed-fresh-{cancel}"), 0))
+            .start(Fixture::request(&format!("fixed-fresh-{cancel}"), 0))
             .unwrap()
             .await;
         if cancel {
@@ -344,7 +352,7 @@ async fn malformed_fixed_result_destinations_reclaim_original_calls() {
     for (mode, original_calls) in [(29, 1), (30, 0), (31, 2)] {
         let id = format!("fixed-destination-{mode}");
         assert_eq!(
-            failure(f.manager.start(f.request(&id, mode)).unwrap().await).code,
+            failure(f.manager.start(Fixture::request(&id, mode)).unwrap().await).code,
             PlatformErrorCode::GuestTrap
         );
         assert_eq!(
@@ -359,7 +367,7 @@ async fn malformed_fixed_result_destinations_reclaim_original_calls() {
         assert_eq!(
             value(
                 f.manager
-                    .start(f.request(&format!("fixed-after-bad-{mode}"), 0))
+                    .start(Fixture::request(&format!("fixed-after-bad-{mode}"), 0))
                     .unwrap()
                     .await
             ),
@@ -377,7 +385,7 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
         assert_eq!(
             value(
                 f.manager
-                    .start(f.request(&format!("runtime-{mode}"), mode))
+                    .start(Fixture::request(&format!("runtime-{mode}"), mode))
                     .unwrap()
                     .await
             ),
@@ -387,14 +395,14 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
     }
     let first = value(
         f.manager
-            .start(f.request("first-generation", 14))
+            .start(Fixture::request("first-generation", 14))
             .unwrap()
             .await,
     );
     f.idle().await;
     let exhausted = f
         .manager
-        .start(f.request("linear-plus-native-memory", 24))
+        .start(Fixture::request("linear-plus-native-memory", 24))
         .unwrap()
         .await;
     assert_eq!(
@@ -404,7 +412,7 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
     f.idle().await;
     let second = value(
         f.manager
-            .start(f.request("second-generation", 14))
+            .start(Fixture::request("second-generation", 14))
             .unwrap()
             .await,
     );
@@ -412,19 +420,19 @@ async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_adm
     f.idle().await;
     let direct = success(
         f.manager
-            .start(f.request("lazy-no-concurrency", 15))
+            .start(Fixture::request("lazy-no-concurrency", 15))
             .unwrap()
             .await,
     );
     f.idle().await;
     let owned = success(
         f.manager
-            .start(f.request("accounted-runtime-owner", 0))
+            .start(Fixture::request("accounted-runtime-owner", 0))
             .unwrap()
             .await,
     );
     f.idle().await;
-    let mut native_exhausted = f.request("native-runtime-exhaustion", 23);
+    let mut native_exhausted = Fixture::request("native-runtime-exhaustion", 23);
     native_exhausted.budget.memory_bytes = direct.consumption.peak_memory_bytes;
     let exhausted = success(f.manager.start(native_exhausted).unwrap().await);
     assert_eq!(
@@ -452,7 +460,7 @@ async fn root_result_idle_worker_and_trap_never_skip_runtime_retirement() {
     for mode in [1, 2, 3] {
         let error = failure(
             f.manager
-                .start(f.request(&format!("unsettled-{mode}"), mode))
+                .start(Fixture::request(&format!("unsettled-{mode}"), mode))
                 .unwrap()
                 .await,
         );
@@ -467,7 +475,7 @@ async fn root_result_idle_worker_and_trap_never_skip_runtime_retirement() {
         assert_eq!(
             value(
                 f.manager
-                    .start(f.request(&format!("fresh-after-{mode}"), 0))
+                    .start(Fixture::request(&format!("fresh-after-{mode}"), 0))
                     .unwrap()
                     .await
             ),
@@ -485,7 +493,7 @@ async fn canonical_timer_allows_sibling_work_and_bounds_recurrence_cancellation_
         assert_eq!(
             value(
                 f.manager
-                    .start(f.request(&format!("timer-{mode}"), mode))
+                    .start(Fixture::request(&format!("timer-{mode}"), mode))
                     .unwrap()
                     .await
             ),
@@ -503,7 +511,7 @@ async fn narrower_timer_policy_deadline_preserves_root_and_allows_owner_settleme
     assert_eq!(
         value(
             f.manager
-                .start(f.request("narrower-policy-deadline", 25))
+                .start(Fixture::request("narrower-policy-deadline", 25))
                 .unwrap()
                 .await
         ),
@@ -521,7 +529,7 @@ async fn policy_revocation_at_real_timer_barrier_stops_original_work_and_reclaim
     let f = configured(root.path(), 1).await;
     let mut invocation = Box::pin(
         f.manager
-            .start(f.request("revoke-parked-runtime", 11))
+            .start(Fixture::request("revoke-parked-runtime", 11))
             .unwrap(),
     );
     pending_timer(invocation.as_mut(), &f).await;
@@ -562,14 +570,14 @@ async fn policy_revocation_at_real_timer_barrier_stops_original_work_and_reclaim
     assert_eq!(
         failure(
             f.manager
-                .start(f.request("fresh-after-revocation", 15))
+                .start(Fixture::request("fresh-after-revocation", 15))
                 .unwrap()
                 .await
         )
         .code,
         PlatformErrorCode::PermissionDenied
     );
-    let mut fresh = f.request("unrelated-fresh-after-revocation", 0);
+    let mut fresh = Fixture::request("unrelated-fresh-after-revocation", 0);
     fresh.target.service = latent_core::ServiceId("callee".into());
     fresh.target.contract = latent_core::ContractId(super::component::CALLEE.into());
     fresh.target.function = latent_core::FunctionId("answer".into());
@@ -583,7 +591,11 @@ async fn cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell()
     let root = tempfile::tempdir().unwrap();
     let f = configured(root.path(), 1).await;
     let id = ActivationId("cancel-parked-runtime".into());
-    let mut invocation = Box::pin(f.manager.start(f.request(id.0.as_str(), 11)).unwrap());
+    let mut invocation = Box::pin(
+        f.manager
+            .start(Fixture::request(id.0.as_str(), 11))
+            .unwrap(),
+    );
     pending_timer(invocation.as_mut(), &f).await;
     assert_eq!(f.quotas.usage().unwrap().active_activations, 1);
     f.manager
@@ -595,7 +607,7 @@ async fn cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell()
     assert_eq!(
         value(
             f.manager
-                .start(f.request("fresh-after-timer-cancel", 0))
+                .start(Fixture::request("fresh-after-timer-cancel", 0))
                 .unwrap()
                 .await
         ),
@@ -609,18 +621,23 @@ async fn root_deadline_does_not_complete_long_timer_and_cpu_loop_remains_contain
     let root = tempfile::tempdir().unwrap();
     let f = configured(root.path(), 1).await;
     assert_eq!(
-        value(f.manager.start(f.request("warm-runtime", 0)).unwrap().await),
+        value(
+            f.manager
+                .start(Fixture::request("warm-runtime", 0))
+                .unwrap()
+                .await
+        ),
         42
     );
     f.idle().await;
-    let mut deadline = f.request("root-deadline", 11);
+    let mut deadline = Fixture::request("root-deadline", 11);
     deadline.budget.wall_time_limit_millis = Some(100);
     assert_eq!(
         failure(f.manager.start(deadline).unwrap().await).code,
         PlatformErrorCode::DeadlineExceeded
     );
     f.idle().await;
-    let mut cpu = f.request("runtime-cpu-loop", 7);
+    let mut cpu = Fixture::request("runtime-cpu-loop", 7);
     cpu.budget.cpu_fuel = 50_000;
     assert_eq!(
         failure(f.manager.start(cpu).unwrap().await).code,
@@ -630,7 +647,7 @@ async fn root_deadline_does_not_complete_long_timer_and_cpu_loop_remains_contain
     assert_eq!(
         value(
             f.manager
-                .start(f.request("fresh-after-containment", 0))
+                .start(Fixture::request("fresh-after-containment", 0))
                 .unwrap()
                 .await
         ),
