@@ -169,7 +169,10 @@ class Compiler:
         source = work / "wit"
         canonical = command.run("canonical-wit", wasm, "component", "wit", source, "--no-docs").decode()
         graph = semantic(json.loads(command.run("authoritative-types", wasm, "component", "wit", source, "--json")))
+        application_graph, application_world = graph, world
+        application_canonical = canonical
         if self.runtime_profile == runtime.ASYNC_PROFILE:
+            runtime.check_application_bindings(application_graph, application_world)
             from tools.typescript_guest.activation_engine import NATIVE_SOURCES
             for name in (*NATIVE_SOURCES, 'runtime-globals.d.ts'):
                 path = 'sdk/typescript-guest/activation/'+name
@@ -201,15 +204,21 @@ class Compiler:
                 {'path': 'wit/'+name, 'content': raw.decode('utf-8')} for name, raw in sorted(files.items())]})
             source, graph, world = selected, actual, runtime.SELECTED_WORLD
             canonical = command.run('selected-runtime-wit', wasm, 'component', 'wit', selected, '--no-docs').decode()
+        # Only application bindings are projected. The exact native activation
+        # async-lower imports remain in the selected engine metadata and cannot
+        # be replaced by synchronous generated JS wrappers during world merge.
+        binding_canonical, binding_graph, binding_world = (
+            (application_canonical, application_graph, application_world)
+            if self.runtime_profile == runtime.ASYNC_PROFILE else (canonical, graph, world))
         projected = output / "stackful.wit"
-        projected.write_text(re.sub(r"\basync\s+func\b", "func", canonical), encoding="utf-8")
+        projected.write_text(re.sub(r"\basync\s+func\b", "func", binding_canonical), encoding="utf-8")
         actual = semantic(json.loads(command.run("projected-types", wasm, "component", "wit", projected, "--json")))
-        if actual != projection(graph):
+        if actual != projection(binding_graph):
             raise ValueError("stackful projection changed the authoritative type graph")
         generated = work / "generated"
-        command.run("generate-types", self.node, self.jco, "types", projected, "--world-name", world, "--name", "capsule", "--out-dir", generated)
+        command.run("generate-types", self.node, self.jco, "types", projected, "--world-name", binding_world, "--name", "capsule", "--out-dir", generated)
         second = output / "generated-check"
-        command.run("regenerate-types", self.node, self.jco, "types", projected, "--world-name", world, "--name", "capsule", "--out-dir", second)
+        command.run("regenerate-types", self.node, self.jco, "types", projected, "--world-name", binding_world, "--name", "capsule", "--out-dir", second)
         # Preserve raw generated declarations separately from the reviewed
         # compiler spelling projection and compare both independent outputs.
         write_json(output / "raw-generated-bindings.json", tree_identity(generated))
@@ -230,7 +239,7 @@ class Compiler:
             match = re.search(r"@module Interface ([^ ]+)", path.read_text())
             if match:
                 paths[match[1]] = ["./" + path.relative_to(work).as_posix()]
-        imports = import_identities(graph, world)
+        imports = import_identities(binding_graph, binding_world)
         missing = [name for name in imports if name not in paths]
         if missing:
             raise ValueError("unsupported or colliding generated WIT import identities: " + ", ".join(missing))
@@ -254,7 +263,7 @@ class Compiler:
         command.run("bundle", self.node, self.recipe / "bundle.mjs", self.esbuild,
                     work, work / "src/main.ts", bundle, allowed, bundle_configuration,
                     self.tools / "node_modules/acorn/dist/acorn.mjs")
-        arguments = [self.compiler, projected, bundle, output, world]
+        arguments = [self.compiler, projected, bundle, output, binding_world]
         if self.engine is not None:
             arguments.extend((self.engine, output/'typescript-runtime-selection.json'))
         command.run("componentize", self.node, self.recipe / "componentize.mjs", *arguments)

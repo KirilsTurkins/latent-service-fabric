@@ -51,6 +51,17 @@ def selection(profile: str) -> dict:
             'apiSupport': 'not-evaluated', 'authority': 'none'}
 
 
+def check_application_bindings(original_graph: dict, world: str) -> None:
+    """The native activation ABI is engine-owned, never a JavaScript adapter.
+
+    The compiler may project ordinary application imports/exports through its
+    established stackful ABI. It must not synthesize a second synchronous copy
+    of the selected engine's real async-lower readiness imports.
+    """
+    if ACTIVATION_INTERFACE in public_graph(original_graph, world)['imports']:
+        raise ValueError('typescript-engine-owned-activation-interface-not-an-application-module')
+
+
 def validate_engine(value: dict, core: bytes, sdk_inputs: dict[str, bytes], runtime_wit: bytes) -> dict:
     """Bind an explicitly supplied compiler input; no publisher trust is inferred."""
     expected = {'schemaVersion', 'profile', 'coreDigest', 'coreBytes', 'sdkInputs',

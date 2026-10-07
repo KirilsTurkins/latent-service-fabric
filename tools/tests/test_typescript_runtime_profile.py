@@ -209,6 +209,11 @@ class TypeScriptRuntimeProfileTests(unittest.TestCase):
             self.assertEqual(manifest['execution']['limits'], value['limits'])
             self.assertEqual(guest_compatibility_build.declared_host_abi(surface), 'lsf-host-abi-phase3-v5')
 
+    def test_native_activation_is_not_synthesized_as_a_second_js_application_import(self):
+        runtime.check_application_bindings(actual_graph('original'), WORLD)
+        with self.assertRaisesRegex(ValueError, 'engine-owned-activation-interface'):
+            runtime.check_application_bindings(actual_graph('derived'), runtime.SELECTED_WORLD)
+
 
 class TypeScriptAbortSourceTests(unittest.TestCase):
     def test_pinned_timeout_conversion_precedes_signal_graph_allocation(self):

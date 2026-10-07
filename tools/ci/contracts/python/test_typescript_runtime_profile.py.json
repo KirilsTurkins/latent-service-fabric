@@ -18,6 +18,7 @@
     "TypeScriptRuntimeProfileTests.test_exact_activation_async_kind_required",
     "TypeScriptRuntimeProfileTests.test_explicit_candidate_does_not_certify_api",
     "TypeScriptRuntimeProfileTests.test_explicit_null_is_not_an_absent_selection",
+    "TypeScriptRuntimeProfileTests.test_native_activation_is_not_synthesized_as_a_second_js_application_import",
     "TypeScriptRuntimeProfileTests.test_npm_explicit_candidate_preserves_conditions_without_promoting_api",
     "TypeScriptRuntimeProfileTests.test_original_async_import_kind_change_rejected",
     "TypeScriptRuntimeProfileTests.test_project_and_captured_profile_must_match",
@@ -293,6 +294,18 @@
         "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
       ]
     },
+    "TypeScriptRuntimeProfileTests.test_native_activation_is_not_synthesized_as_a_second_js_application_import": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
     "TypeScriptAbortSourceTests.test_pinned_timeout_conversion_precedes_signal_graph_allocation": {
       "bases": [
         "unittest.TestCase"
@@ -356,6 +369,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_runtime_profile.py",
-  "reviewReason": "Register new explicit TypeScript candidate selection, source-bound engine envelope and actual-parser full public WIT contract controls; no source/runtime qualification inference.; five source-only exact upstream AbortSignal derivation/input/range declaration controls; original21 cases and execution guards unchanged; one additive declared activation surface/manifest/V5 selection control retains limits/public exports and all prior26 execution guards",
+  "reviewReason": "Register new explicit TypeScript candidate selection, source-bound engine envelope and actual-parser full public WIT contract controls; no source/runtime qualification inference.; five source-only exact upstream AbortSignal derivation/input/range declaration controls; original21 cases and execution guards unchanged; one additive declared activation surface/manifest/V5 selection control retains limits/public exports and all prior26 execution guards; one engine-owned native activation/application binding separation control, original27 guards unchanged",
   "schemaVersion": "latent.ci.contracts.v1"
 }
