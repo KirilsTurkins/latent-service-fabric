@@ -203,7 +203,6 @@ impl Shared {
             started: false,
             management: false,
             capacity: None,
-            management: false,
         })
     }
 
