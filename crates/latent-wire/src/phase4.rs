@@ -9,9 +9,9 @@ mod lease;
 mod public_error;
 mod state_management;
 pub use state_management::{
-    StateMaintenanceClock, StateManagementAdmission, StateManagementBackend, StateManagementBinding,
-    StateManagementRecoveryAdmission, StateManagementRecoveryBinding, StateManagementReservation,
-    StateManagementServices,
+    StateMaintenanceClock, StateManagementAdmission, StateManagementBackend,
+    StateManagementBinding, StateManagementRecoveryAdmission, StateManagementRecoveryBinding,
+    StateManagementReservation, StateManagementServices,
 };
 #[cfg(test)]
 mod tests;
