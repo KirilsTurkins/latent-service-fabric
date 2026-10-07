@@ -136,7 +136,13 @@ fn request(
             memory_bytes: ceiling.memory_bytes.min(limits.max_memory_bytes),
             wall_time_limit_millis: Some(wall),
             state_read_bytes: ceiling.state_read_bytes,
-            ..ResourceBudget::default()
+            state_write_bytes: 0,
+            effect_count: 0,
+            child_calls: 0,
+            outbound_requests: 0,
+            blob_read_bytes: 0,
+            blob_write_bytes: 0,
+            log_bytes: 0,
         },
         metadata: latent_core::Metadata::new(),
         input: Vec::new(),
@@ -175,7 +181,11 @@ mod tests {
             state_read_bytes: 4_194_304,
             state_write_bytes: 2_097_152,
             effect_count: 32,
-            ..ResourceBudget::default()
+            child_calls: 0,
+            outbound_requests: 0,
+            blob_read_bytes: 0,
+            blob_write_bytes: 0,
+            log_bytes: 0,
         };
         let trace = SystemInvocationTraceSource::default().next_trace().unwrap();
         let actual = request(

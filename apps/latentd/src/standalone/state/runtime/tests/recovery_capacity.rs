@@ -14,7 +14,14 @@ fn original_request(
         cpu_fuel: 100,
         memory_bytes: 65_536,
         wall_time_limit_millis: Some(5_000),
-        ..ResourceBudget::default()
+        child_calls: 0,
+        outbound_requests: 0,
+        state_read_bytes: 0,
+        state_write_bytes: 0,
+        blob_read_bytes: 0,
+        blob_write_bytes: 0,
+        log_bytes: 0,
+        effect_count: 0,
     };
     let budget = ActivationBudget::with_profile(
         EffectiveActivationBudget::admit_at(&requested, &requested, &requested, None, sample)
