@@ -1,0 +1,134 @@
+   Compiling latent-core v0.1.0-alpha.5 (/source/crates/latent-core)
+   Compiling latent-network v0.1.0-alpha.5 (/source/crates/latent-network)
+   Compiling latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+   Compiling latent-contracts v0.1.0-alpha.5 (/source/crates/latent-contracts)
+   Compiling latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+   Compiling latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+   Compiling latent-oci v0.1.0-alpha.5 (/source/crates/latent-oci)
+   Compiling latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+   Compiling latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+   Compiling latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+    Finished `test` profile [unoptimized] target(s) in 26.52s
+     Running unittests src/lib.rs (/build/target/debug/deps/latent_policy-78d3ae26bfe57f3c)
+
+running 117 tests
+test capability::control::tests::cancelled_waiter_keeps_queued_or_running_work_charged_until_actual_completion ... ok
+test capability::control::tests::shutdown_timeout_reports_owned_work_and_rejects_new_submissions ... ok
+test capability::resources::stream_tests::endpoint_scope_is_exact_and_cannot_be_derived_from_http_authority ... ok
+test capability::resources::stream_tests::malformed_ambiguous_and_wildcard_endpoints_fail_closed ... ok
+test capability::store::authority::owned::tests::owned_stream_target_retains_exact_endpoint_without_borrowed_authority ... ok
+test capability::store::tests::authority::held_policy_snapshots_reject_later_calls_after_revocation_and_owner_retirement ... ok
+test capability::store::tests::authority::principal_policy_and_binding_revisions_narrow_and_invalidate_independently ... ok
+test capability::store::tests::authority::publication::final_admission_checks_real_catalog_owner_publication_and_every_narrowing ... ok
+test capability::store::tests::authority::publication::service::only_the_explicit_service_publication_can_cross_the_policy_tenant_fence ... ok
+test capability::store::tests::authority::resource_live_and_staged_snapshots_share_the_configured_read_owner_ceiling ... ok
+test capability::store::tests::bounded_outcome_retention_never_evicts_identity_tombstones ... ok
+test capability::store::tests::competing_cas_writers_have_exactly_one_winner ... ok
+test capability::store::tests::every_uncertain_write_poison_invalidates_live_owner_and_recovery_checks_the_floor ... ok
+test capability::store::tests::exact_replay_does_not_restore_a_revoked_grant_and_survives_restart ... ok
+test capability::store::tests::missing_floor_markers_corruption_and_links_never_become_a_new_store ... ok
+test capability::store::tests::opaque_cursor_binds_scope_kind_generation_and_session ... ok
+test capability::store::tests::perimeter::storage_permissions_links_corruption_and_oversized_history_fail_closed ... ok
+test capability::store::tests::perimeter::unwinding_preflight_retires_authority_until_verified_reopen ... ok
+test capability::store::tests::reader_limits_include_cloned_body_owners_and_have_separate_mutation_headroom ... ok
+test capability::store::tests::response_preflight_deadline_and_disk_capacity_fail_before_any_persistence ... ok
+test capability::tests::additional_restrictions_inherit_only_when_absent_and_never_grant_by_themselves ... ok
+test capability::tests::binding_digest_tracks_only_validated_immutable_configuration_identity ... ok
+test capability::tests::empty_sets_default_deny_and_matching_deny_overrides_every_allow ... ok
+test capability::tests::exact_identity_is_required_and_guest_claims_do_not_supply_it ... ok
+test capability::tests::malformed_unknown_duplicate_and_null_constraints_are_rejected ... ok
+test capability::tests::matching_allow_rules_intersect_every_ceiling_instead_of_building_a_union ... ok
+test capability::tests::normalized_http_scope_has_exact_origins_and_segment_prefixes ... ok
+test capability::tests::required_audit_is_monotonic_and_old_canonical_documents_are_unchanged ... ok
+test capability::tests::runtime_timer_policy_requires_its_exact_contract_and_clock_scope ... ok
+test capability::tests::state::same_tenant_subjects_require_current_entity_and_result_policy_grants ... ok
+test capability::tests::state::state_and_intent_opt_ins_preserve_stateless_linking_and_closed_bounded_decoding ... ok
+test capability::tests::state::state_policy_matches_exact_tuples_without_cross_product_or_incarnation_revival ... ok
+test supply_chain::tests::authority::corruption_and_exclusive_ledger_ownership_fail_closed ... ok
+test supply_chain::tests::authority::every_policy_durability_cut_halts_current_authority_and_preserves_restart_floors ... ok
+test supply_chain::tests::authority::existing_builder_identifier_profile_round_trips_historical_receipt ... ok
+test supply_chain::tests::authority::fresh_replacement_recovers_expired_outer_policy_but_identical_expired_child_is_not_refresh ... ok
+test supply_chain::tests::authority::grant_fence_is_nonblocking_and_currentness_rechecks_inside_commit ... ok
+test supply_chain::tests::authority::initialized_ledger_missing_floor_cannot_restart_as_fresh ... ok
+test supply_chain::tests::authority::newly_required_inventory_is_ineligible_history_not_storage_corruption ... ok
+test supply_chain::tests::authority::policy_change_revokes_old_grants_and_exact_original_evidence_can_refresh ... ok
+test supply_chain::tests::authority::proof_age_expiry_requires_fresh_verification_without_rewriting_history ... ok
+test supply_chain::tests::authority::required_evidence_tamper_wrong_tenant_and_spare_capacity_reject ... ok
+test supply_chain::tests::authority::retired_node_denies_held_grants_and_never_renews ... ok
+test supply_chain::tests::authority::uncovered_time_never_advances_clock_and_failed_covered_requests_do ... ok
+test supply_chain::tests::authority::valid_admission_derives_publisher_and_historical_receipt_reverifies_on_reopen ... ok
+test supply_chain::tests::catalog::aged_proof_refresh_preserves_original_durable_receipt_and_package ... ok
+test supply_chain::tests::catalog::expired_package_recovers_only_as_history_and_retired_catalog_tokens_fail ... ok
+test supply_chain::tests::catalog::held_retired_token_does_not_keep_authority_or_catalog_root_locked ... ok
+test supply_chain::tests::catalog::malformed_or_missing_evidence_never_creates_preparation_authority ... ok
+test supply_chain::tests::catalog::revocation_blocks_source_and_original_evidence_can_reverify_after_approved_update ... ok
+test supply_chain::tests::catalog::signed_package_roundtrips_metadata_and_sealed_preparation_source ... ok
+test supply_chain::tests::catalog::slow_package_publication_renews_its_lease_without_bypassing_currentness ... ok
+test supply_chain::tests::clock::mutation_renewal_persists_a_full_window_even_before_the_sampler_margin ... ok
+test supply_chain::tests::clock::renewal_post_sync_regression_cannot_forget_newly_covered_observation ... ok
+test supply_chain::tests::clock::renewal_without_persistence_retains_covered_clock_observation ... ok
+test supply_chain::tests::clock_renewal::current_grant_checkpoints_share_a_read_only_authority_epoch ... ok
+test supply_chain::tests::clock_renewal::current_grants_remain_available_during_clock_floor_persistence ... ok
+test supply_chain::tests::clock_renewal::current_grants_remain_available_during_trusted_clock_renewal_sample ... ok
+test supply_chain::tests::clock_renewal::failed_clock_persistence_halts_grants_without_restoring_the_old_floor ... ok
+test supply_chain::tests::clock_renewal::failed_durable_renewal_invalidates_a_reader_paused_in_the_trusted_clock ... ok
+test supply_chain::tests::clock_renewal::final_publication_remains_available_during_read_only_grant_clock_sample ... ok
+test supply_chain::tests::clock_renewal::final_publication_remains_available_during_trusted_clock_renewal_sample ... ok
+test supply_chain::tests::clock_renewal::out_of_order_readers_preserve_the_clock_high_water_mark_and_detect_later_rollback ... ok
+test supply_chain::tests::clock_renewal::pending_clock_floor_never_extends_a_grant_before_durable_publication ... ok
+test supply_chain::tests::clock_renewal::policy_replacement_cannot_overtake_a_pending_clock_floor_write ... ok
+test supply_chain::tests::clock_renewal::retirement_waits_for_the_pending_floor_and_never_revives_held_grants ... ok
+test supply_chain::tests::clock_renewal::retiring_the_owner_invalidates_a_reader_paused_in_the_trusted_clock ... ok
+test supply_chain::tests::closed_policy_rejects_duplicates_bounds_and_unbound_snapshots ... ok
+test supply_chain::tests::history::canonical_wrong_receipt_identities_are_corruption_even_after_expiry ... ok
+test supply_chain::tests::history::supplied_detached_sbom_must_be_the_historical_exact_association ... ok
+test supply_chain::tests::lifecycle::bad_evidence_wrong_package_and_new_policy_denial_cannot_advance_lifecycle ... ok
+test supply_chain::tests::lifecycle::expired_trust_reopens_as_denied_history_and_emergency_revocation_remains_available ... ok
+test supply_chain::tests::lifecycle::lifecycle_revocation_is_terminal_for_reverify_republication_renewal_and_restart ... ok
+test supply_chain::tests::lifecycle::renewal_replaces_only_selected_evidence_and_invalidates_old_execution_generation ... ok
+test supply_chain::tests::lock_diagnostics::held_authority_fence_reports_busy_and_recovers_after_release ... ok
+test supply_chain::tests::lock_diagnostics::poisoned_authority_fence_stays_fail_closed_across_retries ... ok
+test supply_chain::tests::lock_diagnostics::unwinding_shared_reader_retires_currentness_for_readers_and_writers ... ok
+test supply_chain::tests::preparation::capsule_preparation_retains_one_slot_and_renews_after_work_exceeds_the_lease ... ok
+test supply_chain::tests::preparation::invalid_capsule_preparation_releases_ownership_without_renewing_the_floor ... ok
+test supply_chain::tests::preparation::prepared_capsules_recheck_policy_replacement_and_both_role_revocations ... ok
+test supply_chain::tests::preparation::prepared_capsules_reject_expiry_retirement_clock_regression_and_uncertain_durability ... ok
+test supply_chain::tests::preparation::uncovered_or_denied_admission_never_enters_structural_preparation ... ok
+test supply_chain::tests::publications::corrected_embedded_inventory_and_two_tenants_share_wasm_without_sharing_authority ... ok
+test supply_chain::tests::runtime::explicit_requirements_without_host_profile_cannot_acquire_authority ... ok
+test supply_chain::tests::runtime::incompatible_restart_retains_exact_history_but_no_live_eligibility ... ok
+test supply_chain::tests::runtime::signed_package_requires_matching_current_runtime_target_and_cpu ... ok
+test supply_chain::tests::same_generation_policy_changes_and_component_floor_rollbacks_fail ... ok
+test supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture ... ignored, Explicit fixture exporter for tools/run_phase2_operator_workflow.py
+test supply_chain::tests::support::operator_fixture::export_publication_workflow_fixture ... ignored, Explicit fixture exporter for tools/run_publication_workflow.py
+test supply_chain::tests::support::operator_fixture::resources::export_phase2_resource_fixture ... ignored, Explicit fixture exporter for tools/phase2_gate_resource.py
+test supply_chain::tests::verification::local_check_denies_wrong_tenant_expiry_missing_and_corrupt_evidence ... ok
+test supply_chain::tests::verification::local_check_uses_current_publisher_policy_and_sbom_requirements ... ok
+test supply_chain::tests::verification::local_report_binds_joint_policy_without_grant_or_clock_history ... ok
+test supply_chain::tests::verification::local_web_check_rejects_foreign_expired_revoked_missing_and_corrupt_evidence ... ok
+test supply_chain::tests::verification::local_web_check_rejects_signed_inconsistent_assets_and_executable_capsules ... ok
+test supply_chain::tests::verification::local_web_report_binds_actual_outputs_without_component_authority ... ok
+test supply_chain::tests::web::actual_web_component_passes_signed_ssr_admission_and_restart ... ignored, Built public async web component; required by tools/validate_contracts.sh
+test supply_chain::tests::web::angular_build::actual_observed_angular_package_authenticates_publisher_builder_sbom_and_restart ... ignored, requires LSF_ANGULAR_BUILD_DIR from the actual maintained builder
+test supply_chain::tests::web::componentless_web_admission_reverifies_on_restart_and_old_owner_grants_stay_retired ... ok
+test supply_chain::tests::web::control_lease_renewal_preserves_current_policy_and_retirement_fences ... ok
+test supply_chain::tests::web::corrected_inventory_retains_distinct_package_and_receipt_with_same_web_outputs ... ok
+test supply_chain::tests::web::malformed_web_history_is_rejected_before_expired_evidence_can_leave_history ... ok
+test supply_chain::tests::web::preparation::decoded_web_bytes_cannot_mint_authority_after_policy_replacement_or_retirement ... ok
+test supply_chain::tests::web::preparation::failed_structural_validation_releases_the_shared_reservation ... ok
+test supply_chain::tests::web::preparation::structural_web_work_retains_one_shared_verification_slot_without_blocking_clock_renewal ... ok
+test supply_chain::tests::web::valid_signatures_cannot_make_a_wrong_asset_tree_or_incompatible_renderer_eligible ... ok
+test supply_chain::tests::web::web_and_capsule_grants_share_the_same_nonblocking_policy_fence_and_reject_foreign_owners ... ok
+test supply_chain::tests::web::web_requires_publisher_builder_inventory_and_allowed_tenant ... ok
+test supply_chain::tests::web_catalog::actual_web_component_catalog_keeps_renderer_and_assets_exact_through_revocation_and_restart ... ignored, Built public async web component; required by tools/validate_contracts.sh
+test supply_chain::tests::web_catalog::registry::authenticated_web_registry_admission_roundtrip ... ignored, requires the owned TLS registry and actual public web-contract component; required in CI
+test supply_chain::tests::web_catalog::web_catalog_and_capsules_conserve_one_combined_entry_ceiling ... ok
+test supply_chain::tests::web_catalog::web_catalog_browser_roundtrip_restart_and_private_layers_never_become_public_assets ... ok
+test supply_chain::tests::web_catalog::web_catalog_corrected_inventory_and_independent_tenants_never_share_revocation_authority ... ok
+test supply_chain::tests::web_catalog::web_catalog_current_grants_do_not_hide_missing_or_changed_original_content_on_restart ... ok
+test supply_chain::tests::web_catalog::web_catalog_preflight_rejection_and_bad_evidence_leave_no_publication_or_mode_upgrade ... ok
+test supply_chain::tests::web_catalog::web_catalog_reclaims_only_unselected_evidence_and_keeps_the_current_revision_after_restart ... ok
+test supply_chain::tests::web_catalog::web_catalog_renewal_replaces_only_evidence_and_invalidates_old_use_tokens_after_restart ... ok
+
+test result: ok. 110 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 11.89s
+
