@@ -1,0 +1,16 @@
+{
+  "commit": "e6209fcd4e36627a25b5a4fde16a31b053080027",
+  "tree": "eeaba464c03a9d800d7a1fae2ab5702d4de0635d",
+  "image": "sha256:ea20dd3d8a7ffc13c5abbea462c1bfa75dd61c0b8bbffe2aac9f30fb9a2483e1",
+  "packSha256": "38dec789ca6e47fe6db2bbbd25d90cf28ef252959644fce2d8358a029e5ba81e",
+  "packBytes": 382123393,
+  "actualGitObjectCount": 8936,
+  "sourceHistoryAttested": false,
+  "allCurrentTrackedFilesPreserved": true,
+  "oldExecutionResultsBorrowed": false,
+  "collectorSha256": {
+    "setup.py": "e3414eccb856df2b4b9aace0d2806148fef907fef04f5a9955f1b924cffe2c30",
+    "runner.py": "5a6ea12bd8f6d347e204cf179738c655c86c78c0fefb0c05fc74b8eb8306674c",
+    "controller.py": "25c1c41335eca60cb2678b52c922255eada17c49ab03c697945226ddf2b898df"
+  }
+}

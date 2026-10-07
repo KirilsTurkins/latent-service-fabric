@@ -26,7 +26,7 @@ RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_st
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 RECIPE += ("tools/rust_dependency_authoring.py", "tools/rust_capsule.lock") + guest_authoring_frontend.RECIPE
 RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
-           "tools/dev_workflow/common.py", "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
+           "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
            "tools/dev_workflow/resource_inputs.py",
            "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
            "tools/dev_workflow/windows.py")
@@ -119,6 +119,8 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
         raise ValueError("dependency patches and replacements cannot override the pinned SDK")
     expected = {"wit-bindgen": "=" + pins["toolchain"]["rust"]["dependencies"]["wit-bindgen"],
                 "latent-guest": {"path": "vendor/lsf/sdk/rust-guest"}}
+    if pins["template"]["name"] == "transactional-aggregate":
+        expected["latent-guest"]["features"] = ["transaction"]
     maintained = cargo.get("target", {}).get('cfg(target_arch = "wasm32")', {}).get("dependencies", {})
     if (not isinstance(maintained, dict) or any(maintained.get(name) != value for name, value in expected.items())
             or not captured and maintained != expected):

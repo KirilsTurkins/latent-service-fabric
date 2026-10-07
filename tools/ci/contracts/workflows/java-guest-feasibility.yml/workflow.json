@@ -23,6 +23,7 @@
         ],
         "paths": [
           "sdk/java-guest/**",
+          "examples/java-http-composition/**",
           "sdk/transaction-contract/**",
           "tools/**",
           "apps/**",

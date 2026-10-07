@@ -1,4 +1,4 @@
-use std::sync::OnceLock;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use super::physical::PhysicalStore;
 use super::{ProtectedStoreError, ProtectedStoreOwner};
@@ -19,6 +19,14 @@ pub struct ProtectedStoreView {
 struct RetainedReadView {
     view: ReadView,
     _owner: Option<Box<dyn Send>>,
+}
+
+// A Send-only admitted owner keeps its original type and drop behavior. The
+// mutex supplies Sync without accessing or cloning that owner. The same Arc is
+// bound to the empty retained slot before submission and kept by the native
+// wrapper; actual worker retirement drops the view before both owner references.
+struct RetainedViewOwner {
+    _owner: Mutex<Box<dyn Send>>,
 }
 
 impl ProtectedStoreView {
@@ -113,6 +121,16 @@ impl ProtectedStoreOwner {
             self.ready.reserve_retained::<RetainedReadView>(8192)
         }
         .map_err(ProtectedStoreError::Io)?;
+        let owner = owner.map(|original| {
+            Arc::new(RetainedViewOwner {
+                _owner: Mutex::new(original),
+            })
+        });
+        if let Some(owner) = &owner {
+            retained.retain_owner(owner.clone()).map_err(|_| {
+                ProtectedStoreError::Io(crate::store_io::StoreIoError::RecoveryRequired)
+            })?;
+        }
         let witness = if observed {
             retained.retirement_witness()
         } else {
@@ -132,7 +150,7 @@ impl ProtectedStoreOwner {
                     let view = store.classify(store.engine().snapshot())?;
                     if let Err(view) = retained.attach(RetainedReadView {
                         view,
-                        _owner: owner,
+                        _owner: owner.map(|owner| Box::new(owner) as Box<dyn Send>),
                     }) {
                         drop(view); // already on the native worker
                         return Err(ProtectedStoreError::Io(

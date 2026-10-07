@@ -155,6 +155,7 @@ fn write_activation_bindings(output: &Path, platform: &Path) -> io::Result<()> {
         format!(
             r#"wit_bindgen::generate!({{
         path: {path}, world: "latent:platform/capsule@0.5.0", generate_all,
+        type_section_suffix: "-phase3-activation",
     }});"#
         ),
     )

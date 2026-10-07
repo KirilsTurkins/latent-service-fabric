@@ -11,7 +11,9 @@ mod validation;
 mod writer;
 pub use captured::{CapturedIntent, IntentCaptureContext};
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
-pub use record::{CommandRecord, DurableResult, InboxIdentity, SourceIdentity};
+pub use record::{
+    command_row_key, result_row_key, CommandRecord, DurableResult, InboxIdentity, SourceIdentity,
+};
 pub use retention::{MaintenanceClock, MaintenanceProgress, ResultMaintenanceOwner};
 pub use validation::{validate_linked_row, validate_row, validate_view};
 pub use writer::{

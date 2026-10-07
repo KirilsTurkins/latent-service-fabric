@@ -18,6 +18,7 @@ mod initialization;
 mod lifecycle;
 mod migration;
 mod native_capacity;
+mod opening_owner;
 mod recovery;
 mod reserved;
 mod resource;
