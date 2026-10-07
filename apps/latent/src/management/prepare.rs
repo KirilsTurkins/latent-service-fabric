@@ -172,9 +172,7 @@ pub fn validate(command: &ValidateCommand) -> Result<Outcome, Failure> {
         let manifest = codec()
             .decode_deployment(&bytes)
             .map_err(|_| invalid_manifest())?;
-        Phase1ManifestValidator
-            .validate_deployment(&manifest)
-            .map_err(|_| invalid_manifest())?;
+        latent_manifest::validate_deployment_document(&manifest).map_err(|_| invalid_manifest())?;
     }
     Ok(Outcome::success(json!({"kind":kind,"valid":true})))
 }
@@ -351,9 +349,7 @@ fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Opera
     let manifest = codec()
         .decode_deployment(&bytes)
         .map_err(|_| invalid_manifest())?;
-    Phase1ManifestValidator
-        .validate_deployment(&manifest)
-        .map_err(|_| invalid_manifest())?;
+    latent_manifest::validate_deployment_document(&manifest).map_err(|_| invalid_manifest())?;
     tenant(
         manifest
             .metadata
