@@ -62,6 +62,19 @@ impl Recorder {
                 error.details.len(),
                 error.retryable,
             );
+            for detail in error.details.iter().take(16) {
+                let reason = detail
+                    .fields
+                    .get("reason")
+                    .map(String::as_str)
+                    .unwrap_or("absent");
+                eprintln!(
+                    "sdk-fixture-detail-hash kind-blake3={} reason-blake3={} fields={}",
+                    blake3::hash(detail.kind.as_bytes()),
+                    blake3::hash(reason.as_bytes()),
+                    detail.fields.len(),
+                );
+            }
         }
         let record = FailureRecord {
             stage,
