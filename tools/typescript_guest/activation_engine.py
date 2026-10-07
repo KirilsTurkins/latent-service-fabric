@@ -95,6 +95,11 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         {name: original[name] for name in EVENT_PREIMAGES}, abort_source)
     result.update(event_sources)
     engine = result["StarlingMonkey/runtime/engine.cpp"]
+    engine = replace_once(engine,
+        b'  bool ENABLE_PBL = std::string(std::getenv("ENABLE_PBL")) == "1";\n',
+        b'  const char* pbl_selection = std::getenv("ENABLE_PBL");\n'
+        b'  const bool ENABLE_PBL = pbl_selection && std::string(pbl_selection) == "1";\n',
+        "optional-original-PBL-selection-no-null-string")
     engine = replace_once(engine, b'#include "event_loop.h"',
                           b'#include "event_loop.h"\n#include "native_engine.h"', "include")
     engine = replace_once(engine, b'bool init_js(const EngineConfig& config) {\n  JS_Init();',
