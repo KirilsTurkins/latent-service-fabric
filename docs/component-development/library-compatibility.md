@@ -19,6 +19,33 @@ exists. Each diagnostic keeps its own component identity. An unavailable or
 stale diagnostic input still produces `compatibility-report-failed.json` and
 preserves the original build failure.
 
+After the recipes recheck immutable inputs, `compatibility-context.json` binds
+the existing report, source and component to selected compiler materials,
+owner-emitted standard-runtime receipts and automatic patch identities. Patch
+records distinguish original bytes, transformed bytes and the recipe plus
+configuration identity. Runtime selection remains unqualified; absent runtime
+observations, unknown reachability and initialization, and unproven worker drain
+remain visible. This separate sidecar does not replace the packaged v1 report.
+
+The normal node test workflow writes `compatibility-outcomes.json` from each
+original invocation result. It retains the frontend source separately from the
+compatibility source inventory, redacts payloads/messages, and validates the
+closed node diagnostic vocabulary and unsigned counters. It issues no extra
+invocation, status request, retry or grant. Queue pressure and generic resource
+errors do not identify a task, timer or stack limit. A client process being
+reaped does not establish a library worker's physical retirement. These sidecars
+describe observed selections and outcomes, with unknown API compatibility.
+
+Rust, Go, C and TypeScript builds also record the maintained owner's automatic
+selection in `standard-runtime-selection.json`. It binds the captured runtime
+sources, selected dependency graph, compiler/recipe materials, WIT input
+inventory, generated binding result and build configuration. No application
+runtime patch is required. The receipt identifies the runtime implementation
+and qualification owner; it does not certify arbitrary APIs, transitive
+callbacks or lifecycle quiescence. Renaming a package changes its captured
+graph identity without changing API eligibility. These receipts remain beside
+the build and preserve the packaged compatibility report and asset identity.
+
 Reports distinguish dependency resolution, target/ABI problems, unsupported
 operations, missing runtime implementations, unqualified profiles, unknown
 behavior, optional application extensions, provider installation, grants,
@@ -56,6 +83,10 @@ checkout:
 ```sh
 python -m tools.guest_compatibility output/compatibility-report.json
 ```
+
+Add `--context output/compatibility-context.json` to present the separately bound
+standard-runtime and patch context. It must match the report's source/component
+identity. `--json` continues to emit the original v1 report on its own.
 
 Add `--json` to validate and emit the same machine report. This command only
 reads the explicit report; it does not execute library code or grant authority.
