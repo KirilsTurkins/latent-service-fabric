@@ -397,6 +397,9 @@ impl NamespaceCatalog {
         if key.family != Family::Namespace {
             return Err(NamespaceError::UnsupportedFormat);
         }
+        if key.key.starts_with(super::history::HISTORY_PREFIX) {
+            super::history::NamespaceHistory::validate_row(key, bytes)?;
+        }
         let (expected, scope) = if key.key.starts_with(super::history::HISTORY_PREFIX) {
             let history = super::history::NamespaceHistory::decode(bytes)?;
             let expected = super::history::history_key(

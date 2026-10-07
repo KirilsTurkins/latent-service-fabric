@@ -89,6 +89,7 @@ grant; its original physical and request owners survive until cleanup. See
 [the scoped rejection observer contract](effect-rejection-observers.md) for the
 required pre-exposure owner attachment and qualification boundary.
 
+
 `DispatchGrant::check_current(EffectTime)` checks the exact original sealed
 effect owner after any awaited connection or qualification work and before
 protocol writes. It reads bounded current metadata under the same short rule
@@ -145,6 +146,7 @@ original grant is denied while the physical permit remains charged. These
 checks establish the metadata/engine bridge; the provider's held-TLS schedule
 separately establishes transport behavior.
 
+
 `DispatchContext::retain_owner` binds one already reserved original request or
 global owner before any grant is issued. Refused replacement or late retention
 returns the exact owner unchanged. Every issued grant retains the same opaque
@@ -158,6 +160,9 @@ cleanup. Unexpected context drop instead preserves the exact keeper with the
 already quarantined physical permit, bounded by the existing physical/global
 capacity limits. Dropping all grants or response waiters cannot refund that
 unresolved capacity; process loss remains the conservative recovery boundary.
+
+All 97 effect library cases and strict all-target/all-feature Clippy passed on
+the pinned Linux Rust 1.97.1 image. The two new cases use real shared native
 
 The original management port milestone recorded 97 effect cases and strict
 all-target/all-feature Clippy on pinned Linux Rust 1.97.1. Provider branch
