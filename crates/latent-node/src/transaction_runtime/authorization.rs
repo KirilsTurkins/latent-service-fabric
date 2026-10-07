@@ -43,6 +43,7 @@ pub struct StateAuthorization {
     intents: Option<Arc<IntentPolicyBinding>>,
     initial_intent: Option<Arc<latent_policy::capability::OwnedPolicyDecision>>,
     pub(super) budget: ActivationBudget,
+    entity: Option<super::entity::EntityCommitFence>,
 }
 impl StateAuthorization {
     pub(crate) fn authority_mode(&self) -> latent_capabilities::namespace::Mode {
@@ -102,6 +103,7 @@ impl StateAuthorization {
             intents: intents.map(Arc::new),
             initial_intent: None,
             budget,
+            entity: None,
         };
         if admitted.authority_mode() == latent_capabilities::namespace::Mode::Command
             && admitted.intents.is_some()
@@ -175,6 +177,21 @@ impl StateAuthorization {
         Ok(self.with_namespace(authority, namespace))
     }
 
+    pub(super) fn with_entity(mut self, entity: Option<super::entity::EntityCommitFence>) -> Self {
+        self.entity = entity;
+        self
+    }
+
+    pub(super) fn with_entity_final<R>(
+        &self,
+        action: impl FnOnce() -> R,
+    ) -> Result<R, PlatformError> {
+        match &self.entity {
+            Some(entity) => entity.with_current(action),
+            None => Ok(action()),
+        }
+    }
+
     pub(super) fn rebind_result_read(
         &self,
         namespace: NamespaceRead,
@@ -207,6 +224,7 @@ impl StateAuthorization {
             intents: self.intents.clone(),
             initial_intent: self.initial_intent.clone(),
             budget: self.budget.clone(),
+            entity: self.entity.clone(),
         }
     }
 
@@ -285,26 +303,32 @@ impl StateAuthorization {
                 acceptance =
                     acceptance.retain_policy(self.initial_intent.as_deref().ok_or_else(denied)?)?;
             }
-            acceptance
-                .accept_with(|| {
-                    if let Some(effects) = effects {
-                        effects
-                            .commit_fence(
-                                authorities,
-                                latent_effects::authority::EffectTime {
-                                    unix_millis: time.unix_millis,
-                                    continuity_proven: time.continuity_proven,
-                                },
-                            )
-                            .map(Some)
-                            .map_err(|_| NamespaceError::PermissionDenied)
-                    } else if authorities.is_empty() {
-                        Ok(None)
-                    } else {
-                        Err(NamespaceError::PermissionDenied)
-                    }
-                })
-                .map_err(|_| denied())
+            // The short local fence surrounds the original acceptance only:
+            // Entity -> captured/current Policy -> Namespace -> Effects ->
+            // original Cancellation. Dispatch never holds Entity while checking
+            // authority, and no native I/O occurs while this fence is held.
+            self.with_entity_final(|| {
+                acceptance
+                    .accept_with(|| {
+                        if let Some(effects) = effects {
+                            effects
+                                .commit_fence(
+                                    authorities,
+                                    latent_effects::authority::EffectTime {
+                                        unix_millis: time.unix_millis,
+                                        continuity_proven: time.continuity_proven,
+                                    },
+                                )
+                                .map(Some)
+                                .map_err(|_| NamespaceError::PermissionDenied)
+                        } else if authorities.is_empty() {
+                            Ok(None)
+                        } else {
+                            Err(NamespaceError::PermissionDenied)
+                        }
+                    })
+                    .map_err(|_| denied())
+            })?
         })
     }
 

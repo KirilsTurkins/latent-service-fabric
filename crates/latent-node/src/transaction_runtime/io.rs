@@ -28,10 +28,39 @@ impl StateTransactionHost {
         authorization: Arc<StateAuthorization>,
         activation: ActivationId,
         scope: StateScope,
+        command: Option<CommandHostSelection>,
+        effects: Option<EffectAuthorityOwner>,
+        time: Arc<dyn CommandTimeSource>,
+        conditions: Vec<Precondition>,
+    ) -> Result<Arc<Self>, StateFailure> {
+        Self::open_owned(
+            store,
+            authorization,
+            activation,
+            scope,
+            command,
+            effects,
+            time,
+            conditions,
+            None,
+        )
+        .await
+    }
+
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "The original affine entity owner travels with each real host owner"
+    )]
+    pub(super) async fn open_owned(
+        store: Arc<ProtectedStoreOwner>,
+        authorization: Arc<StateAuthorization>,
+        activation: ActivationId,
+        scope: StateScope,
         mut command: Option<CommandHostSelection>,
         effects: Option<EffectAuthorityOwner>,
         time: Arc<dyn CommandTimeSource>,
         conditions: Vec<Precondition>,
+        entity: Option<super::entity::EntityOwner>,
     ) -> Result<Arc<Self>, StateFailure> {
         let (mode, limits, retained_bytes) = never_started(
             super::initialization::configuration(
@@ -65,6 +94,7 @@ impl StateTransactionHost {
                 memory,
                 retained_bytes,
                 time: Arc::clone(&time),
+                entity: entity.clone(),
             },
             &mut command,
         )
@@ -118,6 +148,7 @@ impl StateTransactionHost {
             effects,
             time,
             retained_bytes,
+            entity: Mutex::new(entity),
         }))
     }
 
@@ -276,6 +307,7 @@ struct SessionSetup {
     memory: Arc<HostMemoryReservation>,
     retained_bytes: u64,
     time: Arc<dyn CommandTimeSource>,
+    entity: Option<super::entity::EntityOwner>,
 }
 struct OpenedSession {
     owned: OwnedSession,
@@ -287,15 +319,23 @@ async fn open_session(
     setup: SessionSetup,
     command: &mut Option<CommandHostSelection>,
 ) -> Result<OpenedSession, StateFailure> {
-    let operation = never_started(store.reserve_operation().map_err(protected_error), command)?;
-    let (opening, witness) = match store.open_view_observed_retaining(Arc::clone(&setup.time)) {
-        Ok(accepted) => accepted,
-        Err(error) => {
-            operation.retire().await;
-            retire_opening_command(command);
-            return Err(protected_error(error));
-        }
-    };
+    let keeper: Arc<dyn std::any::Any + Send + Sync> =
+        Arc::new((Arc::clone(&setup.time), setup.entity.clone()));
+    let operation = never_started(
+        store
+            .reserve_operation_retaining(keeper)
+            .map_err(protected_error),
+        command,
+    )?;
+    let (opening, witness) =
+        match store.open_view_observed_retaining((Arc::clone(&setup.time), setup.entity.clone())) {
+            Ok(accepted) => accepted,
+            Err(error) => {
+                operation.retire().await;
+                retire_opening_command(command);
+                return Err(protected_error(error));
+            }
+        };
     let view = match opening.await {
         Ok(Ok(view)) => view,
         Ok(Err(error)) => {
@@ -320,6 +360,7 @@ async fn open_session(
         memory,
         retained_bytes,
         time: _,
+        entity: _,
     } = setup;
     let job = store.with_view(view, retained_bytes, move |view| {
         super::initialization::initialize(view, selected, limits, mode, &conditions, &auth, memory)

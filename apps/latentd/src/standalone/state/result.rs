@@ -79,7 +79,7 @@ impl ResultAdmission {
             self.runtime
                 .seal(&self.installed, envelope, budget, namespace, decision)?;
         let key = super::command::command_key(&self.installed, envelope, self.original_id.clone())?;
-        let coordinator = self.runtime.coordinator(self.time.clone());
+        let coordinator = self.runtime.coordinator(self.time.clone())?;
         let mut original = coordinator
             .original_metadata(key.clone(), current_read)
             .await?

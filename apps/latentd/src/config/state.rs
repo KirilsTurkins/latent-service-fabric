@@ -8,7 +8,9 @@ mod effects;
 pub use effects::DeferredHttpConfig;
 mod tenant;
 pub use tenant::{TenantLimitsConfig, TenantQuotaConfig};
+mod entities;
 mod root;
+pub use entities::EntityLaneConfig;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -25,6 +27,8 @@ pub struct StateConfig {
     pub operations: Vec<StateOperationConfig>,
     #[serde(default)]
     pub tenant_quotas: Vec<TenantQuotaConfig>,
+    #[serde(default)]
+    pub entity_lanes: EntityLaneConfig,
 }
 
 #[derive(Clone, Deserialize)]
@@ -66,6 +70,7 @@ pub(crate) struct StateSettings {
     state_root: Option<PathBuf>,
     pub operations: Vec<OperationSettings>,
     pub tenant_quotas: Vec<latent_state::tenant::TenantQuota>,
+    pub entity_lanes: latent_state::entity_lanes::EntityLaneLimits,
 }
 
 impl StateSettings {
@@ -175,6 +180,7 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
         state_root,
         operations,
         tenant_quotas,
+        entity_lanes: value.entity_lanes.derive()?,
     })
 }
 

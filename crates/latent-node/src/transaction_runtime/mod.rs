@@ -1,12 +1,14 @@
 //! Activation-scoped native state sessions over the existing protected owner.
 mod authorization;
 pub mod command_completion;
+mod entity;
 mod host;
 mod initialization;
 mod io;
 pub mod query;
 mod staging;
 pub use authorization::{IntentPolicyBinding, PolicyCallBinding, StateAuthorization};
+pub use entity::{default_entity_limits, EntityCommandLanes};
 
 use latent_commit::atomic::{
     AdmittedCommand, CapturedIntent, CommandTime, IntentCaptureContext, PhysicalAttemptWork,
@@ -140,6 +142,7 @@ pub struct StateTransactionHost {
     effects: Option<EffectAuthorityOwner>,
     time: Arc<dyn CommandTimeSource>,
     retained_bytes: u64,
+    entity: Mutex<Option<entity::EntityOwner>>,
 }
 
 /// Only host coordination receives the affine view and staged state/intent
@@ -151,6 +154,30 @@ pub struct StateHandoff {
     pub memory: Arc<HostMemoryReservation>,
 }
 impl StateTransactionHost {
+    pub(super) fn retain_entity(&self) -> Result<Option<entity::EntityOwner>, StateFailure> {
+        self.entity
+            .lock()
+            .map(|owner| owner.clone())
+            .map_err(|_| StateFailure::Unavailable)
+    }
+
+    pub(super) fn release_entity(&self) -> Result<(), StateFailure> {
+        if !self.guest_closed.load(std::sync::atomic::Ordering::Acquire)
+            || !self.witness.has_retired()
+            || self
+                .physical
+                .lock()
+                .map_err(|_| StateFailure::Unavailable)?
+                .is_some()
+        {
+            return Err(StateFailure::Unavailable);
+        }
+        self.entity
+            .lock()
+            .map_err(|_| StateFailure::Unavailable)?
+            .take();
+        Ok(())
+    }
     /// Descriptive identity captured from this session's actual native view.
     /// It grants no read permission and never refreshes during the activation.
     #[must_use]
@@ -170,6 +197,11 @@ impl StateTransactionHost {
         use std::sync::atomic::Ordering;
         if !self.guest_closed.load(Ordering::Acquire) {
             return Err(StateFailure::HandleClosed);
+        }
+        if let Some(entity) = self.retain_entity()? {
+            entity
+                .begin_cleanup()
+                .map_err(|_| StateFailure::Unavailable)?;
         }
         let owned = self
             .session

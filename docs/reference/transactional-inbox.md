@@ -13,3 +13,10 @@ Ordinary standalone configuration accepts the closed optional `transactionalTrig
 The existing node ProviderRuntime supplies the single actual pool/broker and the separately retained incoming credential store, including an input-only configuration with no guest publisher binding. The node opens State first, prepares one caller-driven consumer task, and enables pulls after normal service readiness. Shutdown stops new pulls before its natural drain, joins the real input task under the original cutoff, then observes shared provider/state teardown. `transactional_trigger_status()` and the optional shutdown projection report actual fixed-owner counters; they supply no caller or broker authority.
 
 This source slice does not yet qualify installed-node readiness against the live broker, expose authenticated management pause/drain controls, or execute the required crash and recreation races. Automatic poison disposition and approved technical retries require separate positive no-commit and physical-retirement evidence. Snapshot/restore and retention-edge clock schedules also remain required. The six library and three configuration cases exercise identity/configuration/refusal boundaries; they are not a live JetStream or installed-node qualification receipt.
+
+## Entity admission
+
+Installed command admission uses the shared finite entity table described in
+[installed entity eligibility](installed-entity-eligibility.md). Transactional
+inbox deliveries reuse that same command factory and its physical retirement
+owners.

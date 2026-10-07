@@ -557,6 +557,7 @@ fn bind_transaction_control(
     admission.bind_control(super::TransactionAdmissionControl::new(
         lifecycle.registration().handle(),
         budget.clone(),
+        Arc::clone(&lifecycle.transport_stop),
     ))?;
     Ok(())
 }

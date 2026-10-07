@@ -87,7 +87,7 @@ pub(super) fn derive(config: &NodeConfig) -> Result<Option<TriggerSettings>, Pla
     let bytes = super::protected_file::read(
         &value.configuration_file,
         524_288,
-        super::protected_file::ProtectedFilePolicy::Secret,
+        super::protected_file::ProtectedFilePolicy::SecretLeaf,
         "transactionalTriggers.configurationProtection",
     )?;
     let configuration = TriggerConfig::from_json(&bytes)

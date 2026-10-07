@@ -31,13 +31,22 @@ impl CommandCoordinator {
         &self,
         auth: &Arc<StateAuthorization>,
     ) -> Result<NamespaceRead, PlatformError> {
-        self.read_namespace_observed(auth, None).await
+        self.read_namespace_observed(auth, None, None).await
+    }
+
+    pub(super) async fn read_namespace_owned(
+        &self,
+        auth: &Arc<StateAuthorization>,
+        entity: Option<super::super::entity::EntityOwner>,
+    ) -> Result<NamespaceRead, PlatformError> {
+        self.read_namespace_observed(auth, None, entity).await
     }
 
     async fn read_namespace_observed(
         &self,
         auth: &Arc<StateAuthorization>,
         original: Option<CommandRecord>,
+        entity: Option<super::super::entity::EntityOwner>,
     ) -> Result<NamespaceRead, PlatformError> {
         let operation = if auth.authority_mode() == latent_capabilities::namespace::Mode::Inspection
         {
@@ -48,9 +57,11 @@ impl CommandCoordinator {
         auth.authorize(operation, 0, 0, || Ok(()))?;
         let auth = Arc::clone(auth);
         let time = Arc::clone(&self.time);
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((Arc::clone(&auth), Arc::clone(&time), entity));
         let job = self
             .store
-            .with_store(StoreIoKind::Read, 8192, move |store| {
+            .with_store_retaining(StoreIoKind::Read, 8192, keeper, move |store| {
                 let result = (|| {
                     let view = store.snapshot()?;
                     let ownership = auth.authority.ownership();
@@ -284,7 +295,7 @@ impl CommandCoordinator {
         record: &CommandRecord,
     ) -> Result<ResultDeliveryFence, PlatformError> {
         let current = read.rebind_result_read(
-            self.read_namespace_observed(read, Some(record.clone()))
+            self.read_namespace_observed(read, Some(record.clone()), None)
                 .await?,
         )?;
         ResultDeliveryFence::command(Arc::new(current), record, Arc::clone(&self.time))

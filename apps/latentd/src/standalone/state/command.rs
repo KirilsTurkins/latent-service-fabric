@@ -110,7 +110,7 @@ impl Factory {
         let key = command_key(&self.installed, envelope, self.request.client_id.clone())?;
         let mut original = self
             .runtime
-            .coordinator(self.time.clone())
+            .coordinator(self.time.clone())?
             .original_metadata(key.clone(), Arc::clone(&current_read))
             .await?;
         let original_read = if let Some(original) = &mut original {

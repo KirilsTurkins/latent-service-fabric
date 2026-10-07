@@ -14,6 +14,8 @@ mod native;
 mod original;
 mod output;
 mod retry;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod tests;
 pub use admission::{
     CommandAdmission, CommandAdmissionFactory, CommandAdmissionSelection, CommandCoordinator,
 };
