@@ -40,6 +40,7 @@ pub struct TransactionDisposition {
     record: CommandRecord,
     observation: CommandObservation,
     read_authorized: bool,
+    recovered_result: bool,
     _memory: Option<Arc<HostMemoryReservation>>,
 }
 impl TransactionDisposition {
@@ -61,6 +62,13 @@ impl TransactionDisposition {
     pub const fn observation(&self) -> CommandObservation {
         self.observation
     }
+    /// The coordinator read an existing command rather than executing this
+    /// admission. This descriptive flag changes no durable outcome or grant.
+    #[must_use]
+    pub const fn recovered_result(&self) -> bool {
+        self.recovered_result
+    }
+
     /// Reports authorization at observation time. Consumers must additionally
     /// use the completion's current delivery fence when releasing data.
     #[must_use]
@@ -74,6 +82,7 @@ impl std::fmt::Debug for TransactionDisposition {
             .field("record", &self.record)
             .field("observation", &self.observation)
             .field("read_authorized", &self.read_authorized)
+            .field("recovered_result", &self.recovered_result)
             .finish_non_exhaustive()
     }
 }
@@ -82,6 +91,7 @@ impl PartialEq for TransactionDisposition {
         self.record == other.record
             && self.observation == other.observation
             && self.read_authorized == other.read_authorized
+            && self.recovered_result == other.recovered_result
     }
 }
 impl Eq for TransactionDisposition {}
@@ -185,6 +195,7 @@ impl TransactionCompletion {
                 record,
                 observation,
                 read_authorized,
+                recovered_result: false,
                 _memory: memory,
             }),
             delivery_failure: None,

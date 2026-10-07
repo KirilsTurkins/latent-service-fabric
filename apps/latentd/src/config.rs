@@ -57,7 +57,8 @@ pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
 pub use security::ExecutionProfileReport;
 pub use state::{
-    DeferredHttpConfig, StateConfig, StateOperationConfig, TenantLimitsConfig, TenantQuotaConfig,
+    DeferredHttpConfig, RecoverySelectionConfig, RecoverySelectorConfig, StateConfig,
+    StateOperationConfig, TenantLimitsConfig, TenantQuotaConfig,
 };
 pub(crate) use supply_chain::SupplyChainSettings;
 

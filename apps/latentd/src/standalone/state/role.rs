@@ -131,6 +131,18 @@ impl CommandTimeSource for AdmissionTime {
         });
         Ok(())
     }
+    fn reserved_response_bytes(&self) -> u64 {
+        self.retained
+            .lock()
+            .ok()
+            .and_then(|state| {
+                state
+                    .original
+                    .as_ref()
+                    .map(|original| original.native.response_bytes())
+            })
+            .unwrap_or(0)
+    }
     fn with_delivery(
         &self,
         action: &mut dyn FnMut() -> Result<(), PlatformError>,

@@ -28,6 +28,7 @@ RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
            "tools/dev_workflow/resource_inputs.py",
            "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
            "tools/dev_workflow/windows.py")
+RECIPE += ("tools/transaction_guest_project.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",

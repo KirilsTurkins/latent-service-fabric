@@ -639,7 +639,18 @@ impl StandaloneNode {
             settings.transport.clone(),
             invocation,
             management,
-            self.state.as_ref().and_then(|state| state.management()),
+            self.state
+                .as_ref()
+                .map(|state| {
+                    state.transaction_rpc(
+                        self.manager.clone(),
+                        cleanup.clone(),
+                        settings.invocation.clone(),
+                        settings.admission.budget_ceiling.clone(),
+                        Arc::clone(&self.clock),
+                    )
+                })
+                .transpose()?,
             Arc::clone(&self.clock),
             control_runtime,
         )

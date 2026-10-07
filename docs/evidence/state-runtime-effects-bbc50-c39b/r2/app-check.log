@@ -1,0 +1,252 @@
+ Downloading crates ...
+  Downloaded anstyle v1.0.14
+  Downloaded anstyle-query v1.1.5
+  Downloaded anstream v1.0.0
+  Downloaded anstyle-parse v1.0.0
+  Downloaded tonic-prost-build v0.14.6
+  Downloaded tonic-prost v0.14.6
+  Downloaded mime v0.3.17
+  Downloaded multimap v0.10.1
+  Downloaded colorchoice v1.0.5
+  Downloaded strsim v0.11.1
+  Downloaded clap_lex v1.1.0
+  Downloaded utf8parse v0.2.2
+  Downloaded protoc-bin-vendored v3.2.0
+  Downloaded httpdate v1.0.3
+  Downloaded tonic-build v0.14.6
+  Downloaded foldhash v0.1.5
+  Downloaded pin-project-internal v1.1.13
+  Downloaded axum-core v0.5.6
+  Downloaded fixedbitset v0.5.7
+  Downloaded is_terminal_polyfill v1.70.2
+  Downloaded prost v0.14.4
+  Downloaded prost-derive v0.14.4
+  Downloaded pulldown-cmark-to-cmark v22.0.1
+  Downloaded unicase v2.9.0
+  Downloaded prost-build v0.14.4
+  Downloaded tokio-stream v0.1.19
+  Downloaded hyper-timeout v0.5.2
+  Downloaded pin-project v1.1.13
+  Downloaded matchit v0.8.4
+  Downloaded clap_derive v4.6.7
+  Downloaded tracing-attributes v0.1.31
+  Downloaded prost-types v0.14.4
+  Downloaded prettyplease v0.2.37
+  Downloaded clap v4.6.7
+  Downloaded tonic v0.14.6
+  Downloaded aho-corasick v1.1.5
+  Downloaded tokio-util v0.7.19
+  Downloaded hashbrown v0.15.5
+  Downloaded regex v1.13.1
+  Downloaded clap_builder v4.6.7
+  Downloaded pulldown-cmark v0.13.4
+  Downloaded h2 v0.4.19
+  Downloaded axum v0.8.9
+  Downloaded regex-syntax v0.8.11
+  Downloaded regex-automata v0.4.18
+  Downloaded petgraph v0.8.3
+  Downloaded protoc-bin-vendored-macos-aarch_64 v3.2.0
+  Downloaded protoc-bin-vendored-macos-x86_64 v3.2.0
+  Downloaded protoc-bin-vendored-linux-x86_64 v3.2.0
+  Downloaded protoc-bin-vendored-win32 v3.2.0
+  Downloaded protoc-bin-vendored-linux-aarch_64 v3.2.0
+  Downloaded protoc-bin-vendored-linux-x86_32 v3.2.0
+  Downloaded protoc-bin-vendored-linux-ppcle_64 v3.2.0
+  Downloaded protoc-bin-vendored-linux-s390_64 v3.2.0
+   Compiling serde_core v1.0.229
+   Compiling syn v2.0.119
+    Checking serde v1.0.229
+    Checking hashbrown v0.17.1
+    Checking indexmap v2.14.1
+    Checking smallvec v1.15.2
+    Checking latent-core v0.1.0-alpha.5 (/source/crates/latent-core)
+    Checking serde_json v1.0.151
+    Checking tokio v1.53.1
+    Checking semver v1.0.28
+    Checking latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+   Compiling anyhow v1.0.104
+    Checking fnv v1.0.7
+   Compiling synstructure v0.13.2
+    Checking futures-sink v0.3.34
+   Compiling zerofrom-derive v0.1.7
+   Compiling yoke-derive v0.8.2
+    Checking zerofrom v0.1.8
+    Checking latent-routing v0.1.0-alpha.5 (/source/crates/latent-routing)
+    Checking ipnet v2.12.2
+    Checking slab v0.4.12
+    Checking futures-channel v0.3.34
+    Checking wasmtime-internal-core v48.0.3
+    Checking yoke v0.8.3
+    Checking latent-activation v0.1.0-alpha.5 (/source/crates/latent-activation)
+    Checking latent-contracts v0.1.0-alpha.5 (/source/crates/latent-contracts)
+    Checking latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+   Compiling tracing-attributes v0.1.31
+    Checking cap-primitives v4.0.3
+    Checking futures-util v0.3.34
+    Checking latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+    Checking zerovec v0.11.8
+    Checking tracing v0.1.44
+   Compiling curve25519-dalek-derive v0.1.1
+    Checking curve25519-dalek v5.0.0
+    Checking cap-std v4.0.3
+    Checking cranelift-bitset v0.135.3
+    Checking latent-protected-files v0.1.0-alpha.5 (/source/crates/latent-protected-files)
+    Checking wasmparser v0.259.0
+   Compiling pulley-macros v48.0.3
+    Checking latent-state v0.1.0-alpha.5 (/source/crates/latent-state)
+    Checking cap-fs-ext v4.0.3
+    Checking ed25519-dalek v3.0.0
+    Checking tokio-util v0.7.19
+    Checking spdx v0.13.5
+   Compiling pulley-interpreter v48.0.3
+    Checking latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+    Checking wit-parser v0.259.0
+    Checking latent-effects v0.1.0-alpha.5 (/source/crates/latent-effects)
+    Checking cranelift-entity v0.135.3
+    Checking tinystr v0.8.4
+    Checking latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+    Checking percent-encoding v2.3.2
+    Checking tower-service v0.3.3
+   Compiling cranelift-codegen-meta v0.135.3
+    Checking latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+    Checking icu_locale_core v2.3.0
+    Checking gimli v0.33.0
+    Checking postcard v1.1.3
+    Checking cranelift-bforest v0.135.3
+    Checking latent-commit v0.1.0-alpha.5 (/source/crates/latent-commit)
+   Compiling prost-derive v0.14.4
+    Checking latent-executor v0.1.0-alpha.5 (/source/crates/latent-executor)
+    Checking zerotrie v0.2.5
+    Checking potential_utf v0.1.6
+    Checking latent-telemetry v0.1.0-alpha.5 (/source/crates/latent-telemetry)
+    Checking icu_collections v2.3.0
+    Checking h2 v0.4.19
+    Checking latent-capabilities v0.1.0-alpha.5 (/source/crates/latent-capabilities)
+    Checking icu_provider v2.3.1
+   Compiling cranelift-codegen v0.135.3
+   Compiling wasmparser v0.254.0
+   Compiling wasmtime-internal-versioned-export-macros v48.0.3
+   Compiling pulldown-cmark v0.13.4
+   Compiling prettyplease v0.2.37
+    Checking httpdate v1.0.3
+   Compiling rustix v1.1.5
+    Checking hyper v1.11.1
+    Checking regalloc2 v0.15.2
+   Compiling linux-raw-sys v0.12.1
+   Compiling foldhash v0.1.5
+   Compiling regex-syntax v0.8.11
+   Compiling unicase v2.9.0
+   Compiling bytes v1.12.1
+   Compiling wasm-encoder v0.254.0
+   Compiling prost v0.14.4
+   Compiling regex-automata v0.4.18
+    Checking wasmprinter v0.254.0
+   Compiling hashbrown v0.15.5
+    Checking icu_properties v2.3.0
+    Checking icu_normalizer v2.3.0
+    Checking object v0.39.1
+    Checking hyper-util v0.1.20
+    Checking sync_wrapper v1.0.2
+    Checking tower-layer v0.3.3
+   Compiling fixedbitset v0.5.7
+   Compiling petgraph v0.8.3
+    Checking wasmtime-environ v48.0.3
+   Compiling wit-parser v0.254.0
+   Compiling tempfile v3.27.0
+    Checking idna_adapter v1.2.2
+   Compiling regex v1.13.1
+   Compiling pulldown-cmark-to-cmark v22.0.1
+   Compiling prost-types v0.14.4
+   Compiling wasm-metadata v0.254.0
+    Checking latent-admission v0.1.0-alpha.5 (/source/crates/latent-admission)
+    Checking mime v0.3.17
+   Compiling multimap v0.10.1
+   Compiling prost-build v0.14.4
+    Checking axum-core v0.5.6
+    Checking latent-scheduler v0.1.0-alpha.5 (/source/crates/latent-scheduler)
+   Compiling wit-component v0.254.0
+    Checking idna v1.1.0
+    Checking tower v0.5.3
+   Compiling tonic-build v0.14.6
+   Compiling wasmtime-internal-fiber v48.0.3
+    Checking form_urlencoded v1.2.2
+   Compiling pin-project-internal v1.1.13
+    Checking matchit v0.8.4
+   Compiling protoc-bin-vendored-macos-aarch_64 v3.2.0
+   Compiling protoc-bin-vendored-win32 v3.2.0
+   Compiling protoc-bin-vendored-macos-x86_64 v3.2.0
+   Compiling protoc-bin-vendored-linux-s390_64 v3.2.0
+   Compiling protoc-bin-vendored-linux-x86_64 v3.2.0
+   Compiling protoc-bin-vendored-linux-x86_32 v3.2.0
+   Compiling protoc-bin-vendored-linux-aarch_64 v3.2.0
+   Compiling protoc-bin-vendored-linux-ppcle_64 v3.2.0
+   Compiling protoc-bin-vendored v3.2.0
+    Checking axum v0.8.9
+    Checking pin-project v1.1.13
+    Checking url v2.5.8
+   Compiling wasmtime-internal-wit-bindgen v48.0.3
+   Compiling tonic-prost-build v0.14.6
+    Checking latent-node v0.1.0-alpha.5 (/source/crates/latent-node)
+    Checking wasmtime-internal-unwinder v48.0.3
+    Checking cranelift-native v0.135.3
+    Checking cranelift-frontend v0.135.3
+    Checking hyper-timeout v0.5.2
+   Compiling wasmtime v48.0.3
+    Checking latent-triggers v0.1.0-alpha.5 (/source/crates/latent-triggers)
+    Checking tokio-stream v0.1.19
+    Checking latent-identity v0.1.0-alpha.5 (/source/crates/latent-identity)
+    Checking base64 v0.22.1
+    Checking utf8parse v0.2.2
+   Compiling wasmtime-internal-component-macro v48.0.3
+    Checking hickory-proto v0.26.3
+    Checking anstyle-parse v1.0.0
+    Checking tonic v0.14.6
+    Checking latent-ingress v0.1.0-alpha.5 (/source/crates/latent-ingress)
+    Checking wasmtime-internal-cranelift v48.0.3
+    Checking tokio-rustls v0.26.5
+   Compiling latent-rpc v0.1.0-alpha.5 (/source/crates/latent-rpc)
+    Checking futures v0.3.34
+    Checking wasmtime-internal-jit-icache-coherence v48.0.3
+   Compiling enumflags2_derive v0.7.12
+    Checking anstyle v1.0.14
+    Checking is_terminal_polyfill v1.70.2
+    Checking anstyle-query v1.1.5
+    Checking colorchoice v1.0.5
+   Compiling latent-component-bindings v0.1.0-alpha.5 (/source/crates/latent-component-bindings)
+   Compiling time-macros v0.2.32
+    Checking anstream v1.0.0
+    Checking enumflags2 v0.7.12
+    Checking tonic-prost v0.14.6
+    Checking latent-control-store v0.1.0-alpha.5 (/source/crates/latent-control-store)
+    Checking latent-network v0.1.0-alpha.5 (/source/crates/latent-network)
+    Checking clap_lex v1.1.0
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/source/crates/latent-wasmtime)
+    Checking strsim v0.11.1
+    Checking clap_builder v4.6.7
+    Checking time v0.3.55
+    Checking latent-http v0.1.0-alpha.5 (/source/crates/latent-http)
+    Checking latent-rollout v0.1.0-alpha.5 (/source/crates/latent-rollout)
+    Checking landlock v0.4.7
+   Compiling clap_derive v4.6.7
+    Checking clap v4.6.7
+    Checking latent-blobs v0.1.0-alpha.5 (/source/crates/latent-blobs)
+    Checking latent-wire v0.1.0-alpha.5 (/source/crates/latent-wire)
+    Checking latent-nats v0.1.0-alpha.5 (/source/crates/latent-nats)
+    Checking latent-secrets v0.1.0-alpha.5 (/source/crates/latent-secrets)
+    Checking latentd v0.1.0-alpha.5 (/source/apps/latentd)
+error[E0308]: mismatched types
+   --> apps/latentd/src/standalone/providers/runtime.rs:127:55
+    |
+127 |                 owner.runtime.install_http(Arc::clone(&provider))?;
+    |                                            ---------- ^^^^^^^^^ expected `&Arc<dyn OutboundHttpInvoker>`, found `&Arc<HttpProvider>`
+    |                                            |
+    |                                            arguments to this function are incorrect
+    |
+    = note: expected reference `&Arc<dyn OutboundHttpInvoker>`
+               found reference `&Arc<HttpProvider>`
+    = help: `HttpProvider` implements `OutboundHttpInvoker` so you could box the found value and coerce it to the trait object `Box<dyn OutboundHttpInvoker>`, you will have to change the expected type as well
+note: method defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/clone.rs:236:7
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `latentd` (lib) due to 1 previous error

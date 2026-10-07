@@ -213,7 +213,6 @@ fn request(
     c::MutateStateRequest {
         namespace: Some(fixture.target()),
         operation_id: "floor-release-original".into(),
-        original_effect_plan: None,
         mutation: c::StateMutationKind::ReleaseExpiredCommandFloor as i32,
         record_id: Some(floor.hex()),
         expected_version: namespace.view.as_ref().unwrap().version.clone(),

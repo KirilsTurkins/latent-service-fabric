@@ -172,7 +172,6 @@ pub(crate) async fn connect_for(
         })))
         .map_err(Into::into)
 }
-
 fn connection_builder(maximum_headers: usize) -> hyper::client::conn::http1::Builder {
     let mut builder = hyper::client::conn::http1::Builder::new();
     builder
@@ -184,6 +183,7 @@ fn connection_builder(maximum_headers: usize) -> hyper::client::conn::http1::Bui
         .ignore_invalid_headers_in_responses(false);
     builder
 }
+
 async fn checkout_for(
     client: &Arc<ProviderClient<Network>>,
     scope: crate::protocol::ProtocolScope<'_>,

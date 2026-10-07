@@ -29,6 +29,8 @@ struct frame {
     latent_state_key_value_result_own_page_state_error_t scan;
     latent_state_key_value_result_option_entry_state_error_t entry;
     latent_state_key_value_page_info_t page_info;
+    probe_list_u8_t view_version;
+    probe_option_list_u8_t key_version;
 };
 static uint8_t key_bytes[] = "aggregate/count";
 static const char media[] = "application/vnd.lsf.aggregate-v1";

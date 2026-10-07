@@ -49,7 +49,8 @@ export function buildSidebars(pages) {
   ], 'Getting started');
   sidebars.learn = sections(sidebars.learn, [
     {label: 'Write and run capsules', collapsed: false, ids: ['component-development/creating-a-capsule',
-      'learn/author-your-first-capsule', 'learn/deliver-and-recover-a-capsule', 'learn/use-capabilities']},
+      'learn/author-your-first-capsule', 'component-development/transactional-authoring',
+      'learn/deliver-and-recover-a-capsule', 'learn/use-capabilities']},
     {label: 'Call services', ids: ['learn/use-a-client']},
     {label: 'Build web applications', ids: ['learn/build-and-deliver-angular', 'component-development/angular-build']},
     {label: 'Contracts and execution', ids: ['learn/runtime-identities', 'learn/read-contracts-and-evidence']},
