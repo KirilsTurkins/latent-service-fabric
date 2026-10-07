@@ -558,7 +558,6 @@ async fn installed_named_recovery_scopes_require_current_subject_delegation_and_
         0
     );
     assert_eq!(fixture.store.snapshot().unwrap().accepted, 0);
-    drop(original);
     drop(namespace);
     drop(backend);
     fixture.finish().await;

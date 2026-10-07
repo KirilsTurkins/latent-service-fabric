@@ -19,6 +19,9 @@ struct Fixture {
 }
 
 impl Fixture {
+    fn root(&self) -> &std::path::Path {
+        self._root.path()
+    }
     fn new() -> Self {
         let directory = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
@@ -120,7 +123,10 @@ async fn finish(state: &StateRuntime, effects: &mut super::super::super::EffectR
     let deadline = Instant::now() + WATCHDOG;
     let effect = effects.shutdown(deadline).await.unwrap();
     assert!(effect.clean && effect.physically_retired && effect.scheduling_owner_retired);
-    assert_eq!(effect.worker_threads_joined, 2);
+    // Two original ordinary workers plus the separately reserved recovery
+    // worker are all physically joined by the same dispatcher owner.
+    assert_eq!(effect.worker_threads_joined.checked_sub(1), Some(2));
+    assert_eq!(effect.worker_threads_joined, 3);
     assert_eq!(effect.worker_threads_remaining, 0);
     let store = state.shutdown(deadline).await.unwrap();
     assert!(store.clean && !store.store_quarantined && !store.native_quarantined);

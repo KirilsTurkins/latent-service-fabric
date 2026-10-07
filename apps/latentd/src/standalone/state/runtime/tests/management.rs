@@ -30,7 +30,7 @@ async fn installed_empty_state_host_exposes_the_original_audited_dispatcher_and_
 ) {
     let fixture = Fixture::new();
     let (audit, mut worker) = latent_audit::DirectoryPhase2AuditJournal::open(
-        fixture._root.path().join("management-audit"),
+        fixture.root().join("management-audit"),
         latent_audit::AuditLimits::default(),
     )
     .unwrap();
