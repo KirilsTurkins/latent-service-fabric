@@ -174,7 +174,7 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     return full_path, publications, proposals, catalog, hosts.value, mutations
 
 
-def admit_authority(client, signed, items, configuration, node, full_path, publications, proposals):
+def admit_authority(client, signed, items, configuration, node, full_path, publications, proposals, hosts):
     # Explicit normal authenticated mutations turn these proposals into actual
     # current decisions. The inspection and configuration alone grant nothing.
     # Native host inspection also opens and retires the admission catalog. Its
@@ -187,14 +187,15 @@ def admit_authority(client, signed, items, configuration, node, full_path, publi
     lifecycle.admission_lease_interval(client)
     node.start(full_path)
     legacy = next(item for item in items if item.name == "put-once-legacy-v1")
-    lifecycle.create_namespace(client, legacy, publications[legacy.name])
+    observed = policies.ObservedHosts.read(hosts, read_json(full_path)["state"]["operations"])
+    lifecycle.create_namespace(client, legacy, publications[legacy.name], operator=observed.operator)
     return full_path, publications, proposals, actual_receipts
 
 
 def provision(client, args, signed, items, peer, configuration, node):
-    full_path, publications, proposals, _, _, _ = prepare_authority(
+    full_path, publications, proposals, _, hosts, _ = prepare_authority(
         client, args, signed, items, peer, configuration, node)
-    return admit_authority(client, signed, items, configuration, node, full_path, publications, proposals)
+    return admit_authority(client, signed, items, configuration, node, full_path, publications, proposals, hosts)
 
 
 def resume_authority(client, args, configuration, node, full_path, prepared):
@@ -405,7 +406,8 @@ def resume(args):
                 stage = "current-authority-recheck"
                 receipts = resume_authority(client, args, configuration, node, full_path, prepared)
                 legacy = next(item for item in items if item.name == "put-once-legacy-v1")
-                lifecycle.create_namespace(client, legacy, publications[legacy.name])
+                observed = policies.ObservedHosts.read(prepared["hosts"], read_json(full_path)["state"]["operations"])
+                lifecycle.create_namespace(client, legacy, publications[legacy.name], operator=observed.operator)
                 stage = "actual-http"
                 execute_campaign(client, args, work, record, configuration, node, peer,
                                  signed, items, full_path, publications, proposals, receipts, diagnostic)

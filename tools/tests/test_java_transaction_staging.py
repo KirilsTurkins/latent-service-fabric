@@ -469,7 +469,7 @@ class CatalogAndOrderingOracle(unittest.TestCase):
                             conductor.resume_authority(client, SimpleNamespace(node="native-source-only"),
                                 configuration, node, full, prepared)
                         else:
-                            conductor.admit_authority(client, root, [], configuration, node, full, {}, {})
+                            conductor.admit_authority(client, root, [], configuration, node, full, {}, {}, {})
                     start.assert_not_called()
                     apply.assert_not_called()
                     retained_apply.assert_not_called()

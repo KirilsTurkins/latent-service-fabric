@@ -219,18 +219,41 @@ def schema(item) -> str:
     return value["stateSchema"]
 
 
-def create_namespace(client, item, publication):
+def observed_operator_identity(operator):
+    require(isinstance(operator, dict) and set(operator) == {"subject", "ownerKind", "tenant", "service",
+        "recoveryKind", "recoveryScope"} and operator["subject"] == cfg.OPERATOR
+        and operator["ownerKind"] == "administrator" and operator["tenant"] == cfg.TENANT
+        and operator["service"] is None and operator["recoveryKind"] == "original-caller"
+        and isinstance(operator["recoveryScope"], str)
+        and re.fullmatch(r"recovery:sha256:[0-9a-f]{64}", operator["recoveryScope"]),
+        "original-observed-namespace-operator")
+    # Qualified native mutation.rs captures owner kind plus the original caller
+    # recovery scope. The receipt cannot supply its own expected operator.
+    return operator["ownerKind"] + ":" + operator["recoveryScope"]
+
+
+def namespace_receipt(result, state_schema, operator):
+    expected_actor = observed_operator_identity(operator)
+    actual = result["data"]["receipt"]
+    require(result["outcomeKnown"] and actual["operationId"] == "java-create"
+            and actual["authenticatedOperator"] == expected_actor
+            and actual["stateSchema"] == state_schema
+            and actual["namespace"] == {"tenant": cfg.TENANT, "namespace": cfg.NAMESPACE, "incarnation": "1"}
+            and actual["afterGeneration"] == "1"
+            and result["data"]["auditAcknowledgement"] is not None,
+            "actual-authorized-namespace-create")
+    return actual
+
+
+def create_namespace(client, item, publication, *, operator):
+    observed_operator_identity(operator)
     quotas = {name: "8388608" for name in ("stateBytes", "resultBytes", "effectBytes", "payloadBytes")}
     quotas.update(stateKeys="4096", resultRows="4096", effectRows="4096", recoveryBytes="1048576")
     path = client.directory / "namespace-create.json"
     write_json(path, {"stateSchema": schema(item), "quota": quotas})
     result = client.call("state", "create", *namespace_arguments(publication), "--operation-id", "java-create",
                          "--expected-generation", "0", "--configuration", path)
-    actual = result["data"]["receipt"]
-    require(result["outcomeKnown"] and actual["operationId"] == "java-create"
-            and actual["authenticatedOperator"] == cfg.OPERATOR
-            and actual["stateSchema"] == schema(item)
-            and result["data"]["auditAcknowledgement"] is not None, "actual-authorized-namespace-create")
+    actual = namespace_receipt(result, schema(item), operator)
     client.evidence.passed("namespace-create", result["data"])
     return actual
 

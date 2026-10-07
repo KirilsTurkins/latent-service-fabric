@@ -8,6 +8,7 @@
     "ProvisioningOracle.test_generated_proposals_fit_the_unchanged_retained_policy_program",
     "ProvisioningOracle.test_http_and_rpc_scope_must_be_same_original_authenticated_user",
     "ProvisioningOracle.test_missing_duplicate_or_changed_native_effect_profiles_refuse",
+    "ProvisioningOracle.test_namespace_receipt_requires_exact_original_native_operator_scope_and_rejects_subject_alias",
     "ProvisioningOracle.test_original_publication_set_cannot_be_guessed_or_aliased",
     "ProvisioningOracle.test_prior_runtime_without_transport_principal_observation_refuses",
     "ProvisioningOracle.test_selected_configuration_preserves_original_checkpoint_and_refuses_large_input",
@@ -110,6 +111,18 @@
       ],
       "skipSites": []
     },
+    "ProvisioningOracle.test_namespace_receipt_requires_exact_original_native_operator_scope_and_rejects_subject_alias": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6d22cedb924453fd01674a25b21fbfd6a774c908d328156c8dfa8eaa859aaa96",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "ProvisioningOracle.test_original_publication_set_cannot_be_guessed_or_aliased": {
       "bases": [
         "unittest.TestCase"
@@ -161,6 +174,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_provision.py",
-  "reviewReason": "Exercise generated clock policy proposals through unchanged retained mutation guards; keep observed native provider identities",
+  "reviewReason": "Preserve every native-host and provisioning control; require the exact observed administrator recovery scope in namespace receipts and reject literal subject aliases, wrong scopes, changed selectors, generations, schema, unknown outcomes or missing audit acknowledgement.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
