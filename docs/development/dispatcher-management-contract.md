@@ -116,9 +116,21 @@ canonicalizes the input before a command claim. Original expected versions and
 explicit abort retry fences are retained; opaque selectors create no grant.
 The initial direct RPC slice uses original-caller application scopes and a
 64 KiB result representation preflight within the existing native response
-reservation. Management remains on its original backend. Command/effect lookup
-and shared/delegated application RPC scopes need their separate current-read
-integration and execution evidence before #387/#400/#401 close.
+reservation. Management remains on its original backend. `LookupCommand` and
+`LookupCommit` use the installed current authorization publication and the
+existing read-only result admission. They check original command, attempt and
+receipt associations and current original-source/result permission without
+preparing a component, executing a guest or submitting a business mutation.
+Effect history, cancellation and shared/delegated application RPC scopes need
+their separate integration and execution evidence before #387/#400/#401 close.
+
+Result admission selects the existing recovery native partition. Authorized
+result metadata work uses the protected store's recovery read lane; ordinary
+command namespace reads retain their ordinary lane. The response retains its
+original native owner and current delivery fence through physical frame drop.
+Manager activation quotas still apply, so this slice does not promise progress
+when those quotas are exhausted. The native tests prove reserved native capacity
+under ordinary slot pressure and preserve the original finite deadline.
 
 The transaction conversion receives the node's configured admission ceiling
 for state reads, writes and staged effects. The generic invocation endpoint
@@ -134,6 +146,10 @@ checks missing/foreign identity refusal for both query and command, a fresh
 query, one command with the original absent-key precondition, explicit replay
 of that unchanged command, and a final query at the acknowledged commit view.
 It requires exactly one original durable command/effect and a final count of
-one. The probe provisions no authority and runs no compiler. Its success
-receipt is produced only after those assertions execute; building the example
-or running source checks supplies no signed runtime qualification.
+one. It also checks original command and commit lookup, rejects a foreign
+caller and wrong original attempt/receipt associations, and compares retained
+source, commit, fingerprint and payload with the first result. The probe
+provisions no authority and runs no compiler. Its success receipt is produced
+only after those assertions execute; building the example or running source
+checks supplies no signed runtime qualification. Current signed execution of
+these added lookup checks remains outstanding.
