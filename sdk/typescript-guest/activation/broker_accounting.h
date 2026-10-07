@@ -11,6 +11,9 @@ class BrokerAccounting final : public Accounting {
   EffectsAllowed effects_allowed_;
   Token continuation_{};
   bool executing_ = false;
+  Token root_{};
+  bool root_live_ = false;
+  bool root_closed_ = false;
 
   static latent_runtime_activation_token_t native(const Token& token) {
     return {token.generation, token.id};
@@ -50,21 +53,75 @@ public:
       : effects_allowed_(effects_allowed) {}
 
   bool currentContinuation(Token& output) const {
-    if (!executing_) return false;
-    output = continuation_;
+    if (!executing_ && !root_live_) return false;
+    output = executing_ ? continuation_ : root_;
     return true;
   }
 
+  bool beginRoot(JSContext* cx) {
+    if (root_live_ || root_closed_ || !effects_allowed_ || !effects_allowed_(cx))
+      return failure(cx, "root-entry", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+    latent_runtime_activation_token_t root{};
+    latent_runtime_activation_error_t error{};
+    if (!latent_runtime_activation_register(LATENT_RUNTIME_ACTIVATION_OWNER_KIND_TASK,
+                                           nullptr, &root, &error))
+      return failure(cx, "root-register", error);
+    root_ = {root.generation, root.id};
+    root_live_ = true;
+    return true;
+  }
+
+  bool parkRoot(JSContext* cx) {
+    if (!root_live_) return failure(cx, "root-park", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+    auto root = native(root_);
+    latent_runtime_activation_error_t error{};
+    if (!latent_runtime_activation_park(&root, &error))
+      return failure(cx, "root-park", error);
+    return true;
+  }
+
+  bool settleRoot(JSContext* cx) {
+    if (!root_live_) return failure(cx, "root-settlement", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+    if (!root_closed_) {
+      latent_runtime_activation_error_t error{};
+      if (!latent_runtime_activation_close(&error)) return failure(cx, "root-close", error);
+      root_closed_ = true;
+    }
+    // Root JS_Call has returned; continuation frames own independent admitted
+    // tasks. The root Promise/result objects remain charged through actual GC.
+    return settle(cx, root_, root_live_);
+  }
+
+  bool rootSettled() const { return root_closed_ && !root_live_; }
+
   bool admit(JSContext* cx, JobOwners& owners) override {
+    Token inherited{};
+    const bool has_parent = currentContinuation(inherited);
+    return admitWithParent(cx, owners, has_parent ? &inherited : nullptr);
+  }
+
+  // An accepted timer remains an actual broker owner after root settlement.
+  // Its callback inherits that exact token, without reopening root admission
+  // or inventing authority, a deadline, or another budget ledger.
+  bool admitUnder(JSContext* cx, Token parent, JobOwners& owners) {
+    if (!parent.generation || !parent.id)
+      return failure(cx, "callback-parent", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_TOKEN);
+    return admitWithParent(cx, owners, &parent);
+  }
+
+private:
+  bool admitWithParent(JSContext* cx, JobOwners& owners, const Token* inherited) {
+    if (owners.task_live || owners.queued_live)
+      return failure(cx, "job-readmission", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
     if (!effects_allowed_ || !effects_allowed_(cx)) {
       JS_ReportErrorASCII(cx, "activation-runtime-job-during-snapshot-denied");
       return false;
     }
     latent_runtime_activation_error_t error{};
     latent_runtime_activation_token_t task{}, queued{};
-    auto parent = native(continuation_);
+    auto parent = inherited ? native(*inherited) : latent_runtime_activation_token_t{};
     if (!latent_runtime_activation_register(LATENT_RUNTIME_ACTIVATION_OWNER_KIND_TASK,
-          executing_ ? &parent : nullptr, &task, &error))
+          inherited ? &parent : nullptr, &task, &error))
       return failure(cx, "task-register", error);
     owners.task = {task.generation, task.id};
     owners.task_live = true;
@@ -78,6 +135,7 @@ public:
     return true;
   }
 
+public:
   bool rollback(JSContext* cx, JobOwners& owners) override {
     return release(cx, owners);
   }
