@@ -22,8 +22,11 @@ The maintained helper qualification also requires a 65,536-byte binary request
 to pass through ordinary `HttpExchange` body streams and return byte for byte,
 followed by a fresh successful request and zero physical owners. The original
 50 controls, excess-body denial and activation limits remain required. This
-additional control is pending a fresh successful component execution; its
-presence does not replace the retained failed observation above.
+[52-control signed regression](../testing/evidence/java-server-maximum-body-regression-2026-10-07.json)
+passed with the rebuilt UTF-8 repair component and clean node shutdown. Its
+SDK, node and controller revisions are recorded separately; complete current
+profile qualification remains pending. The retained failed observation above
+remains unchanged.
 
 ## Create and build
 
