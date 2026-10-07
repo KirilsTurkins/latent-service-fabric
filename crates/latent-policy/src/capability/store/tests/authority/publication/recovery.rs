@@ -123,15 +123,13 @@ fn refused_scopes(
         };
         assert!(snapshot.authorize(request, restrictions, release).is_err());
     }
-    assert!(
-        snapshot
-            .authorize(
-                input(actor, release.publication().as_str(), "namespace-recreate"),
-                restrictions,
-                release
-            )
-            .is_err()
-    );
+    assert!(snapshot
+        .authorize(
+            input(actor, release.publication().as_str(), "namespace-recreate"),
+            restrictions,
+            release
+        )
+        .is_err());
 }
 
 #[test]
@@ -192,18 +190,14 @@ fn native_recovery_decisions_retain_exact_current_operator_scope_and_refuse_revo
         })
         .unwrap();
     mutate(&store, "p", "actual-revoke", 2, None).unwrap();
-    assert!(
-        store
-            .with_retained_decisions(&originals, &mut |_| {
-                accepted += 1;
-                Ok(())
-            })
-            .is_err()
-    );
+    assert!(store
+        .with_retained_decisions(&originals, &mut |_| {
+            accepted += 1;
+            Ok(())
+        })
+        .is_err());
     assert_eq!(accepted, 1);
-    assert!(
-        store
-            .snapshot(&TenantId("a".into()), &["p".into()], "binding", deadline())
-            .is_err()
-    );
+    assert!(store
+        .snapshot(&TenantId("a".into()), &["p".into()], "binding", deadline())
+        .is_err());
 }
