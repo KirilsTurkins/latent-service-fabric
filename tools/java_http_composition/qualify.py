@@ -14,7 +14,7 @@ from tools.build_process_signals import owned_cancellation
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.java_http_composition.build import compile_pair
-from tools.java_http_composition import context
+from tools.java_http_composition import context, inspection, trust
 from tools.java_http_composition.node import (
     ADAPTER, DOMAIN_CONTRACT, SERVICE_CAPABILITY, WEB_CONTRACT, configure, decoded,
     grant, idle, invoke, request, route, service_grant, web_request, rebind,
@@ -34,8 +34,11 @@ def publish(client, releases):
     for name in ("domain", "adapter", "adapter-next", "context-required"):
         source = releases / ("java-http-" + name)
         published = client.call("release", "publish-package", source / "package", "--evidence", source / "evidence/index.json",
-            "--operation-id", "publish-" + name, "--expected-generation", 0)
-        require(published["outcomeKnown"], "java-http-publication-unknown")
+            "--operation-id", "publish-" + name, "--expected-generation", 0, codes=(0, 2, 4, 5, 6))
+        recovered = client.call("release", "operation", "publish-" + name, codes=(0, 6))
+        require(published["outcomeKnown"] and published["category"] == "success", "java-http-publication-rejected-or-unknown")
+        require(recovered["category"] == "success" and recovered["data"]["receipt"] == published["data"]["operation"],
+            "java-http-original-publication-operation-recovery")
         result[name] = published["data"]["operation"]["publication"]["id"]
     require(result["domain"] != result["adapter"], "java-http-independent-publications")
     return result
@@ -112,6 +115,13 @@ def canary(client, targets, publications, releases, host):
     started = receipt(client.call("rollout", "start", "java-http-canary", "--base", "java-http-adapter",
         "--expected-base-generation", base["generation"], "--candidate", candidate_path, "--weights", "5000,10000",
         "--operation-id", "java-canary-start", "--expected-revision", 0, "--canary-policy", policy_path), "java-canary-start")
+    ambiguity = inspection.observe(client, "adapter", route=False, expected=2)
+    require(ambiguity["selectedRevisionId"] is None
+        and {row["publication"]["id"] for row in ambiguity["candidates"]} == {
+            publications["adapter"], publications["adapter-next"]}, "java-target-canary-candidates-are-not-an-implicit-choice")
+    selected = inspection.observe(client, "adapter", route=False, routing_key="java-supported-inspection-key", expected=2)
+    require(selected["selectedRevisionId"] in {row["revisionId"] for row in selected["candidates"]},
+        "java-target-supported-selector-not-attributed-to-real-candidate")
     historical = rollback_target(client, "java-http-canary", started)
     samples = []
     for ordinal in range(16):
@@ -139,10 +149,14 @@ def canary(client, targets, publications, releases, host):
         promoted = receipt(client.call("rollout", "promote", "java-http-canary", "--expected-revision", started["revision"],
             "--operation-id", "java-canary-promote", "--next-step", 1), "java-canary-promote")
         held = client.call("node", "get", NODE_ID)["data"]["inventory"]
+        drain["afterPromotion"] = held
+        drain["activationAfterPromotion"] = client.call("activation", "get", "java-canary-drain")["data"]
+        drain["treeAfterPromotion"] = context.tree(client, "java-canary-drain")
+        write_json(client.evidence / "java-canary-drain-promotion.json", drain)
         require(sum(int(row["active"]) for row in held["cellCapacity"]) == 2
             and any(int(value) > 0 for value in held["quotas"]["usage"].values()),
             "java-canary-promotion-released-live-owners")
-        drain["afterPromotion"] = held
+        drain["inspectionAfterPromotion"] = inspection.observe(client, "adapter", route=False, guard=False)
         stale_status = request(host)[0]
         require(stale_status in (409, 503), "java-http-stale-trigger-silently-followed-rollout")
         rolled = receipt(client.call("rollout", "rollback", "java-http-canary", "--expected-revision", promoted["revision"],
@@ -158,8 +172,11 @@ def canary(client, targets, publications, releases, host):
     drain["afterPhysicalRelease"] = idle(client)
     route(client, host, publications["adapter"])
     require(request(host)[0] == 200, "java-http-rollback-fresh-route")
+    final_inspection = inspection.selected(client, releases, publications, "adapter")
     return {"started": started, "samples": samples, "evaluation": report, "promoted": promoted,
-            "staleTriggerStatus": stale_status, "rolledBack": rolled, "drain": drain, "idle": idle(client)}
+            "staleTriggerStatus": stale_status, "rolledBack": rolled, "drain": drain, "idle": idle(client),
+            "inspectionAmbiguity": ambiguity, "inspectionExplicitRoutingKey": selected,
+            "inspectionAfterRollback": final_inspection}
 
 
 def run_node(binaries, releases, output, *, http, former_profile=False):
@@ -205,6 +222,11 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                         "java-former-profile-diagnosis-exposed-in-public-invoke")
                     result["formerProfileFailure"] = failure
                     result["formerProfileAuthorizedTree"] = tree
+                    inspected = inspection.observe(client, "domain", publication=publications["domain"], expected=1)
+                    preparation = inspected["candidates"][0]["preparation"]
+                    require(preparation["stateName"] == "rejected" and preparation["diagnostic"] == diagnostic,
+                        "java-former-profile-original-preparation-inspection")
+                    result["formerProfileTargetInspection"] = inspected
                 else:
                     result["standaloneStatus"] = invoke(client, targets, "domain", "status", [], "java-standalone-status")
                     require(decoded(result["standaloneStatus"])[0][0]["sequence"] == "18446744073709551615",
@@ -219,6 +241,11 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                             {"capability": SERVICE_CAPABILITY, "policy": "java-domain-allow"}])
                     require(request(host)[0] in (409, 503), "java-http-stale-deployment-target-accepted")
                     route(client, host, publications["adapter"])
+                    domain_inspection = inspection.selected(client, releases, publications, "domain")
+                    adapter_inspection = inspection.selected(client, releases, publications, "adapter")
+                    result["targetInspection"] = {"domain": domain_inspection, "adapter": adapter_inspection,
+                        "authority": inspection.authority(client),
+                        "ordinaryHttpBinding": inspection.ordinary_http_binding(client, host, domain_inspection)}
                     result["composed"] = fresh_status(client, targets, host, "java-domain-direct-composed")
                     generated_client = run_bounded_result(["node", "--dns-result-order=ipv4first",
                         str(ROOT / "examples/java-http-composition/client-test.mjs"), "http://" + host,
@@ -230,8 +257,11 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     result["generatedClient"] = json.loads(generated_client.stdout)
                     result["context"] = context.qualify(client, targets, releases, publications, host, evidence)
                     result["ordinaryContextImport"] = context.ordinary_import(client, targets, releases, publications, host)
+                    adapter_inspection = inspection.selected(client, releases, publications, "adapter")
+                    result["targetInspection"]["beforeServicePolicyChange"] = adapter_inspection
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
+                    result["targetInspection"]["triggerOnlyOldPlan"] = inspection.stale_policy(client, "adapter", adapter_inspection)
                     result["triggerOnlyRebinding"] = rebind(client, targets, releases, publications)
                     impersonation = invoke(client, targets, "adapter", "handle", web_request(host), "java-trigger-impersonation")
                     require(decoded(impersonation)[0]["status"] == 403, "java-operator-impersonated-original-http-trigger")
@@ -241,8 +271,13 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     require(len(impersonation_nodes) == 1 and impersonation_nodes[0]["principalKind"] == "administrator"
                         and impersonation_nodes[0]["callerService"] is None, "java-context-operator-cannot-inherit-ingress-trigger")
                     service_generation = service_grant(client, node, publications, generation=service_generation)
+                    result["targetInspection"]["restoredPolicyOldPlan"] = inspection.observe(client, "adapter", expected=1,
+                        preparation=False, state_name="stale")
+                    require(not result["targetInspection"]["restoredPolicyOldPlan"]["candidates"][0]["eligible"],
+                        "java-target-restored-policy-silently-refreshed-frozen-plan")
                     result["restoredGrantRebinding"] = rebind(client, targets, releases, publications)
                     route(client, host, publications["adapter"])
+                    result["targetInspection"]["explicitRebinding"] = inspection.selected(client, releases, publications, "adapter")
                     wide = decoded(result["standaloneStatus"])[0][0]
                     for path, arguments in (("echo", [wide]),
                             ("nested", [{"value": wide, "optional": {"some": wide}, "labels": ["Gr\u00fc\u00dfe \U0001f600"]}]),
@@ -316,10 +351,12 @@ def qualify(output, wasi_sdk, target):
         stage = "sign"
         (output / "signing").mkdir(mode=0o700)
         commands = Commands(ROOT, output / "signing", build_environment(output / "signing"))
-        commands.run("demo-sign", binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built.values())
+        commands.run("demo-sign-separated", binaries["examples/capsule_authoring"], "demo-sign-separated", output / "releases", *built.values())
         result["releaseSet"] = read_json(output / "releases/release-set.json")
         signed_inputs = inventory(output / "releases", maximum_bytes=128 * 1024 * 1024)
         result["signedInputs"] = signed_inputs
+        stage = "paired-canonical-trust"
+        result["pairedTrust"] = trust.qualify(binaries, output / "releases", output / "paired-trust")
         stage = "former-http-global-profile"
         result["formerProfile"] = run_node(binaries, output / "releases", output / "former-profile", http=False,
                                             former_profile=True)

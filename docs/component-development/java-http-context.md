@@ -34,6 +34,11 @@ the adapter has an Administrator root and a Service child. A child never acquire
 the original HTTP trigger or administrator principal from its parent's metadata.
 The qualifier proves this with a trigger-only grant that rejects the operator
 path, a missing service grant, and a wrong child-principal clock grant.
+The domain's `status` operation actually calls the declared monotonic provider;
+an unused import cannot prove grant denial. The wrong-principal case requires the
+actual child's bounded Binding/GrantDenied diagnostic and failed outcome,
+alongside the adapter's HTTP failure. A guest trap while calling a denied clock
+can produce HTTP 500 through the existing platform-failure mapping.
 
 ## Run and inspect the actual example
 
@@ -91,6 +96,14 @@ must retain the real Trigger/Service identities and lineage; rejected requests
 must leave a fresh request usable. A real two-cell cancellation records the
 actual child, waits until stores/cells/quotas are retired, and then runs a fresh
 composition. No accepted child or provider operation is retried automatically.
+
+The supported CLI accepts at most 32 KiB of aggregate metadata and 4096 bytes
+per value. The fixture records an accepted five-value input below that bound,
+then a nine-value input above it that fails locally before RPC dispatch. It
+retains the exact requested UTF-8 sizes and a fresh composed invocation after
+rejection. This validates the public input boundary; it does not claim to exceed
+the standalone host's separate 1 MiB admitted-context budget. Supplied activation
+lineage instead reaches the node and is rejected with `permission-denied`.
 
 ## Application observations and unavailable values
 

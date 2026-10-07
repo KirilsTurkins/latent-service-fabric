@@ -16,7 +16,9 @@ from tools.rust_capsule_project import ROOT, digest, read_json, write_json
 SPIN_CPU_FUEL = 10_000_000_000
 
 
+
 def projects(output: Path, *, diagnostic_adaptations: dict | None = None) -> dict[str, Path]:
+
     result = {}
     for name in ("domain", "context-required"):
         project = create(output / name, "greeting", "java-http-" + name)
@@ -36,14 +38,17 @@ def projects(output: Path, *, diagnostic_adaptations: dict | None = None) -> dic
                             "witDigest": digest((fixture / "world.wit").read_bytes())}
         (project / "sdk-lock.json").write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
         result[name] = project
+
     if diagnostic_adaptations is not None:
         from tools.java_http_composition import provider_timeout
         diagnostic_adaptations["domain"] = provider_timeout.adapt_domain(result["domain"])
+
     selection = ROOT / "examples/java-http-composition/routes.json"
     result["adapter"] = generate(result["domain"], selection, output / "adapter")
     check(result["domain"], selection, result["adapter"])
     result["adapter-next"] = create_revision(result["adapter"], output / "adapter-next")
     return result
+
 
 
 def compile_pair(output: Path, wasi_sdk: Path, binaries: dict, *, diagnostics=False) -> dict[str, Path]:
@@ -60,5 +65,6 @@ def compile_pair(output: Path, wasi_sdk: Path, binaries: dict, *, diagnostics=Fa
         write_json(output / "diagnostic-adaptations.json", adaptations)
     return {name: build(project, output / "builds" / name,
         binaries["examples/capsule_contracts"], binaries.get("examples/package"),
+
         "https://github.com/KirilsTurkins/latent-service-fabric", wasi_sdk)
         for name, project in selected.items()}

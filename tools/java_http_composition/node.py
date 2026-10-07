@@ -84,6 +84,7 @@ def configure(directory: Path, releases: Path, *, http=True, former_profile=Fals
     return config, host
 
 
+
 def grant(client, node, releases, publications, *, child_trigger=False, domain_grants=()):
     from tools.java_http_composition.policy_proposals import runtime
     for proposal in runtime(node.startup_record, publications):
@@ -92,10 +93,12 @@ def grant(client, node, releases, publications, *, child_trigger=False, domain_g
               for name, values in profiles("java").items()]
     return {name: deploy(client, releases / ("java-http-" + name) / "deployment.json", publications[name],
                         grants=grants + list(domain_grants) if name == "domain" else grants)
+
             for name in ("domain", "adapter")}
 
 
 def service_grant(client, node, publications, *, generation=0, trigger_only=False):
+
     from tools.java_http_composition.policy_proposals import service
     proposals = service(node.startup_record, publications, trigger_only=trigger_only)
     if generation == 0:
@@ -103,6 +106,7 @@ def service_grant(client, node, publications, *, generation=0, trigger_only=Fals
         policy(client, binding["kind"], binding["id"], binding["document"])
     document = proposals[1]
     result = policy(client, document["kind"], document["id"], document["document"], generation)
+
     return result["generation"]
 
 
