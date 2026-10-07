@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use latent_activation::ActivationOutcome;
 use latent_commit::atomic::{
     AdmittedCommand, AtomicError, AttemptRetirement, CapturedIntent, CommandRecord, CommandTime,
-    CompleteEnvelope, PreparedDisposition, RetiredAttempt,
+    CompleteEnvelope, PreparedDisposition,
 };
 use latent_core::{BoxFuture, HostMemoryReservation, PlatformError};
 use latent_effects::authority::EffectAuthorityOwner;
@@ -14,7 +14,9 @@ use latent_state::{
     store_io::StoreIoKind,
 };
 
-use super::super::{StateAuthorization, StateHandoff, StateTransactionHost};
+use super::super::{
+    authorization::TerminalAbortPurpose, StateAuthorization, StateHandoff, StateTransactionHost,
+};
 use super::{
     errors, lookup::failed, native::NativeCommandWork, CommandCoordinator, CommandObservation,
     CommandOutput, CommandResultCodec, TransactionCompletion,
@@ -54,6 +56,63 @@ pub(super) struct CommandCompletion {
     codec: Arc<dyn CommandResultCodec>,
 }
 impl CommandCompletion {
+    #[cfg(test)]
+    pub(super) async fn refused_read_observation(
+        &self,
+    ) -> (Result<(), PlatformError>, Result<(), AtomicError>, bool) {
+        let attempt = self.attempt.lock().unwrap().take().unwrap();
+        let retired = attempt.claim.retirement();
+        // Reserve a real original guard in the untouched recovery partition,
+        // then offer its actual read callback to the saturated ordinary queue.
+        // This exercises closure rejection after guard creation, separately
+        // from the production reserve-first refusal below.
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((Arc::clone(&self.host), self.host.retain_entity().unwrap()));
+        let operation = self
+            .coordinator
+            .store
+            .reserve_recovery_operation_retaining(keeper)
+            .unwrap();
+        let mut native = NativeCommandWork::new(
+            operation,
+            Some(attempt.claim.physical_work().unwrap()),
+            None,
+        );
+        let rejected = matches!(
+            self.coordinator
+                .store
+                .with_store(StoreIoKind::Read, 4096, move |store| {
+                    native.enter();
+                    let result = (|| {
+                        let view = store.snapshot()?;
+                        drop(view);
+                        Ok(())
+                    })();
+                    native.complete();
+                    result
+                }),
+            Err(latent_state::protected_store::ProtectedStoreError::Io(
+                latent_state::store_io::StoreIoError::QueueFull
+            ))
+        );
+        let result = self
+            .coordinator
+            .read_current_claim_namespace(
+                &self.host.authorization,
+                &attempt.claim,
+                self.host.retain_entity().unwrap(),
+            )
+            .await
+            .map(|_| ());
+        // A live original claim must still refuse a retirement proof; quarantine
+        // instead of that refusal would also prevent its later real abort.
+        let proof = retired.proven_noncommit().map(drop);
+        let mut retained = self.attempt.lock().unwrap();
+        assert!(retained.is_none());
+        *retained = Some(attempt);
+        (result, proof, rejected)
+    }
+
     #[allow(
         clippy::too_many_arguments,
         reason = "Every affine owner is retained from the same admitted attempt"
@@ -135,6 +194,7 @@ impl CommandCompletion {
         // original durable row under fresh current permission, regardless of this result.
         notification.notify_reload();
         self.coordinator.time.retire_attempt(&physical);
+        let _ = self.host.release_entity();
         completion
     }
 
@@ -455,6 +515,10 @@ impl CommandCompletion {
         outcome: ActivationOutcome,
         memory: Arc<HostMemoryReservation>,
     ) -> TransactionCompletion {
+        let entity = match self.host.retain_entity() {
+            Ok(owner) => owner,
+            Err(_) => return self.recovery(record, outcome, memory).await,
+        };
         self.coordinator
             .abort_retired(
                 retirement,
@@ -462,6 +526,7 @@ impl CommandCompletion {
                 Arc::clone(&self.result_read),
                 outcome,
                 memory,
+                entity,
             )
             .await
     }
@@ -506,10 +571,23 @@ impl CommandCoordinator {
         error: PlatformError,
         memory: Arc<HostMemoryReservation>,
     ) -> TransactionCompletion {
+        self.abort_unstarted_owned(retirement, record, read, error, memory, None)
+            .await
+    }
+
+    pub(super) async fn abort_unstarted_owned(
+        &self,
+        retirement: AttemptRetirement,
+        record: CommandRecord,
+        read: Arc<StateAuthorization>,
+        error: PlatformError,
+        memory: Arc<HostMemoryReservation>,
+        entity: Option<super::super::entity::EntityOwner>,
+    ) -> TransactionCompletion {
         let outcome = failed(error, read.budget.snapshot_at(std::time::Instant::now()));
         let original = retirement.clone();
         let completion = self
-            .abort_retired(retirement, record, read, outcome, memory)
+            .abort_retired(retirement, record, read, outcome, memory, entity)
             .await;
         self.time.retire_attempt(&original);
         completion
@@ -522,22 +600,31 @@ impl CommandCoordinator {
         read: Arc<StateAuthorization>,
         outcome: ActivationOutcome,
         memory: Arc<HostMemoryReservation>,
+        entity: Option<super::super::entity::EntityOwner>,
     ) -> TransactionCompletion {
-        let Ok(attempt) = retirement.proven_noncommit() else {
-            return self
-                .observation(
-                    record,
-                    outcome,
-                    CommandObservation::RecoveryRequired,
-                    &read,
-                    memory,
-                )
-                .await;
+        let purpose = match retirement
+            .proven_noncommit()
+            .map_err(errors::atomic)
+            .and_then(|attempt| {
+                TerminalAbortPurpose::new(Arc::clone(&read), record.clone(), attempt)
+            }) {
+            Ok(purpose) => Arc::new(purpose),
+            Err(_) => {
+                return self
+                    .observation(
+                        record,
+                        outcome,
+                        CommandObservation::RecoveryRequired,
+                        &read,
+                        memory,
+                    )
+                    .await;
+            }
         };
         let current = match self
-            .read_namespace(&read)
+            .read_namespace_for_abort(Arc::clone(&purpose), entity.clone())
             .await
-            .and_then(|row| read.rebind_result_read(row))
+            .and_then(|row| purpose.rebind(row))
         {
             Ok(current) => Arc::new(current),
             Err(_) => {
@@ -552,7 +639,9 @@ impl CommandCoordinator {
                     .await
             }
         };
-        let Ok(operation) = self.store.reserve_operation() else {
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((Arc::clone(&memory), Arc::clone(&self.time), entity.clone()));
+        let Ok(operation) = self.store.reserve_operation_retaining(keeper) else {
             return self
                 .observation(
                     record,
@@ -564,6 +653,9 @@ impl CommandCoordinator {
                 .await;
         };
         let mut native = NativeCommandWork::new(operation, None, Some(Arc::clone(&memory)));
+        let entity_fence = entity
+            .as_ref()
+            .map(super::super::entity::EntityOwner::fence);
         let time = Arc::clone(&self.time);
         let code = match &outcome {
             ActivationOutcome::Failed { error, .. } => error.code.wire_code(),
@@ -575,7 +667,7 @@ impl CommandCoordinator {
             .with_store(StoreIoKind::Write, WRITER_JOB_BYTES, move |store| {
                 native.enter();
                 let view = store.snapshot()?;
-                let disposition = prepare_abort(&view, store, attempt, code, &current, &*time);
+                let disposition = prepare_abort(&view, store, code, &current, &*time, entity_fence);
                 native.complete();
                 disposition
             });
@@ -717,12 +809,12 @@ fn prepare_handoff(
 fn prepare_abort(
     view: &ReadView,
     store: &EmbeddedStore,
-    attempt: RetiredAttempt,
     code: String,
-    current: &StateAuthorization,
+    current: &TerminalAbortPurpose,
     time: &dyn super::super::CommandTimeSource,
+    entity: Option<super::super::entity::EntityCommitFence>,
 ) -> Result<Result<PreparedDisposition, AtomicError>, StoreError> {
-    let prepared = match CompleteEnvelope::technical_abort(view, attempt, code, time.sample()) {
+    let prepared = match current.prepare(view, code, time.sample()) {
         Ok(value) => value,
         Err(error) => return errors::storage(error).map(Err),
     };
@@ -731,7 +823,10 @@ fn prepare_abort(
         Err(error) => return errors::storage(error).map(Err),
     };
     Ok(Ok(prepared.publish(store, |_| {
-        time.with_acceptance(&mut |_| current.accept_abort(&fence))
-            .map_err(|_| AtomicError::PermissionDenied)
+        time.with_acceptance(&mut |_| match &entity {
+            Some(entity) => entity.with_current(|| current.accept(&fence))?,
+            None => current.accept(&fence),
+        })
+        .map_err(|_| AtomicError::PermissionDenied)
     })))
 }

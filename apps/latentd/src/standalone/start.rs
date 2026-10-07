@@ -584,6 +584,7 @@ impl StandaloneNode {
     ) -> Result<(), PlatformError> {
         self.start_state(settings, &catalogs, &control_runtime)
             .await?;
+        self.start_triggers(settings).await?;
         if let Some(capabilities) = &catalogs.capabilities {
             capabilities
                 .broker()
@@ -695,6 +696,9 @@ impl StandaloneNode {
         if let Some(http) = &self.http {
             http.handle().start_accepting()?;
         }
+        if let Some(triggers) = &self.triggers {
+            triggers.start_accepting();
+        }
         Ok(())
     }
 
@@ -738,6 +742,34 @@ impl StandaloneNode {
             )?);
         }
         Ok(())
+    }
+
+    async fn start_triggers(&mut self, settings: &NodeSettings) -> Result<(), PlatformError> {
+        let Some(configuration) = &settings.transactional_triggers else {
+            return Ok(());
+        };
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            let state = self.state.as_ref().ok_or_else(mode_error)?.clone();
+            state.check_inbox_configuration(&configuration.configuration)?;
+            let providers = self.providers.as_deref_mut().ok_or_else(mode_error)?;
+            let poller = Box::pin(providers.install_triggers(
+                configuration,
+                state,
+                std::time::Instant::now() + std::time::Duration::from_secs(30),
+            ))
+            .await?;
+            self.triggers = Some(super::triggers::TriggerOwner::start(
+                poller,
+                self.manager.clone(),
+            ));
+            Ok(())
+        }
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _ = configuration;
+            Err(mode_error())
+        }
     }
 
     async fn start_state(
@@ -839,6 +871,7 @@ impl StandaloneNode {
             rollouts: None,
             effects: None,
             state: None,
+            triggers: None,
             policies: None,
             providers: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),

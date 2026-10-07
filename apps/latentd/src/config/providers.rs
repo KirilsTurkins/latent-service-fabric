@@ -124,8 +124,29 @@ pub(super) fn present<'de, Document: Deserialize<'de>, Input: Deserializer<'de>>
 pub(super) fn derive(
     config: &NodeConfig,
 ) -> Result<Option<Box<ConfiguredProviders>>, PlatformError> {
-    let Some(providers) = &config.providers else {
-        return Ok(None);
+    let empty;
+    let providers = match &config.providers {
+        Some(providers) => providers,
+        None if config.transactional_triggers.is_some() => {
+            empty = ConfiguredProviders {
+                format_version: 1,
+                http: None,
+                http_streaming: None,
+                blob: None,
+                secrets: None,
+                metrics: None,
+                local_service: None,
+                events: None,
+                clock_monotonic: None,
+                clock_wall: None,
+                random: None,
+                context: None,
+                log: None,
+                bindings: Vec::new(),
+            };
+            &empty
+        }
+        None => return Ok(None),
     };
     if !config.credentials_from_protected_file
         || !cfg!(all(target_os = "linux", target_arch = "x86_64"))
@@ -133,8 +154,9 @@ pub(super) fn derive(
         || config.audit.is_none()
         || !provider_budget(config.budget_profile.profile())
         || providers.format_version != 1
-        || providers.no_installations()
-        || providers.bindings.is_empty()
+        || (providers.no_installations() && config.transactional_triggers.is_none())
+        || (providers.bindings.is_empty()
+            && !(providers.no_installations() && config.transactional_triggers.is_some()))
         || providers.bindings.capacity() > 16
     {
         return Err(invalid("providers"));

@@ -53,6 +53,8 @@ impl<T> Drop for Release<T> {
     fn drop(&mut self) {
         if let Ok(mut state) = self.inner.state.lock() {
             state.retire(&self.stamp);
+            drop(state);
+            self.inner.changed();
         }
     }
 }
@@ -226,6 +228,8 @@ impl<T> EntityWaiter<T> {
             return Err(EntityLaneError::StaleFence);
         }
         if let Some(request) = state.remove_queued(&self.scope, self.ticket) {
+            drop(state);
+            self.inner.changed();
             return Ok(EntityCancellation::Queued(request));
         }
         if let Some(active) = state
@@ -249,6 +253,7 @@ impl<T> Drop for EntityWaiter<T> {
             let request = state.remove_queued(&self.scope, self.ticket);
             drop(state);
             drop(request);
+            self.inner.changed();
         }
     }
 }

@@ -14,6 +14,7 @@ pub(super) enum RequestKind {
         conditions: Vec<Precondition>,
         business_metadata: Vec<(String, String)>,
         retry: Option<CommandRetry>,
+        inbox: Option<latent_nats::triggers::InboxDelivery>,
     },
     Query {
         minimum_view: Option<Vec<u8>>,
@@ -55,6 +56,24 @@ impl StateRequest {
                 conditions,
                 business_metadata,
                 retry,
+                inbox: None,
+            },
+        })
+    }
+
+    /// Only the installed inbox adapter can supply this sealed delivery identity.
+    /// HTTP inputs cannot fill it and no retry is inferred from redelivery.
+    pub(super) fn inbox(
+        delivery: &latent_nats::triggers::InboxDelivery,
+    ) -> Result<Self, PlatformError> {
+        client_key(delivery.client_id())?;
+        Ok(Self {
+            kind: RequestKind::Command {
+                client_id: delivery.client_id().into(),
+                conditions: Vec::new(),
+                business_metadata: Vec::new(),
+                retry: None,
+                inbox: Some(delivery.clone()),
             },
         })
     }

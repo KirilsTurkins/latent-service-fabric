@@ -45,6 +45,8 @@ pub use inbound::InboundActivationReservation;
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
+#[cfg(test)]
+pub(crate) use transaction::TestTransactionTransport;
 pub use transaction::{
     TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
     TransactionAdmissionKind, TransactionCompletion, TransactionCompletionHook,

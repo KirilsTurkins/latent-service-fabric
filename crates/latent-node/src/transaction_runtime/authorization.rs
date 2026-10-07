@@ -8,6 +8,16 @@ use latent_policy::capability::{
 };
 use latent_state::namespace::catalog::NamespaceRead;
 use std::{sync::Arc, time::Instant};
+mod payload;
+pub use payload::IntentPayloadConstraint;
+
+mod terminal_abort;
+pub(super) use terminal_abort::TerminalAbortPurpose;
+
+enum DecisionPurpose {
+    Operation,
+    RetiredAbort,
+}
 
 /// Descriptive installed binding constraints; the actual policy owner must
 /// match every profile/configuration/revision before granting an operation.
@@ -29,7 +39,7 @@ pub struct IntentPolicyBinding {
     pub binding: String,
     pub operation: String,
     pub maximum_intents: u32,
-    pub payload_digest: String,
+    pub payload: IntentPayloadConstraint,
 }
 
 pub struct StateAuthorization {
@@ -43,6 +53,7 @@ pub struct StateAuthorization {
     intents: Option<Arc<IntentPolicyBinding>>,
     initial_intent: Option<Arc<latent_policy::capability::OwnedPolicyDecision>>,
     pub(super) budget: ActivationBudget,
+    entity: Option<super::entity::EntityCommitFence>,
 }
 impl StateAuthorization {
     pub(crate) fn authority_mode(&self) -> latent_capabilities::namespace::Mode {
@@ -102,6 +113,7 @@ impl StateAuthorization {
             intents: intents.map(Arc::new),
             initial_intent: None,
             budget,
+            entity: None,
         };
         if admitted.authority_mode() == latent_capabilities::namespace::Mode::Command
             && admitted.intents.is_some()
@@ -153,26 +165,37 @@ impl StateAuthorization {
             || intent.operation != selected.operation
             || sequence >= selected.maximum_intents
             || intent.expires_at_unix_millis.is_some()
-            || latent_effects::payload::payload_digest(&intent.payload).map_err(|_| denied())?
-                != selected.payload_digest
         {
             return Err(denied());
         }
+        selected.payload.check(&selected.call, &intent.payload)?;
         Ok(())
     }
 
-    pub(super) fn rebind_command_after_claim(
+    pub(super) fn rebind_current_claim(
         &self,
         claim: &latent_commit::atomic::AdmittedCommand,
-        namespace: NamespaceRead,
+        observed: latent_commit::atomic::CurrentClaimNamespace,
     ) -> Result<Self, PlatformError> {
-        let authority = self.authority.rebind_command_after_claim(
-            &self.policy,
-            claim,
-            &self.namespace,
-            &namespace,
-        )?;
-        Ok(self.with_namespace(authority, namespace))
+        let authority =
+            self.authority
+                .rebind_current_claim(&self.policy, claim, &self.namespace, &observed)?;
+        Ok(self.with_namespace(authority, observed.into_namespace()))
+    }
+
+    pub(super) fn with_entity(mut self, entity: Option<super::entity::EntityCommitFence>) -> Self {
+        self.entity = entity;
+        self
+    }
+
+    pub(super) fn with_entity_final<R>(
+        &self,
+        action: impl FnOnce() -> R,
+    ) -> Result<R, PlatformError> {
+        match &self.entity {
+            Some(entity) => entity.with_current(action),
+            None => Ok(action()),
+        }
     }
 
     pub(super) fn rebind_result_read(
@@ -207,6 +230,7 @@ impl StateAuthorization {
             intents: self.intents.clone(),
             initial_intent: self.initial_intent.clone(),
             budget: self.budget.clone(),
+            entity: self.entity.clone(),
         }
     }
 
@@ -285,36 +309,32 @@ impl StateAuthorization {
                 acceptance =
                     acceptance.retain_policy(self.initial_intent.as_deref().ok_or_else(denied)?)?;
             }
-            acceptance
-                .accept_with(|| {
-                    if let Some(effects) = effects {
-                        effects
-                            .commit_fence(
-                                authorities,
-                                latent_effects::authority::EffectTime {
-                                    unix_millis: time.unix_millis,
-                                    continuity_proven: time.continuity_proven,
-                                },
-                            )
-                            .map(Some)
-                            .map_err(|_| NamespaceError::PermissionDenied)
-                    } else if authorities.is_empty() {
-                        Ok(None)
-                    } else {
-                        Err(NamespaceError::PermissionDenied)
-                    }
-                })
-                .map_err(|_| denied())
-        })
-    }
-
-    pub(super) fn accept_abort(
-        &self,
-        envelope: &latent_commit::atomic::EnvelopeNamespaceExpectation,
-    ) -> Result<(), PlatformError> {
-        self.with_current_decision("cancel-command", 0, 0, |decision| {
-            self.authority
-                .accept_terminal_abort(&self.policy, decision, &self.namespace, envelope)
+            // The short local fence surrounds the original acceptance only:
+            // Entity -> captured/current Policy -> Namespace -> Effects ->
+            // original Cancellation. Dispatch never holds Entity while checking
+            // authority, and no native I/O occurs while this fence is held.
+            self.with_entity_final(|| {
+                acceptance
+                    .accept_with(|| {
+                        if let Some(effects) = effects {
+                            effects
+                                .commit_fence(
+                                    authorities,
+                                    latent_effects::authority::EffectTime {
+                                        unix_millis: time.unix_millis,
+                                        continuity_proven: time.continuity_proven,
+                                    },
+                                )
+                                .map(Some)
+                                .map_err(|_| NamespaceError::PermissionDenied)
+                        } else if authorities.is_empty() {
+                            Ok(None)
+                        } else {
+                            Err(NamespaceError::PermissionDenied)
+                        }
+                    })
+                    .map_err(|_| denied())
+            })?
         })
     }
 
@@ -327,6 +347,25 @@ impl StateAuthorization {
             &latent_policy::capability::SealedPolicyDecision<'_>,
         ) -> Result<R, PlatformError>,
     ) -> Result<R, PlatformError> {
+        self.with_decision(
+            operation,
+            input_bytes,
+            output_bytes,
+            DecisionPurpose::Operation,
+            action,
+        )
+    }
+
+    fn with_decision<R>(
+        &self,
+        operation: &str,
+        input_bytes: usize,
+        output_bytes: usize,
+        purpose: DecisionPurpose,
+        action: impl FnOnce(
+            &latent_policy::capability::SealedPolicyDecision<'_>,
+        ) -> Result<R, PlatformError>,
+    ) -> Result<R, PlatformError> {
         let intent = operation == "stage";
         let binding = if intent {
             &self.intents.as_ref().ok_or_else(denied)?.call
@@ -334,7 +373,15 @@ impl StateAuthorization {
             &self.state
         };
         let now = Instant::now();
-        if self.budget.deadline().is_expired_at(now) || self.budget.descendant_is_cancelled() {
+        if self.budget.deadline().is_expired_at(now)
+            || (matches!(purpose, DecisionPurpose::Operation)
+                && self.budget.descendant_is_cancelled())
+            || (matches!(purpose, DecisionPurpose::RetiredAbort)
+                && (operation != "cancel-command"
+                    || input_bytes != 0
+                    || output_bytes != 0
+                    || self.budget.descendant_snapshot().is_err()))
+        {
             return Err(denied());
         }
         // Current data permission also fences already-owned terminal buffers
@@ -418,15 +465,10 @@ fn validate_bindings(
     if let Some(intent) = intents {
         latent_core::transaction_contract::identity(&intent.binding).map_err(|_| denied())?;
         latent_core::transaction_contract::identity(&intent.operation).map_err(|_| denied())?;
-        if !(1..=128).contains(&intent.maximum_intents)
-            || intent.payload_digest.len() != 71
-            || !intent.payload_digest.starts_with("sha256:")
-            || !intent.payload_digest[7..]
-                .bytes()
-                .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
-        {
+        if !(1..=128).contains(&intent.maximum_intents) {
             return Err(denied());
         }
+        intent.payload.require_binding(&intent.call)?;
     }
     for binding in std::iter::once(state).chain(intents.map(|intent| &intent.call)) {
         if binding.policies.is_empty()

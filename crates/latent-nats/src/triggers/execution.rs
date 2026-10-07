@@ -1,4 +1,4 @@
-use super::{consumer::Ack, driver::stopped, TriggerBinding, TriggerTerminal};
+use super::{consumer::Ack, driver::stopped, InboxDelivery, TriggerBinding, TriggerTerminal};
 use crate::EventError;
 use latent_activation::{ActivationOutcome, ActivationRequest, TraceContext};
 use latent_core::ClockSample;
@@ -17,6 +17,7 @@ pub(super) async fn execute(
     mut reservation: InboundActivationReservation,
     payload: &[u8],
     stop: &mut watch::Receiver<bool>,
+    delivery: Option<&InboxDelivery>,
 ) -> (TriggerTerminal, Ack, bool) {
     reservation.input_buffer()[..payload.len()].copy_from_slice(payload);
     let Ok(mut activation) = reservation.start(payload.len()) else {
@@ -31,7 +32,11 @@ pub(super) async fn execute(
         },
         receipt=&mut activation=>receipt,
     };
-    let (terminal, ack) = outcome(&receipt.outcome);
+    let (terminal, ack) = if let Some(delivery) = delivery {
+        transaction_outcome(&receipt, delivery)
+    } else {
+        outcome(&receipt.outcome)
+    };
     (terminal, ack, false)
 }
 pub(super) fn root_request(
@@ -67,7 +72,7 @@ pub(super) fn root_request(
         },
         idempotency_key: None,
         retry_attempt: 0,
-        budget: binding.budget.budget(),
+        budget: binding.activation_budget(),
         metadata: Metadata::from([("trigger.id".into(), binding.id.clone())]),
         input: Vec::new(),
         input_media_type: "application/vnd.latent.wit-values.v1+json".into(),
@@ -91,6 +96,30 @@ pub(super) fn outcome(outcome: &ActivationOutcome) -> (TriggerTerminal, Ack) {
             _ => (TriggerTerminal::Failed, Ack::Retry),
         },
     }
+}
+
+pub(super) fn transaction_outcome(
+    receipt: &latent_node::ActivationReceipt,
+    delivery: &InboxDelivery,
+) -> (TriggerTerminal, Ack) {
+    let record = receipt
+        .transaction
+        .as_ref()
+        .and_then(|value| value.durable_command());
+    if let Some(record) = record.filter(|record| delivery.matches(record)) {
+        match record.outcome() {
+            latent_commit::atomic::Outcome::Committed => {
+                return (TriggerTerminal::Succeeded, Ack::Success);
+            }
+            latent_commit::atomic::Outcome::Rejected => {
+                return (TriggerTerminal::DeclaredFailure, Ack::Success);
+            }
+            latent_commit::atomic::Outcome::Pending | latent_commit::atomic::Outcome::Aborted => {}
+        }
+    }
+    // Delivery counts, cleanup outcomes and absent receipts cannot invent an
+    // input disposition or an affirmative retired-attempt retry fence.
+    (TriggerTerminal::RecoveryRequired, Ack::Hold)
 }
 
 impl super::NatsTriggers {

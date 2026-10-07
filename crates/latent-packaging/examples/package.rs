@@ -20,10 +20,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let limits = PackagingLimits::default();
     match args.as_slice() {
         [command, recipe, root, output] if command == "build" => {
-            build(recipe, root, output, None, limits)?;
+            build(recipe, root, output, None, &limits)?;
         }
         [command, recipe, inventory, root, output] if command == "build-with-sbom" => {
-            build(recipe, root, output, Some(inventory), limits)?;
+            build(recipe, root, output, Some(inventory), &limits)?;
         }
         [command, directory] if command == "inspect" => {
             let bundle = read_package_directory(Path::new(directory), limits).map_err(|error| error.message)?;
@@ -39,19 +39,19 @@ fn build(
     root: &str,
     output: &str,
     inventory: Option<&str>,
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bytes = read(recipe, limits.package.max_document_bytes)?;
-    let source = decode_package_source(&bytes, limits).map_err(|error| error.message)?;
+    let source = decode_package_source(&bytes, *limits).map_err(|error| error.message)?;
     let input =
-        read_package_input(Path::new(root), &source, limits).map_err(|error| error.message)?;
+        read_package_input(Path::new(root), &source, *limits).map_err(|error| error.message)?;
     let bundle = if let Some(path) = inventory {
         let bytes = read(path, limits.sbom.max_document_bytes)?;
         let inventory =
             decode_sbom_inventory(&bytes, limits.sbom).map_err(|error| error.message)?;
-        build_package_with_sbom(input, inventory, limits)
+        build_package_with_sbom(input, inventory, *limits)
     } else {
-        build_package(input, limits)
+        build_package(input, *limits)
     }
     .map_err(|error| error.message)?;
     write_package_directory(&bundle, Path::new(output)).map_err(|error| error.message)?;

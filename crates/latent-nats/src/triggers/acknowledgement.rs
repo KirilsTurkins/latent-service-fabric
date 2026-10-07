@@ -27,6 +27,9 @@ pub(super) async fn finish(
     ack: Ack,
     stop: &mut watch::Receiver<bool>,
 ) -> (Acknowledgement, Option<EventError>) {
+    if ack == Ack::Hold {
+        return (Acknowledgement::NotSent, None);
+    }
     if let Err(error) = network::check_current(pending.credential, pending.stamp) {
         return (Acknowledgement::NotSent, Some(error));
     }
@@ -46,6 +49,7 @@ pub(super) async fn finish(
                 Ack::Success => (&counters.acknowledged, Acknowledgement::Accepted),
                 Ack::Retry => (&counters.retries, Acknowledgement::RetryScheduled),
                 Ack::Terminate => (&counters.terminated, Acknowledgement::Terminated),
+                Ack::Hold => unreachable!("held input returned before acknowledgement"),
             };
             tick(counter);
             (acknowledgement, None)

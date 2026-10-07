@@ -284,6 +284,7 @@ fn settings_bound_startup_refuses_ambiguous_declarations_and_nonfinite_cutoffs()
         state_root: None,
         operations: vec![],
         tenant_quotas: vec![],
+        entity_lanes: Default::default(),
     };
     let mut settings = crate::config::state::derive(&config).unwrap();
     settings.tenant_quotas = vec![quota("alpha")];

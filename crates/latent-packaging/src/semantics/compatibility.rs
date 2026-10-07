@@ -36,7 +36,7 @@ pub fn compare_packages(
     {
         analysis.issue(Level::Unsupported, Code::UnsupportedPackage, &[]);
     } else {
-        let result = compare_inner(previous, candidate, limits, &mut analysis);
+        let result = compare_inner(previous, candidate, &limits, &mut analysis);
         match result {
             Err(error) if error.code == PlatformErrorCode::ResourceExhausted => {
                 analysis.exhausted();
@@ -71,7 +71,7 @@ fn lock(bundle: &PackageBundle) -> Result<WitLock, PlatformError> {
 fn preflight(
     bundle: &PackageBundle,
     lock: &WitLock,
-    limits: PackageComparisonLimits,
+    limits: &PackageComparisonLimits,
     total_bytes: &mut usize,
     total_packages: &mut usize,
     a: &mut Analysis,
@@ -125,7 +125,7 @@ fn resolved(
 fn compare_inner(
     old: &PackageBundle,
     new: &PackageBundle,
-    limits: PackageComparisonLimits,
+    limits: &PackageComparisonLimits,
     a: &mut Analysis,
 ) -> Result<(), PlatformError> {
     let old_lock = lock(old)?;
@@ -136,7 +136,23 @@ fn compare_inner(
     preflight(new, &new_lock, limits, &mut bytes, &mut packages, a)?;
     let (left, old_surface) = resolved(old, &old_lock, limits.semantics)?;
     let (right, new_surface) = resolved(new, &new_lock, limits.semantics)?;
-    surfaces(&left, &old_surface, &right, &new_surface, a)
+    let old_profile = old.surface().expect("checked capsule").host_profile();
+    let new_profile = new.surface().expect("checked capsule").host_profile();
+    if old_profile == latent_core::PHASE3_HOST_ABI_CURRENT
+        && new_profile == latent_core::PHASE3_HOST_ABI_CURRENT
+    {
+        surfaces(&left, &old_surface, &right, &new_surface, a)
+    } else {
+        surfaces_for_profiles(
+            &left,
+            &old_surface,
+            &right,
+            &new_surface,
+            a,
+            old_profile,
+            new_profile,
+        )
+    }
 }
 
 fn surfaces(
@@ -146,18 +162,46 @@ fn surfaces(
     new: &compare::WorldSurface,
     a: &mut Analysis,
 ) -> Result<(), PlatformError> {
+    surfaces_for_profiles(
+        left,
+        old,
+        right,
+        new,
+        a,
+        latent_core::PHASE3_HOST_ABI_CURRENT,
+        latent_core::PHASE3_HOST_ABI_CURRENT,
+    )
+}
+
+fn surfaces_for_profiles(
+    left: &Resolve,
+    old: &compare::WorldSurface,
+    right: &Resolve,
+    new: &compare::WorldSurface,
+    a: &mut Analysis,
+    old_profile: latent_core::HostAbiProfile,
+    new_profile: latent_core::HostAbiProfile,
+) -> Result<(), PlatformError> {
+    if old_profile != new_profile {
+        a.issue(Level::Unknown, Code::ImportChanged, &["host-profile"]);
+    }
     let mut walk = Walker {
         left,
         right,
         analysis: a,
         resources: false,
+        host_profile: old_profile,
     };
     // Inspect both complete public surfaces before allowing a breaking decision:
     // a removed/added function with unsupported shape cannot hide behind a diff.
-    for (resolve, surface) in [(left, old), (right, new)] {
+    for (resolve, surface, profile) in [(left, old, old_profile), (right, new, new_profile)] {
         for (name, id) in &surface.imports {
             walk.analysis.name(name)?;
-            types::inspect_host_interface(resolve, *id, walk.analysis)?;
+            if profile == latent_core::PHASE3_HOST_ABI_CURRENT {
+                types::inspect_host_interface(resolve, *id, walk.analysis)?;
+            } else {
+                types::inspect_host_interface_for_profile(resolve, *id, walk.analysis, profile)?;
+            }
         }
         for (name, id) in &surface.exports {
             walk.analysis.name(name)?;
@@ -170,7 +214,7 @@ fn surfaces(
     }
     for (name, id) in &old.imports {
         if let Some(candidate) = new.imports.get(name) {
-            walk.resources = latent_core::PHASE3_HOST_ABI_CURRENT
+            walk.resources = old_profile
                 .interface(name)
                 .is_some_and(|profile| !profile.resource_types().is_empty());
             walk.interface(*id, *candidate, name, false)?;
@@ -196,6 +240,7 @@ struct Walker<'a, 'b> {
     right: &'a Resolve,
     analysis: &'b mut Analysis,
     resources: bool,
+    host_profile: latent_core::HostAbiProfile,
 }
 impl Walker<'_, '_> {
     fn interface(

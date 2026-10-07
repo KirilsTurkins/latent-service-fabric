@@ -15,6 +15,7 @@ mod metrics;
 mod providers;
 mod renderer;
 mod security;
+mod triggers;
 
 use super::{input, CellConfig, CredentialRole, NodeConfig, NodeSettings, MIB};
 

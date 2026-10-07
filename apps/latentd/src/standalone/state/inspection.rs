@@ -46,6 +46,7 @@ pub struct NativeTransactionHostInspection {
     pub state_configuration_digest: String,
     pub state_configuration_epoch: u64,
     pub deferred_http: Vec<NativeDeferredEffectHostInspection>,
+    pub deferred_events: Vec<NativeDeferredEffectHostInspection>,
 }
 
 /// Stable scope data from the principals selected by actual authenticated
@@ -75,6 +76,12 @@ pub(in crate::standalone) async fn inspect_host_configuration(
         ProtectedStoreConfig::bounded_linux(configuration.protected_root(&settings.data_directory));
     store.create_if_missing = configuration.create_if_missing;
     let (profile, digest) = store.inspection_profile().map_err(|_| super::denied())?;
+    let (deferred_events, deferred_http) =
+        effects::observe(settings, &installed, providers, policy, &time)?
+            .into_iter()
+            .partition(|entry| {
+                entry.provider_profile == latent_nats::deferred::NATS_DEFERRED_PROFILE
+            });
     Ok(NativeTransactionHostInspection {
         schema_version: "latent.transaction-host-inspection.v1",
         configured_providers: providers
@@ -89,7 +96,8 @@ pub(in crate::standalone) async fn inspect_host_configuration(
         state_provider_profile: profile.into(),
         state_configuration_digest: format!("sha256:{:x}", latent_core::digest::HexDigest(digest)),
         state_configuration_epoch: configuration.configuration_epoch,
-        deferred_http: effects::observe(settings, &installed, providers, policy, &time)?,
+        deferred_http,
+        deferred_events,
     })
 }
 

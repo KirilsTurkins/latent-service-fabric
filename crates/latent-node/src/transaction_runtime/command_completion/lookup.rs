@@ -14,10 +14,10 @@ use latent_state::{
     store_io::StoreIoKind,
 };
 
-use super::super::StateAuthorization;
+use super::super::{authorization::TerminalAbortPurpose, StateAuthorization};
 use super::{
-    errors, CommandCoordinator, CommandObservation, CommandResultCodec, ResultDeliveryFence,
-    TransactionCompletion,
+    errors, native::NativeCommandWork, CommandCoordinator, CommandObservation, CommandResultCodec,
+    ResultDeliveryFence, TransactionCompletion,
 };
 use crate::{
     command_waiters::{CommandWaiterDecision, CommandWaiterError},
@@ -27,17 +27,89 @@ use crate::{
 const LOOKUP_BYTES: u64 = 4 * 1024 * 1024;
 
 impl CommandCoordinator {
+    pub(super) async fn read_current_claim_namespace(
+        &self,
+        auth: &Arc<StateAuthorization>,
+        claim: &atomic::AdmittedCommand,
+        entity: Option<super::super::entity::EntityOwner>,
+    ) -> Result<atomic::CurrentClaimNamespace, PlatformError> {
+        auth.authorize("acquire-command", 0, 0, || Ok(()))?;
+        let auth = Arc::clone(auth);
+        let time = Arc::clone(&self.time);
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((Arc::clone(&auth), Arc::clone(&time), entity));
+        let operation = self
+            .store
+            .reserve_operation_retaining(Arc::clone(&keeper))
+            .map_err(errors::protected)?;
+        let work = match claim.physical_work() {
+            Ok(work) => work,
+            Err(error) => {
+                operation.retire().await;
+                return Err(errors::atomic(error));
+            }
+        };
+        let retained = work.namespace_observation_bytes();
+        let mut native = NativeCommandWork::new(operation, Some(work), None);
+        let job = self
+            .store
+            .with_store_retaining(StoreIoKind::Read, retained, keeper, move |store| {
+                native.enter();
+                let result = (|| {
+                    let view = store.snapshot()?;
+                    let ownership = auth.authority.ownership();
+                    latent_state::recovery::require_namespace_ready(
+                        &view,
+                        &ownership.tenant,
+                        &latent_core::StateNamespaceId(ownership.namespace.clone()),
+                        ownership.incarnation,
+                    )?;
+                    Ok(native.attempt()?.observe_claim_namespace(&view))
+                })();
+                // The real view is destroyed before its affine physical attempt
+                // guard retires. A dropped waiter or panic cannot retire this guard.
+                native.complete();
+                Ok((result, time))
+            })
+            .map_err(errors::protected)?;
+        let (result, _time) = job
+            .await
+            .map_err(|_| errors::atomic(AtomicError::RecoveryRequired))?
+            .map_err(errors::protected)?;
+        result.map_err(errors::store)?.map_err(errors::atomic)
+    }
+
     pub(super) async fn read_namespace(
         &self,
         auth: &Arc<StateAuthorization>,
     ) -> Result<NamespaceRead, PlatformError> {
-        self.read_namespace_observed(auth, None).await
+        self.read_namespace_observed(auth, None, None, None).await
+    }
+
+    pub(super) async fn read_namespace_owned(
+        &self,
+        auth: &Arc<StateAuthorization>,
+        entity: Option<super::super::entity::EntityOwner>,
+    ) -> Result<NamespaceRead, PlatformError> {
+        self.read_namespace_observed(auth, None, entity, None).await
+    }
+
+    pub(super) async fn read_namespace_for_abort(
+        &self,
+        purpose: Arc<TerminalAbortPurpose>,
+        entity: Option<super::super::entity::EntityOwner>,
+    ) -> Result<NamespaceRead, PlatformError> {
+        let auth = Arc::clone(purpose.authorization());
+        self.read_namespace_observed(&auth, None, entity, Some(purpose))
+            .await
     }
 
     async fn read_namespace_observed(
         &self,
         auth: &Arc<StateAuthorization>,
         original: Option<CommandRecord>,
+        entity: Option<super::super::entity::EntityOwner>,
+        terminal: Option<Arc<TerminalAbortPurpose>>,
     ) -> Result<NamespaceRead, PlatformError> {
         let operation = if auth.authority_mode() == latent_capabilities::namespace::Mode::Inspection
         {
@@ -45,12 +117,18 @@ impl CommandCoordinator {
         } else {
             "acquire-command"
         };
-        auth.authorize(operation, 0, 0, || Ok(()))?;
+        if let Some(purpose) = &terminal {
+            purpose.authorize_metadata()?;
+        } else {
+            auth.authorize(operation, 0, 0, || Ok(()))?;
+        }
         let auth = Arc::clone(auth);
         let time = Arc::clone(&self.time);
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((Arc::clone(&auth), Arc::clone(&time), entity, terminal));
         let job = self
             .store
-            .with_store(StoreIoKind::Read, 8192, move |store| {
+            .with_store_retaining(StoreIoKind::Read, 8192, keeper, move |store| {
                 let result = (|| {
                     let view = store.snapshot()?;
                     let ownership = auth.authority.ownership();
@@ -284,7 +362,7 @@ impl CommandCoordinator {
         record: &CommandRecord,
     ) -> Result<ResultDeliveryFence, PlatformError> {
         let current = read.rebind_result_read(
-            self.read_namespace_observed(read, Some(record.clone()))
+            self.read_namespace_observed(read, Some(record.clone()), None, None)
                 .await?,
         )?;
         ResultDeliveryFence::command(Arc::new(current), record, Arc::clone(&self.time))

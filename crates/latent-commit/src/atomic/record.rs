@@ -164,6 +164,11 @@ impl CommandRecord {
     pub fn key(&self) -> &CommandKey {
         &self.key
     }
+    /// Descriptive original input linkage; observing it grants no authority.
+    #[must_use]
+    pub fn inbox_identity(&self) -> Option<&InboxIdentity> {
+        self.inbox.as_ref()
+    }
     #[must_use]
     pub const fn id(&self) -> Identity {
         self.id

@@ -39,6 +39,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     let wasmtime = runtime::wasmtime(config, &capacity)?;
     let http = super::http::derive(config, capacity.reservations as usize)?;
     let providers = super::providers::derive(config)?;
+    let transactional_triggers = super::triggers::derive(config)?;
     let runtime_profile = std::sync::Arc::new(wasmtime.detected_runtime_profile()?);
     let artifacts = artifact_limits(config, management.max_page_size);
     let isolated_aot = config
@@ -66,6 +67,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             .map(super::state::derive)
             .transpose()?,
         providers,
+        transactional_triggers,
         node,
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,

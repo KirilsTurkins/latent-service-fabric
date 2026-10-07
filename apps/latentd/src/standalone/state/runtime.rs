@@ -53,6 +53,7 @@ pub(super) struct Inner {
     pub management: Option<StateManagementBackend>,
     pub maintenance: Arc<latent_commit::atomic::ResultMaintenanceOwner>,
     pub maintenance_clock: Arc<dyn latent_wire::phase4::StateMaintenanceClock>,
+    pub entity: Arc<latent_node::transaction_runtime::EntityCommandLanes>,
 }
 #[derive(Clone)]
 pub struct StateRuntime(pub(super) Arc<Inner>);
@@ -151,6 +152,17 @@ impl StateRuntime {
         let configuration_digest = format!("sha256:{:x}", latent_core::digest::HexDigest(digest));
         let source = effects.command_admission_source();
         let namespaces = Arc::new(NamespaceCatalog::new());
+        let entity = match latent_node::transaction_runtime::EntityCommandLanes::new(
+            &store,
+            state.entity_lanes.clone(),
+        ) {
+            Ok(entity) => Arc::new(entity),
+            Err(error) => {
+                let _retirement = effects.shutdown(startup_deadline).await;
+                retire_startup_store(&store, startup_deadline).await;
+                return Err(error);
+            }
+        };
         let inner = Inner {
             store,
             policy,
@@ -167,6 +179,7 @@ impl StateRuntime {
             management: None,
             maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
             maintenance_clock: time,
+            entity,
         };
         finish_open(inner, effects, clock, audit, settings.shutdown_grace()).await
     }
@@ -202,6 +215,7 @@ impl StateRuntime {
                 conditions,
                 business_metadata,
                 retry,
+                inbox,
             } => {
                 if installed.mode() != latent_manifest::TransactionOperationMode::StrictCommand {
                     return Err(super::denied());
@@ -214,11 +228,12 @@ impl StateRuntime {
                         conditions,
                         metadata: business_metadata,
                         retry,
+                        inbox,
                     },
                     codec,
                     time: time.clone(),
                 };
-                Ok(self.coordinator(time).admission(Arc::new(factory)))
+                Ok(self.coordinator(time)?.admission(Arc::new(factory)))
             }
             RequestKind::Query { minimum_view } => {
                 let selected = QuerySelection::installed(
@@ -266,13 +281,23 @@ impl StateRuntime {
             codec,
         )))
     }
-    pub(super) fn coordinator(&self, time: Arc<dyn CommandTimeSource>) -> CommandCoordinator {
-        CommandCoordinator::new(
+    pub(super) fn coordinator(
+        &self,
+        time: Arc<dyn CommandTimeSource>,
+    ) -> Result<CommandCoordinator, PlatformError> {
+        CommandCoordinator::new_with_entity_lanes(
             Arc::clone(&self.0.store),
             self.0.waiters.clone(),
             Some(self.0.source.effect_authority()),
             time,
+            Arc::clone(&self.0.entity),
         )
+    }
+
+    pub fn entity_snapshot(
+        &self,
+    ) -> Result<latent_state::entity_lanes::EntityLaneSnapshot, PlatformError> {
+        self.0.entity.snapshot()
     }
     fn check_installed(
         &self,

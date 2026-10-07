@@ -355,6 +355,74 @@ impl NamespaceAuthority {
         })
     }
 
+    /// A queued real claim can outlive unrelated command accounting advances.
+    /// The observation is minted by its actual protected reader, not a decoded
+    /// row or receipt. Only accounting generation/pins may differ; lifecycle,
+    /// quota, caller, publication, gate and original deadline remain fixed.
+    pub fn rebind_current_claim(
+        &self,
+        store: &PolicyStore,
+        claim: &latent_commit::atomic::AdmittedCommand,
+        original: &NamespaceRead,
+        observed: &latent_commit::atomic::CurrentClaimNamespace,
+    ) -> Result<Self, PlatformError> {
+        let command = claim.record();
+        let ownership = &self.ownership;
+        let before = original.record();
+        let current = observed.namespace().record();
+        if self.mode != Mode::Command
+            || before.version != self.version
+            || before.tenant != ownership.tenant
+            || before.id.0 != ownership.namespace
+            || before.version.incarnation != ownership.incarnation
+            || before.status != NamespaceStatus::Active
+            || Instant::now() >= self.deadline
+            || !observed.matches_claim(claim)
+            || command.outcome() != latent_commit::atomic::Outcome::Pending
+            || command.key().tenant != ownership.tenant.0
+            || command.key().namespace != ownership.namespace
+            || command.key().incarnation != ownership.incarnation.to_string()
+            || command.key().entity != ownership.entity
+            || command.key().recovery_scope != ownership.caller.scope
+            || command.result_read_policy() != ownership.result_policy
+            || command.source().publication != self.publication
+            || command.source().state_schema != before.state_schema
+            || current.version.generation <= before.version.generation
+            || current.pins.retained_results == 0
+        {
+            return Err(denied());
+        }
+        let mut unchanged = before.clone();
+        unchanged.version.generation = current.version.generation;
+        unchanged.pins = current.pins;
+        if &unchanged != current {
+            return Err(denied());
+        }
+        self.gate.check()?;
+        store.with_retained_decision(&self.initial, &mut |actual, _| {
+            self.check_target(actual, "acquire-command")?;
+            // This original epoch rejects quiesce/reconfigure/recreate and ABA,
+            // independently of accounting generation and pin count changes.
+            self.lifecycle
+                .with_current(observed.namespace(), true, || Ok(()))
+                .map_err(|_| denied())
+        })?;
+        Ok(Self {
+            initial: Arc::clone(&self.initial),
+            ownership: self.ownership.clone(),
+            publication: self.publication.clone(),
+            version: current.version,
+            activation: self.activation.clone(),
+            mode: Mode::Command,
+            ceiling: self.ceiling,
+            deadline: self.deadline,
+            gate: Arc::clone(&self.gate),
+            selection: self.selection.clone(),
+            lifecycle: Arc::clone(&self.lifecycle),
+            result_history: None,
+        })
+    }
+
     /// Reobserve the current row for an originally sealed read-result owner.
     /// This preserves its actual retained decision, scope and original deadline;
     /// it cannot acquire command authority or reopen an accepted command gate.

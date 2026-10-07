@@ -12,6 +12,7 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-commit = { path = "../latent-commit" }
 latent-effects = { path = "../latent-effects" }
 latent-activation = { path = "../latent-activation" }
 latent-node = { path = "../latent-node" }
@@ -30,7 +31,6 @@ zeroize = { version = "=1.9.0", features = ["alloc"] }
 
 [dev-dependencies]
 latent-artifacts = { path = "../latent-artifacts" }
-latent-commit = { path = "../latent-commit" }
 latent-core = { path = "../latent-core", features = ["test-support"] }
 latent-secrets = { path = "../latent-secrets" }
 latent-state = { path = "../latent-state" }

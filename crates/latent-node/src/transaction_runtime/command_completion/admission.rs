@@ -185,6 +185,7 @@ struct ExecutionSelection {
     result_read: Arc<StateAuthorization>,
     codec: Arc<dyn CommandResultCodec>,
     memory: Arc<HostMemoryReservation>,
+    entity: Option<super::super::entity::EntityOwner>,
 }
 
 /// Shared owners; no dispatcher, timer, execution map or second store is created.
@@ -194,8 +195,17 @@ pub struct CommandCoordinator {
     pub(super) waiters: CommandWaiterRegistry,
     pub(super) effects: Option<EffectAuthorityOwner>,
     pub(super) time: Arc<dyn CommandTimeSource>,
+    pub(super) entity: Arc<super::super::EntityCommandLanes>,
 }
 impl CommandCoordinator {
+    #[cfg(test)]
+    pub(in crate::transaction_runtime) fn uses_entity_lanes(
+        &self,
+        lanes: &Arc<super::super::EntityCommandLanes>,
+    ) -> bool {
+        Arc::ptr_eq(&self.entity, lanes)
+    }
+
     #[must_use]
     pub fn new(
         store: Arc<ProtectedStoreOwner>,
@@ -203,12 +213,36 @@ impl CommandCoordinator {
         effects: Option<EffectAuthorityOwner>,
         time: Arc<dyn CommandTimeSource>,
     ) -> Self {
+        let entity = Arc::new(
+            super::super::EntityCommandLanes::new(&store, super::super::default_entity_limits())
+                .expect("static finite entity limits"),
+        );
         Self {
             store,
             waiters,
             effects,
             time,
+            entity,
         }
+    }
+
+    /// Construct directly with the installed runtime's one validated table.
+    /// A foreign protected store cannot substitute an equal-looking registry.
+    pub fn new_with_entity_lanes(
+        store: Arc<ProtectedStoreOwner>,
+        waiters: CommandWaiterRegistry,
+        effects: Option<EffectAuthorityOwner>,
+        time: Arc<dyn CommandTimeSource>,
+        entity: Arc<super::super::EntityCommandLanes>,
+    ) -> Result<Self, PlatformError> {
+        entity.require_store(&store)?;
+        Ok(Self {
+            store,
+            waiters,
+            effects,
+            time,
+            entity,
+        })
     }
     #[must_use]
     pub fn admission(&self, factory: Arc<dyn CommandAdmissionFactory>) -> Arc<CommandAdmission> {
@@ -217,6 +251,10 @@ impl CommandCoordinator {
             factory,
             control: Mutex::new(None),
             admitted: AtomicBool::new(false),
+            #[cfg(test)]
+            host_observation: Mutex::new(std::sync::Weak::new()),
+            #[cfg(test)]
+            completion_observation: Mutex::new(std::sync::Weak::new()),
         })
     }
 }
@@ -225,6 +263,10 @@ pub struct CommandAdmission {
     factory: Arc<dyn CommandAdmissionFactory>,
     control: Mutex<Option<TransactionAdmissionControl>>,
     admitted: AtomicBool,
+    #[cfg(test)]
+    host_observation: Mutex<std::sync::Weak<StateTransactionHost>>,
+    #[cfg(test)]
+    completion_observation: Mutex<std::sync::Weak<CommandCompletion>>,
 }
 impl TransactionActivationAdmission for CommandAdmission {
     fn preflight<'a>(
@@ -255,11 +297,28 @@ impl TransactionActivationAdmission for CommandAdmission {
     }
 }
 impl CommandAdmission {
+    #[cfg(test)]
+    pub(super) fn observed_host(&self) -> Arc<StateTransactionHost> {
+        self.host_observation.lock().unwrap().upgrade().unwrap()
+    }
+
+    #[cfg(test)]
+    pub(super) fn observed_completion(&self) -> Arc<CommandCompletion> {
+        self.completion_observation
+            .lock()
+            .unwrap()
+            .upgrade()
+            .unwrap()
+    }
+
     async fn admit_owned(
         &self,
         envelope: &ActivationEnvelope,
         budget: &ActivationBudget,
     ) -> Result<TransactionAdmission, PlatformError> {
+        if envelope.parent_activation_id.is_some() {
+            return Err(errors::atomic(AtomicError::PermissionDenied));
+        }
         if self.admitted.swap(true, Ordering::AcqRel) {
             return Err(errors::atomic(AtomicError::Conflict));
         }
@@ -297,7 +356,8 @@ impl CommandAdmission {
             original,
         } = selected;
         let key = input.key.clone();
-        let (decision, operation) = self
+        let queued_bytes = admission_bytes(&input)?;
+        let (decision, operation, entity_pin) = self
             .publish_claim(
                 input,
                 retry,
@@ -331,8 +391,12 @@ impl CommandAdmission {
                         result_read,
                         codec,
                         memory,
+                        entity: None,
                     },
                     envelope.activation_id.clone(),
+                    control,
+                    queued_bytes,
+                    entity_pin,
                 )
                 .await
             }
@@ -347,12 +411,20 @@ impl CommandAdmission {
         auth: Arc<StateAuthorization>,
         read: Arc<StateAuthorization>,
         memory: Arc<HostMemoryReservation>,
-    ) -> Result<(ClaimDecision, ProtectedStoreOperation), PlatformError> {
+    ) -> Result<
+        (
+            ClaimDecision,
+            ProtectedStoreOperation,
+            Arc<super::super::entity::EntityOperationPin>,
+        ),
+        PlatformError,
+    > {
         let retained = admission_bytes(&input)?;
+        let entity_pin = Arc::new(super::super::entity::EntityOperationPin::default());
         let operation = self
             .coordinator
             .store
-            .reserve_operation()
+            .reserve_operation_retaining(entity_pin.clone())
             .map_err(errors::protected)?;
         let mut native = NativeCommandWork::new(operation, None, Some(memory));
         let time = Arc::clone(&self.coordinator.time);
@@ -438,7 +510,7 @@ impl CommandAdmission {
             .map_err(|_| errors::atomic(AtomicError::RecoveryRequired))?
             .map_err(errors::protected)?;
         let error = match decision {
-            Ok(Ok(value)) => return Ok((value, operation)),
+            Ok(Ok(value)) => return Ok((value, operation, entity_pin)),
             Ok(Err(error)) => errors::atomic(error),
             Err(error) => errors::store(error),
         };
@@ -453,11 +525,47 @@ impl CommandAdmission {
         operation: ProtectedStoreOperation,
         mut selected: ExecutionSelection,
         activation: ActivationId,
+        control: TransactionAdmissionControl,
+        queued_bytes: u64,
+        entity_pin: Arc<super::super::entity::EntityOperationPin>,
     ) -> Result<TransactionAdmission, PlatformError> {
-        let post = self.coordinator.read_namespace(&selected.execution).await;
+        let token = control.token();
+        let eligible = tokio::select! {
+            biased;
+            () = token.cancelled() => Err(errors::fixed(latent_core::PlatformErrorCode::Cancelled, "entity-command-cancelled-before-host")),
+            failure = control.transport_interrupted() => Err(failure),
+            result = self.coordinator.entity.acquire(
+                claim.record(), Arc::clone(&selected.execution), Arc::clone(&self.coordinator.time),
+                queued_bytes, latent_state::entity_lanes::EntityCallKind::Root,
+            ) => result,
+        };
+        selected.entity = match eligible {
+            Ok(owner) => owner,
+            Err(error) => {
+                return Ok(self
+                    .abort_before_host(claim, operation, selected, None, error)
+                    .await)
+            }
+        };
+        if let Err(error) = entity_pin.attach(selected.entity.clone()) {
+            return Ok(self
+                .abort_before_host(claim, operation, selected, None, error)
+                .await);
+        }
+        let post = self
+            .coordinator
+            .read_current_claim_namespace(&selected.execution, &claim, selected.entity.clone())
+            .await;
         selected.execution =
-            match post.and_then(|row| selected.execution.rebind_command_after_claim(&claim, row)) {
-                Ok(value) => Arc::new(value),
+            match post.and_then(|row| selected.execution.rebind_current_claim(&claim, row)) {
+                Ok(value) => Arc::new(
+                    value.with_entity(
+                        selected
+                            .entity
+                            .as_ref()
+                            .map(super::super::entity::EntityOwner::fence),
+                    ),
+                ),
                 Err(error) => {
                     return Ok(self
                         .abort_before_host(claim, operation, selected, None, error)
@@ -495,7 +603,7 @@ impl CommandAdmission {
                     .await)
             }
         };
-        let host = match StateTransactionHost::open(
+        let host = match StateTransactionHost::open_owned(
             Arc::clone(&self.coordinator.store),
             Arc::clone(&selected.execution),
             activation,
@@ -504,6 +612,7 @@ impl CommandAdmission {
             self.coordinator.effects.clone(),
             Arc::clone(&self.coordinator.time),
             std::mem::take(&mut selected.conditions),
+            selected.entity.clone(),
         )
         .await
         {
@@ -530,6 +639,11 @@ impl CommandAdmission {
             selected.codec,
             selected.memory,
         ));
+        #[cfg(test)]
+        {
+            *self.host_observation.lock().unwrap() = Arc::downgrade(&host);
+            *self.completion_observation.lock().unwrap() = Arc::downgrade(&completion);
+        }
         Ok(TransactionAdmission::Execute(TransactionExecution {
             host,
             completion,
@@ -551,12 +665,13 @@ impl CommandAdmission {
         operation.retire().await;
         let completion = self
             .coordinator
-            .abort_unstarted(
+            .abort_unstarted_owned(
                 retirement,
                 record,
                 selected.result_read,
                 error,
                 selected.memory,
+                selected.entity,
             )
             .await;
         if let Some(notification) = notification {

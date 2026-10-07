@@ -250,7 +250,7 @@ panic = "abort"
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
     if template == "transactional-aggregate":
         from tools.transaction_guest_project import augment
-        augment(files, project)
+        augment(files, project, event_values=True)
     pin = {"formatVersion": 1, "toolchain": pins,
            "sdk": json.loads(inventory(vendor)),
            "bindings": read_json(ROOT / "tools/guest_bindings.lock.json"),

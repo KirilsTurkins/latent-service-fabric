@@ -38,6 +38,8 @@ mod scalar;
 mod secrets;
 #[path = "startup.rs"]
 mod startup;
+#[path = "triggers.rs"]
+mod triggers;
 
 pub(in crate::standalone) struct ProviderRuntime {
     pub runtime: Arc<ActivationCapabilityRuntime>,
@@ -49,6 +51,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
     http: Option<latent_http::HttpProvider>,
+    trigger_secrets: Option<latent_secrets::LocalSecretStore>,
     events: Option<latent_nats::NatsPublisher>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
     blobs: Option<Arc<LocalBlobStore>>,
@@ -57,6 +60,79 @@ pub(in crate::standalone) struct ProviderRuntime {
 }
 
 impl ProviderRuntime {
+    #[cfg(test)]
+    pub(in crate::standalone) async fn install_control_test_poller(
+        &self,
+        directory: std::path::PathBuf,
+        configuration: latent_nats::triggers::TriggerConfig,
+    ) -> (
+        latent_nats::triggers::NatsTriggers,
+        latent_secrets::LocalSecretStore,
+    ) {
+        use latent_capabilities::broker::secrets::TlsCredentialScope;
+        use latent_secrets::{
+            SecretLimits, SecretPurpose, SecretSource, SecretSpec, SystemSecretClock,
+        };
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let store = latent_secrets::LocalSecretStore::open_before(
+            Arc::clone(&self.pools),
+            directory,
+            SecretLimits::default(),
+            Vec::new(),
+            Arc::new(SystemSecretClock),
+            deadline,
+        )
+        .unwrap()
+        .await
+        .unwrap();
+        let destination = configuration.endpoint.credential_destination();
+        store
+            .reload_before(
+                0,
+                vec![SecretSpec {
+                    tenant: TenantId("tests".into()),
+                    reference: "input-control".into(),
+                    source: SecretSource::File {
+                        name: "credential".into(),
+                    },
+                    purpose: SecretPurpose::TlsProviderCredential {
+                        provider_id: "input-control".into(),
+                        destination: destination.clone(),
+                    },
+                    media_type: "text/plain".into(),
+                    version: "1".into(),
+                    expires_at_unix_millis: None,
+                }],
+                deadline,
+            )
+            .unwrap()
+            .await
+            .unwrap();
+        let secret = store
+            .bind_tls_credential(
+                TlsCredentialScope {
+                    tenant: TenantId("tests".into()),
+                    provider_id: "input-control".into(),
+                    destination,
+                },
+                "input-control".into(),
+            )
+            .unwrap();
+        let poller = latent_nats::triggers::NatsTriggers::install(
+            Arc::clone(&self.pools),
+            "input-control",
+            1,
+            0,
+            configuration,
+            vec![latent_nats::NatsCredential {
+                username: None,
+                secret,
+            }],
+        )
+        .unwrap();
+        (poller, store)
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "bounded provider owners are installed and rolled back in one transaction"
@@ -99,6 +175,7 @@ impl ProviderRuntime {
             guest_secrets: None,
             event_secrets: None,
             http: None,
+            trigger_secrets: None,
             events: None,
             metrics: None,
             blobs: None,
@@ -255,6 +332,42 @@ impl ProviderRuntime {
         Ok(owner)
     }
 
+    /// Install the sole incoming owner after the same node StateRuntime opens.
+    pub async fn install_triggers(
+        &mut self,
+        settings: &crate::config::triggers::TriggerSettings,
+        state: Arc<crate::standalone::state::StateRuntime>,
+        deadline: Instant,
+    ) -> Result<latent_nats::triggers::NatsTriggers, PlatformError> {
+        if self.trigger_secrets.is_some() {
+            return Err(unavailable());
+        }
+        let store = latent_secrets::LocalSecretStore::open_before(
+            Arc::clone(&self.pools),
+            settings.installation.credential_directory.clone(),
+            latent_secrets::SecretLimits::default(),
+            Vec::new(),
+            Arc::new(latent_secrets::SystemSecretClock),
+            deadline,
+        )
+        .map_err(|_| unavailable())?
+        .await
+        .map_err(|_| unavailable())?;
+        // Retain the real store even if a later read/binding/install step fails.
+        // Existing startup rollback drains the same shared I/O/pool owners.
+        self.trigger_secrets = Some(store);
+        triggers::install(
+            &self.pools,
+            self.trigger_secrets
+                .as_ref()
+                .expect("retained input secrets"),
+            settings,
+            state,
+            deadline,
+        )
+        .await
+    }
+
     fn record(
         &mut self,
         identity: &ProviderIdentity,
@@ -290,27 +403,65 @@ impl ProviderRuntime {
         if installation.deferred.capacity() > 16 {
             return Err(unavailable());
         }
-        let publisher = self.events.as_ref().ok_or_else(unavailable)?;
         let adapters = installation
             .deferred
             .iter()
             .map(|deferred| {
-                publisher
-                    .deferred_adapter(
-                        &installation.identity.tenant,
-                        &deferred.topic,
-                        deferred.qualification.clone(),
-                        Arc::clone(&time),
-                    )
-                    .map(|adapter| {
+                self.captured_deferred_event(installation, &deferred.topic, Arc::clone(&time))
+                    .map(|(adapter, _reference)| {
                         Arc::new(adapter) as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>
                     })
-                    .map_err(|_| unavailable())
             })
             .collect();
         // Each adapter retains the same original clock owner.
         drop(time);
         adapters
+    }
+
+    /// Same original constructor used by the public deferred adapter port.
+    /// Return its opaque captured provider identity for installed policy checks,
+    /// rather than rebuilding configuration facts from an operator descriptor.
+    pub(in crate::standalone) fn captured_deferred_event(
+        &self,
+        installation: &crate::config::providers::EventInstallation,
+        topic: &str,
+        time: Arc<dyn latent_effects::runtime::EffectTimeSource>,
+    ) -> Result<
+        (
+            latent_nats::deferred::JetStreamEffectAdapter,
+            ProviderReference,
+        ),
+        PlatformError,
+    > {
+        let publisher = self.events.as_ref().ok_or_else(unavailable)?;
+        let reference = publisher.reference();
+        if installation.identity.epoch != reference.configuration_epoch()
+            || !self.descriptors.iter().any(|entry| {
+                entry.id == installation.identity.id
+                    && entry.tenant == installation.identity.tenant
+                    && entry.service == installation.identity.service
+                    && entry.capability == reference.capability()
+                    && entry.profile == reference.profile()
+                    && entry.configuration_digest == reference.configuration_digest()
+                    && entry.configuration_epoch == reference.configuration_epoch().to_string()
+            })
+        {
+            return Err(unavailable());
+        }
+        let deferred = installation
+            .deferred
+            .iter()
+            .find(|item| item.topic == topic)
+            .ok_or_else(unavailable)?;
+        let adapter = publisher
+            .deferred_adapter(
+                &installation.identity.tenant,
+                topic,
+                deferred.qualification.clone(),
+                time,
+            )
+            .map_err(|_| unavailable())?;
+        Ok((adapter, reference))
     }
 
     pub fn descriptors(&self) -> &[ProviderDescriptor] {
@@ -345,6 +496,9 @@ impl ProviderRuntime {
         if let Some(secrets) = &self.event_secrets {
             secrets.close();
         }
+        if let Some(secrets) = &self.trigger_secrets {
+            secrets.close();
+        }
         if let Some(metrics) = &self.metrics {
             metrics.retire();
         }
@@ -367,6 +521,7 @@ impl ProviderRuntime {
             &self.streaming_secrets,
             &self.guest_secrets,
             &self.event_secrets,
+            &self.trigger_secrets,
         ]
         .into_iter()
         .flatten()

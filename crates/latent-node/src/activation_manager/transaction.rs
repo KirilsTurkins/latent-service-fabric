@@ -13,13 +13,73 @@ pub use crate::transaction_runtime::command_completion::{
 pub struct TransactionAdmissionControl {
     cancellation: crate::CancellationHandle,
     budget: ActivationBudget,
+    transport: Arc<super::TransportStop>,
 }
 impl TransactionAdmissionControl {
-    pub(super) fn new(cancellation: crate::CancellationHandle, budget: ActivationBudget) -> Self {
+    pub(super) fn new(
+        cancellation: crate::CancellationHandle,
+        budget: ActivationBudget,
+        transport: Arc<super::TransportStop>,
+    ) -> Self {
         Self {
             cancellation,
             budget,
+            transport,
         }
+    }
+
+    pub(crate) async fn transport_interrupted(&self) -> PlatformError {
+        self.transport.interrupted().await;
+        self.transport
+            .failure()
+            .expect("sticky original transport interruption")
+    }
+
+    #[cfg(test)]
+    /// Native fixtures retain their original registration, budget and single
+    /// transport emitter. No production caller gains a constructor or emitter.
+    pub(crate) fn for_registered_test_with_transport(
+        registration: &crate::CancellationRegistration,
+        budget: &ActivationBudget,
+    ) -> (Self, TestTransactionTransport) {
+        Self::registered_test_control(registration, budget, true)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_unbound_registered_test_with_transport(
+        registration: &crate::CancellationRegistration,
+        budget: &ActivationBudget,
+    ) -> (Self, TestTransactionTransport) {
+        Self::registered_test_control(registration, budget, false)
+    }
+
+    #[cfg(test)]
+    fn registered_test_control(
+        registration: &crate::CancellationRegistration,
+        budget: &ActivationBudget,
+        bind_lineage: bool,
+    ) -> (Self, TestTransactionTransport) {
+        let transport = Arc::new(super::TransportStop::default());
+        if bind_lineage {
+            budget
+                .enable_descendants(
+                    latent_core::DelegationLimits::default(),
+                    Arc::new(super::probes::ActivationControl::new(
+                        registration,
+                        Arc::clone(&transport),
+                        budget.profile().supports_descendants(),
+                    )),
+                )
+                .unwrap();
+        }
+        (
+            Self::new(
+                registration.handle(),
+                budget.clone(),
+                Arc::clone(&transport),
+            ),
+            TestTransactionTransport(transport),
+        )
     }
 
     pub fn bind_command(
@@ -71,6 +131,17 @@ impl TransactionAdmissionControl {
     #[must_use]
     pub(crate) fn token(&self) -> crate::CancellationToken {
         self.cancellation.token()
+    }
+}
+
+/// The fixture's one original transport emitter. It uses the same sticky
+/// TransportStop and notification as ActivationHandle::interrupt_for_cleanup.
+#[cfg(test)]
+pub(crate) struct TestTransactionTransport(Arc<super::TransportStop>);
+#[cfg(test)]
+impl TestTransactionTransport {
+    pub(crate) fn interrupt(self, cause: super::ActivationTransportInterruption) {
+        self.0.mark(cause);
     }
 }
 
