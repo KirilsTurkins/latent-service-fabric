@@ -24,6 +24,8 @@ use latent_policy::capability::PolicyStore;
 
 use crate::config::{NodeSettings, ProviderIdentity};
 
+#[path = "http/runtime.rs"]
+mod deferred_http;
 #[path = "events.rs"]
 mod events;
 #[path = "http.rs"]
@@ -45,6 +47,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     streaming_secrets: Option<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
+    http: Option<latent_http::HttpProvider>,
     events: Option<latent_nats::NatsPublisher>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
     blobs: Option<Arc<LocalBlobStore>>,
@@ -93,6 +96,7 @@ impl ProviderRuntime {
             streaming_secrets: None,
             guest_secrets: None,
             event_secrets: None,
+            http: None,
             events: None,
             metrics: None,
             blobs: None,
@@ -132,6 +136,7 @@ impl ProviderRuntime {
                 let (provider, secrets) = http::install(&owner.pools, http, deadline).await?;
                 owner.secrets = secrets;
                 providers.push(owner.record(&http.identity, provider.reference()));
+                owner.http = Some(provider.clone());
                 owner.runtime.install_http(Arc::new(provider))?;
             }
             if let Some(http) = &config.http_streaming {
@@ -298,8 +303,7 @@ impl ProviderRuntime {
                     .map_err(|_| unavailable())
             })
             .collect();
-        // Each returned adapter retains this same clock owner. The constructor
-        // consumes its incoming Arc only after every adapter is constructed.
+        // Each adapter retains the same original clock owner.
         drop(time);
         adapters
     }
