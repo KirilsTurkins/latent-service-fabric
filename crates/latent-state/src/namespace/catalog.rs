@@ -362,19 +362,12 @@ impl NamespaceCatalog {
         if key.family != Family::Namespace {
             return Err(NamespaceError::UnsupportedFormat);
         }
-        let (expected, scope) = if key.key.starts_with(super::history::HISTORY_PREFIX) {
+        if key.key.starts_with(super::history::HISTORY_PREFIX) {
+            super::history::NamespaceHistory::validate_row(key, bytes)?;
             let history = super::history::NamespaceHistory::decode(bytes)?;
-            let expected = super::history::history_key(
-                &history.tenant,
-                &history.namespace,
-                history.incarnation,
-            )?
-            .key;
-            (
-                expected,
-                (history.tenant, history.namespace, history.incarnation),
-            )
-        } else if key.key.starts_with(b"ns-v1\0") {
+            return Ok((history.tenant, history.namespace, history.incarnation));
+        }
+        let (expected, scope) = if key.key.starts_with(b"ns-v1\0") {
             let record = NamespaceRecord::decode(bytes)?;
             (
                 namespace_record_key(&record.tenant, &record.id)?,

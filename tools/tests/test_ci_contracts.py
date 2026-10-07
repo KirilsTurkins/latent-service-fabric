@@ -878,18 +878,20 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(data["after"][key],
                                  dict(value, run="python3 website/toolchain/prepare.py\n" + value["run"]), key)
             elif key == reviewed_narrow_fixture:
-                # State requires engine validation. Use the fixed real Identity
-                # reverse-dependent host subset, retaining full CI, step identity
-                # and its original runner. Derive only this exact reviewed change.
+                # State now requires its real engine renderer. Keep that
+                # assertion alongside a genuinely narrow workflow selection,
+                # preserving the original runner and all other metadata.
                 expected = dict(value)
                 expected["run"] = value["run"].replace(
+                    "from tools.ci_profile import classify_paths\n"
                     "selection = classify_paths(['crates/latent-state/src/lib.rs'])\n"
                     "assert selection.profile == 'fast'\n",
+                    "from tools.ci_profile import classify_paths\n"
                     "from tools import ci_suite_inventory as registry\n"
                     "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
-                    "assert state.profile == 'full'\n"
-                    "selection = classify_paths(['crates/latent-identity/src/lib.rs'])\n"
-                    "assert selection.profile == 'full'\n"
+                    "assert state.profile == 'full' and state.renderer\n"
+                    "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
+                    "assert selection.profile == 'fast'\n"
                     "assert selection.fast_packages\n"
                     "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
                 )
