@@ -169,10 +169,16 @@ certify commercial APIs, arbitrary HTTP mutations or endpoint rollback safety.
 
 The lookup-purpose follow-up passed all 59 HTTP, 145 capability, 106 effect and
 118 state library cases on pinned Rust 1.97.1 Linux, with no ignored or filtered
-cases. Strict HTTP/effects/state all-target/all-feature Clippy passed. Three new
+cases. Strict HTTP/capabilities/effects/state all-target/all-feature Clippy passed.
+The capability running-call allocation remains within the original prepaid
+2048-byte operation metadata allowance and retains its affine call through
+actual retirement. Three new
 real-TLS schedules exercise expired and revoked execution with an exact positive
 original receipt, absent/recreated/expired status, and current lookup revocation
-while the actual TLS socket is held. The positive schedule fills the original
+while the actual TLS socket is held. The extended proxy source for this
+follow-up is Git blob
+`2f1acd68eb31a06aa27dbe4ce8589961c41cbb73`.
+The positive schedule fills the original
 shared native ordinary slots and provider running slot while its same-owner
 recovery pin and maintenance request complete. Two real-TCP pool schedules prove
 bounded operation counts, metadata/socket retention after caller drop, and the

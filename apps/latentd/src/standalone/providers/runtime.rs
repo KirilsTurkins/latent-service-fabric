@@ -303,8 +303,7 @@ impl ProviderRuntime {
                     .map_err(|_| unavailable())
             })
             .collect();
-        // Each returned adapter retains this same clock owner. The constructor
-        // consumes its incoming Arc only after every adapter is constructed.
+        // Each adapter retains the same original clock owner.
         drop(time);
         adapters
     }
