@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use latent_state::store_io::StoreIoLimits;
+use latent_state::store_io::{StoreIoLimits, StoreIoRecoveryLimits};
 
 use super::DispatcherError;
 
@@ -51,6 +51,9 @@ impl Default for DispatcherConfig {
 
 impl DispatcherConfig {
     pub(super) const ATTEMPT_BYTES: u64 = 4 * 1024 * 1024;
+    pub(super) const RECOVERY_JOBS: usize =
+        crate::authority::EffectAuthorityOwner::MAXIMUM_LOOKUP_OWNERS;
+    pub(super) const RECOVERY_BYTES: u64 = 8 * 1024 * 1024;
 
     pub(super) fn validate(&self) -> Result<(), DispatcherError> {
         if self.ordering != DispatchOrdering::Unordered {
@@ -77,13 +80,19 @@ impl DispatcherConfig {
 
     pub(super) fn worker_limits(&self) -> StoreIoLimits {
         StoreIoLimits {
-            recovery: None,
-            workers: self.workers,
+            recovery: Some(StoreIoRecoveryLimits {
+                workers: 1,
+                queued_jobs: 2,
+                accepted_jobs: Self::RECOVERY_JOBS,
+                retained_bytes: Self::RECOVERY_BYTES,
+                job_bytes: 7 * 512 * 1024 + 8192,
+            }),
+            workers: self.workers + 1,
             queued_jobs: self.queued_jobs,
             accepted_jobs: self.accepted_jobs,
             active_reads: self.workers,
             active_writes: 1,
-            retained_bytes: self.retained_bytes,
+            retained_bytes: self.retained_bytes + Self::RECOVERY_BYTES,
             job_bytes: Self::ATTEMPT_BYTES + 4096,
             resident_bytes: 128 * 1024,
         }

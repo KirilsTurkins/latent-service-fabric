@@ -105,6 +105,7 @@ impl DispatcherOwner {
         ));
         let (receipts, receiver) = tokio::sync::mpsc::channel(config.accepted_jobs);
         let services = Arc::new(Services {
+            config: config.clone(),
             store,
             authority,
             adapters: adapters.into(),
@@ -128,7 +129,7 @@ impl DispatcherOwner {
                     return Err(error.reason.into());
                 }
             };
-        let workers = config.workers;
+        let workers = config.worker_limits().workers;
         let driver = runtime.spawn(super::driver::drive(
             Arc::clone(&services),
             jobs.clone(),

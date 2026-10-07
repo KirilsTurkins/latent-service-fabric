@@ -878,17 +878,19 @@ class RepositoryMigrationTests(unittest.TestCase):
                 # command, qualification guard and step field byte for byte.
                 self.assertEqual(data["after"][key],
                                  dict(value, run="python3 website/toolchain/prepare.py\n" + value["run"]), key)
-            elif key == host_fixture:
-                # State now has real engine consumers. Preserve its original
-                # selected subset and runner, and explicitly prove full CI is
-                # still selected alongside this smaller host qualification.
+            elif key == reviewed_narrow_fixture:
+                # State now requires its real engine renderer. Keep that
+                # assertion alongside a genuinely narrow workflow selection,
+                # preserving the original runner and all other metadata.
                 expected = dict(value)
                 expected["run"] = value["run"].replace(
+                    "from tools.ci_profile import classify_paths\n"
                     "selection = classify_paths(['crates/latent-state/src/lib.rs'])\n"
                     "assert selection.profile == 'fast'\n",
+                    "from tools.ci_profile import classify_paths\n"
                     "from tools import ci_suite_inventory as registry\n"
                     "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
-                    "assert state.profile == 'full'\n"
+                    "assert state.profile == 'full' and state.renderer\n"
                     "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
                     "assert selection.profile == 'fast'\n"
                     "assert selection.fast_packages\n"

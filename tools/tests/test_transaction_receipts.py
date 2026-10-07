@@ -160,6 +160,14 @@ class TransactionReceiptTests(unittest.TestCase):
         operations = {operation["name"] for item in value["externalClient"]["requiredServices"] for operation in item["operations"]}
         self.assertIn("MutateNamespace", operations)
         self.assertIn("GetStateOperationReceipt", operations)
+        self.assertEqual({item["service"]: {operation["name"] for operation in item["operations"]}
+                          for item in value["externalClient"]["requiredServices"]}, {
+            "latent.transaction.v1.TransactionService": {"InvokeCommand", "Query", "LookupCommand",
+                "LookupCommit", "GetEffect", "ListEffectHistory", "CancelCommand"},
+            "latent.control.v1.StateService": {"MutateNamespace", "InspectNamespace", "SelectEntity",
+                "MutateState", "PlanEffectMutation", "GetStateOperationReceipt"},
+            "latent.control.v1.DispatcherService": {"InspectDispatcher", "ControlDispatcher", "GetDispatcherOperation"},
+        })
         self.assertNotEqual(value["guest"]["profile"], value["externalClient"]["profile"])
 
     def test_raw_http_decoder_rejects_duplicate_fields_and_deep_json_before_lifting(self):

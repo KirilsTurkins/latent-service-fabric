@@ -143,19 +143,22 @@ pub(super) fn response(value: &Response) -> Value {
             json!({"namespace":value.namespace.as_ref().map(|v|json!({"view":v.view.as_ref().map(view),
             "encodedStateBytes":v.encoded_state_bytes.to_string(),"commandCount":v.command_count.to_string(),"pendingEffectCount":v.pending_effect_count.to_string(),
             "retainedFormats":v.retained_formats.iter().map(retention).collect::<Vec<_>>(),"engineProfile":v.engine_profile,"engineProfileDigest":v.engine_profile_digest,
-            "status":c::NamespaceStatus::try_from(v.status).expect("validated enum").as_str_name(),"quota":v.quota.as_ref().map(quota),"generation":v.generation.to_string()}))})
+            "status":c::NamespaceStatus::try_from(v.status).expect("validated enum").as_str_name(),"quota":v.quota.as_ref().map(quota),"generation":v.generation.to_string(),"namespacePolicyDigest":v.namespace_policy_digest}))})
         }
         Response::MutateNamespace(value) => {
             json!({"receipt":value.receipt.as_ref().map(namespace_receipt),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
         }
         Response::MutateState(value) => {
-            json!({"receipt":value.receipt.as_ref().map(state_receipt),"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+            json!({"receipt":value.receipt.as_ref().map(state_receipt),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+        }
+        Response::PlanEffectMutation(value) => {
+            json!({"plan":value.plan.as_ref().map(effect_management::plan),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
         }
         Response::PlanEffectMutation(value) => {
             json!({"plan":value.plan.as_ref().map(effect_management::plan),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
         }
         Response::GetStateOperationReceipt(value) => {
-            json!({"stateReceipt":value.receipt.as_ref().map(state_receipt),"namespaceReceipt":value.namespace_receipt.as_ref().map(namespace_receipt)})
+            json!({"stateReceipt":value.receipt.as_ref().map(state_receipt),"namespaceReceipt":value.namespace_receipt.as_ref().map(namespace_receipt),"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
         }
         Response::SelectEntity(value) => {
             json!({"entities":value.entities.iter().map(|v|json!({"entity":v.entity,"version":bytes(&v.version)})).collect::<Vec<_>>(),"page":value.page.as_ref().map(page)})

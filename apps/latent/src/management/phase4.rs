@@ -5,7 +5,7 @@ mod projection;
 #[cfg(test)]
 mod tests;
 pub use execute::execute;
-pub use prepare::{prepare_state, prepare_transaction};
+pub use prepare::{prepare_dispatcher, prepare_state, prepare_transaction};
 
 use crate::error::Failure;
 pub(super) fn invalid() -> Failure {

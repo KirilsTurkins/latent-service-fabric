@@ -1,31 +1,65 @@
 //! Closed state-cell/accounting codecs for coherent startup validation. Reading
 //! these descriptive records does not mint a session or namespace authority.
 
-use super::{codec, StateError};
+use super::{codec, usage_key, StateError, StateMode, StateScope};
 use crate::{
     embedded::{Family, ReadView, RowKey, StoreError},
     namespace::{namespace_record_key, NamespaceRecord, NamespaceStatus},
 };
 use latent_core::{transaction_contract as contract, StateNamespaceId, TenantId};
 
+/// Coherent persisted namespace usage. This descriptor allocates no session,
+/// refreshes no grant and cannot edit state. Tombstones remain charged.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StateUsage {
+    pub keys: u64,
+    pub encoded_bytes: u64,
+    pub tombstones: u64,
+}
+pub fn inspect_usage(
+    view: &ReadView,
+    namespace: &NamespaceRecord,
+) -> Result<StateUsage, StateError> {
+    let scope = StateScope {
+        tenant: namespace.tenant.clone(),
+        namespace: namespace.id.clone(),
+        incarnation: namespace.version.incarnation,
+        state_schema: namespace.state_schema.clone(),
+        entity: None,
+        mode: StateMode::Query,
+    };
+    let usage = view
+        .get(&usage_key(&scope)?)?
+        .map_or(Ok(codec::Usage::default()), |bytes| {
+            codec::Usage::decode(&bytes)
+        })?;
+    if usage.keys > namespace.quota.state_keys
+        || usage.bytes > namespace.quota.state_bytes
+        || usage.tombstones > namespace.quota.state_keys
+        || usage.tombstone_bytes > namespace.quota.state_bytes
+    {
+        return Err(StateError::Corrupt);
+    }
+    Ok(StateUsage {
+        keys: usage.keys,
+        encoded_bytes: usage
+            .bytes
+            .checked_add(usage.tombstone_bytes)
+            .ok_or(StateError::Corrupt)?,
+        tombstones: usage.tombstones,
+    })
+}
+
 pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     match key.family {
         Family::State if key.key.starts_with(b"state-v1\0") => {
-            let mut input = KeyInput(&key.key[b"state-v1\0".len()..]);
-            let tenant = TenantId(input.text()?);
-            let namespace = StateNamespaceId(input.text()?);
-            let incarnation = input.number()?;
-            match input.byte()? {
-                0 => {}
-                1 => {
-                    input.text()?;
-                }
-                _ => return Err(StoreError::Corrupt),
-            }
-            if input.0.is_empty() || input.0.len() > contract::KEY_BYTES {
-                return Err(StoreError::Corrupt);
-            }
-            let namespace = namespace_in(view, &tenant, &namespace, incarnation)?;
+            let identity = cell_identity(&key.key)?;
+            let namespace = namespace_in(
+                view,
+                &identity.tenant,
+                &identity.namespace,
+                identity.incarnation,
+            )?;
             codec::Cell::decode(bytes, namespace.version.generation).map_err(storage)?;
         }
         Family::Maintenance if key.key.starts_with(b"state-usage-v1\0") => {
@@ -50,6 +84,39 @@ pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
         _ => return Err(StoreError::UnsupportedFormat),
     }
     Ok(())
+}
+
+/// The same closed physical key decoder serves startup and host inspection.
+/// These values describe persisted scope and cannot supply a grant or session.
+pub(super) struct CellIdentity {
+    pub tenant: TenantId,
+    pub namespace: StateNamespaceId,
+    pub incarnation: u64,
+    pub entity: Option<String>,
+}
+
+pub(super) fn cell_identity(key: &[u8]) -> Result<CellIdentity, StoreError> {
+    let mut input = KeyInput(
+        key.strip_prefix(b"state-v1\0")
+            .ok_or(StoreError::UnsupportedFormat)?,
+    );
+    let tenant = TenantId(input.text()?);
+    let namespace = StateNamespaceId(input.text()?);
+    let incarnation = input.number()?;
+    let entity = match input.byte()? {
+        0 => None,
+        1 => Some(input.text()?),
+        _ => return Err(StoreError::Corrupt),
+    };
+    if incarnation == 0 || input.0.is_empty() || input.0.len() > contract::KEY_BYTES {
+        return Err(StoreError::Corrupt);
+    }
+    Ok(CellIdentity {
+        tenant,
+        namespace,
+        incarnation,
+        entity,
+    })
 }
 
 fn namespace_in(
