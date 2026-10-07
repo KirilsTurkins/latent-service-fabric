@@ -541,29 +541,7 @@ fn inspect_stream_with_visit(
     visit: &mut impl FnMut(RowKey, Vec<u8>) -> Result<(), StoreError>,
 ) -> Result<SnapshotReceipt, StoreError> {
     validate_deadline(deadline)?;
-    let mut histories = expected
-        .map(|manifest| {
-            manifest
-                .namespaces
-                .iter()
-                .map(|snapshot| {
-                    let (record, _) = snapshot.decode()?;
-                    let key = crate::namespace::history::history_key(
-                        &record.tenant,
-                        &record.id,
-                        record.version.incarnation,
-                    )
-                    .map_err(|_| StoreError::Corrupt)?;
-                    let legacy = NamespaceHistory::initial(&record)
-                        .encode()
-                        .map_err(|_| StoreError::Corrupt)?
-                        == snapshot.history;
-                    Ok((key, snapshot.history.as_slice(), false, legacy))
-                })
-                .collect::<Result<Vec<_>, StoreError>>()
-        })
-        .transpose()?
-        .unwrap_or_default();
+    let mut histories = expected_histories(expected)?;
     let mut reader = SnapshotReader {
         input,
         hash: Sha256::new(),
@@ -587,22 +565,12 @@ fn inspect_stream_with_visit(
         if tag != 1 {
             return Err(StoreError::Corrupt);
         }
-        let rest = reader.read(7)?;
-        let family = FAMILIES
-            .iter()
-            .copied()
-            .find(|family| *family as u8 == rest[0])
-            .ok_or(StoreError::UnsupportedFormat)?;
-        let key_bytes = usize::from(u16::from_le_bytes(
-            rest[1..3].try_into().map_err(|_| StoreError::Corrupt)?,
-        ));
-        let value_bytes = usize::try_from(u32::from_le_bytes(
-            rest[3..7].try_into().map_err(|_| StoreError::Corrupt)?,
-        ))
-        .map_err(|_| StoreError::Capacity)?;
-        if key_bytes == 0 || key_bytes > 4096 || value_bytes > 4 * 1024 * 1024 {
-            return Err(StoreError::Capacity);
-        }
+        let SnapshotRowHeader {
+            family,
+            key_bytes,
+            value_bytes,
+            encoded: rest,
+        } = SnapshotRowHeader::read(&mut reader)?;
         rows = rows.checked_add(1).ok_or(StoreError::Capacity)?;
         logical_bytes = logical_bytes
             .checked_add(
@@ -665,6 +633,70 @@ fn inspect_stream_with_visit(
         &namespaces,
         source_store_identity.as_deref(),
     )
+}
+
+type HistoryExpectation<'a> = (RowKey, &'a [u8], bool, bool);
+
+struct SnapshotRowHeader {
+    family: Family,
+    key_bytes: usize,
+    value_bytes: usize,
+    encoded: Vec<u8>,
+}
+
+impl SnapshotRowHeader {
+    fn read(reader: &mut SnapshotReader<'_, impl Read>) -> Result<Self, StoreError> {
+        let rest = reader.read(7)?;
+        let family = FAMILIES
+            .iter()
+            .copied()
+            .find(|family| *family as u8 == rest[0])
+            .ok_or(StoreError::UnsupportedFormat)?;
+        let key_bytes = usize::from(u16::from_le_bytes(
+            rest[1..3].try_into().map_err(|_| StoreError::Corrupt)?,
+        ));
+        let value_bytes = usize::try_from(u32::from_le_bytes(
+            rest[3..7].try_into().map_err(|_| StoreError::Corrupt)?,
+        ))
+        .map_err(|_| StoreError::Capacity)?;
+        if key_bytes == 0 || key_bytes > 4096 || value_bytes > 4 * 1024 * 1024 {
+            return Err(StoreError::Capacity);
+        }
+        Ok(Self {
+            family,
+            key_bytes,
+            value_bytes,
+            encoded: rest,
+        })
+    }
+}
+
+fn expected_histories(
+    expected: Option<&SnapshotManifest>,
+) -> Result<Vec<HistoryExpectation<'_>>, StoreError> {
+    Ok(expected
+        .map(|manifest| {
+            manifest
+                .namespaces
+                .iter()
+                .map(|snapshot| {
+                    let (record, _) = snapshot.decode()?;
+                    let key = crate::namespace::history::history_key(
+                        &record.tenant,
+                        &record.id,
+                        record.version.incarnation,
+                    )
+                    .map_err(|_| StoreError::Corrupt)?;
+                    let legacy = NamespaceHistory::initial(&record)
+                        .encode()
+                        .map_err(|_| StoreError::Corrupt)?
+                        == snapshot.history;
+                    Ok((key, snapshot.history.as_slice(), false, legacy))
+                })
+                .collect::<Result<Vec<_>, StoreError>>()
+        })
+        .transpose()?
+        .unwrap_or_default())
 }
 
 fn require_schema_artifacts(

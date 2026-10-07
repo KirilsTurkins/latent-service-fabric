@@ -1,4 +1,8 @@
-use super::*;
+use super::{
+    accept, current, prepare, ActivationClock, Arc, ProtectedStoreError, ProtectedStoreStartup,
+    RestoreAdoptionKind, RestoreAdoptionPlan, RestoreAdoptionStartError, StoreError,
+    PLAN_RESPONSE_BYTES,
+};
 use crate::protected_store::{
     checkpoint::CheckpointFile,
     physical::{FailureLatch, PhysicalStore},
@@ -13,7 +17,7 @@ pub(super) fn start(
     if let Err(reason) = plan.check_retired() {
         return Err(RestoreAdoptionStartError {
             reason,
-            plan: Some(plan),
+            plan: Some(Box::new(plan)),
         });
     }
     // A once-Fresh root is now an existing reviewed object. Initialization may
@@ -27,7 +31,7 @@ pub(super) fn start(
         Err(reason) => {
             return Err(RestoreAdoptionStartError {
                 reason,
-                plan: Some(plan),
+                plan: Some(Box::new(plan)),
             })
         }
     };

@@ -355,6 +355,12 @@ impl ProtectedStoreOwner {
     }
 }
 
+struct RestoreStageReview {
+    snapshot: SnapshotReceipt,
+    window: RestoreWindow,
+    operation_digest: [u8; 32],
+}
+
 fn stage(
     source: &PhysicalStore,
     file: &SnapshotFile,
@@ -362,6 +368,87 @@ fn stage(
     request: &RestoreStageRequest,
     owners: Arc<dyn RestoreStageOwners>,
 ) -> Result<RestoreStageReceipt, RestoreStageError> {
+    let (review, current_view) = review_stage(source, file, &input, request, &owners)?;
+    let operation_digest = review.operation_digest;
+    let mut staging = file
+        .restore
+        .lock()
+        .map_err(|_| RestoreStageError::Review(StoreError::Unavailable))?;
+    initialize_destination(
+        &mut staging,
+        source,
+        file,
+        &review,
+        &current_view,
+        owners.as_ref(),
+    )?;
+    let destination = staging
+        .destination
+        .as_ref()
+        .expect("private created destination");
+    // Persist closure before the first imported row. Interrupted private work
+    // can never look like the pre-recovery ready profile after a later reopen.
+    let guard = RecoveryGuard::staging(
+        operation_digest,
+        review.snapshot.snapshot_digest,
+        request.loss_window_acknowledgement,
+    )
+    .map_err(RestoreStageError::Review)?;
+    let imported_rows = import_rows(destination, file, &review, &guard, owners.as_ref())?;
+    current(file, &input, owners.as_ref())?;
+    install_histories(destination, file, &review, owners.as_ref())?;
+    let controls = prepare_controls(destination, current_view, &input, request, owners.as_ref())?;
+    destination
+        .store
+        .apply_fenced(controls.batch, || {
+            accept(
+                file,
+                owners.as_ref(),
+                operation_digest,
+                RestoreWriteKind::InstallControls,
+            )
+        })
+        .map_err(|error| RestoreStageError::Review(protected_error(error)))?;
+    verify_staged(
+        destination,
+        file,
+        &review,
+        &input,
+        request,
+        &guard,
+        owners.as_ref(),
+    )?;
+    let (checkpoint, view) = complete_and_seal(
+        destination,
+        file,
+        &review,
+        &input,
+        request,
+        &guard,
+        owners.as_ref(),
+    )?;
+    staging.sealed = true;
+    drop(view);
+    drop(staging);
+    let receipt = RestoreStageReceipt {
+        checkpoint,
+        operation_digest,
+        imported_rows,
+        owners,
+        input,
+        request: request.clone(),
+    };
+    receipt.check()?;
+    Ok(receipt)
+}
+
+fn review_stage(
+    source: &PhysicalStore,
+    file: &SnapshotFile,
+    input: &ProtectedRestoreInput,
+    request: &RestoreStageRequest,
+    owners: &Arc<dyn RestoreStageOwners>,
+) -> Result<(RestoreStageReview, ReadView), RestoreStageError> {
     if !input.is_from_file(file) {
         return Err(RestoreStageError::Review(StoreError::Conflict));
     }
@@ -371,13 +458,13 @@ fn stage(
             .lock()
             .map_err(|_| RestoreStageError::Review(StoreError::Unavailable))?;
         match held.as_ref() {
-            Some(original) if Arc::ptr_eq(original, &owners) => {}
+            Some(original) if Arc::ptr_eq(original, owners) => {}
             Some(_) => return Err(RestoreStageError::Review(StoreError::Conflict)),
-            None => *held = Some(Arc::clone(&owners)),
+            None => *held = Some(Arc::clone(owners)),
         }
     }
-    let operation_digest = request.digest(&input).map_err(RestoreStageError::Review)?;
-    current(file, &input, owners.as_ref())?;
+    let operation_digest = request.digest(input).map_err(RestoreStageError::Review)?;
+    current(file, input, owners.as_ref())?;
     let actual = inspect_snapshot(&mut file.cursor(), file.deadline(), |key, bytes| {
         check_owners(owners.as_ref())?;
         owners.archive_row(key, bytes)
@@ -387,7 +474,7 @@ fn stage(
         return Err(RestoreStageError::Review(StoreError::Conflict));
     }
     for artifact in &actual.manifest.metadata.required_artifacts {
-        current(file, &input, owners.as_ref())?;
+        current(file, input, owners.as_ref())?;
         owners
             .required_artifact(artifact)
             .map_err(RestoreStageError::Review)?;
@@ -407,12 +494,26 @@ fn stage(
         return Err(RestoreStageError::Review(StoreError::Conflict));
     }
     owners
-        .review_input(&current_view, &input, request)
+        .review_input(&current_view, input, request)
         .map_err(RestoreStageError::Review)?;
-    let mut staging = file
-        .restore
-        .lock()
-        .map_err(|_| RestoreStageError::Review(StoreError::Unavailable))?;
+    Ok((
+        RestoreStageReview {
+            snapshot: actual,
+            window,
+            operation_digest,
+        },
+        current_view,
+    ))
+}
+
+fn initialize_destination(
+    staging: &mut RestoreStaging,
+    source: &PhysicalStore,
+    file: &SnapshotFile,
+    review: &RestoreStageReview,
+    current_view: &ReadView,
+    owners: &dyn RestoreStageOwners,
+) -> Result<(), RestoreStageError> {
     if staging.attempted {
         return Err(RestoreStageError::Review(StoreError::Conflict));
     }
@@ -420,8 +521,8 @@ fn stage(
         .config
         .take()
         .ok_or(RestoreStageError::Review(StoreError::Invalid))?;
-    if config.identity.encode() == actual.manifest.source_store_identity
-        || StoreIdentity::inspect(&current_view)
+    if config.identity.encode() == review.snapshot.manifest.source_store_identity
+        || StoreIdentity::inspect(current_view)
             .map_err(RestoreStageError::Review)?
             .as_ref()
             == Some(&config.identity)
@@ -435,14 +536,14 @@ fn stage(
         file,
         config.identity.clone(),
         || {
-            check_owners(owners.as_ref())?;
+            check_owners(owners)?;
             file.check().map_err(|_| StoreError::Unavailable)
         },
         || {
             accept(
                 file,
-                owners.as_ref(),
-                operation_digest,
+                owners,
+                review.operation_digest,
                 RestoreWriteKind::InitializeIdentity,
             )
         },
@@ -462,27 +563,24 @@ fn stage(
         file,
         config.checkpoint.clone(),
         fresh,
-        || current_store(file, owners.as_ref()),
+        || current_store(file, owners),
     )
     .map_err(RestoreStageError::Checkpoint)?;
-    let expected_identity = config.identity.clone();
     staging.destination = Some(RestoreDestination {
         checkpoint,
         store: destination,
         config,
     });
-    let destination = staging
-        .destination
-        .as_ref()
-        .expect("private created destination");
-    // Persist closure before the first imported row. Interrupted private work
-    // can never look like the pre-recovery ready profile after a later reopen.
-    let guard = RecoveryGuard::staging(
-        operation_digest,
-        actual.snapshot_digest,
-        request.loss_window_acknowledgement,
-    )
-    .map_err(RestoreStageError::Review)?;
+    Ok(())
+}
+
+fn import_rows(
+    destination: &RestoreDestination,
+    file: &SnapshotFile,
+    review: &RestoreStageReview,
+    guard: &RecoveryGuard,
+    owners: &dyn RestoreStageOwners,
+) -> Result<u64, RestoreStageError> {
     destination
         .store
         .apply_fenced(
@@ -490,8 +588,8 @@ fn stage(
             || {
                 accept(
                     file,
-                    owners.as_ref(),
-                    operation_digest,
+                    owners,
+                    review.operation_digest,
                     RestoreWriteKind::InstallControls,
                 )
             },
@@ -500,15 +598,15 @@ fn stage(
     let mut imported_rows = 0;
     visit_snapshot_rows(
         &mut file.cursor(),
-        &actual,
+        &review.snapshot,
         file.deadline(),
         |key, bytes| {
-            check_owners(owners.as_ref())?;
+            check_owners(owners)?;
             owners.archive_row(key, bytes)
         },
         |key, value| {
-            current_store(file, owners.as_ref())?;
-            if let Some((key, value)) = imported_row(key, value, &window, owners.as_ref())? {
+            current_store(file, owners)?;
+            if let Some((key, value)) = imported_row(key, value, &review.window, owners)? {
                 let batch = AtomicBatch {
                     expectations: vec![ExpectedRow {
                         key: key.clone(),
@@ -524,8 +622,8 @@ fn stage(
                     .apply_fenced(batch, || {
                         accept(
                             file,
-                            owners.as_ref(),
-                            operation_digest,
+                            owners,
+                            review.operation_digest,
                             RestoreWriteKind::ImportRow,
                         )
                     })
@@ -536,7 +634,15 @@ fn stage(
         },
     )
     .map_err(RestoreStageError::Review)?;
-    current(file, &input, owners.as_ref())?;
+    Ok(imported_rows)
+}
+
+fn install_histories(
+    destination: &RestoreDestination,
+    file: &SnapshotFile,
+    review: &RestoreStageReview,
+    owners: &dyn RestoreStageOwners,
+) -> Result<(), RestoreStageError> {
     // Legacy snapshots may omit initial NSH rows. Publish every actual reviewed
     // proposed recovery history under an exact absent/existing expectation.
     let view = destination
@@ -545,7 +651,7 @@ fn stage(
         .snapshot()
         .map_err(RestoreStageError::Review)?;
     let mut histories = AtomicBatch::default();
-    for namespace in window.namespaces() {
+    for namespace in review.window.namespaces() {
         let proposed = namespace
             .proposed_history()
             .map_err(RestoreStageError::Review)?;
@@ -573,59 +679,82 @@ fn stage(
         .apply_fenced(histories, || {
             accept(
                 file,
-                owners.as_ref(),
-                operation_digest,
+                owners,
+                review.operation_digest,
                 RestoreWriteKind::InstallControls,
             )
         })
         .map_err(|error| RestoreStageError::Review(protected_error(error)))?;
+    Ok(())
+}
+
+fn prepare_controls(
+    destination: &RestoreDestination,
+    current_view: ReadView,
+    input: &ProtectedRestoreInput,
+    request: &RestoreStageRequest,
+    owners: &dyn RestoreStageOwners,
+) -> Result<RestoreStageControls, RestoreStageError> {
     let staged_view = destination
         .store
         .engine()
         .snapshot()
         .map_err(RestoreStageError::Review)?;
     let controls = owners
-        .stage_controls(&current_view, &staged_view, &input, request)
+        .stage_controls(&current_view, &staged_view, input, request)
         .map_err(RestoreStageError::Review)?;
     require_control_batch(&controls.batch).map_err(RestoreStageError::Review)?;
     drop(staged_view);
     drop(current_view);
-    destination
-        .store
-        .apply_fenced(controls.batch, || {
-            accept(
-                file,
-                owners.as_ref(),
-                operation_digest,
-                RestoreWriteKind::InstallControls,
-            )
-        })
-        .map_err(|error| RestoreStageError::Review(protected_error(error)))?;
+    Ok(controls)
+}
+
+fn verify_staged(
+    destination: &RestoreDestination,
+    file: &SnapshotFile,
+    review: &RestoreStageReview,
+    input: &ProtectedRestoreInput,
+    request: &RestoreStageRequest,
+    guard: &RecoveryGuard,
+    owners: &dyn RestoreStageOwners,
+) -> Result<(), RestoreStageError> {
     let view = destination
         .store
         .engine()
         .snapshot()
         .map_err(RestoreStageError::Review)?;
-    verify_import(file, &view, &actual, &window, owners.as_ref())
+    verify_import(file, &view, &review.snapshot, &review.window, owners)
         .map_err(RestoreStageError::Review)?;
     if StoreIdentity::inspect(&view)
         .map_err(RestoreStageError::Review)?
         .as_ref()
-        != Some(&expected_identity)
+        != Some(&destination.config.identity)
     {
         return Err(RestoreStageError::Review(StoreError::Corrupt));
     }
     owners
-        .verify_staged(&view, &input, request)
+        .verify_staged(&view, input, request)
         .map_err(RestoreStageError::Review)?;
     if RecoveryGuard::capture(&view)
         .map_err(RestoreStageError::Review)?
         .as_ref()
-        != Some(&guard)
+        != Some(guard)
     {
         return Err(RestoreStageError::Review(StoreError::Corrupt));
     }
     drop(view);
+    Ok(())
+}
+
+fn complete_and_seal(
+    destination: &RestoreDestination,
+    file: &SnapshotFile,
+    review: &RestoreStageReview,
+    input: &ProtectedRestoreInput,
+    request: &RestoreStageRequest,
+    guard: &RecoveryGuard,
+    owners: &dyn RestoreStageOwners,
+) -> Result<(ExternalCheckpoint, ReadView), RestoreStageError> {
     destination
         .store
         .apply_fenced(
@@ -635,8 +764,8 @@ fn stage(
             || {
                 accept(
                     file,
-                    owners.as_ref(),
-                    operation_digest,
+                    owners,
+                    review.operation_digest,
                     RestoreWriteKind::InstallControls,
                 )
             },
@@ -651,8 +780,8 @@ fn stage(
         .map_err(RestoreStageError::Review)?
         .ok_or(RestoreStageError::Review(StoreError::Corrupt))?;
     if completed.status() != crate::recovery::RecoveryStatus::ReconciliationRequired
-        || completed.operation_digest() != operation_digest
-        || completed.snapshot_digest() != actual.snapshot_digest
+        || completed.operation_digest() != review.operation_digest
+        || completed.snapshot_digest() != review.snapshot.snapshot_digest
         || completed.window_digest() != request.loss_window_acknowledgement
     {
         return Err(RestoreStageError::Review(StoreError::Corrupt));
@@ -663,19 +792,19 @@ fn stage(
     let epoch = owners
         .protected_clock_epoch()
         .map_err(RestoreStageError::Review)?;
-    current(file, &input, owners.as_ref())?;
+    current(file, input, owners)?;
     let checkpoint = destination
         .checkpoint
         .seal_restore(
             &view,
             epoch,
             dispatch,
-            || current_store(file, owners.as_ref()),
+            || current_store(file, owners),
             || {
                 accept(
                     file,
-                    owners.as_ref(),
-                    operation_digest,
+                    owners,
+                    review.operation_digest,
                     RestoreWriteKind::SealCheckpoint,
                 )
             },
@@ -685,20 +814,8 @@ fn stage(
         .store
         .check()
         .map_err(RestoreStageError::Destination)?;
-    current(file, &input, owners.as_ref())?;
-    staging.sealed = true;
-    drop(view);
-    drop(staging);
-    let receipt = RestoreStageReceipt {
-        checkpoint,
-        operation_digest,
-        imported_rows,
-        owners,
-        input,
-        request: request.clone(),
-    };
-    receipt.check()?;
-    Ok(receipt)
+    current(file, input, owners)?;
+    Ok((checkpoint, view))
 }
 
 fn imported_row(
@@ -883,8 +1000,8 @@ fn accept(
 }
 fn protected_error(error: super::ProtectedFencedStoreError<StoreError>) -> StoreError {
     match error {
-        super::ProtectedFencedStoreError::Fence(error) => error,
-        super::ProtectedFencedStoreError::Store(ProtectedStoreError::Store(error)) => error,
+        super::ProtectedFencedStoreError::Fence(error)
+        | super::ProtectedFencedStoreError::Store(ProtectedStoreError::Store(error)) => error,
         super::ProtectedFencedStoreError::Store(_) => StoreError::CommitUncertain,
     }
 }

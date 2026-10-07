@@ -30,6 +30,12 @@ pub struct MigrationResumePlan {
     action: MigrationResumeAction,
 }
 
+struct ResumeKeys {
+    namespace: crate::embedded::RowKey,
+    history: crate::embedded::RowKey,
+    receipt: crate::embedded::RowKey,
+}
+
 impl MigrationResumePlan {
     pub fn prepare(
         view: &ReadView,
@@ -81,42 +87,7 @@ impl MigrationResumePlan {
             })
             .transpose()
             .map_err(MigrationError::source)?;
-        if let Some(prior) = &prior {
-            if prior
-                .request
-                .fingerprint()
-                .map_err(MigrationError::source)?
-                != request.fingerprint().map_err(MigrationError::Review)?
-            {
-                return Err(MigrationError::Review(StoreError::Conflict));
-            }
-        } else {
-            super::super::require_ready(view).map_err(MigrationError::Review)?;
-            super::super::migration::require_no_incomplete(view, &current.namespace)
-                .map_err(MigrationError::Review)?;
-            progress
-                .require_request(
-                    &request.migration,
-                    schema,
-                    progress.recipe().map_err(MigrationError::source)?,
-                )
-                .map_err(MigrationError::Review)?;
-            if !progress.completed()
-                || current.namespace
-                    != progress
-                        .result_namespace()
-                        .map_err(MigrationError::source)?
-                || current.history != progress.result_history().map_err(MigrationError::source)?
-                || current.scope() != request.scope
-                || current.namespace.status != NamespaceStatus::Quiescing
-                || current.history.status != HistoryStatus::ReconciliationRequired
-                || current.view_token().map_err(MigrationError::source)? != request.expected_view
-            {
-                return Err(MigrationError::Review(StoreError::Conflict));
-            }
-            require_composition(&current.namespace, std::slice::from_ref(schema))
-                .map_err(|_| MigrationError::Review(StoreError::UnsupportedFormat))?;
-        }
+        require_observation(view, request, schema, &current, &progress, prior.as_ref())?;
         review(
             view,
             request,
@@ -129,18 +100,8 @@ impl MigrationResumePlan {
         )
         .map_err(MigrationError::Review)?;
         super::super::snapshot::validate_deadline(deadline).map_err(MigrationError::source)?;
-        let namespace_key = crate::embedded::RowKey {
-            family: crate::embedded::Family::Namespace,
-            key: namespace_record_key(&request.scope.tenant, &request.scope.namespace)
-                .map_err(|_| MigrationError::Review(StoreError::Invalid))?,
-        };
-        let history_key = history_key(
-            &current.namespace.tenant,
-            &current.namespace.id,
-            current.namespace.version.incarnation,
-        )
-        .map_err(|_| MigrationError::Source(StoreError::Corrupt))?;
-        let mut batch = AtomicBatch {
+        let (namespace_key, history_key) = row_keys(&current, request)?;
+        let batch = AtomicBatch {
             expectations: vec![
                 ExpectedRow {
                     value: view.get(&namespace_key).map_err(MigrationError::source)?,
@@ -165,6 +126,30 @@ impl MigrationResumePlan {
             ],
             mutations: vec![],
         };
+        Self::finish(
+            view,
+            request,
+            current,
+            &progress_bytes,
+            prior,
+            ResumeKeys {
+                namespace: namespace_key,
+                history: history_key,
+                receipt: key,
+            },
+            batch,
+        )
+    }
+
+    fn finish(
+        view: &ReadView,
+        request: &MigrationResumeRequest,
+        current: NamespaceMigrationView,
+        progress_bytes: &[u8],
+        prior: Option<MigrationResumeReceipt>,
+        keys: ResumeKeys,
+        mut batch: AtomicBatch,
+    ) -> Result<Self, MigrationError> {
         let (receipt, action) = if let Some(receipt) = prior {
             crate::tenant::prepare_update(view, &request.scope.tenant, TenantDelta::default())
                 .and_then(|accounting| accounting.append_read_expectations(&mut batch))
@@ -173,14 +158,14 @@ impl MigrationResumePlan {
         } else {
             let receipt = MigrationResumeReceipt {
                 request: request.clone(),
-                progress_digest: Sha256::digest(&progress_bytes).into(),
+                progress_digest: Sha256::digest(progress_bytes).into(),
                 before: current.namespace,
                 history_before: current.history,
             };
             let encoded = receipt.encode().map_err(MigrationError::source)?;
             batch.mutations = vec![
                 RowMutation {
-                    key: namespace_key,
+                    key: keys.namespace,
                     value: Some(
                         receipt
                             .namespace()
@@ -191,7 +176,7 @@ impl MigrationResumePlan {
                     ),
                 },
                 RowMutation {
-                    key: history_key,
+                    key: keys.history,
                     value: Some(
                         receipt
                             .history()
@@ -200,7 +185,7 @@ impl MigrationResumePlan {
                     ),
                 },
                 RowMutation {
-                    key: key.clone(),
+                    key: keys.receipt.clone(),
                     value: Some(encoded.clone()),
                 },
             ];
@@ -210,7 +195,7 @@ impl MigrationResumePlan {
                 TenantDelta {
                     added: TenantUsage {
                         metadata_rows: 1,
-                        metadata_bytes: crate::tenant::row_charge(&key, &encoded)
+                        metadata_bytes: crate::tenant::row_charge(&keys.receipt, &encoded)
                             .map_err(MigrationError::source)?,
                         ..TenantUsage::default()
                     },
@@ -241,4 +226,69 @@ impl MigrationResumePlan {
     pub(crate) fn into_parts(self) -> (AtomicBatch, MigrationResumeReceipt, MigrationResumeAction) {
         (self.batch, self.receipt, self.action)
     }
+}
+
+fn row_keys(
+    current: &NamespaceMigrationView,
+    request: &MigrationResumeRequest,
+) -> Result<(crate::embedded::RowKey, crate::embedded::RowKey), MigrationError> {
+    let namespace_key = crate::embedded::RowKey {
+        family: crate::embedded::Family::Namespace,
+        key: namespace_record_key(&request.scope.tenant, &request.scope.namespace)
+            .map_err(|_| MigrationError::Review(StoreError::Invalid))?,
+    };
+    let history_key = history_key(
+        &current.namespace.tenant,
+        &current.namespace.id,
+        current.namespace.version.incarnation,
+    )
+    .map_err(|_| MigrationError::Source(StoreError::Corrupt))?;
+    Ok((namespace_key, history_key))
+}
+
+fn require_observation(
+    view: &ReadView,
+    request: &MigrationResumeRequest,
+    schema: &ReviewedSchema,
+    current: &NamespaceMigrationView,
+    progress: &AggregateMigrationProgress,
+    prior: Option<&MigrationResumeReceipt>,
+) -> Result<(), MigrationError> {
+    if let Some(prior) = prior {
+        if prior
+            .request
+            .fingerprint()
+            .map_err(MigrationError::source)?
+            != request.fingerprint().map_err(MigrationError::Review)?
+        {
+            return Err(MigrationError::Review(StoreError::Conflict));
+        }
+    } else {
+        super::super::require_ready(view).map_err(MigrationError::Review)?;
+        super::super::migration::require_no_incomplete(view, &current.namespace)
+            .map_err(MigrationError::Review)?;
+        progress
+            .require_request(
+                &request.migration,
+                schema,
+                progress.recipe().map_err(MigrationError::source)?,
+            )
+            .map_err(MigrationError::Review)?;
+        if !progress.completed()
+            || current.namespace
+                != progress
+                    .result_namespace()
+                    .map_err(MigrationError::source)?
+            || current.history != progress.result_history().map_err(MigrationError::source)?
+            || current.scope() != request.scope
+            || current.namespace.status != NamespaceStatus::Quiescing
+            || current.history.status != HistoryStatus::ReconciliationRequired
+            || current.view_token().map_err(MigrationError::source)? != request.expected_view
+        {
+            return Err(MigrationError::Review(StoreError::Conflict));
+        }
+        require_composition(&current.namespace, std::slice::from_ref(schema))
+            .map_err(|_| MigrationError::Review(StoreError::UnsupportedFormat))?;
+    }
+    Ok(())
 }

@@ -193,7 +193,7 @@ impl ProtectedStoreOwner {
                 validate,
                 verify_artifact,
             )
-            .and_then(|receipt| file.verify(receipt, validate_row));
+            .and_then(|receipt| file.verify(&receipt, validate_row));
             match outcome {
                 Err(SnapshotError::Source(error)) => Err(error),
                 outcome => Ok((Some(file), outcome)),

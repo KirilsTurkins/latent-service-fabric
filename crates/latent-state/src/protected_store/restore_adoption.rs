@@ -150,7 +150,7 @@ impl RestoreAdoptionPlan {
 
 pub struct RestoreAdoptionStartError {
     pub reason: ProtectedStoreError,
-    pub plan: Option<RestoreAdoptionPlan>,
+    pub plan: Option<Box<RestoreAdoptionPlan>>,
 }
 
 impl std::fmt::Debug for RestoreAdoptionStartError {

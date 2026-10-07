@@ -86,7 +86,10 @@ impl CheckpointFile {
             return Err(StoreError::Conflict);
         }
         super::check_fresh_view(&store.engine().snapshot()?, &fresh.identity)?;
-        let root = ProtectedRoot::open(&config.root).map_err(|_| StoreError::Unavailable)?;
+        let ProtectedCheckpointConfig {
+            root: checkpoint_root,
+        } = config;
+        let root = ProtectedRoot::open(&checkpoint_root).map_err(|_| StoreError::Unavailable)?;
         if !store
             .is_separate_root(&root)
             .map_err(|_| StoreError::Unavailable)?
@@ -167,7 +170,7 @@ impl CheckpointFile {
             if !self.created_here || recorded.is_some() {
                 return Err(StoreError::Conflict);
             }
-            self.exact_current(&recorded)?;
+            self.exact_current(recorded.as_ref())?;
         }
         let next = ExternalCheckpoint::initial(
             self.identity.clone(),
@@ -236,7 +239,10 @@ impl CheckpointFile {
             .with_live(|| ())
             .map_err(|_| StoreError::Conflict)?;
         let business_root = store.root_identity().map_err(|_| StoreError::Unavailable)?;
-        let root = ProtectedRoot::open(&config.root).map_err(|_| StoreError::Unavailable)?;
+        let ProtectedCheckpointConfig {
+            root: checkpoint_root,
+        } = config;
+        let root = ProtectedRoot::open(&checkpoint_root).map_err(|_| StoreError::Unavailable)?;
         if root.identity() == business_root
             || !store
                 .is_separate_root(&root)
@@ -254,17 +260,17 @@ impl CheckpointFile {
         root_lock.try_lock().map_err(|_| StoreError::Conflict)?;
         let maximum = u64::try_from(ExternalCheckpoint::MAXIMUM_ENCODED_BYTES)
             .expect("bounded checkpoint length");
-        let (file, fence, created_here) = if fresh.is_some() {
-            match root.create_mutable_file(FILE_NAME, maximum) {
-                Ok((file, fence)) => (file, fence, true),
+        let initialized_identity = fresh.map(|witness| witness.identity);
+        let (file, fence, created_here) = if initialized_identity.is_some() {
+            if let Ok((file, fence)) = root.create_mutable_file(FILE_NAME, maximum) {
+                (file, fence, true)
+            } else {
                 // An existing entry, including one created by interrupted
                 // initialization, is never assumed fresh or overwritten.
-                Err(_) => {
-                    let (file, fence) = root
-                        .open_mutable_file(FILE_NAME, maximum, false)
-                        .map_err(|_| StoreError::Unavailable)?;
-                    (file, fence, false)
-                }
+                let (file, fence) = root
+                    .open_mutable_file(FILE_NAME, maximum, false)
+                    .map_err(|_| StoreError::Unavailable)?;
+                (file, fence, false)
             }
         } else {
             let (file, fence) = root
@@ -328,7 +334,7 @@ impl CheckpointFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    fn exact_current(&self, cached: &Option<ExternalCheckpoint>) -> Result<(), StoreError> {
+    fn exact_current(&self, cached: Option<&ExternalCheckpoint>) -> Result<(), StoreError> {
         self.check()?;
         let file = self.file.as_ref().expect("worker-owned checkpoint file");
         if let Some(expected) = cached {
@@ -363,7 +369,7 @@ impl CheckpointFile {
             .map_err(|_| StoreError::Conflict)?;
         self.check_identity(view)?;
         let current = self.current.lock().map_err(|_| StoreError::Unavailable)?;
-        self.exact_current(&current)?;
+        self.exact_current(current.as_ref())?;
         if let Some(checkpoint) = current.as_ref() {
             let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
             checkpoint.check_store(&self.identity, epoch, floor)?;
@@ -409,7 +415,7 @@ impl CheckpointFile {
             .map_err(|_| StoreError::Conflict)?;
         self.check_identity(view)?;
         let mut current = self.current.lock().map_err(|_| StoreError::Unavailable)?;
-        self.exact_current(&current)?;
+        self.exact_current(current.as_ref())?;
         if current.as_ref() != expected {
             return Err(StoreError::Conflict);
         }
