@@ -178,7 +178,11 @@ fn rejected_namespace_acceptance_preserves_current_original_effect_rules() {
         fence.accept(|| Err::<(), _>("original-request-closed")),
         Err("original-request-closed")
     );
-    owner.retry_fence(&authority, 2, 200, time(101)).unwrap();
+    drop(
+        owner
+            .commit_fence(std::slice::from_ref(&authority), time(101))
+            .unwrap(),
+    );
     assert!(owner.0.state.lock().unwrap().closed_namespaces.is_empty());
 }
 

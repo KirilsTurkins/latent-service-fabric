@@ -448,17 +448,31 @@ impl Fixture {
         effect: &DurableEffectAuthority,
         wanted: Disposition,
     ) -> EffectRecord {
-        tokio::time::timeout(WATCHDOG, async {
+        let mut last = None;
+        let waited = tokio::time::timeout(WATCHDOG, async {
             loop {
                 let record = self.record(effect).await;
                 if record.disposition() == wanted {
                     return record;
                 }
+                // One fixed-size observation from the actual durable row. A
+                // timeout retains the failing phase instead of hiding it behind
+                // a watchdog message; it never extends any physical owner.
+                last = Some((record.disposition(), record.attempts()));
                 tokio::task::yield_now().await;
             }
         })
-        .await
-        .expect("actual durable disposition did not arrive")
+        .await;
+        waited.unwrap_or_else(|_| {
+            panic!(
+                "actual durable disposition did not arrive: wanted={wanted:?}, last={last:?}, \
+                 dispatcher={:?}, native={:?}, posts={}, lookups={}",
+                self.owner.as_ref().unwrap().snapshot(),
+                self.native_capacity.snapshot(),
+                self.proxy.posts.load(Ordering::Acquire),
+                self.proxy.lookups.load(Ordering::Acquire),
+            )
+        })
     }
     pub async fn stop_dispatcher(&mut self) {
         let mut owner = self.owner.take().unwrap();
