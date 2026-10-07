@@ -14,6 +14,13 @@ original Phase 3 budget and cancellation tree, an exact capability broker bindin
 and grant, and an executor-neutral `PreparationReadWait` for timer suspension.
 Permission to read either clock does not authorize runtime waits or timers.
 
+The installed scalar profile requires 100 fuel for each of its eleven host
+operations. The bridge reserves that charge through `CapabilityCallCost` on the
+original activation ledger before dispatch. Logical registration and timer work
+keep their separate existing charges. The signed component fixture uses these
+same minimum requirements, so a policy grant without the required host-call
+charge fails before runtime execution.
+
 ## Ownership and closing
 
 Every Store has a host-derived generation and every logical owner has an
@@ -126,13 +133,31 @@ The prior signed Java executor failure and its closed `resource-exhausted`
 receipt are also retained. This host matrix does not qualify the expanded Java
 profile.
 
+The [normal native required-cost controls](../testing/evidence/activation-runtime-required-cost-native-2026-10-02.json)
+passed all ten runtime cases with the fixture enforcing the installed profile's
+100-fuel minimum for every operation. This receipt identifies the integrated
+`acb79889` source, all 7,402 input bodies, normal binaries and unchanged limits.
+The prior signed Java executor failure and its closed `resource-exhausted`
+receipt are retained; these host cases do not qualify the expanded Java profile.
+
 These checks are implementation evidence for #736. Remaining requirements
 include the complete signed cross-tenant, late-wake and node-stop matrix,
 measured cold/active/parked physical owner plateaus, tenant/node fairness,
 standard-language scheduler ports and API-specific error aggregation. ADR-0060
-remains Proposed. Language profiles and the larger #695/#677 qualification gates
-remain open until those requirements are exercised under their exact source,
-compiler, runtime, policy and artifact identities.
+remains Proposed. The #695 research qualification is closed after its separate
+acceptance audit and actual-component evidence. Language delivery and the larger
+#677 qualification gate remain open until their requirements are exercised under
+their exact source, compiler, runtime, policy and artifact identities.
+
+The [retained default HttpClient diagnostic](../testing/evidence/activation-runtime-call-cost-diagnostic-2026-10-02.json)
+places an original-component trap in timer subscription after activation
+registration authority was allowed. Source inspection found that the bridge
+omitted the installed profile's required fuel charge. The matching minimum is
+now enforced by the ten passing normal host cases. The unchanged default
+HttpClient signed-node replay remains pending physical capacity. The private
+trace used an explicitly older observer and proves neither corrected normal-node
+execution nor the ordinary CLR Task/ThreadPool profile. Original failed normal
+and private attempts remain retained.
 
 The initial [Java fiber integration](java-activation-fibers.md) exercises ordinary
 threads in signed components through this bridge. Its broader standard-runtime

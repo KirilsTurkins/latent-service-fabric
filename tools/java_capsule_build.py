@@ -8,7 +8,7 @@ import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
 from tools import (guest_compatibility_build, guest_resources, guest_dependency_inputs,
-                   guest_authoring_frontend, java_server_source, server_source)
+                   guest_authoring_frontend, java_http_client, java_server_source, server_source)
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.java_guest import resources as java_resources
@@ -37,6 +37,7 @@ RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += java_server_source.RECIPE
+RECIPE += java_http_client.RECIPE
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -113,7 +114,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "requestedSource": str(project_path / "src")})
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
                     application_classpath=application_jars, application_resources=application_resources,
-                    server_profile=server_plan is not None, server_bridge=automatic_bridge)
+                    server_profile=server_plan is not None, server_bridge=automatic_bridge,
+                    **({"http_client_profile": True} if "httpClient" in project else {}))
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
                 write_json(output / "bindings.json", generated)
@@ -139,13 +141,17 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 stage = "compatibility"
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
                 additional_assets = []
+                if "httpClient" in project:
+                    (output / "http-client-profile.json").write_bytes(java_http_client.profile(
+                        compiler.sdk, recipe_inputs, source_inputs, component))
+                    additional_assets.append(("http-client-profile.json", "asset", "application/vnd.latent.java.http.profile.v1+json"))
                 if server_plan is not None:
                     actual_web = server_source.inspect(commands, compiler.paths["wasm-tools"], component_path,
                                                        temporary / "compiled/wit", world=project["world"])
                     declaration = server_source.emit(files, component, read_file(output / "server-profile.json"), server_plan,
                                                      actual_web, source_inputs=source_inputs)
-                    additional_assets = [server_source.package(output, declaration),
-                        ("server-profile.json", "asset", "application/vnd.latent.server.source.profile.v1+json")]
+                    additional_assets.extend([server_source.package(output, declaration),
+                        ("server-profile.json", "asset", "application/vnd.latent.server.source.profile.v1+json")])
                 package_inputs(output, project, surface, package_files, component,
                                additional_resources=additional_resources, additional_assets=additional_assets)
                 if packager is not None:

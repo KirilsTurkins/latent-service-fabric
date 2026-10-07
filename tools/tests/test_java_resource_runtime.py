@@ -180,7 +180,10 @@ class JavaResourceRuntime(unittest.TestCase):
         def generated(_run, _wit, _world, destination):
             destination.mkdir()
             (destination / 'Bindings.java').write_bytes(b'// controlled binding boundary\n')
-            (destination / 'probe.c').write_bytes(b'/* controlled binding boundary: no transaction imports */\n')
+            # The current binding producer also emits the C bridge consumed by
+            # the canonical SDK import detector. This fixture's empty world
+            # has no imported state/intent resources, so neither facade applies.
+            (destination / 'probe.c').write_bytes(b'/* controlled empty-world C binding boundary */\n')
             return {'source': 'controlled-binding'}
 
         class CompileBoundary(Exception):
@@ -210,6 +213,8 @@ class JavaResourceRuntime(unittest.TestCase):
             self.assertEqual((project / 'src/main/resources' / name).read_bytes().splitlines(), expected)
         self.assertTrue((project / 'src/main/java/dev/latent/guest/server/http/HttpServer.java').is_file())
         self.assertTrue((project / 'src/main/java/dev/latent/guest/resources/ImmutableResources.java').is_file())
+        for facade in ('State.java', 'Intent.java'):
+            self.assertFalse((project / 'src/main/java/dev/latent/guest' / facade).exists())
         receipt = json.loads((destination / 'resource-profile.json').read_bytes())
         self.assertEqual(receipt['resourceInputs'], json.loads(inventory(resources.source_inputs(self.data))))
 
