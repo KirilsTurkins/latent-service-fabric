@@ -119,7 +119,7 @@ provider observations and positive shutdown/retirement reports separately.
 The immutable production binaries built at
 `0537a6682f7a7e89c00c13d2bb327432cc3ad6cb` precede the transaction manifest
 profile closure and the historical result-read change described in
-[Historical transaction results](../development/historical-transaction-results.md).
+[Original result delivery and recovery](../architecture/phase4-result-delivery.md).
 A signed Java campaign must use new native binaries containing both changes.
 The older binaries cannot supply signed Java or positive schema/restore
 result-recovery evidence.

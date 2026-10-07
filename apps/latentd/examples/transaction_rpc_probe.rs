@@ -135,7 +135,7 @@ async fn main() {
     println!(
         "{}",
         serde_json::json!({"schemaVersion":"latent.transaction-rpc-probe.v1", "passed":true,
-        "cases":7, "ordinaryQueries":2, "explicitCommandRequests":2, "unauthorizedRefusals":4, "automaticRetries":0,
+        "cases":12, "ordinaryQueries":2, "explicitCommandRequests":2, "unauthorizedRefusals":5, "resultLookups":2, "wrongOriginalAssociationRefusals":2, "automaticRetries":0,
         "commandId":record.command_id, "attemptId":record.attempt_id, "clientKey":args.client_key,
         "componentDigest":args.component_digest, "publication":args.publication,
         "finalAggregate":observed.count, "compilerExecuted":false, "authorityInstalledByProbe":false,
@@ -281,6 +281,7 @@ async fn command_and_replay(
     );
     same_original(record, replay.command.as_ref().unwrap());
     assert_eq!(aggregate(replay.invocation.as_ref().unwrap()).count, 1);
+    lookup_original(client, token, foreign, record).await;
     record.clone()
 }
 
@@ -308,4 +309,71 @@ async fn final_query(
     assert!(after.invocation.as_ref().unwrap().result.as_ref().is_some_and(|value|
         matches!(value, i::invoke_response::Result::Success(success) if success.effect_ids.is_empty())));
     observed
+}
+
+async fn lookup_original(
+    client: &mut TransactionServiceClient<tonic::transport::Channel>,
+    token: &str,
+    foreign: &str,
+    original: &t::CommandInspection,
+) {
+    let key = original.key.as_ref().unwrap();
+    let command = t::CommandSelector {
+        namespace: key.namespace.clone(),
+        operation: key.operation.clone(),
+        entity: key.entity.clone(),
+        client_key: key.client_key.clone(),
+        shared_recovery_scope: None,
+    };
+    let publication = c::PublicationRef {
+        tenant: key.namespace.as_ref().unwrap().tenant.clone(),
+        id: original.source.as_ref().unwrap().publication_id.clone(),
+    };
+    let lookup = t::LookupCommandRequest {
+        profile: Some(contract::current_profile()),
+        command: Some(command.clone()),
+        attempt_id: Some(original.attempt_id.clone()),
+        authorization_publication: Some(publication.clone()),
+    };
+    let response = client
+        .lookup_command(request(Some(token), lookup.clone()))
+        .await
+        .unwrap()
+        .into_inner();
+    contract::Response::from(response.clone())
+        .validate_for(&contract::Request::from(lookup.clone()))
+        .unwrap();
+    same_original(original, response.command.as_ref().unwrap());
+    let foreign_error = client
+        .lookup_command(request(Some(foreign), lookup.clone()))
+        .await
+        .unwrap_err();
+    assert_eq!(foreign_error.code(), tonic::Code::PermissionDenied);
+    let mut wrong_attempt = lookup;
+    wrong_attempt.attempt_id = Some(format!("command-attempt:sha256:{}", "f".repeat(64)));
+    assert!(client
+        .lookup_command(request(Some(token), wrong_attempt))
+        .await
+        .is_err());
+    let commit = t::LookupCommitRequest {
+        profile: Some(contract::current_profile()),
+        command: Some(command),
+        receipt_id: original.commit.as_ref().unwrap().receipt_id.clone(),
+        authorization_publication: Some(publication),
+    };
+    let response = client
+        .lookup_commit(request(Some(token), commit.clone()))
+        .await
+        .unwrap()
+        .into_inner();
+    contract::Response::from(response.clone())
+        .validate_for(&contract::Request::from(commit.clone()))
+        .unwrap();
+    same_original(original, response.command.as_ref().unwrap());
+    let mut wrong_commit = commit;
+    wrong_commit.receipt_id = format!("command-disposition:sha256:{}", "f".repeat(64));
+    assert!(client
+        .lookup_commit(request(Some(token), wrong_commit))
+        .await
+        .is_err());
 }

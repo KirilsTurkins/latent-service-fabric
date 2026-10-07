@@ -28,7 +28,7 @@ impl ResultAdmission {
         original_id: String,
         codec: Arc<dyn CommandResultCodec>,
     ) -> Self {
-        let time = AdmissionTime::new(runtime.0.source.clone(), runtime.0.native.clone());
+        let time = AdmissionTime::recovery(runtime.0.source.clone(), runtime.0.native.clone());
         Self {
             runtime,
             installed,
