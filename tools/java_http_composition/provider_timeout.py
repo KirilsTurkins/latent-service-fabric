@@ -35,8 +35,10 @@ def adapt_domain(project: Path) -> dict:
     source_path, wit_path = project / "src/dev/latent/app/Capsule.java", project / "wit/world.wit"
     source, wit = read_file(source_path, 32768).decode(), read_file(wit_path, 32768).decode()
     original = "public String text(String value) { return value; }"
+    original_export = "text: func(value: string) -> string;"
     require(source.count(original) == 1 and wit.count("world service {") == 1
-            and CAPABILITY not in wit, "java-provider-domain-adaptation-shape")
+            and CAPABILITY not in wit and wit.count(original_export) == 1,
+            "java-provider-domain-adaptation-shape")
     template = read_file(ROOT / "sdk/java-guest/templates/http-status.java", 32768).decode()
     method = re.search(r"    public Result<Integer, Bindings\.LatentHttpClientHttpError> check\(String url\) \{.*?\n    \}",
                        template, re.S)
@@ -57,6 +59,9 @@ def adapt_domain(project: Path) -> dict:
         source = source.replace("import dev.latent.guest.Result;", "import dev.latent.guest.Result;\nimport dev.latent.guest.Option;", 1)
     source = source.rstrip()[:-1] + helper + "\n}\n"
     wit = wit.replace("world service {", "world service {\n    import " + CAPABILITY + ";", 1)
+    # The diagnostic text body calls the async HTTP import. Its component task
+    # must permit that suspension, as the maintained http-status export does.
+    wit = wit.replace(original_export, "text: async func(value: string) -> string;", 1)
     descriptor, lock = read_json(project / "capsule-project.json"), read_json(project / "sdk-lock.json")
     descriptor["limits"]["outboundRequests"] = 1
     lock["template"] = {"name": "java-provider-timeout-v1", "sourceDigest": digest(source.encode()),

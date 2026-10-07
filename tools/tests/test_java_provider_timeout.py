@@ -7,10 +7,11 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 from types import SimpleNamespace
 
 from tools.java_capsule_project import create, validate
-from tools.java_http_composition import provider_timeout as campaign
+from tools.java_http_composition import build as composition_build, provider_timeout as campaign
 from tools.phase2_operator_process import WorkflowError
 from tools.phase3_management_scenario import PROVIDER_CREDENTIAL, http_provider
 from tools.rust_capsule_project import ROOT, digest, read_json, snapshot
@@ -112,13 +113,72 @@ class JavaProviderTimeoutTests(unittest.TestCase):
             wit = after["wit/world.wit"].decode()
             self.assertEqual(wit.count("import latent:http/client@0.2.0;"), 1)
             self.assertEqual(wit.split("interface api {", 1)[1].split("world typed-domain", 1)[0],
-                             before["wit/world.wit"].decode().split("interface api {", 1)[1].split("world typed-domain", 1)[0])
+                             before["wit/world.wit"].decode().replace("text: func(value: string) -> string;",
+                                 "text: async func(value: string) -> string;").split("interface api {", 1)[1].split("world typed-domain", 1)[0])
             descriptor, lock, _ = validate(after)
             self.assertEqual(descriptor["limits"]["outboundRequests"], 1)
             self.assertEqual(lock["template"]["sourceDigest"], digest(after["src/dev/latent/app/Capsule.java"]))
             self.assertEqual(observation["templateDigest"], digest((ROOT / "sdk/java-guest/templates/http-status.java").read_bytes()))
             with self.assertRaises(WorkflowError):
                 campaign.adapt_domain(project)
+
+    def test_missing_synchronous_text_export_rejects_before_any_project_mutation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            project = self.domain(Path(temporary) / "domain")
+            path = project / "wit/world.wit"
+            path.write_bytes(path.read_bytes().replace(b"text: func", b"text: async func"))
+            before = snapshot(project)
+            with self.assertRaisesRegex(WorkflowError, "java-provider-domain-adaptation-shape"):
+                campaign.adapt_domain(project)
+            self.assertEqual(snapshot(project), before)
+
+    def test_diagnostic_build_observes_async_text_before_generation_and_keeps_ordinary_build_sync(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            for diagnostics in (False, True):
+                output = Path(temporary) / str(diagnostics)
+                output.mkdir()
+                expected = "text: " + ("async " if diagnostics else "") + "func(value: string) -> string;"
+                events, built = [], {}
+
+                def generated(domain, selection, destination):
+                    self.assertIn(expected, (domain / "wit/world.wit").read_text())
+                    self.assertEqual(read_json(domain / "capsule-project.json")["limits"]["outboundRequests"], int(diagnostics))
+                    events.append("generate")
+                    project = create(destination, "greeting", "java-http-adapter")
+                    (project / "src/dev/latent/app/Capsule.java").write_text('class Capsule { String marker = "route-not-selected"; }')
+                    descriptor = read_json(project / "capsule-project.json")
+                    descriptor["limits"]["cpuFuel"] = composition_build.SPIN_CPU_FUEL
+                    (project / "capsule-project.json").write_text(json.dumps(descriptor))
+                    return project
+
+                def checked(domain, selection, adapter):
+                    self.assertIn(expected, (domain / "wit/world.wit").read_text())
+                    events.append("check")
+
+                def qualified(domain, selection, adapter, evidence):
+                    self.assertEqual(events, ["generate", "check"])
+                    self.assertIn(expected, (domain / "wit/world.wit").read_text())
+                    events.append("probes")
+
+                def compiled(project, destination, *arguments):
+                    self.assertEqual(events, ["generate", "check", "probes"])
+                    built[project.name] = snapshot(project)
+                    return destination
+
+                with patch.object(composition_build, "generate", autospec=True, side_effect=generated), \
+                     patch.object(composition_build, "check", autospec=True, side_effect=checked), \
+                     patch.object(composition_build, "qualify_generation", autospec=True, side_effect=qualified), \
+                     patch.object(composition_build, "build", autospec=True, side_effect=compiled):
+                    composition_build.compile_pair(output, Path("wasi-sdk"), {"examples/capsule_contracts": Path("contracts")},
+                                                   diagnostics=diagnostics)
+                self.assertEqual(set(built), {"domain", "context-required", "adapter", "adapter-next"})
+                self.assertEqual(built["adapter"]["wit/world.wit"], built["adapter-next"]["wit/world.wit"])
+                for name in ("adapter", "adapter-next"):
+                    self.assertEqual(json.loads(built[name]["capsule-project.json"])["limits"]["outboundRequests"], 2 if diagnostics else 0)
+                self.assertEqual((output / "diagnostic-adaptations.json").exists(), diagnostics)
+                if diagnostics:
+                    observations = read_json(output / "diagnostic-adaptations.json")
+                    self.assertEqual(observations["domain"]["witDigest"], digest(built["domain"]["wit/world.wit"]))
 
     def test_adapter_changes_only_declared_outbound_allowance_before_compiler_capture(self):
         with tempfile.TemporaryDirectory() as temporary:

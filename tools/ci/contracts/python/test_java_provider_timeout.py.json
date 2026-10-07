@@ -5,7 +5,9 @@
     "JavaProviderTimeoutTests.test_adaptation_uses_actual_http_template_and_preserves_vendor_exports_and_ordinary_text",
     "JavaProviderTimeoutTests.test_adapter_changes_only_declared_outbound_allowance_before_compiler_capture",
     "JavaProviderTimeoutTests.test_common_provider_configuration_is_same_bounded_owner_and_never_replaces_existing_http",
+    "JavaProviderTimeoutTests.test_diagnostic_build_observes_async_text_before_generation_and_keeps_ordinary_build_sync",
     "JavaProviderTimeoutTests.test_failed_http_response_retains_bounded_digest_and_authorized_closed_child_before_assertion",
+    "JavaProviderTimeoutTests.test_missing_synchronous_text_export_rejects_before_any_project_mutation",
     "JavaProviderTimeoutTests.test_only_finite_nonterminal_provider_timeout_counts_and_absence_remains_unavailable",
     "JavaProviderTimeoutTests.test_oversized_http_response_retains_existing_read_bound_without_inventing_a_root",
     "JavaProviderTimeoutTests.test_shutdown_requires_original_reaped_report_and_every_known_pool_counter"
@@ -19,7 +21,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:27bebd6132e275db5192c800e2ca798080493279c35a1d9d23bfa16f55a8cd88",
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
         "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
       ]
     },
@@ -31,7 +33,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:27bebd6132e275db5192c800e2ca798080493279c35a1d9d23bfa16f55a8cd88",
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
         "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
       ]
     },
@@ -43,7 +45,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:27bebd6132e275db5192c800e2ca798080493279c35a1d9d23bfa16f55a8cd88",
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
         "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
       ]
     },
@@ -55,7 +57,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:27bebd6132e275db5192c800e2ca798080493279c35a1d9d23bfa16f55a8cd88",
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
         "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
       ]
     },
@@ -67,7 +69,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:27bebd6132e275db5192c800e2ca798080493279c35a1d9d23bfa16f55a8cd88",
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
         "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
       ]
     },
@@ -79,7 +81,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:27bebd6132e275db5192c800e2ca798080493279c35a1d9d23bfa16f55a8cd88",
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
         "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
       ]
     },
@@ -91,7 +93,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:27bebd6132e275db5192c800e2ca798080493279c35a1d9d23bfa16f55a8cd88",
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
         "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
       ]
     },
@@ -103,7 +105,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:27bebd6132e275db5192c800e2ca798080493279c35a1d9d23bfa16f55a8cd88",
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
         "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
       ]
     },
@@ -115,13 +117,37 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:27bebd6132e275db5192c800e2ca798080493279c35a1d9d23bfa16f55a8cd88",
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
+      ]
+    },
+    "JavaProviderTimeoutTests.test_diagnostic_build_observes_async_text_before_generation_and_keeps_ordinary_build_sync": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
+      ]
+    },
+    "JavaProviderTimeoutTests.test_missing_synchronous_text_export_rejects_before_any_project_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
         "class:setup-sha256:04ef0ea261d2531cdcec9b15360539ebe8c3ac3100ca0965ff6b31fe3c62e528"
       ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_provider_timeout.py",
-  "reviewReason": "Add two real HTTP response retention controls before unchanged status/size assertions; preserve seven original case bodies, strict typed timeout and physical cleanup checks",
+  "reviewReason": "Declare only diagnostic text asynchronous before adapter generation; add ordinary-sync/diagnostic-async propagation and fail-before-mutation controls; retain all nine original cases, strict provider/cleanup assertions, and unchanged fixture guards apart from explicit imports",
   "schemaVersion": "latent.ci.contracts.v1"
 }
