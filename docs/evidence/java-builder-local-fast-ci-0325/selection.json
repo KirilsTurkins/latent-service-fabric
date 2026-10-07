@@ -1,0 +1,58 @@
+{
+  "sourceHead": "0325b746ce89f6268d3b441257715adc96c35740",
+  "profile": "full",
+  "packages": [
+    "latent-activation",
+    "latent-admission",
+    "latent-commit",
+    "latent-core",
+    "latent-effects",
+    "latent-executor",
+    "latent-identity",
+    "latent-manifest",
+    "latent-network",
+    "latent-routing",
+    "latent-scheduler",
+    "latent-state",
+    "latent-telemetry",
+    "latent-workflows"
+  ],
+  "workspaceDependencyClosure": [
+    "latent-activation",
+    "latent-admission",
+    "latent-artifacts",
+    "latent-audit",
+    "latent-commit",
+    "latent-contracts",
+    "latent-core",
+    "latent-effects",
+    "latent-executor",
+    "latent-identity",
+    "latent-manifest",
+    "latent-network",
+    "latent-routing",
+    "latent-scheduler",
+    "latent-state",
+    "latent-telemetry",
+    "latent-workflows"
+  ],
+  "forbiddenDependencies": [
+    "latent-testkit",
+    "latent-wasmtime",
+    "wasmtime",
+    "cranelift",
+    "latent-renderer-profile",
+    "latent-angular-renderer-adapter"
+  ],
+  "heavyweightDependenciesAbsent": true,
+  "narrowPackages": [
+    "latent-commit",
+    "latent-core",
+    "latent-effects",
+    "latent-state",
+    "latent-workflows"
+  ],
+  "narrowProfile": "fast",
+  "originalJobTimeoutSeconds": 1200,
+  "nativeRuntimeBuildPlanned": false
+}

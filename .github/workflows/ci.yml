@@ -154,9 +154,13 @@ jobs:
           from tools.ci_profile import classify_paths
           from tools import ci_suite_inventory as registry
           state = classify_paths(['crates/latent-state/src/lib.rs'])
-          assert state.profile == 'full'
-          selection = classify_paths(['crates/latent-identity/src/lib.rs'])
-          assert selection.profile == 'full'
+          assert state.profile == 'full' and state.renderer
+          identity = classify_paths(['crates/latent-identity/src/lib.rs'])
+          assert identity.profile == 'full'
+          assert identity.fast_packages
+          assert set(identity.fast_packages) < set(registry.load()['fastPackages'])
+          selection = classify_paths(['crates/latent-workflows/src/lib.rs'])
+          assert selection.profile == 'fast'
           assert selection.fast_packages
           assert set(selection.fast_packages) < set(registry.load()['fastPackages'])
           print(selection.outputs()['fast_packages'])

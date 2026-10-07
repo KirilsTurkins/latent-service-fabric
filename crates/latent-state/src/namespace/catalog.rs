@@ -212,6 +212,20 @@ pub struct NamespaceOperationReceipt {
 }
 
 impl NamespaceOperationReceipt {
+    /// The immutable original mutation, including its original generation.
+    pub fn mutation(&self) -> Result<NamespaceMutation, NamespaceError> {
+        NamespaceMutation::decode_canonical(&self.request)
+    }
+
+    /// Opaque receipt identity over the exact persisted bytes, not authority.
+    pub fn digest(&self) -> Result<[u8; 32], NamespaceError> {
+        use sha2::{Digest, Sha256};
+        let mut digest = Sha256::new();
+        digest.update(b"lsf-namespace-receipt-v1\0");
+        digest.update(self.encode()?);
+        Ok(digest.finalize().into())
+    }
+
     fn encode(&self) -> Result<Vec<u8>, NamespaceError> {
         identity(&self.context.actor)?;
         identity(&self.context.operation_id)?;
@@ -402,15 +416,20 @@ impl NamespaceCatalog {
         store: &EmbeddedStore,
         context: &NamespaceOperationContext,
     ) -> Result<Option<NamespaceOperationReceipt>, NamespaceError> {
+        Self::outcome_in(&store.snapshot().map_err(storage)?, context)
+    }
+
+    /// Read the original actor-scoped receipt from the same native view as the
+    /// currently authorized namespace metadata. No lookup ID grants access.
+    pub fn outcome_in(
+        view: &ReadView,
+        context: &NamespaceOperationContext,
+    ) -> Result<Option<NamespaceOperationReceipt>, NamespaceError> {
         let key = RowKey {
             family: Family::Namespace,
             key: namespace_operation_key(&context.tenant, &context.actor, &context.operation_id)?,
         };
-        let bytes = store
-            .snapshot()
-            .map_err(storage)?
-            .get(&key)
-            .map_err(storage)?;
+        let bytes = view.get(&key).map_err(storage)?;
         let receipt = bytes
             .map(|bytes| NamespaceOperationReceipt::decode(&bytes))
             .transpose()?;

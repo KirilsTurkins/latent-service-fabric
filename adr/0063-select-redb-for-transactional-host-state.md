@@ -53,6 +53,15 @@ the handoff contract, not proof that an arbitrary caller of the prototype is a
 qualified production node owner. Guest execution never holds an exclusive
 writer transaction. A cancelled waiter does not retire accepted physical I/O.
 
+The integrated [protected store owner](../docs/development/shared-state-store-owner.md)
+uses three fixed workers (two native readers and one writer), with eight queued
+and 32 accepted jobs. Its internal framed keys/values allow 4 KiB/2 MiB and
+1,024 checks or mutations per batch, so complete atomic envelopes fit the same
+transaction. Guest key/value limits remain 1 KiB/1 MiB. The prototype defaults
+above remain unchanged. The [integrated results](../docs/evidence/transaction-store-owner-381.json)
+exercise this physical boundary; complete node and distribution qualification
+remain later handoffs.
+
 Normal writes use immediate durability. Validation/conflict/quota failures
 before commit abort every family. A failed commit is **uncertain**, never a
 proven business abort: the in-memory store stops new operations, keeps physical
@@ -64,6 +73,11 @@ the engine's allocator repair is not permission to reset application records.
 The [repeatable qualification](../docs/testing/transaction-store-engine.md)
 records finite real commits, two concurrent writers, retained/expired read views,
 compaction, closed backup/reopen and owned child termination before/after commit.
+The [current finite observation](../docs/evidence/transaction-store-current-381-c993.json)
+records these existing cases at exact source `c99365fc` after the v1/v2 metadata
+transition: all 22 selected engine cases passed on the recorded private Linux
+ext4 fixture with Rust 1.97.1 and redb 4.3.0. Original measurements remain tied
+to their earlier immutable inputs; this observation adds no broader workload.
 The local Docker volume exposes the WSL2 Linux ext filesystem. Measurements are
 observations under that virtualized host load, not throughput promises.
 Process-crash checks establish all-or-none recovery at those barriers;
