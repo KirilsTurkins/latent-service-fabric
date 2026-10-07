@@ -39,18 +39,25 @@ impl CommandCoordinator {
         auth: &Arc<StateAuthorization>,
         original: Option<CommandRecord>,
     ) -> Result<NamespaceRead, PlatformError> {
-        let operation = if auth.authority_mode() == latent_capabilities::namespace::Mode::Inspection
-        {
+        let inspection = auth.authority_mode() == latent_capabilities::namespace::Mode::Inspection;
+        let operation = if inspection {
             "read-result"
         } else {
             "acquire-command"
         };
+        let kind = if inspection {
+            StoreIoKind::RecoveryRead
+        } else {
+            StoreIoKind::Read
+        };
         auth.authorize(operation, 0, 0, || Ok(()))?;
         let auth = Arc::clone(auth);
         let time = Arc::clone(&self.time);
+        // Only sealed result inspection uses recovery workers. Command admission
+        // retains its ordinary lane and every current namespace/history fence.
         let job = self
             .store
-            .with_store(StoreIoKind::Read, 8192, move |store| {
+            .with_store(kind, 8192, move |store| {
                 let result = (|| {
                     let view = store.snapshot()?;
                     let ownership = auth.authority.ownership();
@@ -209,7 +216,7 @@ impl CommandCoordinator {
         let time = Arc::clone(&self.time);
         let job = self
             .store
-            .with_store(StoreIoKind::Read, LOOKUP_BYTES, move |store| {
+            .with_store(StoreIoKind::RecoveryRead, LOOKUP_BYTES, move |store| {
                 let result = (|| {
                     let view = store.snapshot()?;
                     if !same_namespace(&view, &read)? {

@@ -9,6 +9,7 @@ use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf, time::Instant};
 
 mod management;
 mod os_retirement;
+mod recovery_capacity;
 
 struct Fixture {
     root: tempfile::TempDir,
