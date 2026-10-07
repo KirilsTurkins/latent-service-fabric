@@ -97,3 +97,29 @@ was subsequently quiesced, substitute its latest generation, or renew any grant.
 Changed inputs conflict. Management/CLI wiring, migration, and approved external
 effect reconciliation remain separate required work; review acceptance is never
 an automatic redrive instruction.
+
+## Lost staged-restore responses
+
+The protected v2 workflow can recover a completed stage receipt while its
+original `ProtectedSnapshot` custody is still owned. After a response is lost,
+drop its response object, review the same input file again with
+`review_restore_window`, then call `recover_restore_receipt` with the exact
+original operation, operator, runtime and loss-window acknowledgement. The
+input response uses the same original native reservation and absolute deadline.
+It cannot replace the snapshot custody or extend the operation's lifetime.
+
+Receipt recovery performs no import or durable write. It rereads the actual
+snapshot, current source window, imported destination rows and protected
+checkpoint. The same installed owners must validate the completed linked view,
+current role, audit, controls and clock. The final read fence must be consumed.
+The destination remains in `ReconciliationRequired`; returning a receipt cannot
+adopt it, resume consumers or dispatch an old pending effect.
+
+A different request or owner, partial stage, changed checkpoint, revocation or
+expired original deadline refuses recovery. Once adoption preparation consumes
+the transition, this read path also refuses. After custody retirement or process
+restart, use the existing explicit restored-root review and adoption workflow;
+an in-memory completion description supplies no new-boot authority. The six
+added protected-store schedules cover this limited lost-response path. Their
+source registration is separate from execution evidence and the required real
+state/outbox/inbox recovery campaign.

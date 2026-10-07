@@ -34,6 +34,8 @@ use std::{
     task::{Context, Poll},
 };
 
+mod receipt;
+
 const WORK_BYTES: u64 = 8 * 1024 * 1024;
 const ROOT_RESOURCE_BYTES: u64 = 64 * 1024;
 const CONTROL_BYTES: usize = 1024 * 1024;
@@ -151,6 +153,15 @@ pub trait RestoreStageOwners: Send + Sync + 'static {
         input: &ProtectedRestoreInput,
         request: &RestoreStageRequest,
     ) -> Result<(), StoreError>;
+    /// Revalidate the actual completed, still-paused destination when an
+    /// operation's response was lost. This is a read review; it cannot install
+    /// controls, renew grants or approve adoption/reconciliation/resume.
+    fn verify_completed(
+        &self,
+        staged: &ReadView,
+        input: &ProtectedRestoreInput,
+        request: &RestoreStageRequest,
+    ) -> Result<(), StoreError>;
     fn dispatch_checkpoint(&self, staged: &ReadView) -> Result<(u64, u64), StoreError>;
     fn protected_clock_epoch(&self) -> Result<u64, StoreError>;
     fn current_role(&self) -> Result<(), StoreError>;
@@ -255,6 +266,16 @@ pub(super) struct RestoreStaging {
     attempted: bool,
     pub(super) sealed: bool,
     pub(super) adoption_prepared: bool,
+    completed: Option<RestoreCompletion>,
+}
+
+/// Small immutable descriptions of a physically verified and sealed operation.
+/// Kept inside the same prepaid file custody; these bytes are not Fresh,
+/// current-policy, native-retirement or adoption evidence on their own.
+struct RestoreCompletion {
+    checkpoint: ExternalCheckpoint,
+    operation_digest: [u8; 32],
+    imported_rows: u64,
 }
 
 #[cfg(test)]
@@ -687,6 +708,11 @@ fn stage(
         .map_err(RestoreStageError::Destination)?;
     current(file, &input, owners.as_ref())?;
     staging.sealed = true;
+    staging.completed = Some(RestoreCompletion {
+        checkpoint: checkpoint.clone(),
+        operation_digest,
+        imported_rows,
+    });
     drop(view);
     drop(staging);
     let receipt = RestoreStageReceipt {
