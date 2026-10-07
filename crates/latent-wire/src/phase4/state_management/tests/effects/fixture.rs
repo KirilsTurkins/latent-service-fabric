@@ -166,6 +166,7 @@ pub(super) async fn setup_with_provider(
             rule.profile.clone(),
             Arc::clone(&time),
             original,
+            super::dispatch_policy::DispatchPolicy::install(&fixture, &rule),
         ))
     });
     authority.publish(rule).unwrap();

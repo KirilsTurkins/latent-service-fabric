@@ -1,7 +1,86 @@
 use super::*;
+mod dispatch_policy;
 mod fixture;
 mod provider;
 use fixture::{mutation, operator, setup};
+
+#[tokio::test]
+async fn controlled_dispatch_requires_the_actual_current_policy_and_source_before_provider_acceptance(
+) {
+    let mut effect =
+        fixture::setup_with_provider(Some(latent_effects::dispatch::Disposition::KnownFailed))
+            .await;
+    let id = effect.effect.clone();
+    let authority = effect
+        .fixture
+        .store
+        .with_store(
+            latent_state::store_io::StoreIoKind::RecoveryRead,
+            4096,
+            move |engine| {
+                let bytes = engine
+                    .snapshot()?
+                    .get(&latent_effects::dispatch_store::effect_row_key(&id).unwrap())?
+                    .unwrap();
+                Ok(latent_effects::dispatch::EffectRecord::decode(&bytes)
+                    .unwrap()
+                    .authority()
+                    .unwrap())
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    let provider = effect.provider.as_ref().unwrap();
+    let mut calls = 0;
+    let mut accept = || {
+        calls += 1;
+        Err(latent_effects::authority::AuthorityError::Unavailable)
+    };
+    assert_eq!(
+        provider
+            .dispatch
+            .with_current(&authority, deadline(), &mut accept)
+            .err()
+            .unwrap(),
+        latent_effects::authority::AuthorityError::Unavailable
+    );
+    assert_eq!(calls, 1);
+    effect
+        .fixture
+        .policy
+        .mutate(
+            latent_policy::capability::MutationRequest {
+                tenant: "a",
+                actor: "fixture-operator",
+                kind: latent_policy::capability::RecordKind::Policy,
+                id: "controlled-dispatch",
+                operation_id: "withdraw-controlled-dispatch",
+                expected_revision: 1,
+                document: None,
+            },
+            deadline(),
+            |_| Ok(()),
+        )
+        .unwrap();
+    let mut denied_calls = 0;
+    let mut denied_accept = || {
+        denied_calls += 1;
+        Err(latent_effects::authority::AuthorityError::Unavailable)
+    };
+    assert_eq!(
+        provider
+            .dispatch
+            .with_current(&authority, deadline(), &mut denied_accept)
+            .err()
+            .unwrap(),
+        latent_effects::authority::AuthorityError::PolicyBlocked
+    );
+    assert_eq!(denied_calls, 0);
+    assert_eq!(provider.sends.load(std::sync::atomic::Ordering::SeqCst), 0);
+    effect.finish().await;
+}
 
 fn planned(value: &OwnedPhase4Response) -> c::EffectManagementPlan {
     let contract::Response::PlanEffectMutation(value) = &value.response else {

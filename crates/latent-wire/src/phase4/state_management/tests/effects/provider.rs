@@ -23,6 +23,7 @@ pub(super) struct ControlledProvider {
     pub entered: tokio::sync::Notify,
     pub release: tokio::sync::Notify,
     pub original: Disposition,
+    pub(super) dispatch: super::dispatch_policy::DispatchPolicy,
 }
 pub(super) struct Adapter(pub Arc<ControlledProvider>);
 struct Accepted {
@@ -33,7 +34,12 @@ struct Accepted {
     grant: DispatchGrant,
 }
 impl ControlledProvider {
-    pub fn new(profile: DispatchProfile, time: Arc<AtomicU64>, original: Disposition) -> Self {
+    pub fn new(
+        profile: DispatchProfile,
+        time: Arc<AtomicU64>,
+        original: Disposition,
+        dispatch: super::dispatch_policy::DispatchPolicy,
+    ) -> Self {
         Self {
             profile,
             time,
@@ -44,12 +50,24 @@ impl ControlledProvider {
             entered: tokio::sync::Notify::new(),
             release: tokio::sync::Notify::new(),
             original,
+            dispatch,
         }
     }
 }
 impl DeferredEffectAdapter for Adapter {
     fn profile(&self) -> &DispatchProfile {
         &self.0.profile
+    }
+    fn with_current_dispatch(
+        &self,
+        authority: &latent_effects::authority::DurableEffectAuthority,
+        deadline: Instant,
+        accept: &mut dyn FnMut() -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError>,
+    ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
+        if authority.profile() != self.profile() {
+            return Err(AuthorityError::PolicyBlocked);
+        }
+        self.0.dispatch.with_current(authority, deadline, accept)
     }
     fn accept(
         &self,
