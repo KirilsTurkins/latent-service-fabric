@@ -1,0 +1,17 @@
+package examples:java-http-context-required@1.0.0;
+
+interface api {
+    status: func() -> string;
+}
+
+world service {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    import latent:context/context@0.1.0;
+    export api;
+}
+
+world runtime-support {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+}

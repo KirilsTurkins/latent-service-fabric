@@ -1,0 +1,11 @@
+{
+  "attempt": "local-docs785-0325-linux-r1",
+  "exitCode": 1,
+  "seconds": 142.454033,
+  "reason": "missing-tool-rustc",
+  "sourceHead": "0325b746ce89f6268d3b441257715adc96c35740",
+  "allSelectedRunBlocksPassed": false,
+  "fullRepositoryCiPassed": false,
+  "originalRawEvidencePreservedOutsideWorktrees": true,
+  "originalReceiptSha256": "sha256:a1a994f858f48abb3ac947987fa84955308462c744c2a269e3d4147626a0d42e"
+}
