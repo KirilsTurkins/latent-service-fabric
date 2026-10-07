@@ -4,7 +4,7 @@ The opt-in `activation-owned-v1` host support profile supplies
 `latent:runtime/activation@0.1.0` beneath maintained language runtimes. It is
 recognized by the V5 host ABI profile. Recognition does not install the bridge,
 grant its operations, or qualify any language runtime. Existing direct guest
-bindings and frozen V1–V4 sources remain available.
+bindings and frozen V1â€“V4 sources remain available.
 
 `WasmtimeConfig.activation_runtime` selects explicit finite limits for tasks,
 executors, queued work, waits, timers, results and native owners. `None` preserves

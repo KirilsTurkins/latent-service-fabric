@@ -38,6 +38,80 @@ fn protected_local_blob_provider_starts_and_reaps_thirty_two_times() {
     repeat_startup(&path);
 }
 
+#[cfg(feature = "development-outbound-streams")]
+#[test]
+fn protected_stream_provider_starts_without_dialing_and_joins_one_maintenance_owner() {
+    let source = TempDir::new().unwrap();
+    std::fs::set_permissions(source.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let path = source.path().join("node.json");
+    let document = serde_json::json!({
+        "formatVersion":1,"dataDirectory":source.path().join("data"),
+        "nodeId":"stream-startup","bind":"127.0.0.1:0",
+        "credentials":[{"token":"LSF-PUBLIC-STREAM-STARTUP-TEST-ONLY", "subject":"administrator", "tenant":"tests", "role":"admin"}],
+        "budgetProfile":{"mode":"phase3","maximumOutboundRequests":8},
+        "audit":{"mode":"durable"},"capabilityPolicies":{"formatVersion":1},
+        "providers":{"formatVersion":1,
+            "outboundStreams":{"identity":{"id":"streams","tenant":"tests","service":"stream-host","epoch":1},
+                "configuration":{"formatVersion":1,"profile":"lsf-outbound-streams-v1",
+                    "destinations":[{"endpoint":{"host":"127.0.0.1","port":listener.local_addr().unwrap().port(),"transport":"tcp"},
+                        "addresses":{"networks":["127.0.0.1/32"],"specialAddresses":["127.0.0.1"]},
+                        "resolution":{"kind":"static","addresses":["127.0.0.1"]}}],
+                    "limits":{"maximumTransferBytes":65536,"idleTimeoutMillis":1000,"absoluteTimeoutMillis":5000}}},
+            "bindings":[{"name":"stream-binding","tenant":"tests","consumerService":"guest-stream",
+                "providerService":"stream-host","contract":"latent:network/streams@0.1.0","providerBinding":"streams-installed"}]}
+    });
+    std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let control = Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(4)
+        .enable_all()
+        .build()
+        .unwrap();
+    let invocation = Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(1)
+        .enable_all()
+        .build()
+        .unwrap();
+    for ordinal in 0..32 {
+        let node = invocation
+            .block_on(StandaloneNode::start(
+                NodeConfig::load(&path).unwrap().derive().unwrap(),
+                control.handle().clone(),
+                RuntimeThreads::default(),
+            ))
+            .unwrap_or_else(|error| panic!("startup {ordinal}: {error:?}"));
+        let providers = node.configured_providers();
+        assert_eq!(providers.len(), 1);
+        assert_eq!(
+            serde_json::to_value(&providers[0]).unwrap()["capability"],
+            "latent:network/streams@0.1.0"
+        );
+        assert_eq!(
+            listener.accept().err().unwrap().kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+        let report = invocation.block_on(node.shutdown()).unwrap();
+        assert!(report.clean);
+        let providers = report.providers.unwrap();
+        assert!(providers.clean);
+        assert_eq!(providers.stream_maintenance_owners, 0);
+        assert_eq!(providers.stream_owners, 0);
+        assert_eq!(providers.stream_connections, 0);
+        assert_eq!(providers.stream_pending_operations, 0);
+        assert_eq!(providers.stream_retained_chunks, 0);
+        assert_eq!(
+            listener.accept().err().unwrap().kind(),
+            std::io::ErrorKind::WouldBlock
+        );
+    }
+    control.shutdown_timeout(Duration::from_secs(5));
+    invocation.shutdown_timeout(Duration::from_secs(5));
+}
+
 #[test]
 fn protected_context_and_log_profiles_start_and_reap_without_guest_owners() {
     let source = TempDir::new().unwrap();
@@ -167,15 +241,37 @@ fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times()
     });
     std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    let control_threads = Arc::new(AtomicUsize::new(0));
+    let invocation_threads = Arc::new(AtomicUsize::new(0));
+    let started = Arc::clone(&control_threads);
+    let stopped = Arc::clone(&control_threads);
     let control = Builder::new_multi_thread()
         .worker_threads(1)
         .max_blocking_threads(4)
+        .on_thread_start(move || {
+            started.fetch_add(1, Ordering::SeqCst);
+        })
+        .on_thread_stop(move || {
+            stopped.fetch_sub(1, Ordering::SeqCst);
+        })
         .enable_all()
         .build()
         .unwrap();
+    let started = Arc::clone(&invocation_threads);
+    let stopped = Arc::clone(&invocation_threads);
     let invocation = Builder::new_multi_thread()
         .worker_threads(1)
         .max_blocking_threads(1)
+        .on_thread_start(move || {
+            started.fetch_add(1, Ordering::SeqCst);
+        })
+        .on_thread_stop(move || {
+            stopped.fetch_sub(1, Ordering::SeqCst);
+        })
         .enable_all()
         .build()
         .unwrap();
@@ -198,7 +294,10 @@ fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times()
             .block_on(StandaloneNode::start(
                 settings,
                 control.handle().clone(),
-                RuntimeThreads::default(),
+                RuntimeThreads {
+                    invocation: Arc::clone(&invocation_threads),
+                    control: Arc::clone(&control_threads),
+                },
             ))
             .unwrap();
         let descriptors = serde_json::to_value(node.configured_providers()).unwrap();
@@ -214,28 +313,42 @@ fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times()
         );
         assert_eq!(actual[0]["configurationEpoch"], "7");
         assert_eq!(actual[0]["configurationDigest"], expected_digest.as_str());
+        let io = node.providers.as_ref().unwrap().io_observer();
         let stopped = invocation.block_on(node.shutdown()).unwrap();
         assert!(stopped.clean);
         let providers = stopped.providers.unwrap();
         assert!(providers.clean);
         assert_eq!(providers.secret_generations, 0);
         assert_eq!(providers.secret_references, 0);
+        let actual_io = io.snapshot();
+        assert_eq!(actual_io.queued_calls, 0);
+        assert_eq!(actual_io.occupied_running_slots, 0);
+        assert_eq!(actual_io.calls, 0);
+        assert_eq!(actual_io.staged_bytes, 0);
+        assert_eq!(actual_io.result_bytes, 0);
+        assert_eq!(actual_io.metadata_bytes, 0);
+        assert_eq!(actual_io.buffers, 0);
+        assert_eq!(actual_io.streams, 0);
+        assert_eq!(providers.io_calls, 0);
+        assert_eq!(providers.io_retained_bytes, 0);
+        assert_eq!(providers.workers, 0);
         assert_eq!(providers.control_owners, 0);
         assert_eq!(providers.connections, 0);
         assert_eq!(providers.pending_requests, 0);
         assert_eq!(providers.running_requests, 0);
-        assert_eq!(providers.workers, 0);
         assert_eq!(providers.cleanup_jobs, 0);
         assert_eq!(providers.failed_cleanup, 0);
         assert_eq!(providers.sessions, 0);
         assert_eq!(providers.handles, 0);
         assert_eq!(providers.calls, 0);
         assert_eq!(providers.results, 0);
-        assert_eq!(providers.io_calls, 0);
-        assert_eq!(providers.io_retained_bytes, 0);
     }
     control.shutdown_timeout(Duration::from_secs(5));
     invocation.shutdown_timeout(Duration::from_secs(5));
+    // IoRuntime creates no threads. Observe the actual borrowed Tokio owners,
+    // including blocking threads, only after their maintained stop has returned.
+    assert_eq!(control_threads.load(Ordering::SeqCst), 0);
+    assert_eq!(invocation_threads.load(Ordering::SeqCst), 0);
 }
 
 #[test]

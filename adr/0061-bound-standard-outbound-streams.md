@@ -29,9 +29,12 @@ requirements are descriptive inputs, never permission.
 
 The initial identity is `latent:network/streams@0.1.0`, profile
 `lsf-outbound-streams-v1`. Authoritative operation/state/error definitions and the
-finite workload matrix live in the linked profile. The comparison WIT under
-`research/standard-outbound/` remains uninstalled until provider work promotes
-the exact reviewed bytes. Import renaming cannot implement socket semantics.
+finite workload matrix live in the linked profile. The canonical WIT and the equal comparison bytes under
+`research/standard-outbound/` are recognized by the current selected V5 ABI.
+TCP installation is restricted to explicit development features; production
+installation still requires this review and the implementation gates. ABI
+recognition alone implements no socket semantics or authority. Import renaming
+cannot implement socket semantics.
 
 ## TLS decision
 
@@ -75,6 +78,13 @@ socket/buffer owners through cancellation. Poll readiness is a wake hint, not a
 transfer or refund proof. #736 owns logical-thread suspension and final drain;
 a waiting thread must not hold a Store borrow across external I/O. There are no
 idle per-application connections, guest executors or authenticated sessions.
+
+The proposed node maintenance owner is one prepaid future on the existing
+bounded control runtime, with finite weak scans of current and retired stream
+generations. It retains no Store or activation across suspension and performs
+no contact. It retires inactive sockets at idle/DNS/absolute expiry and original
+authority revocation. Stop acknowledgement cannot release its metadata; normal
+node shutdown must join the actual owner or retain failure/quarantine status.
 
 Possible writes remain uncertain on timeout, cancellation, failed reads and
 close. A local successful write is transport acceptance, not remote protocol
