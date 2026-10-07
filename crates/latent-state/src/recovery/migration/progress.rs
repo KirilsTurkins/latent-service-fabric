@@ -7,7 +7,7 @@ use crate::{
     namespace::{
         compatibility::ReviewedSchema,
         history::{history_key, HistoryStatus, NamespaceHistory},
-        namespace_record_key, NamespaceRecord, NamespaceStatus,
+        NamespaceRecord, NamespaceStatus,
     },
     session::{version::ViewIdentity, StateMode, StateScope},
     tenant::TenantRecord,
@@ -242,18 +242,6 @@ impl AggregateMigrationProgress {
             &self.operator_id,
             &self.operation_id,
         )
-    }
-
-    pub(super) fn namespace_expectation(&self) -> Result<ExpectedRow, StoreError> {
-        let namespace = self.source_namespace()?;
-        Ok(ExpectedRow {
-            key: RowKey {
-                family: crate::embedded::Family::Namespace,
-                key: namespace_record_key(&namespace.tenant, &namespace.id)
-                    .map_err(|_| StoreError::Corrupt)?,
-            },
-            value: Some(self.namespace_row.clone()),
-        })
     }
 
     pub(super) fn history_expectation(&self) -> Result<ExpectedRow, StoreError> {

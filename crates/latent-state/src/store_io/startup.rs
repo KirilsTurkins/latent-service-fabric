@@ -252,7 +252,7 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
         kind: StoreIoKind,
         bytes: u64,
         operation: impl FnOnce(&mut super::StoreIoCustody<OnceLock<S>, T>, &S) -> R + Send + 'static,
-    ) -> Result<StoreIoJob<(super::StoreIoCustody<OnceLock<S>, T>, R)>, StoreIoError> {
+    ) -> Result<super::custody::StoreIoCustodyJob<OnceLock<S>, T, R>, StoreIoError> {
         self.owner
             .submit_custody(custody, kind, bytes, move |custody, slot| {
                 operation(custody, slot.get().expect("initialized store owner"))

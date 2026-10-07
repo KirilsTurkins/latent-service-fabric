@@ -2,7 +2,7 @@
 //!
 //! Retained v1 bytes are never relabelled as protected snapshot/v2, migration/v2
 //! or migration-resume/v1. This adapter preserves original decoding and logical
-//! plans; its offline facade uses the same ProtectedStoreOwner and fixed workers.
+//! plans; its offline facade uses the same `ProtectedStoreOwner` and fixed workers.
 //! Descriptions and historical grants do not establish current authority.
 
 pub mod migration;

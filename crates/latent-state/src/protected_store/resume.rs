@@ -170,20 +170,17 @@ fn apply(
         &request.migration.operation_id,
     )
     .map_err(MigrationError::source)?;
-    let progress = match progress {
-        Some(progress) => progress,
-        None => {
-            let key = request.receipt_key().map_err(MigrationError::Review)?;
-            return if view
-                .get_bounded(&key, RECEIPT_BYTES)
-                .map_err(MigrationError::source)?
-                .is_some()
-            {
-                Err(MigrationError::Source(StoreError::Corrupt))
-            } else {
-                Err(MigrationError::Review(StoreError::Conflict))
-            };
-        }
+    let Some(progress) = progress else {
+        let key = request.receipt_key().map_err(MigrationError::Review)?;
+        return if view
+            .get_bounded(&key, RECEIPT_BYTES)
+            .map_err(MigrationError::source)?
+            .is_some()
+        {
+            Err(MigrationError::Source(StoreError::Corrupt))
+        } else {
+            Err(MigrationError::Review(StoreError::Conflict))
+        };
     };
     progress
         .require_input(&request.migration)

@@ -69,7 +69,11 @@ impl SnapshotFile {
             .with_live(|| ())
             .map_err(|_| SnapshotError::Deadline)?;
         current().map_err(SnapshotError::Review)?;
-        let root = ProtectedRoot::open(&config.root).map_err(|_| SnapshotError::Output)?;
+        let ProtectedSnapshotConfig {
+            root: snapshot_root,
+            file_name,
+        } = config;
+        let root = ProtectedRoot::open(&snapshot_root).map_err(|_| SnapshotError::Output)?;
         if !store
             .is_separate_root(&root)
             .map_err(|_| SnapshotError::Source(StoreError::Unavailable))?
@@ -80,9 +84,9 @@ impl SnapshotFile {
         // No overwrite or reclassification of an interrupted prior export.
         // A partial file remains private and cannot pass complete readback.
         let (file, fence) = if create {
-            root.create_mutable_file(&config.file_name, SNAPSHOT_FILE_BYTES)
+            root.create_mutable_file(&file_name, SNAPSHOT_FILE_BYTES)
         } else {
-            root.open_mutable_file(&config.file_name, SNAPSHOT_FILE_BYTES, false)
+            root.open_mutable_file(&file_name, SNAPSHOT_FILE_BYTES, false)
         }
         .map_err(|_| SnapshotError::Output)?;
         file.try_lock().map_err(|_| SnapshotError::Output)?;
@@ -245,14 +249,14 @@ impl SnapshotFile {
 
     pub(super) fn verify(
         &self,
-        expected: SnapshotReceipt,
+        expected: &SnapshotReceipt,
         validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
     ) -> Result<SnapshotReceipt, SnapshotError> {
         self.check().map_err(|_| SnapshotError::Output)?;
         let actual = inspect_snapshot(&mut self.cursor(), self.deadline(), validate_row)
             .map_err(SnapshotError::Review)?;
         self.check().map_err(|_| SnapshotError::Output)?;
-        if actual != expected {
+        if &actual != expected {
             return Err(SnapshotError::Review(StoreError::Corrupt));
         }
         Ok(actual)

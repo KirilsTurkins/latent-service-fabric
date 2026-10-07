@@ -76,7 +76,7 @@ pub enum ProtectedStoreError {
     CommitUncertain,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ProtectedFencedStoreError<E> {
     Store(ProtectedStoreError),
     Fence(E),

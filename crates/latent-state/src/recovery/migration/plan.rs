@@ -92,7 +92,7 @@ impl AggregateMigrationPlan {
             Some(progress) if progress.completed() || phase == MigrationPhase::Stage => {
                 Self::replay(view, &current, key, bytes, progress)
             }
-            Some(progress) => Self::complete(view, &current, key, bytes, progress),
+            Some(progress) => Self::complete(view, &current, &key, bytes.as_deref(), progress),
             None if phase == MigrationPhase::Stage => {
                 Self::stage(view, &current, request, schema, recipe)
             }
@@ -153,8 +153,8 @@ impl AggregateMigrationPlan {
     fn complete(
         view: &ReadView,
         current: &NamespaceMigrationView,
-        key: crate::embedded::RowKey,
-        bytes: Option<Vec<u8>>,
+        key: &crate::embedded::RowKey,
+        bytes: Option<&[u8]>,
         mut progress: AggregateMigrationProgress,
     ) -> Result<Self, StoreError> {
         require_staged_view(current, &progress)?;
@@ -163,14 +163,14 @@ impl AggregateMigrationPlan {
             &current.namespace,
             progress.recipe()?,
         )?;
-        let original = bytes.as_deref().ok_or(StoreError::Corrupt)?;
+        let original = bytes.ok_or(StoreError::Corrupt)?;
         batch.expectations.extend([
             current.namespace_expectation.clone(),
             current.history_expectation.clone(),
             current.guard_expectation.clone(),
             ExpectedRow {
                 key: key.clone(),
-                value: bytes.clone(),
+                value: bytes.map(<[u8]>::to_vec),
             },
         ]);
         progress.finish()?;
@@ -202,7 +202,7 @@ impl AggregateMigrationPlan {
         accounting::append(
             view,
             &current.namespace.tenant,
-            &key,
+            key,
             Some(original),
             &encoded,
             &mut batch,

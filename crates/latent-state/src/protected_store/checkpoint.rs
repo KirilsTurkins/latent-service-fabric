@@ -117,7 +117,7 @@ pub struct CheckpointInspection {
 }
 
 /// A single bounded waiter for a closed checkpoint operation. No generic
-/// production result can transfer File, ProtectedRoot or the private resource.
+/// production result can transfer File, `ProtectedRoot` or the private resource.
 #[must_use = "dropping observation detaches accepted work and reserved destruction"]
 pub struct ProtectedCheckpointJob<R> {
     inner: ProtectedResourceJob<CheckpointFile, R>,
@@ -175,7 +175,7 @@ impl ProtectedStoreOwner {
     /// files. Existing files are always opened without truncation; only the
     /// same-owner Fresh witness permits exclusive creation of a missing leaf.
     /// `observe_dispatch` is a trusted bounded metadata projection from one
-    /// coherent native view, normally DispatchCatalog::checkpoint.
+    /// coherent native view, normally `DispatchCatalog::checkpoint`.
     pub fn open_checkpoint(
         &self,
         config: ProtectedCheckpointConfig,
