@@ -10,6 +10,9 @@ GENERATED = {
     'clocks.h': '52d7686d2fa5d770fd55a691081f4d758adaf62a6270a1f6439daeda1225b4ae',
     'clocks_component_type.o': '0f6d19fba71434d0e72b7a55deb9e94308e951c187a2742ced57199fd4145865',
 }
+CLOCK_PROFILE = 'spidermonkey-activation-promises-clocks-v1'
+CLOCK_INTERFACES = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0')
+CLOCK_NATIVE_SOURCES = ('native_clock_engine.cpp', 'native_clocks.h', 'clock_values.h', 'clock_globals.js')
 
 
 def derive_clock_source(install_source: bytes, globals_source: bytes,
@@ -44,3 +47,33 @@ def derive_clock_source(install_source: bytes, globals_source: bytes,
         'performanceOrigin':'lazy-first-read-per-fresh-Store; no compiler-time origin',
         'supportedAsyncProfile':False,'signedLSFComponentQualified':False}
     return result,receipt
+
+
+def extend_selected_engine_source(base_source: dict[str, bytes], native_clock: dict[str, bytes],
+                                  clock_wit: bytes, generated: dict[str, bytes]) -> tuple[dict[str, bytes], dict]:
+    """Make a distinct unqualified named source selection; mutate no carrier.
+
+    The existing activation interface and original app contract stay unchanged.
+    Clock interfaces must be declared, installed and granted independently.
+    This source helper does not execute a compiler, install providers or certify
+    the resulting module/profile as available.
+    """
+    if set(native_clock) != set(CLOCK_NATIVE_SOURCES):
+        raise ValueError('exact-private-clock-native-source-selection-required')
+    before = identity(base_source)
+    identity(native_clock)
+    install_path = 'StarlingMonkey/builtins/install_builtins.cpp'
+    if install_path not in base_source or any('lsf/'+name in base_source for name in (*CLOCK_NATIVE_SOURCES, *GENERATED)):
+        raise ValueError('unreviewed-or-already-extended-clock-engine-source')
+    selected, receipt = derive_clock_source(base_source[install_path], native_clock['clock_globals.js'], clock_wit, generated)
+    result = dict(base_source)
+    result.update(selected)
+    result.update({'lsf/'+name:raw for name,raw in native_clock.items()})
+    receipt.update(profile=CLOCK_PROFILE, originalSelectedEngineSource=before,
+        derivedCompleteSource=identity(result), requestedClockInterfaces=list(CLOCK_INTERFACES),
+        compilerSourceFilesToAdd=['lsf/native_clock_engine.cpp','lsf/clocks.c'],
+        compilerMetadataObjectToAdd='lsf/clocks_component_type.o',
+        existingPromiseTimerAndLifecycleSourceChanged=False,
+        originalSynchronousCompilerSelectionChanged=False, clockAuthorityGranted=False,
+        qualification='unknown', supportedAsyncProfile=False, signedLSFComponentQualified=False)
+    return result, receipt

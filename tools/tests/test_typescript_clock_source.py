@@ -58,6 +58,24 @@ class TypeScriptClockSourceTests(unittest.TestCase):
         self.assertFalse(receipt['supportedAsyncProfile'])
         self.assertFalse(receipt['signedLSFComponentQualified'])
 
+    def test_clock_candidate_extends_only_its_exact_source_without_granting_authority(self):
+        from tools.typescript_guest.clock_engine import extend_selected_engine_source, CLOCK_NATIVE_SOURCES, CLOCK_PROFILE
+        source = inputs()
+        base = {'StarlingMonkey/builtins/install_builtins.cpp':source[0], 'lsf/native_engine.cpp':b'original activation engine'}
+        original = dict(base)
+        native = {name:(ROOT/'sdk/typescript-guest/activation'/name).read_bytes() for name in CLOCK_NATIVE_SOURCES}
+        result, receipt = extend_selected_engine_source(base,native,source[2],source[3])
+        self.assertEqual(base, original)
+        self.assertEqual(result['lsf/native_engine.cpp'], original['lsf/native_engine.cpp'])
+        self.assertEqual(receipt['profile'], CLOCK_PROFILE)
+        self.assertFalse(receipt['clockAuthorityGranted'])
+        self.assertFalse(receipt['existingPromiseTimerAndLifecycleSourceChanged'])
+        self.assertFalse(receipt['originalSynchronousCompilerSelectionChanged'])
+        self.assertFalse(receipt['supportedAsyncProfile'])
+        self.assertEqual(receipt['requestedClockInterfaces'], ['latent:clock/monotonic@0.1.0','latent:clock/wall@0.1.0'])
+        with self.assertRaisesRegex(ValueError, 'already-extended'):
+            extend_selected_engine_source(result,native,source[2],source[3])
+
 
 if __name__ == '__main__':
     unittest.main()

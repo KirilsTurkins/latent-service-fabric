@@ -2,9 +2,10 @@
   "schemaVersion": "latent.ci.contracts.v1",
   "kind": "python",
   "module": "tools/tests/test_typescript_clock_source.py",
-  "reviewReason": "Five private scoped clock original-source/generator/phase/provenance controls; no API or signed qualification claim",
+  "reviewReason": "Five private scoped clock original-source/generator/phase/provenance controls; no API or signed qualification claim; add immutable named source-only clock selection/no-authority control, prior5 guards unchanged",
   "cases": [
     "TypeScriptClockSourceTests.test_actual_clock_ABI_and_original_install_are_exact_preconditions",
+    "TypeScriptClockSourceTests.test_clock_candidate_extends_only_its_exact_source_without_granting_authority",
     "TypeScriptClockSourceTests.test_clock_module_is_installed_after_original_builtins_before_app_evaluation",
     "TypeScriptClockSourceTests.test_original_typed_C_clock_signatures_and_metadata_are_retained_byteexact",
     "TypeScriptClockSourceTests.test_phase_lifetime_and_unknown_qualification_are_explicit",
@@ -60,6 +61,18 @@
       ]
     },
     "TypeScriptClockSourceTests.test_phase_lifetime_and_unknown_qualification_are_explicit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:08d62c8ef3c37f1844d54879d9ad47b0185747e1eb0e602b7fd8a91c893a0e15",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptClockSourceTests.test_clock_candidate_extends_only_its_exact_source_without_granting_authority": {
       "bases": [
         "unittest.TestCase"
       ],
