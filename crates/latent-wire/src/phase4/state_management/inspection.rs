@@ -224,14 +224,15 @@ pub(super) async fn receipt(
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    let acknowledgement = audit::ack(finish).await;
-    require_read_ack(&acknowledgement)?;
-    let (read, receipt, mut public) = result.map_err(|error| {
+    let acknowledgement = read_ack(finish).await;
+    let (read, receipt, public) = result.map_err(|error| {
         protected_error(latent_state::protected_store::ProtectedStoreError::Store(
             error,
         ))
     })??;
-    public.audit_ack = Some(acknowledgement);
+    let ack = acknowledgement?;
+    let mut public = public;
+    public.audit_ack = Some(ack);
     response::owned(
         inner,
         worker_permit,
@@ -298,18 +299,15 @@ pub(super) fn native_namespace(error: NamespaceError) -> StoreError {
         _ => StoreError::Corrupt,
     }
 }
-pub(super) async fn read_ack(finish: audit::Finish) -> Result<(), PlatformError> {
+pub(super) async fn read_ack(finish: audit::Finish) -> Result<c::AuditAck, PlatformError> {
     let ack = audit::ack(finish).await;
-    require_read_ack(&ack)
-}
-fn require_read_ack(ack: &c::AuditAck) -> Result<(), PlatformError> {
     if ack.status == c::AuditAckStatus::OutcomeUnknown as i32 {
         return Err(error(
             PlatformErrorCode::Unavailable,
             "namespace-audit-outcome-unknown",
         ));
     }
-    Ok(())
+    Ok(ack)
 }
 fn inventory(
     inner: &Inner,

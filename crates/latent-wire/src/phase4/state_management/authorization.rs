@@ -13,9 +13,9 @@ pub(super) struct Access {
     pub binding: Arc<StateManagementBinding>,
     pub caller: CallerScope,
     pub inspect: OwnedPolicyDecision,
-    pub mutation: Option<OwnedPolicyDecision>,
     pub policy_digest: String,
     pub listing: Option<OwnedPolicyDecision>,
+    pub mutation: Option<OwnedPolicyDecision>,
 }
 /// A descriptive SHA-256 precondition over original sealed configuration, not a
 /// permission. Every operation still rechecks its actual retained policy owner.

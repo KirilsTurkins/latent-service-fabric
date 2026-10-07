@@ -108,7 +108,6 @@ pub(super) async fn response_body_for(fixture: &Fixture, path: &str, encoded: Ve
         },
     )
     .unwrap();
-    let encoded = fixture.target().encode_to_vec();
     let mut bytes = vec![0];
     bytes.extend_from_slice(&u32::try_from(encoded.len()).unwrap().to_be_bytes());
     bytes.extend_from_slice(&encoded);
@@ -237,7 +236,6 @@ async fn authenticated_recovery_and_retained_rpc_frame_progress_under_real_ordin
 
 #[tokio::test]
 async fn detached_recovery_write_keeps_global_capacity_until_original_expiry_and_real_retirement() {
-    let mut fixture = Fixture::new(false).await;
     let clock = TestClock::new(100, Instant::now(), 1);
     let owner =
         NativeCapacityOwner::with_clock(NativeCapacityLimits::default(), Arc::new(clock.clone()))

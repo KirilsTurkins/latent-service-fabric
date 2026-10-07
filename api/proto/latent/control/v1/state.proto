@@ -128,6 +128,7 @@ enum StateMutationKind {
   STATE_MUTATION_KIND_PURGE_EXPIRED_PAYLOAD = 3;
   STATE_MUTATION_KIND_CHECKPOINT_NAMESPACE = 4;
   STATE_MUTATION_KIND_RECONCILE_EFFECT = 5;
+  // Explicit alpha allocation: never reinterpret the current reconcile action.
   // One previously purged identity in a retired, physically drained namespace.
   // Requires current namespace-destroy authority and the original view/policy.
   STATE_MUTATION_KIND_RELEASE_EXPIRED_COMMAND_FLOOR = 6;

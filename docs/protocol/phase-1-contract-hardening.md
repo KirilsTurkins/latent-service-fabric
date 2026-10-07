@@ -601,7 +601,6 @@ types, nested messages, oneof membership, enum values and service signatures
 from both the earlier transaction source and current development. These are
 contract definitions; they do not qualify installed dispatch or transport
 execution.
-
 `PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
 reconciliation and termination require that complete original plan when calling
 `MutateState`. Receipt recovery preserves the original action, record version,

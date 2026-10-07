@@ -57,14 +57,13 @@ impl ProtectedStoreOwner {
             .map(|(job, _)| job)
     }
 
-    /// Authenticated host recovery uses the existing reserved I/O and
-    /// retirement partition; ordinary pressure cannot take these slots.
-    /// Retain the admitted owner until the actual native snapshot is destroyed.
+    /// Authenticated recovery retains its original owner on the same physical
+    /// snapshot and uses the existing reserved I/O and retirement partition.
     pub fn open_recovery_view_retaining<T: Send + 'static>(
         &self,
         owner: T,
     ) -> Result<ProtectedViewOpenJob, ProtectedStoreError> {
-        self.open_view_inner(false, true, Some(Box::new(owner)))
+        self.open_view_inner(true, false, Some(Box::new(owner)))
             .map(|(job, _)| job)
     }
 
@@ -90,7 +89,7 @@ impl ProtectedStoreOwner {
         &self,
         owner: Option<Box<dyn Send>>,
     ) -> Result<(ProtectedViewOpenJob, StoreIoRetirementWitness), ProtectedStoreError> {
-        self.open_view_inner(true, false, owner)
+        self.open_view_inner(false, true, owner)
             .map(|(job, witness)| {
                 (
                     job,
@@ -101,8 +100,8 @@ impl ProtectedStoreOwner {
 
     fn open_view_inner(
         &self,
-        observed: bool,
         recovery: bool,
+        observed: bool,
         owner: Option<Box<dyn Send>>,
     ) -> Result<ViewOpening, ProtectedStoreError> {
         self.available()?;

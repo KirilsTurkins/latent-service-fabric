@@ -674,6 +674,29 @@ public sealed record ActivationDiagnostic(
     ulong? LiftingFuel,
     ulong? LiftMultiplier);
 
+/// <summary>Transport-neutral TransactionStagingWitness; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="SchemaVersion">The exact schema_version value with preserved presence.</param>
+/// <param name="ActivationSerial">The exact activation_serial value with preserved presence.</param>
+/// <param name="CommandId">The exact command_id value with preserved presence.</param>
+/// <param name="AttemptId">The exact attempt_id value with preserved presence.</param>
+/// <param name="TransactionId">The exact transaction_id value with preserved presence.</param>
+/// <param name="PublicationId">The exact publication_id value with preserved presence.</param>
+/// <param name="StagedMutations">The exact staged_mutations value with preserved presence.</param>
+/// <param name="CapturedIntents">The exact captured_intents value with preserved presence.</param>
+/// <param name="StateWriteBytes">The exact state_write_bytes value with preserved presence.</param>
+/// <param name="ObservedAtUnixMillis">The exact observed_at_unix_millis value with preserved presence.</param>
+public sealed record TransactionStagingWitness(
+    uint SchemaVersion,
+    ulong ActivationSerial,
+    string CommandId,
+    string AttemptId,
+    string TransactionId,
+    string PublicationId,
+    uint StagedMutations,
+    uint CapturedIntents,
+    ulong StateWriteBytes,
+    ulong ObservedAtUnixMillis);
+
 /// <summary>Transport-neutral ActivationTreeNode; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="ActivationId">The exact activation_id value with preserved presence.</param>
 /// <param name="ParentActivationId">The exact parent_activation_id value with preserved presence.</param>
@@ -689,6 +712,7 @@ public sealed record ActivationDiagnostic(
 /// <param name="DiagnosticIsTerminal">The exact diagnostic_is_terminal value with preserved presence.</param>
 /// <param name="TargetService">The exact target_service value with preserved presence.</param>
 /// <param name="ReceivedAtUnixMillis">The exact received_at_unix_millis value with preserved presence.</param>
+/// <param name="TransactionStaging">The exact transaction_staging value with preserved presence.</param>
 public sealed record ActivationTreeNode(
     string ActivationId,
     string? ParentActivationId,
@@ -703,7 +727,8 @@ public sealed record ActivationTreeNode(
     ulong? EffectiveDeadlineUnixMillis,
     bool DiagnosticIsTerminal,
     string TargetService,
-    ulong ReceivedAtUnixMillis);
+    ulong ReceivedAtUnixMillis,
+    TransactionStagingWitness? TransactionStaging);
 
 /// <summary>Transport-neutral InspectActivationTreeRequest; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="ActivationId">The exact activation_id value with preserved presence.</param>

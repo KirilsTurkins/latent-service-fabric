@@ -5,8 +5,6 @@ use super::{ActivationBudget, BudgetDimension, BudgetError, BudgetProfile};
 /// Affine capacity reserved before a native allocation. Call `confirm` only
 /// after allocation succeeds; retain this guard with the actual allocation,
 /// including a quarantined owner. Dropping an awaiter is not retirement.
-/// Phase4 conservatively precharges its bounded envelope at reservation;
-/// confirmation is already settled and cannot charge it a second time.
 #[derive(Debug)]
 #[must_use = "retain with the actual native allocation"]
 pub struct HostMemoryReservation {

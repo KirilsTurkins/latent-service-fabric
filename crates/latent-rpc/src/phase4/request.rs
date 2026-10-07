@@ -43,6 +43,19 @@ pub(super) fn validate(request: &Request) -> Result<(), ValidationError> {
                         Ok(())
                     }
                 }
+                Ok(c::StateMutationKind::ReleaseExpiredCommandFloor) => {
+                    let record = required(value.record_id.as_ref())?;
+                    if record.len() != 64
+                        || !record
+                            .bytes()
+                            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+                        || record.bytes().all(|byte| byte == b'0')
+                    {
+                        Err(ValidationError::Shape)
+                    } else {
+                        Ok(())
+                    }
+                }
                 Ok(c::StateMutationKind::PurgeExpiredPayload) => {
                     if value.record_id.is_none() {
                         Err(ValidationError::Shape)

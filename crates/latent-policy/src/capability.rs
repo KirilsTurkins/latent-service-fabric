@@ -99,12 +99,13 @@ fn publication(value: &str) -> bool {
         && value.parse::<latent_core::PublicationId>().is_ok()
 }
 
-// Phase 4 policy documents are explicit opt-ins. This recognizes their typed
-// scopes without extending the default stateless linker or guest authority.
+// Runtime and Phase 4 policies are explicit opt-ins. Their exact contracts and
+// typed scopes do not extend the default stateless linker or guest authority.
 fn supported_contract(value: &str) -> bool {
     latent_core::PHASE3_HOST_ABI_CURRENT
         .interface(value)
         .is_some()
+        || value == latent_core::activation_runtime::CAPABILITY
         || matches!(
             value,
             "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
@@ -201,18 +202,18 @@ fn operation(contract: &str, name: &str) -> bool {
             "namespace-retire",
             "namespace-destroy",
             "namespace-recreate",
-            "namespace-snapshot",
-            "namespace-inspect-restore",
-            "namespace-restore",
-            "namespace-schema-migrate",
-            "namespace-review-recovery",
-            "namespace-resume",
             "effect-plan",
             "effect-reconcile",
             "effect-redrive",
             "effect-terminate",
             "state-checkpoint",
             "purge-expired-payload",
+            "namespace-snapshot",
+            "namespace-inspect-restore",
+            "namespace-restore",
+            "namespace-schema-migrate",
+            "namespace-review-recovery",
+            "namespace-resume",
         ],
         // Dispatch is a native current-purpose operation, not a guest import.
         "latent:intents/staging@0.1.0" => &["stage", "dispatch"],

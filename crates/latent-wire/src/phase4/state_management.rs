@@ -2,18 +2,18 @@
 mod audit;
 mod authorization;
 mod clock;
+mod dispatcher;
+mod effects;
+mod entities;
 mod floor_release;
 mod inspection;
 mod mutation;
 mod recovery;
+mod recovery_bindings;
 mod response;
 mod state_receipt;
 pub use clock::StateMaintenanceClock;
 pub use recovery::StateManagementRecoveryAdmission;
-mod dispatcher;
-mod effects;
-mod entities;
-mod recovery_bindings;
 pub use recovery_bindings::StateManagementRecoveryBinding;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;

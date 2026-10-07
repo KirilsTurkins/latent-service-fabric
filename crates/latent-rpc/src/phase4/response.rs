@@ -195,7 +195,8 @@ fn state_receipt(
             | c::StateMutationKind::TerminateEffect
             | c::StateMutationKind::PurgeExpiredPayload
             | c::StateMutationKind::CheckpointNamespace
-            | c::StateMutationKind::ReconcileEffect,
+            | c::StateMutationKind::ReconcileEffect
+            | c::StateMutationKind::ReleaseExpiredCommandFloor,
         ) => Ok(()),
         _ => Err(ValidationError::Shape),
     }

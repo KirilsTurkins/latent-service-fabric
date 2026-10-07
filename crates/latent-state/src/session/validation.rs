@@ -36,18 +36,12 @@ pub fn inspect_cell(
     if key.family != Family::State || !key.key.starts_with(b"state-v1\0") {
         return Err(StoreError::UnsupportedFormat);
     }
-    let mut input = KeyInput(&key.key[b"state-v1\0".len()..]);
-    let tenant = TenantId(input.text()?);
-    let id = StateNamespaceId(input.text()?);
-    let incarnation = input.number()?;
-    let entity = match input.byte()? {
-        0 => None,
-        1 => Some(input.text()?),
-        _ => return Err(StoreError::Corrupt),
-    };
-    if input.0.is_empty() || input.0.len() > contract::KEY_BYTES {
-        return Err(StoreError::Corrupt);
-    }
+    let identity = cell_identity(&key.key)?;
+    let tenant = identity.tenant;
+    let id = identity.namespace;
+    let incarnation = identity.incarnation;
+    let entity = identity.entity;
+    let key_bytes = identity.key;
     let namespace = namespace_in(view, &tenant, &id, incarnation)?;
     let cell = codec::Cell::decode(bytes, namespace.version.generation).map_err(storage)?;
     Ok(ObservedCell {
@@ -59,7 +53,7 @@ pub fn inspect_cell(
             entity,
             mode: StateMode::Query,
         },
-        key: input.0.to_vec(),
+        key: key_bytes.to_vec(),
         generation: cell.generation,
         value: cell.value,
     })
@@ -101,7 +95,6 @@ pub fn inspect_usage(
 pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     match key.family {
         Family::State if key.key.starts_with(b"state-v1\0") => {
-            cell_identity(&key.key)?;
             inspect_cell(view, key, bytes)?;
         }
         Family::Maintenance if key.key.starts_with(b"state-usage-v1\0") => {
@@ -145,14 +138,15 @@ pub fn tenant_for_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<Ten
 
 /// The same closed physical key decoder serves startup and host inspection.
 /// These values describe persisted scope and cannot supply a grant or session.
-pub(super) struct CellIdentity {
+pub(super) struct CellIdentity<'a> {
     pub tenant: TenantId,
     pub namespace: StateNamespaceId,
     pub incarnation: u64,
     pub entity: Option<String>,
+    pub key: &'a [u8],
 }
 
-pub(super) fn cell_identity(key: &[u8]) -> Result<CellIdentity, StoreError> {
+pub(super) fn cell_identity(key: &[u8]) -> Result<CellIdentity<'_>, StoreError> {
     let mut input = KeyInput(
         key.strip_prefix(b"state-v1\0")
             .ok_or(StoreError::UnsupportedFormat)?,
@@ -173,6 +167,7 @@ pub(super) fn cell_identity(key: &[u8]) -> Result<CellIdentity, StoreError> {
         namespace,
         incarnation,
         entity,
+        key: input.0,
     })
 }
 

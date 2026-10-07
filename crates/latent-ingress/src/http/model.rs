@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 use super::bounded::{BoundedBytes, BoundedList, BoundedText, Decimal, Optional};
-use super::{body::Body, HttpError, MAX_HEADERS, MAX_REQUEST_BODY, MAX_RESPONSE_BODY};
+use super::{
+    body::Body, HttpError, MAX_HEADERS, MAX_HEADER_NAME_BYTES, MAX_HEADER_VALUE_BYTES,
+    MAX_MEDIA_TYPE_BYTES, MAX_REQUEST_BODY, MAX_RESPONSE_BODY,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -72,8 +75,8 @@ pub(super) enum Profile {
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Header {
-    pub name: BoundedText<64>,
-    pub value: BoundedBytes<4096>,
+    pub name: BoundedText<MAX_HEADER_NAME_BYTES>,
+    pub value: BoundedBytes<MAX_HEADER_VALUE_BYTES>,
 }
 
 impl Header {
@@ -106,7 +109,7 @@ pub(super) struct ResponseData {
     pub profile: Profile,
     pub status: u16,
     pub headers: BoundedList<Header, MAX_HEADERS>,
-    pub media_type: Optional<BoundedText<256>>,
+    pub media_type: Optional<BoundedText<MAX_MEDIA_TYPE_BYTES>>,
     pub representation_length: Optional<Decimal>,
     #[serde(rename = "body-base64")]
     pub body: Body<MAX_RESPONSE_BODY>,
