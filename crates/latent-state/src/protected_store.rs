@@ -92,7 +92,6 @@ impl ProtectedStoreOwner {
         Arc::ptr_eq(&self.failure, &other.failure)
     }
 
-
     /// Trusted namespace/command control operations use this same physical
     /// owner. Declare all retained payload/result bytes and the correct I/O
     /// class. Return bounded owned metadata; native read views use `open_view`
