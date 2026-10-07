@@ -1,0 +1,28 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Register bounded authenticated compiler-source staging, explicit offline closure roots, original executable modes, hostile archive/link/path/count/byte rejection and unsupported target/compiler controls. Staging invokes no compiler and installs no sysroot; all existing cases/guards preserved.",
+  "module":"tools/tests/test_rust_standard_sysroot_source.py",
+  "cases":["SysrootSourceCapture.test_full_offline_workspace_roots_and_exact_member_bytes_are_required","SysrootSourceCapture.test_host_target_or_unpinned_compiler_rejects_before_archive_access","SysrootSourceCapture.test_links_special_entries_and_case_collisions_are_rejected","SysrootSourceCapture.test_missing_workspace_root_cannot_be_called_complete_source","SysrootSourceCapture.test_original_compiler_source_count_file_and_total_limits_fail_closed","SysrootSourceCapture.test_original_executable_modes_are_separate_from_immutable_source_bytes","SysrootSourceCapture.test_traversal_absolute_alias_and_backslash_paths_reject_before_output","SysrootSourceCapture.test_unapproved_archive_cannot_stage_or_install_sysroot"],
+  "guards":{
+    "SysrootSourceCapture.test_full_offline_workspace_roots_and_exact_member_bytes_are_required":
+      "731668592db917672549852c995a8bf71355ff072b6e216c04f500f2da6f688e",
+    "SysrootSourceCapture.test_traversal_absolute_alias_and_backslash_paths_reject_before_output":
+      "731668592db917672549852c995a8bf71355ff072b6e216c04f500f2da6f688e",
+    "SysrootSourceCapture.test_links_special_entries_and_case_collisions_are_rejected":
+      "731668592db917672549852c995a8bf71355ff072b6e216c04f500f2da6f688e",
+    "SysrootSourceCapture.test_original_compiler_source_count_file_and_total_limits_fail_closed":
+      "731668592db917672549852c995a8bf71355ff072b6e216c04f500f2da6f688e",
+    "SysrootSourceCapture.test_missing_workspace_root_cannot_be_called_complete_source":
+      "731668592db917672549852c995a8bf71355ff072b6e216c04f500f2da6f688e",
+    "SysrootSourceCapture.test_unapproved_archive_cannot_stage_or_install_sysroot":
+      "731668592db917672549852c995a8bf71355ff072b6e216c04f500f2da6f688e",
+    "SysrootSourceCapture.test_host_target_or_unpinned_compiler_rejects_before_archive_access":
+      "731668592db917672549852c995a8bf71355ff072b6e216c04f500f2da6f688e",
+    "SysrootSourceCapture.test_original_executable_modes_are_separate_from_immutable_source_bytes":
+      "731668592db917672549852c995a8bf71355ff072b6e216c04f500f2da6f688e"
+  },
+  "guardDefinitions":{
+    "731668592db917672549852c995a8bf71355ff072b6e216c04f500f2da6f688e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:27e4b9cc9f423402db75ab4d365ece0ab38904b6fc77aeb97013266d83789ca4","class:setup-sha256:838007103ad4683a7fad78d09f423072fcc30d92e56e0510225a9885853fcfe8"]}
+  }
+}

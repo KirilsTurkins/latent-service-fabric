@@ -1,0 +1,16 @@
+[package]
+name = "latent-rust-std-stack-source-transform"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.97.1"
+license = "MIT OR Apache-2.0"
+publish = false
+
+# This source experiment does not enter the application/runtime workspace or
+# select a sysroot. Its pinned dependencies are already in the maintained lock.
+[workspace]
+
+[dependencies]
+wasm-encoder = { version = "=0.259.0", features = ["wasmparser"] }
+wasmparser = "=0.259.0"
+sha2 = "=0.10.9"
