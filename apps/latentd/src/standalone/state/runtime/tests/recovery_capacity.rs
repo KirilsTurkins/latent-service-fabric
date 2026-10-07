@@ -73,18 +73,22 @@ async fn original_result_admission_retains_reserved_capacity_under_ordinary_pres
     let (envelope, budget) = original_request(fixture.clock.as_ref());
     let deadline = budget.deadline().monotonic().unwrap();
     let mut ordinary = Vec::new();
-    loop {
+    let mut refused = false;
+    for _ in 0..=1024 {
         match state.0.native.reserve(
             NativeAdmissionClass::Ordinary,
             NativeReservationRequest::default(),
             deadline,
         ) {
             Ok(reservation) => ordinary.push(reservation),
-            Err(NativeCapacityError::SlotsFull) => break,
+            Err(NativeCapacityError::SlotsFull) => {
+                refused = true;
+                break;
+            }
             Err(error) => panic!("ordinary saturation must hit its original slot limit: {error:?}"),
         }
     }
-    assert!(!ordinary.is_empty());
+    assert!(refused && !ordinary.is_empty());
     let before = state.0.native.snapshot().unwrap();
     let source = effects.command_admission_source();
     let denied = AdmissionTime::new(source.clone(), state.0.native.clone());
