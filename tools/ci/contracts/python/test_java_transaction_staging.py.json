@@ -9,6 +9,7 @@
     "CandidateOracle.test_unknown_envelope_fields_boolean_counts_and_escaping_paths_refuse",
     "CatalogAndOrderingOracle.test_candidate_modes_require_explicit_paired_resume_and_exclude_combined_preparation",
     "CatalogAndOrderingOracle.test_original_catalog_observation_uses_only_bounded_release_and_policy_reads",
+    "CatalogAndOrderingOracle.test_original_deadline_refuses_inspection_lease_retirement_before_start_or_policy_mutation",
     "CatalogAndOrderingOracle.test_populated_paged_overflowing_and_foreign_catalogs_refuse",
     "CatalogAndOrderingOracle.test_preparation_stops_before_policy_apply_and_namespace_creation",
     "CatalogAndOrderingOracle.test_resume_applies_same_proposal_object_only_after_original_read_fences",
@@ -124,6 +125,18 @@
       "skipSites": []
     },
     "CatalogAndOrderingOracle.test_original_catalog_observation_uses_only_bounded_release_and_policy_reads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c09fc90eb62570f35c0b8cc6d3d01ecc798b3cc5724dd70bb9eb04c7d81d3bea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogAndOrderingOracle.test_original_deadline_refuses_inspection_lease_retirement_before_start_or_policy_mutation": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -330,6 +343,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_staging.py",
-  "reviewReason": "Review four additional native CAS containment and topology cases with every original fixture and guard preserved",
+  "reviewReason": "Retain all original candidate, catalog, profile and ordering controls; add deadline exhaustion refusal before startup or policy mutation after native host inspection opens and retires the enforced admission catalog.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

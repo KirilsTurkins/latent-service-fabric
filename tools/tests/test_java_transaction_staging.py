@@ -405,6 +405,7 @@ class CatalogAndOrderingOracle(unittest.TestCase):
                     patches.enter_context(patch.object(conductor.lifecycle, "inspect", return_value=SimpleNamespace(
                         value={"profile": "changed"} if change == "profile" else prepared["hosts"])))
                     patches.enter_context(patch.object(staging, "catalog", return_value={"generation": "changed"}))
+                    patches.enter_context(patch.object(conductor.lifecycle, "admission_lease_interval", return_value=None))
                     apply = patches.enter_context(patch.object(conductor.policies, "apply_retained"))
                     with self.assertRaises(ValueError):
                         conductor.resume_authority(SimpleNamespace(), SimpleNamespace(node="native-source-only"),
@@ -440,9 +441,39 @@ class CatalogAndOrderingOracle(unittest.TestCase):
                                                   side_effect=lambda _: events.append(("original-lease",))))
                 result = conductor.resume_authority(client, SimpleNamespace(node="native-source-only"),
                     SimpleNamespace(path=root / "bootstrap.json"), node, full, prepared)
-            self.assertEqual([row[0] for row in events], ["inspect", "start", "catalog", "apply", "stop", "original-lease", "start"])
+            self.assertEqual([row[0] for row in events], ["inspect", "original-lease", "start", "catalog", "apply", "stop", "original-lease", "start"])
             self.assertEqual(result, {"sourceOnly": "mutation callback observed"})
             self.assertEqual(prepared["proposals"], {"reviewedBytes": "original"})
+
+    def test_original_deadline_refuses_inspection_lease_retirement_before_start_or_policy_mutation(self):
+        from tools.java_transaction_qualification import lifecycle
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            full = root / "full.json"
+            full.write_bytes(evidence.encoded({"state": {"operations": []}}))
+            prepared = {"hosts": {"profile": "original"}, "mutations": []}
+            for mode in ("resume", "provision"):
+                client = SimpleNamespace(deadline=lifecycle.time.monotonic() + 1)
+                original_deadline = client.deadline
+                with self.subTest(mode=mode), ExitStack() as patches:
+                    patches.enter_context(patch.object(conductor.lifecycle, "inspect",
+                        return_value=SimpleNamespace(value=prepared["hosts"])))
+                    start = patches.enter_context(patch.object(conductor.lifecycle.Node, "start"))
+                    apply = patches.enter_context(patch.object(conductor.policies, "apply"))
+                    retained_apply = patches.enter_context(patch.object(conductor.policies, "apply_retained"))
+                    node = lifecycle.Node(client, Path("native-source-only"), root)
+                    configuration = SimpleNamespace(path=root / "bootstrap.json")
+                    with self.assertRaisesRegex(ValueError, "original-admission-lease-interval"):
+                        if mode == "resume":
+                            conductor.resume_authority(client, SimpleNamespace(node="native-source-only"),
+                                configuration, node, full, prepared)
+                        else:
+                            conductor.admit_authority(client, root, [], configuration, node, full, {}, {})
+                    start.assert_not_called()
+                    apply.assert_not_called()
+                    retained_apply.assert_not_called()
+                    self.assertEqual(client.deadline, original_deadline)
 
     def test_preparation_stops_before_policy_apply_and_namespace_creation(self):
         with tempfile.TemporaryDirectory() as temporary:

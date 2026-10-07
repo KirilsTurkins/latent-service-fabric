@@ -23,6 +23,12 @@ fixture. Protected clock, signing, workroot and catalogs remain newly produced;
 retaining TLS bytes supplies no native authority or clock continuity. The
 selection and every digest remain in preparation/resume source pins.
 
+Native host inspection opens and cleanly retires the enforced admission catalog.
+Before the following node start, both provision and resume spend the existing
+six-second admission retirement interval inside the same original deadline.
+An exhausted deadline refuses before node startup or policy mutation. Inspection
+does not renew the campaign clock or bypass the persisted restart floor.
+
 The separate `--pending-restore-only` selection uses the installed native V3
 close owner. It requires a new candidate whose source selection and collector
 digests include that programme. It retains the original twelve native-action,

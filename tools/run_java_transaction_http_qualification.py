@@ -177,6 +177,9 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
 def admit_authority(client, signed, items, configuration, node, full_path, publications, proposals):
     # Explicit normal authenticated mutations turn these proposals into actual
     # current decisions. The inspection and configuration alone grant nothing.
+    # Native host inspection also opens and retires the admission catalog. Its
+    # persisted restart floor must elapse inside the original campaign deadline.
+    lifecycle.admission_lease_interval(client)
     node.start(configuration.path)
     actual_receipts = policies.apply(client, proposals)
     client.evidence.record("authenticated-policy-receipts", actual_receipts)
@@ -199,6 +202,7 @@ def resume_authority(client, args, configuration, node, full_path, prepared):
                               stage="transaction-host-recheck")
     inputs.require(hosts.value == prepared["hosts"], "original-native-profile-drift")
     fixed_environment.check_authority(args, client, hosts.value, prepared["mutations"])
+    lifecycle.admission_lease_interval(client)
     node.start(configuration.path)
     inputs.require(staging.catalog(client, prepared["publications"]) == prepared["catalog"],
                    "original-current-catalog-drift")
