@@ -25,6 +25,7 @@ pub struct InstalledTransactionOperation {
     pub(super) entity: Option<String>,
     pub(super) mode: TransactionOperationMode,
     pub(super) contract_digest: String,
+    pub(super) component_digest: String,
     pub(super) deferred_http: Option<(
         crate::config::state::DeferredHttpConfig,
         super::effect_requirements::HttpRequirements,
@@ -114,6 +115,14 @@ pub(super) async fn load(
         return Err(super::denied());
     }
     let config = decode_config(&configuration, PackageLimits::default())?;
+    let component_digest = config
+        .component_digest
+        .as_ref()
+        .ok_or_else(super::denied)?
+        .to_string();
+    if component_digest != publication.release().0 {
+        return Err(super::denied());
+    }
     let companion = companion(&config, &layers, &input.companion_digest)?;
     let contract_digest = config
         .layers
@@ -171,6 +180,7 @@ pub(super) async fn load(
         entity: input.entity,
         mode,
         contract_digest,
+        component_digest,
         deferred_http,
     })
 }

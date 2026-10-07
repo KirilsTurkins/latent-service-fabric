@@ -39,6 +39,12 @@ pub trait CommandTimeSource: Send + Sync {
         Ok(())
     }
 
+    /// Bytes prepaid by this actual original response owner. A default clock
+    /// supplies no transport reservation and cannot authorize a wire response.
+    fn reserved_response_bytes(&self) -> u64 {
+        0
+    }
+
     /// Retained physical response owner; no guest accounting is consumed.
     fn with_delivery(
         &self,

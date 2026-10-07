@@ -274,6 +274,9 @@ impl CommandCoordinator {
                 Some(memory),
             )),
         }?;
+        if let Some(disposition) = &mut completion.disposition {
+            disposition.recovered_result = true;
+        }
         completion.delivery_fence = Some(Arc::new(fence));
         Ok(completion)
     }
@@ -330,6 +333,9 @@ fn observed(
         true,
         Some(memory),
     );
+    if let Some(disposition) = &mut completion.disposition {
+        disposition.recovered_result = true;
+    }
     completion.delivery_fence = Some(Arc::new(fence));
     Ok(completion)
 }

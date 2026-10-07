@@ -8416,6 +8416,11 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "invocation::transaction::tests::transaction_request_reuses_original_authenticated_target_lineage_and_deadline_validation",
+        "invocation::transaction::tests::installed_transaction_ceiling_accepts_state_work_without_enabling_the_generic_invocation_endpoint",
+        "invocation::transaction::tests::transaction_conversion_preserves_the_earlier_caller_deadline_and_exact_arrival_expiry",
+        "phase4::state_management::tests::bindings::installed_named_recovery_scopes_require_current_subject_delegation_and_scope_policy",
+        "phase4::state_management::tests::bindings::installed_dispatcher_only_backend_cannot_resolve_application_namespace_selectors",
         "invocation::cancellation::tests::all_registered_waiters_observe_the_same_sticky_cause",
         "invocation::cancellation::tests::transport_cause_is_first_wins_and_visible_before_waiting",
         "invocation::cleanup::tests::abort_before_first_poll_drains_queue_and_handles_late_reservation",
@@ -8609,7 +8614,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 187,
+      "minimumCases": 192,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -9124,6 +9129,12 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "standalone::state::rpc::selection::tests::command_rpc_selection_preserves_original_preconditions_and_refuses_scope_authority_from_metadata",
+        "standalone::state::rpc::tests::rpc_result_codec_refuses_unrepresentable_output_before_the_business_writer",
+        "config::state::recovery::tests::explicit_management_recovery_selections_derive_closed_data_without_changing_application_callers",
+        "config::state::recovery::tests::recovery_selector_configuration_rejects_duplicates_unknown_grants_and_unsafe_present_values",
+        "standalone::transport::tests::ownership::phase4_recovery_uses_existing_reserved_rpc_slot_while_ordinary_responses_remain_owned",
+        "standalone::state::runtime::tests::management::installed_empty_state_host_exposes_the_original_audited_dispatcher_and_retains_recovery_owner",
         "command::tests::check_config_requires_an_explicit_file_and_never_selects_serve",
         "command::tests::obsolete_catalog_migration_command_is_rejected",
         "command::tests::serve_requires_configuration_and_help_advertises_only_product_surfaces",
@@ -9486,7 +9497,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 300,
+      "minimumCases": 306,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

@@ -51,6 +51,7 @@ pub(super) struct Inner {
     pub profile: String,
     pub configuration_digest: String,
     pub management: Option<StateManagementBackend>,
+    pub recovery_selections: Vec<crate::config::state::RecoverySelectorConfig>,
     pub maintenance: Arc<latent_commit::atomic::ResultMaintenanceOwner>,
     pub maintenance_clock: Arc<dyn latent_wire::phase4::StateMaintenanceClock>,
 }
@@ -165,6 +166,7 @@ impl StateRuntime {
             profile: profile.into(),
             configuration_digest,
             management: None,
+            recovery_selections: state.recovery_selections.clone(),
             maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
             maintenance_clock: time,
         };
@@ -294,7 +296,10 @@ async fn finish_open(
     audit: Option<latent_audit::AuditHandle>,
     grace: std::time::Duration,
 ) -> Result<(Arc<StateRuntime>, super::super::EffectRuntime), PlatformError> {
-    match platform(Stage::StateManagement, management(&inner, clock, audit)) {
+    match platform(
+        Stage::StateManagement,
+        management(&inner, effects.management_port(), clock, audit),
+    ) {
         Ok(management) => inner.management = management,
         Err(error) => {
             retire_startup_services(&mut effects, &inner.store, grace).await;
@@ -423,6 +428,7 @@ async fn retire_failed_startup(startup: &ProtectedStoreStartup, deadline: std::t
 }
 fn management(
     inner: &Inner,
+    dispatcher: latent_effects::runtime::DispatcherManagementPort,
     clock: Arc<dyn ActivationClock>,
     audit: Option<latent_audit::AuditHandle>,
 ) -> Result<Option<StateManagementBackend>, PlatformError> {
@@ -448,10 +454,7 @@ fn management(
             state: super::authorization::management_binding(inner, op),
         });
     }
-    if bindings.is_empty() {
-        return Ok(None);
-    }
-    Ok(Some(StateManagementBackend::new(
+    let backend = StateManagementBackend::with_installed_dispatcher(
         StateManagementServices {
             store: Arc::clone(&inner.store),
             namespaces: Arc::clone(&inner.namespaces),
@@ -465,7 +468,20 @@ fn management(
             maintenance_clock: Arc::clone(&inner.maintenance_clock),
         },
         bindings,
-    )?))
+        dispatcher,
+    )?;
+    // Trusted installation selects descriptive scope data. Effect management
+    // still seals current data-read/action decisions; application commands keep
+    // their separately bound OriginalCaller admission.
+    Ok(Some(
+        backend.with_recovery_bindings(
+            inner
+                .recovery_selections
+                .iter()
+                .map(|value| value.binding())
+                .collect(),
+        )?,
+    ))
 }
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]

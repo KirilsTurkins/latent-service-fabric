@@ -8,7 +8,9 @@ mod effects;
 pub use effects::DeferredHttpConfig;
 mod tenant;
 pub use tenant::{TenantLimitsConfig, TenantQuotaConfig};
+mod recovery;
 mod root;
+pub use recovery::{RecoverySelectionConfig, RecoverySelectorConfig};
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -25,6 +27,10 @@ pub struct StateConfig {
     pub operations: Vec<StateOperationConfig>,
     #[serde(default)]
     pub tenant_quotas: Vec<TenantQuotaConfig>,
+    /// Named management effect-recovery constraints. These labels are data;
+    /// actual current inspect/action policy still supplies every permission.
+    #[serde(default)]
+    pub recovery_selections: Vec<RecoverySelectorConfig>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -66,6 +72,7 @@ pub(crate) struct StateSettings {
     state_root: Option<PathBuf>,
     pub operations: Vec<OperationSettings>,
     pub tenant_quotas: Vec<latent_state::tenant::TenantQuota>,
+    pub recovery_selections: Vec<RecoverySelectorConfig>,
 }
 
 impl StateSettings {
@@ -105,6 +112,7 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
         return Err(super::invalid("state"));
     }
     let tenant_quotas = tenant::derive(&value.tenant_quotas, &value.operations)?;
+    recovery::validate(&value.recovery_selections)?;
     let state_root = root::derive(value.state_root.as_deref())?;
     let mut operations = Vec::with_capacity(value.operations.len());
     for input in &value.operations {
@@ -175,6 +183,7 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
         state_root,
         operations,
         tenant_quotas,
+        recovery_selections: value.recovery_selections.clone(),
     })
 }
 
@@ -200,7 +209,7 @@ fn checked_digest(text: &str) -> Result<(), PlatformError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    pub(super) fn input() -> serde_json::Value {
+    pub(crate) fn input() -> serde_json::Value {
         serde_json::json!({"formatVersion":1,"configurationEpoch":1,"clockCheckpoint":std::env::temp_dir().join("state-clock.json"),
             "tenantQuotas":[tenant::tests::quota("a")],"operations":[{
             "tenant":"a","componentDigest":format!("sha256:{}","a".repeat(64)),
