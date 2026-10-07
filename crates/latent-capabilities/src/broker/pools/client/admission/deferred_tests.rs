@@ -1,8 +1,16 @@
 use super::*;
-use crate::broker::pools::{limits::Kind, DeferredRequest};
+use crate::broker::pools::{limits::Kind, tests::fixture::*, ProviderPoolLimits};
+use crate::broker::tests::fixture::{pending, ready};
 use latent_core::PlatformErrorCode;
-use latent_effects::authority::{AuthorityError, ProviderLookupAuthorization};
-use std::time::Instant;
+use latent_effects::authority::{
+    AuthorityError, CommitLink, DispatchCeiling, DispatchContext, DispatchGrant, DispatchProfile,
+    EffectAuthorityOwner, EffectRule, EffectScope, EffectTime, ProviderLookupAuthorization,
+};
+use std::{
+    io::Read,
+    net::{TcpListener, TcpStream},
+    time::Instant,
+};
 
 struct LookupPermission;
 impl ProviderLookupAuthorization for LookupPermission {
@@ -87,7 +95,7 @@ fn original_grant(lookup: bool, deadline: Option<Instant>) -> (DispatchContext, 
     } else {
         let mut context = owner.accept(&authority, 1, time).unwrap();
         if let Some(deadline) = deadline {
-            context.tighten_deadline(deadline).unwrap();
+            context.restrict_deadline(deadline).unwrap();
         }
         context
     };

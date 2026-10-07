@@ -7,6 +7,8 @@ use std::sync::{Mutex, MutexGuard, TryLockError};
 use std::time::Duration;
 
 #[cfg(all(test, target_os = "linux"))]
+mod deferred_tests;
+#[cfg(all(test, target_os = "linux"))]
 mod tests;
 
 pub(super) enum ClientAccessError {
