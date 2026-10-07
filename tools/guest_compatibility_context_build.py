@@ -5,10 +5,12 @@ from pathlib import Path
 
 from tools import guest_compatibility as compatibility
 from tools import guest_compatibility_context as context
+from tools import guest_emitted_code
 from tools.dev_workflow.common import decode, digest, encode, require
 from tools.rust_capsule_project import read_file, write_json
 
-RECIPE = ('tools/guest_compatibility_context.py', 'tools/guest_compatibility_context_build.py')
+RECIPE = ('tools/guest_compatibility_context.py', 'tools/guest_compatibility_context_build.py',
+          'tools/guest_emitted_code.py')
 
 
 def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
@@ -86,6 +88,10 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
     omitted = max(0, len(retained) - context.MAX_MATERIALS)
     value = context.create(report, retained[:context.MAX_MATERIALS], selected, omitted=omitted)
     write_json(output / 'compatibility-context.json', value)
+    graph_raw = files.get('latent.dependencies.lock.json')
+    graph = digest(encode(decode(graph_raw, 8 * 1024 * 1024))) if graph_raw is not None else None
+    guest_emitted_code.emit(output, component, digest(source_inputs), selected.get('profile', 'not-observed'),
+        report['runtimeProfile'], graph=graph, recipe=captured.get('build-recipe', {}).get('digest'))
     require(read_file(output / 'compatibility-report.json', compatibility.MAX_BYTES) == report_raw,
             'compatibility-context-report-was-mutated')
     return value

@@ -46,6 +46,22 @@ callbacks or lifecycle quiescence. Renaming a package changes its captured
 graph identity without changing API eligibility. These receipts remain beside
 the build and preserve the packaged compatibility report and asset identity.
 
+`compatibility-reachability.json` additionally inspects bounded compiler-emitted
+core code. It follows direct calls from all core exports, start functions and
+observed addressable callbacks, using a conservative superset of the component's
+selected exports. A closed core graph can identify a function without an emitted
+root path. That observation does not prove API elimination, actual execution,
+transitive library reachability or successful initialization. Indirect dispatch,
+tables, opaque instruction encodings and analysis limits remain unknown. The
+sidecar binds source, component, runtime/host profiles, selected graph and recipe;
+it never runs initializers. At most 64 findings and 64 KiB are retained, with
+explicit omission and symbol redaction counts. Source locations remain explicitly
+unobserved when the emitted code supplies no authenticated mapping.
+
+```sh
+python -m tools.guest_emitted_code output/compatibility-reachability.json --context output/compatibility-context.json
+```
+
 Reports distinguish dependency resolution, target/ABI problems, unsupported
 operations, missing runtime implementations, unqualified profiles, unknown
 behavior, optional application extensions, provider installation, grants,
