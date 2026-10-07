@@ -40,6 +40,22 @@ class JavaTransactionDiagnosticTests(unittest.TestCase):
             self.assertIs(declaration["utf8RoundtripQualified"], False)
             self.assertIs(declaration["absentOptionalQualified"], False)
 
+    def test_generated_java_utf8_literal_has_exact_json_value_and_declared_raw_byte_digest(self):
+        import re
+        from tools.java_transaction_values import UTF8_TEXT, create as create_values
+        with tempfile.TemporaryDirectory() as temporary:
+            files = snapshot(create_values(Path(temporary) / "values"))
+            source = files[SOURCE].decode("utf-8")
+            declaration = json.loads(files["transaction-value-inputs.json"])
+            literal = re.search(r'UTF8_VALUE = ("(?:[^"\\]|\\.)*")\.getBytes', source).group(1)
+            # The emitted Java literal uses only the common JSON/Java string
+            # escapes. Decode the literal before checking application bytes.
+            actual = json.loads(literal).encode("utf-8")
+            self.assertEqual(json.loads(actual), [None, UTF8_TEXT])
+            expected = json.dumps([None, UTF8_TEXT], ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+            self.assertEqual(actual, expected)
+            self.assertEqual(digest(actual), declaration["utf8PayloadDigest"])
+
     def test_forbidden_child_is_real_reachable_java_import_with_original_companion_and_zero_child_budget(self):
         from tools.transaction_guest_variants import CHILD, create as create_variant
         with tempfile.TemporaryDirectory() as temporary:

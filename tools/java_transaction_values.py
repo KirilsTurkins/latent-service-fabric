@@ -11,13 +11,15 @@ UTF8_TEXT = "κλειδί / 値 / 🌍"
 
 
 def source_variant(original: str) -> str:
+    utf8_payload = json.dumps([None, UTF8_TEXT], ensure_ascii=False, separators=(",", ":"))
+    java_literal = json.dumps(utf8_payload, ensure_ascii=False)
     source = replace_once(original, "import java.util.List;",
         "import java.util.List;\nimport java.util.Arrays;\nimport java.nio.charset.StandardCharsets;")
     source = replace_once(source, "public final class Capsule implements Bindings.Exports {",
         "public final class Capsule implements Bindings.Exports {\n"
         '    private static final byte[] UTF8_KEY = "aggregate/clé/🌍".getBytes(StandardCharsets.UTF_8);\n'
         '    private static final byte[] ABSENT_KEY = "aggregate/absent/null".getBytes(StandardCharsets.UTF_8);\n'
-        '    private static final byte[] UTF8_VALUE = "[null,\\\"κλειδί / 値 / 🌍\\\"]".getBytes(StandardCharsets.UTF_8);\n'
+        '    private static final byte[] UTF8_VALUE = ' + java_literal + '.getBytes(StandardCharsets.UTF_8);\n'
         "    private static int entries;\n"
         '    private static void enter() { if (++entries != 1) throw new IllegalStateException("value-instance-reused"); }')
     source = replace_once(source,
