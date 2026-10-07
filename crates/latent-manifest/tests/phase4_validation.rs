@@ -51,7 +51,7 @@ fn transaction_trigger_schema_enforces_every_allof_method_and_precondition_const
         "metadata":{"name":"transaction","tenant":"examples"},
         "spec":{"target":{"service":"examples/echo","contract":"examples:echo/api@1.0.0",
             "function":"update","route":"echo","publication":format!("publication:sha256:{}","a".repeat(64)),
-            "revision":"revision-1","deploymentGeneration":1},
+            "revision":format!("revision-v1:sha256:{}","b".repeat(64)),"deploymentGeneration":1},
             "configuration":{"profile":"transaction-http-v1","scheme":"http","host":"localhost:8080",
                 "path":"/transaction","pathMatch":"exact","method":"POST","transactionMode":"command",
                 "namespace":"aggregate","incarnation":"1","stateSchema":format!("sha256:{}","1".repeat(64)),
@@ -85,6 +85,33 @@ fn transaction_trigger_schema_enforces_every_allof_method_and_precondition_const
                 .is_ok(),
             valid && mode == "command",
             "precondition keys remain command-only: {mode}/{method}"
+        );
+    }
+    for (field, value, valid) in [
+        ("incarnation", "18446744073709551615", true),
+        ("incarnation", "18446744073709551616", false),
+        ("incarnation", "01", false),
+        ("incarnation", "0", false),
+        (
+            "stateSchema",
+            "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            false,
+        ),
+        ("namespace", "orders\u{0080}", false),
+        ("path", "transaction", false),
+        ("preconditionKey", "YQ==", true),
+        ("preconditionKey", "YR==", false),
+        ("preconditionKey", "YQ", false),
+        ("preconditionKey", "====", false),
+    ] {
+        let mut selected = original.clone();
+        selected["spec"]["configuration"][field] = value.into();
+        assert_eq!(
+            codec
+                .decode_trigger(&serde_json::to_vec(&selected).unwrap())
+                .is_ok(),
+            valid,
+            "exact reviewed transaction pattern must remain enforced: {field}"
         );
     }
 }
