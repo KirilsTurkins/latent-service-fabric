@@ -163,8 +163,9 @@ explicit redeployment/rollback, an in-flight request's actual journal revision
 pin, a competing route CAS, fresh static state, real disconnect retirement,
 fuel exhaustion and a separately narrowed root deadline. Its fixture's outbound
 `HttpURLConnection` rendezvous has its own explicit typed HTTP provider and grant;
-it adds no ambient network authority. Run the unchanged helper's 52 ingress
-vectors separately. Source/socket tests and a prepared command do not establish
+it adds no ambient network authority. Its first source fixture retains the
+complete ordinary helper and runs all 52 original ingress vectors before the
+extra lifecycle cases. Source/socket tests and a prepared command do not establish
 that these lifecycle gates passed; retain the actual `lifecycle-conformance.json`
 and the enclosing node receipt, including failed attempts, before qualification.
 

@@ -50,7 +50,7 @@ def main(argv=None):
                                 second_body=b"Revision-two", peer_port=args.peer_port)
     try:
         result = run(args.binary, args.node, args.first_fixture, args.first_build, args.output,
-                     tls_tool=args.tls_tool, tls=True, lifecycle=observer)
+                     helper=True, tls_tool=args.tls_tool, lifecycle=observer)
     finally:
         if args.output.is_dir():
             identity = {"before": native}

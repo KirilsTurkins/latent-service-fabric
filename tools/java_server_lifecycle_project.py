@@ -3,36 +3,29 @@ from pathlib import Path
 import json
 
 from tools import java_http_client
-from tools.java_capsule_project import runtime_wit
+from tools.java_capsule_project import ROOT, runtime_wit
 from tools.java_server_project import create_server
 from tools.rust_capsule_project import canonical
 
 
-SOURCE = '''package dev.latent.app;
+LIFECYCLE_SOURCE = '''package outside.developer.routes;
 
 import com.sun.net.httpserver.HttpServer;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-public final class Server {
+public final class LifecycleRoutes {
     private static int invocations;
+    private static volatile long work;
 
-    public static void main(String[] arguments) throws Exception {
-        var server = HttpServer.create(new InetSocketAddress(8080), 0);
-        server.createContext("/hey", exchange -> {
-            byte[] bytes = "/*REVISION*/".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(200, bytes.length);
-            try (var body = exchange.getResponseBody()) { body.write(bytes); }
-        });
+    public static void install(HttpServer server) {
         server.createContext("/fresh", exchange -> {
             byte[] bytes = Integer.toString(++invocations).getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, bytes.length);
             try (var body = exchange.getResponseBody()) { body.write(bytes); }
         });
         server.createContext("/fuel", exchange -> {
-            long work = 0;
             while (true) { work++; }
         });
         server.createContext("/gate", exchange -> {
@@ -46,20 +39,36 @@ public final class Server {
             exchange.sendResponseHeaders(200, bytes.length);
             try (var body = exchange.getResponseBody()) { body.write(bytes); }
         });
-        server.start();
     }
 }
 '''
+
 
 
 def create(directory: Path, *, name: str, revision: str, peer_port: int) -> Path:
     if revision not in {"Hey!", "Revision-two"} or type(peer_port) is not int or not 1 <= peer_port <= 65535:
         raise ValueError("finite reviewed server lifecycle fixture selection required")
     root = create_server(directory, name)
-    # Edit only developer-owned source/declaration. Captured SDK and lock remain
-    # exact; production compilation/inspection/signing are separate required steps.
-    (root / "src/dev/latent/app/Server.java").write_text(
-        SOURCE.replace("/*REVISION*/", revision).replace("/*PORT*/", str(peer_port)), encoding="utf-8")
+    # Preserve the complete original helper fixture, including code after
+    # start and every body/error case. Add only a separate ordinary helper.
+    original = (ROOT / "sdk/java-guest/tests/server/Server.java").read_bytes()
+    marker = b"        Router.install(server);\n"
+    if original.count(marker) != 1:
+        raise ValueError("maintained original helper registration shape changed")
+    expanded = original.replace(marker, marker + b"        outside.developer.routes.LifecycleRoutes.install(server);\n")
+    (root / "src/dev/latent/app/Server.java").write_bytes(expanded)
+    helper = root / "src/outside/developer/routes"
+    helper.mkdir(parents=True)
+    router = (ROOT / "sdk/java-guest/tests/server/Router.java").read_bytes()
+    if revision != "Hey!":
+        if router.count(b'"Hey!".getBytes(StandardCharsets.UTF_8)') != 1:
+            raise ValueError("maintained original helper reply shape changed")
+        router = router.replace(b'"Hey!".getBytes(StandardCharsets.UTF_8)',
+                                b'"Revision-two".getBytes(StandardCharsets.UTF_8)')
+    (helper / "Router.java").write_bytes(router)
+    (helper / "LifecycleRoutes.java").write_text(
+        LIFECYCLE_SOURCE.replace("/*REVISION*/", revision).replace("/*PORT*/", str(peer_port)),
+        encoding="utf-8", newline="\n")
     project = json.loads((root / "capsule-project.json").read_bytes())
     project["httpClient"] = {"profile": java_http_client.PROFILE_ID}
     (root / "capsule-project.json").write_bytes(canonical(project) + b"\n")

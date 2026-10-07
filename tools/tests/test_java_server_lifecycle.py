@@ -31,8 +31,29 @@ class ServerLifecycleInputs(unittest.TestCase):
                              {k: v for k, v in baseline.items() if k.startswith("vendor/")})
             self.assertIn(b"import latent:http/streaming@0.3.0", actual["wit/world.wit"])
             self.assertIn(b"new URL(\"http://127.0.0.1:32123/gate\")",
-                          actual["src/dev/latent/app/Server.java"])
+                          actual["src/outside/developer/routes/LifecycleRoutes.java"])
             self.assertNotIn(b"dev.latent.guest", actual["src/dev/latent/app/Server.java"])
+
+    def test_original_helper_routes_and_every_body_case_are_retained_with_exact_revision_delta(self):
+        from tools.java_capsule_project import ROOT
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            first = snapshot(project.create(root / "first", name="lifecycle-server", revision="Hey!", peer_port=32123))
+            second = snapshot(project.create(root / "second", name="lifecycle-server", revision="Revision-two", peer_port=32123))
+            original_server = (ROOT / "sdk/java-guest/tests/server/Server.java").read_bytes()
+            extended = first["src/dev/latent/app/Server.java"]
+            self.assertEqual(extended.replace(b"        outside.developer.routes.LifecycleRoutes.install(server);\n", b""),
+                             original_server)
+            original_router = (ROOT / "sdk/java-guest/tests/server/Router.java").read_bytes()
+            name = "src/outside/developer/routes/Router.java"
+            self.assertEqual(first[name], original_router)
+            self.assertEqual(second[name], original_router.replace(b'"Hey!".getBytes(StandardCharsets.UTF_8)',
+                                                                  b'"Revision-two".getBytes(StandardCharsets.UTF_8)'))
+            self.assertEqual(first["sdk-lock.json"], second["sdk-lock.json"])
+            self.assertEqual(first["capsule-project.json"], second["capsule-project.json"])
+            self.assertEqual(first["wit/world.wit"], second["wit/world.wit"])
+            self.assertEqual(second["src/outside/developer/routes/LifecycleRoutes.java"],
+                first["src/outside/developer/routes/LifecycleRoutes.java"].replace(b'"Hey!"', b'"Revision-two"'))
 
     def test_unreviewed_revision_and_peer_are_rejected_before_project_write(self):
         with tempfile.TemporaryDirectory() as temporary:
