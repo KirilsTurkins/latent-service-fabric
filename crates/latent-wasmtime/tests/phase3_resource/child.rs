@@ -26,7 +26,7 @@ pub async fn measure(rows: &mut Vec<Value>) {
                     Duration::from_secs(3),
                     fixture
                         .manager
-                        .start(fixture::Fixture::request(
+                        .start(fixture.request(
                             &format!("resource-child-{ordinal}-{mode}"),
                             mode,
                         ))
@@ -61,7 +61,7 @@ pub async fn measure(rows: &mut Vec<Value>) {
                 cancel(&fixture, ordinal, rows).await;
                 let result = fixture
                     .manager
-                    .start(fixture::Fixture::request(
+                    .start(fixture.request(
                         &format!("resource-child-recover-{ordinal}"),
                         0,
                     ))
@@ -80,7 +80,7 @@ async fn cancel(fixture: &fixture::Fixture, ordinal: u32, rows: &mut Vec<Value>)
     let mut parent = tokio::spawn(
         fixture
             .manager
-            .start(fixture::Fixture::request(&activation, 2))
+            .start(fixture.request(&activation, 2))
             .unwrap(),
     );
     let control = async {

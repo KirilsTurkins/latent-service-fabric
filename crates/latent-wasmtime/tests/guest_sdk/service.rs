@@ -84,7 +84,7 @@ async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
             let root = tempfile::tempdir().unwrap();
             let f = Box::pin(configured(root.path(), permit, language)).await;
             for (index, (which, expected)) in [(0, 42), (1, 10), (0, 42)].into_iter().enumerate() {
-                let mut request = fixture::Fixture::request(&format!("sdk-service-{index}"), which);
+                let mut request = f.request(&format!("sdk-service-{index}"), which);
                 request.input = serde_json::to_vec(&serde_json::json!([which, "", "0"])).unwrap();
                 // Fixed numeric snapshots distinguish caller/child cache reuse
                 // from new worker activity without retaining any guest input.
