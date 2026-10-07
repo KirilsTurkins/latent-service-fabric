@@ -74,7 +74,7 @@ pub(super) async fn mutate(
                     ),
                 };
                 let finish = pending.finish(disposition, reason, digest, replay);
-            Ok((result, access.inspect, finish, retained))
+                Ok((result, access.inspect, finish, retained))
             },
         )
         .map_err(protected_error)?;

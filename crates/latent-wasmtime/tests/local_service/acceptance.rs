@@ -155,6 +155,9 @@ async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_c
         // Observe the original failure without invoking or accepting another call.
         eprintln!("local-service-child-failures {child_failures:?}");
     }
+    let child_failures = f.observations.child_failures.snapshot();
+    assert!(child_failures.records.is_empty(), "{child_failures:?}");
+    assert!(!child_failures.incomplete);
     assert_eq!(
         actual, ANSWER,
         "original child failures: {child_failures:?}"

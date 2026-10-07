@@ -5,6 +5,8 @@ on:
     branches: [development]
     paths:
       - 'sdk/java-guest/**'
+      - 'examples/java-http-composition/**'
+
       - 'sdk/transaction-contract/**'
       - 'examples/java-http-composition/**'
       - 'tools/**'

@@ -77,6 +77,7 @@ impl CheckedSurface {
     /// Checked source imports that require capability/provider bindings. All
     /// other imports were validated as resource-free value definitions; they
     /// remain in `imports()` and grant no host or provider authority.
+    #[must_use]
     pub fn capability_imports(&self) -> impl Iterator<Item = &str> {
         self.imports
             .iter()

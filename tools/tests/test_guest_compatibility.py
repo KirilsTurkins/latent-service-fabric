@@ -181,6 +181,7 @@ class FinalComponentInspection(unittest.TestCase):
         changed["interfaces"][2]["types"] = {"bounded-" + str(index): base + index for index in range(9)}
         with self.assertRaises(DevError):
             build.interface_names(changed)
+
     def test_packaged_report_is_preserved_when_later_packaging_fails(self):
         for language in c.LANGUAGES:
             with self.subTest(language=language), tempfile.TemporaryDirectory() as temporary:

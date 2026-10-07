@@ -1,17 +1,17 @@
 //! Actual namespace management over the node's single protected engine.
 mod audit;
 mod authorization;
+mod clock;
 mod dispatcher;
 mod effects;
 mod entities;
-mod clock;
 mod floor_release;
-mod state_receipt;
 mod inspection;
 mod mutation;
 mod recovery;
 mod recovery_bindings;
 mod response;
+mod state_receipt;
 pub use clock::StateMaintenanceClock;
 pub use recovery::StateManagementRecoveryAdmission;
 pub use recovery_bindings::StateManagementRecoveryBinding;
