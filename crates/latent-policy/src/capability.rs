@@ -201,6 +201,12 @@ fn operation(contract: &str, name: &str) -> bool {
             "namespace-retire",
             "namespace-destroy",
             "namespace-recreate",
+            "namespace-snapshot",
+            "namespace-inspect-restore",
+            "namespace-restore",
+            "namespace-schema-migrate",
+            "namespace-review-recovery",
+            "namespace-resume",
         ],
         // Dispatch is a native current-purpose operation, not a guest import.
         "latent:intents/staging@0.1.0" => &["stage", "dispatch"],
