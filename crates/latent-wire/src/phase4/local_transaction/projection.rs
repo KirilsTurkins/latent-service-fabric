@@ -12,6 +12,10 @@ use latent_node::{
     ActivationReceipt,
 };
 use latent_rpc::{invocation::v1 as i, phase4 as contract, transaction::v1 as t};
+use std::sync::Arc;
+
+#[cfg(test)]
+mod tests;
 
 impl super::super::Phase4ResponseOwner for TransactionResponseAuthority {
     fn reserved_bytes(&self) -> usize {
@@ -67,13 +71,12 @@ pub(super) fn response(
                     error.code
                 );
             }
-            let result = result.as_ref().ok().and_then(Option::as_ref);
-            let outcome = match result {
-                Some(result) => result_outcome(&command, result, current_consumption)?,
-                None => failure(current_consumption),
-            };
-            let inspection = inspection(&command, result.map(AsRef::as_ref), None);
-            let invocation = command_invocation(receipt, outcome, limits, command.source());
+            let existing = existing_outcome(result, current_consumption, |result, consumption| {
+                result_outcome(&command, result, consumption)
+            })?;
+            let inspection = inspection(&command, existing.result.as_deref(), None);
+            let invocation =
+                command_invocation(receipt, existing.outcome, limits, command.source());
             contract::Response::from(t::InvokeCommandResponse {
                 invocation: Some(invocation),
                 command: Some(inspection),
@@ -105,6 +108,26 @@ pub(super) fn response(
     }
     owned.authority.with_current(&mut || {})?;
     Ok(OwnedPhase4Response::new(response, owned.authority))
+}
+
+struct ExistingOutcome {
+    result: Option<Arc<DurableResult>>,
+    outcome: ActivationOutcome,
+}
+
+fn existing_outcome(
+    result: Result<Option<Arc<DurableResult>>, PlatformError>,
+    consumption: BudgetConsumption,
+    project: impl FnOnce(&DurableResult, BudgetConsumption) -> Result<ActivationOutcome, PlatformError>,
+) -> Result<ExistingOutcome, PlatformError> {
+    // An explicit replay refusal must reach the public error boundary before
+    // inspecting command metadata or projecting any retained application body.
+    let result = result?;
+    let outcome = match result.as_deref() {
+        Some(result) => project(result, consumption)?,
+        None => failure(consumption),
+    };
+    Ok(ExistingOutcome { result, outcome })
 }
 
 fn command_response(
