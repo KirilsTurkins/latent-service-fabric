@@ -249,7 +249,12 @@ impl Fixture {
         self.store
             .with_store_retaining(StoreIoKind::Read, 4096, keeper, move |store| {
                 let view = store.snapshot()?;
-                let exists = view.get(Family::State, b"counter")?.is_some();
+                let exists = view
+                    .get(&latent_state::embedded::RowKey {
+                        family: Family::State,
+                        key: b"counter".to_vec(),
+                    })?
+                    .is_some();
                 entered.send(()).unwrap();
                 release.recv_timeout(Duration::from_secs(5)).unwrap();
                 drop(view);
