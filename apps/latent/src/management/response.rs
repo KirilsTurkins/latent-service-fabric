@@ -1,4 +1,4 @@
-use latent_manifest::{ManifestCodec, ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::ManifestCodec;
 use latent_wire::management::{deployment_from_proto, proto, release_descriptor_from_proto};
 use serde_json::{json, Value};
 
@@ -34,8 +34,7 @@ pub(super) fn release(value: proto::ReleaseDescriptor) -> Result<Value, Failure>
 
 pub(super) fn deployment(value: proto::Deployment) -> Result<Value, Failure> {
     let versioned = deployment_from_proto(value).map_err(|_| invalid_response())?;
-    Phase1ManifestValidator
-        .validate_deployment(&versioned.manifest)
+    latent_manifest::validate_deployment_document(&versioned.manifest)
         .map_err(|_| invalid_response())?;
     let encoded = prepare::codec()
         .encode_deployment(&versioned.manifest)

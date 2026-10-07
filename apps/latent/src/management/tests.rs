@@ -191,6 +191,101 @@ fn malformed_deployment_identity_and_missing_budget_fail_conversion() {
     assert!(bounds::checked(&value, 4096).is_err());
 }
 
+fn phase4_deployment_reply() -> proto::Deployment {
+    let mut value = deployment();
+    let publication = proto::PublicationRef {
+        id: format!("publication:sha256:{}", "a".repeat(64)),
+        tenant: "examples".into(),
+    };
+    value.publication = Some(publication.clone());
+    value.requested_publication = Some(publication);
+    let resources = value.resources.as_mut().unwrap();
+    resources.cpu_fuel = 1_000_000_000;
+    resources.memory_bytes = 64 * 1024 * 1024;
+    resources.wall_time_limit_millis = Some(120_000);
+    resources.child_calls = 0;
+    resources.outbound_requests = 0;
+    resources.state_read_bytes = 4 * 1024 * 1024;
+    resources.state_write_bytes = 2 * 1024 * 1024;
+    resources.effect_count = 1;
+    value
+}
+
+#[test]
+fn phase4_deployment_replies_preserve_original_budgets_for_apply_get_and_list() {
+    let value = phase4_deployment_reply();
+    bounds::checked(&value, 4096).unwrap();
+    super::association::deployment(Some(&value), "examples", Some(&value.id), None).unwrap();
+    let applied = response::applied(proto::ApplyDeploymentResponse {
+        deployment: Some(value.clone()),
+        ..proto::ApplyDeploymentResponse::default()
+    })
+    .unwrap();
+    let got = response::got_deployment(proto::GetDeploymentResponse {
+        deployment: Some(value.clone()),
+        ..proto::GetDeploymentResponse::default()
+    })
+    .unwrap();
+    let listed = response::deployments(proto::ListDeploymentsResponse {
+        deployments: vec![value],
+        page: Some(proto::PageResponse::default()),
+    })
+    .unwrap();
+    let expected = &applied.data["deployment"];
+    assert_eq!(expected, &got.data["deployment"]);
+    assert_eq!(expected, &listed.data["deployments"][0]);
+    assert_eq!(expected["generation"], u64::MAX.to_string());
+    assert_eq!(
+        expected["publication"]["id"],
+        format!("publication:sha256:{}", "a".repeat(64))
+    );
+    assert_eq!(expected["publication"]["tenant"], "examples");
+    let resources = &expected["manifest"]["spec"]["resources"];
+    assert_eq!(resources["cpuFuel"], 1_000_000_000_u64);
+    assert_eq!(resources["memoryBytes"], 64 * 1024 * 1024_u64);
+    assert_eq!(resources["wallTimeLimitMillis"], 120_000);
+    assert_eq!(resources["stateReadBytes"], 4 * 1024 * 1024_u64);
+    assert_eq!(resources["stateWriteBytes"], 2 * 1024 * 1024_u64);
+    assert_eq!(resources["effectCount"], 1);
+}
+
+#[test]
+fn phase4_deployment_reply_conversion_keeps_invalid_fields_and_scope_refusals() {
+    let value = phase4_deployment_reply();
+    assert!(
+        super::association::deployment(Some(&value), "foreign", Some(&value.id), None).is_err()
+    );
+    assert!(super::association::deployment(Some(&value), "examples", Some("other"), None).is_err());
+    for index in 0..5 {
+        let mut invalid = value.clone();
+        match index {
+            0 => invalid.id = "other".into(),
+            1 => invalid.resources = None,
+            2 => invalid.resources.as_mut().unwrap().state_read_bytes = u64::MAX,
+            3 => invalid.resources.as_mut().unwrap().effect_count = u32::MAX,
+            _ => invalid.resources.as_mut().unwrap().child_calls = 1,
+        }
+        assert!(response::applied(proto::ApplyDeploymentResponse {
+            deployment: Some(invalid.clone()),
+            ..proto::ApplyDeploymentResponse::default()
+        })
+        .is_err());
+        assert!(response::got_deployment(proto::GetDeploymentResponse {
+            deployment: Some(invalid.clone()),
+            ..proto::GetDeploymentResponse::default()
+        })
+        .is_err());
+        assert!(response::deployments(proto::ListDeploymentsResponse {
+            deployments: vec![invalid],
+            page: Some(proto::PageResponse::default())
+        })
+        .is_err());
+    }
+    let mut zero = value;
+    zero.generation = 0;
+    assert!(bounds::checked(&zero, 4096).is_err());
+}
+
 #[test]
 fn bounded_traversal_rejects_large_collections_strings_and_page_tokens() {
     let mut value = proto::ListReleasesResponse {
