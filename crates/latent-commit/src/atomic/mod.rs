@@ -12,13 +12,13 @@ mod writer;
 pub use captured::{CapturedIntent, IntentCaptureContext};
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
 pub use record::{
-    CommandRecord, DurableResult, InboxIdentity, SourceIdentity, command_row_key, result_row_key,
+    command_row_key, result_row_key, CommandRecord, DurableResult, InboxIdentity, SourceIdentity,
 };
 pub use retention::{MaintenanceClock, MaintenanceProgress, ResultMaintenanceOwner};
 pub use validation::{validate_linked_row, validate_row, validate_view};
 pub use writer::{
-    AdmissionDecision, AdmittedCommand, CompleteEnvelope, PreparedAdmission, PreparedDisposition,
-    RetryRequest, StagedIntent, inspect,
+    inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, PreparedAdmission,
+    PreparedDisposition, RetryRequest, StagedIntent,
 };
 
 use latent_core::transaction_contract::{self as contract, CommandFingerprint, CommandKey};

@@ -136,12 +136,10 @@ fn recovery_snapshot_reads_and_retires_on_reserved_worker_under_ordinary_pressur
     let (view, result) = wait(
         owner
             .with_view(view, 4096, |native| {
-                assert!(
-                    std::thread::current()
-                        .name()
-                        .unwrap()
-                        .starts_with("latent-store-recovery-")
-                );
+                assert!(std::thread::current()
+                    .name()
+                    .unwrap()
+                    .starts_with("latent-store-recovery-"));
                 native.get(&key(Family::State, "command"))
             })
             .unwrap(),
