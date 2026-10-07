@@ -518,6 +518,21 @@ async fn admit_transaction(
     if let Some(gate) = execution.cancellation {
         lifecycle.registration().handle().bind_commit_gate(gate)?;
     }
+    if host.mode() == latent_executor::transaction::Mode::Command {
+        let identity = host.staging_identity().ok_or_else(|| {
+            error(
+                PlatformErrorCode::PermissionDenied,
+                "transaction staging identity unavailable",
+            )
+        })?;
+        let observer = lifecycle.staging_observer(identity)?;
+        host.bind_staging_observer(observer).map_err(|_| {
+            error(
+                PlatformErrorCode::PermissionDenied,
+                "transaction staging observer refused",
+            )
+        })?;
+    }
     Ok(None)
 }
 
