@@ -36,6 +36,7 @@ RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += java_server_source.RECIPE
+RECIPE += ("tools/java_generator_authoring.py",)
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -176,6 +177,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"]), ("compiler-closure", compiler.compiler_inputs),
                     ("dependency-lock", files["vendor/lsf/sdk/java-guest/feasibility/dependencies.lock.json"]),
                     ("generated-bindings", read_file(output / "bindings.json"))))
+                if 'java-generated-inputs.json' in files:
+                    data = files['java-generated-inputs.json']
+                    materials.append({"name": "java-generator-inputs", "role": "generated",
+                                      "digest": digest(data), "size": len(data)})
                 if closure is not None:
                     data = read_file(output / "application-dependencies.json", 8 * 1024 * 1024)
                     materials.extend([{"name": "application-dependency-closure", "digest": digest(data), "size": len(data)},
