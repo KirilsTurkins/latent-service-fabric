@@ -17,6 +17,9 @@ use latent_rpc::{
 };
 use serde::Deserialize;
 use std::path::Path;
+mod dispatcher;
+mod effect_management;
+pub use dispatcher::prepare_dispatcher;
 
 fn target(args: &NamespaceArgs, config: &ResolvedConfig) -> c::InspectNamespaceRequest {
     c::InspectNamespaceRequest {
@@ -104,6 +107,7 @@ pub fn prepare_state(
         StateCommand::Operation(args) => Request::from(c::GetStateOperationReceiptRequest {
             namespace: Some(target(&args.target, config)),
             operation_id: args.operation_id.clone(),
+            original_effect_plan: None,
         }),
         StateCommand::Entities(args) => Request::from(c::SelectEntityRequest {
             namespace: Some(target(&args.target, config)),
@@ -113,6 +117,9 @@ pub fn prepare_state(
                 cursor: args.cursor.as_deref().map(decode).transpose()?,
             }),
         }),
+        StateCommand::PlanEffect(args) => effect_management::plan(args, config)?,
+        StateCommand::ApplyEffect(args) => effect_management::apply(args, config)?,
+        StateCommand::EffectOperation(args) => effect_management::receipt(args, config)?,
     };
     finish(request)
 }

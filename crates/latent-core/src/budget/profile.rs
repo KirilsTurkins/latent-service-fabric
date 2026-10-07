@@ -10,6 +10,8 @@ pub enum BudgetProfile {
     #[default]
     Phase1,
     Phase3,
+    /// Explicit node selection for transactional state and durable intents.
+    Phase4,
 }
 impl BudgetProfile {
     #[must_use]
@@ -18,13 +20,26 @@ impl BudgetProfile {
             || matches!(
                 (self, dimension),
                 (
-                    Self::Phase3,
+                    Self::Phase3 | Self::Phase4,
                     BudgetDimension::ChildCalls
                         | BudgetDimension::OutboundRequests
                         | BudgetDimension::BlobReadBytes
                         | BudgetDimension::BlobWriteBytes
                 )
             )
+            || matches!(
+                (self, dimension),
+                (
+                    Self::Phase4,
+                    BudgetDimension::StateReadBytes
+                        | BudgetDimension::StateWriteBytes
+                        | BudgetDimension::EffectCount
+                )
+            )
+    }
+    #[must_use]
+    pub const fn supports_descendants(self) -> bool {
+        matches!(self, Self::Phase3 | Self::Phase4)
     }
     pub fn validate_request(self, budget: &ResourceBudget) -> Result<(), BudgetError> {
         for dimension in BudgetDimension::LATER_PHASE {
@@ -45,7 +60,7 @@ impl BudgetProfile {
         let mut effective = request.intersect(deployment).intersect(node);
         if self == Self::Phase1 {
             effective.zero_later_phase_dimensions();
-        } else {
+        } else if self == Self::Phase3 {
             effective.state_read_bytes = 0;
             effective.state_write_bytes = 0;
             effective.effect_count = 0;

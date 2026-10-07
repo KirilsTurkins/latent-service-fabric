@@ -9,7 +9,11 @@
 pub mod bindings;
 pub mod blob;
 pub mod http;
+#[cfg(feature = "transaction")]
+pub mod intents;
 pub mod secrets;
+#[cfg(feature = "transaction")]
+pub mod state;
 pub mod streaming;
 
 /// Authoritative context, logging and clocks, without ambient process state.
