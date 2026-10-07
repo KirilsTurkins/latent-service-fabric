@@ -82,7 +82,9 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         # operations, never extra guest WIT imports or guest commit authority.
         host_operations = {"commit", "read-result", "inspect-effect", "cancel-command",
                            "namespace-create", "namespace-inspect", "namespace-list",
-                           "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate"}
+                           "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate",
+                           "namespace-snapshot", "namespace-inspect-restore", "namespace-restore",
+                           "namespace-schema-migrate", "namespace-review-recovery", "namespace-resume"}
         self.assertTrue(expected["latent:state/key-value@0.2.0"].isdisjoint(host_operations))
         expected["latent:state/key-value@0.2.0"].update(host_operations)
         # Dispatch is a separately authorized native purpose. The frozen guest

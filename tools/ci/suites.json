@@ -4194,6 +4194,7 @@
         "capability::store::tests::authority::principal_policy_and_binding_revisions_narrow_and_invalidate_independently",
         "capability::store::tests::authority::publication::dispatch::explicit_native_dispatch_decision_keeps_current_source_policy_and_original_deadline",
         "capability::store::tests::authority::publication::final_admission_checks_real_catalog_owner_publication_and_every_narrowing",
+        "capability::store::tests::authority::publication::recovery::native_recovery_decisions_retain_exact_current_operator_scope_and_refuse_revocation",
         "capability::store::tests::authority::publication::recovery::inherited_state_binding_keeps_caller_purposes_and_final_publication_fences",
         "capability::store::tests::authority::publication::service::only_the_explicit_service_publication_can_cross_the_policy_tenant_fence",
         "capability::store::tests::authority::resource_live_and_staged_snapshots_share_the_configured_read_owner_ceiling",
@@ -4328,7 +4329,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 121,
+      "minimumCases": 122,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
