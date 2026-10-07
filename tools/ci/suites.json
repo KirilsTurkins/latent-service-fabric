@@ -8765,6 +8765,8 @@
         "management::tests::inventory::inventory_preserves_every_counter_family_and_unknown_vs_measured_zero",
         "management::tests::inventory::unknown_inventory_enum_and_incomplete_required_fields_are_protocol_failures",
         "management::tests::malformed_deployment_identity_and_missing_budget_fail_conversion",
+        "management::tests::phase4_deployment_replies_preserve_original_budgets_for_apply_get_and_list",
+        "management::tests::phase4_deployment_reply_conversion_keeps_invalid_fields_and_scope_refusals",
         "management::tests::preparation::apply_and_delete_keep_absent_zero_and_maximum_preconditions",
         "management::tests::preparation::local_validation_needs_neither_profile_nor_connection_and_rejects_unknown_fields",
         "management::tests::preparation::manifest_tenant_mismatch_is_a_local_failure",
@@ -8820,7 +8822,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 154,
+      "minimumCases": 156,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
