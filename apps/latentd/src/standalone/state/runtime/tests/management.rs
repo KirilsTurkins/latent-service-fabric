@@ -1,7 +1,7 @@
 use super::*;
 use latent_core::{InvocationPrincipal, Metadata, PrincipalKind};
-use latent_rpc::{control::v1 as c, phase4 as contract};
 use latent_wire::invocation::AuthenticatedInvocationContext;
+use latent_wire::{management::proto as c, phase4::contract};
 
 fn operator(trusted: bool) -> AuthenticatedInvocationContext {
     AuthenticatedInvocationContext::new(InvocationPrincipal {

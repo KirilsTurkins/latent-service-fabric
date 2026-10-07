@@ -23,7 +23,11 @@ use crate::{
     },
 };
 use latent_core::{ActivationClock, BoxFuture, PlatformError, PlatformErrorCode};
-use latent_rpc::{control::v1 as c, phase4 as contract, transaction::v1 as t};
+/// The maintained typed protocol used by embedding runtimes and listeners.
+pub use latent_rpc::phase4 as contract;
+/// Exact recovery routes without creating another path registry.
+pub use latent_rpc::phase4::is_recovery_rpc_path;
+use latent_rpc::{control::v1 as c, transaction::v1 as t};
 pub use lease::Phase4ResponseService;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
