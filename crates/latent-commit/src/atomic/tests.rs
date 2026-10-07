@@ -19,6 +19,7 @@ use writer::{inspect, RetryRequest, StagedIntent};
 mod accounted;
 mod captured;
 mod census;
+mod historical_reservations;
 mod managed_accounting;
 mod supported_formats;
 mod view_tokens;
