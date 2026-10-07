@@ -40,7 +40,7 @@
       {
         "name": "Qualify the genuinely narrow reverse-dependent fixture",
         "if": "needs.profile.outputs.profile == 'full'",
-        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-workflows/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
+        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nfrom tools import ci_suite_inventory as registry\nstate = classify_paths(['crates/latent-state/src/lib.rs'])\nassert state.profile == 'full' and state.renderer\nselection = classify_paths(['crates/latent-workflows/src/lib.rs'])\nassert selection.profile == 'fast'\nassert selection.fast_packages\nassert set(selection.fast_packages) < set(registry.load()['fastPackages'])\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
       },
       {
         "name": "Retain exact host dependency, discovery and timing receipts",
@@ -57,7 +57,7 @@
   },
   "jobId": "fast",
   "kind": "job",
-  "reviewReason": "Keep all exact historical baseline/before/coverage and case/guard obligations while reconciling current actual compiler/dependency/transaction/native owners. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
+  "reviewReason": "Preserve current full state renderer and actual narrow workflow selection, every historical command and all limits/artifacts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

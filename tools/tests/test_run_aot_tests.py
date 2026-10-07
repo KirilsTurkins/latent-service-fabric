@@ -69,6 +69,23 @@ class ExecutionTests(unittest.TestCase):
                 self.assertEqual(subprocess.run([tool, "--version"], env=env, check=False).returncode, 97)
             self.assertEqual({Path(name).name for name in log.read_text().splitlines()}, set(runner.BUILD_TOOLS))
 
+    def test_native_selection_matches_independent_registered_restart_cases(self):
+        from tools import ci_suite_inventory
+
+        suites = ci_suite_inventory.load()["suites"]
+        native = next(suite for suite in suites
+                      if suite["id"] == "latent-wasmtime.test.native-aot-cache")
+        registered = frozenset(native["expectedCases"])
+        self.assertEqual(runner.NATIVE_CASES, registered)
+        self.assertEqual(native["minimumCases"], len(runner.NATIVE_CASES))
+        raw = ("\n".join(f"{name}: test" for name in sorted(registered))
+               + f"\n\n{len(registered)} tests, 0 benchmarks\n").encode()
+        runner.listing(raw, runner.NATIVE_CASES)
+        restart = "reopen::buffered_web_profile_change_after_restart_cannot_reuse_a_stale_native_image"
+        self.assertIn(restart, registered)
+        with self.assertRaises(runner.artifacts.ArtifactError):
+            runner.listing(raw, registered - {restart})
+
     def test_unsupported_platform_never_creates_success_report(self):
         with mock.patch.object(runner.platform, "system", return_value="Darwin"):
             with self.assertRaisesRegex(inputs.InputError, "not-run-linux"):

@@ -83,6 +83,13 @@ by a Docker Desktop engine HTTP 500; it supplies no new Linux evidence.
 
 ## Rechecking a retained transport grant
 
+Accepted policy and publication changes also close each affected grant's
+original irreversible installation token. Reapproval cannot revive a held
+grant; its original physical and request owners survive until cleanup. See
+[the scoped rejection observer contract](effect-rejection-observers.md) for the
+required pre-exposure owner attachment and qualification boundary.
+
+
 `DispatchGrant::check_current(EffectTime)` checks the exact original sealed
 effect owner after any awaited connection or qualification work and before
 protocol writes. It reads bounded current metadata under the same short rule

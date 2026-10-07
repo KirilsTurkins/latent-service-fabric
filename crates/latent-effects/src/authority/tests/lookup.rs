@@ -1,6 +1,6 @@
 use super::*;
 
-struct CurrentManagement {
+pub(super) struct CurrentManagement {
     allowed: AtomicBool,
     live: AtomicBool,
 }
@@ -24,7 +24,7 @@ impl ProviderLookupAuthorization for CurrentManagement {
         accept()
     }
 }
-fn gate() -> Arc<CurrentManagement> {
+pub(super) fn gate() -> Arc<CurrentManagement> {
     Arc::new(CurrentManagement {
         allowed: AtomicBool::new(true),
         live: AtomicBool::new(true),

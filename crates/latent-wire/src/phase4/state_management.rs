@@ -2,11 +2,15 @@
 mod audit;
 mod authorization;
 mod dispatcher;
+mod effects;
+mod entities;
 mod inspection;
 mod mutation;
 mod recovery;
+mod recovery_bindings;
 mod response;
 pub use recovery::StateManagementRecoveryAdmission;
+pub use recovery_bindings::StateManagementRecoveryBinding;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
 
@@ -36,6 +40,9 @@ use std::{
 /// Actual retained request/work/response admission. The implementation belongs
 /// to the node's bounded recovery owner (#397), not an alternate wire pool.
 pub trait StateManagementAdmission: Send + Sync {
+    /// Projects the actual installed global owner. Equal configuration is not
+    /// identity, and constructing a replacement pool cannot satisfy this port.
+    fn native_capacity(&self) -> latent_core::native_capacity::NativeCapacityOwner;
     /// Reserve before returning the operation future. `request_bytes` includes
     /// the decoded request; `work_bytes` includes all native page/codec buffers.
     fn reserve_recovery(
@@ -47,6 +54,11 @@ pub trait StateManagementAdmission: Send + Sync {
     ) -> Result<Arc<dyn StateManagementReservation>, PlatformError>;
 }
 pub trait StateManagementReservation: Send + Sync {
+    /// Identity of the actual retained affine reservation, without re-admission.
+    fn uses_native_capacity(
+        &self,
+        owner: &latent_core::native_capacity::NativeCapacityOwner,
+    ) -> bool;
     fn reserved_response_bytes(&self) -> usize;
     /// The real owner's short currentness/cancellation fence, without I/O.
     fn with_live(&self, action: &mut dyn FnMut()) -> Result<(), PlatformError>;
@@ -79,6 +91,7 @@ struct Inner {
     services: StateManagementServices,
     bindings: Vec<Arc<StateManagementBinding>>,
     dispatcher: Option<latent_effects::runtime::DispatcherManagementPort>,
+    recovery_bindings: Option<Vec<StateManagementRecoveryBinding>>,
 }
 struct AdmittedRequest {
     context: AuthenticatedInvocationContext,
@@ -98,6 +111,12 @@ impl StateManagementBackend {
         services: StateManagementServices,
         bindings: Vec<StateManagementBinding>,
     ) -> Result<Self, PlatformError> {
+        if !services
+            .store
+            .uses_native_capacity(&services.admission.native_capacity())
+        {
+            return Err(invalid());
+        }
         if bindings.is_empty() || bindings.len() > 128 || bindings.capacity() > 128 {
             return Err(capacity());
         }
@@ -115,6 +134,7 @@ impl StateManagementBackend {
             services,
             bindings: bindings.into_iter().map(Arc::new).collect(),
             dispatcher: None,
+            recovery_bindings: None,
         })))
     }
 
@@ -124,10 +144,27 @@ impl StateManagementBackend {
         mut self,
         dispatcher: latent_effects::runtime::DispatcherManagementPort,
     ) -> Result<Self, PlatformError> {
-        if !dispatcher.uses_store(&self.0.services.store) {
+        if !dispatcher.uses_store(&self.0.services.store)
+            || !dispatcher.uses_native_capacity(&self.0.services.admission.native_capacity())
+        {
             return Err(invalid());
         }
         Arc::get_mut(&mut self.0).ok_or_else(invalid)?.dispatcher = Some(dispatcher);
+        Ok(self)
+    }
+
+    /// Immutable trusted configuration. A request selector describes a choice;
+    /// actual caller/data-read policy still seals the derived scope.
+    pub fn with_recovery_bindings(
+        mut self,
+        bindings: Vec<StateManagementRecoveryBinding>,
+    ) -> Result<Self, PlatformError> {
+        recovery_bindings::validate(&bindings)?;
+        let inner = Arc::get_mut(&mut self.0).ok_or_else(invalid)?;
+        if inner.recovery_bindings.is_some() {
+            return Err(invalid());
+        }
+        inner.recovery_bindings = Some(bindings);
         Ok(self)
     }
 
@@ -164,8 +201,31 @@ impl StateManagementBackend {
             let access =
                 authorization::authorize(&self.0.services, &binding, &context, &request, deadline)
                     .await?;
+            if effects::handles(&request) {
+                return effects::execute(
+                    Arc::clone(&self.0),
+                    context,
+                    request,
+                    access,
+                    node_decision.ok_or_else(invalid)?,
+                    deadline,
+                    permit,
+                )
+                .await;
+            }
             let pending = audit::begin(&self.0, &access, &context, &request).await?;
             match request {
+                contract::Request::SelectEntity(value) => {
+                    entities::select(
+                        Arc::clone(&self.0),
+                        value,
+                        access,
+                        permit,
+                        deadline,
+                        pending,
+                    )
+                    .await
+                }
                 contract::Request::InspectNamespace(value) => {
                     inspection::inspect(
                         Arc::clone(&self.0),
@@ -214,10 +274,16 @@ impl StateManagementBackend {
             _ => invalid(),
         })?;
         let binding = self.binding(&context, &request)?;
+        if let Some(command) = recovery_bindings::command(&request)? {
+            // Requested names are resolved through immutable installation data
+            // before reservation or native lookup. The derived scope is data;
+            // current publication/data-read policy must still authorize it.
+            recovery_bindings::scope(&self.0, &context, command.shared_recovery_scope.as_deref())?;
+        }
         let node = request.is_node_management();
         // Capture the original operator decision before returning the future.
         // Polling later must not replace a revoked decision with a new grant.
-        let node_decision = if node {
+        let node_decision = if node || effects::handles(&request) {
             Some(
                 self.0
                     .services
@@ -249,7 +315,9 @@ impl StateManagementBackend {
             response_bytes,
             deadline,
         )?;
-        if permit.reserved_response_bytes() < response_bytes {
+        if permit.reserved_response_bytes() < response_bytes
+            || !permit.uses_native_capacity(&self.0.services.admission.native_capacity())
+        {
             return Err(capacity());
         }
         Ok(AdmittedRequest {
@@ -277,7 +345,7 @@ impl StateManagementBackend {
             return Ok(None);
         }
         let target = target(request)?;
-        let selector = target.namespace.as_ref().ok_or_else(invalid)?;
+        let selector = target.namespace;
         let principal = context.principal();
         if principal
             .tenant
@@ -290,10 +358,7 @@ impl StateManagementBackend {
             .services
             .authorization
             .authorize(principal, ManagementOperation::Tenant)?;
-        let publication = target
-            .authorization_publication
-            .as_ref()
-            .ok_or_else(invalid)?;
+        let publication = target.publication;
         let binding = self
             .0
             .bindings
@@ -322,15 +387,46 @@ impl Phase4Runtime for StateManagementBackend {
         self.execute_state(context, request)
     }
 }
-fn target(request: &contract::Request) -> Result<&c::InspectNamespaceRequest, PlatformError> {
-    match request {
-        contract::Request::InspectNamespace(value) => Ok(value),
-        contract::Request::MutateNamespace(value) => value.namespace.as_ref().ok_or_else(invalid),
-        contract::Request::GetStateOperationReceipt(value) => {
-            value.namespace.as_ref().ok_or_else(invalid)
-        }
-        _ => Err(unsupported()),
+struct RequestedTarget<'a> {
+    namespace: &'a latent_rpc::transaction::v1::NamespaceSelector,
+    publication: &'a c::PublicationRef,
+}
+fn target(request: &contract::Request) -> Result<RequestedTarget<'_>, PlatformError> {
+    if let contract::Request::PlanEffectMutation(value) = request {
+        let effect = value.effect.as_ref().ok_or_else(invalid)?;
+        return Ok(RequestedTarget {
+            namespace: effect
+                .command
+                .as_ref()
+                .ok_or_else(invalid)?
+                .namespace
+                .as_ref()
+                .ok_or_else(invalid)?,
+            publication: effect
+                .authorization_publication
+                .as_ref()
+                .ok_or_else(invalid)?,
+        });
     }
+    let namespace = match request {
+        contract::Request::InspectNamespace(value) => value,
+        contract::Request::MutateNamespace(value) => {
+            value.namespace.as_ref().ok_or_else(invalid)?
+        }
+        contract::Request::MutateState(value) => value.namespace.as_ref().ok_or_else(invalid)?,
+        contract::Request::SelectEntity(value) => value.namespace.as_ref().ok_or_else(invalid)?,
+        contract::Request::GetStateOperationReceipt(value) => {
+            value.namespace.as_ref().ok_or_else(invalid)?
+        }
+        _ => return Err(unsupported()),
+    };
+    Ok(RequestedTarget {
+        namespace: namespace.namespace.as_ref().ok_or_else(invalid)?,
+        publication: namespace
+            .authorization_publication
+            .as_ref()
+            .ok_or_else(invalid)?,
+    })
 }
 fn error(code: PlatformErrorCode, message: &'static str) -> PlatformError {
     PlatformError {

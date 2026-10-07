@@ -7,6 +7,8 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use crate::dispatch_store::DispatchCatalog;
 use latent_state::embedded::{EmbeddedStore, StoreLimits};
 
+mod fences;
+
 #[test]
 fn original_live_gate_denial_prevents_receipt_and_logical_acceptance_after_native_plan() {
     let fixture = Fixture::new(false, false);
@@ -155,13 +157,27 @@ fn resume_stays_paused_through_the_final_fence_until_actual_engine_durability() 
     let fixture = Fixture::new(true, false);
     let request = fixture.request("resume-original", DispatcherControlAction::Resume);
     let prepared = fixture.prepare(request);
-    let outcome = execute(&fixture.store, &prepared, |accept| {
-        accept()?;
-        let state = fixture.shared.state.lock().unwrap();
-        assert!(state.paused && state.pending_control.is_some());
-        Ok(())
-    })
-    .unwrap();
+    let PlannedControl::Write { batch, receipt } = ControlCatalog::plan(
+        &fixture.store,
+        &prepared.request,
+        prepared.restore_review,
+        fixture.time.observe(),
+    )
+    .unwrap() else {
+        panic!("new original control must require a native write");
+    };
+    fixture
+        .store
+        .apply_fenced(batch, || {
+            prepared.accept_guarded(&receipt, |accept| accept(), |accept| accept())?;
+            // Observe after the short acceptance locks retire, still inside
+            // the real native writer and strictly before tx.commit/flush.
+            let state = fixture.shared.state.lock().unwrap();
+            assert!(state.paused && state.pending_control.is_some());
+            Ok::<(), DispatcherControlError>(())
+        })
+        .unwrap();
+    let outcome = prepared.publish(receipt).unwrap();
     assert!(outcome.published && !outcome.paused);
     assert!(fixture
         .shared

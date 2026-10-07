@@ -578,22 +578,27 @@ their separate meanings. Live grant checks are explicitly absent; an inspection
 does not grant execution or mutation authority. Public invocation and browser
 error projections retain their existing disclosure rules.
 
-## Phase 4 management descriptor additions
+## Phase 4 transaction and management descriptor additions
 
-The descriptor golden now includes `latent/control/v1/state.proto`,
-`latent/control/v1/dispatcher.proto` and
-`latent/transaction/v1/transaction.proto`. These add the six state management,
-three dispatcher management and seven transaction methods frozen by the
-external transaction profile. They remain distinct from guest WIT operations.
+The Buf 1.72.0 descriptor baseline adds `latent/transaction/v1/transaction.proto`,
+`latent/control/v1/state.proto` and `latent/control/v1/dispatcher.proto`. The seven
+transaction, six state and three dispatcher methods use independent bounded
+messages. Every prior file, field, enum value and service signature is preserved.
+The audit descriptor adds state and dispatcher targets at fields 25 and 26,
+state resource class 11 and control actions 13 through 29; all prior audit rows
+remain exact.
 
-The existing audit descriptor gains `AuditStateTarget`,
-`AuditDispatcherTarget`, two `AuditIdentities` target fields, the state
-capability resource class and seventeen attributed management action values.
-All 1,039 historical fields, 282 enum values and 57 RPC method descriptors keep
-their exact numbers, types and signatures; the other twelve historical file
-descriptors remain unchanged. No existing reservation is removed.
+`PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
+reconciliation and termination require that complete original plan when calling
+`MutateState`. Receipt recovery preserves the original action, record version,
+policy digest and operation ID while requesting a separately current read
+publication. An expired historical plan can describe an already completed
+operation. It supplies neither a grant nor provider proof. Provider confirmation,
+administrator declaration and scheduled redrive remain separate typed facts.
+Historical effect records without the new record version remain readable and
+cannot authorize a new mutation.
 
-This golden was generated from the exact current Protobuf sources using pinned
-Buf 1.72.0 with source information excluded. Descriptor validation and the
-compatibility tests compare the complete normalized result. This records the
-wire contract; installed runtime and provider qualification have separate gates.
+The golden matches the frozen sixteen-operation client descriptor and was
+reviewed against every prior named row using actual Buf output. The
+[transaction reference](transactions.md) describes the separate guest ABI,
+durable-format, authority and production qualification boundaries.

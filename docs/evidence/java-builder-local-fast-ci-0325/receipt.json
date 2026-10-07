@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "latent.local-ci.workflow-job.v1",
+  "sourceHead": "0325b746ce89f6268d3b441257715adc96c35740",
+  "job": "fast",
+  "profile": "full",
+  "jobTimeoutSeconds": 1200,
+  "allSelectedRunBlocksPassed": true,
+  "fullRepositoryCiPassed": false,
+  "sharedCargoCacheUsed": false,
+  "sourceTrackedFilesUnchanged": true,
+  "stages": [
+    {
+      "stage": "source-clone",
+      "command": [
+        "git",
+        "clone",
+        "--shared",
+        "--no-checkout",
+        "/repository",
+        "/tmp/local-fast785-0325-r2/source"
+      ],
+      "exitCode": 0,
+      "seconds": 2.233363
+    },
+    {
+      "stage": "source-checkout",
+      "command": [
+        "git",
+        "checkout",
+        "--detach",
+        "0325b746ce89f6268d3b441257715adc96c35740"
+      ],
+      "exitCode": 0,
+      "seconds": 11.204899
+    },
+    {
+      "stage": "original-affected-command",
+      "command": [
+        "bash",
+        "-e",
+        "-o",
+        "pipefail",
+        "-c",
+        "python3 tools/ci_fast.py --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast/affected\""
+      ],
+      "exitCode": 0,
+      "seconds": 324.578867
+    },
+    {
+      "stage": "original-narrow-command",
+      "command": [
+        "bash",
+        "-e",
+        "-o",
+        "pipefail",
+        "-c",
+        "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-state/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
+      ],
+      "exitCode": 0,
+      "seconds": 45.051104
+    }
+  ],
+  "seconds": 384.327251,
+  "workspaceDependencies": [
+    "latent-activation",
+    "latent-admission",
+    "latent-artifacts",
+    "latent-audit",
+    "latent-commit",
+    "latent-contracts",
+    "latent-core",
+    "latent-effects",
+    "latent-executor",
+    "latent-identity",
+    "latent-manifest",
+    "latent-network",
+    "latent-routing",
+    "latent-scheduler",
+    "latent-state",
+    "latent-telemetry",
+    "latent-workflows"
+  ],
+  "heavyweightDependenciesAbsent": true,
+  "osRelease": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n"
+}

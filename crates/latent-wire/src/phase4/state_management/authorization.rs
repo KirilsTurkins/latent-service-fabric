@@ -13,6 +13,7 @@ pub(super) struct Access {
     pub binding: Arc<StateManagementBinding>,
     pub caller: CallerScope,
     pub inspect: OwnedPolicyDecision,
+    pub listing: Option<OwnedPolicyDecision>,
     pub mutation: Option<OwnedPolicyDecision>,
 }
 /// A descriptive SHA-256 precondition over original sealed configuration, not a
@@ -114,6 +115,7 @@ pub(super) async fn authorize(
         context,
         publication: &publication,
         caller: &caller,
+        entity: None,
         deadline,
         input_bytes: request.encoded_len(),
     };
@@ -123,6 +125,11 @@ pub(super) async fn authorize(
         }
         _ => None,
     };
+    let listing = if matches!(request, contract::Request::SelectEntity(_)) {
+        Some(original.seal("namespace-list", binding.incarnation)?)
+    } else {
+        None
+    };
     let response_incarnation = if matches!(request, contract::Request::MutateNamespace(value) if value.mutation == c::NamespaceMutationKind::Recreate as i32)
     {
         binding.incarnation.checked_add(1).ok_or_else(capacity)?
@@ -131,6 +138,9 @@ pub(super) async fn authorize(
     };
     let inspect = original.seal("namespace-inspect", response_incarnation)?;
     if (inspect.requires_audit()
+        || listing
+            .as_ref()
+            .is_some_and(OwnedPolicyDecision::requires_audit)
         || mutation
             .as_ref()
             .is_some_and(OwnedPolicyDecision::requires_audit))
@@ -145,6 +155,7 @@ pub(super) async fn authorize(
         binding: Arc::clone(binding),
         caller,
         inspect,
+        listing,
         mutation,
     })
 }
@@ -154,6 +165,7 @@ struct OriginalAccess<'a> {
     context: &'a AuthenticatedInvocationContext,
     publication: &'a ReleaseUseEligibility,
     caller: &'a CallerScope,
+    entity: Option<&'a str>,
     deadline: Instant,
     input_bytes: usize,
 }
@@ -169,6 +181,7 @@ impl OriginalAccess<'_> {
             context,
             publication,
             caller,
+            entity,
             deadline,
             input_bytes,
         } = *self;
@@ -195,7 +208,7 @@ impl OriginalAccess<'_> {
                 resource: ResourceTarget::State {
                     namespace: &binding.namespace.0,
                     incarnation,
-                    entity: None,
+                    entity,
                     recovery_kind: caller.kind,
                     recovery_scope: &caller.scope,
                     result_policy: &binding.result_policy,
@@ -220,6 +233,38 @@ impl OriginalAccess<'_> {
             publication,
         )?;
         services.policy.retain_decision(&decision)
+    }
+}
+pub(super) struct EffectDecision<'a> {
+    pub services: &'a StateManagementServices,
+    pub binding: &'a StateManagementBinding,
+    pub context: &'a AuthenticatedInvocationContext,
+    pub caller: &'a CallerScope,
+    pub entity: Option<&'a str>,
+    pub deadline: Instant,
+    pub input_bytes: usize,
+}
+impl EffectDecision<'_> {
+    pub fn seal(&self, operation: &str) -> Result<OwnedPolicyDecision, PlatformError> {
+        let publication = self
+            .services
+            .artifacts
+            .execution_eligibility_selected(
+                &self.binding.component,
+                Some(&self.binding.publication.id),
+            )?
+            .ok_or_else(denied)?;
+        OriginalAccess {
+            services: self.services,
+            binding: self.binding,
+            context: self.context,
+            publication: &publication,
+            caller: self.caller,
+            entity: self.entity,
+            deadline: self.deadline,
+            input_bytes: self.input_bytes,
+        }
+        .seal(operation, self.binding.incarnation)
     }
 }
 pub(super) fn mutation_operation(kind: i32) -> Result<&'static str, PlatformError> {

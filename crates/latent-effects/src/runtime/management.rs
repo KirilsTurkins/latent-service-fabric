@@ -58,6 +58,20 @@ impl DispatcherManagementPort {
     pub fn uses_store(&self, store: &ProtectedStoreOwner) -> bool {
         self.services.store.is_same_owner(store)
     }
+    /// Identity only. Operator inspection and reconciliation remain possible
+    /// while ordinary execution is paused or restore review is required.
+    #[must_use]
+    pub fn uses_native_capacity(
+        &self,
+        owner: &latent_core::native_capacity::NativeCapacityOwner,
+    ) -> bool {
+        self.services.native_capacity.lock().is_ok_and(|binding| {
+            binding
+                .owner
+                .as_ref()
+                .is_some_and(|installed| installed.is_same_owner(owner))
+        })
+    }
     pub fn snapshot(&self) -> Result<DispatcherSnapshot, DispatcherError> {
         Ok(self
             .services
@@ -74,10 +88,9 @@ impl DispatcherManagementPort {
     ) -> Result<PreparedDispatcherControl, DispatcherControlError> {
         control::prepare(&self.services, request)
     }
-    /// `authorize` retains original node policy through final acceptance. `live`
-    /// is called inside the actual dispatcher lock, after lifecycle validation,
-    /// and encloses the bounded acceptance action under the original capacity/
-    /// deadline gate. Neither callback may perform I/O, audit flush or await.
+    /// The final order is actual dispatcher role -> original node policy ->
+    /// original capacity/deadline. Both callbacks run inside the role fence;
+    /// neither may perform I/O, clock observation, audit flush or await.
     pub fn submit_control_retained<R: Send + 'static>(
         &self,
         prepared: PreparedDispatcherControl,

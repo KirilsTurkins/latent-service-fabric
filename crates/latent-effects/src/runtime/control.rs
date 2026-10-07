@@ -289,12 +289,13 @@ pub(super) fn prepare(
     request: DispatcherControlRequest,
 ) -> Result<PreparedDispatcherControl, DispatcherControlError> {
     request.validate()?;
+    let time = services.time.observe();
     let state = services
         .shared
         .state
         .lock()
         .map_err(|_| DispatcherControlError::RecoveryRequired)?;
-    check_request(&state, &request, services.time.observe())?;
+    check_request(&state, &request, time)?;
     Ok(PreparedDispatcherControl {
         shared: Arc::clone(&services.shared),
         time: Arc::clone(&services.time),
@@ -364,25 +365,12 @@ pub(super) fn execute_guarded(
     };
     store
         .apply_fenced(batch, || {
-            let mut calls = 0_u8;
-            let mut accept = || {
-                calls = calls
-                    .checked_add(1)
-                    .ok_or(DispatcherControlError::InvalidAuthorizationFence)?;
-                if calls != 1 {
-                    return Err(DispatcherControlError::InvalidAuthorizationFence);
-                }
-                prepared.accept_guarded(
-                    &receipt,
-                    live.take()
-                        .ok_or(DispatcherControlError::InvalidAuthorizationFence)?,
-                )
-            };
-            authorize(&mut accept)?;
-            if calls != 1 {
-                return Err(DispatcherControlError::InvalidAuthorizationFence);
-            }
-            Ok(())
+            prepared.accept_guarded(
+                &receipt,
+                authorize,
+                live.take()
+                    .ok_or(DispatcherControlError::InvalidAuthorizationFence)?,
+            )
         })
         .map_err(|error| match error {
             FencedStoreError::Store(error) => DispatcherControlError::Store(error),
@@ -398,6 +386,9 @@ impl PreparedDispatcherControl {
     fn accept_guarded(
         &self,
         receipt: &DispatcherControlReceipt,
+        authorize: impl FnOnce(
+            &mut dyn FnMut() -> Result<(), DispatcherControlError>,
+        ) -> Result<(), DispatcherControlError>,
         live: impl FnOnce(
             &mut dyn FnMut() -> Result<(), DispatcherControlError>,
         ) -> Result<(), DispatcherControlError>,
@@ -408,12 +399,12 @@ impl PreparedDispatcherControl {
             request: self.request.clone(),
             generation: receipt.generation(),
         });
+        let time = self.time.observe();
         let mut state = self
             .shared
             .state
             .lock()
             .map_err(|_| DispatcherControlError::RecoveryRequired)?;
-        let time = self.time.observe();
         check_request(&state, &self.request, time)?;
         if self.request.action == DispatcherControlAction::Resume
             && time.unix_millis < receipt.observed_at_millis()
@@ -425,18 +416,37 @@ impl PreparedDispatcherControl {
         {
             return Err(DispatcherControlError::Conflict);
         }
+        // Match effect management: role -> original operator -> original native
+        // request. Clock observation and bounded cloning happened before locks.
         let mut calls = 0_u8;
-        live(&mut || {
+        let mut live = Some(live);
+        authorize(&mut || {
             calls = calls
                 .checked_add(1)
                 .ok_or(DispatcherControlError::InvalidAuthorizationFence)?;
             if calls != 1 {
                 return Err(DispatcherControlError::InvalidAuthorizationFence);
             }
-            state.control_generation = receipt.generation();
-            state.pending_control = pending.take();
-            // Both pause and resume remain paused until the actual flush succeeds.
-            state.paused = true;
+            let mut accepted = 0_u8;
+            live.take()
+                .ok_or(DispatcherControlError::InvalidAuthorizationFence)?(
+                &mut || {
+                    accepted = accepted
+                        .checked_add(1)
+                        .ok_or(DispatcherControlError::InvalidAuthorizationFence)?;
+                    if accepted != 1 {
+                        return Err(DispatcherControlError::InvalidAuthorizationFence);
+                    }
+                    state.control_generation = receipt.generation();
+                    state.pending_control = pending.take();
+                    // Both pause and resume remain paused until the flush succeeds.
+                    state.paused = true;
+                    Ok(())
+                },
+            )?;
+            if accepted != 1 {
+                return Err(DispatcherControlError::InvalidAuthorizationFence);
+            }
             Ok(())
         })?;
         if calls != 1 {
@@ -451,6 +461,7 @@ impl PreparedDispatcherControl {
         &self,
         receipt: DispatcherControlReceipt,
     ) -> Result<DispatcherControlOutcome, DispatcherControlError> {
+        let time = self.time.observe();
         let mut state = self
             .shared
             .state
@@ -469,7 +480,6 @@ impl PreparedDispatcherControl {
                 paused: state.paused,
             });
         }
-        let time = self.time.observe();
         let can_resume = !state.closed
             && state.failure.is_none()
             && !state.restore_review.is_required()

@@ -33,6 +33,7 @@ fn original_queued_deadline_narrows_context_and_grant_without_late_reopening() {
 }
 
 mod lookup;
+mod rejection;
 
 #[test]
 fn unretired_provider_context_quarantines_original_global_capacity_after_all_grants_drop() {
@@ -222,133 +223,74 @@ fn sticky_namespace_close_is_exact_and_bounded_before_original_acceptance() {
 }
 
 #[test]
-fn retained_grant_rechecks_original_owner_revocation_profile_ceiling_and_credential_epoch() {
-    for change in 0..5 {
-        let (owner, mut current, authority) = setup();
-        let mut context = owner.accept(&authority, 1, time(101)).unwrap();
-        let grant = context
-            .accept_with(&authority, 1, time(102), |grant| grant)
-            .unwrap();
-        let original_deadline = grant.deadline();
-        let foreign = EffectAuthorityOwner::new(2, 2, 100).unwrap();
-        let mut foreign_rule = current.clone();
-        foreign_rule.enabled = false;
-        foreign.publish(foreign_rule).unwrap();
-        assert_eq!(grant.check_current(time(103)), Ok(()));
-        current.policy_revision = 2;
-        let expected = match change {
-            0 => {
-                current.enabled = false;
-                AuthorityError::PolicyBlocked
-            }
-            1 => {
-                current.profile.adapter = "replacement-adapter".into();
-                AuthorityError::UnsupportedFormat
-            }
-            2 => {
-                current.ceiling.maximum_response_bytes -= 1;
-                AuthorityError::Capacity
-            }
-            3 => {
-                current.credential_epoch += 1;
-                AuthorityError::PolicyBlocked
-            }
-            _ => {
-                current.protected_credential_reference = "replacement-secret".into();
-                AuthorityError::PolicyBlocked
-            }
-        };
-        owner.publish(current).unwrap();
-        assert_eq!(grant.check_current(time(104)), Err(expected));
-        assert_eq!(grant.deadline(), original_deadline);
-        assert_eq!(owner.owners().unwrap().physical, 1);
-        context.retire().unwrap();
-        assert_eq!(grant.check_current(time(105)), Err(AuthorityError::Stale));
-        assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
-    }
+fn explicit_redrive_intersects_narrowed_original_rules_through_final_acceptance() {
+    let (owner, mut rule, authority) = setup();
+    rule.policy_revision = 2;
+    rule.ceiling.maximum_attempts = 2;
+    owner.publish(rule).unwrap();
+    let guard = owner.retry_fence(&authority, 2, 200, time(101)).unwrap();
+    assert!(matches!(
+        owner.0.state.try_lock(),
+        Err(std::sync::TryLockError::WouldBlock)
+    ));
+    drop(guard);
+    assert!(matches!(
+        owner.retry_fence(&authority, 3, 200, time(102)),
+        Err(AuthorityError::Capacity)
+    ));
+    assert!(matches!(
+        owner.retry_fence(&authority, 2, authority.expires_at_millis, time(103)),
+        Err(AuthorityError::Expired)
+    ));
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
 }
 
 #[test]
-fn retained_grant_compatible_widening_preserves_original_ceiling_expiry_deadline_and_clock() {
-    let (owner, mut current, authority) = setup();
-    current.policy_revision = 2;
-    current.ceiling.maximum_age_millis = 200;
-    owner.publish(current.clone()).unwrap();
-    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
-    let grant = context
-        .accept_with(&authority, 1, time(102), |grant| grant)
-        .unwrap();
-    let deadline = grant.deadline();
-    let ceiling = grant.ceiling();
-    current.policy_revision = 3;
-    current.ceiling.maximum_age_millis = 2000;
-    current.ceiling.maximum_response_bytes = 4096;
-    current.ceiling.maximum_attempts = 8;
-    owner.publish(current).unwrap();
-    assert_eq!(grant.check_current(time(299)), Ok(()));
-    assert_eq!(grant.deadline(), deadline);
-    assert_eq!(grant.ceiling(), ceiling);
-    assert_eq!(grant.check_current(time(300)), Err(AuthorityError::Expired));
-    assert_eq!(
-        grant.check_current(time(299)),
-        Err(AuthorityError::ClockDiscontinuity)
-    );
-    assert_eq!(
-        grant.check_current(EffectTime {
-            unix_millis: 301,
-            continuity_proven: false
-        }),
-        Err(AuthorityError::ClockDiscontinuity)
-    );
-    assert_eq!(owner.owners().unwrap().physical, 1);
-    context.retire().unwrap();
-}
-
-#[test]
-fn retired_or_quarantined_attempt_cannot_reauthorize_its_grant_through_another_live_owner() {
-    let (owner, _, authority) = setup();
-    let mut first = owner.accept(&authority, 1, time(101)).unwrap();
-    let first_grant = first
-        .accept_with(&authority, 1, time(102), |grant| grant)
-        .unwrap();
-    let mut second = owner.accept(&authority, 2, time(103)).unwrap();
-    let second_grant = second
-        .accept_with(&authority, 2, time(104), |grant| grant)
-        .unwrap();
-    first.retire().unwrap();
-    assert_eq!(
-        first_grant.check_current(time(105)),
-        Err(AuthorityError::Stale)
-    );
-    assert_eq!(second_grant.check_current(time(105)), Ok(()));
-    assert_eq!(owner.owners().unwrap().physical, 1);
-    drop(second);
-    assert_eq!(
-        second_grant.check_current(time(106)),
-        Err(AuthorityError::Stale)
-    );
-    assert_eq!(
-        owner.owners().unwrap(),
-        DispatchOwners {
-            physical: 1,
-            quarantined: 1
-        }
-    );
+fn newer_publication_cannot_revive_revoked_original_redrive_scope() {
+    let (owner, mut original, authority) = setup();
+    original.policy_revision = 2;
+    original.enabled = false;
+    owner.publish(original.clone()).unwrap();
+    let mut newer = original;
+    newer.scope.publication = "pub-b".into();
+    newer.enabled = true;
+    owner.publish(newer).unwrap();
+    assert!(matches!(
+        owner.retry_fence(&authority, 2, 200, time(101)),
+        Err(AuthorityError::PolicyBlocked)
+    ));
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
 }
 
 #[test]
 fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_under_fence() {
     let (owner, mut rule, authority) = setup();
-    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
-    let deadline = context.deadline();
+    let mut original = owner.accept(&authority, 1, time(101)).unwrap();
+    let original_deadline = original.deadline();
     rule.policy_revision = 2;
     rule.credential_epoch = 2;
     rule.protected_credential_reference = "rotated-secret".into();
     rule.ceiling.maximum_response_bytes = 128;
     rule.ceiling.attempt_timeout_millis = 50;
     owner.publish(rule).unwrap();
+    // Rotation/narrowing irreversibly rejects the accepted original stamp.
+    // Revalidating it cannot issue another grant or refund its physical owner.
+    assert_eq!(
+        original.accept_with(&authority, 1, time(102), |_| {
+            panic!("rotated original context accepted adapter IO");
+        }),
+        Err(AuthorityError::Stale)
+    );
+    assert!(original.deadline() <= original_deadline);
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    original.retire().unwrap();
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+    // A fresh current context intersects the persisted original effect with
+    // the actually approved rule; this does not revive the retired stamp.
+    let mut context = owner.accept(&authority, 1, time(103)).unwrap();
+    let deadline = context.deadline();
     context
-        .accept_with(&authority, 1, time(102), |grant| {
+        .accept_with(&authority, 1, time(104), |grant| {
             assert_eq!(grant.effect(), authority.link().effect);
             assert_eq!(grant.attempt(), 1);
             assert_eq!(grant.scope(), authority.scope());
@@ -960,41 +902,116 @@ fn bounded_retained_record_roundtrip_never_restores_current_authority() {
 }
 
 #[test]
-fn explicit_redrive_intersects_narrowed_original_rules_through_final_acceptance() {
-    let (owner, mut rule, authority) = setup();
-    rule.policy_revision = 2;
-    rule.ceiling.maximum_attempts = 2;
-    owner.publish(rule).unwrap();
-    let guard = owner.retry_fence(&authority, 2, 200, time(101)).unwrap();
-    assert!(matches!(
-        owner.0.state.try_lock(),
-        Err(std::sync::TryLockError::WouldBlock)
-    ));
-    drop(guard);
-    assert!(matches!(
-        owner.retry_fence(&authority, 3, 200, time(102)),
-        Err(AuthorityError::Capacity)
-    ));
-    assert!(matches!(
-        owner.retry_fence(&authority, 2, authority.expires_at_millis, time(103)),
-        Err(AuthorityError::Expired)
-    ));
-    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+fn retained_grant_rechecks_original_owner_revocation_profile_ceiling_and_credential_epoch() {
+    for change in 0..5 {
+        let (owner, mut current, authority) = setup();
+        let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+        let grant = context
+            .accept_with(&authority, 1, time(102), |grant| grant)
+            .unwrap();
+        let original_deadline = grant.deadline();
+        let foreign = EffectAuthorityOwner::new(2, 2, 100).unwrap();
+        let mut foreign_rule = current.clone();
+        foreign_rule.enabled = false;
+        foreign.publish(foreign_rule).unwrap();
+        assert_eq!(grant.check_current(time(103)), Ok(()));
+        current.policy_revision = 2;
+        let expected = match change {
+            0 => {
+                current.enabled = false;
+                AuthorityError::PolicyBlocked
+            }
+            1 => {
+                current.profile.adapter = "replacement-adapter".into();
+                AuthorityError::UnsupportedFormat
+            }
+            2 => {
+                current.ceiling.maximum_response_bytes -= 1;
+                AuthorityError::Capacity
+            }
+            3 => {
+                current.credential_epoch += 1;
+                AuthorityError::PolicyBlocked
+            }
+            _ => {
+                current.protected_credential_reference = "replacement-secret".into();
+                AuthorityError::PolicyBlocked
+            }
+        };
+        owner.publish(current).unwrap();
+        assert_eq!(grant.check_current(time(104)), Err(expected));
+        assert_eq!(grant.deadline(), original_deadline);
+        assert_eq!(owner.owners().unwrap().physical, 1);
+        context.retire().unwrap();
+        assert_eq!(grant.check_current(time(105)), Err(AuthorityError::Stale));
+        assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+    }
 }
 
 #[test]
-fn newer_publication_cannot_revive_revoked_original_redrive_scope() {
-    let (owner, mut original, authority) = setup();
-    original.policy_revision = 2;
-    original.enabled = false;
-    owner.publish(original.clone()).unwrap();
-    let mut newer = original;
-    newer.scope.publication = "pub-b".into();
-    newer.enabled = true;
-    owner.publish(newer).unwrap();
-    assert!(matches!(
-        owner.retry_fence(&authority, 2, 200, time(101)),
-        Err(AuthorityError::PolicyBlocked)
-    ));
-    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+fn retained_grant_compatible_widening_preserves_original_ceiling_expiry_deadline_and_clock() {
+    let (owner, mut current, authority) = setup();
+    current.policy_revision = 2;
+    current.ceiling.maximum_age_millis = 200;
+    owner.publish(current.clone()).unwrap();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    let deadline = grant.deadline();
+    let ceiling = grant.ceiling();
+    current.policy_revision = 3;
+    current.ceiling.maximum_age_millis = 2000;
+    current.ceiling.maximum_response_bytes = 4096;
+    current.ceiling.maximum_attempts = 8;
+    owner.publish(current).unwrap();
+    assert_eq!(grant.check_current(time(299)), Ok(()));
+    assert_eq!(grant.deadline(), deadline);
+    assert_eq!(grant.ceiling(), ceiling);
+    assert_eq!(grant.check_current(time(300)), Err(AuthorityError::Expired));
+    assert_eq!(
+        grant.check_current(time(299)),
+        Err(AuthorityError::ClockDiscontinuity)
+    );
+    assert_eq!(
+        grant.check_current(EffectTime {
+            unix_millis: 301,
+            continuity_proven: false
+        }),
+        Err(AuthorityError::ClockDiscontinuity)
+    );
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    context.retire().unwrap();
+}
+
+#[test]
+fn retired_or_quarantined_attempt_cannot_reauthorize_its_grant_through_another_live_owner() {
+    let (owner, _, authority) = setup();
+    let mut first = owner.accept(&authority, 1, time(101)).unwrap();
+    let first_grant = first
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    let mut second = owner.accept(&authority, 2, time(103)).unwrap();
+    let second_grant = second
+        .accept_with(&authority, 2, time(104), |grant| grant)
+        .unwrap();
+    first.retire().unwrap();
+    assert_eq!(
+        first_grant.check_current(time(105)),
+        Err(AuthorityError::Stale)
+    );
+    assert_eq!(second_grant.check_current(time(105)), Ok(()));
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    drop(second);
+    assert_eq!(
+        second_grant.check_current(time(106)),
+        Err(AuthorityError::Stale)
+    );
+    assert_eq!(
+        owner.owners().unwrap(),
+        DispatchOwners {
+            physical: 1,
+            quarantined: 1
+        }
+    );
 }

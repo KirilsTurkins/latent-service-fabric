@@ -73,7 +73,8 @@ impl NamespaceEffectCloseFence<'_> {
         let result = accept()?;
         for (scope, rule) in &mut self.state.rules {
             if self.scope.matches(scope) {
-                rule.enabled = false;
+                rule.rule.enabled = false;
+                rule.rejection.reject();
             }
         }
         self.state.closed_namespaces.insert(self.scope);

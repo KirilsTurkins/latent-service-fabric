@@ -1,8 +1,13 @@
 use super::*;
+mod bindings;
 mod dispatcher;
+mod effects;
+mod entities;
 mod fixture;
 mod physical;
 mod recovery;
+mod rejection;
+mod view_identity;
 use fixture::{context, deadline, Fixture};
 use latent_core::PlatformErrorCode;
 use latent_rpc::control::v1::state_service_server::StateService;

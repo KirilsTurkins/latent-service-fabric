@@ -1,10 +1,11 @@
 //! Fixed-worker controls retain the original policy owner across asynchronous I/O.
 use super::{
-    check_inspection, denied, inspection_actual, mutation_scope, platform, AtomicBatch,
-    CallerScope, EmbeddedStore, EvaluationInput, NamespaceCatalog, NamespaceControl,
-    NamespaceError, NamespaceLifecycleCompletion, NamespaceLifecycleRegistry, NamespaceMutation,
-    NamespaceOperationContext, NamespaceOperationReceipt, NamespaceRead, NamespaceRecord,
-    PlatformError, PolicyStore, RecoverySelection, ResourceTarget, TenantId, STATE_CONTRACT,
+    check_inspection, denied, inspection_actual, inspection_scope, mutation_scope, platform,
+    AtomicBatch, CallerScope, EmbeddedStore, EvaluationInput, NamespaceCatalog, NamespaceControl,
+    NamespaceError, NamespaceLifecycleCompletion, NamespaceLifecycleHandle,
+    NamespaceLifecycleRegistry, NamespaceMutation, NamespaceOperationContext,
+    NamespaceOperationReceipt, NamespaceRead, NamespaceRecord, PlatformError, PolicyStore,
+    RecoverySelection, ResourceTarget, TenantId, STATE_CONTRACT,
 };
 use latent_policy::capability::OwnedPolicyDecision;
 
@@ -79,17 +80,7 @@ impl NamespaceControl {
         store.with_retained_decisions(&[operation, inspection], &mut |inputs| {
             let actual = inputs[0];
             let inspect = inputs[1];
-            if actual.capability != STATE_CONTRACT
-                || actual.operation != expected_operation
-                || actual.principal.subject != inspect.principal.subject
-                || actual.principal.kind != inspect.principal.kind
-                || actual.principal.tenant != inspect.principal.tenant
-                || actual.publication != inspect.publication
-                || actual.service != inspect.service
-                || actual.resource != inspect.resource
-            {
-                return Err(denied());
-            }
+            operation_scope(actual, inspect, expected_operation)?;
             inspection_actual(
                 inspect,
                 lifecycle,
@@ -97,6 +88,40 @@ impl NamespaceControl {
                 None,
                 action.take().ok_or_else(denied)?,
             )
+        })
+    }
+
+    /// Entity pages retain a real catalog-owned namespace handle through native
+    /// view destruction. Recheck both original decisions and that same handle
+    /// under Policy -> Lifecycle; the action performs no I/O or audit flush.
+    pub fn with_listing_retained(
+        store: &PolicyStore,
+        listing: &OwnedPolicyDecision,
+        inspection: &OwnedPolicyDecision,
+        lifecycle: &NamespaceLifecycleRegistry,
+        handle: &NamespaceLifecycleHandle,
+        current: &NamespaceRead,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if !lifecycle.owns_handle(handle) {
+            return Err(denied());
+        }
+        let mut action = Some(action);
+        store.with_retained_decisions(&[listing, inspection], &mut |inputs| {
+            operation_scope(inputs[0], inputs[1], "namespace-list")?;
+            inspection_scope(inputs[1], current, None)?;
+            let mut failure = None;
+            let result = handle.with_current(current, false, || {
+                action.take().ok_or(NamespaceError::PermissionDenied)?().map_err(|error| {
+                    failure = Some(error);
+                    NamespaceError::PermissionDenied
+                })
+            });
+            if let Some(error) = failure {
+                Err(error)
+            } else {
+                result.map_err(platform)
+            }
         })
     }
 
@@ -225,6 +250,25 @@ impl NamespaceControl {
             fence,
         })
     }
+}
+
+fn operation_scope(
+    actual: &EvaluationInput<'_>,
+    inspection: &EvaluationInput<'_>,
+    expected_operation: &str,
+) -> Result<(), PlatformError> {
+    if actual.capability != STATE_CONTRACT
+        || actual.operation != expected_operation
+        || actual.principal.subject != inspection.principal.subject
+        || actual.principal.kind != inspection.principal.kind
+        || actual.principal.tenant != inspection.principal.tenant
+        || actual.publication != inspection.publication
+        || actual.service != inspection.service
+        || actual.resource != inspection.resource
+    {
+        return Err(denied());
+    }
+    Ok(())
 }
 impl RetainedNamespaceControlFence<'_> {
     /// Holds current policy/publication through lifecycle acceptance only.
