@@ -66,7 +66,7 @@ impl HostCapabilities {
             CapabilityCallCost::new(output_bytes),
         )
     }
-    fn begin_typed(
+    pub(super) fn begin_typed(
         &self,
         capability: &str,
         operation: &str,

@@ -27,6 +27,9 @@ mod http;
 #[path = "providers/http_streaming.rs"]
 mod http_streaming;
 pub use http_streaming::HttpStreamingInstallation;
+#[path = "providers/activation_runtime.rs"]
+mod activation_runtime;
+pub use activation_runtime::{ActivationRuntimeInstallation, ActivationRuntimeLimits};
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -38,6 +41,8 @@ pub struct ConfiguredProviders {
     pub outbound_streams: Option<StreamInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub http_streaming: Option<HttpStreamingInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub activation_runtime: Option<ActivationRuntimeInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub blob: Option<BlobInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -153,6 +158,13 @@ pub(super) fn derive(
     if let Some(http) = &providers.http_streaming {
         http.validate_installation(providers)?;
     }
+    if let Some(runtime) = &providers.activation_runtime {
+        if config.security_profile != latent_wasmtime::ExecutionIsolationProfile::LocalExperimental
+        {
+            return Err(invalid("providers.activationRuntime.securityProfile"));
+        }
+        runtime.validate_installation(providers)?;
+    }
     if let Some(blob) = &providers.blob {
         blob.identity.validate()?;
         if !token(&blob.namespace, 128) {
@@ -229,6 +241,7 @@ impl ConfiguredProviders {
         self.http.is_none()
             && self.outbound_streams.is_none()
             && self.http_streaming.is_none()
+            && self.activation_runtime.is_none()
             && self.blob.is_none()
             && self.secrets.is_none()
             && self.metrics.is_none()
@@ -257,6 +270,7 @@ impl ConfiguredProviders {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
                 "latent:network/streams@0.1.0" => self.outbound_streams.as_ref().map(|v| &v.identity),
                 "latent:http/streaming@0.3.0" => self.http_streaming.as_ref().map(|http| &http.identity),
+                latent_core::activation_runtime::CAPABILITY => self.activation_runtime.as_ref().map(|runtime| &runtime.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
                 "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
                 "latent:telemetry/custom@0.1.0" => self.metrics.as_ref().map(|v| &v.identity),
