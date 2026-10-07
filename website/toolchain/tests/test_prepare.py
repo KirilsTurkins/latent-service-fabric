@@ -1,13 +1,20 @@
 """Offline fixtures for the package-manager derivation; no package code executes."""
 import importlib.util
+import errno
+import http.client
+import http.server
 import hashlib
 import io
 import json
 from pathlib import Path
 import tarfile
 import tempfile
+import threading
+import ssl
+import time
+import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 SPEC = importlib.util.spec_from_file_location('npm_prepare', Path(__file__).resolve().parents[1] / 'prepare.py')
 prepare = importlib.util.module_from_spec(SPEC)
@@ -311,6 +318,268 @@ class PreparationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'reviewed package lock'):
                     prepare.prepare(offline=True)
                 self.assertEqual(target.read_bytes(), original)
+
+
+class TransportTests(unittest.TestCase):
+    class Clock:
+        value = 100.0
+        def __call__(self):
+            return self.value
+
+    class Response:
+        def __init__(self, parts, *, clock=None, costs=None, length=None):
+            self.parts = list(parts)
+            self.clock, self.costs, self.length = clock, list(costs or []), length
+            self.closed = False
+            self.timeouts, self.reads, self.received = [], [], 0
+            self.fp = types.SimpleNamespace(raw=types.SimpleNamespace(_sock=self))
+        def settimeout(self, value):
+            self.timeouts.append(value)
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            self.closed = True
+        def read1(self, amount):
+            self.reads.append(amount)
+            if self.costs:
+                cost = self.costs.pop(0)
+                if cost >= self.timeouts[-1]:
+                    self.clock.value += self.timeouts[-1]
+                    raise TimeoutError('read timeout')
+                self.clock.value += cost
+            part = self.parts.pop(0) if self.parts else b''
+            if isinstance(part, BaseException):
+                raise part
+            if len(part) > amount:
+                self.parts.insert(0, part[amount:])
+                part = part[:amount]
+            self.received += len(part)
+            if self.length is not None:
+                self.length -= len(part)
+            return part
+
+    def setUp(self):
+        self.raw = b'authenticated full archive'
+        self.pin = {'name': 'example', 'version': '1.2.3', 'integrity': prepare.integrity(self.raw)}
+
+    def acquire(self, opener, cache):
+        with patch.object(prepare.urllib.request, 'build_opener', return_value=opener):
+            return prepare.acquire(self.pin, cache, False)
+
+    def test_transport_open_retries_only_reset_timeout_and_tls_eof(self):
+        for error in (ConnectionResetError(104, 'reset'),
+                      prepare.urllib.error.URLError(ConnectionResetError(104, 'reset')),
+                      TimeoutError('timeout'), prepare.urllib.error.URLError(TimeoutError('timeout')),
+                      ssl.SSLEOFError('peer EOF'), http.client.RemoteDisconnected('peer EOF')):
+            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory() as temporary:
+                response = self.Response([self.raw], length=len(self.raw))
+                opener = types.SimpleNamespace(open=Mock(side_effect=[error, response]))
+                cache = Path(temporary) / 'inputs'
+                self.assertEqual(self.acquire(opener, cache), self.raw)
+                self.assertEqual(opener.open.call_count, 2)
+                self.assertTrue(response.closed)
+                self.assertEqual((cache / 'example-1.2.3.tgz').read_bytes(), self.raw)
+                self.assertEqual(len(list(cache.iterdir())), 1)
+
+    def test_partial_reset_discarded_before_authenticated_retry(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            first = self.Response([b'bad partial', ConnectionResetError(104, 'reset')])
+            second = self.Response([self.raw], length=len(self.raw))
+            opener = types.SimpleNamespace(open=Mock(side_effect=[first, second]))
+            cache = Path(temporary) / 'inputs'
+            self.assertEqual(self.acquire(opener, cache), self.raw)
+            self.assertTrue(first.closed and second.closed)
+            self.assertEqual((cache / 'example-1.2.3.tgz').read_bytes(), self.raw)
+
+    def test_declared_partial_body_eof_retries_and_preserves_total_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            first = self.Response([b'x', b''], length=len(self.raw))
+            second = self.Response([self.raw], length=len(self.raw))
+            opener = types.SimpleNamespace(open=Mock(side_effect=[first, second]))
+            with patch.object(prepare, 'LIMIT', len(self.raw) + 1):
+                self.assertEqual(self.acquire(opener, Path(temporary) / 'inputs'), self.raw)
+            self.assertEqual(first.received + second.received, len(self.raw) + 1)
+            self.assertTrue(first.closed and second.closed)
+
+    def test_permanent_errors_are_never_retried(self):
+        errors = [ssl.SSLCertVerificationError('untrusted certificate'),
+                  prepare.urllib.error.URLError(ssl.SSLCertVerificationError('untrusted certificate')),
+                  ssl.SSLError('protocol error'), ValueError('unexpected registry redirect'),
+                  OSError(errno.ENOSPC, 'disk failure'),
+                  prepare.urllib.error.URLError('unclassified transport failure')]
+        errors += [prepare.urllib.error.HTTPError('https://registry.npmjs.org', status, 'HTTP', {}, None)
+                   for status in (401, 403, 404, 429, 500, 503)]
+        for error in errors:
+            with self.subTest(error=repr(error)), tempfile.TemporaryDirectory() as temporary:
+                opener = types.SimpleNamespace(open=Mock(side_effect=error))
+                cache = Path(temporary) / 'inputs'
+                with self.assertRaises(type(error)):
+                    self.acquire(opener, cache)
+                self.assertEqual(opener.open.call_count, 1)
+                self.assertFalse(cache.exists())
+
+    def test_checksum_and_oversized_archive_do_not_retry(self):
+        for raw, limit in ((b'changed bytes', prepare.LIMIT), (self.raw, 2)):
+            with self.subTest(limit=limit), tempfile.TemporaryDirectory() as temporary:
+                response = self.Response([raw], length=len(raw))
+                opener = types.SimpleNamespace(open=Mock(return_value=response))
+                cache = Path(temporary) / 'inputs'
+                with patch.object(prepare, 'LIMIT', limit), self.assertRaises(ValueError):
+                    self.acquire(opener, cache)
+                self.assertEqual(opener.open.call_count, 1)
+                self.assertLessEqual(response.received, limit + 1)
+                self.assertTrue(response.closed)
+                self.assertFalse(cache.exists())
+
+    def test_failed_partial_body_budget_cannot_be_reset_by_retry(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            first = self.Response([b'123456', ConnectionResetError(104, 'reset')])
+            second = self.Response([self.raw], length=len(self.raw))
+            opener = types.SimpleNamespace(open=Mock(side_effect=[first, second]))
+            cache = Path(temporary) / 'inputs'
+            with patch.object(prepare, 'LIMIT', 7), self.assertRaisesRegex(ValueError, 'cumulative'):
+                self.acquire(opener, cache)
+            self.assertEqual(first.received + second.received, 8)
+            self.assertEqual(second.reads, [2])
+            self.assertTrue(first.closed and second.closed)
+            self.assertFalse(cache.exists())
+
+    def test_incomplete_read_exception_partial_counts_toward_bound(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            response = self.Response([http.client.IncompleteRead(b'12345678', 2)])
+            opener = types.SimpleNamespace(open=Mock(return_value=response))
+            cache = Path(temporary) / 'inputs'
+            with patch.object(prepare, 'LIMIT', 7), self.assertRaisesRegex(ValueError, 'cumulative'):
+                self.acquire(opener, cache)
+            self.assertEqual(opener.open.call_count, 1)
+            self.assertTrue(response.closed)
+            self.assertFalse(cache.exists())
+
+    def test_three_attempts_share_original_thirty_second_budget(self):
+        clock = self.Clock()
+        timeouts = []
+        def denied(url, *, timeout):
+            timeouts.append(timeout)
+            clock.value += timeout
+            raise TimeoutError('bounded inactivity')
+        opener = types.SimpleNamespace(open=Mock(side_effect=denied))
+        with tempfile.TemporaryDirectory() as temporary, patch.object(prepare.time, 'monotonic', clock):
+            with self.assertRaises(TimeoutError):
+                self.acquire(opener, Path(temporary) / 'inputs')
+        self.assertEqual(timeouts, [10, 10, 10])
+        self.assertEqual(clock.value, 130)
+        self.assertEqual(opener.open.call_count, 3)
+
+    def test_body_reads_use_remaining_shared_deadline(self):
+        clock = self.Clock()
+        response = self.Response([b'a', b'b', b'c', self.raw], clock=clock, costs=[9, 9, 9, 9])
+        opener = types.SimpleNamespace(open=Mock(return_value=response))
+        with tempfile.TemporaryDirectory() as temporary, patch.object(prepare.time, 'monotonic', clock):
+            cache = Path(temporary) / 'inputs'
+            with self.assertRaises(TimeoutError):
+                self.acquire(opener, cache)
+            self.assertFalse(cache.exists())
+        self.assertEqual(response.timeouts, [10, 10, 10, 3])
+        self.assertEqual(clock.value, 130)
+        self.assertEqual(opener.open.call_count, 1)
+        self.assertTrue(response.closed)
+
+    def test_fast_failures_stop_after_three_attempts(self):
+        opener = types.SimpleNamespace(open=Mock(side_effect=ConnectionResetError(104, 'reset')))
+        with tempfile.TemporaryDirectory() as temporary, self.assertRaises(ConnectionResetError):
+            self.acquire(opener, Path(temporary) / 'inputs')
+        self.assertEqual(opener.open.call_count, 3)
+
+    def test_disk_failure_after_download_does_not_retry_network(self):
+        response = self.Response([self.raw], length=len(self.raw))
+        opener = types.SimpleNamespace(open=Mock(return_value=response))
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(Path, 'mkdir', side_effect=OSError(errno.ENOSPC, 'disk full')):
+                with self.assertRaises(OSError):
+                    self.acquire(opener, Path(temporary) / 'inputs')
+        self.assertEqual(opener.open.call_count, 1)
+        self.assertTrue(response.closed)
+
+    def test_changed_pin_is_not_retried_or_cached(self):
+        response = self.Response([self.raw], length=len(self.raw))
+        def changed(url, *, timeout):
+            self.pin['integrity'] = prepare.integrity(b'different source')
+            return response
+        opener = types.SimpleNamespace(open=Mock(side_effect=changed))
+        with tempfile.TemporaryDirectory() as temporary:
+            cache = Path(temporary) / 'inputs'
+            with self.assertRaisesRegex(ValueError, 'integrity'):
+                self.acquire(opener, cache)
+            self.assertFalse(cache.exists())
+        self.assertEqual(opener.open.call_count, 1)
+
+    def test_real_http_response_partial_eof_then_authenticated_success(self):
+        calls, body = [], self.raw
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                calls.append(self.path)
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body[:1] if len(calls) == 1 else body)
+                self.wfile.flush()
+                self.close_connection = True
+            def log_message(self, *args):
+                pass
+        server = http.server.HTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=lambda: server.serve_forever(poll_interval=0.01))
+        thread.start()
+        try:
+            local = prepare.urllib.request.build_opener(prepare.urllib.request.ProxyHandler({}), prepare.NoRedirect())
+            with tempfile.TemporaryDirectory() as temporary:
+                def request(url, *, timeout):
+                    self.assertEqual(url, 'https://registry.npmjs.org/example/-/example-1.2.3.tgz')
+                    return local.open('http://127.0.0.1:' + str(server.server_port) + '/archive', timeout=timeout)
+                opener = types.SimpleNamespace(open=Mock(side_effect=request))
+                self.assertEqual(self.acquire(opener, Path(temporary) / 'inputs'), body)
+                self.assertEqual(opener.open.call_count, 2)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(3)
+            self.assertFalse(thread.is_alive())
+
+    def test_real_blocked_response_cannot_extend_acquisition_deadline(self):
+        release = threading.Event()
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header('Content-Length', '100')
+                self.end_headers()
+                self.wfile.write(b'x')
+                self.wfile.flush()
+                release.wait(1)
+                self.close_connection = True
+            def log_message(self, *args):
+                pass
+        server = http.server.HTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=lambda: server.serve_forever(poll_interval=0.01))
+        thread.start()
+        try:
+            local = prepare.urllib.request.build_opener(prepare.urllib.request.ProxyHandler({}), prepare.NoRedirect())
+            def request(url, *, timeout):
+                return local.open('http://127.0.0.1:' + str(server.server_port) + '/archive', timeout=timeout)
+            opener = types.SimpleNamespace(open=Mock(side_effect=request))
+            with tempfile.TemporaryDirectory() as temporary, patch.object(prepare, 'NETWORK_TIMEOUT', 0.12):
+                cache = Path(temporary) / 'inputs'
+                started = time.monotonic()
+                with self.assertRaises(Exception) as rejected:
+                    self.acquire(opener, cache)
+                self.assertTrue(prepare.transient_transport(rejected.exception))
+                self.assertLess(time.monotonic() - started, 1)
+                self.assertLessEqual(opener.open.call_count, 3)
+                self.assertFalse(cache.exists())
+        finally:
+            release.set()
+            server.shutdown()
+            server.server_close()
+            thread.join(3)
+            self.assertFalse(thread.is_alive())
 
 
 if __name__ == '__main__':

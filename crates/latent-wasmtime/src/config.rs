@@ -188,6 +188,7 @@ impl Default for WasmtimeConfig {
             development_clock_readings: None,
             angular_renderer: false,
             java_guest: false,
+            transactional_state: false,
             activation_runtime: None,
             transactional_state: false,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),

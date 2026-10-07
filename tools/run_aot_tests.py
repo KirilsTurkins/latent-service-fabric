@@ -46,6 +46,7 @@ ISOLATED_CASES = frozenset({
 })
 NATIVE_CASES = frozenset({
     "ownership::evicted_ready_handle_keeps_its_image_and_revocation_never_recovers_from_native_cache",
+    "reopen::buffered_web_profile_change_after_restart_cannot_reuse_a_stale_native_image",
     "reopen::identical_component_after_restart_requires_its_exact_engine_before_native_reuse",
     "reopen::real_miss_invokes_then_reopened_native_hit_verifies_source_without_compiling",
     "tamper::replaced_bytes_with_matching_sha_and_wrong_host_key_never_reach_the_loader",

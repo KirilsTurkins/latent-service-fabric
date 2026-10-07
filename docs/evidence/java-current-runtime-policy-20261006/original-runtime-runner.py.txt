@@ -1,0 +1,78 @@
+"""Execute original complete current runtime suites with their original bounds."""
+from pathlib import Path
+import hashlib
+import json
+import os
+import re
+import subprocess
+import time
+
+os.chdir('/source')
+identity = json.loads(Path('/inputs/source-identity.json').read_bytes())
+out = Path('/results')
+for name, digest in identity['collectorSha256'].items():
+    assert hashlib.sha256((Path('/inputs') / name).read_bytes()).hexdigest() == digest
+assert os.getuid() == os.getgid() == 10001
+assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == identity['commit']
+assert subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip() == identity['tree']
+assert not subprocess.check_output(['git', 'status', '--porcelain'])
+for name in ('CARGO_PROFILE_DEV_DEBUG_ASSERTIONS', 'CARGO_PROFILE_TEST_DEBUG_ASSERTIONS',
+             'CARGO_PROFILE_DEV_OVERFLOW_CHECKS', 'CARGO_PROFILE_TEST_OVERFLOW_CHECKS'):
+    assert os.environ[name] == 'true'
+assert os.environ['LSF_REQUIRE_NATIVE_PROCESS_TESTS'] == '1'
+catalogue = json.loads(Path('tools/ci/suites.json').read_bytes())
+selection = [('latent-wasmtime.lib.latent-wasmtime', ['--lib'], 347, 2),
+             ('latent-wasmtime.test.native-aot-cache', ['--test', 'native_aot_cache'], 5, 0)]
+results = []
+for number, (identifier, target, minimum, ignored) in enumerate(selection, 1):
+    suite = next(row for row in catalogue['suites'] if row['id'] == identifier)
+    assert suite['recipe'] == 'workspace-all-features' and suite['timeoutSeconds'] == 900
+    assert suite['minimumCases'] == minimum and len(suite['expectedCases']) == minimum
+    assert len(suite['expectedIgnored']) == ignored
+    expected_default = set(suite['expectedCases']) - set(suite['expectedIgnored'])
+    assert len(expected_default) == minimum - ignored
+    argv = ['cargo', '+1.97.1', '--config', '.cargo/managed-guest.toml', 'test', '-p',
+            'latent-wasmtime', *target, '--all-features', '--locked', '--', '--test-threads=1']
+    log = out / f'{number:02d}-original-suite.log'
+    started = time.monotonic()
+    with log.open('xb') as stream:
+        try:
+            code = subprocess.run(argv, stdout=stream, stderr=subprocess.STDOUT, timeout=900).returncode
+        except subprocess.TimeoutExpired:
+            code = 124
+    raw = log.read_bytes()
+    assert len(raw) <= 16 * 1024 * 1024
+    record = {'argv': argv, 'exitCode': code, 'elapsedSeconds': time.monotonic() - started,
+              'timeoutSeconds': 900, 'registeredSuite': suite, 'sourceCommit': identity['commit'],
+              'sourceTree': identity['tree'], 'logSha256': hashlib.sha256(raw).hexdigest(),
+              'oldExecutionResultsUsedAsPass': False, 'completeRepositoryCI': False}
+    receipt = out / f'{number:02d}-original-suite.json'
+    receipt.write_text(json.dumps(record, indent=2) + '\n')
+    print(raw.decode(errors='replace')[-10000:], flush=True)
+    assert code == 0, record
+    text = raw.decode(errors='replace')
+    cases = re.findall(r'^test (\S+) \.\.\. ok$', text, re.M)
+    excluded = re.findall(r'^test (\S+) \.\.\. ignored(?:,.*)?$', text, re.M)
+    assert sorted(cases) == sorted(expected_default), (identifier, cases)
+    assert sorted(excluded) == sorted(suite['expectedIgnored']), (identifier, excluded)
+    assert f'test result: ok. {minimum - ignored} passed; 0 failed; {ignored} ignored; 0 measured; 0 filtered out;' in text
+    matches = re.findall(r'^\s*Running (?:unittests \S+|tests/\S+) \((/build/target/[^\s)]+)\)$', text, re.M)
+    assert len(matches) == 1, matches
+    executable = Path(matches[0])
+    with executable.open('rb') as stream:
+        executable_digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+    record.update(status='passed', actualTestsPassed=len(cases), actualOriginalIgnored=len(excluded),
+                  actualFiltered=0, executedElf=str(executable), executedElfSha256=executable_digest)
+    (out / f'{number:02d}-verified-suite.json').write_text(json.dumps(record, indent=2) + '\n')
+    results.append(record)
+assert not subprocess.check_output(['git', 'status', '--porcelain'])
+for name, digest in identity['collectorSha256'].items():
+    assert hashlib.sha256((Path('/inputs') / name).read_bytes()).hexdigest() == digest
+final = {'sourceCommit': identity['commit'], 'sourceTree': identity['tree'],
+         'status': 'passed', 'completeSourceCleanAfter': True, 'actualDefaultTestsPassed': 350,
+         'actualRegisteredCases': 352,
+         'actualOriginalIgnored': 2, 'actualFiltered': 0,
+         'originalSuiteDeadlinesPreserved': True, 'completeRepositoryCI': False,
+         'results': results}
+(out / 'verified-current-runtime.json').write_text(json.dumps(final, indent=2) + '\n')
+print(json.dumps(final), flush=True)

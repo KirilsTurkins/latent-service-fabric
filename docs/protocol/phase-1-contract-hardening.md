@@ -578,22 +578,27 @@ their separate meanings. Live grant checks are explicitly absent; an inspection
 does not grant execution or mutation authority. Public invocation and browser
 error projections retain their existing disclosure rules.
 
-## Additive Phase 4 transaction and state descriptors
+## Phase 4 transaction and management descriptor additions
 
-The descriptor baseline deliberately includes the published
-`latent/transaction/v1/transaction.proto` and `latent/control/v1/state.proto`
-contracts. Their new messages, enums and services negotiate the complete
-transaction profile and keep command, query, recovery and management authority
-explicit. See [the transaction protocol](transactions.md). Descriptor availability
-does not install a storage engine, authorize an operation or prove runtime
-integration.
+The Buf 1.72.0 descriptor baseline adds `latent/transaction/v1/transaction.proto`,
+`latent/control/v1/state.proto` and `latent/control/v1/dispatcher.proto`. The seven
+transaction, six state and three dispatcher methods use independent bounded
+messages. Every prior file, field, enum value and service signature is preserved.
+The audit descriptor adds state and dispatcher targets at fields 25 and 26,
+state resource class 11 and control actions 13 through 29; all prior audit rows
+remain exact.
 
-`AuditCapabilityResourceClass` adds `STATE` at value 11 so host-produced state
-capability events retain their resource class through RPC and CLI projection.
-Every prior descriptor, field number, enum value and RPC signature remains
-unchanged. The additive descriptor comparison checks those prior members before
-updating the golden; existing audit clients may retain an unknown numeric value.
+`PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
+reconciliation and termination require that complete original plan when calling
+`MutateState`. Receipt recovery preserves the original action, record version,
+policy digest and operation ID while requesting a separately current read
+publication. An expired historical plan can describe an already completed
+operation. It supplies neither a grant nor provider proof. Provider confirmation,
+administrator declaration and scheduled redrive remain separate typed facts.
+Historical effect records without the new record version remain readable and
+cannot authorize a new mutation.
 
-WIT guest ABI versions and durable storage formats retain independent
-compatibility boundaries. A namespace, command, effect or receipt identifier
-confers no runtime authority.
+The golden matches the frozen sixteen-operation client descriptor and was
+reviewed against every prior named row using actual Buf output. The
+[transaction reference](transactions.md) describes the separate guest ABI,
+durable-format, authority and production qualification boundaries.

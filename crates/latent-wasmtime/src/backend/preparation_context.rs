@@ -125,6 +125,7 @@ impl PreparationContext {
                 false,
             )
         })?;
+        self.install_transaction_imports(&mut linker)?;
         if self.config.activation_runtime.is_some() {
             crate::host::runtime::install(&mut linker).map_err(|_| {
                 platform_error(

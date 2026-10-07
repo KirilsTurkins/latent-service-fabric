@@ -201,6 +201,7 @@ impl Shared {
             effect: effect.to_owned(),
             retired: false,
             started: false,
+            management: false,
             capacity: None,
             management: false,
         })

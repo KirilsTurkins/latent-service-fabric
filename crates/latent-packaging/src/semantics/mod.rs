@@ -69,6 +69,16 @@ impl CheckedSurface {
     pub fn imports(&self) -> &[Box<str>] {
         &self.imports
     }
+    /// Checked source imports that require capability/provider bindings. All
+    /// other imports were validated as resource-free value definitions; they
+    /// remain in `imports()` and grant no host or provider authority.
+    #[must_use]
+    pub fn capability_imports(&self) -> impl Iterator<Item = &str> {
+        self.imports
+            .iter()
+            .map(AsRef::as_ref)
+            .filter(|name| host::recognizes(name))
+    }
     #[must_use]
     pub fn exports(&self) -> &[Box<str>] {
         &self.exports
