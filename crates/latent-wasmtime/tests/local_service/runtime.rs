@@ -3,7 +3,11 @@
 use super::{fixture::Fixture, packages};
 use latent_activation::ActivationOutcome;
 use latent_artifacts::ArtifactRepository;
-use latent_core::{activation_runtime::RuntimeLimits, ActivationId, PlatformErrorCode, TenantId};
+use latent_core::{
+    activation_runtime::RuntimeLimits,
+    diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage},
+    ActivationId, PlatformErrorCode, TenantId,
+};
 use std::{future::Future, pin::Pin, sync::atomic::Ordering, task::Poll, time::Duration};
 
 #[path = "runtime/component.rs"]
@@ -309,12 +313,17 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
             // execution cell instead of inferring permission to reuse it.
             let error = failure(fresh);
             assert_eq!(error.code, PlatformErrorCode::Unavailable);
-            assert_eq!(error.details.len(), 1);
+            assert_eq!(error.details.len(), 2);
             assert_eq!(error.details[0].kind, "scheduler.limit");
             assert_eq!(error.details[0].fields.len(), 1);
             assert_eq!(
                 error.details[0].fields.get("reason").map(String::as_str),
                 Some("all-cells-quarantined")
+            );
+            assert_eq!(
+                error.details[1],
+                ActivationDiagnostic::new(DiagnosticStage::Queue, DiagnosticReason::QueuePressure)
+                    .detail()
             );
         }
         f.idle().await;
