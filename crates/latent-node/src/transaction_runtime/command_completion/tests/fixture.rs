@@ -181,6 +181,27 @@ impl Fixture {
         .unwrap();
     }
 
+    pub async fn assert_no_claim(&self) {
+        let empty = self
+            .owners
+            .store
+            .with_store(StoreIoKind::Read, 8192, |store| {
+                let view = store.snapshot()?;
+                Ok(
+                    !view.contains_prefix(latent_state::embedded::Family::Command, b"")?
+                        && !view.contains_prefix(latent_state::embedded::Family::Attempt, b"")?,
+                )
+            })
+            .unwrap()
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(
+            empty,
+            "refusal must precede durable command and attempt publication"
+        );
+    }
+
     pub async fn shutdown(mut self) {
         let deadline = Instant::now() + Duration::from_secs(10);
         let report = self.dispatcher.shutdown(deadline).await.unwrap();

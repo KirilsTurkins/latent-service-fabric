@@ -42,7 +42,36 @@ impl TransactionAdmissionControl {
         registration: &crate::CancellationRegistration,
         budget: &ActivationBudget,
     ) -> (Self, TestTransactionTransport) {
+        Self::registered_test_control(registration, budget, true)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_unbound_registered_test_with_transport(
+        registration: &crate::CancellationRegistration,
+        budget: &ActivationBudget,
+    ) -> (Self, TestTransactionTransport) {
+        Self::registered_test_control(registration, budget, false)
+    }
+
+    #[cfg(test)]
+    fn registered_test_control(
+        registration: &crate::CancellationRegistration,
+        budget: &ActivationBudget,
+        bind_lineage: bool,
+    ) -> (Self, TestTransactionTransport) {
         let transport = Arc::new(super::TransportStop::default());
+        if bind_lineage {
+            budget
+                .enable_descendants(
+                    latent_core::DelegationLimits::default(),
+                    Arc::new(super::probes::ActivationControl::new(
+                        registration,
+                        Arc::clone(&transport),
+                        budget.profile().supports_descendants(),
+                    )),
+                )
+                .unwrap();
+        }
         (
             Self::new(
                 registration.handle(),

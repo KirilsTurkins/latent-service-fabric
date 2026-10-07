@@ -41,13 +41,16 @@ async fn finish(
     outcome: ActivationOutcome,
 ) -> TransactionCompletion {
     execution.host.finish_guest_access();
+    // Match Lifecycle.complete: terminal authorization and the actual native
+    // completion run before publication freezes the original root ledger.
+    let completed = tokio::time::timeout(WATCHDOG, execution.completion.complete(outcome))
+        .await
+        .unwrap();
     let _ = execution
         .host
         .budget()
         .finalize_at(None, std::time::Instant::now());
-    tokio::time::timeout(WATCHDOG, execution.completion.complete(outcome))
-        .await
-        .unwrap()
+    completed
 }
 async fn retire(execution: &TransactionExecution) {
     let completed = finish(execution, unstarted_failure()).await;
@@ -66,6 +69,63 @@ fn success() -> ActivationOutcome {
         effect_ids: vec![],
         metadata: latent_core::Metadata::new(),
     })
+}
+
+#[tokio::test]
+async fn unbound_original_budget_refuses_current_authorization_before_pending_or_entity_work() {
+    let fixture = Fixture::new().await;
+    let call = fixture.unbound_call("unbound", "hot");
+    let before = fixture.owners.store.snapshot().unwrap();
+    let deadline = call.budget.deadline().monotonic();
+    assert!(call.budget.descendant_is_cancelled());
+    call.admission
+        .preflight(&call.envelope, &call.budget)
+        .await
+        .unwrap();
+    let error = call
+        .admission
+        .admit(&call.envelope, &call.budget)
+        .await
+        .err()
+        .expect("unbound original cancellation owner must remain denied");
+    assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
+    assert_eq!(call.budget.deadline().monotonic(), deadline);
+    assert_eq!(fixture.lanes.snapshot().unwrap(), Default::default());
+    fixture.assert_no_claim().await;
+    assert_eq!(
+        fixture.owners.store.snapshot().unwrap().physical_owners,
+        before.physical_owners
+    );
+    drop(call);
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
+async fn actual_registered_root_cancellation_refuses_claim_before_any_lane_or_host() {
+    let fixture = Fixture::new().await;
+    let call = fixture.call("cancel-before-claim", "hot");
+    let deadline = call.budget.deadline().monotonic();
+    assert!(!call.budget.descendant_is_cancelled());
+    assert_eq!(
+        fixture
+            .cancellations
+            .cancel(call.registration.activation_id(), "before claim")
+            .unwrap(),
+        CancelDisposition::Accepted
+    );
+    assert!(call.budget.descendant_is_cancelled());
+    let error = call
+        .admission
+        .admit(&call.envelope, &call.budget)
+        .await
+        .err()
+        .expect("original cancelled root must not acquire a command");
+    assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
+    assert_eq!(call.budget.deadline().monotonic(), deadline);
+    assert_eq!(fixture.lanes.snapshot().unwrap(), Default::default());
+    fixture.assert_no_claim().await;
+    drop(call);
+    fixture.shutdown().await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

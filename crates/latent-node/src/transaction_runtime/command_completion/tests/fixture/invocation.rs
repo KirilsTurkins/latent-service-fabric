@@ -50,6 +50,14 @@ impl Call {
 
 impl Fixture {
     pub fn call(&self, client_key: &str, entity: &str) -> Call {
+        self.call_with_lineage(client_key, entity, true)
+    }
+
+    pub fn unbound_call(&self, client_key: &str, entity: &str) -> Call {
+        self.call_with_lineage(client_key, entity, false)
+    }
+
+    fn call_with_lineage(&self, client_key: &str, entity: &str, bind_lineage: bool) -> Call {
         let resources = ResourceBudget {
             cpu_fuel: 1_000_000,
             memory_bytes: 64 * 1024 * 1024,
@@ -132,11 +140,17 @@ impl Fixture {
             client_key: client_key.into(),
             entity: entity.into(),
         }));
-        let (control, transport) =
+        let (control, transport) = if bind_lineage {
             crate::TransactionAdmissionControl::for_registered_test_with_transport(
                 &registration,
                 &budget,
-            );
+            )
+        } else {
+            crate::TransactionAdmissionControl::for_unbound_registered_test_with_transport(
+                &registration,
+                &budget,
+            )
+        };
         admission.bind_control(control).unwrap();
         Call {
             admission,
