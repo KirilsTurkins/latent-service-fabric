@@ -6794,6 +6794,7 @@
         "host::accounting::tests::original_clock_sample_and_tighter_request_deadline_survive_wall_adjustment",
         "host::accounting::tests::phase3_managed_execution_keeps_original_ledger_and_rejects_unmanaged_opt_in",
         "host::accounting::tests::runtime_observation::competing_fuel_charge_cannot_publish_the_failed_observations_memory_peak",
+        "host::accounting::tests::runtime_observation::concurrent_child_admission_requires_native_fuel_reconciliation_before_next_host_call",
         "host::accounting::tests::runtime_observation::finalized_ledger_cannot_advance_either_local_watermark_even_for_zero_fuel",
         "host::accounting::tests::runtime_observation::invalid_native_observations_leave_both_watermarks_and_ledger_unchanged",
         "host::accounting::tests::runtime_observation::native_fuel_adjustments_do_not_double_charge_child_work_or_refunds",
@@ -6920,7 +6921,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 351,
+      "minimumCases": 352,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
