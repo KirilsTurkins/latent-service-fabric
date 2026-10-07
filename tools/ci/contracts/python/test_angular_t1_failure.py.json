@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "AngularT1FailureTests.test_currentness_vocabulary_matches_original_producer_owned_codes",
+    "AngularT1FailureTests.test_duplicate_oversized_or_invalid_error_projection_stays_unclassified",
+    "AngularT1FailureTests.test_failed_cli_observation_happens_after_original_process_close_without_replay",
+    "AngularT1FailureTests.test_group_retirement_does_not_fabricate_clean_shutdown_or_durable_outcome",
+    "AngularT1FailureTests.test_main_emits_failed_observation_and_preserves_original_failure",
+    "AngularT1FailureTests.test_only_exact_typed_currentness_reason_is_retained_without_error_strings"
+  ],
+  "guards": {
+    "AngularT1FailureTests.test_currentness_vocabulary_matches_original_producer_owned_codes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0e796f841e87ed8cd2524a39fcc0ce475ad762f6eac982c1f367543d4caa2b07",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1FailureTests.test_duplicate_oversized_or_invalid_error_projection_stays_unclassified": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0e796f841e87ed8cd2524a39fcc0ce475ad762f6eac982c1f367543d4caa2b07",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1FailureTests.test_failed_cli_observation_happens_after_original_process_close_without_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0e796f841e87ed8cd2524a39fcc0ce475ad762f6eac982c1f367543d4caa2b07",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1FailureTests.test_group_retirement_does_not_fabricate_clean_shutdown_or_durable_outcome": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0e796f841e87ed8cd2524a39fcc0ce475ad762f6eac982c1f367543d4caa2b07",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1FailureTests.test_main_emits_failed_observation_and_preserves_original_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0e796f841e87ed8cd2524a39fcc0ce475ad762f6eac982c1f367543d4caa2b07",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1FailureTests.test_only_exact_typed_currentness_reason_is_retained_without_error_strings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0e796f841e87ed8cd2524a39fcc0ce475ad762f6eac982c1f367543d4caa2b07",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_angular_t1_failure.py",
+  "reviewReason": "Add six hostile-input, original process-cleanup, finite producer-reason and failed-observation sink controls; source tests are not native Angular qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
