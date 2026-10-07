@@ -231,6 +231,9 @@ async fn pending_timer(
 async fn completed_fixed_results_release_original_calls_before_the_next_import() {
     let root = tempfile::tempdir().unwrap();
     let f = configured(root.path(), 1).await;
+    // This fixture requires the ordinary installed scalar profile's 100-fuel
+    // charge for every runtime operation. Omitting it from the bridge denies
+    // the initial register, before any logical owner or completed result.
     // The existing fixture installs the unchanged broker default. This ceiling
     // limits simultaneous accepted calls, not completed lifetime operation count.
     assert_eq!(f.maximum_calls_per_session, 16);
