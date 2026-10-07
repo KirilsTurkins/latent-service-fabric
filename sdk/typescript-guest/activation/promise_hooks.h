@@ -20,6 +20,13 @@ struct ActivationPromiseHooks {
   void (*reactionAllocationFailed)(void* record);
   void (*reactionCreated)(JSContext*, JSObject*, void* record);
   void* (*reactionRecord)(JSContext*, JSObject*);
+  // Thenable resolution uses original native job functions instead of a
+  // pending reaction object. Reserve their captured-frame owners before the
+  // function is allocated, with the same weak-GC/collection-end discipline.
+  bool (*beforeNativeJobAllocate)(JSContext*, void** record);
+  void (*nativeJobAllocationFailed)(void* record);
+  void (*nativeJobCreated)(JSContext*, JSObject*, void* record);
+  void* (*nativeJobRecord)(JSContext*, JSObject*);
 };
 
 // The embedding installs this once before content evaluation. Its lifetime

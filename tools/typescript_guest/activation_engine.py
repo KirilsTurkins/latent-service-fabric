@@ -19,11 +19,13 @@ PREIMAGES = {
     "StarlingMonkey/runtime/engine.cpp": "91bfc4d7e6376c802e2c9abc5e62554d52c804b50f5eabb07ccca6916af0626d",
     "StarlingMonkey/runtime/event_loop.cpp": "22a6a46ed762f64dd23665f5bcff089ac147e26d691fe65fa30fa85abbe57471",
     "embedding/embedding.cpp": "0c083624ba85778cafe9aadbf81a3b9db63d6b632bb1760088098dd3a0b82cbb",
+    "StarlingMonkey/builtins/web/timers.cpp": "86ea5d06379182db1d4f2563b388fd4c4d1fbb1788a8b47b42ff6d6761d84c6a",
+    "StarlingMonkey/builtins/web/timers.h": "bc4f4867fa647a1fa7814f6d013801adc24a11fcc824e1babee92cdd55b5054b",
 }
 NATIVE_SOURCES = (
     "native_job_queue.h", "broker_accounting.h", "native_engine.h", "native_engine.cpp",
     "promise_hooks.h", "promise_records.h", "promise_accounting.h",
-    "reaction_records.h",
+    "reaction_records.h", "native_readiness.h", "native_timers.h",
 )
 
 
@@ -69,6 +71,11 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         raise ValueError("engine carrier already contains a private SDK extension")
 
     result = dict(original)
+    from tools.typescript_guest.timer_engine import derive_activation_timers
+    timer_sources, timer_receipt = derive_activation_timers({
+        name: original[name] for name in (
+            "StarlingMonkey/builtins/web/timers.cpp", "StarlingMonkey/builtins/web/timers.h")})
+    result.update(timer_sources)
     engine = result["StarlingMonkey/runtime/engine.cpp"]
     engine = replace_once(engine, b'#include "event_loop.h"',
                           b'#include "event_loop.h"\n#include "native_engine.h"', "include")
@@ -94,6 +101,38 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         b'    JS::PrepareForFullGC(cx());', "snapshot-job-empty")
     result["StarlingMonkey/runtime/engine.cpp"] = engine
 
+    embedding = result["embedding/embedding.cpp"]
+    embedding = replace_once(embedding, b'#include "embedding.h"\n',
+        b'#include "embedding.h"\n#include "native_engine.h"\n', "root-embedding-include")
+    embedding = replace_once(embedding,
+        b"  Runtime.engine->decr_event_loop_interest();\n  return true;\n",
+        b"  if (!lsf::typescript::activation::settle_root(cx)) return false;\n"
+        b"  Runtime.engine->decr_event_loop_interest();\n  return true;\n", "actual-root-fulfilled")
+    embedding = replace_once(embedding,
+        b"  Runtime.engine->decr_event_loop_interest();\n"
+        b"  Runtime.engine->dump_error(args.get(0), stderr);\n  return false;\n",
+        b"  JS_SetPendingException(cx, args.get(0));\n"
+        b"  if (!lsf::typescript::activation::settle_root(cx)) return false;\n"
+        b"  Runtime.engine->decr_event_loop_interest();\n"
+        b"  Runtime.engine->dump_error(args.get(0), stderr);\n  return false;\n", "actual-root-rejected")
+    embedding = replace_once(embedding,
+        b"  JSAutoRealm ar(Runtime.cx, Runtime.engine->global());\n\n"
+        b"  JS::RootedVector<JS::Value> args(Runtime.cx);\n",
+        b"  JSAutoRealm ar(Runtime.cx, Runtime.engine->global());\n\n"
+        b"  if (!lsf::typescript::activation::begin_root(Runtime.cx))\n"
+        b'    Runtime.engine->abort("(call) activation root admission denied");\n'
+        b"  JS::RootedVector<JS::Value> args(Runtime.cx);\n", "root-admit-before-lowering-frame")
+    embedding = replace_once(embedding, b"  // all calls are async functions returning promises\n",
+        b"  if (!lsf::typescript::activation::park_root(Runtime.cx))\n"
+        b'    Runtime.engine->abort("(call) activation root park denied");\n\n'
+        b"  // all calls are async functions returning promises\n", "actual-root-frame-suspended")
+    embedding = replace_once(embedding, b"  Runtime.free_list.clear();\n  RootedValue result(Runtime.cx);\n",
+        b"  Runtime.free_list.clear();\n"
+        b"  if (!lsf::typescript::activation::acknowledge_result_retirement(Runtime.cx))\n"
+        b'    Runtime.engine->abort("(post_call) actual result retirement denied");\n'
+        b"  RootedValue result(Runtime.cx);\n", "actual-post-call-result-retirement")
+    result["embedding/embedding.cpp"] = embedding
+
     event_loop = result["StarlingMonkey/runtime/event_loop.cpp"]
     event_loop = replace_once(event_loop, b'#include "event_loop.h"\n',
         b'#include "event_loop.h"\n#include "native_engine.h"\n', "event-loop-promise-include")
@@ -103,6 +142,29 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         b"    js::RunJobs(cx);\n"
         b"    if (!lsf::typescript::activation::acknowledge_promise_retirement(cx)) {\n"
         b"      exit_event_loop();\n      return false;\n    }\n", "non-gc-retirement-checkpoint")
+    event_loop = replace_once(event_loop,
+        b"    if (interest_complete()) {\n      exit_event_loop();\n      return true;\n    }\n",
+        b"    if (interest_complete()) {\n"
+        b"      const bool drained = lsf::typescript::activation::root_work_drained(cx);\n"
+        b"      exit_event_loop();\n      return drained;\n    }\n", "root-versus-accepted-work-drain")
+    event_loop = replace_once(event_loop,
+        b"    // if there is no interest in the event loop at all, just run one tick\n",
+        b"    // Timers are accepted work even after the root Promise settles.\n"
+        b"    // Dispatch one ordinary callback, then the next genuine microtask\n"
+        b"    // checkpoint. P3 readiness suspends only an idle native pump.\n"
+        b"    if (lsf::typescript::activation::has_pending_timer_work()) {\n"
+        b"      if (!lsf::typescript::activation::run_timer_turn(cx)) {\n"
+        b"        exit_event_loop();\n        return false;\n      }\n"
+        b"      continue;\n    }\n"
+        b"    // if there is no interest in the event loop at all, just run one tick\n",
+        "actual-timer-before-root-drain")
+    event_loop = replace_once(event_loop,
+        b"    auto *const tasks = &queue.get().tasks;\n",
+        b"    auto *const tasks = &queue.get().tasks;\n"
+        b"    if (!tasks->empty()) {\n"
+        b'      JS_ReportErrorASCII(cx, "activation-runtime-unselected-native-async-task-denied");\n'
+        b"      exit_event_loop();\n      return false;\n    }\n",
+        "unsupported-legacy-host-task-fence")
     result["StarlingMonkey/runtime/event_loop.cpp"] = event_loop
 
     cmake = result["CMakeLists.txt"]
@@ -124,6 +186,7 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         "firefoxCommit": FIREFOX_COMMIT,
         "originalSource": before, "derivedSource": identity(result),
         "nativeQueueSource": identity(native), "generatedActivationABI": identity(generated),
+        "selectedTimerDerivation": timer_receipt,
         "ordinaryCompilerSelectionChanged": False,
         "supportedAsyncProfile": False,
         "qualification": "pending-real-engine-and-signed-component-controls",

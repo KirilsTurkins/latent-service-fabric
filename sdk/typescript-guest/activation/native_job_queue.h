@@ -48,6 +48,7 @@ public:
   // A reaction transfers the task/queue reservations made before its intrinsic
   // allocation. Other native jobs still use the original admission path.
   using Transfer = bool (*)(JSContext*, JS::HandleObject, JobOwners&, bool&);
+  using Retirement = void (*)(void* record, bool frame_executed);
 
 private:
   enum class Phase { Queued, Executing, Retired };
@@ -55,9 +56,12 @@ private:
     JS::PersistentRootedObject callable;
     JobOwners owners;
     Phase phase = Phase::Queued;
+    Retirement retirement = nullptr;
+    void* retirement_record = nullptr;
     std::unique_ptr<Job> next;
-    Job(JSContext* cx, JS::HandleObject function, const JobOwners& accepted)
-        : callable(cx, function), owners(accepted) {}
+    Job(JSContext* cx, JS::HandleObject function, const JobOwners& accepted,
+        Retirement retired, void* record)
+        : callable(cx, function), owners(accepted), retirement(retired), retirement_record(record) {}
   };
 
   Accounting& accounting_;
@@ -69,6 +73,8 @@ private:
   // rollback. At most this single admission can fail before the queue closes.
   JobOwners rollback_{};
   bool rollback_pending_ = false;
+  Retirement rollback_retirement_ = nullptr;
+  void* rollback_record_ = nullptr;
   bool running_ = false;
   bool stopped_ = false;
 
@@ -76,12 +82,22 @@ private:
     return owners.task_live || owners.queued_live;
   }
 
-  void retainFailedAdmission(JSContext* cx, JobOwners& owners) {
+  void retainFailedAdmission(JSContext* cx, JobOwners& owners,
+                             Retirement retired = nullptr, void* record = nullptr) {
     if (!accounting_.rollback(cx, owners) || live(owners)) {
       rollback_ = owners;
       rollback_pending_ = true;
       stopped_ = true;
+      rollback_retirement_ = retired;
+      rollback_record_ = record;
+      owners = {}; // ownership moved into the single retained rollback slot
+    } else if (retired) {
+      retired(record, false);
     }
+  }
+
+  static void acknowledge(Job& job) {
+    if (job.retirement) job.retirement(job.retirement_record, job.phase == Phase::Retired);
   }
 
 public:
@@ -113,9 +129,20 @@ public:
       if (live(accepted)) retainFailedAdmission(cx, accepted);
       return false;
     }
-    auto record = std::unique_ptr<Job>(new (std::nothrow) Job(cx, job, accepted));
+    return enqueueAdmitted(cx, job, accepted);
+  }
+
+  bool enqueueAdmitted(JSContext* cx, JS::HandleObject job, JobOwners& accepted,
+                       Retirement retired = nullptr, void* owner_record = nullptr) {
+    if (stopped_) {
+      // The caller retains a prepaid owner on this closed-path refusal. Never
+      // overwrite an existing partial admission or fabricate its retirement.
+      JS_ReportErrorASCII(cx, "activation-runtime-job-admission-closed");
+      return false;
+    }
+    auto record = std::unique_ptr<Job>(new (std::nothrow) Job(cx, job, accepted, retired, owner_record));
     if (!record) {
-      retainFailedAdmission(cx, accepted);
+      retainFailedAdmission(cx, accepted, retired, owner_record);
       JS_ReportOutOfMemory(cx);
       return false;
     }
@@ -123,6 +150,7 @@ public:
     if (tail_) tail_->next = std::move(record);
     else head_ = std::move(record);
     tail_ = last;
+    accepted = {};
     JS::JobQueueMayNotBeEmpty(cx);
     return true;
   }
@@ -156,6 +184,7 @@ public:
         stopped_ = true;
         break;
       }
+      acknowledge(*current_);
       current_.reset();
       if (!called) {
         stopped_ = true;
@@ -178,6 +207,9 @@ public:
     if (rollback_pending_) {
       if (!accounting_.rollback(cx, rollback_) || live(rollback_)) return false;
       rollback_pending_ = false;
+      if (rollback_retirement_) rollback_retirement_(rollback_record_, false);
+      rollback_retirement_ = nullptr;
+      rollback_record_ = nullptr;
     }
     if (current_) {
       // The running frame must have returned before a cancellation or a failed
@@ -188,10 +220,12 @@ public:
           ? accounting_.completed(cx, current_->owners)
           : accounting_.cancelled(cx, current_->owners);
       if (!settled || live(current_->owners)) return false;
+      acknowledge(*current_);
       current_.reset();
     }
     while (head_) {
       if (!accounting_.cancelled(cx, head_->owners) || live(head_->owners)) return false;
+      acknowledge(*head_);
       auto next = std::move(head_->next);
       head_ = std::move(next);
     }

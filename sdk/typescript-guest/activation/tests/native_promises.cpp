@@ -77,6 +77,7 @@ static PromiseRecords* promise_records;
 static ReactionRecords* reaction_records;
 static unsigned promises_created = 0, promises_settled = 0, promises_finalized = 0;
 static unsigned reactions_created = 0, reactions_finalized = 0;
+static unsigned native_jobs_created = 0;
 static bool before_promise(JSContext* cx, void** output) {
   return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
          promise_records->beforeAllocate(cx, output);
@@ -96,6 +97,10 @@ static void created_reaction(JSContext* cx, JSObject* object, void* record) {
 }
 static void* reaction_record(JSContext* cx, JSObject* object) {
   return reaction_records->record(cx, object);
+}
+static void created_native_job(JSContext* cx, JSObject* object, void* record) {
+  ++native_jobs_created;
+  ReactionRecords::created(cx, object, record);
 }
 static void weak_sweep(JSTracer* tracer, void*) {
   promise_records->sweep(tracer);
@@ -164,13 +169,33 @@ int main(int argc, char** argv) {
     static const JS::ActivationPromiseHooks hooks{
         before_promise, PromiseRecords::allocationFailed, created_promise,
         settled_promise, before_reaction, ReactionRecords::allocationFailed,
-        created_reaction, reaction_record};
+        created_reaction, reaction_record,
+        before_reaction, ReactionRecords::allocationFailed,
+        created_native_job, reaction_record};
     if (!JS_AddWeakPointerZonesCallback(cx, weak_sweep, nullptr) ||
         !JS_AddFinalizeCallback(cx, collection_completed, nullptr) ||
         !JS::SetActivationPromiseHooks(cx, &hooks)) return 8;
     JS::RootedValue output(cx);
     const char* selected = argv[1];
-    if (!std::strcmp(selected, "pending-reactions")) {
+    if (!std::strcmp(selected, "thenable-preallocation")) {
+      jobs.limit = 0;
+      bool evaluated = evaluate(cx, "globalThis.called=0;"
+          "Promise.resolve({then(resolve){called++;resolve(42);}});", &output);
+      status = !evaluated && JS_IsExceptionPending(cx) && native_jobs_created == 0 &&
+               jobs.admitted == 0 && jobs.tasks == 0 && jobs.queued == 0 && queue.empty() ? 0 : 1;
+      JS_ClearPendingException(cx);
+      if (!expect(cx, "called===0")) status = 1;
+    } else if (!std::strcmp(selected, "thenable-original-semantics")) {
+      if (!evaluate(cx, "globalThis.answer=0;globalThis.called=0;"
+          "Promise.resolve({then(resolve){called++;resolve(42);resolve(99);}})"
+          ".then(value=>{answer=value;});", &output)) return 9;
+      bool before = native_jobs_created == 1 && jobs.admitted == 2 &&
+                    jobs.tasks == 2 && jobs.queued == 2 && jobs.entries == 0;
+      js::RunJobs(cx);
+      status = before && queue.empty() && !JS_IsExceptionPending(cx) && jobs.admitted == 2 &&
+               jobs.entries == 2 && jobs.exits == 2 && jobs.tasks == 0 && jobs.queued == 0 &&
+               expect(cx, "answer===42&&called===1") ? 0 : 1;
+    } else if (!std::strcmp(selected, "pending-reactions")) {
       if (!evaluate(cx, "globalThis.called=0; globalThis.root=new Promise(resolve=>{globalThis.finish=resolve;});"
           "root.then(()=>called++); root.then(()=>called++);", &output)) return 9;
       status = promises.hasPendingPromises() && reactions.hasPendingReactions() &&
@@ -252,9 +277,9 @@ int main(int argc, char** argv) {
     std::printf("{\"case\":\"%s\",\"status\":%d,\"tasks\":%u,\"queued\":%u,"
         "\"native\":%u,\"jobsAdmitted\":%u,\"entries\":%u,\"exits\":%u,"
         "\"promisesCreated\":%u,\"promisesSettled\":%u,\"promisesFinalized\":%u,"
-        "\"reactionsCreated\":%u,\"reactionsFinalized\":%u,\"hostcallInGC\":%s}\n",
+        "\"reactionsCreated\":%u,\"reactionsFinalized\":%u,\"nativeJobsCreated\":%u,\"hostcallInGC\":%s}\n",
         selected,status,jobs.tasks,jobs.queued,native.owners,jobs.admitted,jobs.entries,jobs.exits,
-        promises_created,promises_settled,promises_finalized,reactions_created,reactions_finalized,
+        promises_created,promises_settled,promises_finalized,reactions_created,reactions_finalized,native_jobs_created,
         native.hostcall_in_gc ? "true" : "false");
   }
   // Physical records outlive the Context's last finalization, while all owners

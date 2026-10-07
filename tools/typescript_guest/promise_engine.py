@@ -26,6 +26,8 @@ JS_PUBLIC_API bool JS::SetActivationPromiseHooks(
       !hooks->created || !hooks->settled ||
       !hooks->beforeReactionAllocate || !hooks->reactionAllocationFailed ||
       !hooks->reactionCreated || !hooks->reactionRecord ||
+      !hooks->beforeNativeJobAllocate || !hooks->nativeJobAllocationFailed ||
+      !hooks->nativeJobCreated || !hooks->nativeJobRecord ||
       activationPromiseHooks) {
     JS_ReportErrorASCII(cx, "activation-runtime-promise-hooks-install-invalid");
     return false;
@@ -99,11 +101,21 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
     source = replace_once(source,
         b"static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);\n",
         b"static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);\n\n"
+        b"static bool PromiseResolveThenableJob(JSContext*, unsigned, Value*);\n"
+        b"static bool PromiseResolveBuiltinThenableJob(JSContext*, unsigned, Value*);\n\n"
         b"JS_PUBLIC_API bool JS::ActivationReactionRecordForJob(\n"
         b"    JSContext* cx, HandleObject job, void** output) {\n"
         b"  *output = nullptr;\n"
-        b"  if (!job->is<JSFunction>() ||\n"
-        b"      job->as<JSFunction>().maybeNative() != PromiseReactionJob) return true;\n"
+        b"  if (!job->is<JSFunction>()) return true;\n"
+        b"  auto native = job->as<JSFunction>().maybeNative();\n"
+        b"  if (native == PromiseResolveThenableJob ||\n"
+        b"      native == PromiseResolveBuiltinThenableJob) {\n"
+        b"    if (activationPromiseHooks && activationPromiseContext == cx)\n"
+        b"      *output = activationPromiseHooks->nativeJobRecord(cx, job);\n"
+        b"    if (!*output) {\n"
+        b"      JS_ReportErrorASCII(cx, \"activation-runtime-native-job-unadmitted\");\n"
+        b"      return false;\n    }\n    return true;\n  }\n"
+        b"  if (native != PromiseReactionJob) return true;\n"
         b"  const Value& value = job->as<JSFunction>().getExtendedSlot(ReactionJobSlot_ReactionRecord);\n"
         b"  JSObject* reaction = UncheckedUnwrap(&value.toObject());\n"
         b"  if (JS_IsDeadWrapper(reaction) || !reaction->is<PromiseReactionRecord>() ||\n"
@@ -115,6 +127,23 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
         b"    JS_ReportErrorASCII(cx, \"activation-runtime-reaction-job-unadmitted\");\n"
         b"    return false;\n  }\n  return true;\n}\n",
         "original-reaction-job-private-record-lookup")
+    for native in (b"PromiseResolveThenableJob", b"PromiseResolveBuiltinThenableJob"):
+        admission_preimage = (b"  RootedFunction job(\n"
+            b"      cx, NewNativeFunction(cx, " + native + b", 0, funName,\n"
+            b"                            gc::AllocKind::FUNCTION_EXTENDED, GenericObject));\n"
+            b"  if (!job) {\n    return false;\n  }\n")
+        after = (b"  void* activationRecord = nullptr;\n"
+            b"  const bool activationObserved = activationPromiseHooks &&\n"
+            b"      activationPromiseContext == cx;\n"
+            b"  if (activationObserved &&\n"
+            b"      !activationPromiseHooks->beforeNativeJobAllocate(cx, &activationRecord)) {\n"
+            b"    return false;\n  }\n" + admission_preimage.replace(
+            b"  if (!job) {\n    return false;\n  }\n",
+            b"  if (!job) {\n"
+            b"    if (activationObserved) activationPromiseHooks->nativeJobAllocationFailed(activationRecord);\n"
+            b"    return false;\n  }\n"
+            b"  if (activationObserved) activationPromiseHooks->nativeJobCreated(cx, job, activationRecord);\n"))
+        source = replace_once(source, admission_preimage, after, "admit-before-" + native.decode())
     result["js/src/builtin/Promise.cpp"] = source
     if "js/public/ActivationPromiseHooks.h" in original:
         raise ValueError("original engine already defines private hook ABI")
@@ -126,6 +155,7 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
         "originalPromiseConstructorAndThenBehaviorReplaced": False,
         "nativeAdmissionBeforeObjectAllocation": True,
         "pendingReactionAdmissionBeforeAllocation": True,
+        "thenableResolutionJobAdmissionBeforeAllocation": True,
         "originalReactionJobRecordLookup": True,
         "GCPerformsHostCallsOrRefunds": False,
         "originalPromiseObjectDeclarationUnchanged": True,
@@ -136,7 +166,7 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
         "supportedAsyncProfile": False,
         "remaining": ["source-built-library-and-real-intrinsic-hook-controls",
                       "real-pending-reaction-admission-and-job-transfer-controls",
-                      "native-thenable-job-preallocation",
+                      "real-native-thenable-preallocation-controls",
                       "root-versus-accepted-work-drain", "standard-timers-and-stop-acknowledgement",
                       "real-async-import-lowering", "matching-signed-component-qualification"],
     }
