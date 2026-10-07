@@ -316,6 +316,14 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
                 error.details[0].fields.get("reason").map(String::as_str),
                 Some("all-cells-quarantined")
             );
+            assert_eq!(
+                error
+                    .details
+                    .iter()
+                    .filter(|detail| detail.kind == "scheduler.limit")
+                    .count(),
+                1
+            );
             let diagnostic = latent_core::diagnostic::ActivationDiagnostic::new(
                 latent_core::diagnostic::DiagnosticStage::Queue,
                 latent_core::diagnostic::DiagnosticReason::QueuePressure,
