@@ -327,13 +327,15 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
                     .count(),
                 1
             );
-            use latent_core::diagnostic::{
-                ActivationDiagnostic, DiagnosticReason, DiagnosticStage,
-            };
-            let diagnostic =
-                ActivationDiagnostic::new(DiagnosticStage::Queue, DiagnosticReason::QueuePressure);
+            let diagnostic = latent_core::diagnostic::ActivationDiagnostic::new(
+                latent_core::diagnostic::DiagnosticStage::Queue,
+                latent_core::diagnostic::DiagnosticReason::QueuePressure,
+            );
             assert_eq!(error.details[1], diagnostic.detail());
-            assert_eq!(ActivationDiagnostic::from_error(&error), Some(diagnostic));
+            assert_eq!(
+                latent_core::diagnostic::ActivationDiagnostic::from_error(&error),
+                Some(diagnostic)
+            );
             assert_eq!(error.details[1].kind, "activation.diagnostic.v1");
             assert_eq!(
                 error.details[1].fields,
