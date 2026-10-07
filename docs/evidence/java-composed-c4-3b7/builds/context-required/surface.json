@@ -1,0 +1,11 @@
+{
+  "exports": [
+    "examples:java-http-context-required/api@1.0.0"
+  ],
+  "imports": [
+    "latent:clock/monotonic@0.1.0",
+    "latent:clock/wall@0.1.0",
+    "latent:context/context@0.1.0"
+  ],
+  "world": "examples:java-http-context-required/service@1.0.0"
+}

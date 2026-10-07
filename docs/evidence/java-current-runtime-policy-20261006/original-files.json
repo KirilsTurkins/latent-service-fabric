@@ -1,0 +1,91 @@
+{
+  "files": [
+    {
+      "path": "current-policy-owner-bridge.json",
+      "bytes": 144217,
+      "sha256": "edc1fc00cb4a1399b2634cd1e19b29dd3bfa58bc28918a4c7f918cff7d541b37"
+    },
+    {
+      "path": "current-wasmtime-owner-bridge.json",
+      "bytes": 2590,
+      "sha256": "11159d7f7455e447ace543d224b77f8b4cf45ea71ecbe61c006b06fd198930d7"
+    },
+    {
+      "path": "failed-e620-policy-receipt.json",
+      "bytes": 3890,
+      "sha256": "2a4cf7968559bfcad99da9195916df62941745e58bf5a6109bfe289a3d595222"
+    },
+    {
+      "path": "failed-e620-policy.log",
+      "bytes": 15113,
+      "sha256": "0ca4b1d38ef68d40dfa6ce1bd81abf04a799cb62ffab4b7f2a65b698b8f59b44"
+    },
+    {
+      "path": "native-aot-cache-receipt.json",
+      "bytes": 2055,
+      "sha256": "3abe5e7ac8b25f5aba057554feebdb7388f8f563f18e66b7f6f69e4b93a3ec78"
+    },
+    {
+      "path": "native-aot-cache.log",
+      "bytes": 848,
+      "sha256": "ef30295f3b508414bbb8456fa4701fceb375d23c27b8b25435917c864289fd87"
+    },
+    {
+      "path": "original-runtime-controller.py.txt",
+      "bytes": 5292,
+      "sha256": "25c1c41335eca60cb2678b52c922255eada17c49ab03c697945226ddf2b898df"
+    },
+    {
+      "path": "original-runtime-runner.py.txt",
+      "bytes": 4752,
+      "sha256": "5a6ea12bd8f6d347e204cf179738c655c86c78c0fefb0c05fc74b8eb8306674c"
+    },
+    {
+      "path": "original-runtime-setup.py.txt",
+      "bytes": 1995,
+      "sha256": "e3414eccb856df2b4b9aace0d2806148fef907fef04f5a9955f1b924cffe2c30"
+    },
+    {
+      "path": "policy-library-list.log",
+      "bytes": 12808,
+      "sha256": "40149ab967e299640bf2576929129f8347bf57c599efac60981fd9f0dee1fd82"
+    },
+    {
+      "path": "policy-library-receipt.json",
+      "bytes": 1985,
+      "sha256": "5fd02c16880b78c6caffde9da08a58b336060ad7f342e3a41a7a6048620f08e6"
+    },
+    {
+      "path": "policy-library.log",
+      "bytes": 14885,
+      "sha256": "2b8fc5c626f9e96ee6b98961f1ae160fd1c9208d0928b6fa1dbecb8ee9dde7fe"
+    },
+    {
+      "path": "policy-review.json",
+      "bytes": 16480,
+      "sha256": "5ce434868efa0bf2cddb508c28007358a4f7054cc7d2a93c804b8f59f7a6f5c2"
+    },
+    {
+      "path": "runtime-library-receipt.json",
+      "bytes": 37596,
+      "sha256": "58f369d0cbf09825c40a485de2cd8868d581ce5fe977661693e8589b9e3b4fcc"
+    },
+    {
+      "path": "runtime-library.log",
+      "bytes": 39715,
+      "sha256": "9fbd1b3c2671883d1ab05075f36cfa8e67e3b59ccb00ca64b3addf5a22843519"
+    },
+    {
+      "path": "runtime-review.json",
+      "bytes": 2043,
+      "sha256": "d07be416cc0e73fdde92e7dbcce14c81648b7490c9f1497730af0562dfb64a03"
+    },
+    {
+      "path": "runtime-source-identity.json",
+      "bytes": 759,
+      "sha256": "7b80aca51e5bdb5b8fe859da79d1d0dd3106cc66e28f4a4b2cd88d2318bc2c31"
+    }
+  ],
+  "originalBytesCopiedExactly": true,
+  "oldFailedReceiptRelabeled": false
+}

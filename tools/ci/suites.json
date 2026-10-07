@@ -1718,6 +1718,7 @@
         "deployments::tests::admission::real_catalog_verifies_the_entire_pinned_identity_and_ignores_forged_attributes",
         "deployments::tests::admission::weighted_selection_preserves_each_exact_revisions_own_policy",
         "deployments::tests::apply_read_list_delete_and_pinned_revision",
+        "deployments::tests::bindings::checked_structural_values_do_not_require_or_create_provider_bindings",
         "deployments::tests::bindings::exact_host_plan_is_durable_and_old_pins_keep_original_data",
         "deployments::tests::bindings::identical_consumers_reuse_one_transient_package_but_never_a_previous_compilation",
         "deployments::tests::bindings::inspection::inspection_preserves_scope_versions_and_stale_unavailable_plans",
@@ -1922,7 +1923,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 250,
+      "minimumCases": 251,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
@@ -4112,6 +4113,7 @@
         "authoring::inputs::tests::diagnostic_assets_preserve_checked_component_and_wit_inventory",
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
         "authoring::policy::tests::demo_publisher_and_builder_proof_age_ceilings_remain_independent",
+        "authoring::policy::tests::separated_builders_verify_only_their_exact_source_under_permuted_policy",
         "fixture_tls::tests::fixture_tls_is_fresh_private_and_never_replaces_an_existing_identity"
       ],
       "expectedIgnored": [],
@@ -4119,7 +4121,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 5,
+      "minimumCases": 6,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -8056,6 +8058,7 @@
       "boundary": "runtime",
       "expectedCases": [
         "ownership::evicted_ready_handle_keeps_its_image_and_revocation_never_recovers_from_native_cache",
+        "reopen::buffered_web_profile_change_after_restart_cannot_reuse_a_stale_native_image",
         "reopen::identical_component_after_restart_requires_its_exact_engine_before_native_reuse",
         "reopen::real_miss_invokes_then_reopened_native_hit_verifies_source_without_compiling",
         "tamper::replaced_bytes_with_matching_sha_and_wrong_host_key_never_reach_the_loader"
@@ -8065,7 +8068,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 4,
+      "minimumCases": 5,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

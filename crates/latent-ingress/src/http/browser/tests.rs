@@ -295,6 +295,7 @@ fn cookie_count_bytes_duplicates_and_identity_encoding_are_bounded() {
 
 #[test]
 fn guest_cannot_override_security_headers_enable_cors_or_supply_encoded_bodies() {
+    assert_ownership_contract();
     for field in security_headers(Scheme::Https) {
         assert!(!validate_response(
             &response(200, &[(field.name, "unsafe")]),
@@ -428,4 +429,185 @@ fn html_requires_explicit_utf8_and_does_not_claim_to_sanitize_application_html()
         crate::http::bounded::BoundedText("text/html".into()),
     ));
     assert!(!validate_response(&value, Scheme::Https));
+}
+
+fn assert_ownership_limits(contract: &serde_json::Value) {
+    assert_eq!(contract["limits"]["fields"], crate::http::MAX_HEADERS);
+    assert_eq!(
+        contract["limits"]["aggregateNameValueBytes"],
+        crate::http::MAX_HEADER_BYTES
+    );
+    assert_eq!(
+        contract["limits"]["nameBytes"],
+        crate::http::MAX_HEADER_NAME_BYTES
+    );
+    assert_eq!(
+        contract["limits"]["valueBytes"],
+        crate::http::MAX_HEADER_VALUE_BYTES
+    );
+    assert_eq!(
+        contract["limits"]["responseBodyBytes"],
+        crate::http::MAX_RESPONSE_BODY
+    );
+    assert_eq!(
+        contract["limits"]["mediaTypeBytes"],
+        crate::http::MAX_MEDIA_TYPE_BYTES
+    );
+    assert_eq!(
+        contract["limits"]["locationBytes"],
+        crate::http::MAX_TARGET_BYTES
+    );
+    assert_eq!(contract["limits"]["cookies"], MAX_COOKIES);
+    assert_eq!(
+        contract["limits"]["cookieAggregateValueBytes"],
+        MAX_COOKIE_BYTES
+    );
+    assert_eq!(contract["limits"]["cookieNameBytes"], MAX_COOKIE_NAME_BYTES);
+    assert_eq!(
+        contract["limits"]["cookieValueBytes"],
+        MAX_COOKIE_VALUE_BYTES
+    );
+}
+
+fn assert_ownership_contract() {
+    let contract: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../contracts/http/browser-response-ownership-v1.json"
+    )))
+    .unwrap();
+    assert_eq!(contract["schemaVersion"], OWNERSHIP_PROFILE);
+    assert_eq!(contract["httpContract"], crate::http::CONTRACT);
+    assert_eq!(contract["browserProfile"], PROFILE);
+    assert_ownership_limits(&contract);
+    let mut documented_security = Vec::new();
+    for row in contract["rows"].as_array().unwrap() {
+        let id = row["id"].as_str().unwrap();
+        for field in row["names"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_str().unwrap().to_owned())
+            .chain(
+                row["prefixes"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| format!("{}fixture", value.as_str().unwrap())),
+            )
+        {
+            assert_eq!(format!("{:?}", header_ownership(&field)), id, "{field}");
+            assert_eq!(
+                header_ownership(&field.to_ascii_uppercase()),
+                header_ownership(&field)
+            );
+            if id == "HostSecurity" {
+                documented_security.push(field.clone());
+            }
+            if matches!(
+                header_ownership(&field),
+                HeaderOwnership::HostSecurity
+                    | HeaderOwnership::HostTransport
+                    | HeaderOwnership::ForbiddenHopByHop
+                    | HeaderOwnership::ForbiddenIdentity
+                    | HeaderOwnership::ForbiddenPlatform
+                    | HeaderOwnership::ForbiddenBrowserPolicy
+            ) {
+                let output = response(200, &[(&field, "synthetic-private-token")]);
+                assert!(
+                    headers::response(&output, Method::Get).is_err()
+                        || !validate_response(&output, Scheme::Https),
+                    "{field}"
+                );
+            }
+        }
+    }
+    assert_eq!(
+        documented_security,
+        security_headers(Scheme::Https)
+            .map(|header| header.name.to_owned())
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        contract["referrerPolicy"],
+        std::str::from_utf8(
+            security_headers(Scheme::Http)
+                .find(|header| header.name == "referrer-policy")
+                .unwrap()
+                .value
+        )
+        .unwrap()
+    );
+    assert_ownership_groups(&contract);
+    assert_eq!(
+        header_ownership("x-app-example"),
+        HeaderOwnership::GuestAllowed
+    );
+    assert!(headers::response(&response(200, &[("X-App-Example", "value")]), Method::Get).is_err());
+    assert!(headers::response(
+        &response(200, &[("x-app-example", "a"), ("x-app-example", "b")]),
+        Method::Get
+    )
+    .is_ok());
+    assert!(validate_response(
+        &response(
+            200,
+            &[("cache-control", "public, max-age=60"), ("age", "123")]
+        ),
+        Scheme::Https
+    ));
+}
+
+fn assert_ownership_groups(contract: &serde_json::Value) {
+    for (id, fields) in [
+        ("HostTransport", headers::HOST_RESPONSE_FIELDS),
+        ("ForbiddenHopByHop", headers::HOP_BY_HOP),
+        ("ForbiddenIdentity", headers::PRIVATE_FIELDS),
+        (
+            "ForbiddenBrowserPolicy",
+            super::ownership::FORBIDDEN_BROWSER,
+        ),
+        ("Conditional", super::ownership::CONDITIONAL),
+        ("HostCacheInput", super::ownership::HOST_CACHE),
+        (
+            "CredentialSensitiveAllowed",
+            super::ownership::SENSITIVE_ALLOWED,
+        ),
+    ] {
+        let row = contract["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["id"] == id)
+            .unwrap();
+        assert_eq!(
+            row["names"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_str().unwrap())
+                .collect::<Vec<_>>(),
+            fields
+        );
+    }
+    for (id, prefixes) in [
+        ("ForbiddenIdentity", headers::PRIVATE_PREFIXES),
+        ("ForbiddenPlatform", ["x-lsf-"].as_slice()),
+        ("ForbiddenBrowserPolicy", ["access-control-"].as_slice()),
+    ] {
+        let row = contract["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["id"] == id)
+            .unwrap();
+        assert_eq!(
+            row["prefixes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_str().unwrap())
+                .collect::<Vec<_>>(),
+            prefixes
+        );
+    }
 }
