@@ -11,6 +11,8 @@ use super::state::Inner;
 use super::{AdmittedSchedulingRequest, SchedulingCancellation};
 use crate::{ActivationScheduler, CellClass};
 
+mod publication;
+
 #[derive(Default)]
 struct Witness {
     drops: AtomicUsize,
