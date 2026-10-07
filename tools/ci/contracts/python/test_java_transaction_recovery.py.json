@@ -8,6 +8,7 @@
     "NativeRecoveryOracle.test_optional_recovery_tool_requires_paired_exact_original_native_source",
     "NativeRecoveryOracle.test_original_cli_generation_refuses_numeric_zero_unicode_and_overflow",
     "NativeRecoveryOracle.test_original_digest_refuses_unbounded_changed_encoding_and_zero_identity",
+    "NativeRecoveryOracle.test_quiesce_requires_observed_canonical_operator_scope_without_changing_snapshot_actor",
     "NativeRecoveryOracle.test_report_refuses_approval_fields_booleans_as_counts_and_duplicate_json_fields",
     "NativeRecoveryOracle.test_restored_selection_retains_catalogs_credentials_clock_and_quotas_without_mutating_original",
     "NativeRecoveryOracle.test_snapshot_keeps_original_native_manifest_and_refuses_changed_actor_scope_and_approval",
@@ -157,10 +158,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "NativeRecoveryOracle.test_quiesce_requires_observed_canonical_operator_scope_without_changing_snapshot_actor": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_recovery.py",
-  "reviewReason": "Preserve all seven original closed receipt and retirement cases; add five source-only original-generation, snapshot attribution, scoped epoch, deliberate root selection and coherent native input refusal cases.",
+  "reviewReason": "Preserve all seven original closed receipt and retirement cases; add five source-only original-generation, snapshot attribution, scoped epoch, deliberate root selection and coherent native input refusal cases. Add one exact canonical quiesce operator/scope/generation/disposition refusal case; every original case, snapshot logical actor and fixture guard remains unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

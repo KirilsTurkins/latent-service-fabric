@@ -10,7 +10,7 @@ from pathlib import Path
 
 from tools.phase2_operator_process import read_json, write_json
 
-from . import configuration as cfg, http, lifecycle, provider, recovery
+from . import configuration as cfg, http, lifecycle, policies, provider, recovery
 from .campaign import command_input, precondition, rpc_result
 from .inputs import require
 
@@ -20,6 +20,29 @@ def generation(value):
             and value == str(int(value)) and 0 < int(value) < 2**64,
             "original-namespace-generation-required")
     return value
+
+
+def quiesce_receipt(result, operation, operator, before):
+    expected_actor = lifecycle.observed_operator_identity(operator)
+    expected_generation = generation(before["generation"])
+    expected_after = generation(str(int(expected_generation) + 1))
+    expected_scope = {"tenant": cfg.TENANT, "namespace": cfg.NAMESPACE, "incarnation": "1"}
+    require(before["view"]["namespace"] == expected_scope,
+            "original-quiesce-namespace-scope")
+    receipt = result["data"]["receipt"]
+    require(result["outcomeKnown"] is True and receipt["operationId"] == operation
+            and receipt["authenticatedOperator"] == expected_actor
+            and receipt["namespace"] == expected_scope
+            and receipt["mutation"] == "NAMESPACE_MUTATION_KIND_QUIESCE"
+            and receipt["beforeGeneration"] == expected_generation
+            and receipt["afterGeneration"] == expected_after
+            and receipt["stateSchema"] == before["view"]["stateSchema"]
+            and receipt["status"] == "NAMESPACE_STATUS_QUIESCING"
+            and receipt["disposition"] == "STATE_OPERATION_DISPOSITION_COMMITTED"
+            and result["data"]["replayed"] is False
+            and result["data"]["auditAcknowledgement"] is not None,
+            "actual-current-authorized-quiesce")
+    return receipt
 
 
 def original_snapshot(value, operation):
@@ -65,6 +88,11 @@ class OfflineCampaign:
     def __init__(self, campaign, helper, directory):
         self.campaign, self.directory = campaign, directory
         self.client, self.node = campaign.client, campaign.node
+        observed = policies.ObservedHosts.read(
+            read_json(self.client.evidence.directory / "actual-native-hosts.json"),
+            read_json(campaign.full_path)["state"]["operations"])
+        self.operator = observed.operator
+        lifecycle.observed_operator_identity(self.operator)
         self.native = recovery.Recovery(self.client, helper, campaign.configuration, directory, self.node)
         self.writer = "put-once-writer-v2"
         self.publication = campaign.publications[self.writer]
@@ -88,14 +116,11 @@ class OfflineCampaign:
         return observed
 
     def quiesce(self, publication, operation):
+        lifecycle.observed_operator_identity(self.operator)
         before = lifecycle.inspect_namespace(self.client, publication)
         result = self.client.call("state", "quiesce", *lifecycle.namespace_arguments(publication),
             "--operation-id", operation, "--expected-generation", generation(before["generation"]))
-        receipt = result["data"]["receipt"]
-        require(result["outcomeKnown"] is True and receipt["operationId"] == operation
-                and receipt["authenticatedOperator"] == cfg.OPERATOR
-                and result["data"]["auditAcknowledgement"] is not None,
-                "actual-current-authorized-quiesce")
+        quiesce_receipt(result, operation, self.operator, before)
         self.client.evidence.passed(operation, {"originalNamespace": before, "actualReceipt": result["data"]})
         self.node.stop()
         lifecycle.admission_lease_interval(self.client)

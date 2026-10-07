@@ -92,6 +92,51 @@ class NativeRecoveryOracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 recovery.original_view(invalid)
 
+    def test_quiesce_requires_observed_canonical_operator_scope_without_changing_snapshot_actor(self):
+        from tools.java_transaction_qualification import configuration as cfg, offline_campaign
+
+        operator = {"subject": cfg.OPERATOR, "ownerKind": "administrator", "tenant": cfg.TENANT,
+            "service": None, "recoveryKind": "original-caller", "recoveryScope": "recovery:sha256:" + "a" * 64}
+        scope = {"tenant": cfg.TENANT, "namespace": cfg.NAMESPACE, "incarnation": "1"}
+        before = {"generation": "7", "view": {"namespace": scope, "stateSchema": "sha256:" + "b" * 64}}
+        original = {"outcomeKnown": True, "data": {"receipt": {
+            "operationId": "original-quiesce", "authenticatedOperator": "administrator:" + operator["recoveryScope"],
+            "namespace": scope, "mutation": "NAMESPACE_MUTATION_KIND_QUIESCE",
+            "beforeGeneration": "7", "afterGeneration": "8", "stateSchema": before["view"]["stateSchema"],
+            "status": "NAMESPACE_STATUS_QUIESCING", "disposition": "STATE_OPERATION_DISPOSITION_COMMITTED"},
+            "replayed": False,
+            "auditAcknowledgement": {"sequence": "29"}}}
+        self.assertIs(offline_campaign.quiesce_receipt(original, "original-quiesce", operator, before), original["data"]["receipt"])
+        for actor in (cfg.OPERATOR, "administrator:recovery:sha256:" + "c" * 64,
+                      "user:" + operator["recoveryScope"]):
+            changed = copy.deepcopy(original)
+            changed["data"]["receipt"]["authenticatedOperator"] = actor
+            with self.subTest(actor=actor), self.assertRaises(ValueError):
+                offline_campaign.quiesce_receipt(changed, "original-quiesce", operator, before)
+        for change in ("operation", "audit", "outcome"):
+            changed = copy.deepcopy(original)
+            if change == "operation":
+                changed["data"]["receipt"]["operationId"] = "another-quiesce"
+            elif change == "audit":
+                changed["data"]["auditAcknowledgement"] = None
+            else:
+                changed["outcomeKnown"] = False
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                offline_campaign.quiesce_receipt(changed, "original-quiesce", operator, before)
+        for key, value in (("beforeGeneration", "8"), ("afterGeneration", "9"),
+                           ("stateSchema", "sha256:" + "c" * 64), ("status", "NAMESPACE_STATUS_ACTIVE"),
+                           ("disposition", "STATE_OPERATION_DISPOSITION_UNKNOWN"),
+                           ("mutation", "NAMESPACE_MUTATION_KIND_RETIRE"),
+                           ("namespace", dict(scope, tenant="foreign"))):
+            changed = copy.deepcopy(original)
+            changed["data"]["receipt"][key] = value
+            with self.subTest(field=key), self.assertRaises(ValueError):
+                offline_campaign.quiesce_receipt(changed, "original-quiesce", operator, before)
+        with self.assertRaisesRegex(ValueError, "original-observed-namespace-operator"):
+            offline_campaign.quiesce_receipt(original, "original-quiesce", dict(operator, subject="alias"), before)
+        self.assertEqual(original["data"]["receipt"]["beforeGeneration"], "7")
+        self.assertEqual(original["data"]["receipt"]["afterGeneration"], "8")
+
     def test_original_digest_refuses_unbounded_changed_encoding_and_zero_identity(self):
         value = "sha256:" + "a" * 64
         self.assertEqual(recovery.original_digest(value), value)

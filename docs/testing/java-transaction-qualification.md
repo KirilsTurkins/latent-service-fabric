@@ -33,6 +33,13 @@ Preparation/resume source pins retain the full bridge. Current tools, native
 host observations and policy bytes still require their own exact fresh checks;
 the historical receipt supplies only TLS provenance and no execution approval.
 
+Namespace create and quiesce receipts must name the canonical administrator plus
+the recovery scope from the independently observed, rechecked native operator.
+The literal workflow operator name remains the logical identifier in snapshot
+and recovery-plan payloads. Quiesce also requires its original operation, exact
+namespace/schema, generation step, committed quiescing disposition and audit
+acknowledgement. A receipt cannot supply its own expected authenticated scope.
+
 Native host inspection opens and cleanly retires the enforced admission catalog.
 Before the following node start, both provision and resume spend the existing
 six-second admission retirement interval inside the same original deadline.
