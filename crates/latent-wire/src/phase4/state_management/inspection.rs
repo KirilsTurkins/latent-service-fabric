@@ -11,10 +11,8 @@ use latent_state::{
     embedded::{EmbeddedStore, Family, ReadView, StoreError},
     namespace::{
         catalog::{NamespaceOperationContext, NamespaceRead},
-        history::NamespaceHistory,
         NamespaceRecord,
     },
-    session::{version::ViewIdentity, StateMode, StateScope},
     store_io::StoreIoKind,
 };
 
