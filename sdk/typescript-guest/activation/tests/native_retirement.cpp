@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
   Records records;
   Records::Record* first = nullptr;
   unsigned acknowledgements = 0;
+  unsigned last_acknowledged_id = 0;
   bool in_gc = false;
   bool host_in_gc = false;
   bool refuse = false;
@@ -29,6 +30,7 @@ int main(int argc, char** argv) {
     if (refuse) return false;
     if (!owner.live) return false;
     ++acknowledgements;
+    last_acknowledged_id = owner.id;
     owner.live = false;
     return true;
   };
@@ -63,8 +65,8 @@ int main(int argc, char** argv) {
     records.collectionCompleted();
     refuse = true;
     const bool result = records.checkpoint(acknowledge);
-    status = !result && records.stopped() && records.hasRetained() && first->owner.id == 1 &&
-             first->owner.live && acknowledgements == 0 ? 0 : 1;
+    status = !result && records.stopped() && records.hasRetained() &&
+             records.hasUnacknowledgedRetirement() && acknowledgements == 0 ? 0 : 1;
     Records::Record* forbidden = nullptr;
     status = status == 0 && !records.track({2, true}, forbidden) && !forbidden ? 0 : 1;
     refuse = false;
@@ -100,6 +102,8 @@ int main(int argc, char** argv) {
   } else return 4;
   if (!records.checkpoint(acknowledge) || records.hasRetained() || records.hasPhysical() || host_in_gc)
     status = 1;
+  if (!last_acknowledged_id) status = 1;
+  if (!std::strcmp(selected, "failed-ack-retains-exact-owner") && last_acknowledged_id != 1) status = 1;
   const auto before = acknowledgements;
   if (!records.checkpoint(acknowledge) || acknowledgements != before) status = 1;
   std::printf("{\"case\":\"%s\",\"status\":%d,\"acknowledgements\":%u,\"retained\":%s,\"hostcallInGC\":%s}\n",

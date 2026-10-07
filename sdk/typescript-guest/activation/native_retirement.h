@@ -20,6 +20,8 @@ private:
   std::unique_ptr<Record> records_;
   Owner failed_owner_{};
   bool failed_owner_live_ = false;
+  Owner retired_owner_{};
+  bool retired_owner_live_ = false;
   bool stopped_ = false;
 
 public:
@@ -58,6 +60,10 @@ public:
       if (!acknowledge(failed_owner_)) return false;
       failed_owner_live_ = false;
     }
+    if (retired_owner_live_) {
+      if (!acknowledge(retired_owner_)) return false;
+      retired_owner_live_ = false;
+    }
     auto* link = &records_;
     while (*link) {
       auto* record = link->get();
@@ -65,14 +71,18 @@ public:
         link = &record->next;
         continue;
       }
-      if (!acknowledge(record->owner)) {
+      // The native graph and even the tracking allocation are destroyed
+      // before releasing this exact charge. Refusal uses a fixed retained
+      // slot rather than allocating another retirement record.
+      retired_owner_ = record->owner;
+      retired_owner_live_ = true;
+      auto next = std::move(record->next);
+      *link = std::move(next);
+      if (!acknowledge(retired_owner_)) {
         stopped_ = true;
         return false;
       }
-      // Only the tracker storage remains here. Its physical graph has already
-      // been destroyed, and this exact owner was acknowledged once above.
-      auto next = std::move(record->next);
-      *link = std::move(next);
+      retired_owner_live_ = false;
     }
     return true;
   }
@@ -83,9 +93,9 @@ public:
       if (record->physical) return true;
     return false;
   }
-  bool hasRetained() const { return failed_owner_live_ || records_ != nullptr; }
+  bool hasRetained() const { return failed_owner_live_ || retired_owner_live_ || records_ != nullptr; }
   bool hasUnacknowledgedRetirement() const {
-    if (failed_owner_live_) return true;
+    if (failed_owner_live_ || retired_owner_live_) return true;
     for (auto* record = records_.get(); record; record = record->next.get())
       if (!record->physical) return true;
     return false;
