@@ -1,5 +1,8 @@
 //! Sealed deferred work shares the existing node provider ownership ledger.
-use super::{IngressRequest, MaintenanceRequest, PlatformError, ProviderClient, ProviderPools};
+use super::{
+    client::ClientCore, IngressRequest, MaintenanceRequest, PlatformError, ProviderClient,
+    ProviderPools,
+};
 use latent_effects::authority::{DispatchGrant, DispatchPurpose};
 use std::{future::Future, sync::Arc, time::Instant};
 
@@ -47,6 +50,23 @@ impl ProviderPools {
 }
 
 impl DeferredRequest {
+    /// Borrow only the already-sealed physical request. No new admission,
+    /// running slot, deadline or protocol-operation allowance is created.
+    pub(super) fn connection_owners(
+        &self,
+        client: &Arc<ClientCore>,
+    ) -> Result<(Option<MaintenanceRequest>, Option<IngressRequest>), PlatformError> {
+        match &self.request {
+            Request::Execute(request) => {
+                request.check_client(client)?;
+                Ok((None, Some(request.clone())))
+            }
+            Request::Reconcile(request) => {
+                request.check_client(client)?;
+                Ok((Some(request.clone()), None))
+            }
+        }
+    }
     #[must_use]
     pub fn grant(&self) -> &DispatchGrant {
         &self.grant
