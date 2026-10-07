@@ -91,6 +91,36 @@ impl ActivationIdSource for Ids {
         )))
     }
 }
+
+/// Observe the real executor-owned timing registration; no artificial sleep or
+/// synthetic provider blocks the guest. Dropping a pending wait removes it.
+pub struct ObservedReadWait {
+    pub active: AtomicU64,
+    pub entered: tokio::sync::Notify,
+}
+impl latent_executor::PreparationReadWait for ObservedReadWait {
+    fn now(&self) -> Instant {
+        latent_executor::PreparationReadWait::now(&latent_node::CurrentnessReadTimer)
+    }
+    fn wait_until(&self, deadline: Instant) -> latent_core::BoxFuture<'_, ()> {
+        struct Active<'a>(&'a AtomicU64);
+        impl Drop for Active<'_> {
+            fn drop(&mut self) {
+                self.0.fetch_sub(1, Ordering::AcqRel);
+            }
+        }
+        Box::pin(async move {
+            self.active.fetch_add(1, Ordering::AcqRel);
+            let _active = Active(&self.active);
+            self.entered.notify_one();
+            latent_executor::PreparationReadWait::wait_until(
+                &latent_node::CurrentnessReadTimer,
+                deadline,
+            )
+            .await;
+        })
+    }
+}
 pub struct Fixture {
     _guest_runtime: guest_runtime::Runtime,
     pub manager: LocalActivationManager,
@@ -100,10 +130,12 @@ pub struct Fixture {
     pub catalog: Arc<DirectoryArtifactRepository>,
     pub quotas: LocalQuotaProvider,
     pub broker: Arc<ActivationCapabilityBroker>,
-    _policies: Arc<PolicyStore>,
+    pub maximum_calls_per_session: usize,
+    pub policies: Arc<PolicyStore>,
     _provider: ProviderRegistration,
     pub target: DeploymentManifest,
     pub observations: Arc<Observations>,
+    pub read_wait: Arc<ObservedReadWait>,
     _root: tempfile::TempDir,
 }
 impl Fixture {
@@ -136,14 +168,37 @@ impl Fixture {
             audit,
             provided,
             Arc::new(SyntheticFixtureLoad),
+            None,
         )
         .await
     }
     pub async fn with_load_source(load: Arc<dyn NodeLoadSource>) -> Self {
-        Self::with_packages_and_load(2, false, true, None, None, load).await
+        Self::with_packages_and_load(2, false, true, None, None, load, None).await
+    }
+    pub async fn with_activation_runtime(
+        cells: u32,
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        call_wall_millis: u64,
+    ) -> Self {
+        Self::with_packages_and_load(
+            cells,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some((limits, call_wall_millis)),
+        )
+        .await
     }
     #[expect(
         clippy::too_many_lines,
+        clippy::too_many_arguments,
         reason = "one explicit real catalog, broker and node ownership composition for integration tests"
     )]
     async fn with_packages_and_load(
@@ -157,6 +212,7 @@ impl Fixture {
             latent_packaging::PackageBundle,
         )>,
         load: Arc<dyn NodeLoadSource>,
+        activation_runtime: Option<(latent_core::activation_runtime::RuntimeLimits, u64)>,
     ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let target_tenant = if foreign { "tenant-b" } else { "tenant-a" };
@@ -206,6 +262,7 @@ impl Fixture {
                 java_guest: guest_runtime::java(),
                 ..Default::default()
             },
+            activation_runtime: activation_runtime.map(|(limits, _)| limits),
             fuel_async_yield_interval: guest_runtime::java().then_some(10_000),
             maximum_memory_bytes: packages::budget().memory_bytes,
             maximum_fuel: packages::budget().cpu_fuel,
@@ -213,6 +270,13 @@ impl Fixture {
             epoch_tick_interval_millis: 1,
             ..Default::default()
         };
+        let runtime_clocks = activation_runtime.is_some()
+            && caller
+                .surface()
+                .unwrap()
+                .imports()
+                .iter()
+                .any(|import| import.as_ref() == "latent:clock/monotonic@0.1.0");
         let store = Arc::new(
             DirectoryDeploymentRepository::open_with_catalog(
                 root.path().join("routes"),
@@ -244,13 +308,38 @@ impl Fixture {
             .manifest
             .execution
             .resource_budget_ceiling;
-        consumer.grants = vec![CapabilityGrantSpec::new(
-            latent_core::CapabilityId(SERVICE_INVOCATION_CAPABILITY.into()),
-            PolicyId("local-calls".into()),
-        )];
-        consumer.grants.extend(guest_runtime::grants());
+        consumer.grants = if activation_runtime.is_some() {
+            let mut grants = vec![CapabilityGrantSpec::new(
+                latent_core::CapabilityId(guest_runtime::ACTIVATION.into()),
+                PolicyId("sdk-runtime-policy-0".into()),
+            )];
+            if runtime_clocks {
+                for (index, capability) in
+                    ["latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0"]
+                        .iter()
+                        .enumerate()
+                {
+                    grants.push(CapabilityGrantSpec::new(
+                        latent_core::CapabilityId((*capability).into()),
+                        PolicyId(format!("sdk-runtime-policy-{}", index + 1)),
+                    ));
+                }
+            }
+            grants
+        } else {
+            let mut grants = vec![CapabilityGrantSpec::new(
+                latent_core::CapabilityId(SERVICE_INVOCATION_CAPABILITY.into()),
+                PolicyId("local-calls".into()),
+            )];
+            grants.extend(guest_runtime::grants());
+            grants
+        };
         let mut target = deployment("callee", target_tenant, &callee, &callee_publication);
-        target.grants = guest_runtime::grants();
+        target.grants = if activation_runtime.is_some() {
+            vec![]
+        } else {
+            guest_runtime::grants()
+        };
         target.resources = catalog
             .fetch(&packages::release(&callee))
             .await
@@ -309,11 +398,12 @@ impl Fixture {
                 .unwrap();
         }
         let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
+        let broker_limits = CapabilityBrokerLimits::default();
         let broker = ActivationCapabilityBroker::new(
             catalog.lifecycle_authority(),
             policies.clone(),
             clock.clone(),
-            CapabilityBrokerLimits::default(),
+            broker_limits,
         )
         .unwrap();
         let broker = Arc::new(match audit {
@@ -330,26 +420,31 @@ impl Fixture {
                 minimum_call_charges: &[],
             })
             .unwrap();
-        let guest_runtime = guest_runtime::Runtime::scoped(
-            &broker,
-            &policies,
-            "tenant-a",
-            &[
-                guest_runtime::Scope {
-                    services: &["caller"],
-                    publications: std::slice::from_ref(&caller_publication),
-                    principal: ("user", "alice"),
-                },
-                // Local invocation deliberately derives a service principal;
-                // the child does not inherit Alice's user authority.
-                guest_runtime::Scope {
-                    services: &["callee"],
-                    publications: std::slice::from_ref(&callee_publication),
-                    principal: ("service", "service:8:tenant-a:6:caller"),
-                },
-            ],
-            false,
-        );
+        let scopes = [
+            guest_runtime::Scope {
+                services: &["caller"],
+                publications: std::slice::from_ref(&caller_publication),
+                principal: ("user", "alice"),
+            },
+            // Local invocation derives its own service principal.
+            guest_runtime::Scope {
+                services: &["callee"],
+                publications: std::slice::from_ref(&callee_publication),
+                principal: ("service", "service:8:tenant-a:6:caller"),
+            },
+        ];
+        let guest_runtime = if let Some((_, call_wall_millis)) = activation_runtime {
+            guest_runtime::Runtime::activation_scoped_with_clocks(
+                &broker,
+                &policies,
+                "tenant-a",
+                &scopes,
+                call_wall_millis,
+                runtime_clocks,
+            )
+        } else {
+            guest_runtime::Runtime::scoped(&broker, &policies, "tenant-a", &scopes, false)
+        };
         let definition = BindingDefinition { manifest: JsonManifestCodec::default().decode_binding(&serde_json::to_vec(&json!({
             "apiVersion":"latent.dev/v1alpha1","kind":"Binding","metadata":{"name":"local-call","tenant":"tenant-a"},
             "spec":{"consumer":{"service":"caller","contract":SERVICE_INVOCATION_CAPABILITY},"provider":{"service":"callee","contract":component::CALLEE,"route":"callee"},"mode":"isolated-local"}})).unwrap()).unwrap(),
@@ -381,12 +476,16 @@ impl Fixture {
             store.clone(),
         ));
         guest_runtime.install(&capabilities);
+        let read_wait = Arc::new(ObservedReadWait {
+            active: AtomicU64::new(0),
+            entered: tokio::sync::Notify::new(),
+        });
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             config,
             WasmtimeHostServices {
                 clock: clock.clone(),
                 capabilities: Some(capabilities.clone()),
-                currentness_read_wait: Some(Arc::new(latent_node::CurrentnessReadTimer)),
+                currentness_read_wait: Some(read_wait.clone()),
                 log_sink: None,
             },
             catalog.lifecycle_authority(),
@@ -450,10 +549,12 @@ impl Fixture {
             catalog,
             quotas,
             broker,
-            _policies: policies,
+            maximum_calls_per_session: broker_limits.maximum_calls_per_session,
+            policies,
             _provider: provider,
             target,
             observations,
+            read_wait,
             _root: root,
         }
     }
@@ -474,6 +575,7 @@ impl Fixture {
                 if self.quotas.usage().unwrap().active_activations == 0
                     && self.manager.cancellation_snapshot().active_registrations == 0
                     && self.backend.active_instance_reservations() == 0
+                    && self.backend.resource_snapshot().live_stores == 0
                     && broker.calls == 0
                     && broker.sessions == 0
                     && broker.handles == 0

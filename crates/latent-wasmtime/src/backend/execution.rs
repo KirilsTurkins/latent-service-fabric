@@ -114,6 +114,11 @@ impl WasmtimeBackend {
         // before resolving, including propagation of post-return traps.
         let component_post_return_started = Instant::now();
         let wall_time_micros = self.execution_wall_time_micros(contained_execution_started);
+        let lifecycle_error = store
+            .data_mut()
+            .runtime
+            .as_mut()
+            .and_then(|runtime| runtime.finalize().err());
         let (consumption, accounting_error) =
             invocation_accounting(&mut store, wall_time_micros, timing);
         let memory_exhausted = call_result
@@ -129,6 +134,31 @@ impl WasmtimeBackend {
                 runtime.surface.value_codec_limits,
             )
         });
+        // Preserve the original execution winner before cleanup signals any
+        // remaining runtime owners; cleanup cannot replace a resource failure.
+        let outcome =
+            if call_result.is_ok() && accounting_error.is_none() && lifecycle_error.is_some() {
+                drop(call_result);
+                drop(encoded);
+                Ok(GuestOutcome::Trapped {
+                    trap: latent_executor::GuestTrap {
+                        code: "runtime-lifecycle-unproven".into(),
+                        message: "runtime-lifecycle-unproven".into(),
+                        guest_backtrace: Vec::new(),
+                        metadata: latent_core::Metadata::new(),
+                    },
+                    consumption,
+                })
+            } else {
+                classify_call_result(
+                    call_result,
+                    encoded,
+                    stop,
+                    memory_exhausted,
+                    consumption,
+                    accounting_error,
+                )
+            };
         // Cleanup order is intentional: after the guest call and its
         // component-model post-return complete, the actual component instance,
         // store/host state, temporary input, and all activation-owned guards
@@ -143,16 +173,7 @@ impl WasmtimeBackend {
         drop(temporary_buffer_guard);
         timing.activation_resource_reclamation_micros = elapsed_micros(reclamation_started);
 
-        reclamation::finish(runtime, instance_permit, timing, || {
-            classify_call_result(
-                call_result,
-                encoded,
-                stop,
-                memory_exhausted,
-                consumption,
-                accounting_error,
-            )
-        })
+        reclamation::finish(runtime, instance_permit, timing, || outcome)
     }
 
     fn execution_wall_time_micros(&self, started: Instant) -> u64 {

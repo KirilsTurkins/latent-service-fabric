@@ -1,4 +1,5 @@
 {
+  "schema": 1,
   "manifests": [
     {
       "absent_when_directory_missing": "sdk/dotnet-guest/tests",
@@ -11,6 +12,20 @@
       "kind": "no-external-packages",
       "path": "sdk/dotnet-guest/tools/package-hash/PackageHash.csproj",
       "sha256": "8ecf130707633e9451818256df40a6617277a651b1ad09b5557a65ff9bf4bdd7"
+    },
+    {
+      "path": "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
+      "kind": "no-external-packages",
+      "sha256": "766809881ad0b7ff2ce3a59edf7a24de0a86d4869b455e27d3f3e9368fde1546",
+      "absent_when_directory_missing": "sdk/dotnet-guest/probes/http-errors",
+      "reason": "SDK error-message probe; no PackageReference or separate resolver graph."
+    },
+    {
+      "path": "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj",
+      "kind": "no-external-packages",
+      "sha256": "ac7f14d0c3a2b03f2fd8486d974f065100b94d4c66d1bd6b249215f47362feed",
+      "absent_when_directory_missing": "sdk/dotnet-guest/tools/http-errors",
+      "reason": "Compiler-only helper with no PackageReference; its digest-pinned Mono.Cecil assembly belongs to the scanned Microsoft.NET.ILLink.Tasks 10.0.0 graph in sdk/dotnet-guest/probes/smoke/packages.lock.json."
     },
     {
       "kind": "cargo",
@@ -254,7 +269,6 @@
       "sha256": "ab11280edf5eb5d82823f0ce488b11f67ebc5ad9ab2051a50ffb785b499e79a5"
     }
   ],
-  "schema": 1,
   "unmanaged": [
     {
       "path": "sdk/c-guest",

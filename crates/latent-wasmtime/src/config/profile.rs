@@ -83,6 +83,13 @@ impl WasmtimeConfig {
         ]);
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
+        if let Some(limits) = self.activation_runtime {
+            fields.insert(
+                "activation-runtime-profile".into(),
+                latent_core::activation_runtime::PROFILE.into(),
+            );
+            fields.insert("activation-runtime-limits".into(), format!("{limits:?}"));
+        }
         if mode == DispatchMode::Generic {
             self.include_generic_policy(&mut fields);
         }
@@ -102,7 +109,7 @@ impl WasmtimeConfig {
     }
 
     fn include_generic_policy(&self, fields: &mut Metadata) {
-        if self.angular_renderer {
+        if self.guest_languages.angular_renderer {
             fields.insert(
                 "renderer-profile-digest".into(),
                 latent_manifest::RendererRequirement::angular().profile_digest,

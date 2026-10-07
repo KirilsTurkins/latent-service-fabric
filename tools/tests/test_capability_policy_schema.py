@@ -51,7 +51,7 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
 
     def test_policy_operation_table_matches_each_frozen_wit_interface(self):
         matrices = [json.loads((ROOT / f"wit/host-abi-phase3-v{version}.json").read_text(encoding="utf-8"))
-                    for version in (2, 3, 4)]
+                    for version in (2, 3, 4, 5)]
         matrices.append(json.loads((ROOT / "wit/host-abi-phase4-v1.json").read_text(encoding="utf-8")))
         rust = (ROOT / "crates/latent-policy/src/capability.rs").read_text(encoding="utf-8")
         actual = {cap: set(re.findall(r'"([a-z0-9-]+)"', operations))

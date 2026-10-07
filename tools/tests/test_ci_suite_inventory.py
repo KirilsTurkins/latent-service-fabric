@@ -41,7 +41,13 @@ class InventoryTests(unittest.TestCase):
         with patch('subprocess.Popen', side_effect=AssertionError('selection spawned a command')):
             for fixture in fixtures['cases']:
                 with self.subTest(case=fixture['name']):
-                    decision = ci_profile.classify_paths(fixture['paths'])
+                    graph = registry.workspace(registry.ROOT)
+                    for owner, dependencies in fixture.get('reverseDependencies', {}).items():
+                        package = graph[owner]
+                        graph[owner] = registry.Package(package.name, package.directory,
+                                                        package.dependencies | set(dependencies))
+                    with patch.object(registry, 'workspace', return_value=graph):
+                        decision = ci_profile.classify_paths(fixture['paths'])
                     self.assertEqual(decision.profile, fixture['profile'])
                     self.assertEqual(decision.renderer, fixture['renderer'])
                     if 'packages' in fixture: self.assertEqual(list(decision.fast_packages), fixture['packages'])

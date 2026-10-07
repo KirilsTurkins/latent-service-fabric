@@ -13,6 +13,8 @@ mod fixture;
 mod load;
 #[path = "local_service/packages.rs"]
 mod packages;
+#[path = "local_service/runtime.rs"]
+mod runtime;
 #[path = "generic_backend/support.rs"]
 #[allow(dead_code)]
 mod support;

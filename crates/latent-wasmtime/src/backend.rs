@@ -606,7 +606,8 @@ impl WasmtimeBackend {
         host_state
             .currentness_read_wait
             .clone_from(&self.shared.currentness_read_wait);
-        if self.config.java_guest {
+        host_state.runtime_stop = Some(Arc::clone(stop));
+        if self.config.guest_languages.java_guest {
             host_state.limiter.reserve_exception_heap()?;
         }
         let mut store = Store::new(&self.engine, host_state);
@@ -897,6 +898,17 @@ impl ExecutionBackend for WasmtimeBackend {
 }
 
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
+    if error.chain().any(|cause| {
+        matches!(
+            cause.downcast_ref::<latent_core::BudgetError>(),
+            Some(latent_core::BudgetError::Exhausted {
+                dimension: latent_core::BudgetDimension::MemoryBytes,
+                ..
+            })
+        )
+    }) {
+        return true;
+    }
     let message = error.to_string().to_ascii_lowercase();
     message.contains("aggregate linear-memory budget exceeded")
         || message.contains("memory minimum size")

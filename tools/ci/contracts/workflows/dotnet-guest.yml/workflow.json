@@ -1,20 +1,6 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "dotnet-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": ".NET guest qualification",
     "on": {
       "pull_request": {
@@ -42,6 +28,8 @@
           "tools/guest_runtime_grants.py",
           "tools/wait_capsule_audit_idle.py",
           "tools/tests/test_dotnet_capsule_authoring.py",
+          "tools/tests/test_dotnet_http_errors.py",
+          "tools/probe_dotnet_http_errors.py",
           "tools/tests/test_dotnet_application_dependencies.py",
           "docs/component-development/dotnet-authoring.md",
           "docs/component-development/dotnet-dependencies.md",
@@ -60,12 +48,26 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "dotnet-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Retain both original transaction compiler and incoming captured-library commands, guards and diagnostic paths, with all historical command coverage unchanged. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained.",
+  "reviewReason": "Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained. Reviewed fixed-development NuGet/composer/entropy union preserves HTTP BCL controls, private captured namespace, original case bodies and job guards; only the target composer/four-adapter receipt extension and local runtime module alias are retained. Preserved additional reviewed obligation: Retain both original transaction compiler and incoming captured-library commands, guards and diagnostic paths, with all historical command coverage unchanged. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

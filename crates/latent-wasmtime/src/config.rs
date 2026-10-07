@@ -171,6 +171,9 @@ pub struct WasmtimeConfig {
     /// for an actual web application export; never inherited by local children.
     pub buffered_web_value_profile: Option<BufferedWebValueProfile>,
     pub context_policy: ContextExposurePolicy,
+    /// Opt-in logical-runtime limits; recognition and clock-read permission
+    /// alone do not install or grant language scheduling/timer operations.
+    pub activation_runtime: Option<latent_core::activation_runtime::RuntimeLimits>,
 }
 
 /// Host-owned bounds for the buffered web ABI, separate from service values.
@@ -205,6 +208,7 @@ impl Default for WasmtimeConfig {
             development_clock_readings: None,
             guest_languages: GuestLanguageProfiles::default(),
             transactional_state: false,
+            activation_runtime: None,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
@@ -301,6 +305,9 @@ impl WasmtimeConfig {
         self.cache_limits().validate()?;
         self.validate_compiler()?;
         self.context_policy.validate()?;
+        if let Some(limits) = self.activation_runtime {
+            limits.validate()?;
+        }
         if let Some(web) = self.buffered_web_value_profile {
             if web.hostcall_fuel == 0 {
                 return Err(invalid_config());

@@ -14,8 +14,9 @@ use std::{
     time::{Duration, Instant},
 };
 
+/// Logical records-v1 snapshot identity. Startup metadata is independently
+/// upgraded through the bounded v1-to-v2 transition without changing these rows.
 pub const STORE_FORMAT: &str = "latent.transaction-store.v1";
-const FORMAT: &[u8] = STORE_FORMAT.as_bytes();
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
 static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
@@ -23,6 +24,7 @@ static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
 mod bounded_file;
 pub use bounded_file::StoreFileStatus;
 mod compaction;
+mod format;
 pub use compaction::{CompactionLimits, CompactionReport, CompactionStop};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -200,19 +202,30 @@ impl EmbeddedStore {
         was_empty: bool,
         file_status: Option<StoreFileStatus>,
     ) -> Result<Self, StoreError> {
+        Self::open_database_with_status_and_checkpoint(db, limits, was_empty, file_status, |_| {})
+    }
+
+    #[cfg(test)]
+    fn open_database_with_checkpoint(
+        db: Database,
+        limits: StoreLimits,
+        was_empty: bool,
+        checkpoint: impl FnMut(format::Checkpoint),
+    ) -> Result<Self, StoreError> {
+        Self::open_database_with_status_and_checkpoint(db, limits, was_empty, None, checkpoint)
+    }
+
+    fn open_database_with_status_and_checkpoint(
+        db: Database,
+        limits: StoreLimits,
+        was_empty: bool,
+        file_status: Option<StoreFileStatus>,
+        mut checkpoint: impl FnMut(format::Checkpoint),
+    ) -> Result<Self, StoreError> {
         if was_empty {
-            let mut tx = db.begin_write().map_err(|_| StoreError::Unavailable)?;
-            tx.set_durability(Durability::Immediate)
-                .map_err(|_| StoreError::Unavailable)?;
-            {
-                let mut meta = tx.open_table(META).map_err(|_| StoreError::Corrupt)?;
-                meta.insert("schema", FORMAT)
-                    .map_err(|_| StoreError::Unavailable)?;
-            }
-            {
-                tx.open_table(ROWS).map_err(|_| StoreError::Corrupt)?;
-            }
-            tx.commit().map_err(|_| StoreError::CommitUncertain)?;
+            checkpoint(format::Checkpoint::NewEngineOpened);
+            format::initialize(&db)?;
+            checkpoint(format::Checkpoint::InitialSchemaDurable);
         }
         let store = Self {
             db: RwLock::new(db),
@@ -222,31 +235,25 @@ impl EmbeddedStore {
             quarantined: AtomicBool::new(false),
             reclamation: AtomicBool::new(false),
         };
+        // Original row limits, reservation coverage and selected page layout
+        // must pass before metadata-only promotion on this same private engine.
+        store.verify()?;
+        {
+            let database = store.database()?;
+            format::upgrade(&database, &mut checkpoint)?;
+        }
         store.verify()?;
         Ok(store)
     }
+
     fn verify(&self) -> Result<(), StoreError> {
         let database = self.database()?;
+        format::inspect(&database)?;
         let tx = database.begin_read().map_err(|_| StoreError::Unavailable)?;
-        let meta = tx
-            .open_table(META)
-            .map_err(|_| StoreError::UnsupportedFormat)?;
-        if meta
-            .get("schema")
-            .map_err(|_| StoreError::Corrupt)?
-            .map(|v| v.value().to_vec())
-            .as_deref()
-            != Some(FORMAT)
-        {
-            return Err(StoreError::UnsupportedFormat);
-        }
         let table = tx.open_table(ROWS).map_err(|_| StoreError::Corrupt)?;
         self.charge_table(&table)?;
         drop(table);
-        drop(meta);
         drop(tx);
-        // Validate the selected 4096-byte page profile through the public
-        // engine API, rather than assuming an imported file's private layout.
         let check = database
             .begin_write()
             .map_err(|_| StoreError::Unavailable)?;
@@ -606,6 +613,33 @@ impl ReadView {
             return Err(StoreError::Corrupt);
         }
         Ok(value.map(|v| v.value().to_vec()))
+    }
+
+    /// Closed recovery readback comparison. The native row stays borrowed from
+    /// this finite view, avoiding a second maximum-size owned value beside the
+    /// authenticated stream row. No transaction/guard/native slice escapes.
+    pub(crate) fn matches_row(&self, key: &RowKey, expected: &[u8]) -> Result<bool, StoreError> {
+        if self.opened.elapsed() > self.limits.maximum_view_age {
+            return Err(StoreError::SnapshotExpired);
+        }
+        if expected.len() > self.limits.maximum_value_bytes {
+            return Err(StoreError::Capacity);
+        }
+        let key = key.encoded(self.limits)?;
+        let table = self
+            .tx
+            .as_ref()
+            .expect("retained view")
+            .open_table(ROWS)
+            .map_err(|_| StoreError::Corrupt)?;
+        let value = table.get(key.as_slice()).map_err(|_| StoreError::Corrupt)?;
+        if value
+            .as_ref()
+            .is_some_and(|row| row.value().len() > self.limits.maximum_value_bytes)
+        {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(value.is_some_and(|row| row.value() == expected))
     }
 
     /// One indexed existence observation without copying an arbitrary stored

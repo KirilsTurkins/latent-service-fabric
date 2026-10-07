@@ -109,6 +109,7 @@ fn lookup_function<'a, T>(
 
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Providers {
+    pub activation_runtime: bool,
     pub local_services: bool,
     pub network: NetworkProviders,
     pub storage: StorageProviders,
@@ -132,7 +133,9 @@ pub(crate) struct SignalProviders {
 }
 impl Providers {
     fn supports(self, name: &str) -> bool {
-        (self.signals.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+        (self.activation_runtime && name == crate::host::runtime::CAPABILITY)
+            || (self.signals.events
+                && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
             || (self.signals.random
                 && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
             || (self.signals.metrics
@@ -364,7 +367,7 @@ fn validate_imports(
                         if specification.interface == transaction::STATE {
                             transaction::is_async(name)?
                         } else {
-                            specification.asynchronous
+                            specification.operation_is_asynchronous(name)
                         },
                         config,
                         remaining,
