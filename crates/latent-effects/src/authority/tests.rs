@@ -982,7 +982,6 @@ fn explicit_redrive_intersects_narrowed_original_rules_through_final_acceptance(
     assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
 }
 
-
 #[test]
 fn newer_publication_cannot_revive_revoked_original_redrive_scope() {
     let (owner, mut original, authority) = setup();
