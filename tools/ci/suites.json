@@ -8222,6 +8222,7 @@
         "cleanup::full_cleanup_capacity_rejects_before_identity_and_ordinary_completion_refunds",
         "cleanup::native_adapter_retention_survives_drop_until_real_lifecycle_cleanup",
         "cleanup::running_drop_retains_real_lifecycle_until_ack_then_recovers_same_cell",
+        "cleanup::transient_tracking_retains_real_quota_refusal_without_guest_or_cleanup_ownership",
         "deadlines::deadline_expiring_during_acceptance_aborts_before_first_lifecycle_poll",
         "deadlines::submillisecond_transport_precision_reaches_the_shared_execution_ledger",
         "identity::forged_auth_metadata_and_later_phase_budgets_fail_before_acceptance",
@@ -8242,7 +8243,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 18,
+      "minimumCases": 19,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -8761,6 +8762,7 @@
         "config::tests::providers::secret_bindings_require_the_actual_provider_service_and_tenant",
         "config::tests::providers::secret_input_rejects_plaintext_environment_and_unknown_authority",
         "config::tests::providers::secret_paths_and_reference_limits_are_validated_without_loading_values",
+        "config::tests::rejected_request_tracking_charges_one_record_without_growing_execution_limits",
         "config::tests::relative_paths_anchor_to_configuration_parent_and_port_zero_is_valid",
         "config::tests::renderer::renderer_opt_in_is_closed_and_preserves_operator_budgets",
         "config::tests::security::a_profile_label_cannot_replace_enforced_admission_or_isolated_compilation",
@@ -9012,7 +9014,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 247,
+      "minimumCases": 248,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
