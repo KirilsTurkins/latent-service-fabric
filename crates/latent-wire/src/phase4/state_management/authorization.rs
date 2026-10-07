@@ -146,7 +146,8 @@ pub(super) async fn authorize(
     let policy_digest = captured_policy_digest(&inspect);
     if let contract::Request::MutateState(value) = request {
         if value.mutation == c::StateMutationKind::ReleaseExpiredCommandFloor as i32
-            && value.expected_policy_digest != policy_digest {
+            && value.expected_policy_digest != policy_digest
+        {
             return Err(error(
                 PlatformErrorCode::StateConflict,
                 "state-policy-precondition-changed",
