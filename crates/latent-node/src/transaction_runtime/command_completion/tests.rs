@@ -100,6 +100,44 @@ async fn unbound_original_budget_refuses_current_authorization_before_pending_or
     fixture.shutdown().await;
 }
 
+async fn refuse_changed_namespace_control(return_active: bool) {
+    let fixture = Fixture::new().await;
+    let first = fixture.call("first", "hot");
+    let execution = execute(first.admit().await);
+    let queued = fixture.call("second", "hot");
+    let deadline = queued.budget.deadline().monotonic();
+    let waiting = queued.waiting();
+    fixture.queued(1).await;
+    fixture.change_namespace_control(return_active).await;
+    let original = finish(&execution, unstarted_failure()).await;
+    assert!(original.disposition().unwrap().requires_recovery());
+    let TransactionAdmission::Existing(refused) = tokio::time::timeout(WATCHDOG, waiting)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap()
+    else {
+        panic!("changed original namespace control must refuse queued host opening");
+    };
+    assert!(refused.disposition().unwrap().requires_recovery());
+    assert!(refused.durable_command().is_none());
+    assert!(refused.delivery_fence().is_none());
+    assert_eq!(queued.budget.deadline().monotonic(), deadline);
+    assert_eq!(fixture.lanes.snapshot().unwrap(), Default::default());
+    drop((original, refused, execution, first, queued));
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
+async fn queued_namespace_quiesce_refuses_original_host_without_rebinding_control_or_deadline() {
+    refuse_changed_namespace_control(false).await;
+}
+
+#[tokio::test]
+async fn queued_namespace_active_metadata_aba_does_not_restore_the_captured_lifecycle_epoch() {
+    refuse_changed_namespace_control(true).await;
+}
+
 #[tokio::test]
 async fn actual_retired_cancelled_command_records_abort_without_restoring_state_or_result_delivery()
 {

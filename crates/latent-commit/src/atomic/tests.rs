@@ -7,7 +7,7 @@ use latent_effects::authority::{
     DispatchCeiling, DispatchProfile, EffectAuthorityOwner, EffectRule, EffectScope, EffectTime,
 };
 use latent_state::{
-    embedded::{AtomicBatch, EmbeddedStore, Family, RowKey, RowMutation, StoreLimits},
+    embedded::{AtomicBatch, EmbeddedStore, ExpectedRow, Family, RowKey, RowMutation, StoreLimits},
     namespace::{
         namespace_record_key, NamespacePins, NamespaceQuota, NamespaceRecord, NamespaceStatus,
         NamespaceVersion,
@@ -584,6 +584,58 @@ fn opaque_retired_attempt_matches_only_its_exact_original_command_and_source() {
         }
         assert!(!proof.matches_original(&other));
     }
+}
+
+#[test]
+fn current_claim_namespace_observation_requires_the_actual_original_claim_and_retained_work() {
+    let (_dir, store, _effects) = setup();
+    let original = claim(&store, input("current-claim"));
+    let other = claim(&store, input("different-claim"));
+    let retirement = original.retirement();
+    let work = original.physical_work().unwrap();
+    let view = store.snapshot().unwrap();
+    let observed = work.observe_claim_namespace(&view).unwrap();
+    assert!(observed.matches_claim(&original));
+    assert!(!observed.matches_claim(&other));
+    assert_eq!(observed.namespace().record().version.incarnation, 1);
+    drop(view);
+    drop(original);
+    assert!(!retirement.physically_retired());
+    assert!(retirement.proven_noncommit().is_err());
+    work.retire();
+    assert!(retirement.physically_retired());
+    drop((observed, other));
+}
+
+#[test]
+fn changed_durable_attempt_row_refuses_current_claim_namespace_before_any_owner_retirement() {
+    let (_dir, store, _effects) = setup();
+    let original = claim(&store, input("changed-current-attempt"));
+    let retirement = original.retirement();
+    let work = original.physical_work().unwrap();
+    let key = record::attempt_row_key(original.record().id(), original.record().attempt());
+    let view = store.snapshot().unwrap();
+    let previous = view.get(&key).unwrap();
+    drop(view);
+    store
+        .apply(AtomicBatch {
+            expectations: vec![ExpectedRow {
+                key: key.clone(),
+                value: previous,
+            }],
+            mutations: vec![RowMutation { key, value: None }],
+        })
+        .unwrap();
+    let view = store.snapshot().unwrap();
+    assert!(matches!(
+        work.observe_claim_namespace(&view),
+        Err(AtomicError::Conflict)
+    ));
+    assert!(retirement.proven_noncommit().is_err());
+    drop(view);
+    work.retire();
+    drop(original);
+    assert!(retirement.physically_retired());
 }
 
 #[test]

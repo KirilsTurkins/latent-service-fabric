@@ -14,7 +14,9 @@ mod validation;
 mod writer;
 pub use captured::{CapturedIntent, IntentCaptureContext};
 pub use census::tenant_census_contribution;
-pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
+pub use ownership::{
+    AttemptRetirement, CurrentClaimNamespace, PhysicalAttemptWork, RetiredAttempt,
+};
 pub use record::{
     attempt_row_key, command_row_key, result_row_key, CommandRecord, DurableResult, InboxIdentity,
     SourceIdentity,

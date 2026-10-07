@@ -2,6 +2,10 @@
 //! retires one. Unretired guards quarantine the attempt and cannot mint abort proof.
 
 use super::{AdmittedCommand, AtomicError, CommandRecord};
+use latent_state::{
+    embedded::ReadView,
+    namespace::catalog::{NamespaceCatalog, NamespaceRead},
+};
 use std::sync::{
     atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering},
     Arc,
@@ -47,6 +51,34 @@ impl RetiredAttempt {
 pub struct PhysicalAttemptWork {
     state: Arc<AttemptState>,
     retired: bool,
+}
+
+/// A coherent observation from the actual claimed attempt's protected reader.
+/// It owns no physical work, grant, writer, retry or retirement permission.
+/// Rebinding still requires the live affine claim and original sealed authority.
+pub struct CurrentClaimNamespace {
+    state: Arc<AttemptState>,
+    namespace: NamespaceRead,
+}
+impl CurrentClaimNamespace {
+    #[must_use]
+    pub fn namespace(&self) -> &NamespaceRead {
+        &self.namespace
+    }
+
+    #[must_use]
+    pub fn matches_claim(&self, claim: &AdmittedCommand) -> bool {
+        Arc::ptr_eq(&self.state, &claim.physical)
+            && self.state.record == claim.record
+            && self.state.expected == claim.expected
+            && self.state.phase.load(Ordering::Acquire) == OPEN
+            && !self.state.quarantined.load(Ordering::Acquire)
+    }
+
+    #[must_use]
+    pub fn into_namespace(self) -> NamespaceRead {
+        self.namespace
+    }
 }
 impl AdmittedCommand {
     #[must_use]
@@ -97,6 +129,57 @@ impl AttemptRetirement {
     }
 }
 impl PhysicalAttemptWork {
+    /// Charge both bounded command comparisons and the namespace descriptor
+    /// before reading. The original native/host reservation still owns these
+    /// bytes; no production quota or per-job maximum changes.
+    #[must_use]
+    pub fn namespace_observation_bytes(&self) -> u64 {
+        self.state.expected.len() as u64 * 2 + 8192
+    }
+
+    /// Only the actual worker can make this observation. It must retain this
+    /// affine work through the view's destruction, then positively retire it.
+    pub fn observe_claim_namespace(
+        &self,
+        view: &ReadView,
+    ) -> Result<CurrentClaimNamespace, AtomicError> {
+        if self.retired
+            || self.state.phase.load(Ordering::Acquire) != OPEN
+            || self.state.quarantined.load(Ordering::Acquire)
+        {
+            return Err(AtomicError::RecoveryRequired);
+        }
+        let record = &self.state.record;
+        for key in [
+            super::record::command_row_key(record.id()),
+            super::record::attempt_row_key(record.id(), record.attempt()),
+        ] {
+            if view
+                .get_bounded(&key, self.state.expected.len())?
+                .as_deref()
+                != Some(self.state.expected.as_slice())
+            {
+                return Err(AtomicError::Conflict);
+            }
+        }
+        let namespace = NamespaceCatalog::read_in(
+            view,
+            &latent_core::TenantId(record.key().tenant.clone()),
+            &latent_core::StateNamespaceId(record.key().namespace.clone()),
+        )
+        .map_err(|_| AtomicError::Corrupt)?
+        .ok_or(AtomicError::NotFound)?;
+        if namespace.record().version.incarnation.to_string() != record.key().incarnation
+            || namespace.record().state_schema != record.source().state_schema
+        {
+            return Err(AtomicError::Conflict);
+        }
+        Ok(CurrentClaimNamespace {
+            state: Arc::clone(&self.state),
+            namespace,
+        })
+    }
+
     /// Invoke only after the physical executor, IO or cleanup operation has
     /// completed. A cancelled waiter cannot call it on the worker's guard.
     pub fn retire(mut self) {

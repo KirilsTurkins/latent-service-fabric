@@ -541,10 +541,10 @@ impl CommandAdmission {
         }
         let post = self
             .coordinator
-            .read_namespace_owned(&selected.execution, selected.entity.clone())
+            .read_current_claim_namespace(&selected.execution, &claim, selected.entity.clone())
             .await;
         selected.execution =
-            match post.and_then(|row| selected.execution.rebind_command_after_claim(&claim, row)) {
+            match post.and_then(|row| selected.execution.rebind_current_claim(&claim, row)) {
                 Ok(value) => Arc::new(
                     value.with_entity(
                         selected

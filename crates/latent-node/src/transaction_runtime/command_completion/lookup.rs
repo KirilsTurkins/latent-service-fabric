@@ -27,6 +27,46 @@ use crate::{
 const LOOKUP_BYTES: u64 = 4 * 1024 * 1024;
 
 impl CommandCoordinator {
+    pub(super) async fn read_current_claim_namespace(
+        &self,
+        auth: &Arc<StateAuthorization>,
+        claim: &atomic::AdmittedCommand,
+        entity: Option<super::super::entity::EntityOwner>,
+    ) -> Result<atomic::CurrentClaimNamespace, PlatformError> {
+        auth.authorize("acquire-command", 0, 0, || Ok(()))?;
+        let work = claim.physical_work().map_err(errors::atomic)?;
+        let retained = work.namespace_observation_bytes();
+        let auth = Arc::clone(auth);
+        let time = Arc::clone(&self.time);
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((Arc::clone(&auth), Arc::clone(&time), entity));
+        let job = self
+            .store
+            .with_store_retaining(StoreIoKind::Read, retained, keeper, move |store| {
+                let result = (|| {
+                    let view = store.snapshot()?;
+                    let ownership = auth.authority.ownership();
+                    latent_state::recovery::require_namespace_ready(
+                        &view,
+                        &ownership.tenant,
+                        &latent_core::StateNamespaceId(ownership.namespace.clone()),
+                        ownership.incarnation,
+                    )?;
+                    Ok(work.observe_claim_namespace(&view))
+                })();
+                // The real view is destroyed before its affine physical attempt
+                // guard retires. A dropped waiter or panic cannot retire this guard.
+                work.retire();
+                Ok((result, time))
+            })
+            .map_err(errors::protected)?;
+        let (result, _time) = job
+            .await
+            .map_err(|_| errors::atomic(AtomicError::RecoveryRequired))?
+            .map_err(errors::protected)?;
+        result.map_err(errors::store)?.map_err(errors::atomic)
+    }
+
     pub(super) async fn read_namespace(
         &self,
         auth: &Arc<StateAuthorization>,

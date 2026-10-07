@@ -171,18 +171,15 @@ impl StateAuthorization {
         Ok(())
     }
 
-    pub(super) fn rebind_command_after_claim(
+    pub(super) fn rebind_current_claim(
         &self,
         claim: &latent_commit::atomic::AdmittedCommand,
-        namespace: NamespaceRead,
+        observed: latent_commit::atomic::CurrentClaimNamespace,
     ) -> Result<Self, PlatformError> {
-        let authority = self.authority.rebind_command_after_claim(
-            &self.policy,
-            claim,
-            &self.namespace,
-            &namespace,
-        )?;
-        Ok(self.with_namespace(authority, namespace))
+        let authority =
+            self.authority
+                .rebind_current_claim(&self.policy, claim, &self.namespace, &observed)?;
+        Ok(self.with_namespace(authority, observed.into_namespace()))
     }
 
     pub(super) fn with_entity(mut self, entity: Option<super::entity::EntityCommitFence>) -> Self {

@@ -171,6 +171,76 @@ impl Fixture {
             .unwrap();
     }
 
+    pub async fn change_namespace_control(&self, return_active: bool) {
+        let catalog = Arc::clone(&self.owners.namespaces);
+        self.owners
+            .store
+            .with_store(StoreIoKind::Write, 8192, move |store| {
+                for step in 0..=usize::from(return_active) {
+                    let view = store.snapshot()?;
+                    let before = NamespaceCatalog::read_in(
+                        &view,
+                        &latent_core::TenantId("a".into()),
+                        &latent_core::StateNamespaceId("orders".into()),
+                    )
+                    .unwrap()
+                    .unwrap();
+                    let after = if step == 0 {
+                        before
+                            .record()
+                            .transition(
+                                before.record().version,
+                                &latent_state::namespace::NamespaceTransition::Quiesce,
+                                0,
+                            )
+                            .unwrap()
+                    } else {
+                        // Exercise an actual control/write returning the same valid
+                        // Active metadata. This fixture adds no production Resume
+                        // operation; its original captured lifecycle epoch must stay
+                        // revoked even when every descriptive field matches again.
+                        let mut after = before.record().clone();
+                        after.status = latent_state::namespace::NamespaceStatus::Active;
+                        after.version.generation = after.version.generation.checked_add(1).unwrap();
+                        after.validate().unwrap();
+                        after
+                    };
+                    let expected = before.expectation();
+                    let batch = latent_state::embedded::AtomicBatch {
+                        expectations: vec![expected.clone()],
+                        mutations: vec![latent_state::embedded::RowMutation {
+                            key: expected.key,
+                            value: Some(after.encode().unwrap()),
+                        }],
+                    };
+                    drop(view);
+                    let mut completion = None;
+                    store
+                        .apply_fenced(batch, || {
+                            catalog
+                                .lifecycle()
+                                .begin_transition(&before, &after, false)
+                                .map(|owned| completion = Some(owned))
+                        })
+                        .unwrap();
+                    let view = store.snapshot()?;
+                    let committed = NamespaceCatalog::read_in(
+                        &view,
+                        &latent_core::TenantId("a".into()),
+                        &latent_core::StateNamespaceId("orders".into()),
+                    )
+                    .unwrap()
+                    .unwrap();
+                    completion.unwrap().resolve(&committed).unwrap();
+                }
+                Ok(())
+            })
+            .unwrap()
+            .await
+            .unwrap()
+            .unwrap();
+    }
+
     pub async fn queued(&self, count: usize) {
         tokio::time::timeout(WATCHDOG, async {
             while self.lanes.snapshot().unwrap().queued != count {
