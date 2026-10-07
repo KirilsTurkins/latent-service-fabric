@@ -12,7 +12,7 @@ Ordinary standalone configuration accepts the closed optional `transactionalTrig
 
 The existing node ProviderRuntime supplies the single actual pool/broker and the separately retained incoming credential store, including an input-only configuration with no guest publisher binding. The node opens State first, prepares one caller-driven consumer task, and enables pulls after normal service readiness. Shutdown stops new pulls before its natural drain, joins the real input task under the original cutoff, then observes shared provider/state teardown. `transactional_trigger_status()` and the optional shutdown projection report actual fixed-owner counters; they supply no caller or broker authority.
 
-This source slice does not yet qualify installed-node readiness against the live broker, expose authenticated management pause/drain controls, or execute the required crash and recreation races. Automatic poison disposition and approved technical retries require separate positive no-commit and physical-retirement evidence. Snapshot/restore and retention-edge clock schedules also remain required. The six library and three configuration cases exercise identity/configuration/refusal boundaries; they are not a live JetStream or installed-node qualification receipt.
+The library and standalone configuration validation do not establish installed-node readiness against the live broker or the required crash and recreation races. Automatic poison disposition and approved technical retries require separate positive no-commit and physical-retirement evidence. Snapshot/restore, retention-edge clocks and authenticated incoming pause/drain controls remain qualification work.
 
 ## Entity admission
 
@@ -20,3 +20,40 @@ Installed command admission uses the shared finite entity table described in
 [installed entity eligibility](installed-entity-eligibility.md). Transactional
 inbox deliveries reuse that same command factory and its physical retirement
 owners.
+
+## Signed outgoing event requirements
+
+The maintained Rust `transactional-aggregate` authoring recipe captures
+`deferred-event-requirements.json` beside its transaction binding and packages
+those exact bytes as a signed asset. It declares one `approved-event` intent
+with an eight-byte `application/vnd.lsf.aggregate-v1` value and empty metadata.
+The namespace, state-schema digest, companion digest and operation set must
+match the captured binding. Packaging refuses a changed declaration.
+
+An installed strict-command operation selects this asset with the closed
+`deferredEvent` configuration: `requirementsDigest`, `topic`,
+`stagingBinding`, `stagingPolicies`, `dispatchBinding` and `dispatchPolicies`.
+The topic must already have an operator-qualified deferred mapping on the
+node's existing NATS publisher. The runtime captures its actual configuration
+digest and epoch, intersects current caller staging policy and derives the
+independent dispatch service principal from the signed publication. A
+declaration or configuration string never grants either permission.
+
+The payload constraint narrows the original host count/byte ledgers. The
+declaration reader retains the existing 8 KiB effect-requirements bound,
+the default 32-intent cap and the existing application profile's 64 KiB
+payload/16-attempt bounds. The actual NATS adapter adds its configured payload
+limit and mandatory 16 KiB response buffers. Existing HTTP exact-digest
+requirements and OrderDraft notification packaging keep their original
+behavior.
+
+Startup inspection reports these descriptive bindings in `deferredEvents`;
+`deferredHttp` keeps its HTTP entries. Recovery resolves the same actual NATS
+adapter profile. Event dispatch uses the existing EffectRuntime inspection,
+pause/resume and prepared management-control ports under their current
+authorization. It installs no extra publisher, broker, pool or consumer.
+
+Compiler capture, payload-filter and decoder tests do not establish signed
+ordinary-node execution or authenticated JetStream ACK/crash behavior. Those
+campaigns must execute the installed factory, original ingress and actual
+provider owners before issue completion.

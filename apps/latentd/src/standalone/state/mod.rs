@@ -4,6 +4,7 @@ mod clock;
 mod command;
 mod effect_requirements;
 mod effects;
+mod event_requirements;
 mod inbox;
 mod inspection;
 mod lifecycle;

@@ -15,6 +15,43 @@ pub struct DeferredHttpConfig {
     pub dispatch_policies: Vec<String>,
 }
 
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DeferredEventConfig {
+    pub requirements_digest: String,
+    pub topic: String,
+    pub staging_binding: String,
+    pub staging_policies: Vec<String>,
+    pub dispatch_binding: String,
+    pub dispatch_policies: Vec<String>,
+}
+
+pub(super) fn present_event<'de, D: serde::Deserializer<'de>>(
+    source: D,
+) -> Result<Option<DeferredEventConfig>, D::Error> {
+    DeferredEventConfig::deserialize(source).map(Some)
+}
+impl DeferredEventConfig {
+    pub(super) fn validate(&self) -> Result<(), PlatformError> {
+        super::checked_digest(&self.requirements_digest)?;
+        for text in [&self.topic, &self.staging_binding, &self.dispatch_binding] {
+            super::checked_identity(text)?;
+        }
+        for policies in [&self.staging_policies, &self.dispatch_policies] {
+            if policies.is_empty() || policies.len() > 8 {
+                return Err(super::super::invalid("state.deferredEvent.policies"));
+            }
+            for (index, policy) in policies.iter().enumerate() {
+                super::checked_identity(policy)?;
+                if policies[..index].contains(policy) {
+                    return Err(super::super::invalid("state.deferredEvent.policies"));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 pub(super) fn present<'de, D: serde::Deserializer<'de>>(
     source: D,
 ) -> Result<Option<DeferredHttpConfig>, D::Error> {

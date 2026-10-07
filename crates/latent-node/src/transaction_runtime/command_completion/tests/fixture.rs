@@ -34,7 +34,7 @@ impl EffectTimeSource for ProcessClock {
     }
 }
 
-pub(super) struct Owners {
+pub(in crate::transaction_runtime) struct Owners {
     pub store: Arc<ProtectedStoreOwner>,
     pub policy: Arc<PolicyStore>,
     pub namespaces: Arc<NamespaceCatalog>,
@@ -42,7 +42,7 @@ pub(super) struct Owners {
     pub source: CommandAdmissionSource,
 }
 
-pub(super) struct Fixture {
+pub(in crate::transaction_runtime) struct Fixture {
     _root: tempfile::TempDir,
     _catalog: DirectoryArtifactRepository,
     pub owners: Arc<Owners>,
@@ -54,6 +54,18 @@ pub(super) struct Fixture {
 }
 
 impl Fixture {
+    pub(in crate::transaction_runtime) fn broker(
+        &self,
+    ) -> latent_capabilities::broker::ActivationCapabilityBroker {
+        latent_capabilities::broker::ActivationCapabilityBroker::new(
+            self._catalog.lifecycle_authority(),
+            Arc::clone(&self.owners.policy),
+            Arc::new(SystemActivationClock),
+            Default::default(),
+        )
+        .unwrap()
+    }
+
     pub async fn new() -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);

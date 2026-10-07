@@ -1,4 +1,5 @@
 //! Real installed adapter and independent staging/dispatch policy purposes.
+mod event;
 mod policy;
 use super::InstalledTransactionOperation;
 use crate::{config::NodeSettings, standalone::providers::ProviderRuntime};
@@ -13,7 +14,9 @@ use latent_effects::{
     runtime::{AdapterOutcome, DeferredEffectAdapter, EffectTimeSource},
 };
 use latent_http::effects::{PutOnceContract, QualifiedHttpEffectAdapter};
-use latent_node::transaction_runtime::{IntentPolicyBinding, PolicyCallBinding};
+use latent_node::transaction_runtime::{
+    IntentPayloadConstraint, IntentPolicyBinding, PolicyCallBinding,
+};
 use latent_policy::capability::{GrantRestriction, PolicyStore};
 use policy::DispatchPolicy;
 use std::{sync::Arc, time::Instant};
@@ -23,6 +26,7 @@ pub(super) struct InstalledIntent {
     digest: String,
     profile: String,
     epoch: u64,
+    event_payload: Option<IntentPayloadConstraint>,
 }
 pub(super) struct Installation {
     pub adapters: Vec<Arc<dyn DeferredEffectAdapter>>,
@@ -75,10 +79,26 @@ pub(super) fn recovery_profiles(
         return Err(super::capacity());
     }
     let mut profiles = Vec::new();
-    for operation in installed
-        .iter()
-        .filter(|operation| operation.deferred_http.is_some())
-    {
+    for operation in installed {
+        if operation.deferred_event.is_some() {
+            let (adapter, reference, dispatch) = event::prepare(
+                settings,
+                operation,
+                providers.ok_or_else(super::denied)?,
+                policy,
+                time,
+            )?;
+            profiles.push(RecoveryProfile {
+                observation: dispatch.observation()?,
+                scope: dispatch.scope,
+                profile: adapter.profile().clone(),
+            });
+            drop(reference);
+            continue;
+        }
+        if operation.deferred_http.is_none() {
+            continue;
+        }
         let (adapter, _, dispatch) = prepare_operation(
             settings,
             operation,
@@ -105,8 +125,44 @@ pub(super) fn install(
 ) -> Result<Installation, PlatformError> {
     let mut adapters: Vec<AuthorizedHttp> = Vec::new();
     let mut intents = Vec::new();
+    let mut event_adapters: Vec<event::AuthorizedEvent> = Vec::new();
+    let mut event_scopes = Vec::new();
     let deadline = Instant::now() + std::time::Duration::from_secs(30);
     for operation in installed {
+        if operation.deferred_event.is_some() {
+            let (adapter, intent) = event::install(
+                settings,
+                operation,
+                providers.ok_or_else(super::denied)?,
+                policy,
+                authority,
+                time,
+                deadline,
+            )?;
+            let scope = &adapter.policies[0].scope;
+            if event_scopes.contains(scope)
+                || adapters
+                    .iter()
+                    .flat_map(|a| &a.policies)
+                    .any(|a| &a.scope == scope)
+            {
+                return Err(super::denied());
+            }
+            event_scopes.push(scope.clone());
+            intents.push(intent);
+            if let Some(existing) = event_adapters
+                .iter_mut()
+                .find(|existing| existing.profile() == adapter.profile())
+            {
+                existing.policies.extend(adapter.policies);
+            } else {
+                if event_adapters.len() + adapters.len() >= 32 {
+                    return Err(super::capacity());
+                }
+                event_adapters.push(adapter);
+            }
+            continue;
+        }
         let Some(_) = &operation.deferred_http else {
             continue;
         };
@@ -117,10 +173,11 @@ pub(super) fn install(
             policy,
             time,
         )?;
-        if adapters
-            .iter()
-            .flat_map(|adapter| &adapter.policies)
-            .any(|other| other.scope == dispatch.scope)
+        if event_scopes.contains(&dispatch.scope)
+            || adapters
+                .iter()
+                .flat_map(|adapter| &adapter.policies)
+                .any(|other| other.scope == dispatch.scope)
         {
             // One actual scope has one unambiguous policy/credential installation.
             return Err(super::denied());
@@ -134,7 +191,7 @@ pub(super) fn install(
         {
             existing.policies.push(dispatch);
         } else {
-            if adapters.len() >= 32 {
+            if event_adapters.len() + adapters.len() >= 32 {
                 return Err(super::capacity());
             }
             adapters.push(AuthorizedHttp {
@@ -147,6 +204,11 @@ pub(super) fn install(
         adapters: adapters
             .into_iter()
             .map(|adapter| Arc::new(adapter) as Arc<dyn DeferredEffectAdapter>)
+            .chain(
+                event_adapters
+                    .into_iter()
+                    .map(|adapter| Arc::new(adapter) as Arc<dyn DeferredEffectAdapter>),
+            )
             .collect(),
         intents,
     })
@@ -234,6 +296,7 @@ fn activate_operation(
         digest: adapter.configuration_digest().into(),
         profile: adapter.profile().adapter.clone(),
         epoch,
+        event_payload: None,
     })
 }
 
@@ -244,6 +307,24 @@ impl InstalledIntent {
     ) -> Option<IntentPolicyBinding> {
         if !std::ptr::eq(self.operation.as_ref(), operation) {
             return None;
+        }
+        if let Some((selected, requirements)) = &operation.deferred_event {
+            return Some(IntentPolicyBinding {
+                call: PolicyCallBinding {
+                    policies: selected.staging_policies.clone(),
+                    binding: selected.staging_binding.clone(),
+                    profile: self.profile.clone(),
+                    configuration_digest: self.digest.clone(),
+                    configuration_epoch: self.epoch,
+                    operations: vec!["stage".into()],
+                    deployment: unrestricted(),
+                    provider_configuration: unrestricted(),
+                },
+                binding: requirements.logical_binding.clone(),
+                operation: requirements.operation.clone(),
+                maximum_intents: requirements.count,
+                payload: self.event_payload.clone()?,
+            });
         }
         let (selected, requirements) = operation.deferred_http.as_ref()?;
         Some(IntentPolicyBinding {
@@ -260,7 +341,7 @@ impl InstalledIntent {
             binding: requirements.logical_binding.clone(),
             operation: requirements.operation.clone(),
             maximum_intents: requirements.count,
-            payload_digest: requirements.payload_digest.clone(),
+            payload: IntentPayloadConstraint::exact_digest(requirements.payload_digest.clone()),
         })
     }
 }

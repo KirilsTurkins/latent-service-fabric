@@ -8,6 +8,8 @@ use latent_policy::capability::{
 };
 use latent_state::namespace::catalog::NamespaceRead;
 use std::{sync::Arc, time::Instant};
+mod payload;
+pub use payload::IntentPayloadConstraint;
 
 /// Descriptive installed binding constraints; the actual policy owner must
 /// match every profile/configuration/revision before granting an operation.
@@ -29,7 +31,7 @@ pub struct IntentPolicyBinding {
     pub binding: String,
     pub operation: String,
     pub maximum_intents: u32,
-    pub payload_digest: String,
+    pub payload: IntentPayloadConstraint,
 }
 
 pub struct StateAuthorization {
@@ -155,11 +157,10 @@ impl StateAuthorization {
             || intent.operation != selected.operation
             || sequence >= selected.maximum_intents
             || intent.expires_at_unix_millis.is_some()
-            || latent_effects::payload::payload_digest(&intent.payload).map_err(|_| denied())?
-                != selected.payload_digest
         {
             return Err(denied());
         }
+        selected.payload.check(&selected.call, &intent.payload)?;
         Ok(())
     }
 
@@ -442,15 +443,10 @@ fn validate_bindings(
     if let Some(intent) = intents {
         latent_core::transaction_contract::identity(&intent.binding).map_err(|_| denied())?;
         latent_core::transaction_contract::identity(&intent.operation).map_err(|_| denied())?;
-        if !(1..=128).contains(&intent.maximum_intents)
-            || intent.payload_digest.len() != 71
-            || !intent.payload_digest.starts_with("sha256:")
-            || !intent.payload_digest[7..]
-                .bytes()
-                .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
-        {
+        if !(1..=128).contains(&intent.maximum_intents) {
             return Err(denied());
         }
+        intent.payload.require_binding(&intent.call)?;
     }
     for binding in std::iter::once(state).chain(intents.map(|intent| &intent.call)) {
         if binding.policies.is_empty()

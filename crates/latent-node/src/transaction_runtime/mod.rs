@@ -7,7 +7,9 @@ mod initialization;
 mod io;
 pub mod query;
 mod staging;
-pub use authorization::{IntentPolicyBinding, PolicyCallBinding, StateAuthorization};
+pub use authorization::{
+    IntentPayloadConstraint, IntentPolicyBinding, PolicyCallBinding, StateAuthorization,
+};
 pub use entity::{default_entity_limits, EntityCommandLanes};
 
 use latent_commit::atomic::{

@@ -29,6 +29,10 @@ pub struct InstalledTransactionOperation {
         crate::config::state::DeferredHttpConfig,
         super::effect_requirements::HttpRequirements,
     )>,
+    pub(super) deferred_event: Option<(
+        crate::config::state::DeferredEventConfig,
+        super::event_requirements::EventRequirements,
+    )>,
 }
 impl InstalledTransactionOperation {
     #[must_use]
@@ -153,6 +157,17 @@ pub(super) async fn load(
         &companion,
         &input.companion_digest,
     )?;
+    let deferred_event = deferred_event(
+        input.deferred_event,
+        mode,
+        &config,
+        &layers,
+        &companion,
+        &input.companion_digest,
+    )?;
+    if deferred_http.is_some() && deferred_event.is_some() {
+        return Err(super::denied());
+    }
     publication.check_current()?;
     Ok(InstalledTransactionOperation {
         target: InvocationTarget {
@@ -172,6 +187,7 @@ pub(super) async fn load(
         mode,
         contract_digest,
         deferred_http,
+        deferred_event,
     })
 }
 
@@ -200,6 +216,57 @@ fn companion(
         return Err(super::denied());
     }
     TransactionBinding::decode(bytes).map_err(|_| super::denied())
+}
+
+fn deferred_event(
+    selected: Option<crate::config::state::DeferredEventConfig>,
+    mode: TransactionOperationMode,
+    config: &latent_artifacts::package::PackageConfig,
+    layers: &[(String, Vec<u8>)],
+    companion: &TransactionBinding,
+    companion_digest: &str,
+) -> Result<
+    Option<(
+        crate::config::state::DeferredEventConfig,
+        super::event_requirements::EventRequirements,
+    )>,
+    PlatformError,
+> {
+    selected
+        .map(|selected| {
+            if mode != TransactionOperationMode::StrictCommand {
+                return Err(super::denied());
+            }
+            let path = super::event_requirements::PATH;
+            let layer = config
+                .layers
+                .iter()
+                .find(|layer| layer.path == path)
+                .filter(|layer| {
+                    layer.role == LayerRole::Asset
+                        && layer.media_type == "application/json"
+                        && layer.digest.as_str() == selected.requirements_digest
+                        && layer.size <= super::event_requirements::MAXIMUM_BYTES as u64
+                })
+                .ok_or_else(super::denied)?;
+            let raw = &layers
+                .iter()
+                .find(|(name, _)| name == path)
+                .ok_or_else(super::denied)?
+                .1;
+            if raw.len() as u64 != layer.size
+                || artifact_blob_digest(raw).as_str() != selected.requirements_digest
+            {
+                return Err(super::denied());
+            }
+            let requirements = super::event_requirements::EventRequirements::decode(
+                raw,
+                companion,
+                companion_digest,
+            )?;
+            Ok((selected, requirements))
+        })
+        .transpose()
 }
 
 fn deferred_http(

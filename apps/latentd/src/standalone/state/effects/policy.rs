@@ -23,16 +23,14 @@ pub(super) struct DispatchPolicy {
     profile: String,
     digest: String,
     epoch: u64,
+    staging_binding: String,
+    dispatch_binding: String,
+    dispatch_policies: Vec<String>,
 }
 impl DispatchPolicy {
     pub fn observation(
         &self,
     ) -> Result<super::super::NativeDeferredEffectHostInspection, PlatformError> {
-        let (selected, _) = self
-            .operation
-            .deferred_http
-            .as_ref()
-            .ok_or_else(super::super::denied)?;
         Ok(super::super::NativeDeferredEffectHostInspection {
             tenant: self.scope.tenant.clone(),
             service: self.operation.target.service.0.clone(),
@@ -41,8 +39,8 @@ impl DispatchPolicy {
             incarnation: self.scope.incarnation,
             logical_binding: self.scope.binding.clone(),
             operation: self.scope.operation.clone(),
-            staging_binding: selected.staging_binding.clone(),
-            dispatch_binding: selected.dispatch_binding.clone(),
+            staging_binding: self.staging_binding.clone(),
+            dispatch_binding: self.dispatch_binding.clone(),
             provider_profile: self.profile.clone(),
             configuration_digest: self.digest.clone(),
             configuration_epoch: self.epoch,
@@ -59,7 +57,7 @@ impl DispatchPolicy {
         adapter: &QualifiedHttpEffectAdapter,
         epoch: u64,
     ) -> Result<Self, PlatformError> {
-        let (_, requirements) = operation
+        let (selected, requirements) = operation
             .deferred_http
             .as_ref()
             .ok_or_else(super::super::denied)?;
@@ -83,6 +81,9 @@ impl DispatchPolicy {
             operation: requirements.operation.clone(),
         };
         let ceiling = requirements.ceiling;
+        let staging_binding = selected.staging_binding.clone();
+        let dispatch_binding = selected.dispatch_binding.clone();
+        let dispatch_policies = selected.dispatch_policies.clone();
         Ok(Self {
             scope,
             ceiling,
@@ -93,6 +94,57 @@ impl DispatchPolicy {
             profile: adapter.profile().adapter.clone(),
             digest: adapter.configuration_digest().into(),
             epoch,
+            staging_binding,
+            dispatch_binding,
+            dispatch_policies,
+        })
+    }
+    pub fn new_event(
+        operation: Arc<InstalledTransactionOperation>,
+        policy: Arc<PolicyStore>,
+        adapter: &latent_nats::deferred::JetStreamEffectAdapter,
+        reference: &latent_capabilities::broker::ProviderReference,
+    ) -> Result<Self, PlatformError> {
+        let (selected, requirements) = operation
+            .deferred_event
+            .as_ref()
+            .ok_or_else(super::super::denied)?;
+        let principal = InvocationPrincipal {
+            subject: InvocationPrincipal::local_service_subject(
+                &operation.target.tenant,
+                &operation.target.service,
+            ),
+            kind: PrincipalKind::Service,
+            tenant: Some(operation.target.tenant.clone()),
+            service: Some(operation.target.service.clone()),
+            claims: Metadata::new(),
+        };
+        let caller = CallerScope::derive(&principal, &RecoverySelection::ServiceIntegration)?;
+        let scope = EffectScope {
+            tenant: operation.target.tenant.0.clone(),
+            namespace: operation.namespace().into(),
+            incarnation: operation.incarnation,
+            publication: operation.publication.publication().as_str().into(),
+            binding: requirements.logical_binding.clone(),
+            operation: requirements.operation.clone(),
+        };
+        let ceiling = requirements.ceiling;
+        let staging_binding = selected.staging_binding.clone();
+        let dispatch_binding = selected.dispatch_binding.clone();
+        let dispatch_policies = selected.dispatch_policies.clone();
+        Ok(Self {
+            scope,
+            ceiling,
+            operation,
+            policy,
+            principal,
+            caller,
+            profile: adapter.profile().adapter.clone(),
+            digest: reference.configuration_digest().into(),
+            epoch: reference.configuration_epoch(),
+            staging_binding,
+            dispatch_binding,
+            dispatch_policies,
         })
     }
     pub fn with_current<T>(
@@ -101,11 +153,6 @@ impl DispatchPolicy {
         input_bytes: u64,
         action: impl FnOnce(u64) -> Result<T, PlatformError>,
     ) -> Result<T, PlatformError> {
-        let (selected, _) = self
-            .operation
-            .deferred_http
-            .as_ref()
-            .ok_or_else(super::super::denied)?;
         let now = Instant::now();
         let remaining = deadline.saturating_duration_since(now);
         // Round up: a millisecond policy ceiling must cover the entire original
@@ -120,8 +167,8 @@ impl DispatchPolicy {
         }
         let snapshot = self.policy.snapshot(
             &self.operation.target.tenant,
-            &selected.dispatch_policies,
-            &selected.dispatch_binding,
+            &self.dispatch_policies,
+            &self.dispatch_binding,
             deadline,
         )?;
         let decision = snapshot.authorize(

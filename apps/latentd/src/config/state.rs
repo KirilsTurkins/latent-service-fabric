@@ -5,7 +5,7 @@ use latent_core::{
 use serde::Deserialize;
 use std::path::PathBuf;
 mod effects;
-pub use effects::DeferredHttpConfig;
+pub use effects::{DeferredEventConfig, DeferredHttpConfig};
 mod tenant;
 pub use tenant::{TenantLimitsConfig, TenantQuotaConfig};
 mod entities;
@@ -51,6 +51,8 @@ pub struct StateOperationConfig {
     pub entity: Option<String>,
     #[serde(default, deserialize_with = "effects::present")]
     pub deferred_http: Option<DeferredHttpConfig>,
+    #[serde(default, deserialize_with = "effects::present_event")]
+    pub deferred_event: Option<DeferredEventConfig>,
 }
 
 fn present_entity<'de, D: serde::Deserializer<'de>>(source: D) -> Result<Option<String>, D::Error> {
@@ -98,6 +100,7 @@ pub(crate) struct OperationSettings {
     pub policies: Vec<String>,
     pub entity: Option<String>,
     pub deferred_http: Option<DeferredHttpConfig>,
+    pub deferred_event: Option<DeferredEventConfig>,
 }
 
 pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError> {
@@ -131,6 +134,12 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
         checked_digest(&input.companion_digest)?;
         if let Some(effect) = &input.deferred_http {
             effect.validate()?;
+        }
+        if let Some(effect) = &input.deferred_event {
+            effect.validate()?;
+        }
+        if input.deferred_http.is_some() && input.deferred_event.is_some() {
+            return Err(super::invalid("state.ambiguous-deferred-operation"));
         }
         if input.incarnation == 0
             || input.state_policies.is_empty()
@@ -171,6 +180,7 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
             policies: input.state_policies.clone(),
             entity: input.entity.clone(),
             deferred_http: input.deferred_http.clone(),
+            deferred_event: input.deferred_event.clone(),
         });
     }
     Ok(StateSettings {

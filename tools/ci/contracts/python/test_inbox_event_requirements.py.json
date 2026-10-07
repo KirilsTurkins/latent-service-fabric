@@ -1,0 +1,32 @@
+{
+  "cases": [
+    "InboxEventRequirementsTests.test_authored_aggregate_captures_exact_companion_schema_and_bounded_event_asset",
+    "InboxEventRequirementsTests.test_event_packaging_retains_captured_bytes_and_refuses_every_authority_or_scope_drift",
+    "InboxEventRequirementsTests.test_event_selector_requires_exact_authored_world_and_companion_operations",
+    "InboxEventRequirementsTests.test_original_http_exact_payload_and_order_draft_notification_packaging_remain_strict"
+  ],
+  "guardDefinitions": {
+    "2706a003ec2935c3b8123c6fd959dd9b264b8694a9470cba7967a9d48cc52226": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1e05889de2c980d7a0f96406a695d4f95d9d7d6919fa3709dc400b10071cf575",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "guards": {
+    "InboxEventRequirementsTests.test_authored_aggregate_captures_exact_companion_schema_and_bounded_event_asset": "2706a003ec2935c3b8123c6fd959dd9b264b8694a9470cba7967a9d48cc52226",
+    "InboxEventRequirementsTests.test_event_packaging_retains_captured_bytes_and_refuses_every_authority_or_scope_drift": "2706a003ec2935c3b8123c6fd959dd9b264b8694a9470cba7967a9d48cc52226",
+    "InboxEventRequirementsTests.test_event_selector_requires_exact_authored_world_and_companion_operations": "2706a003ec2935c3b8123c6fd959dd9b264b8694a9470cba7967a9d48cc52226",
+    "InboxEventRequirementsTests.test_original_http_exact_payload_and_order_draft_notification_packaging_remain_strict": "2706a003ec2935c3b8123c6fd959dd9b264b8694a9470cba7967a9d48cc52226"
+  },
+  "kind": "python",
+  "module": "tools/tests/test_inbox_event_requirements.py",
+  "reviewReason": "Add four captured aggregate event asset/packaging drift regressions; preserve existing HTTP exact-payload and OrderDraft notification producer behavior. No compiler, signing or broker qualification is inferred.",
+  "schemaVersion": "latent.ci.contracts.v2"
+}

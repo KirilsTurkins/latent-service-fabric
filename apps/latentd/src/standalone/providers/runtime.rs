@@ -325,28 +325,66 @@ impl ProviderRuntime {
         if installation.deferred.capacity() > 16 {
             return Err(unavailable());
         }
-        let publisher = self.events.as_ref().ok_or_else(unavailable)?;
         let adapters = installation
             .deferred
             .iter()
             .map(|deferred| {
-                publisher
-                    .deferred_adapter(
-                        &installation.identity.tenant,
-                        &deferred.topic,
-                        deferred.qualification.clone(),
-                        Arc::clone(&time),
-                    )
-                    .map(|adapter| {
+                self.captured_deferred_event(installation, &deferred.topic, Arc::clone(&time))
+                    .map(|(adapter, _reference)| {
                         Arc::new(adapter) as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>
                     })
-                    .map_err(|_| unavailable())
             })
             .collect();
         // Each returned adapter retains this same clock owner. The constructor
         // consumes its incoming Arc only after every adapter is constructed.
         drop(time);
         adapters
+    }
+
+    /// Same original constructor used by the public deferred adapter port.
+    /// Return its opaque captured provider identity for installed policy checks,
+    /// rather than rebuilding configuration facts from an operator descriptor.
+    pub(in crate::standalone) fn captured_deferred_event(
+        &self,
+        installation: &crate::config::providers::EventInstallation,
+        topic: &str,
+        time: Arc<dyn latent_effects::runtime::EffectTimeSource>,
+    ) -> Result<
+        (
+            latent_nats::deferred::JetStreamEffectAdapter,
+            ProviderReference,
+        ),
+        PlatformError,
+    > {
+        let publisher = self.events.as_ref().ok_or_else(unavailable)?;
+        let reference = publisher.reference();
+        if installation.identity.epoch != reference.configuration_epoch()
+            || !self.descriptors.iter().any(|entry| {
+                entry.id == installation.identity.id
+                    && entry.tenant == installation.identity.tenant
+                    && entry.service == installation.identity.service
+                    && entry.capability == reference.capability()
+                    && entry.profile == reference.profile()
+                    && entry.configuration_digest == reference.configuration_digest()
+                    && entry.configuration_epoch == reference.configuration_epoch().to_string()
+            })
+        {
+            return Err(unavailable());
+        }
+        let deferred = installation
+            .deferred
+            .iter()
+            .find(|item| item.topic == topic)
+            .ok_or_else(unavailable)?;
+        let adapter = publisher
+            .deferred_adapter(
+                &installation.identity.tenant,
+                topic,
+                deferred.qualification.clone(),
+                time,
+            )
+            .map_err(|_| unavailable())?;
+        Ok((adapter, reference))
     }
 
     pub fn descriptors(&self) -> &[ProviderDescriptor] {

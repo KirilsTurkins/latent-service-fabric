@@ -172,7 +172,7 @@ impl HttpRequirements {
         Ok(())
     }
 }
-fn unsigned(text: &str) -> Result<u64, PlatformError> {
+pub(super) fn unsigned(text: &str) -> Result<u64, PlatformError> {
     if text.is_empty()
         || text.len() > 20
         || (text.len() > 1 && text.starts_with('0'))

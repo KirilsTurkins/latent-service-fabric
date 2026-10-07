@@ -1,4 +1,4 @@
-mod fixture;
+pub(in crate::transaction_runtime) mod fixture;
 
 use super::*;
 use crate::{TransactionActivationAdmission, TransactionAdmission, TransactionExecution};

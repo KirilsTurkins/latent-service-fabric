@@ -14,6 +14,21 @@ pub(in crate::standalone) struct ProviderRuntime {
 }
 
 impl ProviderRuntime {
+    pub(in crate::standalone) fn captured_deferred_event(
+        &self,
+        _installation: &crate::config::providers::EventInstallation,
+        _topic: &str,
+        _time: Arc<dyn latent_effects::runtime::EffectTimeSource>,
+    ) -> Result<
+        (
+            latent_nats::deferred::JetStreamEffectAdapter,
+            latent_capabilities::broker::ProviderReference,
+        ),
+        PlatformError,
+    > {
+        Err(unsupported())
+    }
+
     pub(in crate::standalone) fn qualified_http(
         _owner: &Self,
         _contract: latent_http::effects::PutOnceContract,
