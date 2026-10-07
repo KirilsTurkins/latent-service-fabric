@@ -31,8 +31,8 @@ use latent_core::{
     RouteGeneration,
 };
 use latent_manifest::{
-    DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidator, ManifestViolation,
-    Phase1ManifestValidator,
+    validate_deployment_document, DeploymentManifest, JsonManifestCodec, ManifestCodec,
+    ManifestViolation,
 };
 use latent_routing::{
     InvocationTarget, ResolvedBinding, ResolvedRevision, RouteCompiler, RouteResolver,
@@ -1074,9 +1074,7 @@ fn deployment_revision_id_observed(
     deployment: &DeploymentManifest,
     work: &mut Work,
 ) -> Result<RevisionId, PlatformError> {
-    Phase1ManifestValidator
-        .validate_deployment(deployment)
-        .map_err(manifest_error)?;
+    validate_deployment_document(deployment).map_err(manifest_error)?;
     let mut identity = deployment.clone();
     identity.route_weight = 1;
     identity.release.0.make_ascii_lowercase();

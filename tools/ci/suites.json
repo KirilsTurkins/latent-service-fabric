@@ -2814,6 +2814,36 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "deployment_document_accepts_both_shapes_without_selecting_artifact_authority",
+        "fresh_query_ceiling_allows_zero_mutation_and_intent_capacity",
+        "transaction_bounds_reject_immediate_operations_children_and_overflowing_ceilings",
+        "transaction_ceilings_require_explicit_phase4_validation_and_preserve_unsigned_width",
+        "transaction_validation_preserves_guest_scope_identity_and_deployment_fences"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-manifest.test.phase4-validation",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-manifest/Cargo.toml",
+      "minimumCases": 5,
+      "mode": "libtest",
+      "package": "latent-manifest",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "host-bounded",
+      "source": "tests/phase4_validation.rs",
+      "target": "phase4_validation",
+      "timeoutSeconds": 180
+    },
+    {
+      "boundary": "host",
+      "expectedCases": [
         "explicit_publication_roundtrips_without_reinterpreting_component_identity",
         "present_publication_requires_exact_typed_identity"
       ],
@@ -8770,6 +8800,8 @@
         "management::tests::preparation::one_page_preserves_cursor_and_zero_default_without_followup",
         "management::tests::preparation::publication_rejects_multiple_stdin_inputs_before_attempting_any_read",
         "management::tests::preparation::publish_preparation_checks_metadata_and_exact_component_digest",
+        "management::tests::preparation::transaction_deployment_data_prepares_without_widening_or_selecting_artifact_authority",
+        "management::tests::preparation::transaction_deployment_preparation_keeps_closed_budgets_tenant_and_publication_checks",
         "management::tests::publications::cli_requires_exact_publication_in_configured_scope",
         "management::tests::publications::exact_reply_cannot_substitute_another_publication_with_the_same_component",
         "management::tests::publications::release_and_audit_output_preserve_distinct_bounded_publication_identity",
@@ -8817,7 +8849,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 152,
+      "minimumCases": 154,
       "mode": "libtest",
       "package": "latent",
       "platforms": [

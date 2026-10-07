@@ -202,6 +202,41 @@ impl StoredAdmission {
         Ok(value)
     }
 
+    /// Recover only the immutable manifest profile before metadata validation.
+    /// This does not load executable bytes, renew admission, or confer authority.
+    pub(in crate::local_repository) fn transaction_profile(
+        &self,
+        directory: &Path,
+        capsule: &latent_manifest::CapsuleManifest,
+        limits: AdmissionStorageLimits,
+    ) -> Result<bool, PlatformError> {
+        let binding = self.binding(directory, limits)?;
+        let manifest = read_blob(directory, &self.manifest, limits.max_document_bytes)?;
+        let configuration = read_blob(directory, &self.configuration, limits.max_document_bytes)?;
+        super::super::transaction_profile::from_package(
+            &manifest,
+            &configuration,
+            &binding,
+            capsule,
+            |layer| {
+                let stored = self
+                    .layers
+                    .iter()
+                    .find(|stored| stored.path == layer.path)
+                    .ok_or_else(|| corrupt("transaction-profile-stored-layer-missing"))?;
+                if stored.blob.digest != layer.digest.as_str() || stored.blob.size != layer.size {
+                    return Err(corrupt("transaction-profile-stored-layer-association"));
+                }
+                let maximum = if layer.path == "transaction-binding.json" {
+                    128 * 1024
+                } else {
+                    crate::package::PackageLimits::default().max_document_bytes
+                };
+                read_blob(directory, &stored.blob, maximum)
+            },
+        )
+    }
+
     /// Reads only immutable package content. Detached policy evidence is neither
     /// retained nor returned to a structural comparison consumer.
     pub(in crate::local_repository) fn package_input(

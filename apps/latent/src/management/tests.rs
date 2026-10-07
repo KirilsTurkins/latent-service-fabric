@@ -61,6 +61,7 @@ fn activation_tree_preserves_future_enums_numeric_presence_and_history_gaps() {
     let node = &value["nodes"][0];
     assert_eq!(node["lastUpdatedUnixMillis"], u64::MAX.to_string());
     assert!(node["grantedBudget"].is_null());
+    assert!(node["transactionStaging"].is_null());
     assert!(!node["diagnosticIsTerminal"].as_bool().unwrap());
     let diagnostic = &node["diagnostic"];
     assert_eq!(diagnostic["stage"], 777);
@@ -82,6 +83,49 @@ fn activation_tree_preserves_future_enums_numeric_presence_and_history_gaps() {
     assert_eq!(gap["historyAvailable"], false);
     assert_eq!(gap["cursorExpired"], true);
     assert_eq!(gap["externalCompletion"], "unknown");
+}
+
+#[test]
+fn activation_tree_staging_preserves_original_claim_and_full_width_unsigned_progress() {
+    let witness = proto::TransactionStagingWitness {
+        schema_version: 1,
+        activation_serial: u64::MAX,
+        command_id: "1".repeat(64),
+        attempt_id: "2".repeat(64),
+        transaction_id: "3".repeat(64),
+        publication_id: format!("publication:sha256:{}", "4".repeat(64)),
+        staged_mutations: 2,
+        captured_intents: 2,
+        state_write_bytes: u64::MAX,
+        observed_at_unix_millis: u64::MAX,
+    };
+    let value = response::activation_tree(proto::InspectActivationTreeResponse {
+        schema_version: 1,
+        retained_history_only: true,
+        history_available: true,
+        page: Some(proto::PageResponse::default()),
+        nodes: vec![proto::ActivationTreeNode {
+            activation_id: "command".into(),
+            root_activation_id: "command".into(),
+            transaction_staging: Some(witness.clone()),
+            ..proto::ActivationTreeNode::default()
+        }],
+        ..proto::InspectActivationTreeResponse::default()
+    })
+    .unwrap()
+    .data;
+    let actual = &value["nodes"][0]["transactionStaging"];
+    assert_eq!(actual["schemaVersion"], 1);
+    assert_eq!(actual["activationSerial"], u64::MAX.to_string());
+    assert_eq!(actual["commandId"], witness.command_id);
+    assert_eq!(actual["attemptId"], witness.attempt_id);
+    assert_eq!(actual["transactionId"], witness.transaction_id);
+    assert_eq!(actual["publicationId"], witness.publication_id);
+    assert_eq!(actual["stagedMutations"], 2);
+    assert_eq!(actual["capturedIntents"], 2);
+    assert_eq!(actual["stateWriteBytes"], u64::MAX.to_string());
+    assert_eq!(actual["observedAtUnixMillis"], u64::MAX.to_string());
+    assert_eq!(value["externalCompletion"], "unknown");
 }
 
 fn deployment() -> proto::Deployment {

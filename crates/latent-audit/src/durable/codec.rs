@@ -357,6 +357,7 @@ fn namespace_attempt(v: &AuditOperationAttempt) -> Result<()> {
             | AuditControlAction::NamespaceDestroy
             | AuditControlAction::NamespaceRecreate
             | AuditControlAction::NamespaceInspect
+            | AuditControlAction::CommandFloorRelease
     );
     if namespace != v.identities.state.is_some()
         || namespace
