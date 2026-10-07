@@ -63,7 +63,7 @@ async fn parent_and_child(stale_child: bool) {
     let fixture = Fixture::with_load_source(load.clone()).await;
     let receipt = fixture
         .manager
-        .start(Fixture::request("load-parent", 0))
+        .start(fixture.request("load-parent", 0))
         .unwrap()
         .await;
     let ActivationOutcome::Succeeded(success) = receipt.outcome else {

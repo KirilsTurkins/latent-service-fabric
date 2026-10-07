@@ -24,7 +24,7 @@ async fn required_audit_records_real_local_acceptance_and_denies_full_sink_befor
     assert_eq!(
         value(
             f.manager
-                .start(Fixture::request("audited-success", 0))
+                .start(f.request("audited-success", 0))
                 .unwrap()
                 .await
         ),
@@ -36,7 +36,7 @@ async fn required_audit_records_real_local_acceptance_and_denies_full_sink_befor
     assert_eq!(
         value(
             f.manager
-                .start(Fixture::request("audited-declared-failure", 1))
+                .start(f.request("audited-declared-failure", 1))
                 .unwrap()
                 .await
         ),
@@ -88,12 +88,7 @@ async fn required_audit_records_real_local_acceptance_and_denies_full_sink_befor
     drop(page);
     let starts = f.observations.starts.lock().unwrap().len();
     assert_eq!(
-        value(
-            f.manager
-                .start(Fixture::request("audit-full", 0))
-                .unwrap()
-                .await
-        ),
+        value(f.manager.start(f.request("audit-full", 0)).unwrap().await),
         2003
     );
     f.idle().await;
@@ -110,7 +105,7 @@ async fn oversized_input_unknown_targets_and_expired_deadline_never_start_childr
         assert_eq!(
             value(
                 f.manager
-                    .start(Fixture::request(&format!("invalid-{mode}"), mode))
+                    .start(f.request(&format!("invalid-{mode}"), mode))
                     .unwrap()
                     .await
             ),
@@ -121,12 +116,7 @@ async fn oversized_input_unknown_targets_and_expired_deadline_never_start_childr
     assert_eq!(f.observations.starts.lock().unwrap().len(), 4);
     // Fresh Store memory must not retain the previous call's mutated arguments.
     assert_eq!(
-        value(
-            f.manager
-                .start(Fixture::request("fresh-memory", 0))
-                .unwrap()
-                .await
-        ),
+        value(f.manager.start(f.request("fresh-memory", 0)).unwrap().await),
         ANSWER
     );
     f.idle().await;
@@ -137,11 +127,7 @@ async fn oversized_input_unknown_targets_and_expired_deadline_never_start_childr
 #[tokio::test]
 async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_call_grant() {
     let f = Fixture::new(3, false, true).await;
-    let receipt = f
-        .manager
-        .start(Fixture::request("concurrent", 3))
-        .unwrap()
-        .await;
+    let receipt = f.manager.start(f.request("concurrent", 3)).unwrap().await;
     let child_failures = f.observations.child_failures.snapshot();
     let ActivationOutcome::Succeeded(success) = &receipt.outcome else {
         panic!("{:?}", receipt.outcome)
@@ -164,7 +150,7 @@ async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_c
     );
     assert_eq!(f.observations.starts.lock().unwrap().len(), 3);
     f.idle().await;
-    let mut request = Fixture::request("one-child-grant", 3);
+    let mut request = f.request("one-child-grant", 3);
     request.budget.child_calls = 1;
     let receipt = f.manager.start(request).unwrap().await;
     let ActivationOutcome::Succeeded(success) = &receipt.outcome else {
@@ -189,11 +175,7 @@ fn value(receipt: latent_node::ActivationReceipt) -> u32 {
 async fn denied_service_publication_never_starts_a_child() {
     for foreign in [false, true] {
         let f = Fixture::new(2, foreign, false).await;
-        let receipt = f
-            .manager
-            .start(Fixture::request("denied", 0))
-            .unwrap()
-            .await;
+        let receipt = f.manager.start(f.request("denied", 0)).unwrap().await;
         assert_eq!(value(receipt), 2004); // WIT permission-denied
         assert_eq!(f.observations.starts.lock().unwrap().len(), 1);
         f.idle().await;
@@ -204,7 +186,7 @@ async fn denied_service_publication_never_starts_a_child() {
 async fn explicit_cross_tenant_policy_and_fresh_activation_identity() {
     let f = Fixture::new(2, true, true).await;
     for root in ["first-root", "second-root"] {
-        let mut request = Fixture::request(root, 0);
+        let mut request = f.request(root, 0);
         request
             .principal
             .claims
@@ -268,12 +250,7 @@ fn assert_cross_tenant_journal_scope(f: &Fixture, root: &str, child: &Activation
 async fn declared_failure_is_distinct_from_a_platform_failure() {
     let f = Fixture::new(2, false, true).await;
     assert_eq!(
-        value(
-            f.manager
-                .start(Fixture::request("declared", 1))
-                .unwrap()
-                .await
-        ),
+        value(f.manager.start(f.request("declared", 1)).unwrap().await),
         1000
     );
     let events = f
@@ -293,7 +270,7 @@ async fn parent_occupying_the_only_cell_rejects_children_promptly_and_keeps_runn
     for id in ["saturated-first", "saturated-again"] {
         let receipt = tokio::time::timeout(
             Duration::from_secs(2),
-            f.manager.start(Fixture::request(id, 0)).unwrap(),
+            f.manager.start(f.request(id, 0)).unwrap(),
         )
         .await
         .expect("child must not queue behind its parent");
@@ -306,7 +283,7 @@ async fn parent_occupying_the_only_cell_rejects_children_promptly_and_keeps_runn
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn cancellation_during_child_execution_reclaims_both_stores_and_reservations() {
     let f = Fixture::new(2, false, true).await;
-    let parent = tokio::spawn(f.manager.start(Fixture::request("cancel-root", 2)).unwrap());
+    let parent = tokio::spawn(f.manager.start(f.request("cancel-root", 2)).unwrap());
     tokio::time::timeout(
         Duration::from_secs(2),
         f.observations.child_running.notified(),
@@ -332,12 +309,7 @@ async fn cancellation_during_child_execution_reclaims_both_stores_and_reservatio
     );
     f.idle().await;
     assert_eq!(
-        value(
-            f.manager
-                .start(Fixture::request("after-cancel", 0))
-                .unwrap()
-                .await
-        ),
+        value(f.manager.start(f.request("after-cancel", 0)).unwrap().await),
         ANSWER
     );
     f.idle().await;
@@ -346,7 +318,7 @@ async fn cancellation_during_child_execution_reclaims_both_stores_and_reservatio
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn abandoning_parent_awaiter_still_drives_child_cleanup() {
     let f = Fixture::new(2, false, true).await;
-    let parent = tokio::spawn(f.manager.start(Fixture::request("abandoned", 2)).unwrap());
+    let parent = tokio::spawn(f.manager.start(f.request("abandoned", 2)).unwrap());
     tokio::time::timeout(
         Duration::from_secs(2),
         f.observations.child_running.notified(),
@@ -358,7 +330,7 @@ async fn abandoning_parent_awaiter_still_drives_child_cleanup() {
     f.idle().await;
     // Dropping an executing root without a cleanup receipt quarantines its
     // cell. The node-owned child completes cleanup and leaves its cell usable.
-    let mut request = Fixture::request("after-abandon", 0);
+    let mut request = f.request("after-abandon", 0);
     request.target.service = latent_core::ServiceId("callee".into());
     request.target.contract = latent_core::ContractId(super::component::CALLEE.into());
     request.target.function = latent_core::FunctionId("answer".into());
@@ -376,11 +348,11 @@ async fn changed_route_requires_a_new_plan_and_revocation_denies_cached_target()
         .store
         .pin()
         .unwrap()
-        .resolve(&Fixture::request("pin", 0).target, None)
+        .resolve(&f.request("pin", 0).target, None)
         .unwrap();
     let old = f.store.plan(&old_revision).unwrap();
     assert_eq!(
-        value(f.manager.start(Fixture::request("warm", 0)).unwrap().await),
+        value(f.manager.start(f.request("warm", 0)).unwrap().await),
         ANSWER
     );
     let mut changed = f.target.clone();
@@ -388,20 +360,11 @@ async fn changed_route_requires_a_new_plan_and_revocation_denies_cached_target()
     f.store.apply(changed).await.unwrap();
     assert!(old.check_eligible().is_err());
     assert_eq!(
-        value(
-            f.manager
-                .start(Fixture::request("new-plan", 0))
-                .unwrap()
-                .await
-        ),
+        value(f.manager.start(f.request("new-plan", 0)).unwrap().await),
         ANSWER
     );
     f.revoke_target();
-    let receipt = f
-        .manager
-        .start(Fixture::request("revoked", 0))
-        .unwrap()
-        .await;
+    let receipt = f.manager.start(f.request("revoked", 0)).unwrap().await;
     match receipt.outcome {
         ActivationOutcome::Succeeded(success) => assert_eq!(
             serde_json::from_slice::<Vec<u32>>(&success.output).unwrap(),
