@@ -56,7 +56,9 @@ pub use providers::{
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
 pub use security::ExecutionProfileReport;
-pub use state::{DeferredHttpConfig, StateConfig, StateOperationConfig};
+pub use state::{
+    DeferredHttpConfig, StateConfig, StateOperationConfig, TenantLimitsConfig, TenantQuotaConfig,
+};
 pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
