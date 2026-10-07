@@ -1,1 +1,50 @@
-{"kind":"workflow","policy":{"concurrency":{"cancel-in-progress":true,"group":"java-guest-feasibility-${{ github.ref }}"},"env":{"CARGO_BUILD_JOBS":"2","CARGO_INCREMENTAL":"0","CARGO_PROFILE_DEV_DEBUG":"0","CARGO_PROFILE_DEV_DEBUG_ASSERTIONS":"true","CARGO_PROFILE_DEV_OVERFLOW_CHECKS":"true","CARGO_PROFILE_TEST_DEBUG":"0","CARGO_PROFILE_TEST_DEBUG_ASSERTIONS":"true","CARGO_PROFILE_TEST_OVERFLOW_CHECKS":"true"},"name":"Java guest authoring","on":{"pull_request":{"branches":["development"],"paths":["sdk/java-guest/**","sdk/transaction-contract/**","tools/**","apps/**","crates/**","schemas/**","Cargo.*","docs/component-development/java-authoring.md","docs/component-development/java-httpserver.md",".github/workflows/java-guest-feasibility.yml","wit/platform/**"]},"workflow_dispatch":null},"permissions":{"contents":"read"}},"requiredJobs":["compiler-component"],"reviewReason":"Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution; CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Incoming development review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Reviewed incoming development: Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Incoming reviewed obligation: Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards.","schemaVersion":"latent.ci.contracts.v1","workflow":".github/workflows/java-guest-feasibility.yml"}
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "java-guest-feasibility-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
+    "name": "Java guest authoring",
+    "on": {
+      "pull_request": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          "sdk/java-guest/**",
+          "sdk/transaction-contract/**",
+          "tools/**",
+          "apps/**",
+          "crates/**",
+          "schemas/**",
+          "Cargo.*",
+          "docs/component-development/java-authoring.md",
+          "docs/component-development/java-httpserver.md",
+          ".github/workflows/java-guest-feasibility.yml",
+          "wit/platform/**"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "compiler-component"
+  ],
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution; CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Incoming development review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Reviewed incoming development: Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Incoming reviewed obligation: Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Incoming reviewed obligation: Preserve current actual workflow triggers, permissions, guards and job ownership after the reviewed source merge. Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/java-guest-feasibility.yml"
+}
