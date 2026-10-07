@@ -12,6 +12,7 @@
     "JavaDiagnosticMaterialTests.test_retained_peer_port_is_fixed_and_drift_retires_the_original_owner",
     "JavaDiagnosticMaterialTests.test_signed_inputs_keep_original_component_source_and_separate_enforced_policy",
     "JavaDiagnosticMaterialTests.test_unadapted_foreign_recipe_changed_component_and_uncompiled_source_are_refused",
+    "JavaDiagnosticPolicyTests.test_http_ceiling_covers_actual_provider_copy_reservation_without_changing_wire_limits",
     "JavaDiagnosticPolicyTests.test_missing_duplicate_foreign_or_changed_native_profiles_cannot_create_review_bytes",
     "JavaDiagnosticPolicyTests.test_program_has_eight_initial_records_four_revisions_and_original_narrow_scopes",
     "JavaDiagnosticPolicyTests.test_review_hash_is_exact_original_policy_owner_file_bytes",
@@ -287,10 +288,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "JavaDiagnosticPolicyTests.test_http_ceiling_covers_actual_provider_copy_reservation_without_changing_wire_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaef32217fe2e4dbc36cb8fb07439603adb3658ebde5c45aefbc794886876d05",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_diagnostic_program.py",
-  "reviewReason": "Register finite native-input, policy-review, deadline, paging, tenant and retained-peer ownership guards without replacing historical cases Add one execute-to-real-session filesystem regression for the duplicate output creation found by the actual signed-node run. Preserve every original case, fixture, approval, boot, deadline and physical-retirement guard; unit mocks make no real-node qualification claim. Add optional unprivileged loopback selection, bounded peer propagation and CLI execute-override guards. Add one explicit ingress port and exact configuration-byte preservation guard. Add one recorded-wire fuel control: strict503 from the maintained generated adapter, reject500, and require closed execution-stage guest-fuel reason11; all original cases, controls, deadlines and budgets are unchanged.",
+  "reviewReason": "Retain22 original cases and guards; add actual unchanged HTTP fixture wire limits versus14336-byte native copy-reservation control; update only explicit output ceiling expectation",
   "schemaVersion": "latent.ci.contracts.v1"
 }
