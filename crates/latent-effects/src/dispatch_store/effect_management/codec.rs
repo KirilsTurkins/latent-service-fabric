@@ -38,13 +38,16 @@ pub(super) fn digest(domain: &[u8], bytes: &[u8]) -> [u8; 32] {
 }
 pub(super) fn operation(request: &EffectManagementRequest) -> [u8; 32] {
     let input = request.input();
-    let mut hash = Sha256::new();
-    hash.update(b"lsf-effect-management-operation-v1\0");
-    for text in [
+    operation_actor(
         &input.actor_tenant,
         &input.actor_subject,
         &input.operation_id,
-    ] {
+    )
+}
+pub(super) fn operation_actor(tenant: &str, subject: &str, operation: &str) -> [u8; 32] {
+    let mut hash = Sha256::new();
+    hash.update(b"lsf-effect-management-operation-v1\0");
+    for text in [tenant, subject, operation] {
         hash.update((text.len() as u64).to_be_bytes());
         hash.update(text.as_bytes());
     }

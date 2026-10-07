@@ -6,7 +6,7 @@ import re
 import tomllib
 
 from tools.java_guest.compiler import sdk_snapshot
-from tools.rust_capsule_project import (ROOT, TEMPLATES, TUTORIALS, decode_json, digest,
+from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TUTORIALS, decode_json, digest,
     fresh, inventory, read_file, snapshot)
 
 
@@ -22,7 +22,7 @@ def runtime_wit(source: bytes, world: str) -> bytes:
 
 
 def create(directory: Path, template: str, name: str | None = None) -> Path:
-    if template not in TEMPLATES:
+    if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown Java capsule template")
     name = name or "my-" + template
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", name) or len(name) > 64:
@@ -46,6 +46,13 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
             "template": {"name": template, "sourceDigest": digest(files["src/dev/latent/app/Capsule.java"]),
                          "witDigest": digest(files["wit/world.wit"])}}
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
+    if template == "transactional-aggregate":
+        from tools.transaction_guest_project import augment
+        augment(files, project)
+        # The authored world explicitly imports TeaVM's runtime clocks. Carry
+        # their captured definition so the project is a closed WIT input even
+        # before the compiler stages its separate runtime-support world.
+        files["wit/deps/clock/package.wit"] = vendor["wit/platform/clock/package.wit"]
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/dev/latent/app/Capsule.java` and `wit/world.wit`.\n"
         "Keep `vendor/lsf` unchanged. Build with `tools/java_capsule.py` from the SDK checkout.\n"
@@ -104,9 +111,12 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("incomplete Java capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
     required = {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
-    if (not isinstance(project, dict) or not required <= project.keys() <= required | {"server"}
+    if (not isinstance(project, dict) or not required <= project.keys() <= required | {"server", "httpClient"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported Java capsule project format")
+    if "httpClient" in project:
+        from tools.java_http_client import selection
+        selection(project["httpClient"])
     if "server" in project:
         from tools.java_server_source import selection
         selected = selection(project["server"])

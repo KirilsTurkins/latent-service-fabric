@@ -15,7 +15,12 @@ pub struct HostMemoryReservation {
 
 impl ActivationBudget {
     pub fn reserve_host_memory(&self, bytes: u64) -> Result<HostMemoryReservation, BudgetError> {
-        if self.profile() != BudgetProfile::Phase3 {
+        let transaction = self.profile() == BudgetProfile::Phase4;
+        if !matches!(
+            self.profile(),
+            BudgetProfile::Phase3 | BudgetProfile::Phase4
+        ) || (transaction && (bytes == 0 || self.has_budget_parent()))
+        {
             return Err(BudgetError::InvalidAccountingOperation {
                 dimension: BudgetDimension::MemoryBytes,
             });
@@ -35,11 +40,26 @@ impl ActivationBudget {
                 requested: bytes,
             });
         }
+        let count = state.outstanding_reservations.checked_add(1).ok_or(
+            BudgetError::ArithmeticOverflow {
+                dimension: BudgetDimension::MemoryBytes,
+            },
+        )?;
         state.host_reserved_memory += bytes;
+        state.outstanding_reservations = count;
+        if transaction {
+            // The transaction host prepays its finite native working set.
+            // Preserve that original Phase 4 observation while Phase 3 runtime
+            // allocations remain explicitly confirmed after allocation.
+            state.host_observed_memory += bytes;
+            let observed =
+                state.own_memory_peak + state.host_observed_memory + state.child_observed_memory;
+            state.consumption.peak_memory_bytes = state.consumption.peak_memory_bytes.max(observed);
+        }
         Ok(HostMemoryReservation {
             budget: self.clone(),
             bytes,
-            confirmed: false,
+            confirmed: transaction,
         })
     }
 
@@ -70,6 +90,7 @@ impl Drop for HostMemoryReservation {
     fn drop(&mut self) {
         let mut state = self.budget.lock_state();
         state.host_reserved_memory -= self.bytes;
+        state.outstanding_reservations -= 1;
         if self.confirmed {
             state.host_observed_memory -= self.bytes;
             self.budget.propagate_memory(self.bytes, false);
