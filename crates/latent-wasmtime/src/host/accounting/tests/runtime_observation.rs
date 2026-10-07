@@ -157,3 +157,93 @@ fn repeated_lower_memory_observations_keep_the_confirmed_peak_and_log_reservatio
     assert_eq!(finalization.consumption().peak_memory_bytes, 64);
     assert_eq!(finalization.consumption().log_bytes, 0);
 }
+
+#[test]
+fn concurrent_child_admission_requires_native_fuel_reconciliation_before_next_host_call() {
+    struct Open;
+    impl latent_core::BudgetCancellationProbe for Open {
+        fn is_cancelled(&self) -> bool {
+            false
+        }
+        fn cancelled(&self) -> latent_core::BoxFuture<'_, ()> {
+            Box::pin(std::future::pending())
+        }
+        fn mark_terminal(&self) {}
+    }
+    let mut request = request();
+    request.budget.child_calls = 4;
+    request.activation.budget = request.budget.clone();
+    let clock = Clock::new();
+    let sample = ClockSample::new(1000, clock.admitted);
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase3,
+        &request.budget,
+        &request.budget,
+        &request.budget,
+        Some(1050),
+        sample,
+    )
+    .unwrap();
+    let budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap();
+    budget
+        .enable_descendants(
+            latent_core::DelegationLimits::default(),
+            std::sync::Arc::new(Open),
+        )
+        .unwrap();
+    let cancellation = Cancellation {
+        id: request.activation.activation_id.clone(),
+        budget: Some(budget.clone()),
+        deadline: None,
+    };
+    let mut accounting = InvocationAccounting::new(&request, &cancellation, &clock).unwrap();
+    accounting.observe_runtime(90, 32).unwrap();
+    // The concurrent service future can delegate after its initial Store
+    // checkpoint. The native Store still holds 90 while the ledger reserves 45.
+    let mut child_grant = request.budget.clone();
+    child_grant.cpu_fuel = 45;
+    child_grant.memory_bytes = 256;
+    child_grant.child_calls = 0;
+    child_grant.log_bytes = 0;
+    let child = budget
+        .delegate_at(&child_grant, &child_grant, &child_grant, None, sample)
+        .unwrap();
+    let child_grant = child.grant();
+    let child = child
+        .accept(&child_grant, std::sync::Arc::new(Open), sample.monotonic())
+        .unwrap();
+    assert_eq!(budget.remaining_at(sample.monotonic()).cpu_fuel, 45);
+    let before = budget.snapshot_at(sample.monotonic());
+    assert_eq!(before.cpu_fuel, 55);
+    assert_eq!(before.child_calls, 1);
+    // A next host checkpoint with the old native watermark may observe real
+    // parent work beyond its remaining grant. A failed charge must not alter
+    // either watermark, the reservation, or the confirmed memory peak.
+    assert_eq!(
+        accounting.observe_runtime(40, 64).unwrap_err().code,
+        PlatformErrorCode::ResourceExhausted
+    );
+    assert_eq!(budget.snapshot_at(sample.monotonic()), before);
+    assert_eq!(accounting.last_remaining_fuel, 90);
+    assert_eq!(accounting.confirmed_peak_memory, 32);
+    // Reconciliation charges no instructions. Five units of actual parent
+    // work and ten child units then settle once on the original ledger.
+    accounting.reset_fuel_watermark(45);
+    accounting.observe_runtime(40, 64).unwrap();
+    child.accounting().observe_runtime_usage(10, 128).unwrap();
+    let _ = child.finish(None, sample.monotonic());
+    assert_eq!(budget.remaining_at(sample.monotonic()).cpu_fuel, 75);
+    accounting.reset_fuel_watermark(75);
+    accounting.observe_runtime(75, 64).unwrap();
+    assert_eq!(accounting.native_fuel_consumed(75), 15);
+    let finalized = budget.finalize_at(
+        Some(&BudgetConsumption {
+            cpu_fuel: 15,
+            peak_memory_bytes: 64,
+            ..Default::default()
+        }),
+        sample.monotonic(),
+    );
+    assert_eq!(finalized.consumption().cpu_fuel, 25);
+    assert_eq!(finalized.consumption().child_calls, 1);
+}
