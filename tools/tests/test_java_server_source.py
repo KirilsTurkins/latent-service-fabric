@@ -116,6 +116,7 @@ class JavaServerSource(unittest.TestCase):
             def generated(_run, _wit, _world, destination):
                 destination.mkdir()
                 (destination / 'Bindings.java').write_bytes(b'// controlled binding boundary\n')
+                (destination / 'probe.c').write_bytes(b'/* controlled import probe */\n')
                 return {'source': 'controlled-binding'}
 
             class CompileBoundary(Exception):
