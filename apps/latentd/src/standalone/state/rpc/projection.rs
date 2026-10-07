@@ -47,88 +47,9 @@ pub(super) fn response(
         .ok_or_else(unavailable)?
         .clone();
     let response = if query {
-        let resolved = receipt.resolved_revision.as_ref().ok_or_else(unavailable)?;
-        let source = t::SourceIdentity {
-            publication_id: installed.publication().publication().to_string(),
-            revision_id: resolved.revision.0.clone(),
-            release_digest: resolved.release.0.clone(),
-            component_digest: installed.component_digest.clone(),
-            route_generation: resolved.route_generation.0,
-            contract_digest: installed.contract_digest.clone(),
-            state_schema: installed.state_schema().into(),
-            input_format: "lsf-wit-values-v1".into(),
-            result_format: "lsf-wit-values-v1".into(),
-        };
-        let metadata = match &receipt.outcome {
-            latent_activation::ActivationOutcome::Succeeded(v) => &v.metadata,
-            latent_activation::ActivationOutcome::DeclaredError { error, .. } => &error.metadata,
-            _ => return Err(unavailable()),
-        };
-        let token = metadata
-            .get(latent_node::transaction_runtime::query::VIEW_METADATA)
-            .ok_or_else(unavailable)?;
-        let version = STANDARD.decode(token).map_err(|_| unavailable())?;
-        if version.len() != latent_state::session::version::VIEW_TOKEN_BYTES
-            || STANDARD.encode(&version) != *token
-        {
-            return Err(unavailable());
-        }
-        let view = t::ViewIdentity {
-            namespace: Some(t::NamespaceSelector {
-                tenant: resolved.target.tenant.0.clone(),
-                namespace: installed.namespace().into(),
-                incarnation: installed.incarnation().to_string(),
-            }),
-            version,
-            state_schema: installed.state_schema().into(),
-        };
-        let mut receipt = receipt;
-        match &mut receipt.outcome {
-            latent_activation::ActivationOutcome::Succeeded(v) => {
-                v.metadata
-                    .remove(latent_node::transaction_runtime::query::VIEW_METADATA);
-            }
-            latent_activation::ActivationOutcome::DeclaredError { error, .. } => {
-                error
-                    .metadata
-                    .remove(latent_node::transaction_runtime::query::VIEW_METADATA);
-            }
-            _ => {}
-        }
-        contract::Response::from(t::QueryResponse {
-            invocation: Some(latent_wire::invocation::transaction_invocation_response(
-                receipt, limits,
-            )),
-            view: Some(view),
-            source: Some(source),
-            observed_at_unix_millis: clock.sample().unix_millis(),
-        })
+        query_response(receipt, installed, limits, clock)?
     } else {
-        let disposition = receipt.transaction.as_ref().ok_or_else(unavailable)?;
-        if !disposition.read_authorized() {
-            return Err(denied());
-        }
-        let record = disposition.original_command();
-        let replayed = disposition.recovered_result();
-        let inspected = inspection(
-            record,
-            disposition.observation(),
-            command.ok_or_else(denied)?,
-            &receipt,
-            limits,
-        )?;
-        let original = record.source().clone();
-        let mut invocation =
-            latent_wire::invocation::transaction_invocation_response(receipt, limits);
-        invocation.publication_id = Some(original.publication);
-        invocation.revision_id = original.revision;
-        invocation.release_digest = original.component_digest;
-        invocation.route_generation = original.route_generation;
-        contract::Response::from(t::InvokeCommandResponse {
-            invocation: Some(invocation),
-            command: Some(inspected),
-            replayed,
-        })
+        command_response(receipt, command.ok_or_else(denied)?, limits)?
     };
     let bytes = response
         .encoded_len()
@@ -143,6 +64,93 @@ pub(super) fn response(
         response,
         Arc::new(Owner { fence, bytes }),
     ))
+}
+fn query_response(
+    receipt: ActivationReceipt,
+    installed: &InstalledTransactionOperation,
+    limits: &InvocationLimits,
+    clock: &dyn ActivationClock,
+) -> Result<contract::Response, PlatformError> {
+    let resolved = receipt.resolved_revision.as_ref().ok_or_else(unavailable)?;
+    let source = t::SourceIdentity {
+        publication_id: installed.publication().publication().to_string(),
+        revision_id: resolved.revision.0.clone(),
+        release_digest: resolved.release.0.clone(),
+        component_digest: installed.component_digest.clone(),
+        route_generation: resolved.route_generation.0,
+        contract_digest: installed.contract_digest.clone(),
+        state_schema: installed.state_schema().into(),
+        input_format: "lsf-wit-values-v1".into(),
+        result_format: "lsf-wit-values-v1".into(),
+    };
+    let metadata = match &receipt.outcome {
+        latent_activation::ActivationOutcome::Succeeded(v) => &v.metadata,
+        latent_activation::ActivationOutcome::DeclaredError { error, .. } => &error.metadata,
+        latent_activation::ActivationOutcome::Failed { .. } => return Err(unavailable()),
+    };
+    let token = metadata
+        .get(latent_node::transaction_runtime::query::VIEW_METADATA)
+        .ok_or_else(unavailable)?;
+    let version = STANDARD.decode(token).map_err(|_| unavailable())?;
+    if version.len() != latent_state::session::version::VIEW_TOKEN_BYTES
+        || STANDARD.encode(&version) != *token
+    {
+        return Err(unavailable());
+    }
+    let view = t::ViewIdentity {
+        namespace: Some(t::NamespaceSelector {
+            tenant: resolved.target.tenant.0.clone(),
+            namespace: installed.namespace().into(),
+            incarnation: installed.incarnation().to_string(),
+        }),
+        version,
+        state_schema: installed.state_schema().into(),
+    };
+    let mut receipt = receipt;
+    match &mut receipt.outcome {
+        latent_activation::ActivationOutcome::Succeeded(v) => {
+            v.metadata
+                .remove(latent_node::transaction_runtime::query::VIEW_METADATA);
+        }
+        latent_activation::ActivationOutcome::DeclaredError { error, .. } => {
+            error
+                .metadata
+                .remove(latent_node::transaction_runtime::query::VIEW_METADATA);
+        }
+        latent_activation::ActivationOutcome::Failed { .. } => {}
+    }
+    Ok(contract::Response::from(t::QueryResponse {
+        invocation: Some(latent_wire::invocation::transaction_invocation_response(
+            receipt, limits,
+        )),
+        view: Some(view),
+        source: Some(source),
+        observed_at_unix_millis: clock.sample().unix_millis(),
+    }))
+}
+fn command_response(
+    receipt: ActivationReceipt,
+    command: &t::CommandSelector,
+    limits: &InvocationLimits,
+) -> Result<contract::Response, PlatformError> {
+    let disposition = receipt.transaction.as_ref().ok_or_else(unavailable)?;
+    if !disposition.read_authorized() {
+        return Err(denied());
+    }
+    let record = disposition.original_command();
+    let replayed = disposition.recovered_result();
+    let inspected = inspection(record, disposition.observation(), command, &receipt, limits)?;
+    let original = record.source().clone();
+    let mut invocation = latent_wire::invocation::transaction_invocation_response(receipt, limits);
+    invocation.publication_id = Some(original.publication);
+    invocation.revision_id = original.revision;
+    invocation.release_digest = original.component_digest;
+    invocation.route_generation = original.route_generation;
+    Ok(contract::Response::from(t::InvokeCommandResponse {
+        invocation: Some(invocation),
+        command: Some(inspected),
+        replayed,
+    }))
 }
 fn source(record: &CommandRecord) -> t::SourceIdentity {
     let value = record.source();
@@ -177,30 +185,28 @@ fn inspection(
                     metadata: v.metadata.clone().into_iter().collect(),
                     committed_state_version: v.committed_state_version.clone(),
                     effect_ids: v.effect_ids.clone(),
-                }))
+                }));
             }
             latent_activation::ActivationOutcome::DeclaredError { error, .. } => {
                 payload = Some(t::command_inspection::RetainedResult::BusinessRejection(
                     latent_wire::invocation::declared_error_to_proto(error),
-                ))
+                ));
             }
-            _ => {}
+            latent_activation::ActivationOutcome::Failed { .. } => {}
         }
     }
     let committed = terminal && record.outcome() == Outcome::Committed;
-    let outcome = if !terminal {
-        if observation == CommandObservation::InProgress {
-            t::CommandOutcome::InProgress
-        } else {
-            t::CommandOutcome::RecoveryRequired
-        }
-    } else {
+    let outcome = if terminal {
         match record.outcome() {
             Outcome::Committed => t::CommandOutcome::Committed,
             Outcome::Rejected => t::CommandOutcome::Rejected,
             Outcome::Aborted => t::CommandOutcome::Aborted,
             Outcome::Pending => return Err(unavailable()),
         }
+    } else if observation == CommandObservation::InProgress {
+        t::CommandOutcome::InProgress
+    } else {
+        t::CommandOutcome::RecoveryRequired
     };
     let encoded = record.encode().map_err(|_| unavailable())?;
     let version = match encoded.get(4) {
@@ -259,6 +265,6 @@ fn inspection(
         cleanup_failure: receipt
             .delivery_failure
             .as_ref()
-            .map(|error| latent_wire::invocation::platform_error_to_proto(error)),
+            .map(latent_wire::invocation::platform_error_to_proto),
     })
 }

@@ -478,7 +478,7 @@ fn management(
             inner
                 .recovery_selections
                 .iter()
-                .map(|value| value.binding())
+                .map(crate::config::state::recovery::RecoverySelectorConfig::binding)
                 .collect(),
         )?,
     ))

@@ -11,7 +11,7 @@ mod management;
 mod os_retirement;
 
 struct Fixture {
-    _root: tempfile::TempDir,
+    root: tempfile::TempDir,
     settings: NodeSettings,
     artifacts: Arc<DirectoryArtifactRepository>,
     policy: Arc<PolicyStore>,
@@ -20,7 +20,7 @@ struct Fixture {
 
 impl Fixture {
     fn root(&self) -> &std::path::Path {
-        self._root.path()
+        self.root.path()
     }
     fn new() -> Self {
         let directory = std::env::var_os("LATENT_STATE_TEST_ROOT")
@@ -79,7 +79,7 @@ impl Fixture {
             .unwrap(),
         );
         Self {
-            _root: root,
+            root,
             settings,
             artifacts,
             policy,

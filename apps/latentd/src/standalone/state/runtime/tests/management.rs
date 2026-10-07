@@ -115,6 +115,13 @@ async fn installed_empty_state_host_exposes_the_original_audited_dispatcher_and_
     drop(page);
     drop(adapter);
     drop(backend);
+    retained_dispatcher_role(&state).await;
+    finish(&state, &mut effects).await;
+    audit.close();
+    assert!(worker.join_until(Instant::now() + WATCHDOG).unwrap());
+}
+
+async fn retained_dispatcher_role(state: &StateRuntime) {
     // The live dispatcher owns one affine store registration until shutdown.
     // Transient completed jobs retire under the original cutoff; the retained
     // registration must remain charged rather than being refunded early.
@@ -135,7 +142,4 @@ async fn installed_empty_state_host_exposes_the_original_audited_dispatcher_and_
     .await
     .unwrap();
     assert_eq!(state.0.store.snapshot().unwrap().physical_owners, 1);
-    finish(&state, &mut effects).await;
-    audit.close();
-    assert!(worker.join_until(Instant::now() + WATCHDOG).unwrap());
 }

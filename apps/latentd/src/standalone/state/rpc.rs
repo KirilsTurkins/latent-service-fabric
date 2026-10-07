@@ -187,8 +187,8 @@ mod tests {
             latent_activation::ActivationOutcome::Succeeded(latent_activation::ActivationSuccess {
                 output: vec![b'x'; size],
                 output_media_type: "application/vnd.latent.wit-values.v1+json".into(),
-                metadata: Default::default(),
-                consumption: Default::default(),
+                metadata: latent_core::Metadata::new(),
+                consumption: latent_core::BudgetConsumption::default(),
                 committed_state_version: None,
                 effect_ids: vec![],
             })
