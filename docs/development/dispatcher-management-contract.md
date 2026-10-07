@@ -53,9 +53,9 @@ The standalone state host attaches that existing dispatcher handle before
 publishing readiness and registers `DispatcherService` on the same private
 management transport. Node inspection is available before any signed
 application operation is installed. Empty application bindings still cannot
-resolve namespace selectors. The current transaction installation format
-supports original-caller recovery only; unconfigured shared/delegated selectors
-remain denied before native admission. Durable audit and trusted node-operator
+resolve namespace selectors. Application command admission still binds the original caller. Named
+management effect-recovery selectors may be explicitly installed in
+`state.recoverySelections`; unknown names remain denied before native admission. Durable audit and trusted node-operator
 identity remain required for dispatcher calls.
 
 The same finite private RPC reserve used for cancellation/status also admits
@@ -64,6 +64,24 @@ retain their slots. Response destruction releases that original reserve;
 unknown method paths and new command/query execution remain ordinary. This
 classification does not authorize a caller or raise the configured RPC,
 control-job, connection, response-byte or deadline limits.
+
+A selector table carries constraints, never a grant. For example, a protected
+node configuration can declare:
+
+```json
+"recoverySelections": [
+  {"selector": "order-readers", "selection": {"kind": "shared", "name": "orders-team"}},
+  {"selector": "orders-worker", "selection": {"kind": "delegated", "delegation": "review-42", "service": "orders-worker"}}
+]
+```
+
+Current state policies must separately authorize the authenticated principal,
+exact tenant/publication, namespace/incarnation, selected recovery kind/scope
+and read/action purpose. Delegated selections retain the authenticated subject, installed delegation
+and target service in their distinct policy tuple. Selector strings, token rotation,
+claims and knowledge of an operation ID cannot replace those checks. Omission
+keeps the table empty, and application command/query admission keeps its
+original-caller behavior.
 
 The CLI requires an explicit node scope:
 

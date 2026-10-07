@@ -51,6 +51,7 @@ pub(super) struct Inner {
     pub profile: String,
     pub configuration_digest: String,
     pub management: Option<StateManagementBackend>,
+    pub recovery_selections: Vec<crate::config::state::RecoverySelectorConfig>,
     pub maintenance: Arc<latent_commit::atomic::ResultMaintenanceOwner>,
     pub maintenance_clock: Arc<dyn latent_wire::phase4::StateMaintenanceClock>,
 }
@@ -165,6 +166,7 @@ impl StateRuntime {
             profile: profile.into(),
             configuration_digest,
             management: None,
+            recovery_selections: state.recovery_selections.clone(),
             maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
             maintenance_clock: time,
         };
@@ -468,9 +470,18 @@ fn management(
         bindings,
         dispatcher,
     )?;
-    // The current signed transaction format exposes only OriginalCaller.
-    // No copied selector or binding name can invent shared/delegated authority.
-    Ok(Some(backend.with_recovery_bindings(vec![])?))
+    // Trusted installation selects descriptive scope data. Effect management
+    // still seals current data-read/action decisions; application commands keep
+    // their separately bound OriginalCaller admission.
+    Ok(Some(
+        backend.with_recovery_bindings(
+            inner
+                .recovery_selections
+                .iter()
+                .map(|value| value.binding())
+                .collect(),
+        )?,
+    ))
 }
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]

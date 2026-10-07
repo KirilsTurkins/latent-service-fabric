@@ -139,6 +139,7 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
     value["providers"] = providers
     value["state"] = {"formatVersion": 1, "createIfMissing": True, "configurationEpoch": 1,
                       "clockCheckpoint": str(checkpoint.resolve()), "operations": [],
+                      "recoverySelections": [],
                       "tenantQuotas": [{"tenant": TENANT, "limits": dict(TENANT_QUOTA_PROFILE)}]}
     path = directory / "bootstrap-node.json"
     write_json(path, value)
