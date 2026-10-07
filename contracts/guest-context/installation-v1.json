@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "latent.guest-context.installation.v1",
+  "formatVersion": 1,
+  "interface": "latent:context/context@0.1.0",
+  "historicalRelease": {
+    "tag": "0.1.0-alpha.4",
+    "revision": "2d6cc2eafc0a17dfe573be4252fa49835bebbbd6",
+    "evidence": "verified-source-contract; historical-private-application-receipt-not-reexecuted"
+  },
+  "profiles": [
+    {
+      "id": "ordinary-phase3-installed-clocks-and-local-service-v1",
+      "publication": "capsule",
+      "contextImportOmitted": "supported",
+      "contextImportPresent": "explicit-binding-and-grant-required",
+      "standaloneContextProviderInstalled": false,
+      "implicitContextAuthority": false,
+      "guestTrustedIdentityAvailable": false,
+      "operatorObservation": "authorized-activation-roots-and-tree"
+    },
+    {
+      "id": "sealed-web-core-context-v1",
+      "publication": "verified-native-checked-web-layout-renderer-projection",
+      "contextImportPresent": "core-context",
+      "contextProviderBindingRequired": false,
+      "authorityOwner": "verified-publication-and-host-derived-activation",
+      "guestTrustedIdentityAvailable": true,
+      "providerImports": "separate-exact-bindings-and-grants"
+    },
+    {
+      "id": "trusted-embedding-context-v1",
+      "publication": "embedding-verified-artifact",
+      "authorityOwner": "trusted-embedding-host-state-and-execution-request",
+      "brokerSessionPresent": "explicit-binding-and-grant-required-unless-verified-native-checked-web-layout-renderer-projection",
+      "brokerSessionAbsent": "trusted-embedding-supplies-bounded-host-context",
+      "standaloneImplicitSelection": false
+    }
+  ],
+  "disclosureDefaults": {
+    "metadataPrefixes": ["guest."],
+    "claimKeys": [],
+    "baggageKeys": [],
+    "maximumEntriesPerAllowlist": 32,
+    "maximumKeyUtf8Bytes": 256,
+    "fixedIdentityIndependentOfAllowlists": true,
+    "peerAddressAvailableToOrdinaryGuest": false,
+    "endUserActorDelegationImplicit": false
+  },
+  "deadline": {
+    "none": "no-additional-child-ceiling",
+    "some": "minimum-of-parent-effective-deadline-and-explicit-child-ceiling",
+    "pastOrZeroRemaining": "deadline-exceeded-before-accepted-work",
+    "wallTimeAccounting": "remaining-monotonic-time-including-queue-delay"
+  },
+  "childAuthority": {
+    "principalKind": "service",
+    "callerService": "immediate-published-caller-service",
+    "rootAndParent": "host-validated-broker-lineage",
+    "grantSource": "current-explicit-provider-binding-and-policy",
+    "budgetSource": "unspent-parent-budget-after-reservation-and-policy-intersection",
+    "callerMetadataIsAuthority": false,
+    "headersAreAuthority": false
+  }
+}

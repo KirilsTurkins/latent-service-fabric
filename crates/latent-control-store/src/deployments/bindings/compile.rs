@@ -430,10 +430,10 @@ async fn plan<'a>(
     let mut local = Vec::new();
     let mut local_targets = Vec::new();
     let mut invocation_targets = Vec::new();
-    for interface in surface.imports() {
+    for interface in surface.capability_imports() {
         let d = definition(record, definitions, interface)?;
         let provider = selected(d, owner)?;
-        let is_invocation = interface.as_ref() == SERVICE_INVOCATION_CAPABILITY
+        let is_invocation = interface == SERVICE_INVOCATION_CAPABILITY
             && provider.reference.profile() == LOCAL_SERVICE_INVOCATION_PROFILE;
         let proof = if let Some(id) = &provider.local_deployment {
             let target = catalog.record_by_id(id).ok_or_else(denied)?;
