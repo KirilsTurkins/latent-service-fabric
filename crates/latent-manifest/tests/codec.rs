@@ -413,13 +413,13 @@ fn transaction_http_identity_digest_incarnation_and_path_boundaries_are_closed()
     for (field, accepted, refused) in [
         (
             "namespace",
-            vec!["orders".to_owned(), "?".repeat(128)],
+            vec!["orders".to_owned(), "\u{e9}".repeat(128)],
             vec![
                 String::new(),
                 "x\n".to_owned(),
                 "x\u{7f}".to_owned(),
                 "x\u{9f}".to_owned(),
-                "?".repeat(129),
+                "\u{e9}".repeat(129),
             ],
         ),
         (
