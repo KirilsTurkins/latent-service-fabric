@@ -77,14 +77,53 @@ public operation receipt and current policy, validates the exact original
 document, and settles local state. It never resubmits an apply. An unknown or
 expired receipt remains unresolved. Confirmed repeated requests read the owned
 record without applying it again; foreign or changed records require explicit
-operator review. Changing the specification, provider generation, publication,
-endpoint or private client configuration fails closed under the existing owner.
+operator review. Changing the publication, endpoint, provider identity or private
+client configuration fails closed under the existing owner. A new provider
+generation must be adopted explicitly as described below.
 
-Live provider configuration rotation and drain require the coupled node owner:
-retire the old stream generation while retaining its physical charges, install
-the new immutable reference, and publish newly compiled binding references.
-The public policy helper does not invoke a standalone lifecycle rotation or
-claim the old catalog has adopted a new provider. Host TLS credential rotation,
-actual signed standard-library workflows, and the complete operator acceptance
-matrix remain separate required observations for
+The owning Linux x86-64 node built with `development-outbound-streams` supports
+protected reload. Keep the same owned configuration path and change only the
+stream limits and a strictly newer `identity.epoch`. Every other field remains
+bound to startup, including destinations, DNS/address constraints, tenant,
+credentials, consumer bindings and provider identity. Replacement files must
+still satisfy the original protected ownership, single-link, mode, input-size
+and closed-type checks. `SIGHUP` reopens and validates that file before rotating
+the actual provider. All changes force retirement: accepted sessions are never
+migrated, and their physical charges remain until cleanup. Repeating the same
+epoch is rejected without another rotation.
+
+The bounded `stream-control` status line distinguishes `configuredGeneration`
+from `installedBindingGeneration`. The first identifies the actual stream
+manager; the second identifies the last confirmed catalog publication. If
+rotation succeeds but publication fails, `bindingPublicationPending` stays
+true. The old reference remains fenced; no retry or rollback follows silently.
+`failureCode` contains only the platform code, and the line contains no
+credentials or protocol bytes. After reviewing the failure, an explicit
+`SIGUSR1` publishes the current reference without rotating it again. The
+publication can still produce unavailable plans until exact grants are present;
+every status and inspection response reports `executionPermission: false`.
+
+Save the actual new `provider` descriptor from that status in another protected
+file. Use `adopt --provider-record /private/operator/new-provider.json` with the
+existing specification and state directory. Adoption requires a strictly newer
+epoch, the same provider identity/profile/tenant, no unresolved operation, and
+unchanged owned policy receipts. It only records the descriptor; it sends no
+mutation and grants no execution authority. Update only `provider` in the
+specification to match, then explicitly run `grant` to apply and confirm the new
+provider-binding record. Send `SIGUSR1` once more to compile that exact binding
+into the catalog. The original publication, principal, endpoint, client secret
+owner and all finite ceilings remain fixed. No receipt recovery resubmits a
+mutation or repeats a side effect.
+
+`SIGUSR2` explicitly retires/drains streams under the existing 30-second
+deadline. A retained owner remains charged and visible; a timeout is not a
+refund. Drain permanently stops this stream manager, so fresh work requires a
+normal node restart. `SIGINT` and `SIGTERM` retain their original shutdown path
+and interrupt a pending control operation. Restart uses the protected file's
+current generation and actual startup provider descriptors; previous status
+lines are historical evidence, not confirmation of the new process's catalog.
+Ordinary default builds allocate no reload owner and register no stream signals.
+
+Host TLS credential rotation, actual signed standard-library workflows, and the
+complete operator acceptance matrix remain separate required observations for
 [#739](https://github.com/KirilsTurkins/latent-service-fabric/issues/739).

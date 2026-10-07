@@ -13,12 +13,82 @@ pub(in crate::standalone) struct ProviderServices {
 mod runtime;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub(super) use runtime::ProviderRuntime;
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "development-outbound-streams"
+))]
+pub use runtime::StreamControlStatus;
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 mod unsupported;
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 pub(super) use unsupported::ProviderRuntime;
 
 impl super::StandaloneNode {
+    #[cfg(all(
+        target_os = "linux",
+        target_arch = "x86_64",
+        feature = "development-outbound-streams"
+    ))]
+    pub async fn reload_outbound_streams(
+        &mut self,
+        guard: &crate::config::StreamReloadGuard,
+    ) -> Result<StreamControlStatus, latent_core::PlatformError> {
+        self.providers
+            .as_deref_mut()
+            .ok_or_else(runtime::unavailable)?
+            .reload_streams(guard)
+            .await
+    }
+
+    #[cfg(all(
+        target_os = "linux",
+        target_arch = "x86_64",
+        feature = "development-outbound-streams"
+    ))]
+    pub async fn publish_outbound_stream_bindings(
+        &mut self,
+        guard: &crate::config::StreamReloadGuard,
+    ) -> Result<StreamControlStatus, latent_core::PlatformError> {
+        let owner = self
+            .providers
+            .as_deref_mut()
+            .ok_or_else(runtime::unavailable)?;
+        owner.check_stream_reload_owner(guard)?;
+        owner.publish_stream_bindings("publish-bindings").await
+    }
+
+    #[cfg(all(
+        target_os = "linux",
+        target_arch = "x86_64",
+        feature = "development-outbound-streams"
+    ))]
+    pub async fn drain_outbound_streams(
+        &mut self,
+        guard: &crate::config::StreamReloadGuard,
+    ) -> Result<StreamControlStatus, latent_core::PlatformError> {
+        let owner = self
+            .providers
+            .as_deref_mut()
+            .ok_or_else(runtime::unavailable)?;
+        owner.check_stream_reload_owner(guard)?;
+        owner.drain_streams().await
+    }
+
+    #[cfg(all(
+        target_os = "linux",
+        target_arch = "x86_64",
+        feature = "development-outbound-streams"
+    ))]
+    pub fn outbound_stream_control_status(
+        &self,
+    ) -> Result<StreamControlStatus, latent_core::PlatformError> {
+        self.providers
+            .as_deref()
+            .ok_or_else(runtime::unavailable)?
+            .stream_control_status("observe", "sampled-not-authority", None)
+    }
+
     /// Builds qualified deferred adapters from the installed provider owner.
     /// Transaction startup supplies the same trusted clock and store runtime.
     pub fn deferred_event_adapters(
@@ -62,7 +132,7 @@ impl super::StandaloneNode {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderDescriptor {
     id: String,

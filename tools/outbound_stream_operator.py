@@ -293,6 +293,41 @@ class StreamOperator:
             self._owned()
             return self.journal.recover(lambda kind, operation: policy_operations.lookup(self.client, operation))
 
+    def adopt_provider(self, provider):
+        """Explicitly record an observed new generation, without any mutation RPC.
+
+        The same protected owner, exact endpoint and publication remain bound.
+        A later grant must separately apply the new binding and observe its
+        receipt; adoption neither rotates a provider nor grants authority.
+        """
+        with state.lock(self.root, "stream-operator.lock"):
+            self._owned()
+            require(self.journal.read()["pending"] is None,
+                    "recover-original-operation-before-provider-adoption")
+            replacement = descriptor(provider, self.owner["tenant"])
+            previous = self.owner["provider"]
+            require(all(replacement[field] == previous[field] for field in
+                        ("id", "tenant", "service", "capability", "profile"))
+                    and int(replacement["configurationEpoch"]) > int(previous["configurationEpoch"]),
+                    "stream-operator-replacement-provider-scope")
+            records = self._records()
+            for kind, field in (("provider-binding", "bindingId"), ("policy", "policyId")):
+                key = kind + ":" + self.owner[field]
+                require(key in records, "stream-operator-no-owned-grant")
+                observed = self.client.call("policy", "--kind", kind, "get", "--id", self.owner[field])
+                current = observed.get("data", {}).get("policy")
+                expected = records[key]
+                require(observed.get("outcomeKnown") is True and observed.get("category") == "success"
+                        and isinstance(current, dict)
+                        and all(current.get(stamp) == expected["receipt"].get(stamp) for stamp in STAMP_FIELDS)
+                        and current.get("document") == expected["document"],
+                        "stream-operator-policy-changed")
+            owner = {**self.owner, "provider": replacement}
+            state.atomic(self.root, "stream-operator-owner.json", owner)
+            self.owner = owner
+            return {"provider": replacement, "executionPermission": False,
+                    "outcome": "descriptor-adopted-binding-grant-still-required"}
+
     def inspect(self, deployment):
         _token(deployment)
         with state.lock(self.root, "stream-operator.lock"):
@@ -315,12 +350,13 @@ def main(argv=None):
     from tools.dev_workflow.client import Client
     from tools.dev_workflow.common import decode
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("grant", "revoke", "recover", "inspect"))
+    parser.add_argument("command", choices=("grant", "revoke", "recover", "inspect", "adopt"))
     parser.add_argument("--cli", type=Path, required=True)
     parser.add_argument("--client-config", type=Path, required=True)
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--specification", type=Path, required=True)
     parser.add_argument("--deployment")
+    parser.add_argument("--provider-record", type=Path)
     args = parser.parse_args(argv)
     try:
         source = args.specification.absolute()
@@ -331,13 +367,20 @@ def main(argv=None):
         paths.private_root(root)
         require((args.command == "inspect") == (args.deployment is not None),
                 "stream-operator-deployment-only-for-inspection")
+        require((args.command == "adopt") == (args.provider_record is not None),
+                "stream-operator-provider-record-only-for-adoption")
         with owned_cancellation():
             client = Client(args.cli.absolute(), args.client_config.absolute(), root,
                             deadline=time.monotonic() + 90)
             operator = StreamOperator(root, client, **{key: value for key, value in specification.items()
                 if key not in {"bindingId", "policyId"}}, binding_id=specification["bindingId"],
                 policy_id=specification["policyId"])
-            result = operator.inspect(args.deployment) if args.command == "inspect" else getattr(operator, args.command)()
+            if args.command == "inspect":
+                result = operator.inspect(args.deployment)
+            elif args.command == "adopt":
+                result = operator.adopt_provider(decode(_private_read(args.provider_record.absolute()), 65536))
+            else:
+                result = getattr(operator, args.command)()
         print(json.dumps({"schemaVersion": "latent.outbound-stream.operator.result.v1",
                          "command": args.command, "status": "completed", "result": result}))
         return 0

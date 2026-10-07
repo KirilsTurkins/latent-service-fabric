@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-fn document() -> Value {
+pub(super) fn document() -> Value {
     let mut value: Value = serde_json::from_str(&super::document()).unwrap();
     value["budgetProfile"] = json!({"mode":"phase3","maximumOutboundRequests":8});
     value["capabilityPolicies"] = json!({"formatVersion":1});
@@ -15,6 +15,26 @@ fn document() -> Value {
         "bindings":[{"name":"stream-binding","tenant":"examples","consumerService":"guest-stream",
             "providerService":"stream-host","contract":"latent:network/streams@0.1.0","providerBinding":"streams-installed"}]});
     value
+}
+
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    not(feature = "development-outbound-streams")
+))]
+#[test]
+fn ordinary_build_rejects_stream_installation_without_allocating_a_reload_owner() {
+    use std::os::unix::fs::PermissionsExt;
+    let directory = tempfile::tempdir().unwrap();
+    std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    let path = directory.path().join("node.json");
+    std::fs::write(&path, serde_json::to_vec(&document()).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let (config, reload) = super::NodeConfig::load_with_stream_reload(&path).unwrap();
+    assert!(reload.is_none());
+    assert!(config.stream_reload_binding.is_none());
+    assert!(config.derive().is_err());
+    assert!(!directory.path().join("data").exists());
 }
 
 #[test]

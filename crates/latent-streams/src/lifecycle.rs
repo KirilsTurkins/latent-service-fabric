@@ -44,6 +44,7 @@ pub struct StreamStatus {
     pub retired_generations: usize,
     pub usage: StreamUsage,
     pub stopped: bool,
+    pub current_generation_retired: bool,
     pub maintenance_owners: usize,
 }
 fn unavailable() -> StreamError {
@@ -200,6 +201,7 @@ impl StreamLifecycle {
             retired_generations: state.retired.iter().filter(|p| p.is_some()).count(),
             usage,
             stopped: state.stopped,
+            current_generation_retired: state.current.inner.installed.is_retired(),
             maintenance_owners: usize::from(self.maintenance_claimed.load(Ordering::Acquire)),
         })
     }

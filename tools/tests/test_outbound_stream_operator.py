@@ -222,6 +222,58 @@ class StreamOperator(unittest.TestCase):
             operator.inspect("mail-deployment")
         self.assertEqual(len(self.mutations()), 0)
 
+    def test_explicit_new_descriptor_adoption_keeps_exact_owner_and_applies_no_mutation(self):
+        operator = self.operator()
+        operator.grant()
+        before = copy.deepcopy(operator.owner)
+        result = operator.adopt_provider({**self.options["provider"], "configurationEpoch": "2", "configurationDigest": "sha256:" + "c" * 64})
+        self.assertFalse(result["executionPermission"])
+        self.assertEqual(len(self.mutations()), 2)
+        self.assertEqual({key: value for key, value in operator.owner.items() if key != "provider"},
+                         {key: value for key, value in before.items() if key != "provider"})
+        with self.assertRaisesRegex(DevError, "owner-changed"):
+            self.operator()
+        restarted = self.operator(provider={**self.options["provider"], "configurationEpoch": "2", "configurationDigest": "sha256:" + "c" * 64})
+        restarted.grant()
+        self.assertEqual(len(self.mutations()), 3)
+        binding = self.client.records["provider-binding:stream-installed"]
+        self.assertEqual(binding["generation"], "2")
+        self.assertEqual(binding["document"]["configurationEpoch"], 2)
+        self.assertEqual(self.client.records["policy:stream-allow"]["document"], operator._policy("allow"))
+
+    def test_adoption_rejects_same_stale_foreign_or_unsupported_provider_without_mutation(self):
+        operator = self.operator()
+        operator.grant()
+        before = copy.deepcopy(operator.owner)
+        for patch in ({"configurationEpoch": "1"}, {"tenant": "foreign"},
+                      {"id": "other"}, {"service": "other"}, {"profile": "host-tls"},
+                      {"capability": "latent:http/client@0.2.0"}):
+            with self.assertRaises(DevError):
+                operator.adopt_provider({**self.options["provider"], "configurationEpoch": "2", "configurationDigest": "sha256:" + "c" * 64, **patch})
+            self.assertEqual(operator.owner, before)
+        self.assertEqual(len(self.mutations()), 2)
+
+    def test_unknown_outcome_blocks_adoption_without_receipt_replay(self):
+        operator = self.operator()
+        self.client.uncertain = True
+        with self.assertRaises(DevError):
+            operator.grant()
+        pending = copy.deepcopy(operator.journal.read()["pending"])
+        with self.assertRaisesRegex(DevError, "recover-original"):
+            operator.adopt_provider({**self.options["provider"], "configurationEpoch": "2", "configurationDigest": "sha256:" + "c" * 64})
+        self.assertEqual(operator.journal.read()["pending"], pending)
+        self.assertEqual(len(self.mutations()), 1)
+
+    def test_changed_policy_blocks_adoption_and_preserves_private_descriptor(self):
+        operator = self.operator()
+        operator.grant()
+        before = copy.deepcopy(operator.owner)
+        self.client.records["policy:stream-allow"]["generation"] = "999"
+        with self.assertRaisesRegex(DevError, "policy-changed"):
+            operator.adopt_provider({**self.options["provider"], "configurationEpoch": "2", "configurationDigest": "sha256:" + "c" * 64})
+        self.assertEqual(operator.owner, before)
+        self.assertEqual(len(self.mutations()), 2)
+
 
 class StreamConfiguration(unittest.TestCase):
     def setUp(self):
