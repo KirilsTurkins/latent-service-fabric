@@ -23,6 +23,16 @@ fixture. Protected clock, signing, workroot and catalogs remain newly produced;
 retaining TLS bytes supplies no native authority or clock continuity. The
 selection and every digest remain in preparation/resume source pins.
 
+When the selected native source changes, an optional closed
+`reviewedTlsProducerBridge` pins the original native producer, original conductor,
+original signer identity and bounded raw `tls-producer-receipt.json`, together
+with the same three TLS file records and the new selected native source. The
+receipt's source and signer facts must match that reviewed bridge exactly.
+Without the bridge, the TLS producer must equal the selected native source.
+Preparation/resume source pins retain the full bridge. Current tools, native
+host observations and policy bytes still require their own exact fresh checks;
+the historical receipt supplies only TLS provenance and no execution approval.
+
 Native host inspection opens and cleanly retires the enforced admission catalog.
 Before the following node start, both provision and resume spend the existing
 six-second admission retirement interval inside the same original deadline.

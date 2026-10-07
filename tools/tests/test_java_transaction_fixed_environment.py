@@ -47,6 +47,74 @@ def save(args, value):
 
 
 class ReviewedEnvironment(unittest.TestCase):
+    def test_tls_producer_bridge_pins_origin_and_never_selects_old_tools_or_authority(self):
+        import copy
+        from tools.java_transaction_qualification import staging
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            args, value, _ = fixture(root)
+            folder = root / "tls-fixture"
+            folder.mkdir()
+            rows = []
+            for name in sorted(reviewed_tls.FILES):
+                raw = ("original-native-tls-" + name).encode()
+                (folder / name).write_bytes(raw)
+                rows.append({"file": name, "bytes": len(raw), "digest": digest(raw)})
+            producer = args.native_source_commit
+            tool = {"name": "signer", "digest": "sha256:" + "1" * 64, "size": 20134824}
+            origin = {"schemaVersion": "latent.java-transaction.focused-native.v1",
+                "nativeSourceCommit": producer, "conductorSourceCommit": "c" * 40,
+                "nativeTools": {"signer": tool}, "passed": False}
+            origin_raw = json.dumps(origin).encode()
+            origin_path = root / "tls-producer-receipt.json"
+            origin_path.write_bytes(origin_raw)
+            args.native_source_commit = value["nativeSource"] = "b" * 40
+            args.conductor_source_commit, args.portable = "d" * 40, root
+            value["nativeTools"] = {"signer": dict(tool, digest="sha256:" + "2" * 64)}
+            value["reviewedTlsFixture"] = {"directory": "tls-fixture",
+                "producerNativeSource": producer, "files": rows}
+            bridge = {"producerNativeSource": producer, "producerConductorSource": origin["conductorSourceCommit"],
+                "selectedNativeSource": args.native_source_commit,
+                "producerTool": tool, "originReceipt": {"file": origin_path.name,
+                    "bytes": len(origin_raw), "digest": digest(origin_raw)}, "files": rows}
+            value["reviewedTlsProducerBridge"] = bridge
+            save(args, value)
+            self.assertEqual(fixed.load(args), value)
+            self.assertEqual(staging.sources(args)["reviewedPolicyEnvironment"]["reviewedTlsProducerBridge"], bridge)
+            fixed.check_tools(args, value["nativeTools"])
+            with self.assertRaisesRegex(ValueError, "native-tools-drift"):
+                fixed.check_tools(args, origin["nativeTools"])
+            for change in ("absent", "producer", "conductor", "selected", "tool", "receipt-path", "receipt-digest",
+                           "files", "extra"):
+                altered = copy.deepcopy(value)
+                selected = altered["reviewedTlsProducerBridge"]
+                if change == "absent":
+                    del altered["reviewedTlsProducerBridge"]
+                elif change == "producer":
+                    selected["producerNativeSource"] = "e" * 40
+                elif change == "conductor":
+                    selected["producerConductorSource"] = "e" * 40
+                elif change == "selected":
+                    selected["selectedNativeSource"] = "e" * 40
+                elif change == "tool":
+                    selected["producerTool"]["digest"] = "sha256:" + "e" * 64
+                elif change == "receipt-path":
+                    selected["originReceipt"]["file"] = "../foreign.json"
+                elif change == "receipt-digest":
+                    selected["originReceipt"]["digest"] = "sha256:" + "e" * 64
+                elif change == "files":
+                    selected["files"] = list(reversed(rows))
+                else:
+                    selected["renewClock"] = True
+                save(args, altered)
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    fixed.load(args)
+            save(args, value)
+            origin_path.write_bytes(origin_raw + b" ")
+            with self.assertRaisesRegex(ValueError, "origin-byte-drift"):
+                fixed.load(args)
+
     def test_default_tls_and_closed_original_native_three_file_selection(self):
         self.assertIsNone(reviewed_tls.selected(SimpleNamespace(), None))
         with tempfile.TemporaryDirectory() as temp:

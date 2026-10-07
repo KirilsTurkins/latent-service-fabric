@@ -74,6 +74,8 @@ def identity(args):
               "recipient": value["recipient"]}
     if "reviewedTlsFixture" in value:
         result["reviewedTlsFixture"] = value["reviewedTlsFixture"]
+    if "reviewedTlsProducerBridge" in value:
+        result["reviewedTlsProducerBridge"] = value["reviewedTlsProducerBridge"]
     return result
 
 

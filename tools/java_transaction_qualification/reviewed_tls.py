@@ -1,24 +1,71 @@
 """Closed native-produced TLS fixture input; no signing, listener or authority."""
 from pathlib import Path
+import re
 import ssl
 import stat
 
 from tools.rust_capsule_project import read_file
-from .inputs import digest, require
+from .inputs import decode, digest, require
 from .provider import private_write
 
 FILES = {"ca.der", "key.pem", "server.pem"}
 
 
+def producer_bridge(args, review, fixture):
+    if "reviewedTlsProducerBridge" not in review:
+        require(fixture["producerNativeSource"] == args.native_source_commit,
+                "closed-reviewed-native-tls-fixture")
+        return
+    bridge = review["reviewedTlsProducerBridge"]
+    require(isinstance(bridge, dict) and set(bridge) == {
+        "producerNativeSource", "producerConductorSource", "selectedNativeSource", "producerTool", "originReceipt", "files"}
+        and bridge["producerNativeSource"] == fixture["producerNativeSource"]
+        and isinstance(bridge["producerConductorSource"], str)
+        and re.fullmatch(r"[0-9a-f]{40}", bridge["producerConductorSource"])
+        and bridge["selectedNativeSource"] == args.native_source_commit == review.get("nativeSource")
+        and bridge["producerNativeSource"] != bridge["selectedNativeSource"]
+        and bridge["files"] == fixture["files"], "closed-reviewed-tls-producer-bridge")
+    tool = bridge["producerTool"]
+    require(isinstance(tool, dict) and set(tool) == {"name", "digest", "size"}
+            and tool["name"] == "signer" and isinstance(tool["digest"], str)
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", tool["digest"])
+            and type(tool["size"]) is int and 0 < tool["size"] <= 1073741824,
+            "closed-reviewed-tls-producer-tool")
+    row = bridge["originReceipt"]
+    require(isinstance(row, dict) and set(row) == {"file", "bytes", "digest"}
+            and row["file"] == "tls-producer-receipt.json"
+            and type(row["bytes"]) is int and 0 < row["bytes"] <= 262144,
+            "closed-reviewed-tls-origin-receipt")
+    path = args.reviewed_policy_environment.parent / row["file"]
+    observed = path.lstat()
+    require(stat.S_ISREG(observed.st_mode) and observed.st_nlink == 1 and not path.is_symlink(),
+            "reviewed-tls-origin-refuses-links")
+    raw = read_file(path, 262144)
+    require(len(raw) == row["bytes"] and digest(raw) == row["digest"],
+            "reviewed-tls-origin-byte-drift")
+    origin = decode(raw, 262144)
+    require(isinstance(origin, dict)
+            and origin.get("schemaVersion") == "latent.java-transaction.focused-native.v1"
+            and origin.get("nativeSourceCommit") == bridge["producerNativeSource"]
+            and origin.get("conductorSourceCommit") == bridge["producerConductorSource"]
+            and isinstance(origin.get("nativeTools"), dict)
+            and origin["nativeTools"].get("signer") == tool,
+            "reviewed-tls-origin-producer-drift")
+
+
 def selected(args, review):
     value = None if review is None else review.get("reviewedTlsFixture")
     if value is None:
+        require(review is None or "reviewedTlsProducerBridge" not in review,
+                "reviewed-tls-bridge-requires-fixture")
         return None
     require(isinstance(value, dict) and set(value) == {"directory", "producerNativeSource", "files"}
             and value["directory"] == "tls-fixture"
-            and value["producerNativeSource"] == args.native_source_commit
+            and isinstance(value["producerNativeSource"], str)
+            and re.fullmatch(r"[0-9a-f]{40}", value["producerNativeSource"])
             and isinstance(value["files"], list) and len(value["files"]) == 3,
             "closed-reviewed-native-tls-fixture")
+    producer_bridge(args, review, value)
     folder = args.reviewed_policy_environment.parent / value["directory"]
     require(folder.is_dir() and not folder.is_symlink() and {p.name for p in folder.iterdir()} == FILES,
             "closed-reviewed-tls-directory")
