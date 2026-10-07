@@ -8,6 +8,9 @@ The [authoring guide](../../docs/component-development/java-authoring.md) create
 an editable Java project outside the runtime checkout, builds its actual source,
 packages it, and demonstrates signed admission and cleanup on a local node.
 This guest SDK is separate from the [external Java RPC client](../java-client).
+The [typed HTTP composition guide](../../docs/component-development/java-http-composition.md)
+generates a separate Java adapter and normal typed client from explicitly
+selected domain operations, preserving the domain's service value profile.
 
 The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
 adds `State.Command`, `State.Query` and `State.Page` plus the logical `Intent`

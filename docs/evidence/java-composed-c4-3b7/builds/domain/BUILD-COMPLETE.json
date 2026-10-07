@@ -1,0 +1,319 @@
+{
+  "formatVersion": 1,
+  "packageAssembled": true,
+  "observationDigest": "sha256:3eca89e3c53055c0be4ca2c396db67e19a51f8f0bf26646be0b3c46064362f53",
+  "sourceDigest": "sha256:5d38bbe8a9948c03acb313d580a50bbd0f0a7295bf821fa2eeab5fffe9cd0f4e",
+  "componentDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+  "sdkBindingDigest": "sha256:2169fcfc2ea3622c4c9a52e33cb080c160e1440d8d41994d2cf57f8e23d2be18",
+  "buildSeconds": 39.12722,
+  "commands": [
+    {
+      "stage": "java-version",
+      "command": [
+        "/store/java-prerequisites/jdk-25.0.4.1+1/bin/java",
+        "-version"
+      ],
+      "exitCode": 0,
+      "seconds": 0.073238
+    },
+    {
+      "stage": "gradle-version",
+      "command": [
+        "/store/java-prerequisites/gradle-9.1.0/bin/gradle",
+        "--version"
+      ],
+      "exitCode": 0,
+      "seconds": 0.891232
+    },
+    {
+      "stage": "clang-version",
+      "command": [
+        "/store/java-prerequisites/wasi-sdk-29.0-x86_64-linux/bin/clang-21",
+        "--version"
+      ],
+      "exitCode": 0,
+      "seconds": 0.083042
+    },
+    {
+      "stage": "wit-bindgen-version",
+      "command": [
+        "/store/java-prerequisites/bin/wit-bindgen",
+        "--version"
+      ],
+      "exitCode": 0,
+      "seconds": 0.01191
+    },
+    {
+      "stage": "wasm-tools-version",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "--version"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011726
+    },
+    {
+      "stage": "wit-graph",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "wit",
+        "/store/lsf-java-capsule-dka9s278/compiler/sdk-reference/wit",
+        "--json"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011683
+    },
+    {
+      "stage": "wit-bindings",
+      "command": [
+        "/store/java-prerequisites/bin/wit-bindgen",
+        "c",
+        "/store/lsf-java-capsule-dka9s278/compiler/sdk-reference/wit",
+        "--world",
+        "latent:java-guest/sdk@1.0.0",
+        "--rename-world",
+        "probe",
+        "--no-sig-flattening",
+        "--async=-all",
+        "--out-dir",
+        "/store/lsf-java-capsule-dka9s278/compiler/sdk-reference/bindings"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011466
+    },
+    {
+      "stage": "bindings-metadata",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "wit",
+        "/store/lsf-java-capsule-dka9s278/compiler/sdk-reference/bindings/probe_component_type.o"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011445
+    },
+    {
+      "stage": "wit-graph",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "wit",
+        "/store/lsf-java-capsule-dka9s278/compiled/wit",
+        "--json"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011637
+    },
+    {
+      "stage": "wit-bindings",
+      "command": [
+        "/store/java-prerequisites/bin/wit-bindgen",
+        "c",
+        "/store/lsf-java-capsule-dka9s278/compiled/wit",
+        "--world",
+        "examples:java-http-domain/service@1.0.0",
+        "--rename-world",
+        "probe",
+        "--no-sig-flattening",
+        "--async=-all",
+        "--out-dir",
+        "/store/lsf-java-capsule-dka9s278/compiled/bindings"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011371
+    },
+    {
+      "stage": "bindings-metadata",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "wit",
+        "/store/lsf-java-capsule-dka9s278/compiled/bindings/probe_component_type.o"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011226
+    },
+    {
+      "stage": "wit-graph",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "wit",
+        "/store/lsf-java-capsule-dka9s278/compiled/wit",
+        "--json"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011221
+    },
+    {
+      "stage": "wit-bindings",
+      "command": [
+        "/store/java-prerequisites/bin/wit-bindgen",
+        "c",
+        "/store/lsf-java-capsule-dka9s278/compiled/wit",
+        "--world",
+        "examples:java-http-domain/service@1.0.0",
+        "--rename-world",
+        "probe",
+        "--no-sig-flattening",
+        "--async=-all",
+        "--out-dir",
+        "/store/lsf-java-capsule-dka9s278/compiled/bindings-check"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011186
+    },
+    {
+      "stage": "bindings-metadata",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "wit",
+        "/store/lsf-java-capsule-dka9s278/compiled/bindings-check/probe_component_type.o"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011141
+    },
+    {
+      "stage": "java-to-c",
+      "command": [
+        "/store/java-prerequisites/gradle-9.1.0/bin/gradle",
+        "--no-daemon",
+        "generateC"
+      ],
+      "exitCode": 0,
+      "seconds": 21.429422
+    },
+    {
+      "stage": "c-to-wasm",
+      "command": [
+        "/store/java-prerequisites/wasi-sdk-29.0-x86_64-linux/bin/clang-21",
+        "-target",
+        "wasm32-wasip1",
+        "-std=c11",
+        "-O2",
+        "-DLSF_TEAVM_WASM=1",
+        "-DTEAVM_CUSTOM_LOG=1",
+        "-mllvm",
+        "-wasm-enable-sjlj",
+        "-lsetjmp",
+        "-mllvm",
+        "-wasm-use-legacy-eh=false",
+        "-mexec-model=reactor",
+        "-Wl,--no-entry",
+        "-Wl,--export-memory",
+        "-Wl,-z,stack-size=65536",
+        "-Wl,--max-memory=67108864",
+        "-include",
+        "/store/lsf-java-capsule-dka9s278/project/vendor/lsf/sdk/java-guest/runtime/native.h",
+        "-I",
+        "/store/lsf-java-capsule-dka9s278/compiled/bindings",
+        "-I",
+        "/store/lsf-java-capsule-dka9s278/project/vendor/lsf/sdk/java-guest/runtime",
+        "-iquote",
+        "/store/lsf-java-capsule-dka9s278/compiled/project/build/teavm-c/c",
+        "/store/lsf-java-capsule-dka9s278/compiled/project/build/teavm-c/c/all.c",
+        "/store/lsf-java-capsule-dka9s278/compiled/bindings/bridge.c",
+        "/store/lsf-java-capsule-dka9s278/project/vendor/lsf/sdk/java-guest/feasibility/platform.c",
+        "/store/lsf-java-capsule-dka9s278/compiled/bindings/probe.c",
+        "/store/lsf-java-capsule-dka9s278/compiled/bindings/probe_component_type.o",
+        "-o",
+        "/store/lsf-java-capsule-dka9s278/compiled/core.wasm"
+      ],
+      "exitCode": 0,
+      "seconds": 7.239633
+    },
+    {
+      "stage": "closed-runtime",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "embed",
+        "/store/lsf-java-capsule-dka9s278/compiled/wit",
+        "/store/lsf-java-capsule-dka9s278/project/vendor/lsf/sdk/java-guest/feasibility/closed-runtime.wat",
+        "--world",
+        "runtime-support",
+        "-o",
+        "/store/lsf-java-capsule-dka9s278/compiled/closed-runtime.wasm"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011314
+    },
+    {
+      "stage": "component-new",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "new",
+        "/store/lsf-java-capsule-dka9s278/compiled/core.wasm",
+        "--adapt",
+        "wasi_snapshot_preview1=/store/lsf-java-capsule-dka9s278/compiled/closed-runtime.wasm",
+        "-o",
+        "/store/lsf-java-capsule-dka9s278/compiled/component.wasm"
+      ],
+      "exitCode": 0,
+      "seconds": 0.010987
+    },
+    {
+      "stage": "component-validate",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "validate",
+        "/store/lsf-java-capsule-dka9s278/compiled/component.wasm"
+      ],
+      "exitCode": 0,
+      "seconds": 0.021766
+    },
+    {
+      "stage": "component-surface",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "wit",
+        "/store/lsf-java-capsule-dka9s278/compiled/component.wasm"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011124
+    },
+    {
+      "stage": "expected-wit",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "wit",
+        "/store/lsf-java-capsule-dka9s278/compiled/wit",
+        "--json"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011036
+    },
+    {
+      "stage": "compiled-wit",
+      "command": [
+        "/store/java-prerequisites/bin/wasm-tools",
+        "component",
+        "wit",
+        "/store/lsf-java-capsule-dka9s278/compiled/component.wasm",
+        "--json"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011305
+    },
+    {
+      "stage": "contracts",
+      "exitCode": 0,
+      "seconds": 0.011062
+    },
+    {
+      "stage": "package",
+      "exitCode": 0,
+      "seconds": 0.155316
+    },
+    {
+      "stage": "inspect",
+      "exitCode": 0,
+      "seconds": 0.093752
+    }
+  ]
+}

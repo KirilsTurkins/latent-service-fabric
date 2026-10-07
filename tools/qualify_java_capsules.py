@@ -31,8 +31,7 @@ JAVA_HELPERS = (*HELPERS, "java_capsule.py", "java_capsule_project.py", "java_ca
     "qualify_java_capsules.py", "qualify_java_bridge.py", "build_java_guest_capsules.py", "browser_response_ownership.py",
     "java_guest/compiler.py", "java_guest/bindings.py", "java_guest/model.py", "java_guest/java.py",
     "java_guest/c.py", "java_guest/lock.py", "java_guest/surface.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
-    "build_snapshot.py", "java_server_project.py", "java_server_source.py", "java_server_node.py",
-    "server_source.py", "server_routes.py", "server_capsule.py", "../.cargo/managed-guest.toml", "../contracts/http/browser-response-ownership-v1.json")
+    "build_snapshot.py", "../.cargo/managed-guest.toml", "../contracts/http/browser-response-ownership-v1.json", "java_server_project.py", "java_server_source.py", "java_server_node.py", "server_source.py", "server_routes.py", "server_capsule.py")
 
 
 def inputs():
@@ -80,6 +79,7 @@ def qualify(output: Path, wasi_sdk: Path):
         result["tools"] = materials
         stage = "host-build"
         commands.run(stage, paths["cargo"], "--config", ROOT / ".cargo/managed-guest.toml", "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
+            "--features", "latentd/development-test-node",
             "-p", "latent-packaging", "--example", "package", "--example", "capsule_contracts",
             "-p", "latent-policy", "--example", "capsule_authoring")
         if inputs() != before: raise ValueError("host sources changed during compilation")

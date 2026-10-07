@@ -190,9 +190,11 @@ The runtime records only the bounded typed operator reason
 under the actual admitted tenant/activation scope and current diagnostic-read
 authorization. Execution success is distinct from accepted HTTP output. This
 does not expose a raw internal diagnostic in HTTP: public output remains the
+
 fixed 502 with the 12-byte ASCII body `Bad gateway\n` (empty for HEAD), host
 security headers and `no-store`. Alpha.4 and development share these delivery
 failure bytes; a transport-level rejection instead has an empty body. Use the local SDK
+
 reason and this ownership table to correct output rather than copying raw
 application values into error messages.
 
@@ -220,6 +222,7 @@ same-origin unsafe-method Origin behavior in the application; the maintained
 POST helper uses an explicit `same-origin` policy after URL cleanup.
 
 The maintained controlled Angular/browser example includes the meta policy
+
 before its external bootstrap and verifies no token reaches unintended referrers
 or reused output. It loads a canonical signed asset URL, then uses browser history
 to give the document a synthetic query token before fetch/navigation probes.
@@ -238,6 +241,7 @@ policy failure without exposing an Origin value or node response. The exact
 activation count verifies that it created no guest. This is neither a measured
 node 403 nor evidence about whether a request reached the network before the
 browser reported failure.
+
 Its actual host responses still report `same-origin`, strict CSP and `no-store`
 on application traffic. A meta element inserted after initial resource fetching
 cannot retroactively protect those requests. LSF never inserts it at runtime or
