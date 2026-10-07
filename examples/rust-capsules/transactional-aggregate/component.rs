@@ -34,19 +34,21 @@ impl Guest for Capsule {
         let mut command = Command::acquire().expect("admitted command");
         let old = command.get(KEY.to_vec()).await.expect("state read");
         let count = count(old.as_ref())?.checked_add(u64::from(request.delta)).ok_or(BusinessError::Overflow)?;
+        let view_version = command.info().expect("original view identity").view.version;
+        let key_version = old.map(|value| value.version);
         let payload = Value { bytes: count.to_le_bytes().to_vec(), media_type: MEDIA.into(), metadata: vec![] };
         command.put(KEY.to_vec(), payload.clone()).await.expect("stage state");
         Intent::new("approved-event".into(), "event".into(), payload).stage(&mut command).await.expect("stage event");
         // A business rejection follows staging so the host must discard both.
         if request.reject { return Err(BusinessError::Rejected); }
-        let staged = command.get(KEY.to_vec()).await.expect("staged read").expect("staged value");
-        Ok(Aggregate { count, version: staged.version })
+        Ok(Aggregate { count, view_version, key_version })
     }
     async fn query() -> Result<Aggregate, BusinessError> {
         let mut query = Query::acquire().expect("admitted fresh query");
         let value = query.get(KEY.to_vec()).await.expect("fresh state read");
-        let version = query.info().expect("view identity").version;
-        Ok(Aggregate { count: count(value.as_ref())?, version })
+        let view_version = query.info().expect("view identity").version;
+        Ok(Aggregate { count: count(value.as_ref())?, view_version,
+            key_version: value.map(|value| value.version) })
     }
     async fn scan(prefix: Vec<u8>, limit: u32, cursor: Option<Vec<u8>>) -> Result<ScanResult, BusinessError> {
         let mut query = Query::acquire().expect("admitted fresh query");

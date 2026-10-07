@@ -29,8 +29,8 @@ class JavaTransactionSchemaTests(unittest.TestCase):
             self.assertFalse(declaration["signedExecutionQualified"])
         self.assertEqual((ROOT / "examples/rust-capsules/transactional-aggregate/world.wit").read_bytes(), original_world)
         self.assertEqual((ROOT / "sdk/java-guest/templates/transactional-aggregate.java").read_bytes(), original_source)
-        self.assertIn(b"record aggregate { count: u64, version: list<u8> }", original_world)
-        self.assertNotIn(b"key-version", original_world)
+        self.assertIn(b"view-version: list<u8>", original_world)
+        self.assertIn(b"key-version: option<list<u8>>", original_world)
 
     def test_recovery_recipe_content_or_claim_drift_refuses_before_creating_a_project(self):
         from tools import java_transaction_schema as owner

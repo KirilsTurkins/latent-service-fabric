@@ -2,8 +2,9 @@
 
 This opt-in application recipe keeps `count`, the original `view-version`, and
 the absent or present `key-version` as distinct observations. The shared
-six-language `transactional-aggregate` example keeps its existing two-field
-`count`/`version` result.
+six-language `transactional-aggregate` example now exposes those same three
+fields. This recipe independently pins the retained Java source and WIT used
+by the recovery captures.
 
 `tools/java_transaction_schema.py` selects this recipe explicitly, checks the
 closed source/WIT identities in `recipe.json`, and copies `world.wit.in` into

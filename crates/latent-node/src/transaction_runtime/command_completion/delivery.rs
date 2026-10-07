@@ -59,6 +59,13 @@ impl ResultDeliveryFence {
         Ok(fence)
     }
 
+    /// Observe the original retained physical byte reservation without
+    /// allocating, refreshing permission or accepting another operation.
+    #[must_use]
+    pub fn reserved_response_bytes(&self) -> u64 {
+        self.time.reserved_response_bytes()
+    }
+
     /// Invoke a short delivery action under current policy, namespace
     /// lifecycle and the original cancellation/deadline gate. A previous read
     /// decision or confirmed durable outcome never substitutes for this check.

@@ -16,6 +16,11 @@ name = "transaction_recovery"
 path = "examples/transaction_recovery.rs"
 test = false
 
+[[example]]
+name = "transaction_rpc_probe"
+path = "examples/transaction_rpc_probe.rs"
+test = false
+
 [features]
 # Explicit developer artifact only. Ordinary node builds reject these inputs.
 development-test-node = ["latent-wasmtime/development-clock-fixture"]
