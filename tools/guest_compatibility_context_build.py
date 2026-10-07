@@ -8,7 +8,10 @@ from tools import guest_compatibility_context as context
 from tools.dev_workflow.common import decode, digest, encode, require
 from tools.rust_capsule_project import read_file, write_json
 
-RECIPE = ('tools/guest_compatibility_context.py', 'tools/guest_compatibility_context_build.py')
+# Rust's shared Commands/package_inputs module is imported by every owner, so
+# its runtime receipt dependency belongs in their common captured closure too.
+RECIPE = ('tools/guest_compatibility_context.py', 'tools/guest_compatibility_context_build.py',
+          'tools/guest_runtime_receipts.py')
 
 
 def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
