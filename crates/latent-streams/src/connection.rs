@@ -104,7 +104,9 @@ fn expired() -> latent_core::PlatformError {
 }
 
 pub(crate) struct Socket {
-    stream: Arc<TcpStream>,
+    stream: Arc<crate::transport::Transport>,
+    _tls_native: Option<HostMemoryReservation>,
+    _tls_metadata: Option<ProviderMetadata>,
     _native: HostMemoryReservation,
     _metadata: ProviderMetadata,
 }
@@ -148,7 +150,7 @@ struct Handle {
 /// Drop the last copied socket reference before releasing a pending-operation
 /// count. `Connection::finish` takes the physical wrapper only after this edge.
 struct Pending {
-    socket: Arc<TcpStream>,
+    socket: Arc<crate::transport::Transport>,
     _guard: PendingGuard,
     deadline: Instant,
 }
@@ -299,6 +301,17 @@ async fn create_socket(
     recheck_io(call.io(), deadline.min(valid_until)).await?;
     let metadata = inner.pools.reserve_protocol_metadata(96 * 1024)?;
     let mut native = scope.reserve_host_memory(96 * 1024)?;
+    let tls_allowance = inner.tls[index]
+        .as_ref()
+        .map(|_| {
+            Ok::<_, StreamError>((
+                scope.reserve_host_memory(crate::tls::CONNECTION_ALLOWANCE)?,
+                inner
+                    .pools
+                    .reserve_protocol_metadata(crate::tls::CONNECTION_ALLOWANCE)?,
+            ))
+        })
+        .transpose()?;
     let socket = if address.is_ipv4() {
         TcpSocket::new_v4()
     } else {
@@ -349,8 +362,40 @@ async fn create_socket(
     stream
         .set_nodelay(true)
         .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
+    let (tls_native, tls_metadata) = match tls_allowance {
+        Some((mut memory, metadata)) => {
+            memory.confirm();
+            (Some(memory), Some(metadata))
+        }
+        None => (None, None),
+    };
+    let transport = match &inner.tls[index] {
+        Some(tls) => crate::transport::Transport::tls(
+            stream,
+            Arc::clone(tls),
+            destination.endpoint.host.clone(),
+        )?,
+        None => crate::transport::Transport::tcp(stream),
+    };
+    if transport.host_tls() {
+        loop {
+            recheck_io(call.io(), deadline.min(valid_until)).await?;
+            let Some(interest) = transport.handshake_step()? else {
+                break;
+            };
+            wait_current(
+                call.io(),
+                deadline.min(valid_until),
+                transport.tcp.ready(interest),
+            )
+            .await?
+            .map_err(|_| error(StreamErrorCode::TlsFailed))?;
+        }
+    }
     let socket = Socket {
-        stream: Arc::new(stream),
+        stream: Arc::new(transport),
+        _tls_native: tls_native,
+        _tls_metadata: tls_metadata,
         _native: connecting.native.take().expect("socket memory"),
         _metadata: connecting.metadata.take().expect("socket metadata"),
     };
@@ -605,15 +650,16 @@ impl OutboundStream for Handle {
             let result = connection
                 .wait(&pending, call.deadline(), async {
                     loop {
-                        pending
-                            .socket
-                            .readable()
-                            .await
-                            .map_err(|_| error(StreamErrorCode::IoFailed))?;
                         recheck_provider(&mut call).await?;
                         match pending.socket.try_read(buffer.spare_mut()?) {
-                            Err(failure) if failure.kind() == io::ErrorKind::WouldBlock => {}
-                            value => break value.map_err(|_| error(StreamErrorCode::IoFailed)),
+                            Ok(None) => pending
+                                .socket
+                                .tcp
+                                .readable()
+                                .await
+                                .map_err(|_| error(StreamErrorCode::IoFailed))?,
+                            Ok(Some(count)) => break Ok(count),
+                            Err(error) => break Err(error),
                         }
                     }
                 })
@@ -682,14 +728,10 @@ impl OutboundStream for Handle {
         Ok(Box::pin(async move {
             let mut call = connection.authorize("write", cost).await?;
             connection.scope.charge_transfer(input.as_ref().len())?;
+            let mut accepted_prefix = 0u32;
             let result = connection
                 .wait(&pending, call.deadline(), async {
                     loop {
-                        pending
-                            .socket
-                            .writable()
-                            .await
-                            .map_err(|_| error(StreamErrorCode::IoFailed))?;
                         recheck_provider(&mut call).await?;
                         connection
                             .state
@@ -697,8 +739,31 @@ impl OutboundStream for Handle {
                             .unwrap_or_else(std::sync::PoisonError::into_inner)
                             .attempted_write = true;
                         match pending.socket.try_write(input.as_ref()) {
-                            Err(failure) if failure.kind() == io::ErrorKind::WouldBlock => {}
-                            value => break value.map_err(|_| error(StreamErrorCode::IoFailed)),
+                            Ok(None) => pending
+                                .socket
+                                .tcp
+                                .writable()
+                                .await
+                                .map_err(|_| error(StreamErrorCode::IoFailed))?,
+                            Ok(Some(count)) => {
+                                accepted_prefix = u32::try_from(count).expect("bounded chunk");
+                                // Flush only this accepted plaintext prefix.
+                                // No new write or retry occurs while waiting.
+                                loop {
+                                    recheck_provider(&mut call).await?;
+                                    if pending.socket.flush_pending()? {
+                                        break;
+                                    }
+                                    pending
+                                        .socket
+                                        .tcp
+                                        .writable()
+                                        .await
+                                        .map_err(|_| error(StreamErrorCode::IoFailed))?;
+                                }
+                                break Ok(count);
+                            }
+                            Err(error) => break Err(error),
                         }
                     }
                 })
@@ -711,7 +776,16 @@ impl OutboundStream for Handle {
                     connection.audit(call, false).await?;
                     return Err(error(StreamErrorCode::IoFailed).uncertain(true));
                 }
-                Err(failure) => {
+                Err(mut failure) => {
+                    failure.accepted_prefix_bytes =
+                        failure.accepted_prefix_bytes.max(accepted_prefix);
+                    if failure.accepted_prefix_bytes != 0 {
+                        connection
+                            .state
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .accepted_write += u64::from(failure.accepted_prefix_bytes);
+                    }
                     connection.abort(failure.code);
                     connection.audit(call, false).await?;
                     return Err(connection.terminal_error(failure));
@@ -748,8 +822,21 @@ impl OutboundStream for Handle {
                 StreamInterest::Writable => Interest::WRITABLE,
                 StreamInterest::Either => Interest::READABLE | Interest::WRITABLE,
             };
+            if matches!(interest, StreamInterest::Readable | StreamInterest::Either)
+                && pending.socket.buffered_readable()?
+            {
+                connection.audit(call, true).await?;
+                return Ok(StreamReadiness {
+                    readable: true,
+                    writable: false,
+                });
+            }
             let result = connection
-                .wait(&pending, call.deadline(), pending.socket.ready(selected))
+                .wait(
+                    &pending,
+                    call.deadline(),
+                    pending.socket.tcp.ready(selected),
+                )
                 .await
                 .and_then(|value| value.map_err(|_| error(StreamErrorCode::IoFailed)));
             match result {
@@ -775,7 +862,11 @@ impl OutboundStream for Handle {
         &self,
         how: StreamShutdown,
     ) -> Result<BoxFuture<'static, Result<StreamObservation, StreamError>>, StreamError> {
-        if how == StreamShutdown::Receive {
+        if how == StreamShutdown::Receive
+            || (how == StreamShutdown::Send
+                && self.connection.endpoint.transport
+                    == latent_policy::capability::StreamTransport::HostTls)
+        {
             return Err(error(StreamErrorCode::Unsupported));
         }
         let pending = self.connection.pending(1, None)?;
@@ -796,7 +887,7 @@ impl OutboundStream for Handle {
             if how == StreamShutdown::Both {
                 connection.stop(None);
             } else {
-                socket2::SockRef::from(pending.socket.as_ref())
+                socket2::SockRef::from(pending.socket.tcp.as_ref())
                     .shutdown(Shutdown::Write)
                     .map_err(|_| error(StreamErrorCode::IoFailed))?;
                 connection

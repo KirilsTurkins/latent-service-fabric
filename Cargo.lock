@@ -2120,13 +2120,17 @@ dependencies = [
  "latent-manifest",
  "latent-network",
  "latent-policy",
+ "latent-protected-files",
  "latent-routing",
+ "rcgen",
+ "rustls",
  "serde",
  "serde_json",
  "sha2 0.11.0",
  "socket2",
  "tempfile",
  "tokio",
+ "tokio-rustls",
 ]
 
 [[package]]

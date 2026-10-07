@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latent.dev/schemas/outbound-stream-provider.schema.json",
-  "title": "Explicit development opaque TCP stream provider configuration",
-  "description": "Immutable bounded provider facts, never a guest grant. Native validation checks canonical exact endpoints, all selected addresses, special address exceptions, resolver peers and allocation capacities. Production installation remains disabled; host TLS is unsupported in this slice. Guest TLS and protocol secrets require separately qualified runtime and secret grants.",
+  "title": "Explicit development bounded TCP/direct host TLS stream configuration",
+  "description": "Immutable finite provider facts, never a guest grant. Native validation checks exact endpoints, addresses, protected SHA-pinned DER roots and original TLS hostname. Production remains disabled; no ambient roots, client keys, STARTTLS or HTTP authority upgrade. Guest TLS/credentials require independent runtime and secret grants.",
   "type": "object", "additionalProperties": false,
   "required": ["formatVersion", "profile", "destinations", "limits"],
   "properties": {
@@ -26,19 +26,21 @@
       "properties": {
         "endpoint": {
           "type": "object", "additionalProperties": false, "required": ["host", "port", "transport"],
-          "properties": {"host": {"type": "string", "minLength": 1, "maxLength": 253}, "port": {"type": "integer", "minimum": 1, "maximum": 65535}, "transport": {"const": "tcp"}}
+          "properties": {"host": {"type": "string", "minLength": 1, "maxLength": 253}, "port": {"type": "integer", "minimum": 1, "maximum": 65535}, "transport": {"enum": ["tcp", "host-tls"]}}
         },
         "addresses": {
           "type": "object", "additionalProperties": false, "required": ["networks", "specialAddresses"],
           "properties": {"networks": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 49}}, "specialAddresses": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/address"}}}
         },
+        "tls": {"type":"object","additionalProperties":false,"required":["serverName","roots"],"properties":{"serverName":{"type":"string","minLength":1,"maxLength":253},"roots":{"type":"array","minItems":1,"maxItems":8,"uniqueItems":true,"items":{"type":"object","additionalProperties":false,"required":["file","sha256"],"properties":{"file":{"type":"string","minLength":1,"maxLength":4096,"pattern":"^(?!.*(?:^|[\\\\/])\\.{1,2}(?:[\\\\/]|$)).+$"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"}}}}}},
         "resolution": {
           "oneOf": [
             {"type": "object", "additionalProperties": false, "required": ["kind", "addresses"], "properties": {"kind": {"const": "static"}, "addresses": {"type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": {"$ref": "#/$defs/address"}}}},
             {"type": "object", "additionalProperties": false, "required": ["kind", "server", "maximumTtlSeconds"], "properties": {"kind": {"const": "dns"}, "server": {"type": "string", "minLength": 1, "maxLength": 53}, "maximumTtlSeconds": {"type": "integer", "minimum": 1, "maximum": 300}}}
           ]
         }
-      }
+      },
+      "allOf": [{"if":{"properties":{"endpoint":{"properties":{"transport":{"const":"host-tls"}}}}},"then":{"required":["tls"]},"else":{"not":{"required":["tls"]}}}]
     }
   }
 }

@@ -25,6 +25,7 @@ fn configuration(port: u16) -> StreamProviderConfig {
         format_version: 1,
         profile: latent_capabilities::broker::network::STREAM_PROFILE.into(),
         destinations: vec![StreamDestination {
+            tls: None,
             endpoint: StreamEndpoint {
                 host: "127.0.0.1".into(),
                 port,

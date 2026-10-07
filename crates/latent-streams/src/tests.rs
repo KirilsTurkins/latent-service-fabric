@@ -14,6 +14,8 @@ mod lifecycle;
 mod maintenance;
 #[cfg(unix)]
 mod sockets;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod tls;
 #[cfg(unix)]
 mod uncertainty;
 
@@ -22,6 +24,7 @@ fn config() -> StreamProviderConfig {
         format_version: 1,
         profile: latent_capabilities::broker::network::STREAM_PROFILE.into(),
         destinations: vec![StreamDestination {
+            tls: None,
             endpoint: StreamEndpoint {
                 host: "127.0.0.1".into(),
                 port: 25,

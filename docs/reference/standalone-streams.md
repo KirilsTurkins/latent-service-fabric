@@ -54,8 +54,12 @@ ambient resolver discovery and proxy settings do not apply.
 
 TCP payload is opaque. Guest TLS and application authentication belong to the
 selected language runtime and independently authorized secret capabilities.
-This slice rejects host TLS installation and accepts no host key paths, trust
-directories, environment lookup or plaintext application credentials. Node
+The [direct host TLS source proposal](../runtime/outbound-stream-host-tls-review.md)
+uses a separately explicit destination with protected SHA-pinned DER roots and
+the exact endpoint hostname. Its installation remains `unsupported` until the
+original TLS parser/native-memory allowance is qualified. TCP cannot inherit its
+trust policy; neither transport accepts client key paths, environment lookup or
+plaintext application credentials. Node
 administrator credentials remain protected by the existing configuration owner.
 
 After deploying a capsule, an authenticated node operator can inspect the same

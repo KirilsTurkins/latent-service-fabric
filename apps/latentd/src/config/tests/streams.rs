@@ -17,6 +17,45 @@ pub(super) fn document() -> Value {
     value
 }
 
+#[test]
+fn explicit_stream_tls_requires_exact_hostname_and_closed_pinned_trust_inputs() {
+    let mut value = document();
+    let destination =
+        &mut value["providers"]["outboundStreams"]["configuration"]["destinations"][0];
+    destination["endpoint"]["transport"] = json!("host-tls");
+    destination["tls"] = json!({"serverName":"127.0.0.1", "roots":[{
+        "file":"private-trust/root.der", "sha256":format!("sha256:{}", "1".repeat(64))}]});
+    let typed = super::input::decode(&serde_json::to_vec(&value).unwrap()).unwrap();
+    let configuration = &typed
+        .providers
+        .as_ref()
+        .unwrap()
+        .outbound_streams
+        .as_ref()
+        .unwrap()
+        .configuration;
+    assert!(configuration.validate().is_ok());
+    let mut mismatched = configuration.clone();
+    mismatched.destinations[0].tls.as_mut().unwrap().server_name = "foreign.test".into();
+    assert!(mismatched.validate().is_err());
+    let mut cleartext = configuration.clone();
+    cleartext.destinations[0].endpoint.transport = latent_policy::capability::StreamTransport::Tcp;
+    assert!(cleartext.validate().is_err());
+    for key in ["privateKey", "publicRoots", "insecure", "clientCertificate"] {
+        let mut invalid = value.clone();
+        invalid["providers"]["outboundStreams"]["configuration"]["destinations"][0]["tls"][key] =
+            json!("DO-NOT-ECHO");
+        let error = super::input::decode(&serde_json::to_vec(&invalid).unwrap())
+            .err()
+            .unwrap();
+        assert!(!error.message.contains("DO-NOT-ECHO"));
+        assert!(error
+            .details
+            .iter()
+            .all(|detail| !format!("{detail:?}").contains("DO-NOT-ECHO")));
+    }
+}
+
 #[cfg(all(
     target_os = "linux",
     target_arch = "x86_64",
