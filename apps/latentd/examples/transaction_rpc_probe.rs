@@ -38,7 +38,7 @@ const SERVICE: &str = "examples/transaction-java-aggregate";
 const CONTRACT: &str = "examples:transactional-aggregate/api@1.0.0";
 const ROUTE: &str = "transaction-java-aggregate";
 const MEDIA: &str = "application/vnd.latent.wit-values.v1+json";
-const DEADLINE: Duration = Duration::from_secs(120);
+const DEADLINE: Duration = Duration::from_mins(2);
 
 fn credential(path: &std::path::Path) -> String {
     let bytes = latent_protected_files::read(
@@ -193,7 +193,7 @@ async fn initial_query(
         );
     }
     let before = client
-        .query(request(Some(&token), before_request))
+        .query(request(Some(token), before_request))
         .await
         .unwrap()
         .into_inner();
@@ -257,7 +257,7 @@ async fn command_and_replay(
         );
     }
     let first = client
-        .invoke_command(request(Some(&token), command.clone()))
+        .invoke_command(request(Some(token), command.clone()))
         .await
         .unwrap()
         .into_inner();
@@ -268,7 +268,7 @@ async fn command_and_replay(
     let record = check_command(&first, &args.publication, &args.component_digest);
     assert_eq!(aggregate(first.invocation.as_ref().unwrap()).count, 1);
     let replay = client
-        .invoke_command(request(Some(&token), command))
+        .invoke_command(request(Some(token), command))
         .await
         .unwrap()
         .into_inner();
@@ -292,7 +292,7 @@ async fn final_query(
     let final_request = query(Some(acknowledged));
     let final_contract = contract::Request::from(final_request.clone());
     let after = client
-        .query(request(Some(&token), final_request))
+        .query(request(Some(token), final_request))
         .await
         .unwrap()
         .into_inner();
