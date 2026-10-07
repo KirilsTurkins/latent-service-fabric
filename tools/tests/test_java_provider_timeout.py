@@ -1,10 +1,13 @@
 """Fixture contracts and real peer ownership, separate from node qualification."""
 from pathlib import Path
+import hashlib
+import json
 import socket
 import tempfile
 import threading
 import time
 import unittest
+from types import SimpleNamespace
 
 from tools.java_capsule_project import create, validate
 from tools.java_http_composition import provider_timeout as campaign
@@ -15,6 +18,78 @@ from tools import sdk_provider_http_fixture as peer
 
 
 class JavaProviderTimeoutTests(unittest.TestCase):
+    def http_observation(self, directory, status, body, discovered):
+        server = socket.socket()
+        server.bind(("127.0.0.1", 0))
+        server.listen(1)
+        server.settimeout(3)
+        errors, requests = [], []
+
+        def serve():
+            try:
+                connection, _ = server.accept()
+                with connection:
+                    connection.settimeout(3)
+                    received = b""
+                    while b"\r\n\r\n" not in received:
+                        received += connection.recv(4096)
+                        self.assertLessEqual(len(received), 65536)
+                    requests.append(received.split(b"\r\n", 1)[0])
+                    connection.sendall(f"HTTP/1.1 {status} Fixture\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n".encode() + body)
+            except BaseException as error:
+                errors.append(error)
+
+        worker = threading.Thread(target=serve)
+        worker.start()
+        before, calls = [], []
+        observed_tree = {"historyAvailable": True, "nextPageToken": None, "nodes": discovered}
+
+        def call(*arguments):
+            calls.append(arguments)
+            if arguments[:2] == ("activation", "roots"):
+                rows = before if len(calls) == 1 else discovered[:1]
+                return {"data": {"schemaVersion": 1, "retainedHistoryOnly": True, "nodes": rows, "nextPageToken": None}}
+            self.assertEqual(arguments[:3], ("activation", "tree", discovered[0]["activationId"]))
+            return {"data": observed_tree}
+
+        client = SimpleNamespace(evidence=directory, deadline=time.monotonic() + 5,
+            cancellation=SimpleNamespace(check=lambda: None), call=call)
+        try:
+            with self.assertRaisesRegex(WorkflowError, "java-provider-composed-response"):
+                campaign._observe(client, f"fixture.invalid:{server.getsockname()[1]}", 12345)
+        finally:
+            worker.join(3)
+            server.close()
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(requests, [b"POST /api/text HTTP/1.1"])
+        return json.loads((directory / "java-provider-http-observation-00.json").read_bytes()), calls
+
+    def test_failed_http_response_retains_bounded_digest_and_authorized_closed_child_before_assertion(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            body = b"private-source-secret-token"
+            nodes = [{"activationId": "authorized-root", "parentActivationId": None},
+                     {"activationId": "authorized-child", "parentActivationId": "authorized-root",
+                      "diagnosticIsTerminal": True, "diagnostic": {"stage": 1, "reason": 9}}]
+            observed, calls = self.http_observation(Path(temporary), 503, body, nodes)
+            self.assertEqual((observed["httpStatus"], observed["responseBytes"]), (503, len(body)))
+            self.assertEqual(observed["responseDigest"], "sha256:" + hashlib.sha256(body).hexdigest())
+            self.assertEqual(observed["tree"]["nodes"], nodes)
+            self.assertEqual(observed["externalMutationDisposition"], "unknown")
+            self.assertNotIn(body.decode(), json.dumps(observed))
+            self.assertEqual(len(calls), 3)
+
+    def test_oversized_http_response_retains_existing_read_bound_without_inventing_a_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            body = b"x" * 32769
+            observed, calls = self.http_observation(Path(temporary), 200, body, [])
+            self.assertEqual((observed["httpStatus"], observed["responseBytes"]), (200, 32769))
+            self.assertEqual(observed["responseDigest"], "sha256:" + hashlib.sha256(body).hexdigest())
+            self.assertIsNone(observed["tree"])
+            self.assertEqual(observed["authorizedRootsAfter"], [])
+            self.assertEqual(observed["externalMutationDisposition"], "unknown")
+            self.assertEqual(len(calls), 2)
+
     def domain(self, directory):
         project = create(directory, "greeting", "java-http-domain")
         for target, source in (("src/dev/latent/app/Capsule.java", "Capsule.java"), ("wit/world.wit", "world.wit")):

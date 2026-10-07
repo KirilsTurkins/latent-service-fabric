@@ -7,6 +7,7 @@ not execute compilers, start another node, retry a send or infer external outcom
 from __future__ import annotations
 
 import copy
+import hashlib
 import http.client
 import json
 import math
@@ -131,7 +132,8 @@ def _marker(client, control: Path, name: str) -> None:
 
 
 def _observe(client, host: str, port: int) -> tuple[dict, object]:
-    before = {row["activationId"] for row in roots(client)}
+    before_rows = roots(client)
+    before = {row["activationId"] for row in before_rows}
     connection = http.client.HTTPConnection("127.0.0.1", int(host.rsplit(":", 1)[1]),
                                             timeout=_remaining(client, 125))
     try:
@@ -141,16 +143,36 @@ def _observe(client, host: str, port: int) -> tuple[dict, object]:
         connection.sock.settimeout(_remaining(client, 125))
         response = connection.getresponse()
         raw = response.read(32769)
-        require(response.status == 200 and len(raw) <= 32768, "java-provider-composed-response")
-        value = json.loads(raw)
     finally:
         connection.close()
+    count = getattr(client, "java_provider_http_observations", 0)
+    require(count < 2, "java-provider-http-observation-count-bound")
+    client.java_provider_http_observations = count + 1
+    retained = {"httpStatus": response.status, "responseBytes": len(raw),
+        "responseDigest": "sha256:" + hashlib.sha256(raw).hexdigest(),
+        "authorizedRootsBefore": before_rows, "authorizedRootsAfter": None, "tree": None,
+        "externalMutationDisposition": "unknown"}
+    path = client.evidence / f"java-provider-http-observation-{count:02d}.json"
+    _retain_observation(client.evidence / f"java-provider-http-response-{count:02d}.json", retained)
     _remaining(client, 125)
-    discovered = [row for row in roots(client) if row["activationId"] not in before]
+    after_rows = roots(client)
+    discovered = [row for row in after_rows if row["activationId"] not in before]
+    retained["authorizedRootsAfter"] = after_rows
+    if len(discovered) == 1:
+        retained["tree"] = tree(client, discovered[0]["activationId"])
+    _retain_observation(path, retained)
+    require(response.status == 200 and len(raw) <= 32768, "java-provider-composed-response")
+    value = json.loads(raw)
     require(len(discovered) == 1, "java-provider-supported-one-root")
-    observation = {"httpStatus": response.status, "tree": tree(client, discovered[0]["activationId"])}
+    observation = {"httpStatus": response.status, "tree": retained["tree"]}
     hops(observation)
     return observation, value
+
+
+def _retain_observation(path, observation):
+    require(len(json.dumps(observation, separators=(",", ":")).encode()) <= 262144,
+            "java-provider-http-observation-byte-bound")
+    write_json(path, observation)
 
 
 def timeout_observation(child: dict) -> str:
