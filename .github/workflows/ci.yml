@@ -152,8 +152,13 @@ jobs:
         run: |
           packages="$(python3 - <<'PYCODE'
           from tools.ci_profile import classify_paths
+          from tools import ci_suite_inventory as registry
+          state = classify_paths(['crates/latent-state/src/lib.rs'])
+          assert state.profile == 'full' and state.renderer
           selection = classify_paths(['crates/latent-workflows/src/lib.rs'])
           assert selection.profile == 'fast'
+          assert selection.fast_packages
+          assert set(selection.fast_packages) < set(registry.load()['fastPackages'])
           print(selection.outputs()['fast_packages'])
           PYCODE
           )"
@@ -805,10 +810,16 @@ jobs:
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: ${{ (matrix.lane == 'bindings' || matrix.lane == 'optimization') && 'lsf-ci-dependencies-v2' || 'lsf-ci-dependencies-v3' }}
+          prefix-key: lsf-ci-dependencies-v3-contract-profiles
           shared-key: ${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}
           key: ubuntu-24.04
-          cache-targets: true
+          # Cache compiled Cargo profiles, never generated fixture directories.
+          cache-targets: false
+          cache-directories: |
+            target/debug
+            target/release
+            target/wasm32-unknown-unknown
+            target/wasm32-wasip2
           cache-bin: false
           cache-workspace-crates: false
           cache-all-crates: false

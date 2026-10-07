@@ -8,6 +8,12 @@
           "sdk/go-guest/**",
           "sdk/transaction-contract/**",
           "tools/qualify_transaction_contracts.py",
+          "tools/compile_transaction_guests.py",
+          "tools/transaction_guest_project.py",
+          "tools/transaction_guest_variants.py",
+          "tools/tests/test_transaction_guest_authoring.py",
+          "tools/tests/test_transaction_guest_compilers.py",
+          "examples/rust-capsules/transactional-aggregate/**",
           "tools/go_guest/**",
           "tools/go_capsule*.py",
           "tools/go_application_dependencies.py",
@@ -51,6 +57,12 @@
           "sdk/go-guest/**",
           "sdk/transaction-contract/**",
           "tools/qualify_transaction_contracts.py",
+          "tools/compile_transaction_guests.py",
+          "tools/transaction_guest_project.py",
+          "tools/transaction_guest_variants.py",
+          "tools/tests/test_transaction_guest_authoring.py",
+          "tools/tests/test_transaction_guest_compilers.py",
+          "examples/rust-capsules/transactional-aggregate/**",
           "tools/go_guest/**",
           "tools/go_capsule*.py",
           "tools/go_application_dependencies.py",
@@ -109,7 +121,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Preserve current actual workflow triggers, permissions, guards and job ownership after the reviewed source merge. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained.",
+  "reviewReason": "Preserve every authored transaction compiler and refusal variant alongside all captured-library approvals, three reviewed .NET runtime adapters, exact guards and retained evidence directories from development. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained. Incoming reviewed obligation: Preserve current actual workflow triggers, permissions, guards and job ownership after the reviewed source merge. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

@@ -8,6 +8,18 @@ The [authoring guide](../../docs/component-development/java-authoring.md) create
 an editable Java project outside the runtime checkout, builds its actual source,
 packages it, and demonstrates signed admission and cleanup on a local node.
 This guest SDK is separate from the [external Java RPC client](../java-client).
+The [typed HTTP composition guide](../../docs/component-development/java-http-composition.md)
+generates a separate Java adapter and normal typed client from explicitly
+selected domain operations, preserving the domain's service value profile.
+
+The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
+adds `State.Command`, `State.Query` and `State.Page` plus the logical `Intent`
+builder for state 0.2 and intent staging 0.1. Imported state types have one
+canonical owner across the two interfaces; `Unsigned64` preserves every bit.
+Page calls retain the original view and try-with-resources closes access only.
+These facades and captured-source inputs require the separately admitted Phase 4
+profile. Their signed Linux-node and HTTP recovery evidence is tracked by #389
+and required Java slice #718, separately from the completed stateless workflow.
 
 Compilation and local state-machine tests are not signed-node proof. The
 [implementation report](../../docs/testing/java-guest-authoring.md) records the
@@ -67,7 +79,7 @@ public signatures are rejected before Java compilation rather than at invocation
 
 ## Capability ownership
 
-The nine [actual Java examples](examples) exercise the eight current interfaces:
+The nine [stateless Java examples](examples) exercise their eight capability interfaces. The table also describes the separately selected Phase 4 transaction template:
 
 | Capability | Java ownership and outcomes |
 | --- | --- |
@@ -79,6 +91,8 @@ The nine [actual Java examples](examples) exercise the eight current interfaces:
 | Local service | Exact returned/declared/platform outcomes and host-controlled child budgets. |
 | Random | Exact u64 values, bounded bytes and typed invalid-length errors. |
 | Custom metrics | Configured instruments, bounded labels and exact budget/unavailable errors. |
+| State (Phase 4) | Scoped command/fresh-query owners, typed get/put/delete/scan, bounded pages and explicit close. |
+| Intents (Phase 4) | Logical binding/operation/payload staged through the canonical command owner; host-owned commitment. |
 
 Canonical resource aliases share consumed/borrowed state. Close is idempotent;
 consuming operations invalidate before dispatch. Borrow and consume cannot
@@ -88,6 +102,39 @@ remain charged until the host reclaims the activation; the wrapper does not
 announce an early refund. Cancellation does not prove an external effect was
 undone. Secret and private wire buffers are explicitly cleared where owned;
 applications must not copy them into immutable strings or logs.
+
+## Inbound buffered web responses (development)
+
+`BufferedWebResponseValidator` inspects an application's inbound
+`latent:web/application@0.1.0` response before returning its generated record.
+It is distinct from the outbound HTTP provider capability above. Its
+`latent.browser.response-ownership.v1` helper covers status/body rules, bounded
+lowercase header grammar, host-reserved/credential/framing collisions, redirects,
+identity encoding, strict HTTPS cookies and UTF-8 HTML. It performs no IO and
+grants no platform authority.
+
+```java
+import dev.latent.guest.BufferedWebResponseValidator;
+import dev.latent.guest.BufferedWebResponseValidator.*;
+
+byte[] body = "{\"ok\":true}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+BufferedWebResponseValidator.requireValid(Method.POST, Scheme.HTTPS, 200,
+    java.util.List.of(new Header("cache-control", "no-store".getBytes(java.nio.charset.StandardCharsets.US_ASCII))),
+    "application/json", body, null);
+```
+
+Pass the actual request method/scheme and actual current response fields;
+nullable media/representation length mean omitted typed fields. Reuse the
+decoded body bytes when constructing the generated response. `validate` returns
+a fixed `Reason` and `requireValid` throws its fixed code, with no raw header,
+token or body. The host remains authoritative and rejects invalid output with an
+empty `no-store` 502. It consumes application cache inputs but keeps dynamic
+browser/proxy output `no-store`. See the complete
+[header ownership and referrer decision](../../docs/security/browser-boundary.md#response-headers).
+
+The maintained authoring qualification compiles this SDK helper, exercises its
+negative responses and compares every ownership field/prefix/limit to the shared
+native contract. JVM checks alone are not signed-node or browser proof.
 
 ## Execution and memory boundaries
 

@@ -1,0 +1,2 @@
+package examples:foo-bar@1.0.0;
+interface types { type count = u64; }
