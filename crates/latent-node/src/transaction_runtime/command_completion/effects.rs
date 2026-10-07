@@ -122,7 +122,6 @@ impl CommandCoordinator {
         let (command, effect, history, retained) = job
             .await
             .map_err(|_| errors::atomic(AtomicError::RecoveryRequired))?
-            .map_err(errors::protected)?
             .map_err(errors::protected)?;
         let delivery = Arc::new(ResultDeliveryFence::effect(
             Arc::clone(&retained.authorization),
