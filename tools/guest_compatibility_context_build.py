@@ -5,13 +5,14 @@ from pathlib import Path
 
 from tools import guest_compatibility as compatibility
 from tools import guest_compatibility_context as context
+from tools import guest_emitted_code, guest_runtime_receipts
 from tools.dev_workflow.common import decode, digest, encode, require
 from tools.rust_capsule_project import read_file, write_json
 
 # Rust's shared Commands/package_inputs module is imported by every owner, so
 # its runtime receipt dependency belongs in their common captured closure too.
 RECIPE = ('tools/guest_compatibility_context.py', 'tools/guest_compatibility_context_build.py',
-          'tools/guest_runtime_receipts.py')
+          'tools/guest_runtime_receipts.py', 'tools/guest_emitted_code.py')
 
 
 def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
@@ -48,7 +49,6 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
         name = 'standard-runtime-selection' if owner_runtime.exists() else 'runtime-profile'
         raw, runtime = bound_receipt(filename, name, 65536 if owner_runtime.exists() else 4 * 1024 * 1024)
         if owner_runtime.exists():
-            from tools import guest_runtime_receipts
             guest_runtime_receipts.verify_build(runtime, report['language'], files, source_inputs, component,
                 [row for row in materials if row['name'] != 'standard-runtime-selection'])
         require(isinstance(runtime, dict) and isinstance(runtime.get('profile'), str),
@@ -89,6 +89,10 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
     omitted = max(0, len(retained) - context.MAX_MATERIALS)
     value = context.create(report, retained[:context.MAX_MATERIALS], selected, omitted=omitted)
     write_json(output / 'compatibility-context.json', value)
+    captured_graph = guest_runtime_receipts.captured_graph(files)
+    graph = digest(encode(captured_graph)) if captured_graph is not None else None
+    guest_emitted_code.emit(output, component, digest(source_inputs), selected.get('profile', 'not-observed'),
+        report['runtimeProfile'], graph=graph, recipe=captured.get('build-recipe', {}).get('digest'))
     require(read_file(output / 'compatibility-report.json', compatibility.MAX_BYTES) == report_raw,
             'compatibility-context-report-was-mutated')
     return value
