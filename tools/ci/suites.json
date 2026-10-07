@@ -8607,14 +8607,15 @@
         "phase4::tests::malformed_profile_and_stale_transport_deadline_never_admit_work",
         "phase4::tests::missing_identity_and_wrong_tenant_cannot_touch_recovery_runtime",
         "phase4::tests::namespace_operations_require_management_role_before_domain_owner",
-        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation"
+        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation",
+        "phase4::state_management::tests::effects::controlled_dispatch_requires_the_actual_current_policy_and_source_before_provider_acceptance"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.lib.latent-wire",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 192,
+      "minimumCases": 193,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

@@ -10,13 +10,37 @@ pub struct RecoverySelectorConfig {
     pub selection: RecoverySelectionConfig,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+#[derive(Clone, Debug)]
 pub enum RecoverySelectionConfig {
     OriginalCaller,
     ServiceIntegration,
     Shared { name: String },
     Delegated { delegation: String, service: String },
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+enum SelectionWire {
+    OriginalCaller {},
+    ServiceIntegration {},
+    Shared { name: String },
+    Delegated { delegation: String, service: String },
+}
+impl<'de> Deserialize<'de> for RecoverySelectionConfig {
+    fn deserialize<D: serde::Deserializer<'de>>(source: D) -> Result<Self, D::Error> {
+        Ok(match SelectionWire::deserialize(source)? {
+            SelectionWire::OriginalCaller {} => Self::OriginalCaller,
+            SelectionWire::ServiceIntegration {} => Self::ServiceIntegration,
+            SelectionWire::Shared { name } => Self::Shared { name },
+            SelectionWire::Delegated {
+                delegation,
+                service,
+            } => Self::Delegated {
+                delegation,
+                service,
+            },
+        })
+    }
 }
 
 impl RecoverySelectorConfig {

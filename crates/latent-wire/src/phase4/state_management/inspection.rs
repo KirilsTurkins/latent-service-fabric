@@ -26,12 +26,15 @@ pub(super) async fn inspect(
 ) -> Result<OwnedPhase4Response, PlatformError> {
     let worker = Arc::clone(&inner);
     let retained = Arc::clone(&permit);
+    let completion = Arc::new(std::sync::Mutex::new(None));
+    let worker_completion = Arc::clone(&completion);
     let job = inner
         .services
         .store
-        .with_store(
+        .with_store_retaining(
             StoreIoKind::RecoveryRead,
             WORK_BYTES as u64,
+            Arc::new(Arc::clone(&permit)),
             move |engine| {
                 let result = inspect_in(&worker, engine, &access, deadline, retained.as_ref());
                 let finish = pending.finish(
@@ -46,18 +49,31 @@ pub(super) async fn inspect(
                 );
                 // Keep global capacity in the unclaimed native completion as well
                 // as the waiter. Its bytes retire after that completion's values.
-                Ok((result, access.inspect, finish, retained))
+                match result {
+                    Ok(result) => Ok((result, access.inspect, finish, retained)),
+                    Err(error) => {
+                        *worker_completion
+                            .lock()
+                            .map_err(|_| StoreError::Unavailable)? = Some(finish);
+                        Err(error)
+                    }
+                }
             },
         )
         .map_err(protected_error)?;
-    let (result, decision, finish, worker_permit) =
-        job.await.map_err(io_error)?.map_err(protected_error)?;
+    let completed = job.await.map_err(io_error)?;
+    let (result, decision, finish, worker_permit) = match completed {
+        Ok(value) => value,
+        Err(error) => {
+            let finish = completion.lock().map_err(|_| super::unsupported())?.take();
+            if let Some(finish) = finish {
+                let _ = audit::ack(finish).await;
+            }
+            return Err(protected_error(error));
+        }
+    };
     let acknowledgement = read_ack(finish).await;
-    let (read, namespace) = result.map_err(|error| {
-        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
-            error,
-        ))
-    })??;
+    let (read, namespace) = result?;
     acknowledgement?;
     response::owned(
         inner,
