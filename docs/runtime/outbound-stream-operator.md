@@ -88,7 +88,12 @@ bound to startup, including destinations, DNS/address constraints, tenant,
 credentials, consumer bindings and provider identity. Replacement files must
 still satisfy the original protected ownership, single-link, mode, input-size
 and closed-type checks. `SIGHUP` reopens and validates that file before rotating
-the actual provider. All changes force retirement: accepted sessions are never
+the actual provider. Before reading, the owner reserves six finite 1 MiB scratch
+charges for the bounded raw/typed/JSON/canonical/derived configuration stages
+under the existing 8 MiB provider pool. Insufficient shared capacity rejects the
+reload before parsing or rotation and drops any partial scratch reservations;
+it never widens that pool or refunds another live owner's charge. All changes
+force retirement: accepted sessions are never
 migrated, and their physical charges remain until cleanup. Repeating the same
 epoch is rejected without another rotation.
 

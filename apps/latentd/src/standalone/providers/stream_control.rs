@@ -104,7 +104,15 @@ impl ProviderRuntime {
         guard: &StreamReloadGuard,
     ) -> Result<StreamControlStatus, PlatformError> {
         self.check_stream_reload_owner(guard)?;
-        let _input_metadata = self.pools.reserve_protocol_metadata(1024 * 1024)?;
+        // The original loader admits at most 64 KiB / 4,096 structural tokens.
+        // Charge all overlapping raw, typed, Value, canonical and derived-copy
+        // stages before reopening it: 48 bytes/input byte + 512/token + 1 MiB
+        // fixed derivation allowance = 6 MiB. Keep each reservation within the
+        // unchanged 1 MiB cap and the total within the original 8 MiB pool.
+        let mut input_metadata = std::array::from_fn::<_, 6, _>(|_| None);
+        for slot in &mut input_metadata {
+            *slot = Some(self.pools.reserve_protocol_metadata(1024 * 1024)?);
+        }
         let candidate = guard.replacement()?;
         let index = self.stream_index()?;
         let installed = &self.descriptors[index];

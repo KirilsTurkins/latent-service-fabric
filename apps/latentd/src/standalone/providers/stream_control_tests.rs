@@ -6,6 +6,9 @@ use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf, time::Duration};
 use tempfile::TempDir;
 use tokio::runtime::{Builder, Runtime};
 
+#[path = "stream_control_physical.rs"]
+mod physical;
+
 struct Fixture {
     _directory: TempDir,
     path: PathBuf,
@@ -136,6 +139,33 @@ fn protected_reload_publishes_actual_new_reference_and_never_repeats_an_epoch() 
         .clone();
     let before = catalog.binding_version().unwrap();
     fixture.rotate_input(2);
+    let pools = node.providers.as_ref().unwrap().pools.clone();
+    let held = [
+        pools.reserve_protocol_metadata(1024 * 1024).unwrap(),
+        pools.reserve_protocol_metadata(1024 * 1024).unwrap(),
+        pools.reserve_protocol_metadata(1024 * 1024).unwrap(),
+    ];
+    let charged = pools.snapshot().unwrap();
+    // Quota admission precedes even protected-file reopening/JSON allocation.
+    fs::set_permissions(&fixture.path, fs::Permissions::from_mode(0o640)).unwrap();
+    assert_eq!(
+        invocation
+            .block_on(node.reload_outbound_streams(&fixture.guard))
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::ResourceExhausted
+    );
+    assert_eq!(
+        pools.snapshot().unwrap().metadata_bytes,
+        charged.metadata_bytes
+    );
+    assert_eq!(catalog.binding_version().unwrap(), before);
+    let status = node.outbound_stream_control_status().unwrap();
+    assert_eq!(status.configured_generation, 1);
+    assert!(!status.stream.current_generation_retired);
+    drop(held);
+    fs::set_permissions(&fixture.path, fs::Permissions::from_mode(0o600)).unwrap();
     let result = invocation
         .block_on(node.reload_outbound_streams(&fixture.guard))
         .unwrap();
@@ -176,20 +206,47 @@ fn protected_reload_publishes_actual_new_reference_and_never_repeats_an_epoch() 
 }
 
 #[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the real pending socket, catalog contention and explicit publication share one original owner"
+)]
 fn catalog_contention_preserves_configured_and_confirmed_generations_until_explicit_publication() {
+    use latent_capabilities::broker::network::{OutboundStreamInvoker, StreamConnectRequest};
+    use latent_policy::capability::{StreamEndpoint, StreamTransport};
+    use std::io::Read;
     let fixture = Fixture::new();
     let (control, invocation) = runtimes();
-    let mut node = invocation
-        .block_on(StandaloneNode::start(
-            fixture.settings(),
-            control.handle().clone(),
-            RuntimeThreads::default(),
-        ))
-        .unwrap();
+    let (mut node, artifacts) = physical::node(&fixture, &control, &invocation);
+    let endpoint = StreamEndpoint {
+        host: "127.0.0.1".into(),
+        port: fixture.listener.local_addr().unwrap().port(),
+        transport: StreamTransport::Tcp,
+    };
+    let (session, execution) =
+        invocation.block_on(physical::session(&node, &artifacts, endpoint.clone()));
     let owner = node.providers.as_ref().unwrap();
+    let lifecycle = owner.streams.as_ref().unwrap().clone();
     let catalog = owner.stream_catalog.as_ref().unwrap().clone();
     let old = owner.stream_binding_reference.as_ref().unwrap().clone();
     let pools = owner.pools.clone();
+    let stream = invocation
+        .block_on(
+            lifecycle
+                .start(
+                    &session,
+                    StreamConnectRequest {
+                        endpoint: endpoint.clone(),
+                        timeout_millis: None,
+                    },
+                )
+                .unwrap(),
+        )
+        .unwrap();
+    let (mut peer, _) = fixture.listener.accept().unwrap();
+    peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+    let pending = stream.read(16 * 1024, None).unwrap();
+    let charged = execution.budget.host_memory_bytes();
+    assert!(charged >= 96 * 1024);
     let before = catalog.binding_version().unwrap();
     let held = invocation
         .block_on(
@@ -210,6 +267,19 @@ fn catalog_contention_preserves_configured_and_confirmed_generations_until_expli
     assert_eq!(failed.installed_binding_generation, 1);
     assert!(failed.binding_publication_pending);
     assert!(failed.failure_code.is_some());
+    assert_eq!(failed.stream.usage.owners, 1);
+    assert_eq!(failed.stream.usage.pending_operations, 1);
+    assert_eq!(pools.snapshot().unwrap().connections, 1);
+    assert_eq!(execution.budget.host_memory_bytes(), charged);
+    assert!(lifecycle
+        .start(
+            &session,
+            StreamConnectRequest {
+                endpoint,
+                timeout_millis: None
+            }
+        )
+        .is_err());
     assert_eq!(catalog.binding_version().unwrap(), before);
     assert!(node
         .providers
@@ -224,6 +294,21 @@ fn catalog_contention_preserves_configured_and_confirmed_generations_until_expli
     assert_eq!(catalog.binding_version().unwrap(), before);
     let status = node.outbound_stream_control_status().unwrap();
     assert!(status.binding_publication_pending);
+    assert_eq!(
+        invocation.block_on(pending).err().unwrap().code,
+        latent_streams::StreamErrorCode::Revoked
+    );
+    let mut byte = [0];
+    match peer.read(&mut byte) {
+        Ok(0) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => {}
+        other => panic!("actual peer closure expected: {other:?}"),
+    }
+    assert_eq!(lifecycle.status().unwrap().usage.connections, 0);
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    assert!(execution.budget.host_memory_bytes() > 0);
+    drop(stream);
+    assert_eq!(execution.budget.host_memory_bytes(), 0);
     let recovered = invocation
         .block_on(node.publish_outbound_stream_bindings(&fixture.guard))
         .unwrap();
@@ -235,6 +320,8 @@ fn catalog_contention_preserves_configured_and_confirmed_generations_until_expli
         failed.stream.retired_generations
     );
     assert!(!recovered.execution_permission);
+    drop(session);
+    drop(lifecycle);
     fixture.untouched_peer();
     clean(node, &invocation);
     control.shutdown_timeout(Duration::from_secs(5));
@@ -297,22 +384,94 @@ fn foreign_protected_guard_and_static_owner_change_cannot_rotate_or_publish() {
 
 #[test]
 fn explicit_drain_retires_current_owner_and_requires_a_normal_restart_for_fresh_work() {
+    use latent_capabilities::broker::network::{OutboundStreamInvoker, StreamConnectRequest};
+    use latent_policy::capability::{StreamEndpoint, StreamTransport};
+    use std::{
+        future::{poll_fn, Future},
+        io::Read,
+        task::Poll,
+    };
     let fixture = Fixture::new();
     let (control, invocation) = runtimes();
-    let mut node = invocation
-        .block_on(StandaloneNode::start(
-            fixture.settings(),
-            control.handle().clone(),
-            RuntimeThreads::default(),
-        ))
+    let (mut node, artifacts) = physical::node(&fixture, &control, &invocation);
+    let endpoint = StreamEndpoint {
+        host: "127.0.0.1".into(),
+        port: fixture.listener.local_addr().unwrap().port(),
+        transport: StreamTransport::Tcp,
+    };
+    let (session, execution) =
+        invocation.block_on(physical::session(&node, &artifacts, endpoint.clone()));
+    let lifecycle = node
+        .providers
+        .as_ref()
+        .unwrap()
+        .streams
+        .as_ref()
+        .unwrap()
+        .clone();
+    let pools = node.providers.as_ref().unwrap().pools.clone();
+    let stream = invocation
+        .block_on(
+            lifecycle
+                .start(
+                    &session,
+                    StreamConnectRequest {
+                        endpoint: endpoint.clone(),
+                        timeout_millis: None,
+                    },
+                )
+                .unwrap(),
+        )
         .unwrap();
-    let result = invocation
-        .block_on(node.drain_outbound_streams(&fixture.guard))
-        .unwrap();
+    let (mut peer, _) = fixture.listener.accept().unwrap();
+    peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+    let pending = stream.read(16 * 1024, None).unwrap();
+    assert_eq!(lifecycle.status().unwrap().usage.connections, 1);
+    assert_eq!(lifecycle.status().unwrap().usage.pending_operations, 1);
+    let charged = execution.budget.host_memory_bytes();
+    assert!(charged >= 96 * 1024);
+    let mut drain = Box::pin(node.drain_outbound_streams(&fixture.guard));
+    invocation.block_on(poll_fn(|context| {
+        assert!(drain.as_mut().poll(context).is_pending());
+        Poll::Ready(())
+    }));
+    // Acknowledged retirement does not refund the unpolled physical read/facade.
+    assert!(lifecycle.status().unwrap().stopped);
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    assert_eq!(pools.snapshot().unwrap().connections, 1);
+    assert_eq!(execution.budget.host_memory_bytes(), charged);
+    assert!(lifecycle
+        .start(
+            &session,
+            StreamConnectRequest {
+                endpoint,
+                timeout_millis: None
+            }
+        )
+        .is_err());
+    assert_eq!(
+        invocation.block_on(pending).err().unwrap().code,
+        latent_streams::StreamErrorCode::Revoked
+    );
+    let mut byte = [0];
+    match peer.read(&mut byte) {
+        Ok(0) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => {}
+        other => panic!("actual peer closure expected: {other:?}"),
+    }
+    assert_eq!(lifecycle.status().unwrap().usage.connections, 0);
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    assert!(execution.budget.host_memory_bytes() > 0);
+    drop(stream);
+    let result = invocation.block_on(drain).unwrap();
     assert_eq!(result.outcome, "drained");
     assert!(result.stream.stopped);
     assert!(result.stream.current_generation_retired);
     assert_eq!(result.stream.usage.owners, 0);
+    assert_eq!(execution.budget.host_memory_bytes(), 0);
+    assert_eq!(pools.snapshot().unwrap().running_requests, 0);
+    drop(session);
+    drop(lifecycle);
     fixture.rotate_input(2);
     assert!(invocation
         .block_on(node.reload_outbound_streams(&fixture.guard))

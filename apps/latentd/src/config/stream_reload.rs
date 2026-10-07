@@ -76,9 +76,11 @@ impl StreamReloadGuard {
         if candidate.static_digest != self.static_digest {
             return Err(invalid("streamReload.static-configuration-changed"));
         }
-        let _settings = config.derive()?;
-        config
-            .providers
+        // Static settings were validated before this guard was bound to the
+        // running node. Revalidate the provider input only: rederiving the whole
+        // node would reopen unrelated TLS files and reconstruct immutable owners.
+        // The same original feature/protected-input/profile/binding checks apply.
+        super::providers::derive(&config)?
             .and_then(|p| p.outbound_streams)
             .ok_or_else(|| invalid("streamReload.installation"))
     }
