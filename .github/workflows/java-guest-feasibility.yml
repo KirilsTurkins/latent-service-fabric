@@ -8,7 +8,6 @@ on:
       - 'examples/java-http-composition/**'
 
       - 'sdk/transaction-contract/**'
-      - 'examples/java-http-composition/**'
       - 'tools/**'
       - 'apps/**'
       - 'crates/**'
