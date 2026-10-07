@@ -1,0 +1,12 @@
+package state
+
+import (
+	raw "wit_component/@intents@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+)
+
+// Canonical generated imports share the actual state Transaction resource.
+func (c *Command) Stage(intent raw.Intent) wit.Result[raw.StagedIntent, raw.IntentError] {
+	v, release := c.owner.Borrow(); defer release()
+	return raw.Stage(v, intent)
+}

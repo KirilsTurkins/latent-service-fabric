@@ -4,6 +4,8 @@
 //! caller scope, authorize a lookup, reserve recovery capacity, or prove abort.
 
 mod bounds;
+mod dispatcher;
+mod effect_management;
 mod profile;
 mod request;
 mod response;
@@ -37,10 +39,14 @@ pub enum ValidationError {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Request {
+    InspectDispatcher(Box<control::InspectDispatcherRequest>),
+    ControlDispatcher(Box<control::ControlDispatcherRequest>),
+    GetDispatcherOperation(Box<control::GetDispatcherOperationRequest>),
     InspectNamespace(Box<control::InspectNamespaceRequest>),
     MutateNamespace(Box<control::MutateNamespaceRequest>),
     SelectEntity(Box<control::SelectEntityRequest>),
     MutateState(Box<control::MutateStateRequest>),
+    PlanEffectMutation(Box<control::PlanEffectMutationRequest>),
     GetStateOperationReceipt(Box<control::GetStateOperationReceiptRequest>),
     InvokeCommand(Box<transaction::InvokeCommandRequest>),
     Query(Box<transaction::QueryRequest>),
@@ -53,10 +59,14 @@ pub enum Request {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Response {
+    InspectDispatcher(Box<control::InspectDispatcherResponse>),
+    ControlDispatcher(Box<control::ControlDispatcherResponse>),
+    GetDispatcherOperation(Box<control::GetDispatcherOperationResponse>),
     InspectNamespace(Box<control::InspectNamespaceResponse>),
     MutateNamespace(Box<control::MutateNamespaceResponse>),
     SelectEntity(Box<control::SelectEntityResponse>),
     MutateState(Box<control::MutateStateResponse>),
+    PlanEffectMutation(Box<control::PlanEffectMutationResponse>),
     GetStateOperationReceipt(Box<control::GetStateOperationReceiptResponse>),
     InvokeCommand(Box<transaction::InvokeCommandResponse>),
     Query(Box<transaction::QueryResponse>),
@@ -84,15 +94,21 @@ macro_rules! conversion {
     };
 }
 conversion!(Request;
+    (InspectDispatcher,control::InspectDispatcherRequest),(ControlDispatcher,control::ControlDispatcherRequest),
+    (GetDispatcherOperation,control::GetDispatcherOperationRequest),
     (InspectNamespace,control::InspectNamespaceRequest),(MutateNamespace,control::MutateNamespaceRequest),
     (SelectEntity,control::SelectEntityRequest),(MutateState,control::MutateStateRequest),
+    (PlanEffectMutation,control::PlanEffectMutationRequest),
     (GetStateOperationReceipt,control::GetStateOperationReceiptRequest),(InvokeCommand,transaction::InvokeCommandRequest),
     (Query,transaction::QueryRequest),(LookupCommand,transaction::LookupCommandRequest),
     (LookupCommit,transaction::LookupCommitRequest),(GetEffect,transaction::GetEffectRequest),
     (ListEffectHistory,transaction::ListEffectHistoryRequest),(CancelCommand,transaction::CancelCommandRequest));
 conversion!(Response;
+    (InspectDispatcher,control::InspectDispatcherResponse),(ControlDispatcher,control::ControlDispatcherResponse),
+    (GetDispatcherOperation,control::GetDispatcherOperationResponse),
     (InspectNamespace,control::InspectNamespaceResponse),(MutateNamespace,control::MutateNamespaceResponse),
     (SelectEntity,control::SelectEntityResponse),(MutateState,control::MutateStateResponse),
+    (PlanEffectMutation,control::PlanEffectMutationResponse),
     (GetStateOperationReceipt,control::GetStateOperationReceiptResponse),(InvokeCommand,transaction::InvokeCommandResponse),
     (Query,transaction::QueryResponse),(LookupCommand,transaction::LookupCommandResponse),
     (LookupCommit,transaction::LookupCommitResponse),(GetEffect,transaction::GetEffectResponse),
@@ -110,10 +126,14 @@ macro_rules! encoded_len {
 }
 encoded_len!(
     Request,
+    InspectDispatcher,
+    ControlDispatcher,
+    GetDispatcherOperation,
     InspectNamespace,
     MutateNamespace,
     SelectEntity,
     MutateState,
+    PlanEffectMutation,
     GetStateOperationReceipt,
     InvokeCommand,
     Query,
@@ -125,10 +145,14 @@ encoded_len!(
 );
 encoded_len!(
     Response,
+    InspectDispatcher,
+    ControlDispatcher,
+    GetDispatcherOperation,
     InspectNamespace,
     MutateNamespace,
     SelectEntity,
     MutateState,
+    PlanEffectMutation,
     GetStateOperationReceipt,
     InvokeCommand,
     Query,
@@ -176,11 +200,27 @@ impl Request {
     pub const fn is_management(&self) -> bool {
         matches!(
             self,
-            Self::InspectNamespace(_)
+            Self::InspectDispatcher(_)
+                | Self::ControlDispatcher(_)
+                | Self::GetDispatcherOperation(_)
+                | Self::InspectNamespace(_)
                 | Self::MutateNamespace(_)
                 | Self::SelectEntity(_)
                 | Self::MutateState(_)
+                | Self::PlanEffectMutation(_)
                 | Self::GetStateOperationReceipt(_)
+        )
+    }
+
+    /// Explicitly node-wide management; authenticated tenant association does
+    /// not supply the separate trusted node-operator authority.
+    #[must_use]
+    pub const fn is_node_management(&self) -> bool {
+        matches!(
+            self,
+            Self::InspectDispatcher(_)
+                | Self::ControlDispatcher(_)
+                | Self::GetDispatcherOperation(_)
         )
     }
 

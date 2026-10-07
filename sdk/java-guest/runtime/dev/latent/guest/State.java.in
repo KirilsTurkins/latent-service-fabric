@@ -1,0 +1,85 @@
+package dev.latent.guest;
+
+import dev.latent.generated.Bindings;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+/** Scoped exact WIT results, without guest commit, replay or authority minting. */
+public final class State {
+    private State() {}
+    private static <T, U, E> Result<U, E> map(Result<T, E> value, Function<T, U> function) {
+        return value.isError() ? Result.err(value.error()) : Result.ok(function.apply(value.value()));
+    }
+    public abstract static class Access implements AutoCloseable {
+        private final Resource resource;
+        private int pages;
+        private Access(Resource resource) { this.resource = resource; }
+        final <T> T guard(Supplier<T> operation) {
+            resource.borrow();
+            try { return operation.get(); }
+            finally { resource.releaseBorrow(); }
+        }
+        final Page ownPage(Bindings.LatentStateKeyValuePage raw) { pages++; return new Page(raw, this); }
+        @Override public final void close() {
+            if (pages != 0) throw new IllegalStateException("state pages remain open");
+            resource.close(); // Access release only; the host retains accepted work.
+        }
+    }
+    public static final class Command extends Access {
+        private final Bindings.LatentStateKeyValueTransaction raw;
+        private Command(Bindings.LatentStateKeyValueTransaction raw) { super(raw); this.raw = raw; }
+        final Bindings.LatentStateKeyValueTransaction intentBorrow() { return raw; }
+        public Result<Bindings.LatentStateKeyValueCommandInfo, Bindings.LatentStateKeyValueStateError> info() {
+            return Bindings.LatentStateKeyValue.info(raw);
+        }
+        public Result<Option<Bindings.LatentStateKeyValueVersionedValue>, Bindings.LatentStateKeyValueStateError> get(byte[] key) {
+            return Bindings.LatentStateKeyValue.get(raw, key);
+        }
+        public Result<Unit, Bindings.LatentStateKeyValueStateError> put(byte[] key, Bindings.LatentStateKeyValueValue value) {
+            return Bindings.LatentStateKeyValue.put(raw, key, value);
+        }
+        public Result<Unit, Bindings.LatentStateKeyValueStateError> delete(byte[] key) {
+            return Bindings.LatentStateKeyValue.delete(raw, key);
+        }
+        public Result<Page, Bindings.LatentStateKeyValueStateError> scan(byte[] prefix, Long limit, Option<byte[]> cursor) {
+            return map(Bindings.LatentStateKeyValue.scan(raw, prefix, limit, cursor), this::ownPage);
+        }
+    }
+    /** A fresh view exposes no mutation or intent staging operation. */
+    public static final class Query extends Access {
+        private final Bindings.LatentStateKeyValueQueryView raw;
+        private Query(Bindings.LatentStateKeyValueQueryView raw) { super(raw); this.raw = raw; }
+        public Result<Bindings.LatentStateKeyValueViewIdentity, Bindings.LatentStateKeyValueStateError> info() {
+            return Bindings.LatentStateKeyValue.queryInfo(raw);
+        }
+        public Result<Option<Bindings.LatentStateKeyValueVersionedValue>, Bindings.LatentStateKeyValueStateError> get(byte[] key) {
+            return Bindings.LatentStateKeyValue.getQuery(raw, key);
+        }
+        public Result<Page, Bindings.LatentStateKeyValueStateError> scan(byte[] prefix, Long limit, Option<byte[]> cursor) {
+            return map(Bindings.LatentStateKeyValue.scanQuery(raw, prefix, limit, cursor), this::ownPage);
+        }
+    }
+    public static final class Page implements AutoCloseable {
+        private final Bindings.LatentStateKeyValuePage raw;
+        private final Access view;
+        private boolean closed;
+        private Page(Bindings.LatentStateKeyValuePage raw, Access view) { this.raw = raw; this.view = view; }
+        public Result<Bindings.LatentStateKeyValuePageInfo, Bindings.LatentStateKeyValueStateError> info() {
+            return view.guard(() -> Bindings.LatentStateKeyValue.describePage(raw));
+        }
+        public Result<Option<Bindings.LatentStateKeyValueEntry>, Bindings.LatentStateKeyValueStateError> next() {
+            return view.guard(() -> Bindings.LatentStateKeyValue.pageNext(raw));
+        }
+        @Override public void close() {
+            if (closed) return;
+            try { raw.close(); }
+            finally { closed = true; view.pages--; }
+        }
+    }
+    public static Result<Command, Bindings.LatentStateKeyValueStateError> acquireCommand() {
+        return map(Bindings.LatentStateKeyValue.acquireCommand(), Command::new);
+    }
+    public static Result<Query, Bindings.LatentStateKeyValueStateError> acquireQuery() {
+        return map(Bindings.LatentStateKeyValue.acquireQuery(), Query::new);
+    }
+}
