@@ -5,6 +5,7 @@
   "definition": {
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 75,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -14,25 +15,25 @@
       },
       {
         "name": "Capture immutable qualification source inputs",
-        "run": "# Retain every input used below, including the pinned compiler lock.\n# Historical benchmark archives are not inputs to this runtime lane.\ngit archive --format=tar.gz --output \"$RUNNER_TEMP/typescript-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/typescript-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/typescript-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/typescript-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/typescript-guest-source.sha\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "# Retain every input used below, including the pinned compiler lock.\n# Historical benchmark archives are not inputs to this runtime lane.\ngit archive --format=tar.gz --output \"$RUNNER_TEMP/typescript-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/typescript-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/typescript-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/typescript-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/typescript-guest-source.sha\"\n"
       },
       {
         "name": "Retain the exact reviewed command contract input",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "typescript-guest-command-contract-${{ github.sha }}",
           "path": "tools/ci/contracts/\n${{ runner.temp }}/typescript-guest-source.tar.gz\n${{ runner.temp }}/typescript-guest-source.sha\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
       {
         "uses": "actions/setup-node",
         "with": {
+          "node-version": "24.19.0",
           "cache": "npm",
-          "cache-dependency-path": "sdk/typescript-guest/tools/package-lock.json",
-          "node-version": "24.19.0"
+          "cache-dependency-path": "sdk/typescript-guest/tools/package-lock.json"
         }
       },
       {
@@ -47,15 +48,15 @@
       {
         "uses": "Swatinem/rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -90,8 +91,8 @@
       },
       {
         "name": "Execute supplementary value and ownership models",
-        "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts sdk/typescript-guest/tests/model/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime/tests/model\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts sdk/typescript-guest/tests/model/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime/tests/model\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log\n"
       },
       {
         "name": "Check captured sources and actual generated-resource owners",
@@ -114,22 +115,21 @@
         "run": "python3 tools/qualify_typescript_capsules.py --application-dependencies --output \"$RUNNER_TEMP/typescript-capsule-dependencies\" --tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
-        "if": "always()",
         "name": "Preserve attempted runtime test evidence",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "typescript-guest-runtime-${{ github.sha }}",
           "path": "${{ runner.temp }}/transaction-contract-typescript/report.json\n${{ runner.temp }}/transaction-contract-typescript/source.tar.gz\n${{ runner.temp }}/transaction-contract-typescript/component.wit\n${{ runner.temp }}/transaction-contract-typescript/preparation.json\n${{ runner.temp }}/transaction-contract-typescript/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-typescript/logs/**\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.log\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wit\n${{ runner.temp }}/transaction-contract-typescript/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/generated/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-typescript/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/component.wasm\ntarget/typescript-guest-runtime/runtime-tests.log\ntarget/typescript-guest-runtime/owner-tests.log\n${{ runner.temp }}/typescript-guest-probe/\n${{ runner.temp }}/typescript-capsule-authoring/\n${{ runner.temp }}/typescript-capsule-dependencies/\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 75
+    ]
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
+  "reviewReason": "Preserve exact historical coverage and all current actual compiler/package/runtime obligations while reconciling independently reviewed Phase 4 owners. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
