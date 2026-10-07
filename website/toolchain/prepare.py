@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare a locked npm bundle without running downloaded package code.
 
-npm overrides do not replace bundled dependencies. Replace the complete four
+npm overrides do not replace bundled dependencies. Replace the complete five
 reviewed packages before npm executes, then authenticate the deterministic TAR
 against package-lock.json. This is a derived distribution, not an upstream npm
 release. All intermediate archives stay under ignored target/.
@@ -23,7 +23,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 LIMIT = 16 * 1024 * 1024
 EXPANDED_LIMIT = 64 * 1024 * 1024
-PROFILE = "npm-11.19.1-lsf-bundle-v3"
+PROFILE = "npm-11.19.1-lsf-bundle-v4"
 OUTPUT = ROOT / "target/website-package-manager" / (PROFILE + ".tar")
 CACHE = OUTPUT.parent / "inputs"
 
@@ -175,7 +175,7 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]], *, repair: dict | No
     names: set[str] = set()
     for pin, raw in patches:
         name = pin["name"]
-        if name not in {"ip-address", "undici", "brace-expansion", "http-cache-semantics"} or name in names:
+        if name not in {"ip-address", "undici", "brace-expansion", "http-cache-semantics", "postcss-selector-parser"} or name in names:
             raise ValueError("unexpected bundle replacement")
         names.add(name)
         prefix = "package/node_modules/" + name + "/"
@@ -184,7 +184,8 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]], *, repair: dict | No
         new = package(replacement)
         if old["name"] != name or old["version"] != pin["from"]:
             raise ValueError("unexpected original bundled package")
-        expected = {"balanced-match": "^4.0.2"} if name == "brace-expansion" else {}
+        expected = ({"balanced-match": "^4.0.2"} if name == "brace-expansion" else
+                    {"cssesc": "^3.0.0", "util-deprecate": "^1.0.2"} if name == "postcss-selector-parser" else {})
         if (new["name"] != name or new["version"] != pin["version"]
                 or new.get("dependencies", {}) != expected
                 or new.get("optionalDependencies") or new.get("peerDependencies")
@@ -202,6 +203,16 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]], *, repair: dict | No
                 raise ValueError("replacement dependency graph requires review")
             if any(key.startswith(prefix + "node_modules/") for key in files):
                 raise ValueError("shadowed replacement dependency requires review")
+        if name == "postcss-selector-parser":
+            if old.get("dependencies") != expected or any(key.startswith(prefix + "node_modules/") for key in files):
+                raise ValueError("replacement dependency graph requires review")
+            for dependency_name, version in (("cssesc", "3.0.0"), ("util-deprecate", "1.0.2")):
+                dependency = package(files, "package/node_modules/" + dependency_name + "/")
+                if (dependency.get("name") != dependency_name or dependency.get("version") != version
+                        or dependency.get("dependencies") or dependency.get("optionalDependencies")
+                        or dependency.get("peerDependencies") or dependency.get("bundleDependencies")
+                        or dependency.get("bundledDependencies")):
+                    raise ValueError("replacement dependency graph requires review")
         if name == "http-cache-semantics" and repair is not None:
             if repair["upstreamIntegrity"] != pin["integrity"]:
                 raise ValueError("source repair archive identity drift")
@@ -209,7 +220,7 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]], *, repair: dict | No
         files = {key: value for key, value in files.items() if not key.startswith(prefix)}
         for key, value in replacement.items():
             files[prefix + key.removeprefix("package/")] = value
-    if names != {"ip-address", "undici", "brace-expansion", "http-cache-semantics"}:
+    if names != {"ip-address", "undici", "brace-expansion", "http-cache-semantics", "postcss-selector-parser"}:
         raise ValueError("incomplete bundle replacement")
     return packed(files)
 

@@ -5,6 +5,7 @@ use super::*;
 
 mod bounds;
 mod publications;
+mod trap_kinds;
 
 fn consumption() -> BudgetConsumption {
     BudgetConsumption {

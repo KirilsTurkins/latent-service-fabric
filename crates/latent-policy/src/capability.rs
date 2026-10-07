@@ -20,7 +20,7 @@ pub use narrowing::GrantRestriction;
 pub use resource_request::ResourceRequest;
 pub use resources::{
     CapabilityCeiling, HttpOrigin, RecoveryScopeKind, ResourceConstraint, ResourceTarget,
-    StateResourceScope,
+    StateResourceScope, StreamEndpoint, StreamTransport,
 };
 pub use store::{
     CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, OwnedPolicyDecision,
@@ -99,12 +99,13 @@ fn publication(value: &str) -> bool {
         && value.parse::<latent_core::PublicationId>().is_ok()
 }
 
-// Phase 4 policy documents are explicit opt-ins. This recognizes their typed
-// scopes without extending the default stateless linker or guest authority.
+// Runtime and Phase 4 policies are explicit opt-ins. Their exact contracts and
+// typed scopes do not extend the default stateless linker or guest authority.
 fn supported_contract(value: &str) -> bool {
     latent_core::PHASE3_HOST_ABI_CURRENT
         .interface(value)
         .is_some()
+        || value == latent_core::activation_runtime::CAPABILITY
         || matches!(
             value,
             "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
@@ -126,6 +127,19 @@ fn operation(contract: &str, name: &str) -> bool {
         "latent:log/log@0.1.0" => &["write"],
         "latent:clock/monotonic@0.1.0" => &["now-nanos"],
         "latent:clock/wall@0.1.0" => &["now-unix-millis"],
+        "latent:runtime/activation@0.1.0" => &[
+            "register",
+            "park",
+            "wake",
+            "settle",
+            "close",
+            "observe",
+            "wait-for",
+            "wait-until",
+            "timer-start",
+            "timer-next",
+            "timer-stop",
+        ],
         "latent:random/random@0.1.0" => &["bytes", "u64-value"],
         "latent:blob/blob@0.2.0" => &[
             "create",
@@ -140,6 +154,16 @@ fn operation(contract: &str, name: &str) -> bool {
         "latent:secrets/reader@0.1.0" => &["read"],
         "latent:events/publisher@0.2.0" => &["publish"],
         "latent:http/client@0.2.0" => &["send"],
+        "latent:network/streams@0.1.0" => &[
+            "connect",
+            "read",
+            "write",
+            "ready",
+            "chunk-bytes",
+            "inspect",
+            "shutdown",
+            "close",
+        ],
         "latent:http/streaming@0.3.0" => &[
             "open",
             "write",

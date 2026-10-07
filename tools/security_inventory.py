@@ -93,10 +93,10 @@ def reviewed_npm_derivation(repo: Path, entry: dict, manifest: dict, owner: dict
         require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == profile[field],
                 "npm-derivation-input-drift")
     source = decode_json(read_file(repo, "website/toolchain/source.json"))
-    require(source.get("schema") == 1 and source.get("profile") == "npm-11.19.1-lsf-bundle-v3"
+    require(source.get("schema") == 1 and source.get("profile") == "npm-11.19.1-lsf-bundle-v4"
             and source["base"]["name"] == "npm" and source["base"]["version"] == owner.get("version"),
             "npm-derivation-identity-drift")
-    archive = "file:../../target/website-package-manager/npm-11.19.1-lsf-bundle-v3.tar"
+    archive = "file:../../target/website-package-manager/npm-11.19.1-lsf-bundle-v4.tar"
     require(manifest.get("dependencies", {}).get("npm") == archive
             and owner.get("resolved") == archive and owner.get("integrity") == profile["integrity"]
             and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", profile["integrity"]),

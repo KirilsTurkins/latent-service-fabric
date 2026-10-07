@@ -40,6 +40,11 @@ checks workspace membership and rejects unsafe paths, links and nonregular files
 It builds in a temporary owned directory. A sorted compact inventory identifies
 each selected file's portable path, SHA-256, size and regular-file mode. The source
 snapshot digest hashes this inventory, not tar metadata or physical paths.
+The committed source budget is 64 MiB of file bytes. Its separate Git archive
+ceiling is 72 MiB, preserving 8 MiB for tar headers and padding. Both are hard
+limits; the existing 8,192-file, 4,096-directory and 4 MiB per-file ceilings
+remain independent. The process reader accepts this archive allowance while
+each other build command retains its own smaller output budget.
 Inputs, recipe files and selected tool binaries are checked again after the
 build. Intermediates are removed before publishing successful small outputs;
 failed observations are not published.

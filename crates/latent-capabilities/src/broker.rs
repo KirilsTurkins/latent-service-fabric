@@ -14,6 +14,8 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 mod audit;
 mod clock;
 pub use clock::HostClock;
+mod currentness;
+pub use currentness::is_authority_bookkeeping_busy;
 pub mod blob;
 pub mod diagnostics;
 pub mod events;
@@ -24,6 +26,7 @@ mod invocation;
 pub mod io;
 mod limits;
 mod local_service;
+pub mod network;
 mod ownership;
 mod plan;
 pub mod pools;
@@ -74,6 +77,8 @@ struct Inner {
     sessions: Mutex<Vec<session::RegistryEntry>>,
     pool_diagnostics: std::sync::OnceLock<Weak<pools::Inner>>,
     pool_registered: std::sync::atomic::AtomicBool,
+    diagnostic_sink:
+        std::sync::OnceLock<Arc<dyn latent_core::diagnostic::ActivationDiagnosticSink>>,
 }
 impl ActivationCapabilityBroker {
     pub fn new(
@@ -102,12 +107,20 @@ impl ActivationCapabilityBroker {
                         .collect(),
                 ),
                 pool_diagnostics: std::sync::OnceLock::new(),
+                diagnostic_sink: std::sync::OnceLock::new(),
             }),
         })
     }
     #[must_use]
     pub fn catalog_owner_matches(&self, catalog: &LifecycleAuthorityHandle) -> bool {
         self.inner.catalog.same_owner(catalog)
+    }
+    /// Configure the single existing node journal before transports start.
+    pub fn install_diagnostic_sink(
+        &self,
+        sink: Arc<dyn latent_core::diagnostic::ActivationDiagnosticSink>,
+    ) -> Result<(), PlatformError> {
+        self.inner.diagnostic_sink.set(sink).map_err(|_| denied())
     }
     #[must_use]
     pub fn clock_owner_matches(&self, clock: &Arc<dyn ActivationClock>) -> bool {
@@ -155,7 +168,14 @@ fn invalid() -> PlatformError {
     error(PlatformErrorCode::InvalidArgument, "capability-invalid")
 }
 fn denied() -> PlatformError {
-    error(PlatformErrorCode::PermissionDenied, "capability-denied")
+    latent_core::diagnostic::ActivationDiagnostic::new(
+        latent_core::diagnostic::DiagnosticStage::Binding,
+        latent_core::diagnostic::DiagnosticReason::GrantDenied,
+    )
+    .attach(error(
+        PlatformErrorCode::PermissionDenied,
+        "capability-denied",
+    ))
 }
 fn busy() -> PlatformError {
     error(PlatformErrorCode::ResourceExhausted, "capability-busy")
