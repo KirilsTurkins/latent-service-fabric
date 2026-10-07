@@ -185,7 +185,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     ("generated-bindings", read_file(output / "bindings.json"))))
                 if 'java-generated-inputs.json' in files:
                     data = files['java-generated-inputs.json']
-                    materials.append({"name": "java-generator-inputs", "role": "generated",
+                    materials.append({"name": "java-generator-inputs",
                                       "digest": digest(data), "size": len(data)})
                 if (output / 'runtime-profile.json').exists():
                     runtime_receipt = read_file(output / 'runtime-profile.json', 4 * 1024 * 1024)

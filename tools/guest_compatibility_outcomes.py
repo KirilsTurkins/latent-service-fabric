@@ -36,8 +36,15 @@ def from_build(source, descriptor, receipt):
                                 source=digest(original_source), component=capture.component)
         runtime = selected['standardRuntime']
         if runtime['state'] == 'selected-unqualified':
-            raw = paths.read(source, str(parent / 'runtime-profile.json').replace('\\', '/'), 4 * 1024 * 1024)
+            owner_runtime = runtime.get('receiptName') == 'standard-runtime-selection.json'
+            raw = paths.read(source, str(parent / runtime.get('receiptName', 'runtime-profile.json')).replace('\\', '/'),
+                             65536 if owner_runtime else 4 * 1024 * 1024)
             require(digest(raw) == runtime['receiptDigest'], 'compatibility-outcomes-stale-runtime')
+            if owner_runtime:
+                from tools import guest_runtime_receipts
+                owner = guest_runtime_receipts.read(raw, language=selected['language'], source=digest(original_source),
+                    component=capture.component, profile=runtime['profile'])
+                require(owner['ownerIssue'] == runtime.get('ownerIssue'), 'compatibility-outcomes-stale-runtime-owner')
         for material in selected['materials']:
             if material['name'] == 'automatic-compiler-patches':
                 raw = paths.read(source, str(parent / 'compiler-patches.json').replace('\\', '/'), 4 * 1024 * 1024)

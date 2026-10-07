@@ -1,7 +1,7 @@
 """Observe one actual Go source build; never sign, execute or grant authority."""
 from __future__ import annotations
 
-from tools import guest_compatibility_context_build
+from tools import guest_compatibility_context_build, guest_runtime_receipts
 
 import json
 from pathlib import Path
@@ -31,6 +31,7 @@ RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_st
 RECIPE += ("tools/go_generator_authoring.py",)
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
+RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
@@ -119,13 +120,18 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("toolchain-config", files["vendor/lsf/sdk/go-guest/toolchain.lock.json"]),
                 ("dependency-lock", files["vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json"])))
             if 'go-generated-inputs.json' in files:
-                materials.append({'name': 'go-generator-inputs', 'role': 'generated',
+                materials.append({'name': 'go-generator-inputs',
                                   'digest': digest(files['go-generated-inputs.json']),
                                   'size': len(files['go-generated-inputs.json'])})
             if closure is not None:
                 for name in ("application-dependencies.json", "compiler-containment.json", "go-module-build-inputs.json"):
                     data = read_file(output / name, 16 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'go-component-async-v1'
+            materials.append(guest_runtime_receipts.emit(output, 'go', runtime_profile, files,
+                source_inputs, component, materials, graph=closure.lock if closure is not None else None,
+                binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],
+                    "target": "wasip1/wasm", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("Go build clock or overall deadline invalid")

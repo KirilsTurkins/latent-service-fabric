@@ -27,7 +27,8 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
                 'compatibility-context-duplicate-build-material')
         captured[row['name']] = row
         if row['name'] not in {'source-snapshot', 'package-inputs'}:
-            kind = 'generated' if row.get('role') == 'generated' else 'compiler'
+            kind = 'generated' if row['name'] in {'c-generator-inputs', 'go-generator-inputs',
+                'java-generator-inputs', 'typescript-generator-inputs', 'executable-input-outputs'} else 'compiler'
             retained.append(context.material(kind, row['name'], row['digest']))
 
     def bound_receipt(filename, name, maximum):
@@ -38,13 +39,28 @@ def finish(output: Path, files: dict[str, bytes], source_inputs: bytes,
         return raw, decode(raw, maximum)
 
     runtime_path = output / 'runtime-profile.json'
-    if runtime_path.exists():
-        raw, runtime = bound_receipt('runtime-profile.json', 'runtime-profile', 4 * 1024 * 1024)
+    owner_runtime = output / 'standard-runtime-selection.json'
+    if runtime_path.exists() or owner_runtime.exists():
+        filename = 'standard-runtime-selection.json' if owner_runtime.exists() else 'runtime-profile.json'
+        name = 'standard-runtime-selection' if owner_runtime.exists() else 'runtime-profile'
+        raw, runtime = bound_receipt(filename, name, 65536 if owner_runtime.exists() else 4 * 1024 * 1024)
+        if owner_runtime.exists():
+            from tools import guest_runtime_receipts
+            guest_runtime_receipts.verify_build(runtime, report['language'], files, source_inputs, component,
+                [row for row in materials if row['name'] != 'standard-runtime-selection'])
         require(isinstance(runtime, dict) and isinstance(runtime.get('profile'), str),
                 'compatibility-context-runtime-receipt')
         profile = compatibility.token(runtime['profile'])
         retained.append(context.material('runtime', 'selected-standard-runtime', digest(raw), profile=profile))
         selected = {'state': 'selected-unqualified', 'profile': profile, 'receiptDigest': digest(raw)}
+        if owner_runtime.exists():
+            selected['receiptName'] = filename
+            selected['ownerIssue'] = runtime['ownerIssue']
+            retained.append(context.material('runtime', 'selected-runtime-original',
+                runtime['originalRuntimeInputsDigest'], profile=profile))
+            for transform in runtime['transformations']:
+                retained.append(context.material('generated', transform['name'], transform['resultDigest'],
+                    original=transform['originalDigest'], transformation=digest(encode(transform))))
         # A compiler receipt identifies selection. Even a "qualified" string
         # cannot establish this component's reachability or runtime behavior.
     patches_path = output / 'compiler-patches.json'

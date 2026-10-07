@@ -1,7 +1,7 @@
 """Observe one actual C source build; never sign, execute or grant authority."""
 from __future__ import annotations
 
-from tools import guest_compatibility_context_build
+from tools import guest_compatibility_context_build, guest_runtime_receipts
 
 import json
 from pathlib import Path
@@ -36,6 +36,7 @@ RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_b
           "examples/echo-contract/deployment.json")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
+RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += guest_resources.RECIPE
@@ -161,8 +162,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 materials.append({"name": "c-compiler-sysroot-and-isolation", "digest": digest(data), "size": len(data)})
             if "c-generated-inputs.json" in files:
                 data = files["c-generated-inputs.json"]
-                materials.append({"name": "c-generator-inputs", "role": "generated",
+                materials.append({"name": "c-generator-inputs",
                                   "digest": digest(data), "size": len(data)})
+            materials.append(guest_runtime_receipts.emit(output, 'c', 'closed-synchronous-v1', files,
+                source_inputs, component, materials, graph=closure.lock if closure is not None else None,
+                binding_digest=binding_digest, configuration={"profile": 'closed-synchronous-v1', "world": project['world'],
+                    "target": "wasm32-wasi", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("C build clock or overall deadline invalid")

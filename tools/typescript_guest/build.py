@@ -1,7 +1,7 @@
 """Observe actual TypeScript sources, generated bindings and compiler inputs."""
 from __future__ import annotations
 
-from tools import guest_compatibility_context_build
+from tools import guest_compatibility_context_build, guest_runtime_receipts
 import json
 from pathlib import Path
 import tempfile
@@ -31,6 +31,7 @@ RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_st
            "tools/typescript_dependency_authoring.py", "tools/captured_compiler_isolation.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
+RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
@@ -141,12 +142,17 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"])))
             if 'typescript-generated-inputs.json' in files:
                 data = files['typescript-generated-inputs.json']
-                materials.append({"name": "typescript-generator-inputs", "role": "generated",
+                materials.append({"name": "typescript-generator-inputs",
                                   "digest": digest(data), "size": len(data)})
             if closure is not None:
                 for name in ("application-dependencies.json", "npm-inputs.json", "compiler-containment.json", "bundle-selected-inputs.json", "application.mjs.map"):
                     data = read_file(output / name, 32 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'spidermonkey-public-sync-v1'
+            materials.append(guest_runtime_receipts.emit(output, 'typescript', runtime_profile, files,
+                source_inputs, component, materials, graph=closure.lock if closure is not None else None,
+                binding_digest=generated['filesDigest'], configuration={"profile": runtime_profile, "world": project['world'],
+                    "target": "wasm32-component", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("compiler observation deadline or clock invalid")

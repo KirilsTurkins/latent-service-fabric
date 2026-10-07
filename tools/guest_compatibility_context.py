@@ -57,11 +57,18 @@ def validate(value, *, report=None, source=None, component=None, expected_materi
     if value['componentDigest'] is not None:
         sha(value['componentDigest'])
     compatibility.token(value['hostAbiProfile'])
-    selection = members(value['standardRuntime'], {'state'}, {'profile', 'receiptDigest'})
+    selection = members(value['standardRuntime'], {'state'}, {'profile', 'receiptDigest', 'receiptName', 'ownerIssue'})
     require(selection['state'] in {'absent', 'selected-unqualified'}, 'compatibility-context-runtime-state')
     if selection['state'] == 'selected-unqualified':
         require({'profile', 'receiptDigest'} <= selection.keys(), 'compatibility-context-runtime-identity')
         compatibility.token(selection['profile']); sha(selection['receiptDigest'])
+        if 'receiptName' in selection:
+            require(selection['receiptName'] in {'runtime-profile.json', 'standard-runtime-selection.json'},
+                    'compatibility-context-runtime-receipt-name')
+        if 'ownerIssue' in selection:
+            integer(selection['ownerIssue'], 1, 2**31 - 1)
+            require(selection.get('receiptName') == 'standard-runtime-selection.json',
+                    'compatibility-context-runtime-owner-without-receipt')
     else:
         require(set(selection) == {'state'}, 'compatibility-context-absent-runtime')
     require(isinstance(value['materials'], list) and len(value['materials']) <= MAX_MATERIALS,
@@ -105,7 +112,9 @@ def present(value):
     validate(value)
     selected = value['standardRuntime']
     runtime = selected.get('profile', 'not-observed')
+    owner = f"Implementation/qualification owner: #{selected['ownerIssue']}.\n" if 'ownerIssue' in selected else ''
     return (f"Standard runtime: {runtime}; qualification unknown.\n"
             f"Host ABI: {value['hostAbiProfile']}.\n"
+            f"{owner}"
             "Reachability and initialization remain unknown; worker drain remains unproven.\n"
             "Use the ordinary captured dependency/profile workflow; review grants separately.\n")

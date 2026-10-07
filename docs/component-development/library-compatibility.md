@@ -36,6 +36,16 @@ errors do not identify a task, timer or stack limit. A client process being
 reaped does not establish a library worker's physical retirement. These sidecars
 describe observed selections and outcomes, with unknown API compatibility.
 
+Rust, Go, C and TypeScript builds also record the maintained owner's automatic
+selection in `standard-runtime-selection.json`. It binds the captured runtime
+sources, selected dependency graph, compiler/recipe materials, WIT input
+inventory, generated binding result and build configuration. No application
+runtime patch is required. The receipt identifies the runtime implementation
+and qualification owner; it does not certify arbitrary APIs, transitive
+callbacks or lifecycle quiescence. Renaming a package changes its captured
+graph identity without changing API eligibility. These receipts remain beside
+the build and preserve the packaged compatibility report and asset identity.
+
 Reports distinguish dependency resolution, target/ABI problems, unsupported
 operations, missing runtime implementations, unqualified profiles, unknown
 behavior, optional application extensions, provider installation, grants,
