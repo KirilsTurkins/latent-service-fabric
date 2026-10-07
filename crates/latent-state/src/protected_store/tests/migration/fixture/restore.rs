@@ -29,6 +29,10 @@ pub(in crate::protected_store::tests::migration) struct StageOwners {
 }
 
 impl StageOwners {
+    pub(in crate::protected_store::tests::migration) fn input_owners(&self) -> Arc<Owners> {
+        Arc::clone(&self.source)
+    }
+
     pub fn new(setup: &Setup, source: &Arc<Owners>) -> Self {
         Self {
             source: Arc::clone(source),
@@ -290,6 +294,19 @@ impl RestoreStageOwners for StageOwners {
         request: &RestoreStageRequest,
     ) -> Result<(), StoreError> {
         self.verify_view(staged, input, request, RecoveryStatus::Staging)
+    }
+    fn verify_completed(
+        &self,
+        staged: &ReadView,
+        input: &ProtectedRestoreInput,
+        request: &RestoreStageRequest,
+    ) -> Result<(), StoreError> {
+        self.verify_view(
+            staged,
+            input,
+            request,
+            RecoveryStatus::ReconciliationRequired,
+        )
     }
     fn dispatch_checkpoint(&self, staged: &ReadView) -> Result<(u64, u64), StoreError> {
         self.current_controls()?;
