@@ -237,25 +237,7 @@ impl WasmtimeBackend {
         Result<Option<latent_capabilities::broker::CapabilitySession>, GuestOutcome>,
         PlatformError,
     > {
-        let Some(owner) = &self.shared.capabilities else {
-            return Ok(Ok(None));
-        };
-        let publication = runtime.eligibility.as_ref().ok_or_else(|| {
-            platform_error(
-                PlatformErrorCode::PermissionDenied,
-                "capability publication owner required",
-                false,
-            )
-        })?;
-        self.capability_session(
-            owner,
-            request,
-            cancellation,
-            publication,
-            accounting.deadline(),
-            stop,
-        )
-        .await
-        .map(|result| result.map(Some))
+        self.capability_session(runtime, request, cancellation, stop, accounting.deadline())
+            .await
     }
 }
