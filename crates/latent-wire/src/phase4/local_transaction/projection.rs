@@ -60,6 +60,13 @@ pub(super) fn response(
         Completion::Existing {
             command, result, ..
         } => {
+            #[cfg(test)]
+            if let Err(error) = &result {
+                eprintln!(
+                    "actual-command phase=ExistingResult platform-code={:?}",
+                    error.code
+                );
+            }
             let result = result.as_ref().ok().and_then(Option::as_ref);
             let outcome = match result {
                 Some(result) => result_outcome(&command, result, current_consumption)?,

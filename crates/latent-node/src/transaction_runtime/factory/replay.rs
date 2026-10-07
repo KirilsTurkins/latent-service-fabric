@@ -1,5 +1,6 @@
 //! Authorized terminal reads reuse the original prepaid physical reservation.
 use super::{atomic, authorization, NativeTransactionAdmission, TransactionCompletionResult};
+use crate::transaction_runtime::observation::{self, Phase};
 use latent_commit::atomic::{AtomicError, CommandRecord, DurableResult};
 use latent_core::PlatformError;
 use latent_state::store_io::StoreIoKind;
@@ -43,15 +44,18 @@ impl NativeTransactionAdmission {
                         .with_current(&mut || {})
                         .map_err(|_| AtomicError::PermissionDenied)
                 });
-                Ok(read.and_then(|(command, result)| {
-                    if command.attempt() == selected.attempt() {
-                        return Ok((command, result.map(Arc::new)));
-                    }
-                    // A durable retry receipt selected this older generation.
-                    // Do not replace its immutable outcome with the latest one.
-                    drop(result);
-                    historical_attempt(&view, &selected, observed)
-                }))
+                Ok(observation::atomic(
+                    Phase::ExistingReplay,
+                    read.and_then(|(command, result)| {
+                        if command.attempt() == selected.attempt() {
+                            return Ok((command, result.map(Arc::new)));
+                        }
+                        // A durable retry receipt selected this older generation.
+                        // Do not replace its immutable outcome with the latest one.
+                        drop(result);
+                        historical_attempt(&view, &selected, observed)
+                    }),
+                ))
             })
             .map_err(|_| atomic(AtomicError::Unavailable))?;
         let read = job
@@ -59,12 +63,15 @@ impl NativeTransactionAdmission {
             .map_err(|_| atomic(AtomicError::Unavailable))?
             .map_err(|_| atomic(AtomicError::Unavailable))?
             .map_err(atomic)?;
-        authority.bind_result(
-            &read.0,
-            read.1
-                .as_ref()
-                .is_some_and(|result| result.value().is_some()),
-            Arc::clone(&self.owners.time),
+        observation::platform(
+            Phase::ReplayBinding,
+            authority.bind_result(
+                &read.0,
+                read.1
+                    .as_ref()
+                    .is_some_and(|result| result.value().is_some()),
+                Arc::clone(&self.owners.time),
+            ),
         )?;
         authority.with_current(&mut || {})?;
         Ok(read)
@@ -98,8 +105,11 @@ impl NativeTransactionAdmission {
             } => (command, false),
             _ => return Ok(()),
         };
-        self.response_authority()?
-            .bind_result(command, payload, Arc::clone(&self.owners.time))
+        observation::platform(
+            Phase::CompletionBinding,
+            self.response_authority()?
+                .bind_result(command, payload, Arc::clone(&self.owners.time)),
+        )
     }
 }
 

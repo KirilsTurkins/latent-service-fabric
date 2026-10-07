@@ -117,6 +117,13 @@ impl LocalTransactionRuntime {
         let installation = selected.installation;
         Ok(Box::pin(async move {
             let (receipt, admission) = retained.await;
+            #[cfg(test)]
+            if let latent_activation::ActivationOutcome::Failed { error, .. } = &receipt.outcome {
+                eprintln!(
+                    "actual-command phase=ManagerCompleted platform-code={:?}",
+                    error.code
+                );
+            }
             let Some(owned) = admission.take_owned_completion()? else {
                 // A pre-admission rejection owns no command result. Preserve
                 // the manager's exact conflict/authorization disposition;
@@ -133,6 +140,15 @@ impl LocalTransactionRuntime {
                 &self.limits,
                 self.services.clock.as_ref(),
             )
+            .inspect_err(|error| {
+                #[cfg(test)]
+                eprintln!(
+                    "actual-command phase=Projection platform-code={:?}",
+                    error.code
+                );
+                #[cfg(not(test))]
+                let _ = error;
+            })
         }))
     }
 }

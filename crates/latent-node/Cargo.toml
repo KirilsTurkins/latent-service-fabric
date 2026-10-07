@@ -10,6 +10,9 @@ description = "Single-node activation lifecycle orchestration and node contracts
 [lints]
 workspace = true
 
+[features]
+transaction-test-observation = []
+
 [dependencies]
 latent-activation = { path = "../latent-activation" }
 latent-admission = { path = "../latent-admission" }
