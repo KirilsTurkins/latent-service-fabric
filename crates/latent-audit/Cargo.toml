@@ -10,6 +10,9 @@ description = "Bounded durable audit journal, scoped queries, and explicit recov
 [lints]
 workspace = true
 
+[features]
+test-support = []
+
 [dependencies]
 latent-core = { path = "../latent-core" }
 serde.workspace = true

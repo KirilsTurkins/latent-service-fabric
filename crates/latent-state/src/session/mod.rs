@@ -5,6 +5,7 @@
 
 mod accounting;
 mod codec;
+pub mod entities;
 pub(crate) mod offline;
 mod validation;
 pub mod version;

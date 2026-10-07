@@ -2,10 +2,31 @@ use super::*;
 #[cfg(unix)]
 mod capability;
 #[cfg(unix)]
+mod effect_management;
+#[cfg(unix)]
 mod namespace;
 #[cfg(unix)]
 mod static_trigger;
 use latent_core::{ArtifactBlobDigest, TenantId};
+
+#[test]
+fn persisted_floor_and_effect_action_names_keep_their_original_meanings() {
+    for (raw, action) in [
+        (
+            "\"command-floor-release\"",
+            AuditControlAction::CommandFloorRelease,
+        ),
+        ("\"effect-plan\"", AuditControlAction::EffectPlan),
+        ("\"effect-reconcile\"", AuditControlAction::EffectReconcile),
+        ("\"payload-purge\"", AuditControlAction::PayloadPurge),
+    ] {
+        assert_eq!(
+            serde_json::from_str::<AuditControlAction>(raw).unwrap(),
+            action
+        );
+        assert_eq!(serde_json::to_string(&action).unwrap(), raw);
+    }
+}
 use std::{
     path::PathBuf,
     sync::atomic::{AtomicU64, Ordering},

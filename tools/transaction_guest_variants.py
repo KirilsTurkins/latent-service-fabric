@@ -141,7 +141,10 @@ def create(directory: Path, language: str, variant: str, name: str | None = None
     dependency = read_file(project / "vendor/lsf/wit/platform/http-v2/package.wit")
     (project / SOURCES[language]).write_bytes(code.encode())
     (project / "wit/world.wit").write_bytes(world.encode())
-    target = project / "wit/deps/forbidden-http/package.wit"
+    # Keep the captured package's canonical directory. Compiler staging can
+    # resolve the same dependency independently; a second alias would declare
+    # the identical package twice in the authored world.
+    target = project / "wit/deps/http-v2/package.wit"
     target.parent.mkdir(parents=True, exist_ok=False)
     with target.open("xb") as output:
         output.write(dependency)

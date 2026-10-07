@@ -11,8 +11,10 @@ use latent_state::{
     embedded::{EmbeddedStore, Family, ReadView, StoreError},
     namespace::{
         catalog::{NamespaceOperationContext, NamespaceRead},
+        history::NamespaceHistory,
         NamespaceRecord,
     },
+    session::{version::ViewIdentity, StateMode, StateScope},
     store_io::StoreIoKind,
 };
 
@@ -112,6 +114,7 @@ fn inspect_in(
         quota: Some(response::quota(read.record().quota)),
         generation: read.record().version.generation,
         policy_digest: Some(access.policy_digest.clone()),
+        namespace_policy_digest: super::authorization::policy_precondition(access),
     };
     Ok(Ok((read, value)))
 }
@@ -187,6 +190,7 @@ pub(super) async fn receipt(
                         c::GetStateOperationReceiptResponse {
                             receipt: Some(state_receipt.public),
                             namespace_receipt: None,
+                            audit_ack: None,
                         },
                     )));
                 }
@@ -203,6 +207,7 @@ pub(super) async fn receipt(
                     c::GetStateOperationReceiptResponse {
                         receipt: None,
                         namespace_receipt: Some(public),
+                        audit_ack: None,
                     },
                 )))
             })();
@@ -221,13 +226,14 @@ pub(super) async fn receipt(
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    let acknowledgement = read_ack(finish).await;
-    let (read, receipt, public) = result.map_err(|error| {
+    let acknowledgement = audit::ack(finish).await;
+    require_read_ack(&acknowledgement)?;
+    let (read, receipt, mut public) = result.map_err(|error| {
         protected_error(latent_state::protected_store::ProtectedStoreError::Store(
             error,
         ))
     })??;
-    acknowledgement?;
+    public.audit_ack = Some(acknowledgement);
     response::owned(
         inner,
         worker_permit,
@@ -294,8 +300,11 @@ pub(super) fn native_namespace(error: NamespaceError) -> StoreError {
         _ => StoreError::Corrupt,
     }
 }
-async fn read_ack(finish: audit::Finish) -> Result<(), PlatformError> {
+pub(super) async fn read_ack(finish: audit::Finish) -> Result<(), PlatformError> {
     let ack = audit::ack(finish).await;
+    require_read_ack(&ack)
+}
+fn require_read_ack(ack: &c::AuditAck) -> Result<(), PlatformError> {
     if ack.status == c::AuditAckStatus::OutcomeUnknown as i32 {
         return Err(error(
             PlatformErrorCode::Unavailable,

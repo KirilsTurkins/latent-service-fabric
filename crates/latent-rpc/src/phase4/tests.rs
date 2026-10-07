@@ -1,5 +1,60 @@
 use super::*;
 use crate::{control::v1 as c, invocation::v1 as i, transaction::v1 as t};
+mod dispatcher;
+
+#[test]
+fn namespace_inspection_preserves_existing_wire_field_and_separate_captured_policy() {
+    use prost::Message;
+    let namespace_policy = format!("sha256:{}", "a".repeat(64));
+    // Existing development clients encoded their configuration digest at
+    // field 11. The richer captured policy precondition is independently 12.
+    let mut old_wire = vec![0x5a, 71];
+    old_wire.extend_from_slice(namespace_policy.as_bytes());
+    let old = c::NamespaceInspection::decode(old_wire.as_slice()).unwrap();
+    assert_eq!(old.namespace_policy_digest, namespace_policy);
+    assert_eq!(old.policy_digest, None);
+    let captured_policy = format!("sha256:{}", "b".repeat(64));
+    let current = c::NamespaceInspection {
+        namespace_policy_digest: namespace_policy.clone(),
+        policy_digest: Some(captured_policy.clone()),
+        ..Default::default()
+    };
+    let wire = current.encode_to_vec();
+    assert_eq!(&wire[..old_wire.len()], old_wire);
+    assert_eq!(wire[old_wire.len()], 0x62);
+    let decoded = c::NamespaceInspection::decode(wire.as_slice()).unwrap();
+    assert_eq!(decoded.namespace_policy_digest, namespace_policy);
+    assert_eq!(
+        decoded.policy_digest.as_deref(),
+        Some(captured_policy.as_str())
+    );
+    let legacy = c::NamespaceInspection::decode(old.encode_to_vec().as_slice()).unwrap();
+    assert_eq!(legacy.policy_digest, None);
+}
+
+#[test]
+fn development_effect_discriminants_remain_distinct_from_additive_floor_actions() {
+    assert_eq!(
+        c::AuditControlAction::try_from(23).unwrap(),
+        c::AuditControlAction::EffectPlan
+    );
+    assert_eq!(
+        c::AuditControlAction::try_from(29).unwrap(),
+        c::AuditControlAction::PayloadPurge
+    );
+    assert_eq!(
+        c::AuditControlAction::try_from(30).unwrap(),
+        c::AuditControlAction::CommandFloorRelease
+    );
+    assert_eq!(
+        c::StateMutationKind::try_from(5).unwrap(),
+        c::StateMutationKind::ReconcileEffect
+    );
+    assert_eq!(
+        c::StateMutationKind::try_from(6).unwrap(),
+        c::StateMutationKind::ReleaseExpiredCommandFloor
+    );
+}
 
 fn namespace() -> t::NamespaceSelector {
     t::NamespaceSelector {
@@ -347,6 +402,7 @@ fn operation_receipt_recovery_requires_one_associated_receipt() {
     let request = Request::from(c::GetStateOperationReceiptRequest {
         namespace: Some(inspect()),
         operation_id: "original".into(),
+        original_effect_plan: None,
     });
     assert!(
         Response::from(c::GetStateOperationReceiptResponse::default())
@@ -367,7 +423,8 @@ fn operation_receipt_recovery_requires_one_associated_receipt() {
     };
     assert!(Response::from(c::GetStateOperationReceiptResponse {
         receipt: None,
-        namespace_receipt: Some(receipt.clone())
+        namespace_receipt: Some(receipt.clone()),
+        audit_ack: None,
     })
     .validate_for(&request)
     .is_ok());
@@ -375,7 +432,8 @@ fn operation_receipt_recovery_requires_one_associated_receipt() {
     other.operation_id = "new-operation".into();
     assert!(Response::from(c::GetStateOperationReceiptResponse {
         receipt: None,
-        namespace_receipt: Some(other)
+        namespace_receipt: Some(other),
+        audit_ack: None,
     })
     .validate_for(&request)
     .is_err());

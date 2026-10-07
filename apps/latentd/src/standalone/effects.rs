@@ -27,6 +27,10 @@ pub struct EffectRuntime {
 }
 
 impl EffectRuntime {
+    #[must_use]
+    pub fn management_port(&self) -> latent_effects::runtime::DispatcherManagementPort {
+        self.owner.management_port()
+    }
     pub async fn start(
         config: DispatcherConfig,
         store: Arc<ProtectedStoreOwner>,

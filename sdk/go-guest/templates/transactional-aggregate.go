@@ -3,8 +3,8 @@ package export_examples_transactional_aggregate_api
 
 import (
     "encoding/binary"
-    api "wit_component/examples_transactional_aggregate_api"
     wit "go.bytecodealliance.org/pkg/wit/types"
+    api "wit_component/examples_transactional_aggregate_api"
     "wit_component/lsf/state"
     "wit_component/lsf/intents"
 )

@@ -3,6 +3,7 @@ use crate::embedded::{EmbeddedStore, FencedStoreError, StoreLimits};
 use crate::namespace::NamespaceQuota;
 use std::fs::OpenOptions;
 
+mod entities;
 mod history;
 mod inspection;
 
