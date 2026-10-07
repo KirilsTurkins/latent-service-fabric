@@ -25,6 +25,9 @@ latent-control-store = { path = "../latent-control-store" }
 latent-manifest = { path = "../latent-manifest" }
 latent-policy = { path = "../latent-policy" }
 latent-capabilities = { path = "../latent-capabilities" }
+latent-state = { path = "../latent-state" }
+latent-commit = { path = "../latent-commit" }
+latent-effects = { path = "../latent-effects" }
 latent-admission = { path = "../latent-admission" }
 http-body.workspace = true
 prost.workspace = true
@@ -35,6 +38,7 @@ tonic.workspace = true
 
 [dev-dependencies]
 latent-streams = { path = "../latent-streams", features = ["development-outbound"] }
+latent-core = { path = "../latent-core", features = ["test-support"] }
 serde_json.workspace = true
 tempfile.workspace = true
 latent-scheduler = { path = "../latent-scheduler" }

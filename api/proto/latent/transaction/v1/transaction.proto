@@ -203,6 +203,8 @@ enum EffectDisposition {
   EFFECT_DISPOSITION_EXPIRED = 6;
   EFFECT_DISPOSITION_POLICY_BLOCKED = 7;
   EFFECT_DISPOSITION_ADMINISTRATIVELY_TERMINATED = 8;
+  EFFECT_DISPOSITION_RETRY_SCHEDULED = 9;
+  EFFECT_DISPOSITION_DEAD_LETTERED = 10;
 }
 
 message EffectReceipt {
@@ -218,6 +220,10 @@ message EffectReceipt {
   optional string management_operation_receipt_id = 10;
   // No universal exactly-once delivery or completion order is implied.
   string provider_profile = 11;
+  // Empty on historical records without a supported durable mutation version.
+  bytes record_version = 12;
+  optional uint64 owner_epoch = 13;
+  optional uint64 claim_generation = 14;
 }
 
 message GetEffectRequest {

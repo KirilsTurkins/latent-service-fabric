@@ -101,7 +101,7 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
                 from .build_provenance import complete
                 complete(working, descriptor, cli, packager, packaged)
                 receipt = {"schemaVersion": "latent.dev.build.v1", "source": record["identity"], "recipe": trusted,
-                    "host": host, "target": recipe["target"], "hostAbi": HOST_ABI,
+                    "host": host, "target": recipe["target"], "hostAbi": descriptor["hostAbi"],
                     "artifacts": build_artifacts.identities(working, descriptor["artifacts"]), "package": packaged,
                     "tools": recipe["tools"], "template": descriptor["template"], "authority": "observed-local-build",
                     "toolInventory": inventory,

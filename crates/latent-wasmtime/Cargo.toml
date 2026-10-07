@@ -68,6 +68,7 @@ seccompiler = "=0.5.0"
 
 [dev-dependencies]
 getrandom = "=0.4.3"
+latent-audit = { path = "../latent-audit", features = ["test-support"] }
 latent-ingress = { path = "../latent-ingress" }
 base64.workspace = true
 latent-signing = { path = "../latent-signing" }

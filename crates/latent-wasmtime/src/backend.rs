@@ -495,6 +495,35 @@ impl WasmtimeBackend {
             Err(outcome) => return Ok(outcome),
         };
         let function = self.requested_function(&runtime, &request)?;
+        let transaction = cancellation.transaction_host();
+        let needs_transaction = runtime
+            .surface
+            .imports
+            .contains(crate::surface::transaction::STATE)
+            || runtime
+                .surface
+                .imports
+                .contains(crate::surface::transaction::INTENTS);
+        if needs_transaction && transaction.is_none() {
+            return Err(platform_error(
+                PlatformErrorCode::PermissionDenied,
+                "scoped transaction execution owner required",
+                false,
+            ));
+        }
+        if let Some(host) = &transaction {
+            if !self.config.transactional_state
+                || !needs_transaction
+                || host.activation_id() != &request.activation.activation_id
+                || !host.budget().is_same_instance(accounting.budget())
+            {
+                return Err(platform_error(
+                    PlatformErrorCode::PermissionDenied,
+                    "transaction execution owner mismatch",
+                    false,
+                ));
+            }
+        }
         let temporary_buffer_guard = self.shared.resources.temporary_buffer();
         let raw_input = input::RawInvocationInput::new(
             std::mem::take(&mut request.activation.input),
@@ -539,6 +568,7 @@ impl WasmtimeBackend {
             &stop,
             accounting,
             capabilities,
+            transaction,
             runtime.surface.hostcall_fuel,
         )?);
         // Decoding and every borrowed validation have completed. The Store now
@@ -684,6 +714,7 @@ impl WasmtimeBackend {
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
+        transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
         hostcall_fuel: usize,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
@@ -721,6 +752,9 @@ impl WasmtimeBackend {
         );
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
+        if let Some(transaction) = transaction {
+            host_state.transaction = crate::host::transaction::Access::attach(transaction);
+        }
         host_state.currentness_read_wait = self.shared.currentness_read_wait.clone();
         host_state.runtime_stop = Some(Arc::clone(stop));
         if self.config.java_guest {
