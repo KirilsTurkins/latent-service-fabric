@@ -29,8 +29,10 @@ For a complete DATA command, the peer records the accepted connection ordinal,
 normalized message length and SHA-256, and recipient count. It retains no
 message, envelope address or AUTH input in its observations. With
 `drop_mutation_reply=True`, it records that mutation and closes the connection
-before sending its successful reply. Accepted mutations and confirmed replies
-are separate counters. The caller must preserve the guest's actual disposition
+before sending its successful reply. Accepted mutations and sent replies
+are separate counters. A sent reply means all reply bytes were submitted to
+the local socket; it does not confirm client receipt or a remote outcome.
+Client confirmation remains unobserved. The caller must preserve the guest's actual disposition
 and inspect the independently observed connection count before making a replay
 claim. The peer never infers a guest outcome.
 

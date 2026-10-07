@@ -35,7 +35,7 @@ class SmtpPeer:
         self.drop_mutation_reply = drop_mutation_reply
         self.fragment_bytes = fragment_bytes
         self.clients = {}
-        self.attempts = self.rejected = self.expired = self.replies = 0
+        self.attempts = self.rejected = self.expired = self.sent_replies = 0
         self.mutations = []
         self.deadline = time.monotonic() + LIFETIME_SECONDS
         self.listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -61,7 +61,8 @@ class SmtpPeer:
             "openConnections": len(self.clients),
             "listenerOwners": int(self.listener is not None),
             "acceptedMutations": len(self.mutations),
-            "confirmedMutationReplies": self.replies,
+            "sentMutationReplies": self.sent_replies,
+            "clientConfirmation": "not-observed",
             "mutationRecords": [dict(row) for row in self.mutations],
             "maximumConnections": MAX_CONNECTIONS,
             "maximumAttempts": MAX_ATTEMPTS,
@@ -117,7 +118,7 @@ class SmtpPeer:
                     self._close_client(stream)
                     return
                 self._reply(record, b"250 accepted\r\n")
-                record["confirming"] = True
+                record["mutation_reply_end"] = len(record["output"])
                 return
             if line.startswith(b".."):
                 line = line[1:]
@@ -182,7 +183,7 @@ class SmtpPeer:
                 "idle": now + IDLE_SECONDS, "absolute": now + CONNECTION_SECONDS,
                 "greeted": False, "mail": False, "recipients": 0, "data": False,
                 "bytes": 0, "hash": hashlib.sha256(), "commands": 0,
-                "committed": False, "confirming": False, "closing": False,
+                "committed": False, "mutation_reply_end": None, "closing": False,
             }
             self.selector.register(connection, selectors.EVENT_READ | selectors.EVENT_WRITE, self)
             return
@@ -214,10 +215,12 @@ class SmtpPeer:
             if events & selectors.EVENT_WRITE and record["output"]:
                 sent = stream.send(record["output"][:self.fragment_bytes])
                 del record["output"][:sent]
+                if record["mutation_reply_end"] is not None:
+                    record["mutation_reply_end"] -= sent
+                    if record["mutation_reply_end"] <= 0:
+                        self.sent_replies += 1
+                        record["mutation_reply_end"] = None
                 if not record["output"]:
-                    if record["confirming"]:
-                        self.replies += 1
-                        record["confirming"] = False
                     if record["closing"]:
                         self._close_client(stream)
                         return

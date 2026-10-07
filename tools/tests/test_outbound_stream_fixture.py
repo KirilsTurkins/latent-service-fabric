@@ -74,10 +74,40 @@ class StreamFixture(unittest.TestCase):
         observed = peer.observation()
         self.assertEqual(observed["acceptedConnections"], 1)
         self.assertEqual(observed["acceptedMutations"], 1)
-        self.assertEqual(observed["confirmedMutationReplies"], 1)
+        self.assertEqual(observed["sentMutationReplies"], 1)
+        self.assertEqual(observed["clientConfirmation"], "not-observed")
         self.assertEqual(observed["mutationRecords"], [{
             "attempt": 1, "bytes": len(message), "sha256": hashlib.sha256(message.encode()).hexdigest(), "recipients": 1}])
         self.assertEqual(observed["openConnections"], 0)
+
+    def test_disconnected_client_after_data_keeps_mutation_without_sent_reply(self):
+        peer = self.peer(fragment_bytes=1)
+        stream = self.client(peer)
+        stream.sendall(b"EHLO local\r\nMAIL FROM:<from@owned.invalid>\r\n"
+                       b"RCPT TO:<to@owned.invalid>\r\nDATA\r\none mutation\r\n.\r\n")
+        self.pump(lambda: peer.observation()["acceptedMutations"] == 1)
+        self.assertTrue(any(row["output"] for row in peer.clients.values()))
+        stream.close()
+        self.pump(lambda: not peer.clients)
+        observed = peer.observation()
+        self.assertEqual(observed["acceptedMutations"], 1)
+        self.assertEqual(observed["sentMutationReplies"], 0)
+        self.assertEqual(observed["clientConfirmation"], "not-observed")
+        self.assertEqual(observed["acceptedConnections"], 1)
+
+    def test_sent_mutation_reply_is_independent_of_later_queued_quit_reply(self):
+        peer = self.peer(fragment_bytes=1)
+        stream = self.client(peer)
+        stream.sendall(b"EHLO local\r\nMAIL FROM:<from@owned.invalid>\r\n"
+                       b"RCPT TO:<to@owned.invalid>\r\nDATA\r\none mutation\r\n.\r\nQUIT\r\n")
+        self.pump(lambda: peer.observation()["sentMutationReplies"] == 1)
+        self.assertTrue(any(row["output"] for row in peer.clients.values()))
+        stream.close()
+        self.pump(lambda: not peer.clients)
+        observed = peer.observation()
+        self.assertEqual(observed["acceptedMutations"], 1)
+        self.assertEqual(observed["sentMutationReplies"], 1)
+        self.assertEqual(observed["clientConfirmation"], "not-observed")
 
     def test_lost_reply_preserves_one_accepted_mutation_without_a_second_attempt(self):
         peer = self.peer(drop_mutation_reply=True)
@@ -86,7 +116,7 @@ class StreamFixture(unittest.TestCase):
         observed = peer.observation()
         self.assertEqual(observed["acceptedConnections"], 1)
         self.assertEqual(observed["acceptedMutations"], 1)
-        self.assertEqual(observed["confirmedMutationReplies"], 0)
+        self.assertEqual(observed["sentMutationReplies"], 0)
         self.assertEqual(observed["openConnections"], 0)
 
     def test_partial_data_and_eof_do_not_accept_a_mutation(self):
@@ -97,7 +127,7 @@ class StreamFixture(unittest.TestCase):
         stream.shutdown(socket.SHUT_WR)
         self.pump(lambda: not peer.clients)
         self.assertEqual(peer.observation()["acceptedMutations"], 0)
-        self.assertEqual(peer.observation()["confirmedMutationReplies"], 0)
+        self.assertEqual(peer.observation()["sentMutationReplies"], 0)
 
     def test_message_bound_rejects_before_mutation_and_recovers_for_fresh_work(self):
         peer = self.peer()

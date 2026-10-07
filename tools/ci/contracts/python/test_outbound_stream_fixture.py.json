@@ -1,11 +1,15 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Actual loopback SMTP peer controls for independent mutation/reply observations; preserves the gated stream profile.",
+  "reviewReason":"Actual SMTP socket controls preserve accepted DATA, sent reply bytes and independently unobserved client confirmation; existing ten controls and bounds retained.",
   "module":"tools/tests/test_outbound_stream_fixture.py",
-  "cases":["StreamFixture.test_attempt_ceiling_retires_listener_without_more_accepts","StreamFixture.test_exact_message_ceiling_is_accepted_with_original_byte_hash","StreamFixture.test_expired_idle_connection_closes_physical_owner_without_mutation","StreamFixture.test_live_listener_is_not_replaced_and_all_clients_are_owned_until_close","StreamFixture.test_lost_reply_preserves_one_accepted_mutation_without_a_second_attempt","StreamFixture.test_message_bound_rejects_before_mutation_and_recovers_for_fresh_work","StreamFixture.test_ordinary_smtp_library_handles_fragmented_replies_and_records_exact_data","StreamFixture.test_partial_data_and_eof_do_not_accept_a_mutation","StreamFixture.test_two_live_connections_reject_third_and_close_retains_no_descriptors","StreamFixture.test_unsupported_auth_input_never_appears_in_public_observation"],
+  "cases":["StreamFixture.test_attempt_ceiling_retires_listener_without_more_accepts","StreamFixture.test_disconnected_client_after_data_keeps_mutation_without_sent_reply","StreamFixture.test_exact_message_ceiling_is_accepted_with_original_byte_hash","StreamFixture.test_expired_idle_connection_closes_physical_owner_without_mutation","StreamFixture.test_live_listener_is_not_replaced_and_all_clients_are_owned_until_close","StreamFixture.test_lost_reply_preserves_one_accepted_mutation_without_a_second_attempt","StreamFixture.test_message_bound_rejects_before_mutation_and_recovers_for_fresh_work","StreamFixture.test_ordinary_smtp_library_handles_fragmented_replies_and_records_exact_data","StreamFixture.test_partial_data_and_eof_do_not_accept_a_mutation","StreamFixture.test_sent_mutation_reply_is_independent_of_later_queued_quit_reply","StreamFixture.test_two_live_connections_reject_third_and_close_retains_no_descriptors","StreamFixture.test_unsupported_auth_input_never_appears_in_public_observation"],
   "guards":{
     "StreamFixture.test_ordinary_smtp_library_handles_fragmented_replies_and_records_exact_data":
+      "a7a6396db0ad5341f475eeecbbe190da108ef633c1c7801957e5ec8e4ced5dc7",
+    "StreamFixture.test_disconnected_client_after_data_keeps_mutation_without_sent_reply":
+      "a7a6396db0ad5341f475eeecbbe190da108ef633c1c7801957e5ec8e4ced5dc7",
+    "StreamFixture.test_sent_mutation_reply_is_independent_of_later_queued_quit_reply":
       "a7a6396db0ad5341f475eeecbbe190da108ef633c1c7801957e5ec8e4ced5dc7",
     "StreamFixture.test_lost_reply_preserves_one_accepted_mutation_without_a_second_attempt":
       "a7a6396db0ad5341f475eeecbbe190da108ef633c1c7801957e5ec8e4ced5dc7",
