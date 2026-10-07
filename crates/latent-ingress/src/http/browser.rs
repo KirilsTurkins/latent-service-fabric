@@ -1,15 +1,19 @@
 mod cookies;
+mod ownership;
 mod response;
 #[cfg(test)]
 mod tests;
 
 use super::{CanonicalTarget, HeaderView, Method, Scheme};
+pub use ownership::{header_ownership, HeaderOwnership, OWNERSHIP_PROFILE};
 pub(super) use response::validate as validate_response;
 
 pub const PROFILE: &str = "same-origin-v1";
 pub const CSP: &str = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'";
 pub const MAX_COOKIE_BYTES: usize = 4096;
 pub const MAX_COOKIES: usize = 16;
+pub const MAX_COOKIE_NAME_BYTES: usize = 64;
+pub const MAX_COOKIE_VALUE_BYTES: usize = 1024;
 
 pub fn security_headers<'value>(scheme: Scheme) -> impl Iterator<Item = HeaderView<'value>> {
     [

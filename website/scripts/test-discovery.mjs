@@ -183,7 +183,11 @@ try {
         applicationGuides: applicationPages.map(([slug]) => slug),
         setupDownloads,
         mobileWidth: 390, reflowWidth: 640, reducedMotion: true, externalRequests: 0, browserErrors: 0, accessibility});
-    } finally { await context.close(); await server.close(); }
+    } finally {
+      await context.unrouteAll({behavior: 'wait'});
+      await context.close();
+      await server.close();
+    }
   }
 } finally { await browser.close(); }
 fs.writeFileSync(path.join(output, 'evidence.json'), JSON.stringify({schema: 1, browser: browser.version(), results}, null, 2) + '\n');
