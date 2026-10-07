@@ -84,6 +84,8 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if project["tenant"] is not None and not (isinstance(project["tenant"], str) and 0 < len(project["tenant"]) <= 512):
         raise ValueError("invalid optional tenant identity")
     lock, _vendor, pins = validate_sdk_inputs(files)
+    from tools.typescript_generator_authoring import validate_generated_inputs
+    validate_generated_inputs(files)
     captured = "latent.dependencies.json" in files
     if captured:
         from tools.application_dependencies import validate_manifest

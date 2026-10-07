@@ -132,6 +132,8 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
             or project["tenant"] is not None and (not isinstance(project["tenant"], str) or not 0 < len(project["tenant"]) <= 128)):
         raise ValueError("invalid capsule identity")
     lock, vendor, pins = validate_sdk_inputs(files)
+    from tools.java_generator_authoring import validate_generated_inputs
+    validate_generated_inputs(files)
     allowed_jars = reviewed_local_jars(files)
     # Captured application JARs enter through the separately reviewed closure.
     # Arbitrary application Gradle/Maven executable build recipes remain denied.

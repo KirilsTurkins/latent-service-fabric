@@ -47,7 +47,8 @@ def inputs(language="rust"):
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "c_application_dependencies.py", "c_static_symbols.py", "c_static_archive_build.py",
-                    "captured_compiler_isolation.py", "c_dependency_fixture.py", "c_dependency_controls.py")
+                    "captured_compiler_isolation.py", "c_dependency_fixture.py", "c_dependency_controls.py",
+                    "c_generator_authoring.py", "c_generator_fixture.py", "c_dependency_authoring.py")
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
@@ -113,11 +114,13 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
 
 
 def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None, dotnet_tools=None,
-            application_dependencies=False, static_application_dependencies=False):
+            application_dependencies=False, static_application_dependencies=False, approved_generator=False):
     if language not in {"rust", "c", "go", "typescript", "dotnet"}:
         raise ValueError("unsupported authoring qualification language")
     if static_application_dependencies and (language != "c" or not application_dependencies):
         raise ValueError("static application qualification requires captured C source qualification")
+    if approved_generator and (language != "c" or not application_dependencies):
+        raise ValueError("approved generator qualification requires captured C source qualification")
     if language == "typescript" and typescript_tools is None:
         raise ValueError("explicit pinned TypeScript compiler installation required")
     creator, builder = create, build
@@ -213,6 +216,10 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 stage = "application-dependency-capture"
                 result["applicationDependencies"] = install(project, output / "outside-project-dependencies")
                 write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
+                if approved_generator:
+                    from tools.c_generator_fixture import install as install_generator
+                    stage = "approved-c-generator"
+                    result["approvedGenerator"] = install_generator(project, output / "outside-project-generator")
                 stage = "standalone-builds"
             if language == "typescript" and application_dependencies and template == "greeting":
                 from tools.typescript_dependency_fixture import install
@@ -259,6 +266,22 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                     "executable_approval": executable_approval} if language == "dotnet" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
+            if approved_generator and template == "greeting":
+                stage = "generated-source-offline-rebuild"
+                rebuilt = builder(project, output / "builds/greeting-offline-rebuild",
+                    binaries["examples/capsule_contracts"], binaries["examples/package"],
+                    "https://github.com/KirilsTurkins/latent-service-fabric")
+                original_complete, rebuilt_complete = result["builds"][template], read_json(rebuilt / "BUILD-COMPLETE.json")
+                if any(original_complete[key] != rebuilt_complete[key] for key in ("sourceDigest", "sdkBindingDigest")):
+                    raise ValueError("generated C offline rebuild changed captured source or SDK identity")
+                for candidate in (artifact, rebuilt):
+                    material = next(item for item in read_json(candidate / "build-observation.json")["materials"]
+                                    if item["name"] == "c-generator-inputs")
+                    if set(material) != {"name", "digest", "size"} or material["digest"] != result["approvedGenerator"]["generatedInputsDigest"]:
+                        raise ValueError("generated C provenance does not bind the signable captured inputs")
+                result["builds"]["greeting-offline-rebuild"] = rebuilt_complete
+                result["approvedGenerator"]["offlineRebuild"] = "same-captured-source-and-sdk"
+                stage = "standalone-builds"
             if language == 'dotnet' and application_dependencies and template == 'greeting':
                 receipt = read_json(artifact / 'executable-input-outputs.json')
                 outputs = receipt['outputs']
@@ -335,6 +358,8 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
             language=language, noncrypto_entropy=language == "dotnet" and application_dependencies)
+        if approved_generator:
+            result["approvedGenerator"]["runtimeExecution"] = "signed-admitted-component"
         if static_application_dependencies:
             from tools.c_static_archive_build import build as build_archive
             from tools.c_dependency_fixture import use_static_archive

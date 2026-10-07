@@ -264,6 +264,9 @@ def review(project: Path, candidate: Path, expected: str) -> dict:
 def status(project: Path) -> dict:
     root = regular_path(project)
     sdk_identity(root)
+    from tools.c_generator_authoring import validate_generated_inputs
+    from tools.rust_capsule_project import snapshot
+    validate_generated_inputs(snapshot(application_root(root)))
     public = public_state(root)
     verified = inputs.verify_inputs(root, 'c')
     return {'formatVersion': 1, 'stage': 'c-dependency-status', 'status': 'verified' if verified else 'undeclared',

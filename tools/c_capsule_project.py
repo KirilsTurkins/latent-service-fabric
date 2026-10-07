@@ -80,4 +80,6 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("C invocation budgets require finite unsigned full-width integers")
     if not limits["cpuFuel"] or not limits["memoryBytes"] or not limits["wallTimeLimitMillis"]:
         raise ValueError("positive fuel, memory and wall-time budgets required")
+    from tools.c_generator_authoring import validate_generated_inputs
+    validate_generated_inputs(files)
     return project, lock, tomllib.loads(vendor["tools/toolchain.toml"].decode())

@@ -10,7 +10,7 @@ import sys
 
 from . import build, dependencies, effects, paths, project, protocol, resource_inputs, snapshot, state
 from .client import Client, successful
-from .common import DevError, MAX_DEPLOY_SECONDS, MAX_SNAPSHOT, decode, digest, encode, members, require
+from .common import DevError, MAX_DEPLOY_SECONDS, MAX_SNAPSHOT, decode, digest, encode, members, require, sha
 from .journal import Journal
 
 
@@ -60,11 +60,13 @@ def install(root: Path, arguments: dict) -> dict:
 
 
 def sync(root: Path, arguments: dict) -> dict:
-    members(arguments, {"snapshot", "content", "project", "trustedRecipe"})
+    members(arguments, {"snapshot", "content", "project", "trustedRecipe"}, {'captureAsset'})
     descriptor = project.validate(arguments["project"])
     require(arguments["trustedRecipe"] == project.trust_identity(descriptor), "workspace-recipe-trust-required")
     record = arguments["snapshot"]
     snapshot.validate(record)
+    separate = 'capturedInputs' in record
+    require(('captureAsset' in arguments) == separate, 'captured-input-transfer-required')
     require(isinstance(arguments["content"], dict), "snapshot-content-object")
     content = {}
     for name, raw in arguments["content"].items():
@@ -85,7 +87,19 @@ def sync(root: Path, arguments: dict) -> dict:
         from .cleanup import prune_snapshots
         prune_snapshots(root, incoming=record["identity"])
         require(sum(1 for _ in snapshots.iterdir()) < 4, "snapshot-retention-full-explicit-clean-required")
-        snapshot.materialize(destination, record, content)
+        snapshot.materialize(destination, record, content, commit=not separate)
+        if separate:
+            from . import assets, captured_inputs
+            selected = sha(arguments['captureAsset'])
+            transferred = assets.directory(root, selected, captured_inputs.DOMAIN)
+            complete = assets.manifest(state.load(transferred, 'complete.json'))
+            require(complete['identity'] == selected and complete.get('domain') == captured_inputs.DOMAIN,
+                    'captured-input-transfer-unconfirmed')
+            for item in complete['files']:
+                require(paths.digest_file(transferred, item['path'], assets.MAX_ASSET) == (item['sha256'], item['size']),
+                        'captured-input-transfer-modified')
+            captured_inputs.restore(destination, record['capturedInputs'], transferred)
+            snapshot.commit(destination, record)
     dependencies.verify(destination, descriptor)
     resource_inputs.verify(destination, descriptor)
     state.atomic(root, "project.json", {"descriptor": descriptor, "trust": arguments["trustedRecipe"],
@@ -183,7 +197,7 @@ def dispatch(request: dict) -> dict:
     if operation == "hello":
         members(arguments, set())
         return protocol.hello()
-    root = state.workspace(root_directory(), request["workspace"], create=operation in {"install", "asset-begin", "purge"})
+    root = state.workspace(root_directory(), request["workspace"], create=operation in {"install", "asset-begin", "capture-begin", "purge"})
     from . import build_control
     if operation == "build-status":
         members(arguments, set())
@@ -222,6 +236,11 @@ def dispatch(request: dict) -> dict:
             result["workflow"] = observe(root)
         return result
     with state.lock(root):
+        if operation.startswith('capture-'):
+            from .assets import receive
+            from .captured_inputs import DOMAIN
+            require(arguments.get('domain') == DOMAIN, 'captured-input-transfer-domain-required')
+            return receive(root, operation.replace('capture-', 'asset-', 1), arguments)
         if operation.startswith("asset-"):
             from .assets import receive
             return receive(root, operation, arguments)
