@@ -32,6 +32,7 @@ use super::*;
 mod admission;
 mod capacity;
 mod control;
+mod effect_management;
 mod ownership;
 mod pressure;
 mod recovery;

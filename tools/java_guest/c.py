@@ -9,6 +9,8 @@ class Codec:
 
     def emit(self, value, expression: str, operation: str, wire: str) -> list[str]:
         self.counter += 1
+        if self.counter > 16384:
+            raise ValueError("java-generated-code: C bridge traversal exceeds its finite limit")
         unique = "local_" + str(self.counter)
         expression = "(" + expression + ")"
         if value is None: return []
