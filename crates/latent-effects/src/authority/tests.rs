@@ -33,6 +33,7 @@ fn original_queued_deadline_narrows_context_and_grant_without_late_reopening() {
 }
 
 mod lookup;
+mod rejection;
 
 #[test]
 fn unretired_provider_context_quarantines_original_global_capacity_after_all_grants_drop() {
