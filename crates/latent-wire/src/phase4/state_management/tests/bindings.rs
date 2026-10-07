@@ -90,21 +90,49 @@ async fn management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_sam
     .await
     .unwrap();
     let foreign = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
-    dispatcher.bind_native_capacity(&foreign).unwrap();
+    assert!(matches!(
+        dispatcher.bind_native_capacity(&foreign),
+        Err(latent_effects::runtime::DispatcherError::InvalidConfiguration)
+    ));
     assert!(dispatcher.management_port().uses_store(&fixture.store));
-    assert!(!dispatcher
+    assert!(dispatcher
+        .management_port()
+        .uses_native_capacity(&fixture.admission.native));
+    // The original same-engine binding was never replaced. A separately
+    // started real foreign engine/dispatcher also cannot satisfy the backend.
+    let mut other = Fixture::new(false).await;
+    let mut foreign_dispatcher = DispatcherOwner::start(
+        DispatcherConfig {
+            start_paused: true,
+            ..DispatcherConfig::default()
+        },
+        Arc::clone(&other.store),
+        EffectAuthorityOwner::new(16, 4, 4).unwrap(),
+        vec![],
+        Arc::new(|| EffectTime {
+            unix_millis: 100,
+            continuity_proven: true,
+        }),
+        None,
+    )
+    .await
+    .unwrap();
+    assert!(!foreign_dispatcher
+        .management_port()
+        .uses_store(&fixture.store));
+    assert!(!foreign_dispatcher
         .management_port()
         .uses_native_capacity(&fixture.admission.native));
     let backend = StateManagementBackend::new(services(&fixture), bindings(&fixture)).unwrap();
     assert!(backend
-        .with_dispatcher(dispatcher.management_port())
+        .with_dispatcher(foreign_dispatcher.management_port())
         .is_err());
     // The installed node-only constructor has the same exact owner fence.
     // Empty application bindings cannot turn a foreign pool into permission.
     assert!(StateManagementBackend::with_installed_dispatcher(
         services(&fixture),
         vec![],
-        dispatcher.management_port(),
+        foreign_dispatcher.management_port(),
     )
     .is_err());
     assert_eq!(
@@ -115,6 +143,8 @@ async fn management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_sam
         0
     );
     assert!(dispatcher.shutdown(deadline()).await.unwrap().clean);
+    assert!(foreign_dispatcher.shutdown(deadline()).await.unwrap().clean);
+    other.finish().await;
     fixture.finish().await;
 }
 
@@ -289,6 +319,14 @@ async fn installed_dispatcher_only_backend_cannot_resolve_application_namespace_
     .unwrap()
     .with_recovery_bindings(vec![])
     .unwrap();
+    tokio::time::timeout_at(deadline().into(), async {
+        while fixture.store.snapshot().unwrap().accepted != 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+
     assert_eq!(
         backend
             .execute_state(context("alice"), fixture.target().into())

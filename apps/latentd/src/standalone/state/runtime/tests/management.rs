@@ -115,6 +115,15 @@ async fn installed_empty_state_host_exposes_the_original_audited_dispatcher_and_
     drop(page);
     drop(adapter);
     drop(backend);
+    // The real audit/dispatcher bootstrap may still own a completed storage
+    // callback. Keep the original cutoff and require its physical retirement.
+    tokio::time::timeout_at((Instant::now() + WATCHDOG).into(), async {
+        while state.0.store.snapshot().unwrap().accepted != 0 {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
     finish(&state, &mut effects).await;
     audit.close();
     assert!(worker.join_until(Instant::now() + WATCHDOG).unwrap());

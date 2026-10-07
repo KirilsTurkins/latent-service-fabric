@@ -213,6 +213,18 @@ fn entire_control_future_stays_owned_after_waiter_abort_during_a_poll() {
     });
 }
 
+struct RecoveryHeldBody;
+impl HttpBody for RecoveryHeldBody {
+    type Data = Bytes;
+    type Error = tonic::Status;
+    fn poll_frame(
+        self: Pin<&mut Self>,
+        _: &mut Context<'_>,
+    ) -> Poll<Option<Result<Frame<Bytes>, tonic::Status>>> {
+        Poll::Pending
+    }
+}
+
 #[test]
 fn phase4_recovery_uses_existing_reserved_rpc_slot_while_ordinary_responses_remain_owned() {
     run(|control| async move {
@@ -228,7 +240,9 @@ fn phase4_recovery_uses_existing_reserved_rpc_slot_while_ordinary_responses_rema
                     .expect("the original private listener authenticated the request");
                 assert_eq!(context.principal().subject, "operator");
                 calls.fetch_add(1, Ordering::Relaxed);
-                std::future::ready(Ok::<_, Infallible>(Response::new(Body::empty())))
+                std::future::ready(Ok::<_, Infallible>(Response::new(Body::new(
+                    RecoveryHeldBody,
+                ))))
             }
         });
         let service = layer(&shared, control).layer(service);
