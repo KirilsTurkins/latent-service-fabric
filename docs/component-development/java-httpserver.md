@@ -18,6 +18,13 @@ profile.
 
 The [2026-10-01 retained-component replay](../testing/evidence/java-server-tls-replay-2026-10-01.json) passed all 50 maintained HTTP controls on the normal TLS node, with strict CA and hostname verification, pre-dispatch rejection of a 65,537-byte body, unchanged inputs and clean shutdown. It reused the exact previously compiled component and fresh short-lived demo signatures; it does not establish a fresh compiler build. An additional 65,536-byte echo probe returned 502 under the original limits. Its failure is retained separately, and maximal body execution remains unqualified.
 
+The maintained helper qualification also requires a 65,536-byte binary request
+to pass through ordinary `HttpExchange` body streams and return byte for byte,
+followed by a fresh successful request and zero physical owners. The original
+50 controls, excess-body denial and activation limits remain required. This
+additional control is pending a fresh successful component execution; its
+presence does not replace the retained failed observation above.
+
 ## Create and build
 
 Run the maintained SDK commands with the exact compiler inputs described in the
