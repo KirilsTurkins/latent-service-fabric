@@ -1,4 +1,5 @@
 use super::*;
+use c::dispatcher_service_server::DispatcherService;
 use latent_core::{InvocationPrincipal, Metadata, PrincipalKind};
 use latent_wire::invocation::AuthenticatedInvocationContext;
 use latent_wire::{management::proto as c, phase4::contract};
@@ -60,13 +61,23 @@ async fn installed_empty_state_host_exposes_the_original_audited_dispatcher_and_
     );
     assert!(state.0.native.snapshot().unwrap().physically_retired());
     let original = port.snapshot().unwrap();
-    let response = backend
-        .execute_state(operator(true), inspect())
-        .await
-        .unwrap();
-    let contract::Response::InspectDispatcher(value) = &response.response else {
-        panic!("installed dispatcher snapshot");
+    let adapter = latent_wire::phase4::Phase4ServiceAdapter::with_services(
+        Arc::new(backend.clone()),
+        latent_wire::management::ManagementLimits::default(),
+        latent_wire::phase4::Phase4Services {
+            principals: Arc::new(latent_wire::invocation::LocalPrincipalPolicy),
+            management: Arc::new(latent_wire::management::LocalManagementPolicy),
+            clock: fixture.clock.clone(),
+        },
+    )
+    .unwrap();
+    let contract::Request::InspectDispatcher(request) = inspect() else {
+        unreachable!("exact fixture request");
     };
+    let mut request = tonic::Request::new(*request);
+    request.extensions_mut().insert(operator(true));
+    let response = adapter.inspect_dispatcher(request).await.unwrap();
+    let value = response.get_ref();
     let public = value.dispatcher.as_ref().unwrap();
     assert_eq!(
         public.generation.as_ref().unwrap().owner_epoch,
@@ -102,6 +113,7 @@ async fn installed_empty_state_host_exposes_the_original_audited_dispatcher_and_
             if value.action == latent_audit::AuditControlAction::DispatcherInspect
     )));
     drop(page);
+    drop(adapter);
     drop(backend);
     finish(&state, &mut effects).await;
     audit.close();
