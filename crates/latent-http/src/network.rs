@@ -127,12 +127,7 @@ pub(crate) async fn connect_for(
     let peer = stream
         .peer_addr()
         .map_err(|_| HttpError::ConnectionFailed)?;
-    if !answers.contains(canonical(peer.ip()))
-        || !destination.addresses.permits(peer.ip())
-        || peer.port() != destination.origin.port
-    {
-        return Err(HttpError::PermissionDenied);
-    }
+    validate_connected_peer(peer, destination, answers)?;
     stream
         .set_nodelay(true)
         .map_err(|_| HttpError::ConnectionFailed)?;
@@ -186,6 +181,21 @@ pub(crate) async fn connect_for(
         })))
         .map_err(Into::into)
 }
+
+fn validate_connected_peer(
+    peer: SocketAddr,
+    destination: &HttpDestination,
+    answers: &Answers,
+) -> Result<(), HttpError> {
+    if !answers.contains(canonical(peer.ip()))
+        || !destination.addresses.permits(peer.ip())
+        || peer.port() != destination.origin.port
+    {
+        return Err(HttpError::PermissionDenied);
+    }
+    Ok(())
+}
+
 /// Drive the connection and its consumer in the caller's original future. The
 /// completed driver is dropped once; a cancellation drops its actual socket.
 pub(crate) async fn drive<F: Future>(
