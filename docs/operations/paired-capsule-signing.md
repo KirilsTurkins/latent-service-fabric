@@ -100,10 +100,12 @@ The `paired-trust` receipts compare actual Rust canonical bytes and digests for
 alternate property, key and requirement orders and verify both original Java
 packages under each equivalent policy. Separate negative copies exercise an
 altered component, altered policy, a raw-input revocation digest, another
-builder's source or key, missing provenance, revoked builder key and stale
-trust. Policy digest and expiry failures remain rejected before node
+builder's source or key, missing provenance, revoked builder key, revoked builder
+identity and stale trust. Policy digest and expiry failures remain rejected before node
 startup; the valid-policy negatives also reach the real package/admission
-boundary. The former construction mistake records the authoritative builder
+boundary. Revoking the original builder identity rejects its existing provenance
+through the approved `revokedBuilders` contract; no per-evidence revocation format
+is added. The former construction mistake records the authoritative builder
 digest alongside the incorrect supplied raw-input digest without correcting
 approved trust automatically.
 
@@ -124,6 +126,14 @@ precondition. The fixture looks up the original operation, including after
 an uncertain result, and never replays publication to obtain a different
 receipt. Failed attempts, bounded logs and exact component/source/compiler
 identities remain in the chosen fresh evidence directory.
+
+The [retained actual paired subcampaign](../evidence/java-paired-trust-36a10fc7/README.md)
+binds its original source and receipts, including the overall HTTP pipeline's
+later failed context assertion. Its passed signing/admission observations do not
+turn that complete pipeline into a successful qualification.
+The [fresh source-66 paired record](../evidence/java-paired-trust-66f2a031/README.md)
+adds actual builder-identity revocation and host-derived child grant observations,
+while preserving its separate later context fixture failure.
 
 The [executed C4/3b7 campaign](../evidence/java-composed-c4-3b7/README.md)
 retains the newer actual four-component builds and a successful complete
