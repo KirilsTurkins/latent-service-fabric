@@ -46,11 +46,11 @@ impl Transport {
         config: TransportConfig,
         invocation: InvocationServiceAdapter<LocalInvocationRuntime>,
         management: ManagementServiceAdapter,
-        state: Option<latent_wire::phase4::StateManagementBackend>,
+        state: Option<Arc<dyn latent_wire::phase4::Phase4Runtime>>,
         clock: Arc<dyn ActivationClock>,
         control_runtime: Handle,
     ) -> Result<Self, PlatformError> {
-        let phase4 = state.map(|runtime| management.phase4_adapter(Arc::new(runtime)));
+        let phase4 = state.map(|runtime| management.phase4_adapter(runtime));
         let mut routes = tonic::service::Routes::new(invocation.into_server())
             .add_service(management.clone().release_server())
             .add_service(management.clone().deployment_server())

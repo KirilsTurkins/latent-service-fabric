@@ -27,6 +27,8 @@ use latent_core::{ActivationClock, BoxFuture, PlatformError, PlatformErrorCode};
 pub use latent_rpc::phase4 as contract;
 /// Exact recovery routes without creating another path registry.
 pub use latent_rpc::phase4::is_recovery_rpc_path;
+/// Maintained application transaction messages for embedding runtimes.
+pub use latent_rpc::transaction::v1 as transaction;
 use latent_rpc::{control::v1 as c, transaction::v1 as t};
 pub use lease::Phase4ResponseService;
 use std::sync::Arc;

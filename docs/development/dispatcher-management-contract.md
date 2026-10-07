@@ -107,3 +107,15 @@ readiness from the caller having received an error.
 Full authenticated CLI-to-node qualification,
 manual effect reconciliation and restored-store operations remain separate
 requirements of issue #400.
+
+The standalone private transport composes application `InvokeCommand` and
+`Query` with the same installed state runtime and activation manager. A typed
+selector must match the exact resolved admitted operation, namespace,
+incarnation, entity and mode. The normal backend's captured WIT signature
+canonicalizes the input before a command claim. Original expected versions and
+explicit abort retry fences are retained; opaque selectors create no grant.
+The initial direct RPC slice uses original-caller application scopes and a
+64 KiB result representation preflight within the existing native response
+reservation. Management remains on its original backend. Command/effect lookup
+and shared/delegated application RPC scopes need their separate current-read
+integration and execution evidence before #387/#400/#401 close.

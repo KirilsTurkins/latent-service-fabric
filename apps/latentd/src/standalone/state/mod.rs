@@ -10,6 +10,7 @@ mod recovery;
 mod request;
 mod result;
 mod role;
+mod rpc;
 mod runtime;
 mod selection;
 mod tenant_setup;
