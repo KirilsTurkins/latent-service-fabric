@@ -62,7 +62,7 @@ fn refused_completion_binding_preserves_exact_denial_consumption_and_no_publicat
         assert_eq!(
             outcome,
             ActivationOutcome::Failed {
-                terminal_state: ActivationTerminalState::PlatformFailed,
+                terminal_state: ActivationTerminalState::Rejected,
                 error: denial,
                 consumption: charged(),
             }
