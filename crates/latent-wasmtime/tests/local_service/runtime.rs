@@ -321,10 +321,17 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
                 Some("all-cells-quarantined")
             );
             assert_eq!(
-                error.details[1],
-                ActivationDiagnostic::new(DiagnosticStage::Queue, DiagnosticReason::QueuePressure)
-                    .detail()
+                error
+                    .details
+                    .iter()
+                    .filter(|detail| detail.kind == "scheduler.limit")
+                    .count(),
+                1
             );
+            let diagnostic =
+                ActivationDiagnostic::new(DiagnosticStage::Queue, DiagnosticReason::QueuePressure);
+            assert_eq!(error.details[1], diagnostic.detail());
+            assert_eq!(ActivationDiagnostic::from_error(&error), Some(diagnostic));
         }
         f.idle().await;
     }
