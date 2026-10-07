@@ -238,13 +238,7 @@ impl WasmtimeBackend {
         Result<Option<latent_capabilities::broker::CapabilitySession>, GuestOutcome>,
         PlatformError,
     > {
-        self.capability_session(
-            runtime,
-            request,
-            cancellation,
-            stop,
-            accounting.deadline(),
-        )
-        .await
+        self.capability_session(runtime, request, cancellation, stop, accounting.deadline())
+            .await
     }
 }
