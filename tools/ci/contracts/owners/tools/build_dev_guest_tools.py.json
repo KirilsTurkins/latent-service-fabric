@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/build_dev_guest_tools.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve captured Phase4 guest profile selection and incoming explicit verified Zig mirror/cache with identical compiler pins, bounded bytes and original deadlines","schemaVersion":"latent.ci.contracts.v1","sha256":"bd0b0a562b8d323fda5a0c0a262e1c3da64a38e28f64649eba2045b103ea05dd"}
+{
+  "kind": "owner",
+  "path": "tools/build_dev_guest_tools.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain bounded native compiler stdout/stderr after the existing owned child reaps, including nonzero exit; preserve command failure, original deadlines, output caps, source identity and compiler pins.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "9d63375f66c5458352924a02402c3e1bef2202de05bf6b9253448a7ec55dde3a"
+}
