@@ -38,7 +38,7 @@ RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += ('tools/typescript_guest/runtime_profile.py', 'tools/typescript_guest/activation_engine.py',
-           'tools/typescript_guest/promise_engine.py', 'tools/typescript_guest/timer_engine.py',
+           'tools/typescript_guest/promise_engine.py', 'tools/typescript_guest/timer_engine.py', 'tools/typescript_guest/abort_engine.py',
            'sdk/typescript-guest/activation/runtime-globals.d.ts')
 from tools.typescript_guest.activation_engine import NATIVE_SOURCES
 RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in NATIVE_SOURCES)
@@ -143,7 +143,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if closure is not None:
                 (output / "bundle-selected-inputs.json").write_bytes(read_file(temporary / "compiled/application.mjs.inputs.json", 8 * 1024 * 1024))
                 (output / "application.mjs.map").write_bytes(read_file(temporary / "compiled/application.mjs.map", 32 * 1024 * 1024))
-            surface = read_json(derived / "surface.json")
+            # The selected runtime derives an authoritative surface with its
+            # activation import. Use those same bytes for compatibility and
+            # manifest admission; the original surface remains retained above.
+            surface = read_json(output / "surface.json")
             stage = "compatibility"
             recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,

@@ -18,6 +18,9 @@ bool start_timer(JSContext* cx, JS::HandleObject callback,
                  const JS::HandleValueArray& arguments, int32_t delay_ms,
                  bool repeat, int32_t* id);
 bool clear_timer(JSContext* cx, int32_t id);
+bool start_timeout_nanoseconds(JSContext* cx, JS::HandleObject callback,
+                               const JS::HandleValueArray& arguments,
+                               uint64_t nanos, int32_t* id);
 bool has_pending_timer_work();
 bool run_timer_turn(JSContext* cx);
 } // namespace lsf::typescript::activation

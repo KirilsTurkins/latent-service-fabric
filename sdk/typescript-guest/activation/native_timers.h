@@ -148,6 +148,17 @@ public:
   bool start(JSContext* cx, JS::HandleObject callback,
              const JS::HandleValueArray& arguments, int32_t delay_ms,
              bool repeat, int32_t* id) {
+    const auto millis = static_cast<uint64_t>(std::max(delay_ms, 0));
+    const uint64_t first = millis * 1000000;
+    uint64_t period = std::max<uint64_t>(millis, 1) * 1000000;
+    return startNanoseconds(cx, callback, arguments, first, repeat ? &period : nullptr, id);
+  }
+
+  // AbortSignal.timeout uses checked Web-IDL millisecond conversion, rather
+  // than the ordinary timer global's original ToInt32 delay normalization.
+  bool startNanoseconds(JSContext* cx, JS::HandleObject callback,
+                        const JS::HandleValueArray& arguments, uint64_t first,
+                        uint64_t* period, int32_t* id) {
     *id = 0;
     if (stopped_ || retired_native_.live || exhausted_ids_)
       return fail(cx, "admission-closed", LATENT_RUNTIME_ACTIVATION_ERROR_RESOURCE_EXHAUSTED);
@@ -171,7 +182,7 @@ public:
     if (tail_) tail_->following = std::move(physical);
     else records_ = std::move(physical);
     tail_ = record;
-    record->repeat = repeat;
+    record->repeat = period != nullptr;
     record->id = next_id_;
     if (next_id_ == INT32_MAX) exhausted_ids_ = true;
     else ++next_id_;
@@ -180,12 +191,9 @@ public:
     const bool has_parent = jobs_.currentContinuation(inherited);
     latent_runtime_activation_token_t parent{inherited.generation, inherited.id};
     latent_runtime_activation_error_t error{};
-    const auto millis = static_cast<uint64_t>(std::max(delay_ms, 0));
-    const uint64_t first = millis * 1000000;
     // The named activation profile uses finite fixed-rate/coalescing intervals.
     // Zero-delay intervals use a one-millisecond period, never a zero host tick.
-    uint64_t period = std::max<uint64_t>(millis, 1) * 1000000;
-    if (!latent_runtime_activation_timer_start(first, repeat ? &period : nullptr,
+    if (!latent_runtime_activation_timer_start(first, period,
           has_parent ? &parent : nullptr, &record->timer, &error)) {
       record->closing = true;
       (void)collect(cx);

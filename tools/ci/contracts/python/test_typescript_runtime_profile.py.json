@@ -1,5 +1,10 @@
 {
   "cases": [
+    "TypeScriptAbortSourceTests.test_abort_recipe_and_native_sources_are_closed_compiler_inputs",
+    "TypeScriptAbortSourceTests.test_pinned_abort_reason_event_algorithms_and_other_methods_are_preserved",
+    "TypeScriptAbortSourceTests.test_pinned_abort_source_change_is_rejected_before_derivation",
+    "TypeScriptAbortSourceTests.test_pinned_timeout_conversion_precedes_signal_graph_allocation",
+    "TypeScriptAbortSourceTests.test_unrepresentable_timeout_is_explicit_and_never_promotes_qualification",
     "TypeScriptRuntimeProfileTests.test_actual_parser_nested_record_change_rejected",
     "TypeScriptRuntimeProfileTests.test_actual_parser_relocation_preserves_full_public_contract",
     "TypeScriptRuntimeProfileTests.test_candidate_project_captures_native_source_without_changing_application_or_limits",
@@ -16,6 +21,7 @@
     "TypeScriptRuntimeProfileTests.test_npm_explicit_candidate_preserves_conditions_without_promoting_api",
     "TypeScriptRuntimeProfileTests.test_original_async_import_kind_change_rejected",
     "TypeScriptRuntimeProfileTests.test_project_and_captured_profile_must_match",
+    "TypeScriptRuntimeProfileTests.test_selected_surface_preserves_exports_and_declares_activation_for_admission",
     "TypeScriptRuntimeProfileTests.test_undeclared_import_cannot_survive_derivation",
     "TypeScriptRuntimeProfileTests.test_unknown_captured_runtime_cannot_be_selected",
     "TypeScriptRuntimeProfileTests.test_unknown_runtime_cannot_be_selected",
@@ -23,41 +29,17 @@
     "TypeScriptRuntimeProfileTests.test_wrong_original_sysroot_is_rejected"
   ],
   "guards": {
-    "TypeScriptRuntimeProfileTests.test_actual_parser_nested_record_change_rejected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_actual_parser_relocation_preserves_full_public_contract": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
     "TypeScriptRuntimeProfileTests.test_candidate_project_captures_native_source_without_changing_application_or_limits": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
+      ]
     },
     "TypeScriptRuntimeProfileTests.test_cli_forwards_exact_candidate_engine_inputs": {
       "bases": [
@@ -65,119 +47,11 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_default_ordinary_selection_is_sync": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_engine_declaration_cannot_promote_qualification": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_engine_envelope_binds_actual_bytes_and_keeps_unknown": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_engine_replaced_bytes_rejected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_engine_stale_runtime_interface_rejected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_engine_stale_sdk_source_rejected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_exact_activation_async_kind_required": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_explicit_candidate_does_not_certify_api": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_explicit_null_is_not_an_absent_selection": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
+      ]
     },
     "TypeScriptRuntimeProfileTests.test_npm_explicit_candidate_preserves_conditions_without_promoting_api": {
       "bases": [
@@ -185,23 +59,35 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
+      ]
     },
-    "TypeScriptRuntimeProfileTests.test_original_async_import_kind_change_rejected": {
+    "TypeScriptRuntimeProfileTests.test_default_ordinary_selection_is_sync": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_explicit_candidate_does_not_certify_api": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
     },
     "TypeScriptRuntimeProfileTests.test_project_and_captured_profile_must_match": {
       "bases": [
@@ -209,35 +95,11 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_undeclared_import_cannot_survive_derivation": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptRuntimeProfileTests.test_unknown_captured_runtime_cannot_be_selected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
-        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
+      ]
     },
     "TypeScriptRuntimeProfileTests.test_unknown_runtime_cannot_be_selected": {
       "bases": [
@@ -245,23 +107,95 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
-      ],
-      "skipSites": []
+      ]
     },
-    "TypeScriptRuntimeProfileTests.test_unknown_type_kind_is_not_name_only_success": {
+    "TypeScriptRuntimeProfileTests.test_unknown_captured_runtime_cannot_be_selected": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_explicit_null_is_not_an_absent_selection": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_engine_envelope_binds_actual_bytes_and_keeps_unknown": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_engine_replaced_bytes_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_engine_stale_sdk_source_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_engine_stale_runtime_interface_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_engine_declaration_cannot_promote_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
     },
     "TypeScriptRuntimeProfileTests.test_wrong_original_sysroot_is_rejected": {
       "bases": [
@@ -269,15 +203,159 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
         "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_actual_parser_relocation_preserves_full_public_contract": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_actual_parser_nested_record_change_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_original_async_import_kind_change_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_exact_activation_async_kind_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_undeclared_import_cannot_survive_derivation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_unknown_type_kind_is_not_name_only_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptRuntimeProfileTests.test_selected_surface_preserves_exports_and_declares_activation_for_admission": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:e99beb7adcce801658107d55096372be8d7111dd955f84ed123ef7890ba7d835"
+      ]
+    },
+    "TypeScriptAbortSourceTests.test_pinned_timeout_conversion_precedes_signal_graph_allocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptAbortSourceTests.test_pinned_abort_reason_event_algorithms_and_other_methods_are_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptAbortSourceTests.test_pinned_abort_source_change_is_rejected_before_derivation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptAbortSourceTests.test_abort_recipe_and_native_sources_are_closed_compiler_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptAbortSourceTests.test_unrepresentable_timeout_is_explicit_and_never_promotes_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ab015571a14a49521c6c7f02a555893cdbcedcf02acc1bd29c9650f275f51fe1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_runtime_profile.py",
-  "reviewReason": "Register new explicit TypeScript candidate selection, source-bound engine envelope and actual-parser full public WIT contract controls; no source/runtime qualification inference.",
+  "reviewReason": "Register new explicit TypeScript candidate selection, source-bound engine envelope and actual-parser full public WIT contract controls; no source/runtime qualification inference.; five source-only exact upstream AbortSignal derivation/input/range declaration controls; original21 cases and execution guards unchanged; one additive declared activation surface/manifest/V5 selection control retains limits/public exports and all prior26 execution guards",
   "schemaVersion": "latent.ci.contracts.v1"
 }

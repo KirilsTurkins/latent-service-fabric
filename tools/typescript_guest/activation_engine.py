@@ -21,12 +21,22 @@ PREIMAGES = {
     "embedding/embedding.cpp": "0c083624ba85778cafe9aadbf81a3b9db63d6b632bb1760088098dd3a0b82cbb",
     "StarlingMonkey/builtins/web/timers.cpp": "86ea5d06379182db1d4f2563b388fd4c4d1fbb1788a8b47b42ff6d6761d84c6a",
     "StarlingMonkey/builtins/web/timers.h": "bc4f4867fa647a1fa7814f6d013801adc24a11fcc824e1babee92cdd55b5054b",
+    "StarlingMonkey/builtins/web/abort/abort-signal.cpp": "1a732263119c393d59953ccb254cc9ebedc99bd9bbd98ba8e231422cb8cff088",
 }
 NATIVE_SOURCES = (
     "native_job_queue.h", "broker_accounting.h", "native_engine.h", "native_engine.cpp",
     "promise_hooks.h", "promise_records.h", "promise_accounting.h",
-    "reaction_records.h", "native_readiness.h", "native_timers.h",
+    "reaction_records.h", "native_readiness.h", "native_timers.h", "native_timeout.h",
 )
+DERIVATION_SOURCES = (
+    "activation_engine.py", "promise_engine.py", "timer_engine.py", "abort_engine.py",
+)
+
+
+def engine_input_paths() -> tuple[str, ...]:
+    """Exact SDK inputs bound by the selected engine and its compiler adapter."""
+    return tuple("sdk/typescript-guest/activation/" + name for name in NATIVE_SOURCES) + tuple(
+        "tools/typescript_guest/" + name for name in DERIVATION_SOURCES)
 
 
 def identity(files: dict[str, bytes]) -> list[dict]:
@@ -76,6 +86,9 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         name: original[name] for name in (
             "StarlingMonkey/builtins/web/timers.cpp", "StarlingMonkey/builtins/web/timers.h")})
     result.update(timer_sources)
+    from tools.typescript_guest.abort_engine import derive_abort_timeout
+    abort_source, abort_receipt = derive_abort_timeout(original['StarlingMonkey/builtins/web/abort/abort-signal.cpp'])
+    result['StarlingMonkey/builtins/web/abort/abort-signal.cpp'] = abort_source
     engine = result["StarlingMonkey/runtime/engine.cpp"]
     engine = replace_once(engine, b'#include "event_loop.h"',
                           b'#include "event_loop.h"\n#include "native_engine.h"', "include")
@@ -187,6 +200,7 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         "originalSource": before, "derivedSource": identity(result),
         "nativeQueueSource": identity(native), "generatedActivationABI": identity(generated),
         "selectedTimerDerivation": timer_receipt,
+        "selectedAbortDerivation": abort_receipt,
         "ordinaryCompilerSelectionChanged": False,
         "supportedAsyncProfile": False,
         "qualification": "pending-real-engine-and-signed-component-controls",

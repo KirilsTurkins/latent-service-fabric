@@ -148,6 +148,15 @@ bool start_timer(JSContext* cx, JS::HandleObject callback,
 }
 
 bool clear_timer(JSContext* cx, int32_t id) { return timers.clear(cx, id); }
+bool start_timeout_nanoseconds(JSContext* cx, JS::HandleObject callback,
+                               const JS::HandleValueArray& arguments,
+                               uint64_t nanos, int32_t* id) {
+  if (!effects_allowed(cx)) {
+    JS_ReportErrorASCII(cx, "activation-runtime-timeout-during-snapshot-denied");
+    return false;
+  }
+  return timers.startNanoseconds(cx, callback, arguments, nanos, nullptr, id);
+}
 bool has_pending_timer_work() { return timers.hasPending(); }
 
 bool run_timer_turn(JSContext* cx) {

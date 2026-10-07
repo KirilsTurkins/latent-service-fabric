@@ -186,6 +186,87 @@ class TypeScriptRuntimeProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unsupported-type-kind'):
             runtime.check_derived_world(actual_graph('original'), graph, actual_graph('activation'), WORLD)
 
+    def test_selected_surface_preserves_exports_and_declares_activation_for_admission(self):
+        from tools.rust_capsule_build import package_inputs
+        from tools import guest_compatibility_build
+        from tools.typescript_guest.project import create
+        from tools.rust_capsule_project import snapshot
+        with tempfile.TemporaryDirectory() as owned:
+            root = Path(owned)
+            project = create(root/'project', 'greeting', 'selected-admission', runtime_profile=runtime.ASYNC_PROFILE)
+            files = snapshot(project)
+            value = json.loads(files['capsule-project.json'])
+            value['world'] = runtime.SELECTED_WORLD
+            exports = [{'contract': 'examples:greeting/greeting@1.0.0'}]
+            surface = {'imports': [runtime.ACTIVATION_INTERFACE], 'exports': exports}
+            output = root/'output'
+            output.mkdir()
+            package_inputs(output, value, surface, files, b'actual-component-bytes')
+            manifest = json.loads((output/'capsule.json').read_bytes())
+            self.assertEqual(manifest['imports'], [{'contract': runtime.ACTIVATION_INTERFACE, 'optional': False}])
+            self.assertEqual(manifest['exports'], exports)
+            self.assertEqual(manifest['component']['world'], runtime.SELECTED_WORLD)
+            self.assertEqual(manifest['execution']['limits'], value['limits'])
+            self.assertEqual(guest_compatibility_build.declared_host_abi(surface), 'lsf-host-abi-phase3-v5')
+
+
+class TypeScriptAbortSourceTests(unittest.TestCase):
+    def test_pinned_timeout_conversion_precedes_signal_graph_allocation(self):
+        from tools.typescript_guest.abort_engine import derive_abort_timeout
+        raw = (FIXTURES/'original-abort-signal.cpp').read_bytes()
+        after, receipt = derive_abort_timeout(raw)
+        start = after.index(b'JSObject *AbortSignal::create_with_timeout(')
+        end = after.index(b'// https://dom.spec.whatwg.org/#dom-abortsignal-any', start)
+        body = after[start:end]
+        self.assertLess(body.index(b'timeout_nanoseconds('), body.index(b'create(cx)'))
+        self.assertLess(body.index(b'timeout_nanoseconds('), body.index(b'start_timeout_nanoseconds('))
+        self.assertNotIn(b'JS::ToNumber(cx, timeout, &ms)', body)
+        self.assertNotIn(b'timers::set_timeout(', body)
+        self.assertFalse(receipt['supportedAsyncProfile'])
+        self.assertFalse(receipt['signedLSFComponentQualified'])
+
+    def test_pinned_abort_reason_event_algorithms_and_other_methods_are_preserved(self):
+        from tools.typescript_guest.abort_engine import derive_abort_timeout
+        raw = (FIXTURES/'original-abort-signal.cpp').read_bytes()
+        after, _ = derive_abort_timeout(raw)
+        first = b'bool AbortSignal::run_abort_steps('
+        boundary = b'JSObject *AbortSignal::create_with_timeout('
+        self.assertEqual(raw[raw.index(first):raw.index(boundary)],
+                         after[after.index(first):after.index(boundary)])
+        following = b'// https://dom.spec.whatwg.org/#dom-abortsignal-any'
+        self.assertEqual(raw[raw.index(following, raw.index(boundary)):],
+                         after[after.index(following, after.index(boundary)):])
+        self.assertIn(b'DOMException::create(cx, "TimeoutError", "TimeoutError")', after)
+
+    def test_pinned_abort_source_change_is_rejected_before_derivation(self):
+        from tools.typescript_guest.abort_engine import derive_abort_timeout
+        raw = (FIXTURES/'original-abort-signal.cpp').read_bytes()
+        with self.assertRaisesRegex(ValueError, 'unreviewed-original-AbortSignal-source'):
+            derive_abort_timeout(raw+b'changed')
+
+    def test_abort_recipe_and_native_sources_are_closed_compiler_inputs(self):
+        from tools.typescript_guest.activation_engine import NATIVE_SOURCES, PREIMAGES, engine_input_paths
+        from tools.typescript_guest.build import RECIPE
+        self.assertIn('native_timeout.h', NATIVE_SOURCES)
+        self.assertEqual(PREIMAGES['StarlingMonkey/builtins/web/abort/abort-signal.cpp'],
+            hashlib.sha256((FIXTURES/'original-abort-signal.cpp').read_bytes()).hexdigest())
+        self.assertIn('tools/typescript_guest/abort_engine.py', RECIPE)
+        self.assertEqual(set(engine_input_paths()),
+            {'sdk/typescript-guest/activation/'+name for name in NATIVE_SOURCES} |
+            {'tools/typescript_guest/'+name for name in (
+                'activation_engine.py', 'promise_engine.py', 'timer_engine.py', 'abort_engine.py')})
+        for name in NATIVE_SOURCES:
+            self.assertIn('sdk/typescript-guest/activation/'+name, RECIPE)
+
+    def test_unrepresentable_timeout_is_explicit_and_never_promotes_qualification(self):
+        from tools.typescript_guest.abort_engine import derive_abort_timeout
+        _, receipt = derive_abort_timeout((FIXTURES/'original-abort-signal.cpp').read_bytes())
+        self.assertEqual(receipt['maximumRepresentableMilliseconds'], (2**64-1)//1000000)
+        self.assertEqual(receipt['unrepresentableNanoseconds'], 'explicit-profile-TypeError')
+        self.assertEqual(receipt['fractionalMilliseconds'], 'truncate-toward-zero-after-ToNumber')
+        self.assertFalse(receipt['supportedAsyncProfile'])
+        self.assertFalse(receipt['signedLSFComponentQualified'])
+
 
 if __name__ == '__main__':
     unittest.main()

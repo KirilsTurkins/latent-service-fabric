@@ -51,7 +51,7 @@ class Compiler:
                  runtime_profile: str = 'spidermonkey-public-sync-v1', engine: Path | None = None,
                  engine_receipt: Path | None = None):
         from tools.typescript_guest.runtime_profile import ASYNC_PROFILE, SYNC_PROFILE, selection, validate_engine
-        from tools.typescript_guest.activation_engine import NATIVE_SOURCES
+        from tools.typescript_guest.activation_engine import engine_input_paths
         selection(runtime_profile)
         self.runtime_profile = runtime_profile
         self.engine, self.engine_original, self.engine_before = None, None, None
@@ -64,10 +64,7 @@ class Compiler:
                 raise ValueError('selected TypeScript Promise candidate requires actual source-bound engine inputs')
             engine, engine_receipt = map(checked_path, (engine, engine_receipt))
             core, envelope = read_file(engine, 64*1024*1024), read_file(engine_receipt, 65536)
-            sdk = {'sdk/typescript-guest/activation/'+name: read_file(ROOT/'sdk/typescript-guest/activation'/name)
-                   for name in NATIVE_SOURCES}
-            for name in ('activation_engine.py', 'promise_engine.py', 'timer_engine.py'):
-                sdk['tools/typescript_guest/'+name] = read_file(ROOT/'tools/typescript_guest'/name)
+            sdk = {name: read_file(ROOT/name) for name in engine_input_paths()}
             self.engine_metadata = validate_engine(json.loads(envelope), core, sdk,
                 read_file(ROOT/'wit/platform/activation-runtime/package.wit'))
             self.engine_original = (engine, engine_receipt)
