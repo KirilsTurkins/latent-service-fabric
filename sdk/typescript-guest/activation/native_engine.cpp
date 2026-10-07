@@ -34,7 +34,11 @@ BrokerPromiseAccounting::Phase promise_phase(JSContext* cx) {
   }
 }
 
-BrokerAccounting accounting(effects_allowed);
+bool compiler_snapshot_allowed(JSContext* cx) {
+  return promise_phase(cx) == BrokerPromiseAccounting::Phase::CompilerSnapshot;
+}
+
+BrokerAccounting accounting(effects_allowed, compiler_snapshot_allowed);
 BrokerPromiseAccounting promise_accounting(promise_phase, accounting);
 PromiseRecords promises(promise_accounting);
 ReactionRecords reactions(promise_accounting, accounting);
@@ -110,6 +114,7 @@ bool install_job_dispatch(JSContext* cx) {
 bool snapshot_jobs_empty(JSContext* cx) {
   if (!queue || !queue->empty() || queue->isDrainingStopped() ||
       api::Engine::has_pending_async_tasks() || timers.hasPending() || promises.hasPendingPromises() ||
+      api::Engine::has_unhandled_promise_rejections() ||
       reactions.hasPendingReactions() || !reactions.checkpoint(cx) ||
       !promises.checkpoint(cx)) {
     JS_ReportErrorASCII(cx, "activation-runtime-pending-work-during-snapshot-denied");
@@ -159,6 +164,10 @@ bool settle_root(JSContext* cx) { return accounting.settleRoot(cx); }
 
 bool root_work_drained(JSContext* cx) {
   if (!effects_allowed(cx)) return snapshot_jobs_empty(cx);
+  if (api::Engine::has_unhandled_promise_rejections()) {
+    JS_ReportErrorASCII(cx, "activation-runtime-unhandled-promise-rejection-on-close");
+    return false;
+  }
   if (!queue || !queue->empty() || queue->isDrainingStopped() ||
       timers.hasPending() || !accounting.rootSettled()) {
     JS_ReportErrorASCII(cx, "activation-runtime-root-or-accepted-jobs-still-live");

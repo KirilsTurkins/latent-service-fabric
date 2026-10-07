@@ -24,7 +24,7 @@ class ReactionRecords final {
   bool stopped_ = false;
 
   static bool live(const JobOwners& owners) {
-    return owners.task_live || owners.queued_live;
+    return owners.task_live || owners.queued_live || owners.compiler_snapshot;
   }
   bool rollback(JSContext* cx, NativeOwner& native, JobOwners& job) {
     if (live(job) && (!job_accounting_.rollback(cx, job) || live(job))) return false;
@@ -109,7 +109,8 @@ public:
   bool transfer(JSContext* cx, void* pointer, JobOwners& output) {
     auto* record = static_cast<Record*>(pointer);
     if (!record || !record->physical || record->transferred ||
-        !record->job.task_live || !record->job.queued_live || stopped_) {
+        ((!record->job.task_live || !record->job.queued_live) &&
+         !record->job.compiler_snapshot) || stopped_) {
       JS_ReportErrorASCII(cx, "activation-runtime-reaction-transfer-invalid");
       return false;
     }

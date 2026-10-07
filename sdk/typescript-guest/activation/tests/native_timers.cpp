@@ -34,9 +34,11 @@ std::array<unsigned, 8> limits{16, 2, 2, 16, 8, 8, 8, 64};
 uint64_t next_owner = 1;
 uint32_t next_wait = 1;
 bool closed = false, effects = true, set_live = false, immediate_return = false;
+bool compiler_phase = false;
 bool defer_cancel = false, refuse_stop = false, refuse_native_ack = false, refuse_task_ack = false;
 unsigned starts = 0, stops = 0, drops = 0, set_drops = 0, waits_entered = 0;
 unsigned callback_entries = 0, native_admissions = 0, native_acknowledgements = 0;
+unsigned host_calls = 0;
 bool host_in_gc = false, in_gc = false;
 uint64_t observed_period = 0;
 
@@ -46,8 +48,9 @@ bool valid(const latent_runtime_activation_token_t* token) {
 bool failed(latent_runtime_activation_error_t* error, uint8_t value) {
   *error = value; return false;
 }
-void note_host() { if (in_gc) host_in_gc = true; }
+void note_host() { ++host_calls; if (in_gc) host_in_gc = true; }
 bool allowed(JSContext*) { return effects; }
+bool snapshot_allowed(JSContext*) { return compiler_phase && !effects; }
 BrokerPromiseAccounting::Phase phase(JSContext*) {
   return effects ? BrokerPromiseAccounting::Phase::Activation
                  : BrokerPromiseAccounting::Phase::CompilerSnapshot;
@@ -274,7 +277,7 @@ int main(int argc, char** argv) {
   if (!JS_Init()) return 3;
   JSContext* cx = JS_NewContext(32*1024*1024);
   if (!cx) return 4;
-  BrokerAccounting jobs(allowed);
+  BrokerAccounting jobs(allowed, snapshot_allowed);
   BrokerPromiseAccounting native(phase, jobs);
   PromiseRecords promises(native);
   ReactionRecords reactions(native, jobs);
@@ -309,7 +312,44 @@ int main(int argc, char** argv) {
     if (!jobs.beginRoot(cx)) return 9;
     JS::RootedValue output(cx);
     const char* selected = argv[1];
-    if (!std::strcmp(selected, "root-promise-suspends")) {
+    if (!std::strcmp(selected, "snapshot-pure-promises-no-owner-imports")) {
+      if (!jobs.parkRoot(cx) || !jobs.settleRoot(cx)) return 10;
+      effects = false; compiler_phase = true;
+      const auto before = host_calls;
+      if (!evaluate(cx, "globalThis.answer=0;globalThis.order=['sync'];"
+          "(async()=>{await Promise.resolve(40);return 42;})()"
+          ".then(v=>{answer=v;order.push('micro');});", &output)) return 10;
+      js::RunJobs(cx);
+      status = host_calls == before && queue.empty() && !queue.isDrainingStopped() &&
+               !JS_IsExceptionPending(cx) && counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE] == 0 &&
+               expect(cx, "answer===42&&order.join(',')==='sync,micro'") ? 0 : 1;
+    } else if (!std::strcmp(selected, "snapshot-job-cannot-cross-activation")) {
+      if (!jobs.parkRoot(cx) || !jobs.settleRoot(cx)) return 10;
+      effects = false; compiler_phase = true;
+      if (!evaluate(cx, "globalThis.called=0;Promise.resolve().then(()=>called++);", &output)) return 10;
+      const auto before = host_calls;
+      effects = true; compiler_phase = false;
+      js::RunJobs(cx);
+      const bool refused = queue.isDrainingStopped() && JS_IsExceptionPending(cx) &&
+                           host_calls == before && counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_TASK] == 0;
+      JS_ClearPendingException(cx);
+      effects = false; compiler_phase = true;
+      status = refused && expect(cx, "called===0") && queue.cancelQueued(cx) ? 0 : 1;
+    } else if (!std::strcmp(selected, "snapshot-runtime-effects-still-denied")) {
+      if (!jobs.parkRoot(cx) || !jobs.settleRoot(cx)) return 10;
+      effects = false; compiler_phase = true;
+      const auto before = host_calls;
+      const bool evaluated = evaluate(cx, "setTimeout(()=>42,0);", &output);
+      status = !evaluated && JS_IsExceptionPending(cx) && host_calls == before &&
+               starts == 0 && !timers.hasPending() ? 0 : 1;
+    } else if (!std::strcmp(selected, "snapshot-opaque-promise-detected")) {
+      if (!jobs.parkRoot(cx) || !jobs.settleRoot(cx)) return 10;
+      effects = false; compiler_phase = true;
+      const auto before = host_calls;
+      if (!evaluate(cx, "globalThis.root=new Promise(()=>{});root.then(()=>42);", &output)) return 10;
+      status = promises.hasPendingPromises() && reactions.hasPendingReactions() && queue.empty() &&
+               host_calls == before && counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_NATIVE] == 0 ? 0 : 1;
+    } else if (!std::strcmp(selected, "root-promise-suspends")) {
       if (!evaluate(cx, "globalThis.answer=0;globalThis.root=new Promise(resolve=>"
           "{setTimeout(()=>resolve(42),0);});root.then(value=>{answer=value;rootDone();});", &output))
         return 10;
@@ -443,7 +483,9 @@ int main(int argc, char** argv) {
     }
     JS_ClearPendingException(cx);
     refuse_stop = refuse_task_ack = refuse_native_ack = defer_cancel = false;
-    effects = true;
+    // Snapshot cleanup still carries no tenant tokens. Finish its actual weak
+    // collection and queue retirement before changing the fixture phase.
+    effects = !compiler_phase;
     if (!jobs.rootSettled() && !jobs.settleRoot(cx)) return 11;
     if (!timers.cancel(cx) || !queue.cancelQueued(cx)) return 11;
     output.setUndefined();
@@ -452,6 +494,7 @@ int main(int argc, char** argv) {
     output.setUndefined();
     collect(cx);
     if (!reactions.checkpoint(cx) || !promises.checkpoint(cx)) return 11;
+    effects = true; compiler_phase = false;
     unsigned total = 0; for (auto count : counts) total += count;
     if (total || timers.hasPending() || !queue.empty() || set_live || host_in_gc) status = 1;
     std::printf("{\"case\":\"%s\",\"status\":%d,\"owners\":%u,\"starts\":%u,\"stops\":%u,"

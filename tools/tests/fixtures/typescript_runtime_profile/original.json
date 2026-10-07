@@ -1,0 +1,216 @@
+{
+  "parser": "wasm-tools1.254.0",
+  "originalSourceSha256": "461f00998a8ad629ef0c3f16a52e09cdde4f880ad4992f9357b036bfaf625afc",
+  "activationSourceSha256": "0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+  "graph": {
+    "worlds": [
+      {
+        "name": "capsule",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "exports": {
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          }
+        },
+        "package": 0
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "host",
+        "types": {},
+        "functions": {
+          "echo": {
+            "name": "echo",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ],
+            "result": "string"
+          },
+          "roundtrip": {
+            "name": "roundtrip",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "u64"
+              },
+              {
+                "name": "minimum",
+                "type": "s64"
+              },
+              {
+                "name": "maximum",
+                "type": "s64"
+              }
+            ],
+            "result": 0
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "probe",
+        "types": {
+          "item": 1,
+          "payload": 5
+        },
+        "functions": {
+          "run": {
+            "name": "run",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "input",
+                "type": 5
+              }
+            ],
+            "result": 6
+          },
+          "echo-signed": {
+            "name": "echo-signed",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "s64"
+              }
+            ],
+            "result": "s64"
+          }
+        },
+        "package": 0
+      }
+    ],
+    "types": [
+      {
+        "name": null,
+        "kind": {
+          "tuple": {
+            "types": [
+              "u64",
+              "s64",
+              "s64"
+            ]
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "item",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "name": "amount",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": 1
+        },
+        "owner": null
+      },
+      {
+        "name": "payload",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "u64"
+              },
+              {
+                "name": "minimum",
+                "type": "s64"
+              },
+              {
+                "name": "maximum",
+                "type": "s64"
+              },
+              {
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "name": "bytes",
+                "type": 2
+              },
+              {
+                "name": "maybe",
+                "type": 3
+              },
+              {
+                "name": "items",
+                "type": 4
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 5,
+            "err": "string"
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "lsf:typescript-probe@1.0.0",
+        "interfaces": {
+          "host": 0,
+          "probe": 1
+        },
+        "worlds": {
+          "capsule": 0
+        }
+      }
+    ]
+  }
+}

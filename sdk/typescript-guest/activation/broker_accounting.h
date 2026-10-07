@@ -9,8 +9,10 @@ namespace lsf::typescript::activation {
 class BrokerAccounting final : public Accounting {
   using EffectsAllowed = bool (*)(JSContext*);
   EffectsAllowed effects_allowed_;
+  EffectsAllowed compiler_snapshot_allowed_;
   Token continuation_{};
   bool executing_ = false;
+  bool executing_snapshot_ = false;
   Token root_{};
   bool root_live_ = false;
   bool root_closed_ = false;
@@ -41,6 +43,13 @@ class BrokerAccounting final : public Accounting {
   }
 
   bool release(JSContext* cx, JobOwners& owners) {
+    if (owners.compiler_snapshot) {
+      if (owners.task_live || owners.queued_live || !compiler_snapshot_allowed_ ||
+          !compiler_snapshot_allowed_(cx) || (effects_allowed_ && effects_allowed_(cx)))
+        return failure(cx, "snapshot-owner-transition", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+      owners.compiler_snapshot = false;
+      return true; // no activation token exists and no host import is invoked
+    }
     // A child queue record is acknowledged before its parent task. If either
     // operation fails, acknowledged flags preserve the exact remaining owner
     // for cancellation; no retry invents a new token or refunds twice.
@@ -49,8 +58,9 @@ class BrokerAccounting final : public Accounting {
   }
 
 public:
-  explicit BrokerAccounting(EffectsAllowed effects_allowed)
-      : effects_allowed_(effects_allowed) {}
+  explicit BrokerAccounting(EffectsAllowed effects_allowed,
+                            EffectsAllowed compiler_snapshot_allowed = nullptr)
+      : effects_allowed_(effects_allowed), compiler_snapshot_allowed_(compiler_snapshot_allowed) {}
 
   bool currentContinuation(Token& output) const {
     if (!executing_ && !root_live_) return false;
@@ -104,6 +114,8 @@ public:
   // Its callback inherits that exact token, without reopening root admission
   // or inventing authority, a deadline, or another budget ledger.
   bool admitUnder(JSContext* cx, Token parent, JobOwners& owners) {
+    if (!effects_allowed_ || !effects_allowed_(cx))
+      return failure(cx, "callback-phase", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
     if (!parent.generation || !parent.id)
       return failure(cx, "callback-parent", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_TOKEN);
     return admitWithParent(cx, owners, &parent);
@@ -111,9 +123,15 @@ public:
 
 private:
   bool admitWithParent(JSContext* cx, JobOwners& owners, const Token* inherited) {
-    if (owners.task_live || owners.queued_live)
+    if (owners.task_live || owners.queued_live || owners.compiler_snapshot)
       return failure(cx, "job-readmission", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
     if (!effects_allowed_ || !effects_allowed_(cx)) {
+      if (compiler_snapshot_allowed_ && compiler_snapshot_allowed_(cx) && !inherited) {
+        // The original bounded Wizer process/linear heap owns pure compilation.
+        // Snapshot jobs create no runtime owner, identity, or external effect.
+        owners.compiler_snapshot = true;
+        return true;
+      }
       JS_ReportErrorASCII(cx, "activation-runtime-job-during-snapshot-denied");
       return false;
     }
@@ -141,7 +159,14 @@ public:
   }
 
   bool started(JSContext* cx, JobOwners& owners) override {
-    if (executing_ || !owners.task_live || !owners.queued_live)
+    if (owners.compiler_snapshot) {
+      if (executing_ || executing_snapshot_ || !compiler_snapshot_allowed_ ||
+          !compiler_snapshot_allowed_(cx) || (effects_allowed_ && effects_allowed_(cx)))
+        return failure(cx, "snapshot-frame-entry", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+      executing_snapshot_ = true;
+      return true;
+    }
+    if (executing_ || executing_snapshot_ || !owners.task_live || !owners.queued_live)
       return failure(cx, "job-entry", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
     auto task = native(owners.task);
     latent_runtime_activation_error_t error{};
@@ -154,6 +179,10 @@ public:
   }
 
   bool completed(JSContext* cx, JobOwners& owners) override {
+    if (owners.compiler_snapshot) {
+      executing_snapshot_ = false; // original native JS::Call frame returned
+      return release(cx, owners);
+    }
     // The native JS::Call frame has returned, including the exceptional path.
     // Subsequent admissions therefore cannot inherit this completed task.
     executing_ = false;
@@ -162,7 +191,7 @@ public:
   }
 
   bool cancelled(JSContext* cx, JobOwners& owners) override {
-    if (executing_)
+    if (executing_ || executing_snapshot_)
       return failure(cx, "running-job-cancel", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
     return release(cx, owners);
   }

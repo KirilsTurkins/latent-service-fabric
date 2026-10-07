@@ -25,6 +25,9 @@ struct JobOwners {
   Token queued{};
   bool task_live = false;
   bool queued_live = false;
+  // Pure compiler initialization has no tenant/runtime tokens. It cannot
+  // survive the checked empty-queue boundary into an activation.
+  bool compiler_snapshot = false;
 };
 
 // These are mandatory native entry/exit hooks, not a second budget ledger.
@@ -79,7 +82,7 @@ private:
   bool stopped_ = false;
 
   static bool live(const JobOwners& owners) {
-    return owners.task_live || owners.queued_live;
+    return owners.task_live || owners.queued_live || owners.compiler_snapshot;
   }
 
   void retainFailedAdmission(JSContext* cx, JobOwners& owners,

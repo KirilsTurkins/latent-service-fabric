@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/typescript_capsule.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review explicit approved source-generator CLI commands while retaining pinned compiler installation and default package-script denial","schemaVersion":"latent.ci.contracts.v1","sha256":"0576d2d5e3a954ed0e2ec5b14299aedbc7872343a05ead4706cc01879d5707d5"}
+{
+  "kind": "owner",
+  "path": "tools/typescript_capsule.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind reviewed explicit runtime selection and exact source-bound engine inputs while retaining ordinary CLI and approved generator/frontend paths.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "f957df80c3897402a8239b258e4f4b72c63ac7b4fb3cfdb2df87eb397b94d637"
+}

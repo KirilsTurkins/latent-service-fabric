@@ -45,6 +45,8 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=TEMPLATES, default="greeting")
     new.add_argument("--name")
+    new.add_argument('--runtime-profile', choices=('spidermonkey-public-sync-v1', 'spidermonkey-activation-promises-v1'),
+                     help='Explicit compiler runtime selection; the Promise candidate remains unqualified')
     capture = commands.add_parser("resolve", help="Explicitly fetch a native application npm lock without package lifecycle scripts")
     capture.add_argument("project", type=Path)
     capture.add_argument("--candidate", type=Path, required=True)
@@ -92,6 +94,8 @@ def parser() -> argparse.ArgumentParser:
     compile_.add_argument("--repository", required=True)
     compile_.add_argument("--contracts-tool", type=Path, default=ROOT / "target/debug/examples/capsule_contracts")
     compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
+    compile_.add_argument('--runtime-engine', type=Path, help='Source-bound engine input for the selected Promise candidate')
+    compile_.add_argument('--runtime-engine-receipt', type=Path, help='Exact engine provenance envelope; never API qualification')
     return parser
 
 
@@ -102,7 +106,8 @@ def main(argv: list[str] | None = None):
         if args.command == "install-tools":
             result = install(args.directory)
         elif args.command == "new":
-            result = create(args.directory, args.template, args.name)
+            result = create(args.directory, args.template, args.name,
+                            **({'runtime_profile': args.runtime_profile} if args.runtime_profile is not None else {}))
         elif authoring:
             from tools import typescript_dependency_authoring as dependencies
             from tools.build_snapshot import canonical
@@ -137,8 +142,13 @@ def main(argv: list[str] | None = None):
                 candidate = dependencies.candidate_location(args.project, args.candidate)
                 if any(os.path.lexists(candidate.with_name(candidate.name + suffix)) for suffix in ('.receipt.json', '.failed.json')):
                     raise DependencyError('npm-dependency-candidate-use-fresh-attempt')
+                from tools.typescript_guest.runtime_profile import selected_profile
+                from tools.guest_dependency_inputs import layout
+                _owner, captured_app, _descriptor = layout(args.project, 'typescript')
+                import json
+                profile = selected_profile(json.loads(read_file(captured_app/'capsule-project.json')))
                 lock = resolve(args.project, candidate, node=args.node, npm=args.npm, registry_config=args.registry_config,
-                               selected={'conditions': args.condition})
+                               selected={'conditions': args.condition, 'runtimeProfile': profile})
                 result = dependencies.resolved(args.project, candidate, lock)
                 paths.write_new(candidate.with_name(candidate.name + '.receipt.json'), canonical(result) + b'\n')
             elif args.command == 'review-lock':
@@ -149,7 +159,11 @@ def main(argv: list[str] | None = None):
             print(canonical({**result, 'receipt': str(receipt)}).decode())
             return 0
         else:
-            result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository, tools=args.tools)
+            runtime_inputs = ({'runtime_engine': args.runtime_engine,
+                               'runtime_engine_receipt': args.runtime_engine_receipt}
+                              if args.runtime_engine is not None or args.runtime_engine_receipt is not None else {})
+            result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository,
+                           tools=args.tools, **runtime_inputs)
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError, KeyError, TypeError) as error:

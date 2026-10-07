@@ -36,9 +36,12 @@ def selection(value: dict | None = None) -> dict:
     if (not isinstance(conditions, list) or len(conditions) > 32
             or any(not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', name) for name in conditions)):
         raise DependencyError('npm-module-conditions-invalid')
-    if value.get('target', 'wasm32-component') != 'wasm32-component' or value.get('runtimeProfile', PROFILE) != PROFILE:
+    from tools.typescript_guest.runtime_profile import ASYNC_PROFILE
+    profile = value.get('runtimeProfile', PROFILE)
+    if value.get('target', 'wasm32-component') != 'wasm32-component' or profile not in (PROFILE, ASYNC_PROFILE):
         raise DependencyError('npm-runtime-profile-not-installed')
-    return {'target': 'wasm32-component', 'runtimeProfile': PROFILE, 'conditions': sorted(set(conditions))}
+    # Explicit capture binds a candidate selection; it certifies no runtime API.
+    return {'target': 'wasm32-component', 'runtimeProfile': profile, 'conditions': sorted(set(conditions))}
 
 
 def native_lock(data: bytes) -> dict:

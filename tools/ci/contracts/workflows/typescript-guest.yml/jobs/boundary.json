@@ -114,6 +114,10 @@
         "run": "python3 tools/qualify_typescript_capsules.py --application-dependencies --output \"$RUNNER_TEMP/typescript-capsule-dependencies\" --tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
+        "name": "Validate explicit TypeScript runtime selection and preserved public contracts",
+        "run": "python3 -m unittest tools.tests.test_typescript_runtime_profile\n"
+      },
+      {
         "if": "always()",
         "name": "Preserve attempted runtime test evidence",
         "uses": "actions/upload-artifact",
@@ -129,7 +133,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
+  "reviewReason": "Add only the new21 source/profile controls; preserve every existing compiler, runtime, ownership, captured npm and enforced-node qualification command.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
