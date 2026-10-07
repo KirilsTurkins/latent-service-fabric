@@ -64,7 +64,7 @@ impl super::StandaloneNode {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderDescriptor {
     id: String,

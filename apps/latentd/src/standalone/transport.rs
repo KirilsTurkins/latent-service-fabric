@@ -19,6 +19,7 @@ use latent_wire::management::ManagementServiceAdapter;
 use tokio::runtime::Handle;
 use tokio::task::JoinHandle;
 
+pub(in crate::standalone) use auth::credential_principal;
 pub use config::{TransportConfig, TransportCredential};
 pub use state::{TransportHandle, TransportSnapshot};
 

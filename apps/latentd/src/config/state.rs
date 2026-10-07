@@ -6,6 +6,9 @@ use serde::Deserialize;
 use std::path::PathBuf;
 mod effects;
 pub use effects::DeferredHttpConfig;
+mod tenant;
+pub use tenant::{TenantLimitsConfig, TenantQuotaConfig};
+mod root;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -15,7 +18,13 @@ pub struct StateConfig {
     pub create_if_missing: bool,
     pub configuration_epoch: u64,
     pub clock_checkpoint: PathBuf,
+    /// Explicit protected operator destination after staged restore. This does
+    /// not authorize its contents or relax any normal startup checks.
+    #[serde(default, deserialize_with = "root::present")]
+    pub state_root: Option<PathBuf>,
     pub operations: Vec<StateOperationConfig>,
+    #[serde(default)]
+    pub tenant_quotas: Vec<TenantQuotaConfig>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -54,7 +63,18 @@ pub(crate) struct StateSettings {
     pub create_if_missing: bool,
     pub configuration_epoch: u64,
     pub clock_checkpoint: PathBuf,
+    state_root: Option<PathBuf>,
     pub operations: Vec<OperationSettings>,
+    pub tenant_quotas: Vec<latent_state::tenant::TenantQuota>,
+}
+
+impl StateSettings {
+    #[must_use]
+    pub(crate) fn protected_root(&self, data_directory: &std::path::Path) -> PathBuf {
+        self.state_root
+            .clone()
+            .unwrap_or_else(|| data_directory.join("state"))
+    }
 }
 
 #[derive(Clone)]
@@ -84,6 +104,8 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
     {
         return Err(super::invalid("state"));
     }
+    let tenant_quotas = tenant::derive(&value.tenant_quotas, &value.operations)?;
+    let state_root = root::derive(value.state_root.as_deref())?;
     let mut operations = Vec::with_capacity(value.operations.len());
     for input in &value.operations {
         for text in [
@@ -150,7 +172,9 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
         create_if_missing: value.create_if_missing,
         configuration_epoch: value.configuration_epoch,
         clock_checkpoint: value.clock_checkpoint.clone(),
+        state_root,
         operations,
+        tenant_quotas,
     })
 }
 
@@ -176,8 +200,9 @@ fn checked_digest(text: &str) -> Result<(), PlatformError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn input() -> serde_json::Value {
-        serde_json::json!({"formatVersion":1,"configurationEpoch":1,"clockCheckpoint":std::env::temp_dir().join("state-clock.json"),"operations":[{
+    pub(super) fn input() -> serde_json::Value {
+        serde_json::json!({"formatVersion":1,"configurationEpoch":1,"clockCheckpoint":std::env::temp_dir().join("state-clock.json"),
+            "tenantQuotas":[tenant::tests::quota("a")],"operations":[{
             "tenant":"a","componentDigest":format!("sha256:{}","a".repeat(64)),
             "publication":format!("publication:sha256:{}","b".repeat(64)),"contract":"test:state/api@1.0.0",
             "function":"save","deployment":"state","binding":"state","companionDigest":format!("sha256:{}","c".repeat(64)),
