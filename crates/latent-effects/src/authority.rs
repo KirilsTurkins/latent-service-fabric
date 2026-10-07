@@ -8,12 +8,14 @@
 
 mod grant;
 mod lookup;
+mod namespace;
 pub use grant::DispatchGrant;
 pub use lookup::{DispatchPurpose, ProviderLookupAuthorization};
+pub use namespace::NamespaceEffectCloseFence;
 
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex, MutexGuard,
@@ -316,6 +318,7 @@ pub struct DispatchOwners {
 
 struct State {
     rules: BTreeMap<EffectScope, EffectRule>,
+    closed_namespaces: BTreeSet<namespace::NamespaceScope>,
     physical: usize,
     quarantined: usize,
     clock_floor: u64,
@@ -357,6 +360,7 @@ impl EffectAuthorityOwner {
         Ok(Self(Arc::new(Owner {
             state: Mutex::new(State {
                 rules: BTreeMap::new(),
+                closed_namespaces: BTreeSet::new(),
                 physical: 0,
                 quarantined: 0,
                 clock_floor,
@@ -379,6 +383,13 @@ impl EffectAuthorityOwner {
             .state
             .lock()
             .map_err(|_| AuthorityError::Unavailable)?;
+        if rule.enabled
+            && state
+                .closed_namespaces
+                .contains(&namespace::NamespaceScope::from_effect(&rule.scope))
+        {
+            return Err(AuthorityError::PolicyBlocked);
+        }
         if let Some(previous) = state.rules.get(&rule.scope) {
             if rule.policy_revision < previous.policy_revision
                 || (rule.policy_revision == previous.policy_revision && rule != *previous)
