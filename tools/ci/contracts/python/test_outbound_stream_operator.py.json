@@ -1,0 +1,56 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Protected operator source controls include real owned-file mode/link/size checks and preserve exact scope, original-operation recovery, finite development configuration and all existing public RPC semantics.",
+  "module":"tools/tests/test_outbound_stream_operator.py",
+  "cases":["StreamConfiguration.test_configuration_is_explicitly_gated_and_preserves_all_other_node_inputs","StreamConfiguration.test_cross_scope_and_http_bindings_are_rejected_without_mutating_node","StreamConfiguration.test_installed_provider_requires_live_owner_rotation_and_not_an_input_overwrite","StreamConfiguration.test_unknown_secret_host_tls_float_and_widened_bounds_fail_with_static_diagnostics","StreamOperator.test_adoption_rejects_same_stale_foreign_or_unsupported_provider_without_mutation","StreamOperator.test_changed_policy_blocks_adoption_and_preserves_private_descriptor","StreamOperator.test_changed_private_client_configuration_or_owner_scope_fails_before_rpc","StreamOperator.test_confirmed_repeat_observes_owned_records_without_reapplying","StreamOperator.test_explicit_new_descriptor_adoption_keeps_exact_owner_and_applies_no_mutation","StreamOperator.test_foreign_policy_or_changed_owned_record_is_not_overwritten","StreamOperator.test_grant_binds_exact_provider_publication_principal_and_tcp_destination","StreamOperator.test_group_readable_private_configuration_is_rejected_before_rpc","StreamOperator.test_http_only_cross_tenant_noncanonical_and_host_tls_inputs_cannot_build_grant","StreamOperator.test_inspection_retains_unavailable_counters_without_minting_authority","StreamOperator.test_linked_private_client_configuration_is_rejected_before_rpc","StreamOperator.test_oversized_private_configuration_is_rejected_before_rpc","StreamOperator.test_restart_recovers_only_original_receipt_before_continuing_grant","StreamOperator.test_revoke_applies_durable_deny_at_owned_policy_generation","StreamOperator.test_transport_exception_retains_pending_dispatch_without_replay","StreamOperator.test_uncertain_binding_retains_original_intent_and_prevents_new_mutation","StreamOperator.test_unknown_outcome_blocks_adoption_without_receipt_replay"],
+  "guards":{
+    "StreamOperator.test_grant_binds_exact_provider_publication_principal_and_tcp_destination":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_uncertain_binding_retains_original_intent_and_prevents_new_mutation":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_transport_exception_retains_pending_dispatch_without_replay":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_restart_recovers_only_original_receipt_before_continuing_grant":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_revoke_applies_durable_deny_at_owned_policy_generation":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_confirmed_repeat_observes_owned_records_without_reapplying":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_foreign_policy_or_changed_owned_record_is_not_overwritten":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_changed_private_client_configuration_or_owner_scope_fails_before_rpc":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_linked_private_client_configuration_is_rejected_before_rpc":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_oversized_private_configuration_is_rejected_before_rpc":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_group_readable_private_configuration_is_rejected_before_rpc":
+      "b20481149cf6e1a519365b994b233acdf4c3ebcf3723a9ded7293652438b4711",
+    "StreamOperator.test_http_only_cross_tenant_noncanonical_and_host_tls_inputs_cannot_build_grant":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_inspection_retains_unavailable_counters_without_minting_authority":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamConfiguration.test_configuration_is_explicitly_gated_and_preserves_all_other_node_inputs":
+      "bbd3c14db7a9bc4fe1e30a7216a6e4dab840c368edee4b5961e7a931d232b464",
+    "StreamConfiguration.test_cross_scope_and_http_bindings_are_rejected_without_mutating_node":
+      "bbd3c14db7a9bc4fe1e30a7216a6e4dab840c368edee4b5961e7a931d232b464",
+    "StreamConfiguration.test_installed_provider_requires_live_owner_rotation_and_not_an_input_overwrite":
+      "bbd3c14db7a9bc4fe1e30a7216a6e4dab840c368edee4b5961e7a931d232b464",
+    "StreamConfiguration.test_unknown_secret_host_tls_float_and_widened_bounds_fail_with_static_diagnostics":
+      "bbd3c14db7a9bc4fe1e30a7216a6e4dab840c368edee4b5961e7a931d232b464",
+    "StreamOperator.test_adoption_rejects_same_stale_foreign_or_unsupported_provider_without_mutation":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_changed_policy_blocks_adoption_and_preserves_private_descriptor":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_explicit_new_descriptor_adoption_keeps_exact_owner_and_applies_no_mutation":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035",
+    "StreamOperator.test_unknown_outcome_blocks_adoption_without_receipt_replay":
+      "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035"
+  },
+  "guardDefinitions":{
+    "529818a2e08d3759952c230aace45caad1a15eb59507d7e04d8adc0bb08d8035":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:2a1703a26e31af3f4e5682c57542f2c7e7109bd5b22d26f1d2f46a3be42d29ae","class:setup-sha256:c569056ce11bfb4d18b75511a4a1bfbf7c1f0edfcbf3ff24f205935794cffffe"]},
+    "b20481149cf6e1a519365b994b233acdf4c3ebcf3723a9ded7293652438b4711":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'posix', 'POSIX file mode protection; Windows uses maintained ACL checks')"],"skipSites":["skip-control-sha256:b136af1df5c3cf30c9d3ecee09c47a3b6e4feb8e55e6e678e9c3267ff3075f9d","unittest.skipUnless(os.name == 'posix', 'POSIX file mode protection; Windows uses maintained ACL checks')"],"fixtureGuards":["module:setup-sha256:2a1703a26e31af3f4e5682c57542f2c7e7109bd5b22d26f1d2f46a3be42d29ae","class:setup-sha256:c569056ce11bfb4d18b75511a4a1bfbf7c1f0edfcbf3ff24f205935794cffffe"]},
+    "bbd3c14db7a9bc4fe1e30a7216a6e4dab840c368edee4b5961e7a931d232b464":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:2a1703a26e31af3f4e5682c57542f2c7e7109bd5b22d26f1d2f46a3be42d29ae","class:setup-sha256:4877a7d552ab0e10c69784337c1507601502af69bd9485adc9dd2c42c4633995"]}
+  }
+}

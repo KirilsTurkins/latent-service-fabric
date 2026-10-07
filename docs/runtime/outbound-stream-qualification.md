@@ -3,8 +3,10 @@
 The shared implementation remains restricted to explicit development features.
 [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md) and the
 [profile](outbound-stream-profile.md) remain subject to #737 architecture/security
-review. These results qualify a canonical TCP component and physical ownership;
-they do not qualify ordinary language networking or a released node artifact.
+review. The maintained suites define canonical TCP and physical-ownership controls.
+Execution remains pending wherever no authenticated source-bound receipt is
+linked below. Case presence and earlier count-only narratives do not establish
+current success, ordinary language networking or a released node artifact.
 
 The maintained `latent-streams` implementation installs exact immutable endpoint,
 address and resolver configuration into the original capability broker, provider
@@ -14,23 +16,26 @@ credentials, trust roots and client keys require the selected language runtime's
 implementation and independent secret grants. No stream configuration accepts
 application credentials or host key paths.
 
-| Evidence | Executed source boundary | Result |
+| Evidence | Maintained source boundary | Current authenticated execution |
 | --- | --- | --- |
-| Native TCP/DNS owners | `latent-streams` real loopback sockets and UDP DNS peer, original sealed policy/catalog/budget | 14 passing cases: actual partial read/EOF/send half-close, chunk backpressure before copy, retained chunks after socket closure, dropped unpolled operation, alternate endpoint denial, revocation before write, revocation during pending read, provider retirement during pending read, explicit host TLS rejection, rotation/drain retaining actual old-generation owners, autonomous idle/DNS expiry of inactive sockets, pending DNS cancellation with independently observed kernel descriptor retirement, and a lost mutation reply preserving uncertainty without host replay |
-| Existing broker behavior | Existing `latent-capabilities` library suite | 125 passing cases, including HTTP/provider audit, cancellation, fair finite queues, delayed physical retirement and exact authority bookkeeping contention |
-| Bounded DNS | `latent-network` real UDP/TCP resolver peers | 3 passing cases: truncated UDP to same explicit TCP resolver, preallocation TCP length rejection and exact special-address policy |
-| Canonical component | Maintained encoded Component Model guest, package/WIT evidence, ordinary Wasmtime backend and actual TCP peer | 7 passing cases: partial owned chunks/EOF, three fresh activations on the same execution cell, oversized byte-list rejection before send, terminal trap/wrong kind/stale resources, root cancellation and policy revocation while a canonical read waits, 256 dormant deployments with zero Stores and socket owners, and protected preparation rejection of UTF-16/compact UTF-16 before Store creation |
-| Signed node execution | Real signatures, SBOM/provenance, enforced package catalog, compiled deployment binding, normal local node admission/manager and actual TCP peers | 4 passing cases: three fresh activations on one execution cell; missing/stale provider binding denied before Store or contact; cancellation acknowledgement retaining original owners followed by actual physical retirement and fresh work; policy revocation at a pending peer barrier before the deadline |
-| Protected node configuration | Normal Linux node configuration loading and derivation, explicit development feature | 3 passing cases: closed input without credential/key-path reflection, exact installed binding scope, protected input and finite exact-address policy before storage or network work |
-| Normal node lifecycle | Protected configuration, ordinary standalone node startup and shutdown | 32 restarts in one maintained case: installation never dials the controlled peer, one prepaid maintenance owner is joined, and physical stream/maintenance owners are zero on each clean shutdown |
-| Authenticated management | Existing capability RPC transport, original broker and actual maintained control future | 45 passing management cases, including additive operator-only stream counters, tenant/caller/spoofed-role denial, actual maintenance join and explicit unavailable status after its weakly observed owner is destroyed |
-| Declarative configuration | Maintained node-provider schema and local stream-schema reference | 6 passing cases; all five existing provider-schema obligations retained, with additive closed stream configuration coverage |
+| Native TCP/DNS owners | `latent-streams` real loopback sockets and UDP DNS peer, original sealed policy/catalog/budget  Pending current-source execution and a linked source/artifact/receipt record. |
+| Existing broker behavior | Existing `latent-capabilities` library suite  Pending current-source execution and a linked source/artifact/receipt record. |
+| Bounded DNS | `latent-network` real UDP/TCP resolver peers  Pending current-source execution and a linked source/artifact/receipt record. |
+| Canonical component | Maintained encoded Component Model guest, package/WIT evidence, ordinary Wasmtime backend and actual TCP peer  Pending current-source execution and a linked source/artifact/receipt record. |
+| Signed node execution | Real signatures, SBOM/provenance, enforced package catalog, compiled deployment binding, normal local node admission/manager and actual TCP peers  Pending current-source execution and a linked source/artifact/receipt record. |
+| Protected node configuration | Normal Linux node configuration loading and derivation, explicit development feature  Pending current-source execution and a linked source/artifact/receipt record. |
+| Normal node lifecycle | Protected configuration, ordinary standalone node startup and shutdown  Pending current-source execution and a linked source/artifact/receipt record. |
+| Authenticated management | Existing capability RPC transport, original broker and actual maintained control future  Pending current-source execution and a linked source/artifact/receipt record. |
+| Declarative configuration | Maintained node-provider schema and local stream-schema reference  Pending current-source execution and a linked source/artifact/receipt record. |
 
-The Linux checks use Rust 1.97.1 image
-`rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97`.
-Tests observe actual peer FIN/reset, pool connections/running requests, original
-host-memory charges and IoRuntime owner snapshots at controlled barriers. A
-cancel acknowledgement or elapsed timeout is never counted as cleanup proof.
+The earlier narrative named Rust 1.97.1 image
+`rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97`
+without per-row source or execution packets. That image reference does not
+authenticate current results. Fresh receipts must identify the full source,
+compiler/runtime/WIT/engine, actual binary, exact cases and controlled barriers.
+Observe actual peer FIN/reset, pool connections/running requests, original
+host-memory charges and IoRuntime owners; a cancellation acknowledgement or
+elapsed timeout never proves cleanup.
 
 The provider prepays kernel socket allowance before allocation and rejects OS
 send/receive sizes beyond its reservation. Original native-memory guards remain
@@ -94,8 +99,8 @@ does not establish a clock-lease or authority-contention cause.
 Future controller observations retain `failureDetail` only for one exact
 `admission.currentness` detail with a recognized public reason and Boolean
 retryability. Arbitrary messages, payloads, extra fields and unknown reasons are
-excluded. All 66 recovery, HTTP-fixture and new observation controls pass on
-Linux, including all 12 currentness reasons and both retryability values. This
+excluded. Fresh source-bound recovery, HTTP-fixture and observation control receipts are
+required, including all 12 currentness reasons and both retryability values. This
 diagnostic neither settles the original operation nor authorizes a mutation
 retry; the original pending identity and receipt-recovery rules are unchanged.
 

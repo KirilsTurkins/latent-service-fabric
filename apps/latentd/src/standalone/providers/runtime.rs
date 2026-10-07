@@ -38,8 +38,13 @@ mod scalar;
 mod secrets;
 #[path = "startup.rs"]
 mod startup;
+#[cfg(feature = "development-outbound-streams")]
+#[path = "stream_control.rs"]
+mod stream_control;
 #[path = "streams.rs"]
 mod streams;
+#[cfg(feature = "development-outbound-streams")]
+pub use stream_control::StreamControlStatus;
 
 pub(in crate::standalone) struct ProviderRuntime {
     pub runtime: Arc<ActivationCapabilityRuntime>,
@@ -57,6 +62,12 @@ pub(in crate::standalone) struct ProviderRuntime {
     blobs: Option<Arc<LocalBlobStore>>,
     registrations: Vec<ProviderRegistration>,
     descriptors: Vec<ProviderDescriptor>,
+    #[cfg(feature = "development-outbound-streams")]
+    stream_binding_reference: Option<ProviderReference>,
+    #[cfg(feature = "development-outbound-streams")]
+    stream_catalog: Option<Arc<DirectoryDeploymentRepository>>,
+    #[cfg(feature = "development-outbound-streams")]
+    stream_reload_binding: Option<[u8; 32]>,
 }
 
 impl ProviderRuntime {
@@ -109,6 +120,12 @@ impl ProviderRuntime {
             blobs: None,
             registrations: Vec::with_capacity(6),
             descriptors: Vec::with_capacity(14),
+            #[cfg(feature = "development-outbound-streams")]
+            stream_binding_reference: None,
+            #[cfg(feature = "development-outbound-streams")]
+            stream_catalog: None,
+            #[cfg(feature = "development-outbound-streams")]
+            stream_reload_binding: settings.stream_reload_binding,
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
@@ -153,6 +170,12 @@ impl ProviderRuntime {
             }
             if let Some(config) = &config.outbound_streams {
                 let provider = Arc::new(streams::install(&owner.pools, config)?);
+                #[cfg(feature = "development-outbound-streams")]
+                {
+                    owner.stream_binding_reference =
+                        Some(provider.reference().map_err(|_| unavailable())?);
+                    owner.stream_catalog = Some(Arc::clone(deployments));
+                }
                 providers.push(owner.record(
                     &config.identity,
                     provider.reference().map_err(|_| unavailable())?,
@@ -332,6 +355,12 @@ impl ProviderRuntime {
         adapters
     }
 
+    /// Read-only test observation of the actual provider I/O owner after stop.
+    #[cfg(test)]
+    pub(in crate::standalone) fn io_observer(&self) -> Arc<IoRuntime> {
+        Arc::clone(&self.io)
+    }
+
     pub fn descriptors(&self) -> &[ProviderDescriptor] {
         &self.descriptors
     }
@@ -480,7 +509,7 @@ impl Drop for ProviderRuntime {
     }
 }
 
-fn unavailable() -> PlatformError {
+pub(super) fn unavailable() -> PlatformError {
     crate::standalone::error(
         PlatformErrorCode::Unavailable,
         "configured-provider-unavailable",
