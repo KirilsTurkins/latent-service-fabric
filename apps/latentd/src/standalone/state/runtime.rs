@@ -294,7 +294,10 @@ async fn finish_open(
     audit: Option<latent_audit::AuditHandle>,
     grace: std::time::Duration,
 ) -> Result<(Arc<StateRuntime>, super::super::EffectRuntime), PlatformError> {
-    match platform(Stage::StateManagement, management(&inner, clock, audit)) {
+    match platform(
+        Stage::StateManagement,
+        management(&inner, effects.management_port(), clock, audit),
+    ) {
         Ok(management) => inner.management = management,
         Err(error) => {
             retire_startup_services(&mut effects, &inner.store, grace).await;
@@ -423,6 +426,7 @@ async fn retire_failed_startup(startup: &ProtectedStoreStartup, deadline: std::t
 }
 fn management(
     inner: &Inner,
+    dispatcher: latent_effects::runtime::DispatcherManagementPort,
     clock: Arc<dyn ActivationClock>,
     audit: Option<latent_audit::AuditHandle>,
 ) -> Result<Option<StateManagementBackend>, PlatformError> {
@@ -448,10 +452,7 @@ fn management(
             state: super::authorization::management_binding(inner, op),
         });
     }
-    if bindings.is_empty() {
-        return Ok(None);
-    }
-    Ok(Some(StateManagementBackend::new(
+    let backend = StateManagementBackend::with_installed_dispatcher(
         StateManagementServices {
             store: Arc::clone(&inner.store),
             namespaces: Arc::clone(&inner.namespaces),
@@ -465,7 +466,11 @@ fn management(
             maintenance_clock: Arc::clone(&inner.maintenance_clock),
         },
         bindings,
-    )?))
+        dispatcher,
+    )?;
+    // The current signed transaction format exposes only OriginalCaller.
+    // No copied selector or binding name can invent shared/delegated authority.
+    Ok(Some(backend.with_recovery_bindings(vec![])?))
 }
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]

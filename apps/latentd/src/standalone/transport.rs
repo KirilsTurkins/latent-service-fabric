@@ -64,6 +64,7 @@ impl Transport {
         if let Some(adapter) = phase4 {
             routes = routes
                 .add_service(adapter.clone().state_server())
+                .add_service(adapter.clone().dispatcher_server())
                 .add_service(adapter.transaction_server());
         }
         Self::start_routes(config, routes.prepare(), clock, control_runtime).await

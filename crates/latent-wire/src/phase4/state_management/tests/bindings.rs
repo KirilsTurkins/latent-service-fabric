@@ -15,6 +15,8 @@ fn services(fixture: &Fixture) -> StateManagementServices {
         artifacts: Arc::clone(&value.artifacts),
         authorization: Arc::clone(&value.authorization),
         admission: Arc::clone(&value.admission),
+        maintenance: Arc::clone(&value.maintenance),
+        maintenance_clock: Arc::clone(&value.maintenance_clock),
         clock: Arc::clone(&value.clock),
         audit: value.audit.clone(),
     }
@@ -97,6 +99,14 @@ async fn management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_sam
     assert!(backend
         .with_dispatcher(dispatcher.management_port())
         .is_err());
+    // The installed node-only constructor has the same exact owner fence.
+    // Empty application bindings cannot turn a foreign pool into permission.
+    assert!(StateManagementBackend::with_installed_dispatcher(
+        services(&fixture),
+        vec![],
+        dispatcher.management_port(),
+    )
+    .is_err());
     assert_eq!(
         fixture
             .admission
@@ -246,5 +256,57 @@ async fn unknown_or_incompatible_requested_recovery_scope_fails_before_native_ad
     );
     assert_eq!(fixture.store.snapshot().unwrap().accepted, 0);
     drop(backend);
+    fixture.finish().await;
+}
+
+#[tokio::test]
+async fn installed_dispatcher_only_backend_cannot_resolve_application_namespace_selectors() {
+    let mut fixture = Fixture::new(false).await;
+    let mut dispatcher = DispatcherOwner::start(
+        DispatcherConfig {
+            start_paused: true,
+            ..DispatcherConfig::default()
+        },
+        Arc::clone(&fixture.store),
+        EffectAuthorityOwner::new(16, 4, 4).unwrap(),
+        vec![],
+        Arc::new(|| EffectTime {
+            unix_millis: 100,
+            continuity_proven: true,
+        }),
+        None,
+    )
+    .await
+    .unwrap();
+    dispatcher
+        .bind_native_capacity(&fixture.admission.native)
+        .unwrap();
+    let backend = StateManagementBackend::with_installed_dispatcher(
+        services(&fixture),
+        vec![],
+        dispatcher.management_port(),
+    )
+    .unwrap()
+    .with_recovery_bindings(vec![])
+    .unwrap();
+    assert_eq!(
+        backend
+            .execute_state(context("alice"), fixture.target().into())
+            .await
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::PermissionDenied,
+    );
+    assert_eq!(
+        fixture
+            .admission
+            .calls
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(fixture.store.snapshot().unwrap().accepted, 0);
+    drop(backend);
+    assert!(dispatcher.shutdown(deadline()).await.unwrap().clean);
     fixture.finish().await;
 }

@@ -49,6 +49,15 @@ releases those locks before committing the receipt. Receipt lookup uses the
 same engine's reserved recovery reader. Accepted worker completion and response
 frames retain the original request owner after the caller disappears.
 
+The standalone state host attaches that existing dispatcher handle before
+publishing readiness and registers `DispatcherService` on the same private
+management transport. Node inspection is available before any signed
+application operation is installed. Empty application bindings still cannot
+resolve namespace selectors. The current transaction installation format
+supports original-caller recovery only; unconfigured shared/delegated selectors
+remain denied before native admission. Durable audit and trusted node-operator
+identity remain required for dispatcher calls.
+
 The CLI requires an explicit node scope:
 
 ```shell

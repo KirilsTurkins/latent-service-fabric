@@ -8409,6 +8409,7 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "phase4::state_management::tests::bindings::installed_dispatcher_only_backend_cannot_resolve_application_namespace_selectors",
         "invocation::cancellation::tests::all_registered_waiters_observe_the_same_sticky_cause",
         "invocation::cancellation::tests::transport_cause_is_first_wins_and_visible_before_waiting",
         "invocation::cleanup::tests::abort_before_first_poll_drains_queue_and_handles_late_reservation",
@@ -8602,7 +8603,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 187,
+      "minimumCases": 188,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -9117,6 +9118,7 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "standalone::state::runtime::tests::management::installed_empty_state_host_exposes_the_original_audited_dispatcher_and_retains_recovery_owner",
         "command::tests::check_config_requires_an_explicit_file_and_never_selects_serve",
         "command::tests::obsolete_catalog_migration_command_is_rejected",
         "command::tests::serve_requires_configuration_and_help_advertises_only_product_surfaces",
@@ -9479,7 +9481,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 300,
+      "minimumCases": 301,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

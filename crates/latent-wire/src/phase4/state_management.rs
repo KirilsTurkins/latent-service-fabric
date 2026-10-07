@@ -117,13 +117,35 @@ impl StateManagementBackend {
         services: StateManagementServices,
         bindings: Vec<StateManagementBinding>,
     ) -> Result<Self, PlatformError> {
+        Self::build(services, bindings, false)
+    }
+
+    /// Node management can inspect the installed dispatcher before any signed
+    /// application binding is installed. The exact existing store, global owner
+    /// and dispatcher handle are still required; namespace selectors gain no access.
+    pub fn with_installed_dispatcher(
+        services: StateManagementServices,
+        bindings: Vec<StateManagementBinding>,
+        dispatcher: latent_effects::runtime::DispatcherManagementPort,
+    ) -> Result<Self, PlatformError> {
+        Self::build(services, bindings, true)?.with_dispatcher(dispatcher)
+    }
+
+    fn build(
+        services: StateManagementServices,
+        bindings: Vec<StateManagementBinding>,
+        dispatcher_installed: bool,
+    ) -> Result<Self, PlatformError> {
         if !services
             .store
             .uses_native_capacity(&services.admission.native_capacity())
         {
             return Err(invalid());
         }
-        if bindings.is_empty() || bindings.len() > 128 || bindings.capacity() > 128 {
+        if (bindings.is_empty() && !dispatcher_installed)
+            || bindings.len() > 128
+            || bindings.capacity() > 128
+        {
             return Err(capacity());
         }
         for (index, binding) in bindings.iter().enumerate() {
