@@ -15,6 +15,10 @@ from tools.java_http_composition.node import (
     ADAPTER, CHILD_SUBJECT, CONTEXT_REQUIRED, DOMAIN, SERVICE_CAPABILITY, TENANT,
 )
 
+# Existing buffered fixture limits, including the native provider's canonical
+# header/container copies (latent-http HttpLimits::output_reservation).
+HTTP_OUTPUT_RESERVATION_BYTES = 4096 + 2 * 4096 + 16 * 64 + 1024
+
 
 def _publication(value):
     require(isinstance(value, str) and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", value),
@@ -98,7 +102,7 @@ def http(startup, publication, port):
             "operations": ["send"], "resources": {"kind": "http",
                 "origins": [{"scheme": "http", "host": "localhost", "port": port}],
                 "methods": ["GET"], "paths": ["/allowed"], "pathPrefixes": []},
-            "ceiling": {"operations": 1, "inputBytes": 4096, "outputBytes": 8192,
+            "ceiling": {"operations": 1, "inputBytes": 4096, "outputBytes": HTTP_OUTPUT_RESERVATION_BYTES,
                         "wallTimeMillis": 1000}}]})]
 
 

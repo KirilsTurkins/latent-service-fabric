@@ -47,11 +47,29 @@ class JavaDiagnosticPolicyTests(unittest.TestCase):
         http = result["initial"][1]["document"]["rules"][0]
         self.assertEqual(http["resources"], {"kind": "http", "origins": [{"scheme": "http", "host": "localhost", "port": 12345}],
                                            "methods": ["GET"], "paths": ["/allowed"], "pathPrefixes": []})
-        self.assertEqual(http["ceiling"], {"operations": 1, "inputBytes": 4096, "outputBytes": 8192, "wallTimeMillis": 1000})
+        self.assertEqual(http["ceiling"], {"operations": 1, "inputBytes": 4096, "outputBytes": 14336, "wallTimeMillis": 1000})
         self.assertEqual(http["publications"], [publications["domain"]])
         self.assertEqual(http["principals"][-1], {"kind": "service", "subject": CHILD_SUBJECT})
         self.assertEqual([row["expectedGeneration"] for row in result["revisions"]], ["1", "2", "1", "2"])
         self.assertEqual(result["revisions"][2]["document"]["rules"], [])
+
+    def test_http_ceiling_covers_actual_provider_copy_reservation_without_changing_wire_limits(self):
+        from tools.phase3_management_scenario import http_provider
+        with tempfile.TemporaryDirectory() as temporary:
+            installed = http_provider(Path(temporary), TENANT, 12345)
+        limits = installed["configuration"]["limits"]
+        self.assertEqual(limits, {"maximumRequestBodyBytes": 4096, "maximumResponseBodyBytes": 4096,
+            "maximumEncodedResponseBytes": 8192, "maximumHeaderBytes": 4096,
+            "maximumHeaders": 16, "maximumRedirects": 0})
+        reservation = (limits["maximumResponseBodyBytes"] + 2 * limits["maximumHeaderBytes"]
+                       + limits["maximumHeaders"] * 64 + 1024)
+        self.assertEqual(reservation, 14336)
+        self.assertGreater(reservation, limits["maximumEncodedResponseBytes"])
+        startup, publications = selected()
+        policy = proposals.http(startup, publications["domain"], 12345)[1]["document"]["rules"][0]
+        self.assertEqual(policy["ceiling"]["outputBytes"], reservation)
+        self.assertEqual(policy["ceiling"], {"operations": 1, "inputBytes": 4096,
+            "outputBytes": reservation, "wallTimeMillis": 1000})
 
     def test_missing_duplicate_foreign_or_changed_native_profiles_cannot_create_review_bytes(self):
         original, pubs = selected()
