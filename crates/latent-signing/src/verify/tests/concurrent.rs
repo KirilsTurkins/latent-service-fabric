@@ -97,7 +97,7 @@ fn exclusive_writer_refuses_currentness_without_queuing_or_renewing_proof() {
     let worker = thread::spawn(move || {
         sender
             .send(worker_verifier.check_current(&proof, NOW + 1))
-            .unwrap()
+            .unwrap();
     });
     let before_unlock = receiver.recv_timeout(Duration::from_secs(1));
     drop(guard);
