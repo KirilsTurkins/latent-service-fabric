@@ -113,8 +113,16 @@ fn immutable_tenant_provider_consumer_binding_and_secret_owner_fields_fail_close
 
 #[test]
 fn replacement_keeps_original_protected_mode_link_size_and_closed_type_checks() {
-    let (_directory, path, original, guard) = owner();
+    let (directory, path, original, guard) = owner();
+    // Retain the maintained service-group and private-ancestor read policy.
     fs::set_permissions(&path, fs::Permissions::from_mode(0o640)).unwrap();
+    assert!(guard.replacement().is_ok());
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+    assert!(guard.replacement().is_ok());
+    fs::set_permissions(directory.path(), fs::Permissions::from_mode(0o755)).unwrap();
+    assert!(guard.replacement().is_err());
+    fs::set_permissions(directory.path(), fs::Permissions::from_mode(0o700)).unwrap();
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o620)).unwrap();
     assert!(guard.replacement().is_err());
     write(&path, &original);
     let alias = path.with_file_name("alias.json");

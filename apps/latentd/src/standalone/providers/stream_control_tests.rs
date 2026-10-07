@@ -147,7 +147,7 @@ fn protected_reload_publishes_actual_new_reference_and_never_repeats_an_epoch() 
     ];
     let charged = pools.snapshot().unwrap();
     // Quota admission precedes even protected-file reopening/JSON allocation.
-    fs::set_permissions(&fixture.path, fs::Permissions::from_mode(0o640)).unwrap();
+    fs::set_permissions(&fixture.path, fs::Permissions::from_mode(0o620)).unwrap();
     assert_eq!(
         invocation
             .block_on(node.reload_outbound_streams(&fixture.guard))
@@ -165,6 +165,22 @@ fn protected_reload_publishes_actual_new_reference_and_never_repeats_an_epoch() 
     assert_eq!(status.configured_generation, 1);
     assert!(!status.stream.current_generation_retired);
     drop(held);
+    // Once capacity is available, the actual protected-file error is visible.
+    assert_eq!(
+        invocation
+            .block_on(node.reload_outbound_streams(&fixture.guard))
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::InvalidArgument
+    );
+    assert_eq!(catalog.binding_version().unwrap(), before);
+    assert_eq!(
+        node.outbound_stream_control_status()
+            .unwrap()
+            .configured_generation,
+        1
+    );
     fs::set_permissions(&fixture.path, fs::Permissions::from_mode(0o600)).unwrap();
     let result = invocation
         .block_on(node.reload_outbound_streams(&fixture.guard))
