@@ -58,6 +58,13 @@ supports original-caller recovery only; unconfigured shared/delegated selectors
 remain denied before native admission. Durable audit and trusted node-operator
 identity remain required for dispatcher calls.
 
+The same finite private RPC reserve used for cancellation/status also admits
+exact maintained Phase 4 recovery methods while ordinary command/query RPCs
+retain their slots. Response destruction releases that original reserve;
+unknown method paths and new command/query execution remain ordinary. This
+classification does not authorize a caller or raise the configured RPC,
+control-job, connection, response-byte or deadline limits.
+
 The CLI requires an explicit node scope:
 
 ```shell

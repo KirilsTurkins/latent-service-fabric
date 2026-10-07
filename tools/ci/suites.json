@@ -9118,6 +9118,7 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "standalone::transport::tests::ownership::phase4_recovery_uses_existing_reserved_rpc_slot_while_ordinary_responses_remain_owned",
         "standalone::state::runtime::tests::management::installed_empty_state_host_exposes_the_original_audited_dispatcher_and_retains_recovery_owner",
         "command::tests::check_config_requires_an_explicit_file_and_never_selects_serve",
         "command::tests::obsolete_catalog_migration_command_is_rejected",
@@ -9481,7 +9482,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 301,
+      "minimumCases": 302,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
