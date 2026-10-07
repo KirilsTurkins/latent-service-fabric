@@ -11,7 +11,7 @@ import zipfile
 
 from tools.native_runtime.verify import verification_command, REPOSITORY, SOURCE
 from . import paths, process
-from .common import DevError, HOST_ABI, decode, digest, encode, members, require, sha
+from .common import DevError, TRANSACTION_HOST_ABI, decode, digest, encode, guest_host_abi, members, require, sha
 
 MAX_BUNDLE = 1024 * 1024 * 1024
 MAX_ENTRIES = 4096
@@ -40,7 +40,8 @@ def manifest(value: dict, *, target: str, version: str, commit: str) -> dict:
     require(value["schemaVersion"] == "latent.dev.bundle.v1" and value["version"] == version
             and value["sourceCommit"] == commit, "developer-bundle-identity")
     require(target in TARGETS and value["target"] == target, "developer-bundle-target")
-    require(value["hostAbi"] == HOST_ABI and value["protocol"] == "latent.dev.protocol.v1", "developer-bundle-abi")
+    guest_host_abi(value["hostAbi"])
+    require(value["protocol"] == "latent.dev.protocol.v1", "developer-bundle-abi")
     archive = members(value["archive"], {"name", "size", "sha256"})
     paths.relative(archive["name"])
     require("/" not in archive["name"] and type(archive["size"]) is int
@@ -61,6 +62,9 @@ def manifest(value: dict, *, target: str, version: str, commit: str) -> dict:
     require(total <= MAX_BUNDLE * 2, "developer-expanded-byte-limit")
     require(isinstance(value["licenses"], list) and value["licenses"] and set(value["licenses"]) <= names
             and value["sbom"] in names, "developer-sbom-and-licenses-required")
+    require(value["hostAbi"] != TRANSACTION_HOST_ABI
+            or target == "linux-x86_64" and {"guest-tools.json", "templates.json"} <= names,
+            "transaction-profile-requires-explicit-linux-guest-tools")
     require(not any("/".join(name.split("/")[:n]) in names for name in names for n in range(1, len(name.split("/")))),
             "developer-file-directory-collision")
     return value
