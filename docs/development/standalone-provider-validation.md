@@ -25,6 +25,31 @@ for actual TLS services, interrupted writes, credential rotation and broker
 redelivery. These tests exercise the Rust composition; they do not add those
 providers to standalone JSON configuration.
 
+## Explicit activation-runtime installation
+
+The optional installer uses the exact finite configuration described in
+[Configure standalone providers](../reference/standalone-providers.md#activation-ownership-and-waits).
+It requires the frozen V5 runtime bridge and the typed HTTP installation
+prerequisite when composing those capabilities. Neither installing a provider
+nor recognizing an interface supplies a deployment grant.
+
+At source `38d7f8cdc08cf0f278e972d8a530ae73d7521820`, the six normal native
+tools compiled with the locked Rust 1.97.1 toolchain, unchanged managed Cargo
+profile, default features, no network, two CPUs and 4 GiB of container memory.
+Four configuration controls passed. The normal node provider startup test
+also passed all 32 installation/retirement cycles, asserting clean retirement
+and zero control, connection, request, worker, broker, I/O and secret ownership
+counters. The source inventory was rechecked after execution. The exact
+[observation](activation-runtime-installation-observation.json) records the
+integration parents, tool digests, log identities and retained first failure.
+
+The first attempt compiled the tools but could not compile the test because its
+assertions referred to nonexistent shutdown-report fields. The corrected test
+uses the actual flattened report; the failed attempt remains separate. This
+evidence covers configuration and idle installation/retirement. Signed runtime
+invocation, language scheduling, sibling host-I/O progress and ordinary
+HttpClient execution remain pending.
+
 ## Shared SDK/management fixture contract
 
 Use `tools/build_guest_capsules.py`, not a synthetic component or a new provider

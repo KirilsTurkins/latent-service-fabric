@@ -8,6 +8,7 @@ impl ReleaseUseEligibility {
         owner: &LifecycleAuthorityHandle,
         projection: WebUseEligibility,
     ) -> Result<Self, PlatformError> {
+        owner.owner.rejection.expose()?;
         let authority = owner
             .required_authority()
             .ok_or_else(super::super::invalid)?;
