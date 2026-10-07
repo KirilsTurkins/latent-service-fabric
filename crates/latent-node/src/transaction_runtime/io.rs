@@ -26,11 +26,43 @@ impl StateTransactionHost {
         authorization: Arc<StateAuthorization>,
         activation: ActivationId,
         scope: StateScope,
+        command: Option<CommandHostSelection>,
+        effects: Option<EffectAuthorityOwner>,
+        time: Arc<dyn CommandTimeSource>,
+        conditions: Vec<Precondition>,
+        minimum_view: Option<Vec<u8>>,
+    ) -> Result<Arc<Self>, StateFailure> {
+        Self::open_owned(
+            store,
+            authorization,
+            activation,
+            scope,
+            command,
+            effects,
+            time,
+            conditions,
+            minimum_view,
+            None,
+        )
+        .await
+    }
+
+    #[allow(
+        clippy::too_many_arguments,
+        clippy::too_many_lines,
+        reason = "Each real native error retains its original physical cleanup owner"
+    )]
+    pub(super) async fn open_owned(
+        store: Arc<ProtectedStoreOwner>,
+        authorization: Arc<StateAuthorization>,
+        activation: ActivationId,
+        scope: StateScope,
         mut command: Option<CommandHostSelection>,
         effects: Option<EffectAuthorityOwner>,
         time: Arc<dyn CommandTimeSource>,
         conditions: Vec<Precondition>,
         minimum_view: Option<Vec<u8>>,
+        entity: Option<super::entity::EntityOwner>,
     ) -> Result<Arc<Self>, StateFailure> {
         let configured = super::initialization::configuration(
             &authorization,
@@ -54,7 +86,9 @@ impl StateTransactionHost {
             return Err(StateFailure::ReadBudgetExhausted);
         };
         let retained_memory = Arc::clone(&memory);
-        let operation = match store.reserve_operation() {
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((memory.clone(), Arc::clone(&authorization), entity.clone()));
+        let operation = match store.reserve_operation_retaining(keeper) {
             Ok(operation) => operation,
             Err(error) => {
                 retire_unstarted(command.take());
@@ -64,7 +98,7 @@ impl StateTransactionHost {
         // Native destruction can outlive a dropped opening or guest waiter.
         // Bind the original memory charge before accepting physical I/O.
         let physical_memory: Arc<dyn std::any::Any + Send + Sync> =
-            Arc::new((memory.clone(), Arc::clone(&authorization)));
+            Arc::new((memory.clone(), Arc::clone(&authorization), entity.clone()));
         let opening = match store.open_view_retaining(physical_memory) {
             Ok(opening) => opening,
             Err(error) => {
@@ -164,6 +198,7 @@ impl StateTransactionHost {
             time,
             retained_bytes,
             memory: retained_memory,
+            entity: Mutex::new(entity),
         }))
     }
 

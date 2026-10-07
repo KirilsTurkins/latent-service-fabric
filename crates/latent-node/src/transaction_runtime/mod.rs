@@ -3,6 +3,7 @@ mod authorization;
 mod capacity;
 mod command_role;
 mod completion;
+mod entity;
 mod factory;
 mod host;
 mod initialization;
@@ -14,6 +15,7 @@ pub use authorization::{PolicyCallBinding, StateAuthorization};
 pub use capacity::TransactionRetention;
 pub use command_role::PendingCommandAdmission;
 pub use completion::{CommandCompletion, CommandCompletionDisposition};
+pub use entity::default_entity_limits;
 pub use factory::{
     NativeTransactionAdmission, TransactionAdmissionOwners, TransactionAdmissionResult,
     TransactionCompletionResult, TransactionInstallation, TransactionInstallationSelection,
@@ -111,6 +113,7 @@ pub struct StateTransactionHost {
     time: Arc<dyn CommandTimeSource>,
     retained_bytes: u64,
     memory: Arc<HostMemoryReservation>,
+    entity: Mutex<Option<entity::EntityOwner>>,
 }
 
 /// Only host coordination receives the affine view and staged state/intent
@@ -122,6 +125,32 @@ pub struct StateHandoff {
     pub memory: Arc<HostMemoryReservation>,
 }
 impl StateTransactionHost {
+    pub(super) fn retain_entity(&self) -> Result<Option<entity::EntityOwner>, StateFailure> {
+        self.entity
+            .lock()
+            .map(|owner| owner.clone())
+            .map_err(|_| StateFailure::Unavailable)
+    }
+
+    /// Called by the fixed completion owner after the entire commit/recovery
+    /// path. Detached native keepers retain their own physical clones.
+    pub(super) fn release_entity(&self) -> Result<(), StateFailure> {
+        if !self.guest_closed.load(std::sync::atomic::Ordering::Acquire)
+            || !self.witness.has_retired()
+            || self
+                .physical
+                .lock()
+                .map_err(|_| StateFailure::Unavailable)?
+                .is_some()
+        {
+            return Err(StateFailure::Unavailable);
+        }
+        self.entity
+            .lock()
+            .map_err(|_| StateFailure::Unavailable)?
+            .take();
+        Ok(())
+    }
     #[must_use]
     pub fn authority(&self) -> &StateAuthorization {
         &self.authorization
@@ -134,6 +163,11 @@ impl StateTransactionHost {
         use std::sync::atomic::Ordering;
         if !self.guest_closed.load(Ordering::Acquire) {
             return Err(StateFailure::HandleClosed);
+        }
+        if let Some(entity) = self.retain_entity()? {
+            entity
+                .begin_cleanup()
+                .map_err(|_| StateFailure::Unavailable)?;
         }
         let owned = self
             .session

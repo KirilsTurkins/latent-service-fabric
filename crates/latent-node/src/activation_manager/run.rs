@@ -194,7 +194,14 @@ impl Inner {
                     "strict transaction admission required",
                 ));
             }
-            let host = admission.admit(&envelope, &budget).await?;
+            let host = stage(
+                admission.admit(&envelope, &budget),
+                &token,
+                budget.deadline().monotonic(),
+                &self.clock,
+                &transport,
+            )
+            .await?;
             if host.activation_id() != &envelope.activation_id
                 || !host.budget().is_same_instance(&budget)
             {

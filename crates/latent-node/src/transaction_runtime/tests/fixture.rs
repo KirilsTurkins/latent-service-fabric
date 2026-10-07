@@ -168,6 +168,28 @@ impl Fixture {
             .continuity
             .store(continuity, std::sync::atomic::Ordering::SeqCst);
     }
+
+    pub fn configure_entities(
+        &mut self,
+        entities: &[&str],
+        limits: latent_state::entity_lanes::EntityLaneLimits,
+    ) {
+        assert_eq!(
+            self.owners.entity_snapshot().unwrap(),
+            latent_state::entity_lanes::EntityLaneSnapshot::default()
+        );
+        policy::install_entities(&self.policy, &self.publication, entities);
+        self.owners = Arc::new(
+            TransactionAdmissionOwners::new_with_entity_limits(
+                Arc::clone(&self.store),
+                Arc::clone(&self.namespaces),
+                Arc::clone(&self.policy),
+                self.dispatcher.command_admission_source(),
+                limits,
+            )
+            .unwrap(),
+        );
+    }
     async fn create_namespace(store: &ProtectedStoreOwner, namespaces: &Arc<NamespaceCatalog>) {
         let namespaces = Arc::clone(namespaces);
         store
@@ -204,6 +226,35 @@ impl Fixture {
             .unwrap()
             .await
             .unwrap()
+            .unwrap()
+    }
+
+    pub fn store_owners(&self) -> usize {
+        self.store.snapshot().unwrap().physical_owners
+    }
+
+    pub fn pause_entity_worker(
+        &self,
+        host: Arc<StateTransactionHost>,
+        entered: tokio::sync::oneshot::Sender<()>,
+        release: std::sync::mpsc::Receiver<()>,
+    ) -> latent_state::store_io::StoreIoJob<
+        Result<bool, latent_state::protected_store::ProtectedStoreError>,
+    > {
+        let physical = host
+            .retain_entity()
+            .unwrap()
+            .expect("original physical entity guard");
+        let keeper: Arc<dyn std::any::Any + Send + Sync> = Arc::new((host, physical));
+        self.store
+            .with_store_retaining(StoreIoKind::Read, 4096, keeper, move |store| {
+                let view = store.snapshot()?;
+                let exists = view.get(Family::State, b"counter")?.is_some();
+                entered.send(()).unwrap();
+                release.recv_timeout(Duration::from_secs(5)).unwrap();
+                drop(view);
+                Ok(exists)
+            })
             .unwrap()
     }
     pub async fn inspect(

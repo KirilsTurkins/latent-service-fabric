@@ -42,12 +42,7 @@ pub(super) fn create(
         catalog.lifecycle_authority(),
     )
     .unwrap();
-    let caller = CallerScope::derive(&principal(), &RecoverySelection::OriginalCaller).unwrap();
-    let document = json!({"formatVersion":1,"tenant":"a","rules":[{
-        "id":"alice","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["a/echo"],"publications":[publication.publication().as_str()],"capability":STATE_CONTRACT,"operations":OPERATIONS,
-        "resources":{"kind":"state","scopes":[{"namespace":"orders","incarnation":1,"entity":null,"recoveryKind":caller.kind,"recoveryScope":caller.scope,"resultPolicy":"visibility-v1"}]},
-        "ceiling":{"operations":256,"inputBytes":2_097_152,"outputBytes":2_097_152,"wallTimeMillis":10_000}
-    }]});
+    let document = entity_policy(publication, &[]);
     let digest = format!("sha256:{}", "2".repeat(64));
     let binding = json!({"formatVersion":1,"tenant":"a","capability":STATE_CONTRACT,"providerProfile":"namespace-v1","configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}});
     for (kind, id, operation, document) in [
@@ -76,6 +71,46 @@ pub(super) fn create(
             .unwrap();
     }
     (policy, call_binding())
+}
+
+fn entity_policy(publication: &ReleaseUseEligibility, entities: &[&str]) -> serde_json::Value {
+    let caller = CallerScope::derive(&principal(), &RecoverySelection::OriginalCaller).unwrap();
+    let scopes: Vec<_> = std::iter::once(None).chain(entities.iter().copied().map(Some)).map(|entity| {
+        json!({"namespace":"orders","incarnation":1,"entity":entity,"recoveryKind":caller.kind,"recoveryScope":caller.scope,"resultPolicy":"visibility-v1"})
+    }).collect();
+    json!({"formatVersion":1,"tenant":"a","rules":[{
+        "id":"alice","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["a/echo"],"publications":[publication.publication().as_str()],"capability":STATE_CONTRACT,"operations":OPERATIONS,
+        "resources":{"kind":"state","scopes":scopes},
+        "ceiling":{"operations":256,"inputBytes":2_097_152,"outputBytes":2_097_152,"wallTimeMillis":10_000}
+    }]})
+}
+
+pub(super) fn install_entities(
+    policy: &PolicyStore,
+    publication: &ReleaseUseEligibility,
+    entities: &[&str],
+) {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let current = policy
+        .get("a", RecordKind::Policy, "state", 64 * 1024, deadline)
+        .unwrap();
+    let revision = current.value().as_ref().unwrap().revision;
+    drop(current);
+    policy
+        .mutate(
+            MutationRequest {
+                tenant: "a",
+                actor: "operator",
+                kind: RecordKind::Policy,
+                id: "state",
+                operation_id: "entity-scopes",
+                expected_revision: revision,
+                document: Some(&serde_json::to_vec(&entity_policy(publication, entities)).unwrap()),
+            },
+            deadline,
+            |_| Ok(()),
+        )
+        .unwrap();
 }
 fn call_binding() -> PolicyCallBinding {
     PolicyCallBinding {

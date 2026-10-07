@@ -84,7 +84,7 @@ impl Fixture {
         ActivationEnvelope,
         ActivationBudget,
     ) {
-        self.invocation_config(query, key, minimum, None)
+        self.invocation_config(query, key, minimum, None, None)
     }
 
     pub fn prepaid_invocation(
@@ -97,7 +97,19 @@ impl Fixture {
         ActivationEnvelope,
         ActivationBudget,
     ) {
-        self.invocation_config(query, key, None, Some(native))
+        self.invocation_config(query, key, None, Some(native), None)
+    }
+
+    pub fn entity_invocation(
+        &self,
+        key: &str,
+        entity: &str,
+    ) -> (
+        Arc<NativeTransactionAdmission>,
+        ActivationEnvelope,
+        ActivationBudget,
+    ) {
+        self.invocation_config(false, key, None, None, Some(entity))
     }
 
     fn invocation_config(
@@ -106,6 +118,7 @@ impl Fixture {
         key: &str,
         minimum: Option<Vec<u8>>,
         native: Option<latent_core::native_capacity::NativeReservation>,
+        entity: Option<&str>,
     ) -> (
         Arc<NativeTransactionAdmission>,
         ActivationEnvelope,
@@ -178,7 +191,7 @@ impl Fixture {
         let selection = TransactionSelection {
             namespace: "orders".into(),
             incarnation: 1,
-            entity: None,
+            entity: entity.map(str::to_owned),
             operation: function.into(),
             mode: if query {
                 TransactionOperationMode::FreshQuery

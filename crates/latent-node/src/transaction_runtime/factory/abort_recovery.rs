@@ -29,6 +29,7 @@ struct AbortWriter {
     // The frozen original host-memory envelope covers metadata work. Its
     // physically retired guest/session can never be reopened by this owner.
     _host: Arc<StateTransactionHost>,
+    _entity: Option<super::super::entity::EntityOwner>,
 }
 
 impl NativeTransactionAdmission {
@@ -134,6 +135,9 @@ impl AbortWriter {
             reservation,
             _buffers: buffers,
             _host: Arc::clone(host),
+            _entity: host
+                .retain_entity()
+                .map_err(|_| AtomicError::RecoveryRequired)?,
         }))
     }
 
@@ -193,9 +197,13 @@ impl AbortWriter {
                             .accept_with_final(
                                 || Ok(()),
                                 || {
-                                    self.reservation
-                                        .with_live(|| ())
-                                        .map_err(|_| NamespaceError::PermissionDenied)
+                                    authorization
+                                        .with_entity_final(|| {
+                                            self.reservation
+                                                .with_live(|| ())
+                                                .map_err(|_| NamespaceError::PermissionDenied)
+                                        })
+                                        .map_err(|_| NamespaceError::PermissionDenied)?
                                 },
                             )
                             .map_err(|_| super::super::authorization::denied())

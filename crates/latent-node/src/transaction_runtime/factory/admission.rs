@@ -28,6 +28,13 @@ enum PendingPublication {
     Refused(AtomicError),
 }
 
+#[derive(Default)]
+struct HostAdmission {
+    role: Option<Arc<CommandRole>>,
+    entity: Option<super::super::entity::EntityCommitFence>,
+    original_deadline: Option<std::time::Instant>,
+}
+
 impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
     fn admit<'a>(
         &'a self,
@@ -62,6 +69,11 @@ impl NativeTransactionAdmission {
         };
         // Verify pinned source, mode, finite input and original policy BEFORE
         // any native lookup or durable reservation. DTOs supply no source grant.
+        if selection.mode == TransactionOperationMode::StrictCommand
+            && envelope.parent_activation_id.is_some()
+        {
+            return Err(authorization::denied());
+        }
         let source = self.installation.source(envelope)?;
         let initial = policy::initial(
             &self.owners,
@@ -81,10 +93,17 @@ impl NativeTransactionAdmission {
             &namespace,
             &self.installation.declaration.state_schema,
         )?;
-        let before = self.seal(initial.before, namespace, envelope, budget, None)?;
+        let before = self.seal(
+            initial.before,
+            namespace,
+            envelope,
+            budget,
+            HostAdmission::default(),
+        )?;
         let mode = selection.mode == TransactionOperationMode::StrictCommand;
         self.retain_response_authority(Arc::clone(&before), !mode)?;
         let scope = selected_scope(&selection, envelope, &source.state_schema);
+        let mut entity = None;
         let authorization = if mode {
             let role = CommandRole::capture(&self.owners.command).map_err(atomic)?;
             let epoch = role.epoch();
@@ -132,16 +151,57 @@ impl NativeTransactionAdmission {
                 bytes,
             )
             .await?;
+            let command = {
+                let state = self.state.lock().map_err(|_| authorization::denied())?;
+                let State::Pending {
+                    claim: Some(claim), ..
+                } = &*state
+                else {
+                    return Err(authorization::denied());
+                };
+                claim.record().clone()
+            };
+            entity = self
+                .owners
+                .entity
+                .acquire(
+                    &command,
+                    Arc::clone(&before),
+                    Arc::clone(&role),
+                    bytes,
+                    latent_state::entity_lanes::EntityCallKind::Root,
+                )
+                .await?;
+            // Keep the actual accepted source pin. Queueing cannot substitute
+            // a new publication or silently refresh the original decision.
+            self.installation.source(envelope)?;
             let after = self
                 .read_namespace(&selection, &envelope.target.tenant)
                 .await?;
-            self.seal(initial.after, after, envelope, budget, Some(role))?
+            check_view(
+                &selection,
+                &after,
+                &self.installation.declaration.state_schema,
+            )?;
+            self.seal(
+                initial.after,
+                after,
+                envelope,
+                budget,
+                HostAdmission {
+                    role: Some(role),
+                    entity: entity
+                        .as_ref()
+                        .map(super::super::entity::EntityOwner::fence),
+                    original_deadline: Some(before.authority.deadline()),
+                },
+            )?
         } else {
             drop(initial.after);
             before
         };
         self.retain_response_authority(Arc::clone(&authorization), !mode)?;
-        self.open_host(envelope, selection, scope, authorization)
+        self.open_host(envelope, selection, scope, authorization, entity)
             .await
     }
 
@@ -151,6 +211,7 @@ impl NativeTransactionAdmission {
         selection: TransactionSelection,
         scope: StateScope,
         authorization: Arc<StateAuthorization>,
+        entity: Option<super::super::entity::EntityOwner>,
     ) -> Result<Arc<dyn TransactionHost>, PlatformError> {
         let mode = scope.mode == StateMode::Command;
         let command = if mode {
@@ -176,7 +237,7 @@ impl NativeTransactionAdmission {
         } else {
             None
         };
-        let host = StateTransactionHost::open(
+        let host = StateTransactionHost::open_owned(
             Arc::clone(&self.owners.store),
             authorization,
             envelope.activation_id.clone(),
@@ -186,6 +247,7 @@ impl NativeTransactionAdmission {
             Arc::clone(&self.owners.time),
             selection.expected_versions,
             selection.minimum_view_version,
+            entity,
         )
         .await
         .map_err(|failure| {
@@ -263,7 +325,7 @@ impl NativeTransactionAdmission {
         namespace: NamespaceRead,
         envelope: &ActivationEnvelope,
         budget: &ActivationBudget,
-        role: Option<Arc<CommandRole>>,
+        admission: HostAdmission,
     ) -> Result<Arc<StateAuthorization>, PlatformError> {
         let lifecycle = self
             .owners
@@ -271,16 +333,20 @@ impl NativeTransactionAdmission {
             .lifecycle()
             .pin(&namespace)
             .map_err(|_| authorization::denied())?;
+        let deadline = budget
+            .deadline()
+            .monotonic()
+            .ok_or_else(authorization::denied)?;
+        let deadline = admission
+            .original_deadline
+            .map_or(deadline, |original| deadline.min(original));
         let authority = Arc::new(NamespaceAuthority::seal_retained(
             &self.owners.policy,
             initial,
             &namespace,
             NamespaceAdmission {
                 activation: envelope.activation_id.clone(),
-                deadline: budget
-                    .deadline()
-                    .monotonic()
-                    .ok_or_else(authorization::denied)?,
+                deadline,
                 recovery: &self.installation.recovery,
                 state_schema: &self.installation.declaration.state_schema,
             },
@@ -297,8 +363,10 @@ impl NativeTransactionAdmission {
             self.installation.intents.clone(),
             budget.clone(),
         )?;
-        let authorization = authorization.with_retention(self.retained_capacity()?);
-        let authorization = match role {
+        let authorization = authorization
+            .with_retention(self.retained_capacity()?)
+            .with_entity(admission.entity);
+        let authorization = match admission.role {
             Some(role) => authorization.with_command_role(role),
             None => authorization,
         };

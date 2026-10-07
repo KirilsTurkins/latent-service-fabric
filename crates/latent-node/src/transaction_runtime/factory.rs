@@ -31,6 +31,7 @@ pub struct TransactionAdmissionOwners {
     time: Arc<dyn CommandTimeSource>,
     command: CommandAdmissionSource,
     native: NativeCapacityOwner,
+    entity: super::entity::EntityAdmission,
 }
 impl TransactionAdmissionOwners {
     /// Prepay the original global slot and finite physical byte envelope before
@@ -50,6 +51,24 @@ impl TransactionAdmissionOwners {
         policy: Arc<PolicyStore>,
         command: CommandAdmissionSource,
     ) -> Result<Self, PlatformError> {
+        Self::new_with_entity_limits(
+            store,
+            namespaces,
+            policy,
+            command,
+            super::entity::default_entity_limits(),
+        )
+    }
+
+    /// One table shared by every actual installed transaction factory. Limits
+    /// bound eligibility in addition to the original physical ingress owner.
+    pub fn new_with_entity_limits(
+        store: Arc<ProtectedStoreOwner>,
+        namespaces: Arc<NamespaceCatalog>,
+        policy: Arc<PolicyStore>,
+        command: CommandAdmissionSource,
+        limits: latent_state::entity_lanes::EntityLaneLimits,
+    ) -> Result<Self, PlatformError> {
         let native = command
             .native_capacity()
             .map_err(|_| authorization::denied())?;
@@ -64,7 +83,15 @@ impl TransactionAdmissionOwners {
             time: Arc::new(super::command_role::CommandClock(command.clone())),
             command,
             native,
+            entity: super::entity::EntityAdmission::new(limits)?,
         })
+    }
+
+    /// Bounded physical facts only; this observation grants no eligibility.
+    pub fn entity_snapshot(
+        &self,
+    ) -> Result<latent_state::entity_lanes::EntityLaneSnapshot, PlatformError> {
+        self.entity.snapshot()
     }
 }
 

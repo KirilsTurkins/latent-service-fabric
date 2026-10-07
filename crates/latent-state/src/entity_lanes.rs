@@ -45,6 +45,21 @@ pub struct EntityLanes<T> {
 
 struct Inner<T> {
     state: Mutex<State<T>>,
+    wake: Option<Arc<dyn EntityLaneWake>>,
+}
+
+/// Wake existing bounded admission futures when eligibility can change.
+/// Implementations must not create entity tasks, timers, or execution authority.
+pub trait EntityLaneWake: Send + Sync {
+    fn changed(&self);
+}
+
+impl<T> Inner<T> {
+    fn changed(&self) {
+        if let Some(wake) = &self.wake {
+            wake.changed();
+        }
+    }
 }
 
 impl<T> Clone for EntityLanes<T> {
@@ -59,10 +74,23 @@ impl<T> EntityLanes<T> {
     /// # Errors
     /// Returns `InvalidLimits` for any zero capacity or zero wait age.
     pub fn new(limits: EntityLaneLimits) -> Result<Self, EntityLaneError> {
+        Self::new_with_wake(limits, None)
+    }
+
+    /// Attach the existing host's shared admission wake source. Notification
+    /// runs after the table lock is released and never owns physical work.
+    ///
+    /// # Errors
+    /// Returns `InvalidLimits` for any zero capacity or zero wait age.
+    pub fn new_with_wake(
+        limits: EntityLaneLimits,
+        wake: Option<Arc<dyn EntityLaneWake>>,
+    ) -> Result<Self, EntityLaneError> {
         limits.validate()?;
         Ok(Self {
             inner: Arc::new(Inner {
                 state: Mutex::new(State::new(limits)),
+                wake,
             }),
         })
     }
@@ -112,6 +140,8 @@ impl<T> EntityLanes<T> {
             wait_until,
             charge,
         });
+        drop(state);
+        self.inner.changed();
         Ok(waiter)
     }
 
@@ -143,6 +173,27 @@ impl<T> EntityLanes<T> {
         state.validate_fence(&fence.stamp)
     }
 
+    /// Hold the local generation fence through a short final acceptance action.
+    /// No native I/O or await may occur within the action. The host separately
+    /// holds current policy, namespace and command-attempt authority.
+    ///
+    /// # Errors
+    /// Returns `StaleFence` for a retired, foreign or revoked observation, or
+    /// `Poisoned` when coherent owner state cannot be established.
+    pub fn with_fence<R>(
+        &self,
+        fence: &EntityLaneFence,
+        action: impl FnOnce() -> R,
+    ) -> Result<R, EntityLaneError> {
+        let state = self
+            .inner
+            .state
+            .lock()
+            .map_err(|_| EntityLaneError::Poisoned)?;
+        state.validate_fence(&fence.stamp)?;
+        Ok(action())
+    }
+
     /// Remove queued reservations and revoke live owners without releasing them.
     ///
     /// The returned original requests let the host persist their disposition.
@@ -162,7 +213,10 @@ impl<T> EntityLanes<T> {
             .state
             .lock()
             .map_err(|_| EntityLaneError::Poisoned)?;
-        Ok(state.revoke_namespace(tenant, namespace, incarnation))
+        let rejected = state.revoke_namespace(tenant, namespace, incarnation);
+        drop(state);
+        self.inner.changed();
+        Ok(rejected)
     }
 }
 

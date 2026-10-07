@@ -1,6 +1,7 @@
 //! Real protected-engine/policy tests. These are native host-owner tests;
 //! the six authored Wasmtime components have a separate execution campaign.
 mod capacity;
+mod entity;
 mod fixture;
 mod history;
 mod response;

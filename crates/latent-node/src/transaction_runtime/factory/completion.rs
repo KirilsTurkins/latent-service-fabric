@@ -42,6 +42,9 @@ impl NativeTransactionAdmission {
                     },
                 };
                 let disposition = self.persist_conflict_abort(disposition, &host).await;
+                // The result/response keeps only observation fences. Real
+                // detached store operations keep independent physical clones.
+                let _ = host.release_entity();
                 let observation = command_observation(&disposition, consumption);
                 (
                     TransactionCompletionResult::Command(disposition),

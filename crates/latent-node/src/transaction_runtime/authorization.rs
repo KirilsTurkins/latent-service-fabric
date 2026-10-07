@@ -24,6 +24,7 @@ pub struct StateAuthorization {
     pub(super) budget: ActivationBudget,
     pub(super) role: Option<Arc<super::command_role::CommandRole>>,
     pub(super) retention: Option<Arc<super::TransactionRetention>>,
+    entity: Option<super::entity::EntityCommitFence>,
 }
 impl StateAuthorization {
     pub(super) fn publication(&self) -> &str {
@@ -91,6 +92,7 @@ impl StateAuthorization {
             budget,
             role: None,
             retention: None,
+            entity: None,
         })
     }
 
@@ -102,6 +104,21 @@ impl StateAuthorization {
     pub(super) fn with_retention(mut self, retention: Arc<super::TransactionRetention>) -> Self {
         self.retention = Some(retention);
         self
+    }
+
+    pub(super) fn with_entity(mut self, entity: Option<super::entity::EntityCommitFence>) -> Self {
+        self.entity = entity;
+        self
+    }
+
+    pub(super) fn with_entity_final<R>(
+        &self,
+        action: impl FnOnce() -> R,
+    ) -> Result<R, PlatformError> {
+        match &self.entity {
+            Some(entity) => entity.with_current(action),
+            None => Ok(action()),
+        }
     }
 
     pub(super) fn authorize(

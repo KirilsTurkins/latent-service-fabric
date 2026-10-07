@@ -104,7 +104,8 @@ impl StateAuthorization {
             self.intents.clone(),
             self.budget.clone(),
         )?
-        .with_retention(Arc::clone(self.retention.as_ref().ok_or_else(denied)?));
+        .with_retention(Arc::clone(self.retention.as_ref().ok_or_else(denied)?))
+        .with_entity(self.entity.clone());
         // Frozen original accounting remains frozen. This authority stays
         // private to the metadata writer and the original result response.
         Ok(Arc::new(authorization))

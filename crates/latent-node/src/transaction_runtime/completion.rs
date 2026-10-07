@@ -168,10 +168,17 @@ impl CommandCompletion {
             return Err((self.host, failure(error)));
         }
         let time = self.time.sample();
+        let entity = match self.host.retain_entity() {
+            Ok(entity) => entity,
+            Err(error) => {
+                drop(self.claim);
+                return Err((self.host, failure(error)));
+            }
+        };
         let result = self.host.store.with_store_retaining(
             StoreIoKind::Read,
             self.host.retained_bytes,
-            Arc::clone(&self.host) as Arc<dyn std::any::Any + Send + Sync>,
+            Arc::new((Arc::clone(&self.host), entity)) as Arc<dyn std::any::Any + Send + Sync>,
             move |store| {
                 let view = store.snapshot()?;
                 Ok(CompleteEnvelope::rejection(
@@ -212,10 +219,14 @@ async fn publish(
     retirement: AttemptRetirement,
 ) -> CommandCompletionDisposition {
     let authorization = Arc::clone(&host.authorization);
+    let entity = match host.retain_entity() {
+        Ok(entity) => entity,
+        Err(_) => return recovery(&host, identity).await,
+    };
     let result = host.store.with_store_retaining(
         StoreIoKind::Write,
         host.retained_bytes,
-        Arc::clone(&host) as Arc<dyn std::any::Any + Send + Sync>,
+        Arc::new((Arc::clone(&host), entity)) as Arc<dyn std::any::Any + Send + Sync>,
         move |store| {
             Ok(publish_fenced(
                 store,
@@ -324,13 +335,17 @@ fn publish_fenced(
                                 // the short Native fence after Policy/Namespace/
                                 // Effects and through the original cancellation
                                 // CAS; never hold it across physical publication.
-                                if let Some(retained) = &authorization.retention {
-                                    retained
-                                        .with_current(accept)
-                                        .map_err(|_| NamespaceError::PermissionDenied)?
-                                } else {
-                                    accept()
-                                }
+                                authorization
+                                    .with_entity_final(|| {
+                                        if let Some(retained) = &authorization.retention {
+                                            retained
+                                                .with_current(accept)
+                                                .map_err(|_| NamespaceError::PermissionDenied)?
+                                        } else {
+                                            accept()
+                                        }
+                                    })
+                                    .map_err(|_| NamespaceError::PermissionDenied)?
                             },
                         )
                         .map_err(|_| super::authorization::denied())
