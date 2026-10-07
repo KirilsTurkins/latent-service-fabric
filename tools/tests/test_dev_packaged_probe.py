@@ -94,7 +94,8 @@ class PackagedProbe(unittest.TestCase):
         inventory['identity'] = common.digest(common.encode(inventory))
         raw = common.encode(inventory)
         (self.root / 'guest-tools.json').write_bytes(raw)
-        descriptor = {'language': 'java', 'template': {'ownerIssue': 548, 'revision': 'a' * 40},
+        descriptor = {'language': 'java', 'hostAbi': common.HOST_ABI,
+            'template': {'ownerIssue': 548, 'revision': 'a' * 40},
             'build': {'inventory': {'path': 'guest-tools.json', 'sha256': common.digest(raw)}, 'tools': tools}}
         actual, observation = packaged._generation_tools(self.root, descriptor)
         self.assertEqual(actual, {name: self.root / 'sdk/bin' / name for name in ('wasm-tools', 'wit-bindgen')})
