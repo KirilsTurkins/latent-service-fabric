@@ -113,7 +113,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("toolchain-config", files["vendor/lsf/sdk/go-guest/toolchain.lock.json"]),
                 ("dependency-lock", files["vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json"])))
             if 'go-generated-inputs.json' in files:
-                materials.append({'name': 'go-generator-inputs', 'role': 'generated',
+                materials.append({'name': 'go-generator-inputs',
                                   'digest': digest(files['go-generated-inputs.json']),
                                   'size': len(files['go-generated-inputs.json'])})
             if closure is not None:

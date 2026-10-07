@@ -78,6 +78,19 @@ class BuildProvenanceSchemaTests(unittest.TestCase):
     def invalid(self, name, value):
         self.assertFalse(self.validators[name].is_valid(value), name)
 
+    def test_generated_inputs_are_named_signable_materials_without_unsigned_role_fields(self):
+        for language in ("c", "go", "java", "typescript"):
+            with self.subTest(language=language):
+                current = samples()
+                material = {"name": language + "-generator-inputs", "digest": DIGEST, "size": 17}
+                current["build-observation"]["materials"].append(material)
+                self.validators["build-observation"].validate(current["build-observation"])
+                self.validators["package-provenance-statement"].validate(current["package-provenance-statement"])
+                current["build-observation"]["materials"][-1]["role"] = "generated"
+                current["package-provenance-statement"]["predicate"]["observation"]["materials"][-1]["role"] = "generated"
+                self.invalid("build-observation", current["build-observation"])
+                self.invalid("package-provenance-statement", current["package-provenance-statement"])
+
     def test_signed_recipes_match_every_standalone_profile_and_builder_choice(self):
         standalone = self.validators["build-observation"].schema
         embedded = self.validators["package-provenance-statement"].schema["properties"]["predicate"]["properties"]["observation"]

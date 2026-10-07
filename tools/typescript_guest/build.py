@@ -135,7 +135,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"])))
             if 'typescript-generated-inputs.json' in files:
                 data = files['typescript-generated-inputs.json']
-                materials.append({"name": "typescript-generator-inputs", "role": "generated",
+                materials.append({"name": "typescript-generator-inputs",
                                   "digest": digest(data), "size": len(data)})
             if closure is not None:
                 for name in ("application-dependencies.json", "npm-inputs.json", "compiler-containment.json", "bundle-selected-inputs.json", "application.mjs.map"):

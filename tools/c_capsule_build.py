@@ -155,7 +155,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 materials.append({"name": "c-compiler-sysroot-and-isolation", "digest": digest(data), "size": len(data)})
             if "c-generated-inputs.json" in files:
                 data = files["c-generated-inputs.json"]
-                materials.append({"name": "c-generator-inputs", "role": "generated",
+                materials.append({"name": "c-generator-inputs",
                                   "digest": digest(data), "size": len(data)})
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
