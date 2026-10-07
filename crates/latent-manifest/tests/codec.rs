@@ -358,3 +358,142 @@ fn assert_violation<T: std::fmt::Debug>(
         "missing {expected_path} [{expected_code}] in {violations:#?}"
     );
 }
+
+fn transaction_http_trigger(mode: &str, method: &str) -> Value {
+    let mut trigger: Value = serde_json::from_slice(ECHO_TRIGGER).unwrap();
+    trigger["metadata"]["tenant"] = json!("acme");
+    trigger["spec"]["target"] = json!({
+        "service": "orders", "contract": "latent:orders/orders@0.1.0",
+        "function": "handle", "route": "orders",
+        "publication": format!("publication:sha256:{}", "a".repeat(64)),
+        "revision": format!("revision-v1:sha256:{}", "b".repeat(64)),
+        "deploymentGeneration": 1
+    });
+    trigger["spec"]["configuration"] = json!({
+        "profile": "transaction-http-v1", "scheme": "http", "host": "localhost",
+        "path": "/orders", "pathMatch": "exact", "method": method,
+        "transactionMode": mode, "namespace": "orders", "incarnation": "1",
+        "stateSchema": format!("sha256:{}", "c".repeat(64)),
+        "companionDigest": format!("sha256:{}", "d".repeat(64)),
+        "stateBinding": "orders", "resultPolicy": "order-results"
+    });
+    trigger
+}
+
+#[test]
+fn transaction_http_conditions_enforce_each_mode_and_precondition_conjunction() {
+    let codec = JsonManifestCodec::default();
+    for mode in ["command", "query", "result"] {
+        for method in ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"] {
+            let mut trigger = transaction_http_trigger(mode, method);
+            let allowed = match mode {
+                "command" => matches!(method, "POST" | "PUT" | "PATCH" | "DELETE"),
+                "query" => matches!(method, "GET" | "HEAD"),
+                _ => method == "GET",
+            };
+            for with_precondition in [false, true] {
+                if with_precondition {
+                    trigger["spec"]["configuration"]["preconditionKey"] = json!("AA==");
+                }
+                let result = codec.decode_trigger(&serde_json::to_vec(&trigger).unwrap());
+                assert_eq!(
+                    result.is_ok(),
+                    allowed && (!with_precondition || mode == "command"),
+                    "{mode}/{method}/precondition={with_precondition}: {result:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn transaction_http_identity_digest_incarnation_and_path_boundaries_are_closed() {
+    let codec = JsonManifestCodec::default();
+    let original = transaction_http_trigger("command", "POST");
+    for (field, accepted, refused) in [
+        (
+            "namespace",
+            vec!["orders".to_owned(), "?".repeat(128)],
+            vec![
+                String::new(),
+                "x\n".to_owned(),
+                "x\u{7f}".to_owned(),
+                "x\u{9f}".to_owned(),
+                "?".repeat(129),
+            ],
+        ),
+        (
+            "incarnation",
+            vec!["1".to_owned(), u64::MAX.to_string()],
+            vec![
+                "0".to_owned(),
+                "01".to_owned(),
+                "+1".to_owned(),
+                "18446744073709551616".to_owned(),
+            ],
+        ),
+        (
+            "path",
+            vec!["/".to_owned(), "/orders".to_owned()],
+            vec!["orders".to_owned()],
+        ),
+        (
+            "stateSchema",
+            vec![format!("sha256:{}", "a".repeat(64))],
+            vec![
+                format!("sha256:{}", "A".repeat(64)),
+                format!("sha256:{}", "a".repeat(63)),
+            ],
+        ),
+        (
+            "companionDigest",
+            vec![format!("sha256:{}", "b".repeat(64))],
+            vec![format!("sha256:{}", "B".repeat(64))],
+        ),
+    ] {
+        for (values, expected) in [(accepted, true), (refused, false)] {
+            for value in values {
+                let mut trigger = original.clone();
+                trigger["spec"]["configuration"][field] = json!(value);
+                let result = codec.decode_trigger(&serde_json::to_vec(&trigger).unwrap());
+                assert_eq!(result.is_ok(), expected, "{field}={value:?}: {result:?}");
+            }
+        }
+    }
+    for field in ["stateBinding", "resultPolicy", "entity"] {
+        let mut trigger = original.clone();
+        trigger["spec"]["configuration"][field] = json!("invalid\u{80}");
+        assert!(codec
+            .decode_trigger(&serde_json::to_vec(&trigger).unwrap())
+            .is_err());
+    }
+}
+
+#[test]
+fn transaction_http_precondition_base64_preserves_padding_bits_and_key_ceiling() {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    let codec = JsonManifestCodec::default();
+    let original = transaction_http_trigger("command", "POST");
+    for (encoded, accepted) in [
+        (STANDARD.encode([0]), true),
+        (STANDARD.encode([0, 1]), true),
+        (STANDARD.encode(vec![255; 1024]), true),
+        (STANDARD.encode(vec![255; 1025]), false),
+        (String::new(), false),
+        ("AB==".to_owned(), false),
+        ("AAB=".to_owned(), false),
+        ("AA".to_owned(), false),
+        ("_w==".to_owned(), false),
+        ("AA==\n".to_owned(), false),
+    ] {
+        let mut trigger = original.clone();
+        trigger["spec"]["configuration"]["preconditionKey"] = json!(encoded);
+        let result = codec.decode_trigger(&serde_json::to_vec(&trigger).unwrap());
+        assert_eq!(
+            result.is_ok(),
+            accepted,
+            "base64 length {}: {result:?}",
+            encoded.len()
+        );
+    }
+}

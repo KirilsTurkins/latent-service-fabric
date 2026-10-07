@@ -83,7 +83,7 @@ fn assert_supported_schema(schema: &Value, path: &str) {
                     assert_supported_schema(child, &format!("{path}.{keyword}.{name}"));
                 }
             }
-            "oneOf" => {
+            "oneOf" | "allOf" => {
                 let children = value.as_array().unwrap_or_else(|| {
                     panic!("embedded schema keyword `{path}.{keyword}` must be an array")
                 });
@@ -117,6 +117,15 @@ fn validate_node(
 ) {
     if violations.len() >= max_violations {
         return;
+    }
+
+    if let Some(conjuncts) = schema.get("allOf").and_then(Value::as_array) {
+        for conjunct in conjuncts {
+            validate_node(conjunct, instance, path, root, violations, max_violations);
+            if violations.len() >= max_violations {
+                return;
+            }
+        }
     }
 
     if let Some(condition) = schema.get("if") {
@@ -471,12 +480,45 @@ fn validate_string(
                 "invalid-target-triple",
                 "target must contain at least three nonempty ASCII alphanumeric, underscore or dot segments separated by hyphens",
             ),
+            "^/" => (value.starts_with('/'), "invalid-path", "HTTP path must start with a slash"),
+            "^sha256:[0-9a-f]{64}$" => (
+                value.parse::<latent_core::ArtifactBlobDigest>().is_ok(),
+                "invalid-digest",
+                "digest must be a canonical lowercase SHA-256 identity",
+            ),
+            r"^[^\u0000-\u001f\u007f-\u009f]+$" => (
+                latent_core::transaction_contract::identity(value).is_ok()
+                    && !value.chars().any(char::is_control),
+                "invalid-identity",
+                "transaction identity must be bounded and contain no control characters",
+            ),
+            r"^(?:[1-9][0-9]{0,18}|1[0-7][0-9]{18}|18[0-3][0-9]{17}|184[0-3][0-9]{16}|1844[0-5][0-9]{15}|18446[0-6][0-9]{14}|184467[0-3][0-9]{13}|1844674[0-3][0-9]{12}|184467440[0-6][0-9]{10}|1844674407[0-2][0-9]{9}|18446744073[0-6][0-9]{8}|1844674407370[0-8][0-9]{6}|18446744073709[0-4][0-9]{5}|184467440737095[0-4][0-9]{4}|18446744073709550[0-9]{3}|18446744073709551[0-5][0-9]{2}|1844674407370955160[0-9]{1}|1844674407370955161[0-4]|18446744073709551615)$" => (
+                value.parse::<u64>().is_ok_and(|number| number != 0 && number.to_string() == value),
+                "invalid-incarnation",
+                "incarnation must be a canonical nonzero unsigned 64-bit integer",
+            ),
+            r"^(?:(?:[A-Za-z0-9+/]{4}){0,340}(?:[A-Za-z0-9+/]{4}|[A-Za-z0-9+/][AQgw]==|[A-Za-z0-9+/]{2}[AEIMQUYcgkosw048]=)|(?:[A-Za-z0-9+/]{4}){341}[A-Za-z0-9+/][AQgw]==)$" => (
+                canonical_precondition_key(value),
+                "invalid-precondition-key",
+                "precondition key must be canonical padded base64 for 1 to 1024 bytes",
+            ),
             _ => panic!("embedded schema uses unsupported pattern `{pattern}`"),
         };
         if !matches {
             push_violation(violations, max_violations, path, code, message);
         }
     }
+}
+
+fn canonical_precondition_key(value: &str) -> bool {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    let maximum = latent_core::transaction_contract::KEY_BYTES;
+    if value.len() > maximum.div_ceil(3) * 4 {
+        return false;
+    }
+    STANDARD.decode(value).is_ok_and(|bytes| {
+        !bytes.is_empty() && bytes.len() <= maximum && STANDARD.encode(&bytes) == value
+    })
 }
 
 fn validate_number(
