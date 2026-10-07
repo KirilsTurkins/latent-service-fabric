@@ -1,0 +1,627 @@
+{
+  "schemaVersion": "latent.activation-provider-cost-diagnostic.v1",
+  "status": "required host-call fuel charge missing; narrow repair awaiting native execution",
+  "normalQualification": false,
+  "defaultHttpClientQualified": false,
+  "defaultTaskSchedulerQualified": false,
+  "normalFailedAttempt": {
+    "component": {
+      "name": "actual-default-http-client",
+      "digest": "sha256:fdf790ee8bd41bfef26d0cda57874edf5b1f60aa9bd1278273e4d4a1739c2d6e",
+      "size": 6321069
+    },
+    "code": "guest-trap",
+    "terminalState": "guest_trap",
+    "outcomeKnown": true,
+    "consumption": {
+      "blobReadBytes": "0",
+      "blobWriteBytes": "0",
+      "childCalls": 0,
+      "cpuFuel": "51286884",
+      "effectCount": 0,
+      "logBytes": "0",
+      "outboundRequests": 0,
+      "peakMemoryBytes": "57016320",
+      "stateReadBytes": "0",
+      "stateWriteBytes": "0",
+      "wallTimeMicros": "53436"
+    },
+    "causeProven": false
+  },
+  "privateTrace": {
+    "kind": "build-free-explicitly-older-observer-original-component-trace",
+    "normalComponentAndHelperSource": "1e9e7c8aead68fa478912e372a590ac79bbfcae9",
+    "olderPrivateObserverSource": "1cf21f0f4c76e0a58d16666d60373ce576653578",
+    "olderPrivateObserverSourceTree": "6a42a5d50efb3c91e4cd57878da28c5a21d183c2",
+    "observer": {
+      "name": "explicitly-older-private-trap-observer",
+      "digest": "sha256:f8a8c169e47d095839458f06d447368c005f8bdcf7fde16aba6ada85d7f080bf",
+      "size": 145892840
+    },
+    "privateSourceChanges": {
+      "crates/latent-wasmtime/src/config/engine.rs": {
+        "originalSha256": "8821b141d34f56e4779c86a9bebddd048281644baaba68e8c71960b3fb28b676",
+        "derivedSha256": "2730b015a8b6a7ece005966235ff363d6f74b31e42801017758cfbca8e997984",
+        "derivedBytes": 6115
+      },
+      "crates/latent-wasmtime/src/containment.rs": {
+        "originalSha256": "ee416ec8ec11e74de5f4b4176adcf5597727e722eb1f2dfdfa3a3886c1b026d8",
+        "derivedSha256": "de4d1e06202896422e698209ef1a3567d5fbfd17c5252ab71297fae10238b6b6",
+        "derivedBytes": 21020
+      }
+    },
+    "nativeSourceComparison": {
+      "olderPrivateObserverSource": "1cf21f0f4c76e0a58d16666d60373ce576653578",
+      "normalComponentAndHelpersSource": "1e9e7c8aead68fa478912e372a590ac79bbfcae9",
+      "pathsCompared": [
+        "apps",
+        "crates",
+        "wit",
+        "proto",
+        "Cargo.toml",
+        "Cargo.lock",
+        ".cargo",
+        "rust-toolchain.toml"
+      ],
+      "changedNativeInputPaths": [
+        "Cargo.toml"
+      ],
+      "exactCargoProfileDiffSha256": "5c8a68aa881091eb5bfb9f99357f6f9860c0a00dc0fabfd5e7c9fe8c8755295b",
+      "addedCargoDevProfileLines": 12,
+      "appsCratesWitProtoLockManagedConfigAndToolchainUnchanged": true,
+      "normalHostQualificationEquivalenceClaimed": false,
+      "recordedScopeCorrectedToOriginalExecutedCommand": true
+    },
+    "component": {
+      "name": "unchanged-normal-default-http-client",
+      "digest": "sha256:fdf790ee8bd41bfef26d0cda57874edf5b1f60aa9bd1278273e4d4a1739c2d6e",
+      "size": 6321069
+    },
+    "observedAt": "2026-10-02T01:22:01.452993+00:00",
+    "elapsedSeconds": 44.90720490005333,
+    "exitCode": 0,
+    "oomKilled": false,
+    "freshNativeOrAotBuild": false,
+    "nativeOrCompilerPayloadDuplicated": false,
+    "cpuLimit": 2,
+    "memoryBytes": 4294967296,
+    "probeTmpfsBytes": 1073741824,
+    "maximumOverallSeconds": 900,
+    "maximumPersistentBackupBytes": 67108864,
+    "originalGuestLimits": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 134217728,
+      "wallTimeMillis": 120000,
+      "outboundRequests": 1
+    },
+    "verifiedNativeInputsBeforeAndAfter": 6,
+    "verifiedTrackedSourceInputsBeforeAndAfter": 7400,
+    "verifiedStagedInputFilesBeforeAndAfter": 114,
+    "stagedInputBytes": 6664712,
+    "inputVolumeCreatedAtUnchanged": {
+      "latent-sdk-http-client-reference-1e9e7c8a-capture-r1-20261002": "2026-10-02T00:02:38Z",
+      "latent-sdk-http-client-reference-1e9e7c8a-node-r3-20261002": "2026-10-02T00:13:37Z",
+      "latent-sdk-http-client-private-trace-1cf21f0f-r1-20261001": "2026-10-01T20:52:54Z"
+    },
+    "backup": {
+      "private": true,
+      "notPublished": true,
+      "bytes": 6960250,
+      "sha256": "b899e213f76bfeb5ec97523613ed6ecb857881daa6a9712af78deb243a85ab14"
+    },
+    "backtrace": {
+      "maximumFrames": 128,
+      "maximumFunctionNameCharacters": 256,
+      "trap": "UnreachableCodeReached",
+      "stderrBytes": 3987,
+      "stderrSha256": "e324d0e3130136d39a7639f2b76ed6688a541077b183da2049ffdfb08c486458",
+      "frames": [
+        {
+          "function": 322,
+          "moduleOffset": 102732,
+          "functionOffset": 1,
+          "name": "_RNvCs9wFQrvczXsK_7___rustc12___rust_abort"
+        },
+        {
+          "function": 306,
+          "moduleOffset": 96163,
+          "functionOffset": 1,
+          "name": "_RNvCs9wFQrvczXsK_7___rustc18___rust_start_panic"
+        },
+        {
+          "function": 318,
+          "moduleOffset": 97207,
+          "functionOffset": 5,
+          "name": "_RNvCs9wFQrvczXsK_7___rustc10rust_panic"
+        },
+        {
+          "function": 316,
+          "moduleOffset": 97179,
+          "functionOffset": 330,
+          "name": "_RNvNtCsdl5sGgnNXvY_3std9panicking15panic_with_hook"
+        },
+        {
+          "function": 314,
+          "moduleOffset": 96655,
+          "functionOffset": 142,
+          "name": "_RNCNvNtCsdl5sGgnNXvY_3std9panicking13panic_handler0B5_"
+        },
+        {
+          "function": 313,
+          "moduleOffset": 96503,
+          "functionOffset": 3,
+          "name": "_RINvNtNtCsdl5sGgnNXvY_3std3sys9backtrace26___rust_end_short_backtraceNCNvNtB6_9panicking13panic_handler0zEB6_"
+        },
+        {
+          "function": 328,
+          "moduleOffset": 105689,
+          "functionOffset": 48,
+          "name": "_RNvCs9wFQrvczXsK_7___rustc17rust_begin_unwind"
+        },
+        {
+          "function": 362,
+          "moduleOffset": 109293,
+          "functionOffset": 63,
+          "name": "_RNvNtCsdkdt1aaAg1T_4core9panicking9panic_fmt"
+        },
+        {
+          "function": 391,
+          "moduleOffset": 119584,
+          "functionOffset": 102,
+          "name": "_RNvNtCsdkdt1aaAg1T_4core6result13unwrap_failed"
+        },
+        {
+          "function": 269,
+          "moduleOffset": 90625,
+          "functionOffset": 501,
+          "name": "_RNvMs_NtCsa9Tc6Kee53E_19dotnet_http_runtime4pollNtB4_8Pollable5timer"
+        },
+        {
+          "function": 193,
+          "moduleOffset": 74410,
+          "functionOffset": 30,
+          "name": "wasi:clocks/monotonic-clock@0.2.6#subscribe-duration"
+        },
+        {
+          "function": 20,
+          "moduleOffset": 751,
+          "functionOffset": 47,
+          "name": ""
+        },
+        {
+          "function": 3925,
+          "moduleOffset": 1386814,
+          "functionOffset": 42,
+          "name": "S_P_CoreLib_WasiPollWorld_wit_imports_wasi_clocks_v0_2_0_MonotonicClockInterop__SubscribeDuration"
+        },
+        {
+          "function": 2379,
+          "moduleOffset": 884711,
+          "functionOffset": 146,
+          "name": "S_P_CoreLib_System_Threading_TimerQueue__SetNextTimer"
+        },
+        {
+          "function": 4773,
+          "moduleOffset": 1727905,
+          "functionOffset": 524,
+          "name": "S_P_CoreLib_System_Threading_TimerQueue__SetTimer"
+        },
+        {
+          "function": 5029,
+          "moduleOffset": 1820701,
+          "functionOffset": 162,
+          "name": "S_P_CoreLib_System_Threading_TimerQueue__EnsureTimerFiresBy"
+        },
+        {
+          "function": 5287,
+          "moduleOffset": 1901884,
+          "functionOffset": 280,
+          "name": "S_P_CoreLib_System_Threading_TimerQueue__UpdateTimer"
+        },
+        {
+          "function": 4708,
+          "moduleOffset": 1706958,
+          "functionOffset": 288,
+          "name": "S_P_CoreLib_System_Threading_TimerQueueTimer__Change_0"
+        },
+        {
+          "function": 2291,
+          "moduleOffset": 853306,
+          "functionOffset": 96,
+          "name": "S_P_CoreLib_System_Threading_TimerQueueTimer__Change"
+        },
+        {
+          "function": 3508,
+          "moduleOffset": 1253098,
+          "functionOffset": 815,
+          "name": "S_P_CoreLib_System_Threading_CancellationTokenSource__CancelAfter_1"
+        },
+        {
+          "function": 2544,
+          "moduleOffset": 933021,
+          "functionOffset": 120,
+          "name": "S_P_CoreLib_System_Threading_CancellationTokenSource__CancelAfter"
+        },
+        {
+          "function": 4055,
+          "moduleOffset": 1463810,
+          "functionOffset": 242,
+          "name": "System_Net_Http_System_Net_Http_HttpClient__PrepareCancellationTokenSource"
+        },
+        {
+          "function": 2510,
+          "moduleOffset": 922434,
+          "functionOffset": 89,
+          "name": "System_Net_Http_System_Net_Http_HttpClient__SendAsync_2"
+        },
+        {
+          "function": 1351,
+          "moduleOffset": 551662,
+          "functionOffset": 323,
+          "name": "Capsule_ServiceWorld_wit_Exports_examples_greeting_ApiExportsImpl__Greet"
+        },
+        {
+          "function": 3308,
+          "moduleOffset": 1176502,
+          "functionOffset": 245,
+          "name": "Capsule_ServiceWorld_wit_Exports_examples_greeting_ApiExportsInterop__wasmExportGreet"
+        }
+      ]
+    },
+    "closedCapabilityObservations": [
+      {
+        "sequence": 14,
+        "kind": "capability-grant-allowed",
+        "outcome": "succeeded",
+        "reason": "admitted",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 15,
+        "kind": "capability-provider-outcome",
+        "outcome": "succeeded",
+        "reason": "committed",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 16,
+        "kind": "capability-grant-allowed",
+        "outcome": "succeeded",
+        "reason": "admitted",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 17,
+        "kind": "capability-provider-outcome",
+        "outcome": "succeeded",
+        "reason": "committed",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 18,
+        "kind": "capability-grant-allowed",
+        "outcome": "succeeded",
+        "reason": "admitted",
+        "capability": "latent:random/random@0.1.0",
+        "operation": "bytes",
+        "providerProfile": "system-random-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 19,
+        "kind": "capability-provider-outcome",
+        "outcome": "succeeded",
+        "reason": "committed",
+        "capability": "latent:random/random@0.1.0",
+        "operation": "bytes",
+        "providerProfile": "system-random-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 20,
+        "kind": "capability-grant-allowed",
+        "outcome": "succeeded",
+        "reason": "admitted",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 21,
+        "kind": "capability-provider-outcome",
+        "outcome": "succeeded",
+        "reason": "committed",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 22,
+        "kind": "capability-grant-allowed",
+        "outcome": "succeeded",
+        "reason": "admitted",
+        "capability": "latent:clock/wall@0.1.0",
+        "operation": "now-unix-millis",
+        "providerProfile": "activation-wall-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 23,
+        "kind": "capability-provider-outcome",
+        "outcome": "succeeded",
+        "reason": "committed",
+        "capability": "latent:clock/wall@0.1.0",
+        "operation": "now-unix-millis",
+        "providerProfile": "activation-wall-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 24,
+        "kind": "capability-grant-allowed",
+        "outcome": "succeeded",
+        "reason": "admitted",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 25,
+        "kind": "capability-provider-outcome",
+        "outcome": "succeeded",
+        "reason": "committed",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 26,
+        "kind": "capability-grant-allowed",
+        "outcome": "succeeded",
+        "reason": "admitted",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 27,
+        "kind": "capability-provider-outcome",
+        "outcome": "succeeded",
+        "reason": "committed",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 28,
+        "kind": "capability-grant-allowed",
+        "outcome": "succeeded",
+        "reason": "admitted",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 29,
+        "kind": "capability-provider-outcome",
+        "outcome": "succeeded",
+        "reason": "committed",
+        "capability": "latent:clock/monotonic@0.1.0",
+        "operation": "now-nanos",
+        "providerProfile": "activation-monotonic-v1",
+        "configurationEpoch": 1
+      },
+      {
+        "sequence": 30,
+        "kind": "capability-grant-allowed",
+        "outcome": "succeeded",
+        "reason": "admitted",
+        "capability": "latent:runtime/activation@0.1.0",
+        "operation": "register",
+        "providerProfile": "activation-owned-v1",
+        "configurationEpoch": 1
+      }
+    ],
+    "invocations": [
+      {
+        "activation": "http-client-no-grants",
+        "exitCode": 4,
+        "code": "permission-denied",
+        "outcomeKnown": true,
+        "processReaped": true,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "0",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "0",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "17778438"
+        }
+      },
+      {
+        "activation": "http-client-no-entropy-grant",
+        "exitCode": 4,
+        "code": "permission-denied",
+        "outcomeKnown": true,
+        "processReaped": true,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "0",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "0",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1249"
+        }
+      },
+      {
+        "activation": "http-client-no-http-grant",
+        "exitCode": 4,
+        "code": "permission-denied",
+        "outcomeKnown": true,
+        "processReaped": true,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "0",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "0",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1591"
+        }
+      },
+      {
+        "activation": "http-client-no-wall-grant",
+        "exitCode": 4,
+        "code": "permission-denied",
+        "outcomeKnown": true,
+        "processReaped": true,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "0",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "0",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "1281"
+        }
+      },
+      {
+        "activation": "http-client-default-get",
+        "exitCode": 4,
+        "code": "guest-trap",
+        "outcomeKnown": true,
+        "processReaped": true,
+        "consumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "51287130",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "57016320",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "62377"
+        }
+      }
+    ],
+    "cleanup": {
+      "nodeClosed": true,
+      "nodeReaped": true,
+      "peerClosed": true,
+      "peerReaped": true,
+      "peerForcedExitCode": -9
+    },
+    "retainedPreNodeHarnessFailure": {
+      "attempt": 1,
+      "nodeStarted": false,
+      "reason": "missing application input constant",
+      "laterAttempt": 2
+    }
+  },
+  "sourceDiagnosis": {
+    "classification": "deterministic missing-charge defect; exact private returned WIT error was not recorded",
+    "sourcePaths": {
+      "nodeInstaller": "apps/latentd/src/standalone/providers/scalar.rs",
+      "runtimeAuthorization": "crates/latent-wasmtime/src/host/runtime.rs",
+      "typedAuthorization": "crates/latent-wasmtime/src/host/capabilities.rs",
+      "brokerMinimumValidation": "crates/latent-capabilities/src/broker/work.rs",
+      "guestTimer": "sdk/dotnet-guest/runtime/http/timer.rs",
+      "guestOwner": "sdk/dotnet-guest/runtime/http/owner.rs"
+    },
+    "installer": {
+      "profile": "activation-owned-v1",
+      "requiredOperations": 11,
+      "dimension": "CpuFuel",
+      "minimumEach": 100
+    },
+    "originalBridgeCost": {
+      "maximumOutputBytes": 128,
+      "charges": []
+    },
+    "broker": "validate_minimum rejects an uncharged call before CallAudit preparation and provider dispatch",
+    "guest": "Owner::new(Wait) calls register before the lazy wait-for; its failed expect traps in timer subscription",
+    "traceInference": "last grant-allowed register without a completed runtime outcome is consistent with this admission defect",
+    "notProven": "the private trace did not expose the exact returned runtime error or establish a successful corrected invocation"
+  },
+  "repair": {
+    "preimageSource": "f69a09bcbdcb3d4aafdf204891d9b96a9bb83417",
+    "preimages": [
+      {
+        "path": "crates/latent-wasmtime/src/host/capabilities.rs",
+        "size": 9151,
+        "sha256": "2b391f1a59fbd255354d5d612f28a1d77f1686d02b05cb3a0febef9f076a923e"
+      },
+      {
+        "path": "crates/latent-wasmtime/src/host/runtime.rs",
+        "size": 22568,
+        "sha256": "c7a39fffd57dfd19861779fac83871948397ce9ad34c9d28eed855343eaadc9e"
+      },
+      {
+        "path": "crates/latent-wasmtime/tests/guest_sdk/runtime.rs",
+        "size": 14735,
+        "sha256": "cb6bc5c17f5e72060426b33b94b3d8e86695745825d200d9243a1b5ec490592a"
+      },
+      {
+        "path": "crates/latent-wasmtime/tests/local_service/runtime.rs",
+        "size": 17998,
+        "sha256": "3299df13844b016e5b4b28337b686fcb1cb443b57143642ef85ec9d963ec879e"
+      }
+    ],
+    "requiredHostCallFuel": 100,
+    "originalLedgerReservations": "CapabilityCallCost.with_charge reserves and commits before original dispatch",
+    "runtimeFixture": "same 100-fuel minimum for all eleven operations as protected node installation",
+    "unchanged": [
+      "WIT",
+      "ABI identities",
+      "profile",
+      "configuration digest and epoch",
+      "grants",
+      "owner limits",
+      "fuel ceiling",
+      "deadlines",
+      "core logical-work charges",
+      "canonical result and pending-work lifetime",
+      "dispatch replay prohibition"
+    ],
+    "nativeRegressionExecution": "pending; fresh native build held for physical disk capacity",
+    "signedDefaultHttpClientExecution": "pending; original component and all four zero-work denial controls retained"
+  }
+}

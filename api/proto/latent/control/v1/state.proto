@@ -50,6 +50,8 @@ message NamespaceInspection {
   NamespaceStatus status = 8;
   NamespaceQuota quota = 9;
   uint64 generation = 10;
+  // Captured configuration precondition only; this digest supplies no grant.
+  string namespace_policy_digest = 11;
 }
 
 enum NamespaceMutationKind {
@@ -123,6 +125,67 @@ enum StateMutationKind {
   STATE_MUTATION_KIND_TERMINATE_EFFECT = 2;
   STATE_MUTATION_KIND_PURGE_EXPIRED_PAYLOAD = 3;
   STATE_MUTATION_KIND_CHECKPOINT_NAMESPACE = 4;
+  STATE_MUTATION_KIND_RECONCILE_EFFECT = 5;
+}
+
+message PlanEffectMutationRequest {
+  latent.transaction.v1.GetEffectRequest effect = 1;
+  string operation_id = 2;
+  StateMutationKind mutation = 3;
+  // Exact supported durable row version, never refreshed automatically.
+  bytes expected_version = 4;
+  string expected_policy_digest = 5;
+  string reason = 6;
+  // Redrive only: 1..60000. Other actions require zero.
+  uint64 retry_delay_millis = 7;
+}
+
+enum EffectPlanSafety {
+  EFFECT_PLAN_SAFETY_UNSPECIFIED = 0;
+  EFFECT_PLAN_SAFETY_KNOWN_NONEXECUTION = 1;
+  EFFECT_PLAN_SAFETY_QUALIFIED_DEDUPLICATION = 2;
+  EFFECT_PLAN_SAFETY_PROVIDER_RECEIPT_LOOKUP = 3;
+  EFFECT_PLAN_SAFETY_ADMINISTRATOR_DECLARED = 4;
+}
+
+message EffectManagementPlan {
+  // Immutable original selectors, including the original access publication.
+  PlanEffectMutationRequest original = 1;
+  bytes plan_digest = 2;
+  // Bounded host management slot, distinct from zero-based staged intents.
+  uint32 management_sequence = 3;
+  // All zero for an undispatched row; otherwise the exact completed attempt.
+  uint64 owner_epoch = 4;
+  uint64 claim_generation = 5;
+  uint32 dispatch_attempt = 6;
+  uint64 expires_at_unix_millis = 7;
+  uint64 prepared_at_unix_millis = 8;
+  latent.transaction.v1.EffectDisposition before = 9;
+  EffectPlanSafety safety = 10;
+  optional uint64 dedup_valid_until_unix_millis = 11;
+}
+
+message PlanEffectMutationResponse {
+  EffectManagementPlan plan = 1;
+  bool replayed = 2;
+  AuditAck audit_ack = 3;
+}
+
+enum EffectManagementFact {
+  EFFECT_MANAGEMENT_FACT_UNSPECIFIED = 0;
+  EFFECT_MANAGEMENT_FACT_REDRIVE_SCHEDULED = 1;
+  EFFECT_MANAGEMENT_FACT_PROVIDER_CONFIRMED = 2;
+  EFFECT_MANAGEMENT_FACT_ADMINISTRATOR_TERMINATED = 3;
+}
+
+message EffectManagementReceiptDetails {
+  EffectManagementPlan original_plan = 1;
+  latent.transaction.v1.EffectDisposition before = 2;
+  latent.transaction.v1.EffectDisposition after = 3;
+  EffectManagementFact fact = 4;
+  // A provider observation and an administrator declaration are separate facts.
+  optional string provider_receipt = 5;
+  optional uint64 provider_observed_at_unix_millis = 6;
 }
 
 message MutateStateRequest {
@@ -133,6 +196,7 @@ message MutateStateRequest {
   bytes expected_version = 5;
   string expected_policy_digest = 6;
   string reason = 7;
+  EffectManagementPlan effect_plan = 8;
 }
 
 message StateOperationReceipt {
@@ -147,11 +211,15 @@ message StateOperationReceipt {
   optional string record_id = 9;
   string policy_digest = 10;
   StateOperationDisposition disposition = 11;
+  EffectManagementReceiptDetails effect = 12;
 }
 
 message GetStateOperationReceiptRequest {
   InspectNamespaceRequest namespace = 1;
   string operation_id = 2;
+  // Historical original semantics remain unchanged after plan expiry. The
+  // namespace above selects current read authority and may name a newer grant.
+  EffectManagementPlan original_effect_plan = 3;
 }
 
 // All calls require management credentials; HTTP application routes and guest
@@ -161,6 +229,7 @@ service StateService {
   rpc InspectNamespace(InspectNamespaceRequest) returns (InspectNamespaceResponse);
   rpc SelectEntity(SelectEntityRequest) returns (SelectEntityResponse);
   rpc MutateState(MutateStateRequest) returns (MutateStateResponse);
+  rpc PlanEffectMutation(PlanEffectMutationRequest) returns (PlanEffectMutationResponse);
   rpc GetStateOperationReceipt(GetStateOperationReceiptRequest) returns (GetStateOperationReceiptResponse);
 }
 
@@ -171,9 +240,11 @@ message InspectNamespaceResponse {
 message MutateStateResponse {
   StateOperationReceipt receipt = 1;
   AuditAck audit_ack = 2;
+  bool replayed = 3;
 }
 
 message GetStateOperationReceiptResponse {
   StateOperationReceipt receipt = 1;
   NamespaceOperationReceipt namespace_receipt = 2;
+  AuditAck audit_ack = 3;
 }

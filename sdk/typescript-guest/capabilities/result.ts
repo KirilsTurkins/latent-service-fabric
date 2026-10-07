@@ -25,3 +25,16 @@ export function unwrap<T, E>(result: Result<T, E>): T {
   if (result.tag === 'err') throw result.val;
   return result.val;
 }
+
+/** Finite WIT enums lower as strings; unexpected exceptions still trap. */
+export function enumCall<T, E extends string>(operation: () => T, values: readonly E[]): Result<T, E> {
+  try { return { tag: 'ok', val: operation() }; }
+  catch (error) {
+    if (typeof error !== 'object' || error === null
+        || Object.prototype.toString.call(error) !== '[object Error]'
+        || !Object.hasOwn(error, 'payload')) throw error;
+    const value: unknown = (error as Error & { payload: unknown }).payload;
+    if (typeof value !== 'string' || !values.includes(value as E)) throw error;
+    return { tag: 'err', val: value as E };
+  }
+}

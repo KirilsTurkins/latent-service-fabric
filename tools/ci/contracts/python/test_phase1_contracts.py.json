@@ -24,7 +24,7 @@
   },
   "kind":"python",
   "module":"tools/tests/test_phase1_contracts.py",
-  "reviewReason":"Explicitly include the two already-authoritative additive Phase 4 descriptor files; preserve every historical field, type, cardinality, oneof and drift guard",
+  "reviewReason":"Current development lossless shared Python guard storage. Retain all parent cases and exact execution, skip, decorator, class and owner guards. Preserve the already reviewed synthetic catalogue import/helper module fingerprint for the unchanged PR source; no new guard hash, deadline, command or obligation is approved.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "7f5eb5439ede7e4737925f7cecfbd3dd90f187aa4b30ea3a7dff0f65734dddfb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:0d31e763ebd2f5f1d12f5e47ae85530ce45f7eaef1a7083552fc2d3eba7c7b71","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
