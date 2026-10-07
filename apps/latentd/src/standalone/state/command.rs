@@ -184,7 +184,7 @@ impl Factory {
             publication: self.installed.publication.publication().to_string(),
             revision: revision.revision.0.clone(),
             release_digest: revision.release.0.clone(),
-            component_digest: self.installed.publication.release().0.clone(),
+            component_digest: self.installed.component_digest.clone(),
             contract_digest: self.installed.contract_digest.clone(),
             route_generation: revision.route_generation.0,
             state_schema: self.installed.state_schema().into(),

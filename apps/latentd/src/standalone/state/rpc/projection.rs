@@ -47,7 +47,7 @@ pub(super) fn response(
             publication_id: installed.publication().publication().to_string(),
             revision_id: resolved.revision.0.clone(),
             release_digest: resolved.release.0.clone(),
-            component_digest: installed.publication().release().0.clone(),
+            component_digest: installed.component_digest.clone(),
             route_generation: resolved.route_generation.0,
             contract_digest: installed.contract_digest.clone(),
             state_schema: installed.state_schema().into(),
