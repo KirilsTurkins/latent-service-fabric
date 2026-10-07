@@ -9,6 +9,15 @@ an editable Java project outside the runtime checkout, builds its actual source,
 packages it, and demonstrates signed admission and cleanup on a local node.
 This guest SDK is separate from the [external Java RPC client](../java-client).
 
+The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
+adds `State.Command`, `State.Query` and `State.Page` plus the logical `Intent`
+builder for state 0.2 and intent staging 0.1. Imported state types have one
+canonical owner across the two interfaces; `Unsigned64` preserves every bit.
+Page calls retain the original view and try-with-resources closes access only.
+These facades and captured-source inputs require the separately admitted Phase 4
+profile. Their signed Linux-node and HTTP recovery evidence is tracked by #389
+and required Java slice #718, separately from the completed stateless workflow.
+
 Compilation and local state-machine tests are not signed-node proof. The
 [implementation report](../../docs/testing/java-guest-authoring.md) records the
 status and exact-source evidence for the required real-component, ownership,
@@ -67,7 +76,7 @@ public signatures are rejected before Java compilation rather than at invocation
 
 ## Capability ownership
 
-The nine [actual Java examples](examples) exercise the eight current interfaces:
+The nine [stateless Java examples](examples) exercise their eight capability interfaces. The table also describes the separately selected Phase 4 transaction template:
 
 | Capability | Java ownership and outcomes |
 | --- | --- |
@@ -79,6 +88,8 @@ The nine [actual Java examples](examples) exercise the eight current interfaces:
 | Local service | Exact returned/declared/platform outcomes and host-controlled child budgets. |
 | Random | Exact u64 values, bounded bytes and typed invalid-length errors. |
 | Custom metrics | Configured instruments, bounded labels and exact budget/unavailable errors. |
+| State (Phase 4) | Scoped command/fresh-query owners, typed get/put/delete/scan, bounded pages and explicit close. |
+| Intents (Phase 4) | Logical binding/operation/payload staged through the canonical command owner; host-owned commitment. |
 
 Canonical resource aliases share consumed/borrowed state. Close is idempotent;
 consuming operations invalidate before dispatch. Borrow and consume cannot

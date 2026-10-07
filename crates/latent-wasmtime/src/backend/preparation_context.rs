@@ -84,6 +84,22 @@ impl PreparationContext {
         Ok(component_digest)
     }
 
+    fn install_transaction_imports(
+        &self,
+        linker: &mut Linker<HostState>,
+    ) -> Result<(), PlatformError> {
+        if self.config.transactional_state {
+            crate::host::transaction::install(linker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind scoped transaction imports",
+                    false,
+                )
+            })?;
+        }
+        Ok(())
+    }
+
     pub(super) fn link_component(
         &self,
         component: &Component,
@@ -109,6 +125,7 @@ impl PreparationContext {
                 false,
             )
         })?;
+        self.install_transaction_imports(&mut linker)?;
         if self.config.activation_runtime.is_some() {
             crate::host::runtime::install(&mut linker).map_err(|_| {
                 platform_error(

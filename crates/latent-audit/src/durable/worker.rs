@@ -42,6 +42,8 @@ struct Shared {
     finished: AtomicBool,
 }
 struct State {
+    #[cfg(any(test, feature = "test-support"))]
+    waiting: bool,
     queue: VecDeque<Command>,
     queued_bytes: usize,
     reserved_records: usize,
@@ -165,6 +167,8 @@ impl DirectoryPhase2AuditJournal {
         let shared = Arc::new(Shared {
             limits,
             state: Mutex::new(State {
+                #[cfg(any(test, feature = "test-support"))]
+                waiting: false,
                 queue: VecDeque::new(),
                 queued_bytes: 0,
                 reserved_records: usize::from(pending_record.is_some()),
@@ -290,6 +294,37 @@ impl Shared {
     }
 }
 impl AuditHandle {
+    /// Observe an isolated test journal's actual idle worker before its next call.
+    /// This does not reserve capacity or retry a rejected capability operation.
+    #[cfg(any(test, feature = "test-support"))]
+    pub fn wait_until_idle_for_test(&self, deadline: Instant) -> Result<bool> {
+        let mut state = self.shared.control_lock()?;
+        loop {
+            if state.closed {
+                return Err(closed());
+            }
+            if state.waiting
+                && state.pending.is_none()
+                && state.begin.is_none()
+                && state.finish.is_none()
+                && state.queue.is_empty()
+                && state.reserved_records == 0
+                && state.queued_bytes == 0
+            {
+                return Ok(true);
+            }
+            let Some(remaining) = deadline.checked_duration_since(Instant::now()) else {
+                return Ok(false);
+            };
+            state = self
+                .shared
+                .wake
+                .wait_timeout(state, remaining)
+                .map_err(|_| unavailable())?
+                .0;
+        }
+    }
+
     /// Checks composition identity without performing I/O or acquiring a grant.
     #[must_use]
     pub fn same_owner(&self, other: &Self) -> bool {
