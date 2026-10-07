@@ -70,6 +70,21 @@ class OwnerSelection(unittest.TestCase):
                 value['originalRuntimeInputsScope'] = 'entire-standard-library'; rehash(value)
                 with self.assertRaisesRegex(DevError, 'source-scope'): runtime.validate(value)
 
+    def test_actual_rust_sdk_path_is_captured_beside_bindings_and_cannot_borrow_old_preimage(self):
+        files = {'vendor/lsf/sdk/rust-guest/src/lib.rs': b'actual Rust guest SDK source',
+                 'vendor/lsf/crates/latent-component-bindings/src/lib.rs': b'actual generated binding boundary',
+                 'wit/world.wit': b'package controlled:app;'}
+        runtime.emit(self.output, 'rust', 'wasm32-unknown-unknown-panic-abort-v1', files, inventory(files),
+            COMPONENT, materials(), graph=None, binding_digest=BINDINGS, configuration={})
+        value = runtime.read((self.output / 'standard-runtime-selection.json').read_bytes())
+        expected = inventory({name: raw for name, raw in files.items() if name != 'wit/world.wit'})
+        self.assertEqual(value['originalRuntimeInputCount'], 2)
+        self.assertEqual(value['originalRuntimeInputsDigest'], digest(expected))
+        files['vendor/lsf/sdk/rust-guest/src/lib.rs'] = b'changed actual Rust SDK source'
+        value['sourceDigest'] = digest(inventory(files)); rehash(value)
+        with self.assertRaisesRegex(DevError, 'stale-runtime-preimage'):
+            runtime.verify_build(value, 'rust', files, inventory(files), COMPONENT, materials())
+
     def test_four_owners_capture_actual_sources_profiles_and_binding_transformation(self):
         for language in ('rust', 'go', 'c', 'typescript'):
             with self.subTest(language=language):

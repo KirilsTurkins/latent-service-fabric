@@ -13,7 +13,7 @@ OWNER_ISSUES = {'rust': 743, 'go': 742, 'c': 744, 'typescript': 745}
 PROFILES = {'rust': 'wasm32-unknown-unknown-panic-abort-v1', 'go': 'go-component-async-v1',
             'c': 'closed-synchronous-v1', 'typescript': 'spidermonkey-public-sync-v1'}
 PREFIXES = {
-    'rust': ('vendor/lsf/crates/latent-guest/', 'vendor/lsf/crates/latent-component-bindings/'),
+    'rust': ('vendor/lsf/sdk/rust-guest/', 'vendor/lsf/crates/latent-component-bindings/'),
     'go': ('vendor/lsf/sdk/go-guest/',),
     'c': ('vendor/lsf/sdk/c-guest/',),
     'typescript': ('vendor/lsf/sdk/typescript-guest/',),
