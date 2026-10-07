@@ -6,11 +6,11 @@
     "WitContractTests.test_interface_item_names_are_unique",
     "WitContractTests.test_same_label_profiles_stage_distinct_exact_worlds_and_dependencies",
     "WitContractTests.test_staging_rejects_source_and_platform_overlaps_before_mutation",
-    "WitContractTests.test_type_use_selector_stages_the_exact_state_dependency",
-    "WitContractTests.test_versioned_runtime_worlds_stage_only_their_selected_package_versions",
-    "WitContractTests.test_versioned_type_uses_stage_exact_transitive_state_dependency",
     "WitContractTests.test_type_use_preserves_dotted_prerelease_and_build_version_identity",
-    "WitContractTests.test_type_use_selector_stages_the_real_intents_state_dependency"
+    "WitContractTests.test_type_use_selector_stages_the_exact_state_dependency",
+    "WitContractTests.test_type_use_selector_stages_the_real_intents_state_dependency",
+    "WitContractTests.test_versioned_runtime_worlds_stage_only_their_selected_package_versions",
+    "WitContractTests.test_versioned_type_uses_stage_exact_transitive_state_dependency"
   ],
   "guards": {
     "WitContractTests.test_captured_versioned_dependencies_keep_their_original_directories": "19580a74e8e8e5ae5585231b2b5316538db37415d6d05bcb71beb5ae17ec7c10",
