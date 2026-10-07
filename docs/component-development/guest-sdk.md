@@ -17,6 +17,21 @@ The [server source contract](server-source.md) defines finite listener-free
 endpoint declarations and authenticated trigger selection; language lowering
 and real ingress qualification remain explicit per-profile requirements.
 
+The explicit [transactional aggregate authoring path](transactional-authoring.md)
+adds scoped state/query and deferred intent facades for all six guest languages.
+It selects `lsf-host-abi-phase4-v1` and captures an exact `TransactionBinding`
+companion. The stateless authoring profile below remains the default. Phase 4
+signed Linux-node execution and cleanup require their own #389/#718 evidence;
+external client coverage and compiler definition receipts are separate.
+
+Rust transaction projects select the `latent-guest` feature `transaction`, which
+enables the exact transaction guest bindings. The maintained transactional
+template captures this selection in its Cargo manifest and authoring validation.
+The default SDK leaves these bindings disabled. `latent-component-bindings`
+also exposes `guest-activation` for the separate activation world; a Wasm guest
+must select one of the two `capsule@0.5.0` worlds. These build selections confer
+no installed state, provider or invocation authority.
+
 [Packaged application development](../start/application-development.md)
 is the starting point for installing their compilers and creating a project.
 [Rust `latent-guest`](../../sdk/rust-guest/README.md) provides the Rust owners.

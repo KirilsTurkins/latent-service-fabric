@@ -39,7 +39,7 @@
       {
         "name": "Qualify the genuinely narrow reverse-dependent fixture",
         "if": "needs.profile.outputs.profile == 'full'",
-        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nfrom tools import ci_suite_inventory as registry\nassert classify_paths(['crates/latent-state/src/lib.rs']).profile == 'full'\nselection = classify_paths(['crates/latent-identity/src/lib.rs'])\nassert selection.profile == 'full'\nassert selection.fast_packages\nassert set(selection.fast_packages) < set(registry.load()['fastPackages'])\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
+        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nfrom tools import ci_suite_inventory as registry\nstate = classify_paths(['crates/latent-state/src/lib.rs'])\nassert state.profile == 'full' and state.renderer\nidentity = classify_paths(['crates/latent-identity/src/lib.rs'])\nassert identity.profile == 'full'\nselection = classify_paths(['crates/latent-workflows/src/lib.rs'])\nassert selection.profile == 'fast'\nassert selection.fast_packages\nassert set(selection.fast_packages) < set(registry.load()['fastPackages'])\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
       },
       {
         "name": "Retain exact host dependency, discovery and timing receipts",

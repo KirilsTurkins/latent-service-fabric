@@ -235,6 +235,9 @@ async fn pending_timer(
 async fn completed_fixed_results_release_original_calls_before_the_next_import() {
     let root = tempfile::tempdir().unwrap();
     let f = configured(root.path(), 1).await;
+    // This fixture requires the ordinary installed scalar profile's 100-fuel
+    // charge for every runtime operation. Omitting it from the bridge denies
+    // the initial register, before any logical owner or completed result.
     // The existing fixture installs the unchanged broker default. This ceiling
     // limits simultaneous accepted calls, not completed lifetime operation count.
     assert_eq!(f.maximum_calls_per_session, 16);
@@ -332,6 +335,14 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
                 ActivationDiagnostic::new(DiagnosticStage::Queue, DiagnosticReason::QueuePressure);
             assert_eq!(error.details[1], diagnostic.detail());
             assert_eq!(ActivationDiagnostic::from_error(&error), Some(diagnostic));
+            assert_eq!(error.details[1].kind, "activation.diagnostic.v1");
+            assert_eq!(
+                error.details[1].fields,
+                latent_core::Metadata::from([
+                    ("reason".into(), "9".into()),
+                    ("stage".into(), "2".into()),
+                ])
+            );
         }
         f.idle().await;
     }

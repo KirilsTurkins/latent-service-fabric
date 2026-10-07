@@ -1,0 +1,199 @@
+{
+  "kind": "normal-integrated-activation-runtime-required-cost-controls",
+  "observedAt": "2026-10-02T02:29:06.058633+00:00",
+  "scope": "required CpuFuel charge through the existing broker and original activation ledger",
+  "reviewedRepair": "3e5f52565fe8bfa83164f7a82b56bd6907fd0684",
+  "integratedNativeSourceRevision": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+  "integratedNativeSourceTree": "3d688b010d5a4217801d65ee3f85e3cbc957bc15",
+  "integratedTrackedInputsBefore": 7402,
+  "integratedTrackedInputsAfter": 7402,
+  "completeInputManifestSha256": "7485ece1745ea88a1f0142ef9e076eeedbf1bea7939323137d5d6bfb225eab7e",
+  "reviewedRepairRustBodiesByteIdentical": [
+    {
+      "path": "crates/latent-wasmtime/src/host/capabilities.rs",
+      "size": 9162,
+      "sha256": "efccf14c2f29014ac40f1ff1274930a030447673d55f9efcafddd09284083f77",
+      "mode": 436
+    },
+    {
+      "path": "crates/latent-wasmtime/src/host/runtime.rs",
+      "size": 22939,
+      "sha256": "310ab7f5cea0e588d8b7325766590c18ceece369a6c23547b2c90fd9e20fdfce",
+      "mode": 436
+    },
+    {
+      "path": "crates/latent-wasmtime/tests/guest_sdk/runtime.rs",
+      "size": 15088,
+      "sha256": "c662bcc8b3301019c8a6fabd2e533b3eed8f3739f92b6674baade021c1f72c89",
+      "mode": 436
+    },
+    {
+      "path": "crates/latent-wasmtime/tests/local_service/runtime.rs",
+      "size": 18229,
+      "sha256": "87731f6b71becdc3220b5d49a776c02034130c324a44804f015f764483c45f30",
+      "mode": 436
+    }
+  ],
+  "image": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+  "toolchain": {
+    "cargo": {
+      "name": "cargo",
+      "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "size": 42839824,
+      "version": "cargo 1.97.1 (c980f4866 2026-06-30)"
+    },
+    "rustc": {
+      "name": "rustc",
+      "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "size": 645000,
+      "version": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+    }
+  },
+  "native": {
+    "kind": "normal-runtime-charge-native-build",
+    "status": "passed",
+    "sourceRevision": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+    "sourceTree": "3d688b010d5a4217801d65ee3f85e3cbc957bc15",
+    "normalNative": true,
+    "manifestSha256": "7485ece1745ea88a1f0142ef9e076eeedbf1bea7939323137d5d6bfb225eab7e",
+    "maximumCommandSeconds": 600,
+    "commandElapsedSeconds": 20.690898813001695,
+    "trackedInputsBefore": 7402,
+    "trackedInputsAfter": 7402,
+    "features": "ordinary defaults; stream and development-test-node features disabled",
+    "noDiagnosticOverlay": true,
+    "nativeBinaries": {
+      "latent": {
+        "size": 58820936,
+        "sha256": "63cd297acfc9a9b5293a9edacac064917042eae1cbfef798a52e184a5577ad3f"
+      },
+      "latentd": {
+        "size": 145998544,
+        "sha256": "55dde542a4cfd1537603ccb129e5e78d205088fa9f076c775f7faac63d70af28"
+      },
+      "package": {
+        "size": 14133096,
+        "sha256": "dc6e5aa36baecbc7a9107dd1924ae91da60d6493ed078406eb08e85de1f85eb9"
+      },
+      "capsule_contracts": {
+        "size": 7092872,
+        "sha256": "3e0b7a9871910cbbf856cda5e1bba14a11c6ec1eeec9df1de291c35ef8928d8e"
+      },
+      "capsule_authoring": {
+        "size": 19342776,
+        "sha256": "69b3c0a3be4b92c2bd2776fbaf9833182ad11427a0b37223966b687a1f1c2b56"
+      }
+    }
+  },
+  "commands": [
+    {
+      "label": "normal-native-build",
+      "arguments": [
+        "/usr/local/rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--config",
+        "/capture/http-client-reference-1e9e7c8a/source/.cargo/managed-guest.toml",
+        "-p",
+        "latentd",
+        "--bin",
+        "latentd",
+        "-p",
+        "latent",
+        "--bin",
+        "latent",
+        "-p",
+        "latent-packaging",
+        "--example",
+        "package",
+        "--example",
+        "capsule_contracts",
+        "-p",
+        "latent-policy",
+        "--example",
+        "capsule_authoring"
+      ],
+      "startedAt": "2026-10-02T02:25:02.348920+00:00",
+      "status": "passed",
+      "exitCode": 0,
+      "stdoutBytes": 0,
+      "stderrBytes": 275,
+      "finishedAt": "2026-10-02T02:25:23.052934+00:00",
+      "elapsedSeconds": 20.690898813001695
+    },
+    {
+      "label": "installed-runtime-regression",
+      "arguments": [
+        "/usr/local/rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--config",
+        "/capture/http-client-reference-1e9e7c8a/source/.cargo/managed-guest.toml",
+        "-p",
+        "latent-wasmtime",
+        "--test",
+        "local_service",
+        "runtime::",
+        "--",
+        "--test-threads=1"
+      ],
+      "startedAt": "2026-10-02T02:25:24.132646+00:00",
+      "status": "passed",
+      "exitCode": 0,
+      "stdoutBytes": 1049,
+      "stderrBytes": 6416,
+      "finishedAt": "2026-10-02T02:29:03.822154+00:00",
+      "elapsedSeconds": 219.6898833660016
+    }
+  ],
+  "runtimeCases": [
+    "runtime::cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell",
+    "runtime::canonical_timer_allows_sibling_work_and_bounds_recurrence_cancellation_and_storms",
+    "runtime::completed_fixed_results_release_original_calls_before_the_next_import",
+    "runtime::malformed_fixed_result_destinations_reclaim_original_calls",
+    "runtime::narrower_timer_policy_deadline_preserves_root_and_allows_owner_settlement",
+    "runtime::pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanly",
+    "runtime::policy_revocation_at_real_timer_barrier_stops_original_work_and_reclaims_owners",
+    "runtime::root_deadline_does_not_complete_long_timer_and_cpu_loop_remains_contained",
+    "runtime::root_result_idle_worker_and_trap_never_skip_runtime_retirement",
+    "runtime::signed_runtime_limits_closing_and_generation_fences_use_normal_node_admission"
+  ],
+  "actualRuntimeTestResult": "10 passed; 0 failed; 0 ignored; 17 filtered out; finished in 2.70s",
+  "installedScalarMinimum": {
+    "resourceClass": "cpu-fuel",
+    "amount": 100,
+    "operations": 11
+  },
+  "originalConcurrentCallCeiling": 16,
+  "budgetOrGrantOrProfileWaiver": false,
+  "nativeTargetOrBinaryCopies": false,
+  "offline": true,
+  "diagnosticOverlay": false,
+  "physicalProducer": {
+    "exitCode": 0,
+    "oomKilled": false,
+    "running": false,
+    "elapsedSeconds": 247.08279019995825,
+    "maximumOverallSeconds": 900,
+    "maximumCommandSeconds": 600,
+    "cpuLimit": 2,
+    "memoryBytes": 4294967296,
+    "capacityStopped": false,
+    "minimumObservedHostFreeBytes": 1464242176,
+    "freeBytesBefore": 2264367104,
+    "freeBytesAfter": 1195589632
+  },
+  "priorSourceViewFailure": {
+    "kind": "Windows checkout CRLF mismatch before Cargo",
+    "containerExitCode": 1,
+    "cargoStarted": false,
+    "targetWritten": false,
+    "productFailureClaimed": false,
+    "originalReceiptRetained": true
+  },
+  "normalSignedDefaultHttpClientReplay": "pending physical capacity; no success claim",
+  "fullLanguageTaskQualification": false,
+  "adrProductionReviewApproved": false
+}

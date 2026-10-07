@@ -38,6 +38,7 @@ zeroize = { version = "=1.9.0", features = ["alloc"] }
 
 [dev-dependencies]
 latent-core = { path = "../latent-core", features = ["test-support"] }
+latent-commit = { path = "../latent-commit" }
 latent-state = { path = "../latent-state" }
 latent-secrets = { path = "../latent-secrets" }
 rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }

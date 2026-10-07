@@ -878,17 +878,22 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(data["after"][key],
                                  dict(value, run="python3 website/toolchain/prepare.py\n" + value["run"]), key)
             elif key == reviewed_narrow_fixture:
-                # State keeps its independent full-CI precheck. The fixed
-                # Identity source proves the real nonempty proper subset under
-                # the unchanged optimizer-owned eligibility policy.
+                # Preserve the original full Identity requirement and the
+                # incoming State renderer obligation alongside a real narrow
+                # Workflows selection. Every other step field stays exact.
                 expected = dict(value)
                 expected["run"] = value["run"].replace(
+                    "from tools.ci_profile import classify_paths\n"
                     "selection = classify_paths(['crates/latent-state/src/lib.rs'])\n"
                     "assert selection.profile == 'fast'\n",
+                    "from tools.ci_profile import classify_paths\n"
                     "from tools import ci_suite_inventory as registry\n"
-                    "assert classify_paths(['crates/latent-state/src/lib.rs']).profile == 'full'\n"
-                    "selection = classify_paths(['crates/latent-identity/src/lib.rs'])\n"
-                    "assert selection.profile == 'full'\n"
+                    "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
+                    "assert state.profile == 'full' and state.renderer\n"
+                    "identity = classify_paths(['crates/latent-identity/src/lib.rs'])\n"
+                    "assert identity.profile == 'full'\n"
+                    "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
+                    "assert selection.profile == 'fast'\n"
                     "assert selection.fast_packages\n"
                     "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
                 )
