@@ -61,7 +61,7 @@ impl CommandCoordinator {
                         ownership.incarnation,
                     )?;
                     if let Some(record) = &original {
-                        super::history::require_record(&view, record)?;
+                        super::history::require_result_record(&view, record, &auth)?;
                     }
                     match NamespaceCatalog::read_in(
                         &view,
@@ -217,7 +217,7 @@ impl CommandCoordinator {
                     }
                     match atomic::inspect(&view, &key, time.sample(), |_, record| {
                         if let Some(record) = record {
-                            super::history::require_record(&view, record)
+                            super::history::require_result_record(&view, record, &read)
                                 .map_err(super::history::atomic_error)?;
                             read.accepts_record(record)
                                 .map_err(|_| AtomicError::PermissionDenied)?;

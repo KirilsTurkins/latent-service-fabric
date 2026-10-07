@@ -5,6 +5,7 @@ use latent_state::embedded::StoreError;
 use latent_state::protected_store::{ProtectedStoreDispatcher, ProtectedStoreError};
 use latent_state::store_io::{StoreIoError, StoreIoKind, StoreIoOwner};
 
+use super::capacity::AttemptCapacity;
 use super::store;
 use super::worker::{ReceiptWork, Services};
 use super::{DispatcherConfig, DispatcherError};
@@ -63,13 +64,14 @@ pub(super) async fn drive(
         }
         match store::counts(&services.store).await {
             Ok(counts) => {
+                let counts_time = services.time.observe().unix_millis;
                 let mut state = services
                     .shared
                     .state
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner);
                 state.counts = counts;
-                state.counts_time = services.time.observe().unix_millis;
+                state.counts_time = counts_time;
             }
             Err(error) if backpressure(error) => {}
             Err(error) => services.shared.fail(error),
@@ -118,18 +120,24 @@ async fn scan(
     )
     .await?;
     for candidate in page.rows {
-        let Some(guard) = services.shared.admit(
+        let Some(mut guard) = services.shared.admit(
             &candidate.authority.scope().tenant,
             &candidate.due.effect,
             config,
         ) else {
             continue;
         };
+        let capacity = match AttemptCapacity::reserve(services, &candidate) {
+            Ok(capacity) => capacity,
+            Err(error) if super::capacity::transient(error) => continue,
+            Err(error) => return Err(error),
+        };
+        guard.retain_capacity(Arc::clone(&capacity));
         match jobs.submit(
             StoreIoKind::Read,
             DispatcherConfig::ATTEMPT_BYTES,
             move |services| {
-                super::worker::run(services, candidate, guard);
+                super::worker::run(services, candidate, guard, capacity);
             },
         ) {
             Ok(job) => drop(job), // Detach result observation; accepted work still runs once.
@@ -158,10 +166,11 @@ async fn record(services: &Services, receipt: ReceiptWork) -> Option<ReceiptWork
     let mut durable = receipt.outcome.receipt.clone();
     durable.observed_at_millis = time.unix_millis;
     let retry = receipt.outcome.retry;
-    let result = store::call(
+    let result = store::call_retaining(
         &services.store,
         StoreIoKind::Write,
-        2 * 1024 * 1024,
+        super::capacity::RECEIPT_BYTES,
+        Arc::clone(&receipt.capacity),
         move |store| {
             DispatchCatalog::complete(store, epoch, &attempt, durable, retry, time).map(|_| ())
         },

@@ -53,10 +53,17 @@ pub(super) fn execute(
                 let schema = codecs
                     .migration_schema(&view, &request)
                     .map_err(OfflineRecoveryError::Review)?;
+                let recipe = codecs
+                    .migration_recipe(&view, &request)
+                    .map_err(OfflineRecoveryError::Review)?;
                 let root = ProtectedRoot::open(&source_root)
                     .map_err(|_| OfflineRecoveryError::UnsafeDestination)?;
-                let mut input =
-                    ProtectedSnapshotFile::open(&request.checkpoint, root.identity(), false)?;
+                let mut input = ProtectedSnapshotFile::open(
+                    &request.checkpoint,
+                    root.identity(),
+                    false,
+                    codecs.snapshot_file_bytes(),
+                )?;
                 let checkpoint = VerifiedMigrationCheckpoint::inspect(
                     &view,
                     &mut input,
@@ -72,12 +79,12 @@ pub(super) fn execute(
                         crate::embedded::StoreError::UnsupportedFormat,
                     ));
                 }
-                let plan = AggregateMigrationPlan::prepare(
+                let plan = AggregateMigrationPlan::prepare_with_recipe(
                     &view,
                     &request.review,
                     &checkpoint,
                     &schema,
-                    phase,
+                    (recipe, phase),
                     deadline,
                     |view, _, observed| codecs.review_migration(view, &request, observed),
                 )

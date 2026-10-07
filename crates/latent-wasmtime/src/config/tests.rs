@@ -4,6 +4,38 @@ mod engine_policy;
 mod security_advisories;
 
 #[test]
+fn every_buffered_web_bound_changes_authenticated_preparation_compatibility() {
+    let mut config = WasmtimeConfig::default();
+    config.buffered_web_value_profile = Some(BufferedWebValueProfile {
+        hostcall_fuel: 2 * 1024 * 1024,
+        limits: config.value_codec_limits,
+    });
+    config.validate().unwrap();
+    let before = config.configuration_digest(DispatchMode::Generic);
+    let changes: &[fn(&mut BufferedWebValueProfile)] = &[
+        |p| p.hostcall_fuel /= 2,
+        |p| p.limits.max_input_bytes /= 2,
+        |p| p.limits.max_output_bytes /= 2,
+        |p| p.limits.max_depth /= 2,
+        |p| p.limits.max_nodes /= 2,
+        |p| p.limits.max_string_bytes /= 2,
+        |p| p.limits.max_collection_items /= 2,
+        |p| p.limits.max_type_nodes /= 2,
+        |p| p.limits.max_type_name_bytes /= 2,
+        |p| p.limits.max_lifted_bytes /= 2,
+        |p| p.limits.max_decoded_value_bytes /= 2,
+    ];
+    for change in changes {
+        let mut changed = config.clone();
+        change(changed.buffered_web_value_profile.as_mut().unwrap());
+        changed.validate().unwrap();
+        assert_ne!(before, changed.configuration_digest(DispatchMode::Generic));
+    }
+    config.buffered_web_value_profile = None;
+    assert_ne!(before, config.configuration_digest(DispatchMode::Generic));
+}
+
+#[test]
 fn legacy_alias_preserves_the_existing_default_policy() {
     let config = Phase0WasmtimeConfig::default();
     config.validate().unwrap();

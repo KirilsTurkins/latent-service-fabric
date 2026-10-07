@@ -115,10 +115,13 @@ old implementation snapshots are not setup instructions.
 ### Library transport research
 
 - [ADR-0059: Defer general outbound streams; evaluate typed protocol boundaries first](0059-defer-general-outbound-streams.md)
+- [ADR-0061: Bound standard outbound streams beneath language runtimes](0061-bound-standard-outbound-streams.md)
 
 ### Library concurrency research
 
 - [ADR-0060: Provide activation-scoped runtime compatibility for ordinary dependencies](0060-bound-invocation-scoped-concurrency.md)
+
+- [ADR-0061: Bound standard outbound streams](0061-bound-standard-outbound-streams.md)
 
 ### Transactional state and durable outcomes
 

@@ -117,7 +117,7 @@ impl Factory {
             let decision = self.runtime.retain(&op, envelope, budget, "read-result")?;
             Some(
                 self.runtime
-                    .seal(&op, envelope, budget, original.take_namespace()?, decision)?,
+                    .seal_original_result(&op, envelope, budget, original, decision)?,
             )
         } else {
             None
@@ -278,7 +278,9 @@ impl StateRuntime {
                     && op.namespace() == current.namespace()
                     && op.incarnation == current.incarnation
                     && op.entity == current.entity
-                    && op.state_schema() == current.state_schema()
+                    && op.state_schema() == source.state_schema
+                    && (op.state_schema() == current.state_schema()
+                        || record.outcome() != latent_commit::atomic::Outcome::Pending)
                     && op.result_policy == record.result_read_policy()
                     && op.mode == latent_manifest::TransactionOperationMode::StrictCommand
                     && source.input_format == "lsf-wit-values-v1"

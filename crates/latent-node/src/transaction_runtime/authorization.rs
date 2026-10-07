@@ -221,7 +221,12 @@ impl StateAuthorization {
             || record.key().entity != ownership.entity
             || record.key().recovery_scope != ownership.caller.scope
             || record.source().publication != self.publication()
-            || record.source().state_schema != self.namespace.record().state_schema
+            || (record.source().state_schema != self.namespace.record().state_schema
+                && self.authority.original_result() != Some(record))
+            || self
+                .authority
+                .original_result()
+                .is_some_and(|original| original != record)
             || record.result_read_policy() != ownership.result_policy
         {
             return Err(denied());

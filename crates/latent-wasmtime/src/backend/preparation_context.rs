@@ -103,8 +103,21 @@ impl PreparationContext {
     pub(super) fn link_component(
         &self,
         component: &Component,
+        type_imports: &std::collections::BTreeSet<String>,
     ) -> Result<InstancePre<HostState>, PlatformError> {
         let mut linker = Linker::<HostState>::new(&self.engine);
+        // Surface validation has proved these interfaces contain no callable
+        // imports or resources. Empty instances satisfy structural type imports
+        // without installing host I/O, context or provider authority.
+        for name in type_imports {
+            linker.instance(name).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::IncompatibleContract,
+                    "structural type import cannot be linked",
+                    false,
+                )
+            })?;
+        }
         bindings::install_context_log_clock(&mut linker).map_err(|error| {
             platform_error(
                 PlatformErrorCode::Internal,
@@ -113,6 +126,15 @@ impl PreparationContext {
             )
         })?;
         self.install_transaction_imports(&mut linker)?;
+        if self.config.activation_runtime.is_some() {
+            crate::host::runtime::install(&mut linker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind activation runtime support",
+                    false,
+                )
+            })?;
+        }
         if let Some(invoker) = self.local_services() {
             crate::host::service::install(&mut linker, invoker).map_err(|error| {
                 platform_error(
@@ -269,11 +291,15 @@ impl PreparationContext {
             || key.target_triple != self.profile.target_triple
             || key.cpu_feature_set != self.profile.cpu_feature_set
         {
-            return Err(platform_error(
+            return Err(latent_core::diagnostic::ActivationDiagnostic::new(
+                latent_core::diagnostic::DiagnosticStage::Preparation,
+                latent_core::diagnostic::DiagnosticReason::UnsupportedEngineProfile,
+            )
+            .attach(platform_error(
                 PlatformErrorCode::IncompatibleContract,
                 "preparation key does not match the active Wasmtime engine profile",
                 false,
-            ));
+            )));
         }
         Ok(())
     }

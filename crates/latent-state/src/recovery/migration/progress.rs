@@ -1,4 +1,7 @@
-use super::{progress_prefix, schema_ids, AggregateMigrationRequest, PROGRESS_BYTES, RECIPE};
+use super::{
+    progress_prefix, schema_ids, AggregateMigrationRecipe, AggregateMigrationRequest,
+    PROGRESS_BYTES, PROGRESS_PREFIX,
+};
 use crate::embedded::{Family, RowKey};
 use crate::{
     embedded::{ExpectedRow, ReadView, StoreError},
@@ -11,7 +14,6 @@ use crate::{
     session::version::ViewIdentity,
 };
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -29,6 +31,10 @@ pub struct AggregateMigrationProgress {
     history_row: Option<Vec<u8>>,
     guard_row: Option<Vec<u8>>,
     result_namespace_row: Option<Vec<u8>>,
+    /// Original installed accounting bytes belong to the same checkpoint.
+    /// Absence preserves the exact historical lower-store legacy encoding.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tenant_quota_row: Option<Vec<u8>>,
 }
 impl AggregateMigrationProgress {
     pub(super) fn new(
@@ -36,6 +42,7 @@ impl AggregateMigrationProgress {
         current: &NamespaceRecoveryView,
         request: &AggregateMigrationRequest,
         schema: &ReviewedSchema,
+        recipe: AggregateMigrationRecipe,
     ) -> Result<Self, StoreError> {
         let key = request.progress_key()?;
         let (_, history_row) = NamespaceHistory::capture(view, &current.namespace)?;
@@ -44,13 +51,13 @@ impl AggregateMigrationProgress {
             key_digest: key.key[key.key.len() - 32..]
                 .try_into()
                 .map_err(|_| StoreError::Corrupt)?,
-            fingerprint: request.fingerprint()?,
+            fingerprint: request.fingerprint(recipe)?,
             checkpoint_digest: request.checkpoint_digest,
             checkpoint_manifest_digest: request.checkpoint_manifest_digest,
             package_digest: request.package_digest,
             declaration_digest: schema.declaration_digest(),
             schema_proof_digest: schema.proof_digest(),
-            recipe_digest: Sha256::digest(RECIPE).into(),
+            recipe_digest: recipe.digest(),
             namespace_row: current
                 .namespace
                 .encode()
@@ -58,14 +65,38 @@ impl AggregateMigrationProgress {
             history_row,
             guard_row: view.get(&guard_key())?,
             result_namespace_row: None,
+            tenant_quota_row: view.get_bounded(
+                &crate::tenant::quota_key(&current.namespace.tenant)?,
+                crate::tenant::RECORD_BYTES,
+            )?,
         })
     }
     #[must_use]
     pub fn completed(&self) -> bool {
         self.result_namespace_row.is_some()
     }
+    /// The original retained recipe, never inferred from the latest package.
+    pub fn recipe(&self) -> Result<AggregateMigrationRecipe, StoreError> {
+        AggregateMigrationRecipe::from_digest(self.recipe_digest)
+    }
     pub fn source_namespace(&self) -> Result<NamespaceRecord, StoreError> {
         NamespaceRecord::decode(&self.namespace_row).map_err(|_| StoreError::Corrupt)
+    }
+    pub(super) fn source_quota_expectation(&self) -> Result<Option<ExpectedRow>, StoreError> {
+        self.tenant_quota_row
+            .as_ref()
+            .map(|bytes| {
+                let namespace = self.source_namespace()?;
+                let record = crate::tenant::TenantRecord::decode(bytes)?;
+                if record.quota.tenant != namespace.tenant {
+                    return Err(StoreError::Corrupt);
+                }
+                Ok(ExpectedRow {
+                    key: crate::tenant::quota_key(&namespace.tenant)?,
+                    value: Some(bytes.clone()),
+                })
+            })
+            .transpose()
     }
     pub(super) fn source_history(&self) -> Result<NamespaceHistory, StoreError> {
         let namespace = self.source_namespace()?;
@@ -137,9 +168,11 @@ impl AggregateMigrationProgress {
         &self,
         request: &AggregateMigrationRequest,
         schema: &ReviewedSchema,
+        recipe: AggregateMigrationRecipe,
     ) -> Result<(), StoreError> {
         self.validate()?;
-        if self.fingerprint != request.fingerprint()?
+        if self.recipe()? != recipe
+            || self.fingerprint != request.fingerprint(recipe)?
             || self.package_digest != schema.declaration().package_digest
             || self.declaration_digest != schema.declaration_digest()
             || self.schema_proof_digest != schema.proof_digest()
@@ -168,6 +201,9 @@ impl AggregateMigrationProgress {
         Ok(progress)
     }
     pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        if key.family != Family::Maintenance || !key.key.starts_with(PROGRESS_PREFIX) {
+            return Err(StoreError::UnsupportedFormat);
+        }
         let p = Self::decode(bytes)?;
         let n = p.source_namespace()?;
         let prefix = progress_prefix(&n.tenant, &n.id, n.version.incarnation)?;
@@ -182,6 +218,7 @@ impl AggregateMigrationProgress {
     }
     pub(super) fn history_key(&self) -> Result<RowKey, StoreError> {
         let n = self.source_namespace()?;
+        self.source_quota_expectation()?;
         history_key(&n.tenant, &n.id, n.version.incarnation).map_err(|_| StoreError::Corrupt)
     }
     pub(super) fn namespace_expectation(&self) -> Result<ExpectedRow, StoreError> {
@@ -213,7 +250,7 @@ impl AggregateMigrationProgress {
     }
     fn validate(&self) -> Result<(), StoreError> {
         if self.format != 1
-            || self.recipe_digest != Sha256::digest(RECIPE).as_slice()
+            || self.recipe().is_err()
             || [
                 self.key_digest,
                 self.fingerprint,

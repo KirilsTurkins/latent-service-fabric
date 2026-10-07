@@ -157,18 +157,22 @@ impl CommandAdmissionSelection {
             || record.source().contract_digest != self.input.source.contract_digest
             || record.source().input_format != self.input.source.input_format
             || record.source().result_format != self.codec.format()
-            || record.source().state_schema != self.input.source.state_schema
-            || record.fingerprint()
-                != latent_commit::atomic::fingerprint(
-                    &self.input.fingerprint,
-                    self.input.inbox.as_ref(),
-                )
-                .map_err(errors::atomic)?
+            || (record.source().state_schema != self.input.source.state_schema
+                && read.authority.original_result() != Some(record))
         {
             return Err(errors::atomic(AtomicError::PermissionDenied));
         }
         read.accepts_record(record)?;
         read.authorize("read-result", 0, 0, || Ok(()))?;
+        if record.fingerprint()
+            != latent_commit::atomic::fingerprint(
+                &self.input.fingerprint,
+                self.input.inbox.as_ref(),
+            )
+            .map_err(errors::atomic)?
+        {
+            return Err(errors::atomic(AtomicError::Conflict));
+        }
         self.result_read = read;
         self.original = Some(original.command_expected);
         Ok(self)
@@ -378,7 +382,7 @@ impl CommandAdmission {
                         let authorize = |access, record: Option<&CommandRecord>| {
                             if access == CommandAccess::Replay {
                                 if let Some(record) = record {
-                                    super::history::require_record(&view, record)
+                                    super::history::require_result_record(&view, record, &read)
                                         .map_err(super::history::atomic_error)?;
                                     read.accepts_record(record)
                                         .map_err(|_| AtomicError::PermissionDenied)?;

@@ -148,6 +148,7 @@ impl Shared {
             effect: effect.to_owned(),
             retired: false,
             started: false,
+            capacity: None,
         })
     }
 
@@ -202,9 +203,14 @@ pub(super) struct ActiveGuard {
     effect: String,
     retired: bool,
     started: bool,
+    capacity: Option<Arc<super::capacity::AttemptCapacity>>,
 }
 
 impl ActiveGuard {
+    pub fn retain_capacity(&mut self, capacity: Arc<super::capacity::AttemptCapacity>) {
+        assert!(self.capacity.is_none());
+        self.capacity = Some(capacity);
+    }
     pub fn start(&mut self) {
         self.started = true;
     }
@@ -229,6 +235,11 @@ impl Drop for ActiveGuard {
                 }
             }
         } else {
+            if let Some(capacity) = self.capacity.take() {
+                // Physical completion evidence was lost. Preserve the original
+                // bounded global reservation with this quarantined effect owner.
+                std::mem::forget(capacity);
+            }
             state.failure.get_or_insert(DispatcherError::Worker(
                 latent_state::store_io::StoreIoError::RecoveryRequired,
             ));

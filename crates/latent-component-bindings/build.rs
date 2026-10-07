@@ -39,6 +39,7 @@ fn main() -> io::Result<()> {
     stage_runtime_world(&platform_wit, &transaction_wit, "runtime-phase4")?;
     write_transaction_guest_bindings(&output, &transaction_wit)?;
     write_web_bindings(&output, &platform_wit)?;
+    write_activation_bindings(&output, &platform_wit)?;
 
     println!(
         "cargo:rerun-if-changed={}",
@@ -134,6 +135,29 @@ fn stage_runtime_world(platform_wit: &Path, destination: &Path, world: &str) -> 
         "missing runtime WIT dependencies: {required:?}"
     );
     Ok(())
+}
+
+fn write_activation_bindings(output: &Path, platform: &Path) -> io::Result<()> {
+    let wit = output.join("activation-wit");
+    stage_runtime_world(platform, &wit, "runtime-phase3-activation")?;
+    let path = format!("{:?}", wit.to_string_lossy());
+    fs::write(
+        output.join("activation_host.rs"),
+        format!(
+            r#"wasmtime::component::bindgen!({{
+        path: {path}, world: "latent:platform/capsule@0.5.0",
+        imports: {{ default: async }}, exports: {{ default: async }},
+    }});"#
+        ),
+    )?;
+    fs::write(
+        output.join("activation_guest.rs"),
+        format!(
+            r#"wit_bindgen::generate!({{
+        path: {path}, world: "latent:platform/capsule@0.5.0", generate_all,
+    }});"#
+        ),
+    )
 }
 
 fn stage_echo_world(repository_root: &Path, destination: &Path) -> io::Result<()> {
@@ -317,12 +341,27 @@ fn write_transaction_guest_bindings(output: &Path, wit: &Path) -> io::Result<()>
         }});"#
         ),
     )?;
+    // Two installed profiles use the same package/version with different
+    // aggregate worlds. Keep the public host profile unchanged and give this
+    // import-only SDK staging world its own metadata identity.
+    let guest_wit = output.join("transaction-guest-wit");
+    recreate(&guest_wit)?;
+    copy_wit_tree(wit, &guest_wit)?;
+    let world = fs::read_to_string(guest_wit.join("world.wit"))?;
+    if world.matches("world capsule {").count() != 1 {
+        return Err(io::Error::other("exact transaction staging world required"));
+    }
+    fs::write(
+        guest_wit.join("world.wit"),
+        world.replacen("world capsule {", "world transaction-bindings {", 1),
+    )?;
+    let guest_path = format!("{:?}", guest_wit.to_string_lossy());
     fs::write(
         output.join("transaction_guest.rs"),
         format!(
             r#"wit_bindgen::generate!({{
-        path: {path},
-        world: "latent:platform/capsule@0.5.0",
+        path: {guest_path},
+        world: "latent:platform/transaction-bindings@0.5.0",
         generate_all,
     }});"#
         ),

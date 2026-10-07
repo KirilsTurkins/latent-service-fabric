@@ -1,10 +1,14 @@
 //! Actual namespace management over the node's single protected engine.
 mod audit;
 mod authorization;
+mod clock;
+mod floor_release;
 mod inspection;
 mod mutation;
 mod recovery;
 mod response;
+mod state_receipt;
+pub use clock::StateMaintenanceClock;
 pub use recovery::StateManagementRecoveryAdmission;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
@@ -71,6 +75,8 @@ pub struct StateManagementServices {
     pub artifacts: Arc<dyn ArtifactRepository>,
     pub authorization: Arc<dyn ManagementPolicy>,
     pub admission: Arc<dyn StateManagementAdmission>,
+    pub maintenance: Arc<latent_commit::atomic::ResultMaintenanceOwner>,
+    pub maintenance_clock: Arc<dyn StateMaintenanceClock>,
     pub clock: Arc<dyn ActivationClock>,
     pub audit: Option<latent_audit::AuditHandle>,
 }
@@ -169,9 +175,41 @@ impl StateManagementBackend {
                     )
                     .await
                 }
+                contract::Request::MutateState(value) => {
+                    floor_release::mutate(
+                        Arc::clone(&self.0),
+                        value,
+                        access,
+                        permit,
+                        deadline,
+                        pending,
+                    )
+                    .await
+                }
                 _ => Err(unsupported()),
             }
         })
+    }
+    /// Closed installed management-receipt codec for the same protected view.
+    /// It never supplies mutation, artifact or recovery authority.
+    pub fn validate_operation_row(
+        view: &latent_state::embedded::ReadView,
+        key: &latent_state::embedded::RowKey,
+        bytes: &[u8],
+    ) -> Result<(), latent_state::embedded::StoreError> {
+        state_receipt::validate_row(view, key, bytes)
+    }
+    /// Exact producer-validated tenant charge for an immutable management row.
+    /// This descriptive startup port supplies no state or recovery authority.
+    /// Foreign prefixes remain unsupported; namespace linkage is checked in
+    /// the original protected view before returning its actual encoded charge.
+    pub fn tenant_metadata_contribution(
+        view: &latent_state::embedded::ReadView,
+        key: &latent_state::embedded::RowKey,
+        bytes: &[u8],
+    ) -> Result<latent_state::tenant::TenantCensusContribution, latent_state::embedded::StoreError>
+    {
+        state_receipt::tenant_contribution(view, key, bytes)
     }
     fn admit(
         &self,
@@ -259,6 +297,7 @@ fn target(request: &contract::Request) -> Result<&c::InspectNamespaceRequest, Pl
     match request {
         contract::Request::InspectNamespace(value) => Ok(value),
         contract::Request::MutateNamespace(value) => value.namespace.as_ref().ok_or_else(invalid),
+        contract::Request::MutateState(value) => value.namespace.as_ref().ok_or_else(invalid),
         contract::Request::GetStateOperationReceipt(value) => {
             value.namespace.as_ref().ok_or_else(invalid)
         }

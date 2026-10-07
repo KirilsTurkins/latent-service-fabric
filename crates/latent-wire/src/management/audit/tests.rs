@@ -131,3 +131,44 @@ fn typed_query_requires_an_explicit_scope() {
         tonic::Code::InvalidArgument
     );
 }
+
+#[test]
+fn audit_resource_class_wire_numbers_remain_stable_and_stream_is_distinct() {
+    use latent_audit::AuditCapabilityResourceClass as R;
+    use prost::Message;
+    for (index, resource) in [
+        R::Context,
+        R::Clock,
+        R::Random,
+        R::Log,
+        R::Http,
+        R::Blob,
+        R::Secrets,
+        R::Events,
+        R::Telemetry,
+        R::Service,
+        R::State,
+        R::Stream,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let wire = proto::AuditCapabilityContext {
+            resource_class: enums::capability_resource(resource),
+            ..Default::default()
+        };
+        let decoded =
+            proto::AuditCapabilityContext::decode(wire.encode_to_vec().as_slice()).unwrap();
+        assert_eq!(decoded.resource_class, i32::try_from(index + 1).unwrap());
+    }
+    assert_eq!(proto::AuditCapabilityResourceClass::State as i32, 11);
+    assert_eq!(proto::AuditCapabilityResourceClass::Stream as i32, 12);
+    assert_ne!(
+        proto::AuditCapabilityResourceClass::Stream,
+        proto::AuditCapabilityResourceClass::State
+    );
+    assert_ne!(
+        proto::AuditCapabilityResourceClass::Stream,
+        proto::AuditCapabilityResourceClass::Http
+    );
+}

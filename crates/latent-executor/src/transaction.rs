@@ -4,6 +4,31 @@
 
 use latent_core::{transaction_contract::Value, ActivationBudget, ActivationId, BoxFuture};
 
+/// Original immutable claim selected by the trusted command host. These
+/// descriptive identifiers convey neither read permission nor commit authority.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TransactionStagingIdentity {
+    pub command_id: String,
+    pub attempt_id: String,
+    pub transaction_id: String,
+    pub publication_id: String,
+}
+
+/// Observed only after insertion of a successfully captured intent. Provisional
+/// budget reservations, running state and guest metadata cannot produce it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TransactionStagingProgress {
+    pub staged_mutations: u32,
+    pub captured_intents: u32,
+    pub state_write_bytes: u64,
+}
+
+/// A trusted manager supplies this bounded observer before guest access.
+/// Reporting performs no native I/O and changes no business/commit disposition.
+pub trait TransactionStagingObserver: Send + Sync {
+    fn observe(&self, progress: TransactionStagingProgress);
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Command,
@@ -107,6 +132,17 @@ impl RetainedTransfer {
 /// once-only even after guest drop; every method rechecks current authority.
 /// No method exposes a namespace selector, native view, provider or commit.
 pub trait TransactionHost: Send + Sync {
+    /// Only command hosts expose an original claim. No guest-visible WIT method
+    /// can bind an observer or supply the identifiers.
+    fn staging_identity(&self) -> Option<TransactionStagingIdentity> {
+        None
+    }
+    fn bind_staging_observer(
+        &self,
+        _observer: std::sync::Arc<dyn TransactionStagingObserver>,
+    ) -> Result<(), StateFailure> {
+        Err(StateFailure::UnsupportedVersion)
+    }
     fn activation_id(&self) -> &ActivationId;
     fn mode(&self) -> Mode;
     fn budget(&self) -> &ActivationBudget;

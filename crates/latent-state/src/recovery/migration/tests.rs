@@ -15,6 +15,7 @@ use crate::{
 use latent_core::{transaction_contract::Value, StateNamespaceId, TenantId};
 use std::io::Cursor;
 use std::time::Duration;
+mod tenant;
 
 struct Fixture {
     store: EmbeddedStore,
@@ -75,7 +76,19 @@ fn artifacts() -> Vec<RequiredArtifact> {
         },
     ]
 }
+fn recipe_artifacts(recipe: AggregateMigrationRecipe) -> Vec<RequiredArtifact> {
+    let mut result = artifacts();
+    result[2] = RequiredArtifact {
+        identity: recipe.identity().into(),
+        digest: recipe.digest(),
+    };
+    result
+}
 fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+    match crate::tenant::validate_row(view, key, bytes) {
+        Err(StoreError::UnsupportedFormat) => {}
+        other => return other,
+    }
     if key.key.starts_with(PROGRESS_PREFIX) {
         AggregateMigrationProgress::validate_row(key, bytes)
     } else if key.key.starts_with(super::super::resume::RECEIPT_PREFIX) {
@@ -114,8 +127,36 @@ fn fixture() -> Fixture {
     fixture_with_count(u64::MAX.to_le_bytes().to_vec(), NamespaceQuota::default())
 }
 fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
+    fixture_with_tenant(count, quota, None)
+}
+fn fixture_with_tenant(
+    count: Vec<u8>,
+    quota: NamespaceQuota,
+    tenant_quota: Option<crate::tenant::TenantQuota>,
+) -> Fixture {
+    fixture_with_tenant_and_recipe(count, quota, tenant_quota, AggregateMigrationRecipe::Count)
+}
+fn fixture_with_recipe(
+    count: Vec<u8>,
+    quota: NamespaceQuota,
+    recipe: AggregateMigrationRecipe,
+) -> Fixture {
+    fixture_with_tenant_and_recipe(count, quota, None, recipe)
+}
+fn fixture_with_tenant_and_recipe(
+    count: Vec<u8>,
+    quota: NamespaceQuota,
+    tenant_quota: Option<crate::tenant::TenantQuota>,
+    recipe: AggregateMigrationRecipe,
+) -> Fixture {
     let root = tempfile::tempdir().unwrap();
     let store = open(root.path(), true);
+    if let Some(quota) = tenant_quota {
+        let view = store.snapshot().unwrap();
+        let plan = crate::tenant::prepare_install(&view, &[quota]).unwrap();
+        drop(view);
+        plan.publish(&store, || Ok::<_, ()>(())).unwrap();
+    }
     let namespace = NamespaceRecord::create(
         TenantId("tenant".into()),
         StateNamespaceId("aggregate".into()),
@@ -135,35 +176,30 @@ fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
         family: Family::Namespace,
         key: namespace_record_key(&scope.tenant, &scope.namespace).unwrap(),
     };
-    store
-        .apply(AtomicBatch {
-            expectations: vec![],
-            mutations: vec![RowMutation {
-                key: key.clone(),
-                value: Some(namespace.encode().unwrap()),
-            }],
-        })
-        .unwrap();
-    initialize_count(&store, &scope, count);
+    initialize_namespace(&store, &namespace, &key);
+    initialize_key(&store, &scope, count, recipe.key());
     let view = store.snapshot().unwrap();
     let before = view.get(&key).unwrap().unwrap();
     let n = NamespaceRecord::decode(&before).unwrap();
     let quiesced = n
         .transition(n.version, &NamespaceTransition::Quiesce, 0)
         .unwrap();
-    drop(view);
-    store
-        .apply(AtomicBatch {
-            expectations: vec![ExpectedRow {
-                key: key.clone(),
-                value: Some(before),
-            }],
-            mutations: vec![RowMutation {
-                key,
-                value: Some(quiesced.encode().unwrap()),
-            }],
-        })
+    let mut quiesce = AtomicBatch {
+        expectations: vec![ExpectedRow {
+            key: key.clone(),
+            value: Some(before),
+        }],
+        mutations: vec![RowMutation {
+            key,
+            value: Some(quiesced.encode().unwrap()),
+        }],
+    };
+    crate::tenant::prepare_update(&view, &scope.tenant, crate::tenant::TenantDelta::default())
+        .unwrap()
+        .rebuild_batch(&mut quiesce)
         .unwrap();
+    drop(view);
+    store.apply(quiesce).unwrap();
     let mut checkpoint = vec![];
     let receipt = export_snapshot(
         &store,
@@ -173,11 +209,15 @@ fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
             operator_id: "operator".into(),
             runtime_digest: [42; 32],
             decoder_formats: vec![retained_format()],
-            required_artifacts: artifacts(),
+            required_artifacts: recipe_artifacts(recipe),
         },
         &mut checkpoint,
         deadline(),
-        closure,
+        |view| {
+            let mut linked = closure(view)?;
+            linked.required_artifacts = recipe_artifacts(recipe);
+            Ok(linked)
+        },
         |_| Ok(()),
     )
     .unwrap();
@@ -201,7 +241,32 @@ fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
         checkpoint,
     }
 }
-fn initialize_count(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>) {
+fn initialize_namespace(store: &EmbeddedStore, namespace: &NamespaceRecord, key: &RowKey) {
+    let mut initial = AtomicBatch {
+        expectations: vec![],
+        mutations: vec![RowMutation {
+            key: key.clone(),
+            value: Some(namespace.encode().unwrap()),
+        }],
+    };
+    let view = store.snapshot().unwrap();
+    initial.expectations.push(ExpectedRow {
+        key: key.clone(),
+        value: None,
+    });
+    crate::tenant::prepare_update(
+        &view,
+        &namespace.tenant,
+        crate::tenant::TenantDelta::default(),
+    )
+    .unwrap()
+    .rebuild_batch(&mut initial)
+    .unwrap();
+    drop(view);
+    store.apply(initial).unwrap();
+}
+
+fn initialize_key(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>, key: &[u8]) {
     let view = store.snapshot().unwrap();
     let mut session =
         StateSession::open(
@@ -214,7 +279,7 @@ fn initialize_count(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>) {
     session
         .put(
             &view,
-            b"count".to_vec(),
+            key.to_vec(),
             Value {
                 bytes: count,
                 media_type: "application/vnd.lsf.aggregate-v1".into(),
@@ -234,15 +299,181 @@ fn initialize_count(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>) {
 }
 
 fn checkpoint(f: &Fixture, view: &ReadView) -> VerifiedMigrationCheckpoint {
+    checkpoint_with_recipe(f, view, AggregateMigrationRecipe::Count)
+}
+fn checkpoint_with_recipe(
+    f: &Fixture,
+    view: &ReadView,
+    recipe: AggregateMigrationRecipe,
+) -> VerifiedMigrationCheckpoint {
     VerifiedMigrationCheckpoint::inspect(
         view,
         &mut Cursor::new(&f.checkpoint),
         deadline(),
         |key, bytes| validate_row(view, key, bytes),
-        closure,
+        |view| {
+            let mut linked = closure(view)?;
+            linked.required_artifacts = recipe_artifacts(recipe);
+            Ok(linked)
+        },
         |_| Ok(()),
     )
     .unwrap()
+}
+
+fn prepare_java(f: &Fixture, phase: MigrationAction) -> AggregateMigrationPlan {
+    let recipe = AggregateMigrationRecipe::JavaAggregate;
+    let view = f.store.snapshot().unwrap();
+    let checkpoint = checkpoint_with_recipe(f, &view, recipe);
+    AggregateMigrationPlan::prepare_with_recipe(
+        &view,
+        &f.request,
+        &checkpoint,
+        &f.schema,
+        (recipe, phase),
+        deadline(),
+        |_, _, _| Ok(()),
+    )
+    .unwrap()
+}
+
+#[test]
+fn java_fixed_recipe_preserves_actual_key_and_original_selection_after_engine_reopen() {
+    let recipe = AggregateMigrationRecipe::JavaAggregate;
+    let mut f = fixture_with_recipe(
+        u64::MAX.to_le_bytes().to_vec(),
+        NamespaceQuota::default(),
+        recipe,
+    );
+    let view = f.store.snapshot().unwrap();
+    let inspected = checkpoint_with_recipe(&f, &view, recipe);
+    assert!(matches!(
+        AggregateMigrationPlan::prepare(
+            &view,
+            &f.request,
+            &inspected,
+            &f.schema,
+            MigrationAction::Stage,
+            deadline(),
+            |_, _, _| Ok(())
+        ),
+        Err(StoreError::UnsupportedFormat)
+    ));
+    drop(view);
+    f.store
+        .apply(prepare_java(&f, MigrationAction::Stage).into_batch())
+        .unwrap();
+    drop(f.store);
+    f.store = open(f.root.path(), false);
+    let complete = prepare_java(&f, MigrationAction::Complete);
+    let original = complete.progress().encode().unwrap();
+    assert_eq!(complete.progress().recipe().unwrap(), recipe);
+    f.store.apply(complete.into_batch()).unwrap();
+    let active = activate(&f);
+    let view = f.store.snapshot().unwrap();
+    let mut scope = f.request.scope.clone();
+    scope.state_schema = active.state_schema;
+    let mut session =
+        StateSession::open(
+            &view,
+            scope.clone(),
+            SessionLimits::default(),
+            |_, _| Ok(()),
+        )
+        .unwrap();
+    let value = session
+        .get(&view, recipe.key(), |_, _| Ok(()))
+        .unwrap()
+        .unwrap()
+        .value;
+    assert_eq!(
+        value.bytes,
+        [b"AG\x02\0".as_slice(), &u64::MAX.to_le_bytes()].concat()
+    );
+    assert_eq!(value.media_type, "application/vnd.lsf.aggregate-v2");
+    assert!(session
+        .get(&view, b"count", |_, _| Ok(()))
+        .unwrap()
+        .is_none());
+    assert!(session
+        .view_identity()
+        .require_minimum(&scope, &f.request.expected_view)
+        .is_err());
+    drop(view);
+    let replay = prepare_java(&f, MigrationAction::Complete);
+    assert_eq!(replay.action(), MigrationAction::Replay);
+    assert_eq!(replay.progress().encode().unwrap(), original);
+    f.store.apply(replay.into_batch()).unwrap();
+}
+
+#[test]
+fn java_fixed_recipe_requires_exact_checkpoint_artifact_and_refuses_cell_or_quota_mismatch() {
+    let recipe = AggregateMigrationRecipe::JavaAggregate;
+    let f = fixture();
+    let view = f.store.snapshot().unwrap();
+    let inspected = checkpoint(&f, &view);
+    assert!(matches!(
+        AggregateMigrationPlan::prepare_with_recipe(
+            &view,
+            &f.request,
+            &inspected,
+            &f.schema,
+            (recipe, MigrationAction::Stage),
+            deadline(),
+            |_, _, _| Ok(())
+        ),
+        Err(StoreError::UnsupportedFormat)
+    ));
+    drop(view);
+    let invalid = [
+        fixture_with_recipe(vec![7; 7], NamespaceQuota::default(), recipe),
+        fixture_with_recipe(vec![7; 9], NamespaceQuota::default(), recipe),
+        fixture_with_recipe(
+            u64::MAX.to_le_bytes().to_vec(),
+            NamespaceQuota {
+                state_bytes: 75,
+                ..NamespaceQuota::default()
+            },
+            recipe,
+        ),
+    ];
+    for (index, f) in invalid.into_iter().enumerate() {
+        let view = f.store.snapshot().unwrap();
+        let inspected = checkpoint_with_recipe(&f, &view, recipe);
+        let before = NamespaceRecoveryView::capture(
+            &view,
+            &f.request.scope.tenant,
+            &f.request.scope.namespace,
+        )
+        .unwrap();
+        let result = AggregateMigrationPlan::prepare_with_recipe(
+            &view,
+            &f.request,
+            &inspected,
+            &f.schema,
+            (recipe, MigrationAction::Stage),
+            deadline(),
+            |_, _, _| Ok(()),
+        );
+        let expected = if index == 2 {
+            StoreError::Capacity
+        } else {
+            StoreError::UnsupportedFormat
+        };
+        assert!(matches!(result, Err(error) if error == expected));
+        assert!(view
+            .get(&f.request.progress_key().unwrap())
+            .unwrap()
+            .is_none());
+        let after = NamespaceRecoveryView::capture(
+            &view,
+            &f.request.scope.tenant,
+            &f.request.scope.namespace,
+        )
+        .unwrap();
+        assert_eq!(after.namespace, before.namespace);
+        assert_eq!(after.history, before.history);
+    }
 }
 fn prepare(f: &Fixture) -> AggregateMigrationPlan {
     let view = f.store.snapshot().unwrap();
@@ -587,4 +818,47 @@ fn fixed_migration_refuses_oversized_cell_and_quota_before_durable_stage() {
         assert_eq!(after.history, before.history);
         assert_eq!(after.guard, before.guard);
     }
+}
+
+#[test]
+fn migration_row_dispatch_preserves_foreign_bytes_and_rejects_malformed_owned_progress() {
+    let f = fixture();
+    let progress = prepare(&f).progress().encode().unwrap();
+    let key = f.request.progress_key().unwrap();
+    AggregateMigrationProgress::validate_row(&key, &progress).unwrap();
+
+    let foreign = RowKey {
+        family: Family::Maintenance,
+        key: b"dispatch-owner-v1\0".to_vec(),
+    };
+    for bytes in [b"LDO\0\x01".as_slice(), b"{}", &progress] {
+        assert_eq!(
+            AggregateMigrationProgress::validate_row(&foreign, bytes),
+            Err(StoreError::UnsupportedFormat)
+        );
+    }
+    let wrong_family = RowKey {
+        family: Family::State,
+        key: key.key.clone(),
+    };
+    assert_eq!(
+        AggregateMigrationProgress::validate_row(&wrong_family, &progress),
+        Err(StoreError::UnsupportedFormat)
+    );
+    for bytes in [
+        b"LDO\0\x01".as_slice(),
+        b"{}",
+        &progress[..progress.len() - 1],
+    ] {
+        assert_eq!(
+            AggregateMigrationProgress::validate_row(&key, bytes),
+            Err(StoreError::Corrupt)
+        );
+    }
+    let mut wrong_identity = key;
+    *wrong_identity.key.last_mut().unwrap() ^= 1;
+    assert_eq!(
+        AggregateMigrationProgress::validate_row(&wrong_identity, &progress),
+        Err(StoreError::Corrupt)
+    );
 }

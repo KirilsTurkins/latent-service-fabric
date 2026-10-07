@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import http from 'node:http';
+import os from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {spawnSync} from 'node:child_process';
@@ -22,12 +24,13 @@ function child(args) {
   return result.stdout;
 }
 
-test('npm consumes the exact prepared ip-address, Undici and brace-expansion bundles', () => {
+test('npm consumes the exact prepared ip-address, Undici, brace-expansion and HTTP cache bundles', () => {
   const source = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/source.json')));
   const lock = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/package-lock.json')));
-  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v3');
+  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v4');
   assert.deepEqual(Object.fromEntries(source.patches.map(pin => [pin.name, pin.version])), {
     'ip-address': '10.7.2', undici: '6.28.1', 'brace-expansion': '5.0.12', 'http-cache-semantics': '4.3.0',
+    'postcss-selector-parser': '7.1.6',
   });
   for (const pin of source.patches) {
     const location = `node_modules/npm/node_modules/${pin.name}`;
@@ -41,6 +44,14 @@ test('npm consumes the exact prepared ip-address, Undici and brace-expansion bun
   assert.equal(fs.realpathSync(minimatchRequire.resolve('brace-expansion')), fs.realpathSync(npmRequire.resolve('brace-expansion')));
   assert.equal(fs.realpathSync(fetchRequire.resolve('http-cache-semantics')), fs.realpathSync(npmRequire.resolve('http-cache-semantics')));
   assert.equal(npmRequire('balanced-match/package.json').version, '4.0.4');
+  const queryRequire = createRequire(npmRequire.resolve('@npmcli/query'));
+  const selectorRequire = createRequire(npmRequire.resolve('postcss-selector-parser'));
+  assert.equal(fs.realpathSync(queryRequire.resolve('postcss-selector-parser')), fs.realpathSync(npmRequire.resolve('postcss-selector-parser')));
+  for (const name of ['cssesc', 'util-deprecate']) {
+    assert.equal(fs.realpathSync(selectorRequire.resolve(name)), fs.realpathSync(npmRequire.resolve(name)));
+  }
+  const selector = '.item#selected[data-name="value"] > a:hover';
+  assert.equal(queryRequire('postcss-selector-parser')().astSync(selector).toString(), selector);
 });
 
 test('npm HTTP cache cannot reuse private or proxy-revalidated responses through max-stale', () => {
@@ -184,4 +195,37 @@ test('npm brace expansion bounds chained parsing, deep nesting and repeated rewr
 test('npm Undici survives oversized malformed decompression', () => {
   assert.match(child([path.join(root, 'scripts/test-undici-decompression.mjs')]),
     /bounded decompression and normal control passed/);
+});
+
+test('npm cache honors no-store and must-revalidate with max-stale', {timeout: 5000}, async () => {
+  const fetch = npmRequire('make-fetch-happen');
+  const counts = new Map();
+  const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'lsf-npm-cache-policy-'));
+  const server = http.createServer((request, response) => {
+    const count = (counts.get(request.url) ?? 0) + 1;
+    counts.set(request.url, count);
+    response.setHeader('cache-control', request.url === '/public'
+      ? 'public, max-age=3600' : request.url === '/must-revalidate'
+        ? 'max-age=0, must-revalidate' : 'no-store');
+    response.end(String(count));
+  });
+  try {
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    for (const route of ['/no-store', '/must-revalidate', '/public']) {
+      const options = {cachePath: cache, retry: {retries: 0}, timeout: 1000};
+      const first = await fetch(origin + route, options);
+      assert.equal(first.status, 200);
+      assert.equal(await first.text(), '1');
+      const second = await fetch(origin + route, {...options,
+        headers: {'cache-control': 'max-stale=999999'}});
+      assert.equal(second.status, 200);
+      assert.equal(await second.text(), route === '/public' ? '1' : '2', route);
+      assert.equal(counts.get(route), route === '/public' ? 1 : 2, route);
+    }
+  } finally {
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(cache, {recursive: true, force: true});
+  }
 });

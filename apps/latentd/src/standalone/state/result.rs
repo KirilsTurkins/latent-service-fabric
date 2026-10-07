@@ -90,7 +90,7 @@ impl ResultAdmission {
         let decision = self.runtime.retain(&op, envelope, budget, "read-result")?;
         let read =
             self.runtime
-                .seal(&op, envelope, budget, original.take_namespace()?, decision)?;
+                .seal_original_result(&op, envelope, budget, &mut original, decision)?;
         control.bind_result(&read)?;
         let completion = coordinator
             .lookup(key, read, Arc::clone(&self.codec), false, None)

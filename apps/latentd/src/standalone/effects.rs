@@ -47,12 +47,28 @@ impl EffectRuntime {
         )
         .await
         .map(|owner| Self { owner })
-        .map_err(runtime_error)
+        .map_err(|reason| {
+            super::startup_observation::record(
+                super::startup_observation::Stage::EffectDispatcher,
+                reason,
+            );
+            runtime_error(reason)
+        })
     }
 
     #[must_use]
     pub fn command_admission_source(&self) -> CommandAdmissionSource {
         self.owner.command_admission_source()
+    }
+    /// Install the same global native owner used by transaction and management
+    /// admission before the first command captures this protected node role.
+    pub fn bind_native_capacity(
+        &self,
+        owner: &latent_core::native_capacity::NativeCapacityOwner,
+    ) -> Result<(), PlatformError> {
+        self.owner
+            .bind_native_capacity(owner)
+            .map_err(runtime_error)
     }
     pub fn command_admission(&self) -> Result<CommandAdmission, PlatformError> {
         self.owner.command_admission().map_err(runtime_error)

@@ -81,11 +81,12 @@ pub(super) async fn begin(
             identities,
         });
     };
-    let (operation_id, action, expected) = operation(request)?;
+    let (operation_id, action, expected) = operation(request, access)?;
     let mut hash = Sha256::new();
     hash.update(b"lsf-state-management-request-v1\0");
     match request {
         contract::Request::MutateNamespace(value) => hash.update(value.encode_to_vec()),
+        contract::Request::MutateState(value) => hash.update(value.encode_to_vec()),
         contract::Request::InspectNamespace(value) => hash.update(value.encode_to_vec()),
         contract::Request::GetStateOperationReceipt(value) => hash.update(value.encode_to_vec()),
         _ => return Err(unsupported()),
@@ -141,12 +142,42 @@ pub(super) async fn begin(
 }
 fn operation(
     request: &contract::Request,
+    access: &Access,
 ) -> Result<(String, AuditControlAction, Option<u64>), PlatformError> {
     if let contract::Request::MutateNamespace(value) = request {
         return Ok((
             value.operation_id.clone(),
             action(value.mutation)?,
             value.expected_generation,
+        ));
+    }
+    if let contract::Request::MutateState(value) = request {
+        if value.mutation != c::StateMutationKind::ReleaseExpiredCommandFloor as i32 {
+            return Err(unsupported());
+        }
+        let scope = latent_state::session::StateScope {
+            tenant: access
+                .binding
+                .publication
+                .scope
+                .tenant()
+                .ok_or_else(denied)?
+                .clone(),
+            namespace: access.binding.namespace.clone(),
+            incarnation: access.binding.incarnation,
+            state_schema: access.binding.state_schema.clone(),
+            entity: None,
+            mode: latent_state::session::StateMode::Query,
+        };
+        let view = latent_state::session::version::ViewIdentity::from_token(
+            &scope,
+            &value.expected_version,
+        )
+        .map_err(|_| invalid())?;
+        return Ok((
+            value.operation_id.clone(),
+            AuditControlAction::CommandFloorRelease,
+            Some(view.namespace.generation),
         ));
     }
     let read = NEXT_READ

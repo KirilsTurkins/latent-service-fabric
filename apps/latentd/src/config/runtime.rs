@@ -2,7 +2,9 @@ use std::time::Duration;
 
 use latent_core::PlatformError;
 use latent_node::{LocalActivationJournalConfig, LocalActivationManagerConfig};
-use latent_wasmtime::{CompilerOptimization, InstanceAllocator, WasmtimeConfig};
+use latent_wasmtime::{
+    BufferedWebValueProfile, CompilerOptimization, InstanceAllocator, WasmtimeConfig,
+};
 use latent_wire::invocation::InvocationLimits;
 use latent_wire::management::ManagementLimits;
 
@@ -77,10 +79,18 @@ pub(super) fn wasmtime(
         }
         // Explicit buffered HTTP profile; these settings participate in engine
         // identity before catalog compatibility or authenticated AOT loading.
-        runtime.hostcall_fuel = 2 * MIB;
-        runtime.value_codec_limits.max_nodes = latent_ingress::http::MAX_JSON_NODES;
-        runtime.value_codec_limits.max_string_bytes = 512 * 1024;
-        runtime.value_codec_limits.max_lifted_bytes = 64 * MIB;
+        let mut limits = runtime.value_codec_limits;
+        limits.max_nodes = latent_ingress::http::MAX_JSON_NODES;
+        limits.max_string_bytes = 512 * 1024;
+        limits.max_lifted_bytes = 64 * MIB;
+        runtime.buffered_web_value_profile = Some(BufferedWebValueProfile {
+            hostcall_fuel: 2 * MIB,
+            limits,
+        });
+    }
+    #[cfg(feature = "development-test-node")]
+    if let Some(profile) = &config.development_preparation {
+        profile.apply(config, &mut runtime)?;
     }
     runtime.validate().map_err(|_| invalid("wasmtime"))?;
     Ok(runtime)

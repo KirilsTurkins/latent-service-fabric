@@ -229,10 +229,11 @@ impl NamespaceResumeReceipt {
         Ok(receipt)
     }
     pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        if key.family != Family::Maintenance || !key.key.starts_with(RECEIPT_PREFIX) {
+            return Err(StoreError::UnsupportedFormat);
+        }
         let receipt = Self::decode(bytes)?;
-        if key.family != Family::Maintenance
-            || key.key.len() != RECEIPT_PREFIX.len() + 32
-            || !key.key.starts_with(RECEIPT_PREFIX)
+        if key.key.len() != RECEIPT_PREFIX.len() + 32
             || key.key[RECEIPT_PREFIX.len()..] != receipt.key_digest
         {
             return Err(StoreError::Corrupt);
@@ -363,13 +364,26 @@ impl NamespaceResumePlan {
             mutations: vec![],
         };
         if let Some(receipt) = prior {
-            return Ok(Self {
+            return Self {
                 batch,
                 receipt,
                 replayed: true,
-            });
+            }
+            .with_accounting(view, &request.scope.tenant);
         }
-        Self::activate(batch, namespace, history, fingerprint)
+        Self::activate(batch, namespace, history, fingerprint)?
+            .with_accounting(view, &request.scope.tenant)
+    }
+
+    fn with_accounting(mut self, view: &ReadView, tenant: &TenantId) -> Result<Self, StoreError> {
+        let accounting =
+            crate::tenant::prepare_update(view, tenant, crate::tenant::TenantDelta::default())?;
+        if self.replayed {
+            accounting.append_read_expectations(&mut self.batch)?;
+        } else {
+            accounting.rebuild_batch(&mut self.batch)?;
+        }
+        Ok(self)
     }
 
     fn activate(

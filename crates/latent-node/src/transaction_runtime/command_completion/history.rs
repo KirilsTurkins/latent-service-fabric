@@ -22,6 +22,28 @@ pub(super) fn require_record(view: &ReadView, record: &CommandRecord) -> Result<
     )
 }
 
+pub(super) fn require_result_record(
+    view: &ReadView,
+    record: &CommandRecord,
+    authorization: &super::super::StateAuthorization,
+) -> Result<(), StoreError> {
+    if authorization.authority.original_result().is_some() {
+        let key = record.key();
+        let namespace = latent_state::namespace::catalog::NamespaceCatalog::read_in(
+            view,
+            &TenantId(key.tenant.clone()),
+            &StateNamespaceId(key.namespace.clone()),
+        )
+        .map_err(|_| StoreError::Corrupt)?
+        .ok_or(StoreError::Unavailable)?;
+        authorization
+            .authority
+            .require_result_history(view, &namespace, record)
+    } else {
+        require_record(view, record)
+    }
+}
+
 fn require_token(
     view: &ReadView,
     scope: &StateScope,

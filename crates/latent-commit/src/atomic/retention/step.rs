@@ -86,34 +86,60 @@ impl ResultMaintenanceOwner {
         )?;
         let mut batch = AtomicBatch::default();
         let mut command = None;
+        let mut observed_floor = false;
+        let mut accounting_tenant = None;
         if let Some((key, bytes)) = page.rows.first() {
-            let record = CommandRecord::decode(bytes)?;
-            batch
-                .expectations
-                .extend(latent_state::recovery::namespace_readiness_expectations(
-                    &view,
-                    &TenantId(record.key.tenant.clone()),
-                    &StateNamespaceId(record.key.namespace.clone()),
-                    crate::atomic::incarnation(&record.key)?,
-                )?);
-            authorize(Some(&record))?;
-            clock.time.check(record.clock_floor)?;
-            validate_linked_row(&view, key, bytes)?;
-            progress.visited = progress.visited.checked_add(1).ok_or(AtomicError::Limit)?;
-            if record.outcome != Outcome::Pending && clock.time.unix_millis >= record.result_expires
-            {
-                let reclaimed = retire_body(&view, key, bytes, &record, clock, &mut batch)?;
-                if reclaimed != 0 {
-                    progress.retired = progress.retired.checked_add(1).ok_or(AtomicError::Limit)?;
-                    progress.reclaimed_bytes = progress
-                        .reclaimed_bytes
-                        .checked_add(reclaimed)
-                        .ok_or(AtomicError::Limit)?;
+            if super::RetiredCommand::is_present(bytes) {
+                let floor = super::RetiredCommand::decode(bytes)?;
+                accounting_tenant = Some(TenantId(floor.tenant.clone()));
+                clock.time.check(floor.retired_at())?;
+                validate_linked_row(&view, key, bytes)?;
+                batch.expectations.extend(
+                    latent_state::recovery::namespace_readiness_expectations(
+                        &view,
+                        &TenantId(floor.tenant.clone()),
+                        &StateNamespaceId(floor.namespace_name.clone()),
+                        floor.incarnation,
+                    )?,
+                );
+                batch.expectations.push(ExpectedRow {
+                    key: key.clone(),
+                    value: Some(bytes.clone()),
+                });
+                progress.visited = progress.visited.checked_add(1).ok_or(AtomicError::Limit)?;
+                observed_floor = true;
+            } else {
+                let record = CommandRecord::decode(bytes)?;
+                accounting_tenant = Some(TenantId(record.key.tenant.clone()));
+                batch.expectations.extend(
+                    latent_state::recovery::namespace_readiness_expectations(
+                        &view,
+                        &TenantId(record.key.tenant.clone()),
+                        &StateNamespaceId(record.key.namespace.clone()),
+                        crate::atomic::incarnation(&record.key)?,
+                    )?,
+                );
+                authorize(Some(&record))?;
+                clock.time.check(record.clock_floor)?;
+                validate_linked_row(&view, key, bytes)?;
+                progress.visited = progress.visited.checked_add(1).ok_or(AtomicError::Limit)?;
+                if record.outcome != Outcome::Pending
+                    && clock.time.unix_millis >= record.result_expires
+                {
+                    let reclaimed = retire_body(&view, key, bytes, &record, clock, &mut batch)?;
+                    if reclaimed != 0 {
+                        progress.retired =
+                            progress.retired.checked_add(1).ok_or(AtomicError::Limit)?;
+                        progress.reclaimed_bytes = progress
+                            .reclaimed_bytes
+                            .checked_add(reclaimed)
+                            .ok_or(AtomicError::Limit)?;
+                    }
                 }
+                command = Some(record);
             }
-            command = Some(record);
         }
-        if command.is_none() {
+        if command.is_none() && !observed_floor {
             let key = latent_state::recovery::guard_key();
             batch.expectations.push(ExpectedRow {
                 value: view.get(&key)?,
@@ -133,17 +159,25 @@ impl ResultMaintenanceOwner {
             Some(old),
             progress.encode()?,
         );
+        if let Some(tenant) = accounting_tenant {
+            crate::atomic::accounting::apply(&view, &tenant, &mut batch)?;
+        }
         store
-            .apply_fenced(batch, || {
-                authorize(None)?;
-                if let Some(record) = &command {
-                    authorize(Some(record))?;
-                }
-                Ok(())
-            })
+            .apply_fenced(batch, || accept_step(&mut authorize, command.as_ref()))
             .map_err(fenced_error)?;
         Ok(progress)
     }
+}
+
+fn accept_step(
+    authorize: &mut impl FnMut(Option<&CommandRecord>) -> Result<(), AtomicError>,
+    record: Option<&CommandRecord>,
+) -> Result<(), AtomicError> {
+    authorize(None)?;
+    if let Some(record) = record {
+        authorize(Some(record))?;
+    }
+    Ok(())
 }
 
 fn retire_body(
@@ -204,7 +238,7 @@ fn retire_body(
         protected,
     );
     replace(batch, result_key, Some(old), marker);
-    replace(batch, usage_key, usage_bytes, usage.encode());
+    replace(batch, usage_key, usage_bytes, usage.encode()?);
     Ok(reclaimed)
 }
 

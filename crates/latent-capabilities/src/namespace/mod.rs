@@ -5,6 +5,7 @@
 mod control;
 mod gate;
 mod page;
+mod result_history;
 mod scope;
 #[cfg(test)]
 mod tests;
@@ -18,6 +19,7 @@ pub use gate::{
     AcceptedCommit, CommitCancellation, CommitCancellationDisposition, CommitIoAcceptance,
 };
 pub use page::ScopedPage;
+pub use result_history::ReviewedResultHistory;
 pub use scope::{CallerScope, RecoverySelection};
 
 use latent_core::{ActivationId, PlatformError, PlatformErrorCode, TenantId};
@@ -71,6 +73,7 @@ pub struct NamespaceAuthority {
     gate: Arc<gate::Gate>,
     selection: RecoverySelection,
     lifecycle: Arc<latent_state::namespace::lifecycle::NamespaceLifecycleHandle>,
+    result_history: Option<Box<ReviewedResultHistory>>,
 }
 
 /// Trusted activation/binding facts, without permission or storage ownership.
@@ -190,7 +193,74 @@ impl NamespaceAuthority {
             gate: gate::Gate::new(),
             selection: selection.clone(),
             lifecycle: Arc::new(lifecycle),
+            result_history: None,
         })
+    }
+
+    /// An independently authorized historical result read. The original
+    /// publication remains live and its current read-result decision is retained.
+    /// The reviewed observation cannot become command, query or stage authority.
+    pub fn seal_result_retained(
+        store: &PolicyStore,
+        initial: OwnedPolicyDecision,
+        namespace: &NamespaceRead,
+        admission: NamespaceAdmission<'_>,
+        lifecycle: latent_state::namespace::lifecycle::NamespaceLifecycleHandle,
+        history: ReviewedResultHistory,
+    ) -> Result<Self, PlatformError> {
+        history.check_selection(namespace, admission.state_schema)?;
+        let mut authority = Self::seal_retained(
+            store,
+            initial,
+            namespace,
+            NamespaceAdmission {
+                state_schema: &namespace.record().state_schema,
+                ..admission
+            },
+            lifecycle,
+        )?;
+        if authority.mode != Mode::Inspection {
+            return Err(denied());
+        }
+        let original = history.original();
+        let key = original.key();
+        let ownership = &authority.ownership;
+        if key.tenant != ownership.tenant.0
+            || key.namespace != ownership.namespace
+            || key.incarnation != ownership.incarnation.to_string()
+            || key.entity != ownership.entity
+            || key.recovery_scope != ownership.caller.scope
+            || original.result_read_policy() != ownership.result_policy
+            || original.source().publication != authority.publication
+        {
+            return Err(denied());
+        }
+        store.with_retained_decision(&authority.initial, &mut |actual, _| {
+            authority.check_target(actual, "read-result")
+        })?;
+        authority.result_history = Some(Box::new(history));
+        Ok(authority)
+    }
+
+    /// Descriptive original result identity. Access still requires the retained
+    /// current-purpose fence, including the original caller and publication.
+    #[must_use]
+    pub fn original_result(&self) -> Option<&latent_commit::atomic::CommandRecord> {
+        self.result_history
+            .as_ref()
+            .map(|history| history.original())
+    }
+
+    pub fn require_result_history(
+        &self,
+        view: &latent_state::embedded::ReadView,
+        namespace: &NamespaceRead,
+        record: &latent_commit::atomic::CommandRecord,
+    ) -> Result<(), latent_state::embedded::StoreError> {
+        self.result_history
+            .as_ref()
+            .ok_or(latent_state::embedded::StoreError::Unavailable)?
+            .require_current(view, namespace, record)
     }
 
     /// Descriptive sealed activation identity; it creates no budget or access.
@@ -281,6 +351,7 @@ impl NamespaceAuthority {
             gate: Arc::clone(&self.gate),
             selection: self.selection.clone(),
             lifecycle: Arc::clone(&self.lifecycle),
+            result_history: None,
         })
     }
 
@@ -321,6 +392,11 @@ impl NamespaceAuthority {
             gate: Arc::clone(&self.gate),
             selection: self.selection.clone(),
             lifecycle: Arc::clone(&self.lifecycle),
+            result_history: self
+                .result_history
+                .as_ref()
+                .map(|history| history.rebind(namespace).map(Box::new))
+                .transpose()?,
         })
     }
 
@@ -368,6 +444,7 @@ impl NamespaceAuthority {
             gate: Arc::clone(&self.gate),
             selection: self.selection.clone(),
             lifecycle: Arc::clone(&self.lifecycle),
+            result_history: None,
         })
     }
     #[must_use]
@@ -567,6 +644,8 @@ impl NamespaceAuthority {
             || current.id.0 != self.ownership.namespace
             || current.version != self.version
             || current.status == NamespaceStatus::Tombstone
+            || (self.result_history.is_some()
+                && (operation != "read-result" || current.status != NamespaceStatus::Active))
             || (matches!(operation, "put" | "delete" | "stage" | "commit")
                 && (self.mode != Mode::Command || current.status != NamespaceStatus::Active))
             || (self.mode == Mode::Inspection

@@ -25,6 +25,34 @@ pub(super) struct DispatchPolicy {
     epoch: u64,
 }
 impl DispatchPolicy {
+    pub fn observation(
+        &self,
+    ) -> Result<super::super::NativeDeferredEffectHostInspection, PlatformError> {
+        let (selected, _) = self
+            .operation
+            .deferred_http
+            .as_ref()
+            .ok_or_else(super::super::denied)?;
+        Ok(super::super::NativeDeferredEffectHostInspection {
+            tenant: self.scope.tenant.clone(),
+            service: self.operation.target.service.0.clone(),
+            publication: self.scope.publication.clone(),
+            namespace: self.scope.namespace.clone(),
+            incarnation: self.scope.incarnation,
+            logical_binding: self.scope.binding.clone(),
+            operation: self.scope.operation.clone(),
+            staging_binding: selected.staging_binding.clone(),
+            dispatch_binding: selected.dispatch_binding.clone(),
+            provider_profile: self.profile.clone(),
+            configuration_digest: self.digest.clone(),
+            configuration_epoch: self.epoch,
+            dispatch_subject: self.principal.subject.clone(),
+            dispatch_recovery_kind: self.caller.kind,
+            dispatch_recovery_scope: self.caller.scope.clone(),
+            result_policy: self.operation.result_policy.clone(),
+        })
+    }
+
     pub fn new(
         operation: Arc<InstalledTransactionOperation>,
         policy: Arc<PolicyStore>,

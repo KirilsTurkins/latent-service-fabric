@@ -5,6 +5,7 @@
 mod file;
 mod migration;
 mod operation;
+mod retained;
 mod review;
 mod startup;
 
@@ -25,7 +26,7 @@ use super::{
     RecoveryGuard,
 };
 use crate::{
-    embedded::{ReadView, RowKey, StoreError},
+    embedded::{AtomicBatch, ReadView, RowKey, StoreError},
     namespace::compatibility::{RetainedFormat, ReviewedSchema},
     protected_store::{
         ProtectedStoreConfig, ProtectedStoreDrain, ProtectedStoreError, ProtectedStoreOwner,
@@ -47,6 +48,12 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
     fn runtime_digest(&self) -> [u8; 32];
     fn retained_bytes(&self) -> u64;
     fn scratch_bytes(&self) -> u64;
+    /// Installed, stricter protected file limit. This can narrow the native
+    /// snapshot profile to an actual retained operator grant; it grants no
+    /// recovery access and cannot expand the original native ceiling.
+    fn snapshot_file_bytes(&self) -> u64 {
+        super::snapshot::SNAPSHOT_FILE_BYTES
+    }
     fn installed_formats(&self) -> &[RetainedFormat];
     fn validate_row(&self, source: &ReadView, key: &RowKey, value: &[u8])
         -> Result<(), StoreError>;
@@ -70,6 +77,17 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
         request: &OfflineRestoreRequest,
     ) -> Result<(), StoreError>;
 
+    /// Recheck the original current restore authority and clock at actual
+    /// destination writes and publication. Earlier review and historic rows are
+    /// not this authority. No request-selected approval or provider execution.
+    fn accept_restore(
+        &self,
+        _request: &OfflineRestoreRequest,
+        _fence: RestoreFence,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+
     /// Review the actual linked restored inventory, recovery/data-loss window,
     /// present grants and conservative clock continuity. No external redrive.
     fn review_reconciliation(
@@ -81,6 +99,31 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
     }
     /// Short no-I/O currentness check at the actual irreversible writer fence.
     fn accept_reconciliation(&self, _request: &RecoveryReviewRequest) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+    /// Read-only installed domain plan. Opaque request bytes grant no access;
+    /// the default exposes neither a plan nor mutable retained work.
+    fn inspect_retained_reconciliation(
+        &self,
+        _view: &ReadView,
+        _request: &RetainedReconciliationRequest,
+    ) -> Result<Vec<u8>, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+    /// A closed installed owner supplies exact old row expectations and its
+    /// immutable receipt. Ordinary business, inbox and result rows cannot be
+    /// mutated by this port; the complete-store guard stays paused.
+    fn prepare_retained_reconciliation(
+        &self,
+        _view: &ReadView,
+        _request: &RetainedReconciliationRequest,
+    ) -> Result<PreparedRetainedReconciliation, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+    fn accept_retained_reconciliation(
+        &self,
+        _request: &RetainedReconciliationRequest,
+    ) -> Result<(), StoreError> {
         Err(StoreError::Unavailable)
     }
     fn review_namespace_resume(
@@ -113,6 +156,15 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
     ) -> Result<ReviewedSchema, StoreError> {
         Err(StoreError::Unavailable)
     }
+    /// Installed, finite data recipe selection. The default preserves the
+    /// historical key; selecting this never grants migration or resume rights.
+    fn migration_recipe(
+        &self,
+        _view: &ReadView,
+        _request: &OfflineAggregateMigrationRequest,
+    ) -> Result<super::migration::AggregateMigrationRecipe, StoreError> {
+        Ok(super::migration::AggregateMigrationRecipe::Count)
+    }
     fn review_migration(
         &self,
         _view: &ReadView,
@@ -131,6 +183,13 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
     }
 }
 
+/// Host-owned acceptance boundaries, never a caller-selected recovery purpose.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RestoreFence {
+    Write,
+    Publication,
+}
+
 #[derive(Debug, Clone)]
 pub struct OfflineAggregateMigrationRequest {
     pub checkpoint: SnapshotFile,
@@ -142,6 +201,19 @@ pub struct RecoveryReviewRequest {
     pub operator_id: String,
     pub expected_guard: RecoveryGuard,
     pub review_digest: [u8; 32],
+}
+
+#[derive(Debug, Clone)]
+pub struct RetainedReconciliationRequest {
+    pub operator_id: String,
+    pub operation_id: String,
+    /// Installed domain decoder owns this finite data, never a request plugin.
+    pub payload: Vec<u8>,
+}
+pub struct PreparedRetainedReconciliation {
+    pub batch: AtomicBatch,
+    pub receipt: Vec<u8>,
+    pub replay: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -195,6 +267,20 @@ pub struct OfflineRecoverySource {
 }
 
 impl OfflineRecoverySource {
+    pub fn inspect_retained_reconciliation(
+        &self,
+        request: RetainedReconciliationRequest,
+        deadline: Instant,
+    ) -> Result<OfflineOperation<Vec<u8>>, OfflineRecoveryError> {
+        retained::inspect(self, request, deadline)
+    }
+    pub fn reconcile_retained(
+        &self,
+        request: RetainedReconciliationRequest,
+        deadline: Instant,
+    ) -> Result<OfflineOperation<Vec<u8>>, OfflineRecoveryError> {
+        retained::apply(self, request, deadline)
+    }
     /// Persist reviewed paused progress; leave data/schema unchanged. A dropped
     /// waiter does not refund accepted physical work. Restart never completes it
     /// automatically; the same attributable operation must explicitly finish.

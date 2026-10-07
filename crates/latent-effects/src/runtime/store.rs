@@ -50,6 +50,34 @@ pub(super) async fn call<T: Send + 'static>(
     job.await??.map_err(DispatcherError::from)
 }
 
+struct RetainedCompletion<T> {
+    result: Result<T, DispatchStoreError>,
+    _capacity: std::sync::Arc<super::capacity::AttemptCapacity>,
+}
+
+/// The accepted closure and its unclaimed output retain the same original
+/// keeper. Its native result buffers always destruct before that keeper.
+pub(super) async fn call_retaining<T: Send + 'static>(
+    owner: &ProtectedStoreOwner,
+    kind: StoreIoKind,
+    bytes: u64,
+    capacity: std::sync::Arc<super::capacity::AttemptCapacity>,
+    operation: impl FnOnce(&EmbeddedStore) -> Result<T, DispatchStoreError> + Send + 'static,
+) -> Result<T, DispatcherError> {
+    let job = owner.with_store(kind, bytes, move |store| {
+        let result = match operation(store) {
+            Err(DispatchStoreError::Storage(error)) => return Err(error),
+            result => result,
+        };
+        Ok(RetainedCompletion {
+            result,
+            _capacity: capacity,
+        })
+    })?;
+    let completion = job.await??;
+    completion.result.map_err(DispatcherError::from)
+}
+
 pub(super) async fn startup(
     owner: &ProtectedStoreOwner,
     time: EffectTime,
@@ -69,10 +97,13 @@ pub(super) async fn startup(
             crate::authority::AuthorityError::ClockDiscontinuity,
         ));
     }
-    let epoch = call(owner, StoreIoKind::Write, 1024 * 1024, move |store| {
-        DispatchCatalog::begin_exclusive_epoch(store, time, checkpoint)
-    })
-    .await?;
+    let job = owner.with_initializing_store(1024 * 1024, move |store, initialization| {
+        match DispatchCatalog::begin_initializing_epoch(store, time, checkpoint, initialization) {
+            Err(DispatchStoreError::Storage(error)) => Err(error),
+            result => Ok(result),
+        }
+    })?;
+    let epoch = job.await??.map_err(DispatcherError::from)?;
     let mut cursor = None;
     loop {
         cursor = call(owner, StoreIoKind::Write, 8 * 1024 * 1024, move |store| {

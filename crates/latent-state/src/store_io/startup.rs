@@ -112,6 +112,16 @@ impl<S: Send + Sync + 'static> StoreIoStartup<S> {
         }
     }
 
+    /// Nonblocking joins of actual finished startup workers. An initializer or
+    /// dropped awaiter never certifies retirement; delivery moves this owner to
+    /// `StoreIoReady` and makes the startup handle unavailable.
+    pub fn reap_retired_threads(&self) -> Result<usize, StoreIoError> {
+        self.owner
+            .as_ref()
+            .ok_or(StoreIoError::AlreadyDelivered)?
+            .reap_retired_threads()
+    }
+
     pub fn drain_async<F: Future<Output = ()>>(
         &self,
         deadline: Instant,
@@ -197,6 +207,13 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
         self.owner.reserve_retained(bytes)
     }
 
+    pub fn reserve_recovery_retained<T: Send + 'static>(
+        &self,
+        bytes: u64,
+    ) -> Result<super::StoreIoRetained<OnceLock<S>, T>, StoreIoError> {
+        self.owner.reserve_recovery_retained(bytes)
+    }
+
     pub(crate) fn owns_retained<T: Send + 'static>(
         &self,
         retained: &super::StoreIoRetained<OnceLock<S>, T>,
@@ -212,6 +229,20 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
     ) -> Result<StoreIoJob<T>, StoreIoError> {
         self.owner
             .submit(kind, bytes, move |slot| {
+                operation(slot.get().expect("initialized store owner"))
+            })
+            .map_err(|error| error.reason)
+    }
+
+    pub fn submit_retaining<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        bytes: u64,
+        keeper: Arc<dyn std::any::Any + Send + Sync>,
+        operation: impl FnOnce(&S) -> T + Send + 'static,
+    ) -> Result<StoreIoJob<T>, StoreIoError> {
+        self.owner
+            .submit_retaining(kind, bytes, keeper, move |slot| {
                 operation(slot.get().expect("initialized store owner"))
             })
             .map_err(|error| error.reason)
@@ -235,5 +266,9 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
     }
     pub fn reap_retired_threads(&self) -> Result<usize, StoreIoError> {
         self.owner.reap_retired_threads()
+    }
+
+    pub fn pending_thread_joins(&self) -> Result<usize, StoreIoError> {
+        self.owner.pending_thread_joins()
     }
 }

@@ -1,6 +1,7 @@
 use latent_state::embedded::{
     AtomicBatch, EmbeddedStore, ExpectedRow, Family, ReadView, RowMutation, StoreError,
 };
+use latent_state::protected_store::FreshStoreInitialization;
 
 use crate::authority::{AuthorityError, DurableEffectAuthority, EffectTime};
 use crate::dispatch::{AttemptIdentity, AttemptReceipt, Disposition, EffectRecord, RetryProof};
@@ -50,6 +51,15 @@ pub struct HistoryPage {
     pub resume: Option<Vec<u8>>,
 }
 
+/// Exact bounded dependencies captured from the same native view. These bytes
+/// confer no terminalization, payload-release or provider authority.
+pub struct RetainedEffectRows {
+    pub record: EffectRecord,
+    pub expectations: Vec<ExpectedRow>,
+    pub due: Option<latent_state::embedded::RowKey>,
+    pub reclaim: Vec<latent_state::embedded::RowKey>,
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
 pub struct DispatchCounts {
     pub pending: u64,
@@ -70,6 +80,26 @@ pub struct DispatchCounts {
 pub struct DispatchCatalog;
 
 impl DispatchCatalog {
+    /// Namespace admission charge for the declared finite retained closure.
+    /// Include closed codec maxima and encoded row-key bytes, rather than
+    /// pretending the initial pending record bounds later receipt/history growth.
+    /// The protected engine independently enforces actual disk/index high-water.
+    pub fn retention_charge(authority: &DurableEffectAuthority) -> Result<u64, StoreError> {
+        let attempts = u64::from(authority.ceiling().maximum_attempts);
+        let history = attempts
+            .checked_mul(
+                (super::codec::MAXIMUM_HISTORY_BYTES + super::codec::HISTORY_PREFIX.len() + 40 + 64)
+                    as u64,
+            )
+            .ok_or(StoreError::Capacity)?;
+        EffectRecord::retained_bound(authority)
+            .map_err(storage_error)?
+            .checked_add((EFFECT_PREFIX.len() + 32 + 64) as u64)
+            .and_then(|bytes| bytes.checked_add(history))
+            .and_then(|bytes| bytes.checked_add(256))
+            .ok_or(StoreError::Capacity)
+    }
+
     /// Only the fresh exclusive node startup owner may advance this fence.
     /// The protected root must prove the previous process physically retired.
     /// An admitted external restore checkpoint rejects epoch/clock rollback;
@@ -79,12 +109,34 @@ impl DispatchCatalog {
         time: EffectTime,
         minimum_checkpoint: Option<(u64, u64)>,
     ) -> Result<DispatchEpoch, DispatchStoreError> {
+        Self::begin_initializing_epoch(store, time, minimum_checkpoint, None)
+    }
+
+    /// The production protected worker may supply its one affine initialization
+    /// witness. This checks the original checkpoint against actual continuous
+    /// time for a wholly empty new store; it never relaxes a reopened owner floor.
+    pub fn begin_initializing_epoch(
+        store: &EmbeddedStore,
+        time: EffectTime,
+        minimum_checkpoint: Option<(u64, u64)>,
+        initialization: Option<FreshStoreInitialization<'_>>,
+    ) -> Result<DispatchEpoch, DispatchStoreError> {
         let view = store.snapshot()?;
         let key = OwnerRecord::key();
         let previous = view.get(&key)?;
         let old = previous.as_deref().map(OwnerRecord::decode).transpose()?;
         if let Some((minimum_epoch, minimum_clock)) = minimum_checkpoint {
-            if old.is_none_or(|old| old.epoch < minimum_epoch || old.clock_floor < minimum_clock) {
+            let accepted = match old {
+                None => {
+                    initialization.is_some_and(|proof| proof.matches_store(store))
+                        && minimum_epoch == 1
+                        && time.continuity_proven
+                        && time.unix_millis >= minimum_clock
+                        && view.is_empty()?
+                }
+                Some(old) => old.epoch >= minimum_epoch && old.clock_floor >= minimum_clock,
+            };
+            if !accepted {
                 return Err(DispatchStoreError::StaleEpoch);
             }
         }
@@ -171,6 +223,19 @@ impl DispatchCatalog {
         due: &DueRecord,
         time: EffectTime,
     ) -> Result<ClaimedEffect, DispatchStoreError> {
+        Self::claim_fenced(store, epoch, due, time, || Ok(()))
+    }
+
+    /// The physical owner performs its original short admission fence only
+    /// after OCC/capacity preparation, immediately before acceptance. A failed
+    /// fence leaves the exact due record and payload unclaimed.
+    pub fn claim_fenced(
+        store: &EmbeddedStore,
+        epoch: DispatchEpoch,
+        due: &DueRecord,
+        time: EffectTime,
+        accept: impl FnOnce() -> Result<(), crate::authority::AuthorityError>,
+    ) -> Result<ClaimedEffect, DispatchStoreError> {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, &due.effect)?;
@@ -192,7 +257,7 @@ impl DispatchCatalog {
                 ) {
                     writer.replace(loaded)?;
                     drop(view);
-                    writer.apply(store)?;
+                    writer.apply_fenced(store, accept)?;
                 }
                 return Err(error.into());
             }
@@ -201,7 +266,7 @@ impl DispatchCatalog {
         writer.reserve_attempt(&loaded.record)?;
         writer.replace(loaded)?;
         drop(view);
-        writer.apply(store)?;
+        writer.apply_fenced(store, accept)?;
         Ok(ClaimedEffect {
             authority,
             attempt,
@@ -215,6 +280,18 @@ impl DispatchCatalog {
         claim: &AttemptIdentity,
         time: EffectTime,
     ) -> Result<(), DispatchStoreError> {
+        Self::begin_send_fenced(store, epoch, claim, time, || Ok(()))
+    }
+
+    /// A provider future remains unpolled until this same original native
+    /// deadline/role acceptance succeeds; no lock remains held during flush.
+    pub fn begin_send_fenced(
+        store: &EmbeddedStore,
+        epoch: DispatchEpoch,
+        claim: &AttemptIdentity,
+        time: EffectTime,
+        accept: impl FnOnce() -> Result<(), crate::authority::AuthorityError>,
+    ) -> Result<(), DispatchStoreError> {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, claim.effect())?;
@@ -227,7 +304,7 @@ impl DispatchCatalog {
         loaded.record.begin_send(claim)?;
         writer.replace(loaded)?;
         drop(view);
-        writer.apply(store)
+        writer.apply_fenced(store, accept)
     }
 
     pub fn complete(

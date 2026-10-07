@@ -179,6 +179,16 @@ impl ProtectedStoreStartup {
         }
     }
 
+    /// Join only workers whose physical retirement has actually completed,
+    /// including a failed validator. Deadline expiry never permits this join.
+    pub fn reap_retired_threads(&self) -> Result<usize, ProtectedStoreError> {
+        match &self.state {
+            Starting::Running(startup) => startup.reap_retired_threads(),
+            Starting::Failed(owner, _) => owner.reap_retired_threads(),
+        }
+        .map_err(ProtectedStoreError::Io)
+    }
+
     pub fn drain_async<F: Future<Output = ()>>(
         &self,
         deadline: Instant,
@@ -209,6 +219,7 @@ impl Future for ProtectedStoreStartup {
                     ready,
                     failure: Arc::clone(&this.failure),
                     limits: this.limits,
+                    native_capacity: Arc::new(super::native_capacity::NativeBinding::default()),
                 }))
             }
             Poll::Ready(Err(error)) => Poll::Ready(Err(this

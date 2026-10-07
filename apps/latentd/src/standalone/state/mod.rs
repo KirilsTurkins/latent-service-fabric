@@ -4,17 +4,30 @@ mod clock;
 mod command;
 mod effect_requirements;
 mod effects;
+mod inspection;
 mod lifecycle;
+mod recovery;
 mod request;
 mod result;
 mod role;
 mod runtime;
 mod selection;
+mod tenant_setup;
 mod validation;
+pub use inspection::{
+    NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,
+};
 pub use lifecycle::StateShutdownReport;
+pub(in crate::standalone) use recovery::failure::Failure as StartupFailure;
+pub use recovery::TransactionStoreDiagnosis;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(in crate::standalone) use recovery::{recover_namespace, RecoveryOwners};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub use recovery::{NativeRecoveryReport, NativeRecoveryRequest};
 pub use request::StateRequest;
 pub use runtime::StateRuntime;
 
+pub(in crate::standalone) use inspection::inspect_host_configuration;
 pub(crate) use selection::load_operations;
 pub use selection::InstalledTransactionOperation;
 pub(crate) use validation::validate_view;

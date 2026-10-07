@@ -28,6 +28,17 @@ pub struct ProtectedMutableFile {
     root_identity: (u64, u64),
     file_identity: (u64, u64),
     maximum_bytes: u64,
+    created: bool,
+}
+
+impl ProtectedMutableFile {
+    /// Observed successful exclusive creation by this retained protected root.
+    /// Reopening an empty file or permitting creation in configuration does not
+    /// establish this fact. The store must also verify its other owner anchors.
+    #[must_use]
+    pub const fn was_created(&self) -> bool {
+        self.created
+    }
 }
 
 impl ProtectedRoot {
@@ -108,8 +119,8 @@ impl ProtectedRoot {
         self.check().map_err(|_| state_failure())?;
         let directory = &self.chain.last().expect("root anchor").file;
         let flags = OFlags::RDWR | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK;
-        let file = match fs::openat(directory, name, flags, Mode::empty()) {
-            Ok(descriptor) => File::from(descriptor),
+        let (file, created) = match fs::openat(directory, name, flags, Mode::empty()) {
+            Ok(descriptor) => (File::from(descriptor), false),
             Err(rustix::io::Errno::NOENT) if create => {
                 let descriptor = fs::openat(
                     directory,
@@ -121,7 +132,7 @@ impl ProtectedRoot {
                 let file = File::from(descriptor);
                 file.sync_all().map_err(|_| state_failure())?;
                 directory.sync_all().map_err(|_| state_failure())?;
-                file
+                (file, true)
             }
             Err(_) => return Err(state_failure()),
         };
@@ -133,6 +144,7 @@ impl ProtectedRoot {
             root_identity: self.identity(),
             file_identity: (metadata.dev(), metadata.ino()),
             maximum_bytes,
+            created,
         };
         self.check_mutable_file(&fence)?;
         Ok((file, fence))
@@ -172,6 +184,7 @@ impl ProtectedRoot {
             root_identity: self.identity(),
             file_identity: (metadata.dev(), metadata.ino()),
             maximum_bytes,
+            created: true,
         };
         file.sync_all().map_err(|_| state_failure())?;
         directory.sync_all().map_err(|_| state_failure())?;

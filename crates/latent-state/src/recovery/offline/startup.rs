@@ -57,6 +57,8 @@ impl OfflineRecoverySource {
             || codecs.runtime_digest() == [0; 32]
             || codecs.retained_bytes() > CODEC_BYTES
             || codecs.scratch_bytes() > CODEC_BYTES
+            || codecs.snapshot_file_bytes() == 0
+            || codecs.snapshot_file_bytes() > super::super::snapshot::SNAPSHOT_FILE_BYTES
         {
             return Err(OfflineRecoveryError::InvalidConfiguration);
         }
@@ -113,6 +115,9 @@ impl OfflineRecoveryStartup {
     }
     pub fn close(&self) {
         self.inner.close();
+    }
+    pub fn reap_retired_threads(&self) -> Result<usize, ProtectedStoreError> {
+        self.inner.reap_retired_threads()
     }
     pub fn drain_async<F: Future<Output = ()>>(
         &self,

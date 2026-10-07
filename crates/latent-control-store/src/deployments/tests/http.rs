@@ -35,6 +35,7 @@ use std::sync::{atomic::Ordering, Arc};
 
 mod recovery;
 mod selection;
+mod target_inspection;
 mod writers;
 
 struct StaticWebHost;
@@ -168,6 +169,7 @@ fn static_web_upload() -> PackageAdmissionUpload {
                 mode: StaticFallbackMode::Spa,
                 document: Some("/index.html".into()),
             },
+            error_document: None,
         }),
         renderer: None,
     };
@@ -347,7 +349,7 @@ fn catalog(root: &TempRoot, repo: &Arc<DirectoryArtifactRepository>) -> Store {
         repo.clone(),
         Limits::default(),
         repo.lifecycle_authority(),
-        super::lifecycle::profile("48.0.3"),
+        super::lifecycle::profile("48.0.4"),
     ))
     .unwrap()
 }

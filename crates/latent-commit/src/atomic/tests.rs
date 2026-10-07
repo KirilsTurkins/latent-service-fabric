@@ -16,7 +16,9 @@ use latent_state::{
 };
 use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
+mod accounted;
 mod captured;
+mod census;
 mod view_tokens;
 
 mod retention_cases;
@@ -153,6 +155,9 @@ fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
             }],
         })
         .unwrap();
+    (dir, store, effect_owner())
+}
+fn effect_owner() -> EffectAuthorityOwner {
     let effects = EffectAuthorityOwner::new(4, 4, 0).unwrap();
     effects
         .publish(EffectRule {
@@ -185,7 +190,7 @@ fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
             enabled: true,
         })
         .unwrap();
-    (dir, store, effects)
+    effects
 }
 fn claim(store: &EmbeddedStore, input: AdmissionInput) -> AdmittedCommand {
     let view = store.snapshot().unwrap();

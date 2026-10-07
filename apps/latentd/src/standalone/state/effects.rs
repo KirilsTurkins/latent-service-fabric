@@ -6,7 +6,7 @@ use latent_core::{BoxFuture, PlatformError};
 use latent_effects::{
     authority::{
         AuthorityError, DispatchGrant, DispatchProfile, DurableEffectAuthority,
-        EffectAuthorityOwner, EffectRule,
+        EffectAuthorityOwner, EffectRule, EffectScope,
     },
     dispatch::AttemptIdentity,
     payload::PayloadRecord,
@@ -31,6 +31,68 @@ pub(super) struct Installation {
 struct AuthorizedHttp {
     inner: QualifiedHttpEffectAdapter,
     policies: Vec<DispatchPolicy>,
+}
+pub(super) struct RecoveryProfile {
+    pub scope: EffectScope,
+    pub profile: DispatchProfile,
+    observation: super::NativeDeferredEffectHostInspection,
+}
+
+pub(in crate::standalone) fn observe(
+    settings: &NodeSettings,
+    installed: &[Arc<InstalledTransactionOperation>],
+    providers: Option<&ProviderRuntime>,
+    policy: &Arc<PolicyStore>,
+    time: &Arc<dyn EffectTimeSource>,
+) -> Result<Vec<super::NativeDeferredEffectHostInspection>, PlatformError> {
+    Ok(
+        recovery_profiles(settings, installed, providers, policy, time)?
+            .into_iter()
+            .map(|prepared| {
+                let RecoveryProfile {
+                    scope,
+                    profile,
+                    observation,
+                } = prepared;
+                // Inspection retains only its closed public projection.
+                drop((scope, profile));
+                observation
+            })
+            .collect(),
+    )
+}
+
+/// Descriptive decoder/destination closure from the same native constructor.
+/// This creates no rule, grant, dispatcher or physical worker.
+pub(super) fn recovery_profiles(
+    settings: &NodeSettings,
+    installed: &[Arc<InstalledTransactionOperation>],
+    providers: Option<&ProviderRuntime>,
+    policy: &Arc<PolicyStore>,
+    time: &Arc<dyn EffectTimeSource>,
+) -> Result<Vec<RecoveryProfile>, PlatformError> {
+    if installed.len() > 128 {
+        return Err(super::capacity());
+    }
+    let mut profiles = Vec::new();
+    for operation in installed
+        .iter()
+        .filter(|operation| operation.deferred_http.is_some())
+    {
+        let (adapter, _, dispatch) = prepare_operation(
+            settings,
+            operation,
+            providers.ok_or_else(super::denied)?,
+            policy,
+            time,
+        )?;
+        profiles.push(RecoveryProfile {
+            observation: dispatch.observation()?,
+            scope: dispatch.scope,
+            profile: adapter.profile().clone(),
+        });
+    }
+    Ok(profiles)
 }
 
 pub(super) fn install(

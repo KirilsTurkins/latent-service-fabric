@@ -207,8 +207,44 @@ async fn explicit_cross_tenant_policy_and_fresh_activation_identity() {
         assert_eq!(child.trace_id.0, root);
         assert_eq!(child.tenant.0, "tenant-b");
         assert_eq!(child.service.0, "callee");
+        assert_cross_tenant_journal_scope(&f, root, &child.activation_id);
     }
     assert_ne!(starts[1].activation_id, starts[3].activation_id);
+}
+
+fn assert_cross_tenant_journal_scope(f: &Fixture, root: &str, child: &ActivationId) {
+    let journal = f.manager.journal();
+    let source_tenant = TenantId("tenant-a".into());
+    let target_tenant = TenantId("tenant-b".into());
+    let root = ActivationId(root.into());
+    let parent_page = journal
+        .inspect_tree(&source_tenant, &root, 128, None)
+        .unwrap();
+    assert!(parent_page.history_available);
+    assert_eq!(parent_page.nodes.len(), 1);
+    assert_eq!(parent_page.nodes[0].activation_id, root);
+    let child_page = journal
+        .inspect_tree(&target_tenant, child, 128, None)
+        .unwrap();
+    assert!(child_page.history_available);
+    assert_eq!(child_page.nodes.len(), 1);
+    let node = &child_page.nodes[0];
+    assert_eq!(&node.activation_id, child);
+    // Opaque original correlation IDs do not grant access to foreign content.
+    assert_eq!(node.parent_activation_id.as_ref(), Some(&root));
+    assert_eq!(node.root_activation_id, root);
+    assert_eq!(node.principal_kind, latent_core::PrincipalKind::Service);
+    assert_eq!(node.caller_service.as_ref().unwrap().0, "caller");
+    assert_eq!(node.target_service.0, "callee");
+    assert!(node.granted_budget.is_some());
+    assert!(node.diagnostic.is_none());
+    for (tenant, foreign) in [(&source_tenant, child), (&target_tenant, &root)] {
+        let page = journal.inspect_tree(tenant, foreign, 128, None).unwrap();
+        assert!(!page.history_available);
+        assert!(page.nodes.is_empty());
+        assert!(journal.status(tenant, foreign).unwrap().is_none());
+        assert!(journal.events(tenant, foreign).unwrap().is_empty());
+    }
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
