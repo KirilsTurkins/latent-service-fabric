@@ -77,6 +77,28 @@ pub(super) fn sign_java_fixtures(output: &Path, paths: &[OsString]) -> Result<()
     sign_selected(output, paths, false, true)
 }
 
+/// Current captures use an explicitly selected source, never the historical r3
+/// pin or an inferred build approval. Every input is checked before key creation.
+pub(super) fn sign_current_java_fixtures(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    if !output.is_absolute() || output.exists() || !(1..=5).contains(&paths.len()) {
+        return Err("choose a fresh absolute fixture output and one to five captures".into());
+    }
+    let mut names = BTreeSet::new();
+    let mut builds = Vec::new();
+    for path in paths {
+        let build = fixtures::load_current(Path::new(path), compiler_source)?;
+        if !names.insert(build.bundle.layout().config().name.clone()) {
+            return Err("duplicate current fixture package name".into());
+        }
+        builds.push(build);
+    }
+    sign_loaded(output, builds, false, true)
+}
+
 fn sign_selected(
     output: &Path,
     paths: &[OsString],
@@ -113,12 +135,7 @@ fn sign_loaded(
 ) -> Result<()> {
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     if fixture {
-        for build in &mut builds {
-            // These are signing-fixture model times, not compiler execution
-            // times. The separate fixture evidence expressly retains this fact.
-            build.observation.started_at = now;
-            build.observation.finished_at = now;
-        }
+        fixture_model_times(&mut builds, now);
     }
     let validity = SignatureValidity {
         issued_at: now,
@@ -126,26 +143,11 @@ fn sign_loaded(
     };
     // Keys are generated only AFTER every build input is read and checked. No
     // compiler runs in this process; private keys are never written or printed.
-    let publisher_key = generate_signing_key()?;
-    let publisher_public = *publisher_key.public_key();
-    let publisher = LocalSigner::from_pkcs8(
-        publisher_key.into_pkcs8(),
-        PublisherId(PUBLISHER.into()),
-        publisher_public,
+    let (publisher, publisher_public) = demo_publisher()?;
+    let builders = demo_builders(
+        if separate_builders { builds.len() } else { 1 },
+        separate_builders,
     )?;
-    let builders = (0..if separate_builders { builds.len() } else { 1 })
-        .map(|ordinal| {
-            let id = if separate_builders {
-                format!("{BUILDER}-{:02}", ordinal + 1)
-            } else {
-                BUILDER.to_owned()
-            };
-            let key = generate_signing_key()?;
-            let public = *key.public_key();
-            let signer = LocalBuilderSigner::from_pkcs8(key.into_pkcs8(), id.clone(), public)?;
-            Ok((id, public, signer))
-        })
-        .collect::<Result<Vec<_>>>()?;
     let assignments = builds
         .iter()
         .enumerate()
@@ -211,17 +213,7 @@ fn sign_loaded(
         )
         .map_err(|error| error.message)?;
         write(&destination.join("deployment.json"), &build.deployment)?;
-        write(
-            &destination.join(if fixture {
-                "fixture-provenance-model.json"
-            } else {
-                "build-observation.json"
-            }),
-            &serde_json::to_vec(&build.observation)?,
-        )?;
-        if let Some(raw) = &build.fixture_evidence {
-            write(&destination.join("fixture-evidence.json"), raw)?;
-        }
+        write_observation(&destination, &build, fixture)?;
         let mut release = json!({"name": name, "world": build.world, "service": build.service,
             "buildType": build.observation.build_type,
             "packageDigest": digest.to_string(), "componentDigest": build.observation.component_digest,
@@ -243,4 +235,50 @@ fn sign_loaded(
     )?;
     println!("{}", serde_json::to_string(&record)?);
     Ok(())
+}
+
+fn demo_publisher() -> Result<(LocalSigner, [u8; 32])> {
+    let key = generate_signing_key()?;
+    let public = *key.public_key();
+    let signer = LocalSigner::from_pkcs8(key.into_pkcs8(), PublisherId(PUBLISHER.into()), public)?;
+    Ok((signer, public))
+}
+fn fixture_model_times(builds: &mut [inputs::Build], now: u64) {
+    for build in builds {
+        // Model times belong only to ephemeral test signing, never compilation.
+        build.observation.started_at = now;
+        build.observation.finished_at = now;
+    }
+}
+fn write_observation(destination: &Path, build: &inputs::Build, fixture: bool) -> Result<()> {
+    write(
+        &destination.join(if fixture {
+            "fixture-provenance-model.json"
+        } else {
+            "build-observation.json"
+        }),
+        &serde_json::to_vec(&build.observation)?,
+    )?;
+    if let Some(raw) = &build.fixture_evidence {
+        write(&destination.join("fixture-evidence.json"), raw)?;
+    }
+    Ok(())
+}
+fn demo_builders(
+    count: usize,
+    separated: bool,
+) -> Result<Vec<(String, [u8; 32], LocalBuilderSigner)>> {
+    (0..count)
+        .map(|ordinal| {
+            let id = if separated {
+                format!("{BUILDER}-{:02}", ordinal + 1)
+            } else {
+                BUILDER.to_owned()
+            };
+            let key = generate_signing_key()?;
+            let public = *key.public_key();
+            let signer = LocalBuilderSigner::from_pkcs8(key.into_pkcs8(), id.clone(), public)?;
+            Ok((id, public, signer))
+        })
+        .collect()
 }

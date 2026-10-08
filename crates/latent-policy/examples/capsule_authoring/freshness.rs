@@ -23,6 +23,16 @@ fn checked<T>(value: std::result::Result<T, latent_core::PlatformError>) -> Resu
     value.map_err(|error| error.message.into())
 }
 
+fn policy_bytes(path: &Path) -> Result<Vec<u8>> {
+    checked(read_package_file(
+        path.parent().ok_or("policy parent required")?,
+        path.file_name()
+            .and_then(|name| name.to_str())
+            .ok_or("policy filename required")?,
+        256 * 1024,
+    ))
+}
+
 pub(crate) fn check_stale_proofs(
     output: &Path,
     policy_path: &Path,
@@ -31,14 +41,7 @@ pub(crate) fn check_stale_proofs(
     if !output.is_absolute() || output.exists() || !(1..=2).contains(&artifacts.len()) {
         return Err("choose a fresh absolute output and one or two signed packages".into());
     }
-    let policy_bytes = checked(read_package_file(
-        policy_path.parent().ok_or("policy parent required")?,
-        policy_path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .ok_or("policy filename required")?,
-        256 * 1024,
-    ))?;
+    let policy_bytes = policy_bytes(policy_path)?;
     let value: Value = serde_json::from_slice(&policy_bytes)?;
     // This finite development experiment cannot use a long policy TTL as a wait.
     if value["builder"]["maxProofAgeSeconds"] != 2 {

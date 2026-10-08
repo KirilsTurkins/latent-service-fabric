@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/build_dev_guest_tools.py","reviewBoundary":"committed-fingerprint","reviewReason":"Add explicit captured guest profile selection while preserving Phase3 defaults, compiler pins, download bounds and publication authentication; Explicit documented Hexops mirror with identical pinned Zig bytes; opt-in untrusted digest cache via CLI or workflow env; preserve all original600s deadlines/byte/hash pins/no retries/owned-file cleanup.","schemaVersion":"latent.ci.contracts.v1","sha256":"bd0b0a562b8d323fda5a0c0a262e1c3da64a38e28f64649eba2045b103ea05dd"}
+{
+  "kind": "owner",
+  "path": "tools/build_dev_guest_tools.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add explicit captured guest profile selection while preserving Phase3 defaults, compiler pins, download bounds and publication authentication; Explicit documented Hexops mirror with identical pinned Zig bytes; opt-in untrusted digest cache via CLI or workflow env; preserve all original600s deadlines/byte/hash pins/no retries/owned-file cleanup. Retain current source owner obligation: Preserve the original owner review boundary; review the actual merged captured source inputs, profile and compiler recipe. Incoming reviewed obligation: Preserve captured Phase4 guest profile selection and incoming explicit verified Zig mirror/cache with identical compiler pins, bounded bytes and original deadlines Retain both parent source cases and execution guards with current state/transaction API unions and actual current source owner identities. Preserve both original source case and nonhash guard inventories, existing deadline/resource bounds, compiled-profile freshness, truthful full renderer gates, and exact source owner identities.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "bd0b0a562b8d323fda5a0c0a262e1c3da64a38e28f64649eba2045b103ea05dd"
+}

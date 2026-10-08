@@ -112,6 +112,22 @@ fn supported_contract(value: &str) -> bool {
         )
 }
 
+fn runtime_operations() -> &'static [&'static str] {
+    &[
+        "register",
+        "park",
+        "wake",
+        "settle",
+        "close",
+        "observe",
+        "wait-for",
+        "wait-until",
+        "timer-start",
+        "timer-next",
+        "timer-stop",
+    ]
+}
+
 fn operation(contract: &str, name: &str) -> bool {
     let operations: &[&str] = match contract {
         "latent:context/context@0.1.0" => &[
@@ -127,19 +143,7 @@ fn operation(contract: &str, name: &str) -> bool {
         "latent:log/log@0.1.0" => &["write"],
         "latent:clock/monotonic@0.1.0" => &["now-nanos"],
         "latent:clock/wall@0.1.0" => &["now-unix-millis"],
-        "latent:runtime/activation@0.1.0" => &[
-            "register",
-            "park",
-            "wake",
-            "settle",
-            "close",
-            "observe",
-            "wait-for",
-            "wait-until",
-            "timer-start",
-            "timer-next",
-            "timer-stop",
-        ],
+        "latent:runtime/activation@0.1.0" => runtime_operations(),
         "latent:random/random@0.1.0" => &["bytes", "u64-value"],
         "latent:blob/blob@0.2.0" => &[
             "create",

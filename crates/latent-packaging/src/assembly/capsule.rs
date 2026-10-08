@@ -131,9 +131,8 @@ fn host_profile(
     {
         return Err(crate::invalid("transaction-companion-capsule-mismatch"));
     }
-    // Exact-byte layer association is already checked by inspect_bundle. The
-    // companion selects only immutable ABI inspection, never an installed host,
-    // deployment, namespace, policy, or execution admission.
+    // This exact companion selects immutable ABI inspection only. Runtime still
+    // requires actual signed publication, installed owners and current policy.
     Ok(latent_core::PHASE4_HOST_ABI_V1)
 }
 

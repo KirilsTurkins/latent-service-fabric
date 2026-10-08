@@ -77,8 +77,7 @@ pub(super) fn load(root: &Path) -> Result<Build> {
         BuildRecipe::RustCapsule(recipe) if input.name == recipe.cargo_package => {}
         BuildRecipe::C(recipe) if recipe.fixture == "application" => {}
         BuildRecipe::GoCapsule(recipe) if input.name == recipe.go_package => {}
-        BuildRecipe::TypeScriptCapsule(_) => {}
-        BuildRecipe::DotnetCapsule(_) => {}
+        BuildRecipe::TypeScriptCapsule(_) | BuildRecipe::DotnetCapsule(_) => {}
         BuildRecipe::JavaCapsule(recipe) if recipe.entry_point == "dev.latent.app.Capsule" => {}
         _ => return Err("standalone recipe and matching package identity required".into()),
     }

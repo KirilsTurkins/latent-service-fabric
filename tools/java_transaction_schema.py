@@ -23,6 +23,24 @@ DEFINITIONS = {
 }
 SOURCE = "src/dev/latent/app/Capsule.java"
 CODEC = "src/dev/latent/app/AggregateCodec.java"
+RECOVERY_RECIPE = "examples/java-transaction-schema/recovery-v1"
+
+
+def recovery_recipe() -> tuple[bytes, bytes, bytes]:
+    directory = ROOT / RECOVERY_RECIPE
+    raw = read_file(directory / "recipe.json", 8192)
+    value = json.loads(raw)
+    source = read_file(directory / "Capsule.java")
+    world = read_file(directory / "world.wit.in")
+    expected = {"schemaVersion": "latent.java.transaction-recovery-recipe.v1", "language": "java",
+        "world": "examples:transactional-aggregate/service@1.0.0",
+        "aggregateFields": ["count", "view-version", "key-version"],
+        "sourceDigest": digest(source), "worldDigest": digest(world),
+        "componentCompiled": False, "signedExecutionQualified": False}
+    if (value != expected or type(value.get("componentCompiled")) is not bool
+            or type(value.get("signedExecutionQualified")) is not bool):
+        raise ValueError("controlled Java recovery recipe identity drift")
+    return source, world, raw
 
 
 def definitions() -> dict[str, bytes]:
@@ -68,7 +86,7 @@ def create(directory: Path, variant: str, name: str = "transaction-java-aggregat
     if effect not in EFFECTS:
         raise ValueError("unknown Java transaction effect variant")
     schema = definitions()
-    original = read_file(ROOT / "sdk/java-guest/templates/transactional-aggregate.java")
+    original, world, recipe = recovery_recipe()
     source = source_variant(original.decode(), variant).encode()
     if effect == "put-once":
         source = replace_once(source.decode(),
@@ -78,6 +96,8 @@ def create(directory: Path, variant: str, name: str = "transaction-java-aggregat
             '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();').encode()
     project = author(directory, TEMPLATE, name)
     (project / SOURCE).write_bytes(source)
+    (project / "wit/world.wit").write_bytes(world)
+    (project / "java-recovery-recipe.json").write_bytes(recipe)
     if variant != "legacy-v1":
         (project / CODEC).write_bytes(read_file(ROOT / "examples/java-transaction-schema/AggregateCodec.java"))
     owner = read_json(project / "capsule-project.json")
@@ -87,6 +107,7 @@ def create(directory: Path, variant: str, name: str = "transaction-java-aggregat
     (project / "capsule-project.json").write_bytes(json.dumps(owner, indent=2).encode() + b"\n")
     lock = read_json(project / "sdk-lock.json")
     lock["template"]["sourceDigest"] = digest(source)
+    lock["template"]["witDigest"] = digest(world)
     (project / "sdk-lock.json").write_bytes(json.dumps(lock, indent=2).encode() + b"\n")
     writer = "v2" if variant == "writer-v2" else "v1"
     binding = read_json(project / "transaction-binding.json")

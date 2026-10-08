@@ -35,6 +35,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     if (3..=7).contains(&args.len()) && args[0] == "fixture-sign-java-inputs" {
         return authoring::sign_java_fixtures(std::path::Path::new(&args[1]), &args[2..]);
     }
+    if (4..=8).contains(&args.len()) && args[0] == "fixture-sign-current-java-inputs" {
+        return authoring::sign_current_java_fixtures(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("explicit UTF-8 compiler source required")?,
+            &args[3..],
+        );
+    }
     if args.len() < 3
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))
         || args.len() > 18

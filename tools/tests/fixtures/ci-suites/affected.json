@@ -18,7 +18,9 @@
       "renderer": false,
       "packages": [
         "latent-core",
-        "latent-effects"
+        "latent-effects",
+        "latent-state",
+        "latent-workflows"
       ]
     },
     {
