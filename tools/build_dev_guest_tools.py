@@ -129,7 +129,14 @@ def main() -> int:
     parser.add_argument("--node-tests", action="store_true", help="Also stage source-built node executables for focused contributor tests")
     parser.add_argument("--compiler-cache", type=Path, default=os.environ.get("LSF_DEV_COMPILER_CACHE"),
                         help="Untrusted digest-addressed archives, reverified before use; defaults to LSF_DEV_COMPILER_CACHE")
+    parser.add_argument('--typescript-runtime-inputs',type=Path,
+                        help='Explicit source-bound candidate engine/splicer bundle; certifies no runtime API')
     args = parser.parse_args()
+    require(args.typescript_runtime_inputs is None or args.language=='typescript',
+            'typescript-runtime-inputs-require-typescript-builder')
+    if args.typescript_runtime_inputs is not None:
+        from tools.typescript_guest.runtime_bundle import validate
+        validate(args.typescript_runtime_inputs)
     def fetch_archive(destination: Path, source: dict) -> None:
         download(destination, source, cache=args.compiler_cache)
     require(sys.platform == "linux", "guest-candidate-linux-builder-required")
@@ -227,7 +234,8 @@ def main() -> int:
         compiler_sbom = dev_go_distribution.prepare(payload, output, fetch_archive, epoch)
         upstream.update(dev_go_distribution.SOURCES)
     elif args.language == "typescript":
-        dev_typescript_distribution.prepare(payload, output, fetch_archive)
+        dev_typescript_distribution.prepare(payload, output, fetch_archive,
+            runtime_inputs=args.typescript_runtime_inputs)
         upstream.update(dev_typescript_distribution.SOURCES)
     distribution.recipe(payload, args.language)
     for name in executables:

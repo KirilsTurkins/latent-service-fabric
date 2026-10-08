@@ -127,8 +127,10 @@ def compile_managed(payload: Path, project: Path, output: Path, check, language:
         build(project, output, sdk / "bin/capsule-contracts", None, repository, offline_cache=staged / "go-cache")
     else:
         from tools.typescript_guest.build import build
+        from tools.typescript_guest.runtime_bundle import compiler_options
         os.environ["PATH"] = str(staged / "node/bin") + os.pathsep + os.environ["PATH"]
-        build(project, output, sdk / "bin/capsule-contracts", None, repository, tools=staged / "tools")
+        build(project, output, sdk / "bin/capsule-contracts", None, repository, tools=staged / "tools",
+              **compiler_options(staged,project))
     check()
 
 

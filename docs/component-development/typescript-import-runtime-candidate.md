@@ -24,6 +24,15 @@ source derivations, compiler-tool bytes and build/transpile receipts. Their
 qualification remains `unknown` and API support remains `not-evaluated`.
 An operator-provided compiler input cannot certify runtime support.
 
+Contributor toolkit assembly can explicitly capture a `runtime-bundle.json`
+with the named profile, exact engine and source-built splicer inputs, and
+original notices. `build_dev_guest_tools.py --typescript-runtime-inputs`
+includes these bytes in the existing authenticated managed-tool inventory.
+The maintained recipe selects that bundle automatically for a project with
+the same explicit profile. Missing inputs, profile disagreement and changed
+bytes fail before application compilation. The bundle continues to record
+unknown qualification and does not advertise a supported release.
+
 The current contributor proofs include genuine engine and typed compiler
 controls, full component type comparisons, and isolated Wizer construction.
 Engine controls use an explicitly simulated admission broker. Actual signed

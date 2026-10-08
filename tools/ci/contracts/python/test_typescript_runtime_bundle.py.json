@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Nine exact toolkit candidate controls, actual managed pack/unpack and maintained recipe forwarding; unknown qualification, original sync/default paths and byte limits preserved",
+  "module": "tools/tests/test_typescript_runtime_bundle.py",
+  "cases": [
+    "TypeScriptRuntimeBundleTests.test_changed_payload_byte_is_rejected_before_engine_validation",
+    "TypeScriptRuntimeBundleTests.test_declared_support_is_rejected_before_engine_validation",
+    "TypeScriptRuntimeBundleTests.test_default_synchronous_project_ignores_absent_candidate_payload",
+    "TypeScriptRuntimeBundleTests.test_exact_import_selection_passes_only_bound_file_paths",
+    "TypeScriptRuntimeBundleTests.test_explicit_candidate_requires_actual_bundle",
+    "TypeScriptRuntimeBundleTests.test_maintained_recipe_passes_exact_selected_inputs_to_builder",
+    "TypeScriptRuntimeBundleTests.test_original_notices_and_inputs_survive_actual_managed_pack_unpack",
+    "TypeScriptRuntimeBundleTests.test_project_and_payload_profile_must_agree",
+    "TypeScriptRuntimeBundleTests.test_unknown_bundle_field_is_rejected"
+  ],
+  "guards": {
+    "TypeScriptRuntimeBundleTests.test_default_synchronous_project_ignores_absent_candidate_payload": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e01616ab680831cfc357f8445a04f4ee5d5636b86645324e20d33835b7074af3",
+        "class:setup-sha256:daf3d463a523b29057f4da0e130e38013c723a41ee75d9531fb7a89e1232114b"
+      ]
+    },
+    "TypeScriptRuntimeBundleTests.test_explicit_candidate_requires_actual_bundle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e01616ab680831cfc357f8445a04f4ee5d5636b86645324e20d33835b7074af3",
+        "class:setup-sha256:daf3d463a523b29057f4da0e130e38013c723a41ee75d9531fb7a89e1232114b"
+      ]
+    },
+    "TypeScriptRuntimeBundleTests.test_project_and_payload_profile_must_agree": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e01616ab680831cfc357f8445a04f4ee5d5636b86645324e20d33835b7074af3",
+        "class:setup-sha256:daf3d463a523b29057f4da0e130e38013c723a41ee75d9531fb7a89e1232114b"
+      ]
+    },
+    "TypeScriptRuntimeBundleTests.test_exact_import_selection_passes_only_bound_file_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e01616ab680831cfc357f8445a04f4ee5d5636b86645324e20d33835b7074af3",
+        "class:setup-sha256:daf3d463a523b29057f4da0e130e38013c723a41ee75d9531fb7a89e1232114b"
+      ]
+    },
+    "TypeScriptRuntimeBundleTests.test_changed_payload_byte_is_rejected_before_engine_validation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e01616ab680831cfc357f8445a04f4ee5d5636b86645324e20d33835b7074af3",
+        "class:setup-sha256:daf3d463a523b29057f4da0e130e38013c723a41ee75d9531fb7a89e1232114b"
+      ]
+    },
+    "TypeScriptRuntimeBundleTests.test_declared_support_is_rejected_before_engine_validation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e01616ab680831cfc357f8445a04f4ee5d5636b86645324e20d33835b7074af3",
+        "class:setup-sha256:daf3d463a523b29057f4da0e130e38013c723a41ee75d9531fb7a89e1232114b"
+      ]
+    },
+    "TypeScriptRuntimeBundleTests.test_unknown_bundle_field_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e01616ab680831cfc357f8445a04f4ee5d5636b86645324e20d33835b7074af3",
+        "class:setup-sha256:daf3d463a523b29057f4da0e130e38013c723a41ee75d9531fb7a89e1232114b"
+      ]
+    },
+    "TypeScriptRuntimeBundleTests.test_original_notices_and_inputs_survive_actual_managed_pack_unpack": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e01616ab680831cfc357f8445a04f4ee5d5636b86645324e20d33835b7074af3",
+        "class:setup-sha256:daf3d463a523b29057f4da0e130e38013c723a41ee75d9531fb7a89e1232114b"
+      ]
+    },
+    "TypeScriptRuntimeBundleTests.test_maintained_recipe_passes_exact_selected_inputs_to_builder": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e01616ab680831cfc357f8445a04f4ee5d5636b86645324e20d33835b7074af3",
+        "class:setup-sha256:daf3d463a523b29057f4da0e130e38013c723a41ee75d9531fb7a89e1232114b"
+      ]
+    }
+  }
+}

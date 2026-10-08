@@ -51,6 +51,7 @@ from tools.typescript_guest.import_engine import NATIVE_IMPORT_SOURCES
 RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in NATIVE_IMPORT_SOURCES if 'sdk/typescript-guest/activation/'+name not in RECIPE)
 RECIPE += ('tools/typescript_guest/import_engine.py','tools/typescript_guest/import_bindgen.py',
            'tools/typescript_guest/import_profile.py','tools/typescript_guest/splicer_input.py')
+RECIPE += ('tools/typescript_guest/runtime_bundle.py',)
 RECIPE += ("tools/typescript_generator_authoring.py",)
 
 
