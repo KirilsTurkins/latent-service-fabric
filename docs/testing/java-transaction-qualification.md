@@ -1,5 +1,23 @@
 # Signed Java transaction qualification
 
+An already exported diagnostic capture can be selected independently of the
+legacy compressed archive. Supply `--diagnostic-export-root`, the original
+`--diagnostic-receipt` and its digest, and paired paths/digests for
+`--diagnostic-export-receipt` and `--diagnostic-export-census`, together with the
+exact diagnostic source/component identities. This mode cannot be combined with
+the legacy diagnostic archive or an offline recovery programme.
+
+The original compiler process receipt keeps its pre-export
+`componentExportAvailable: false` bytes. A separate pinned export seal records
+availability, binds that original receipt and the complete census, and requires
+the original compiler to be physically retired. The collector checks all
+regular single-link files against the bounded census, then retains the original
+receipt, export seal, census and selected materials without reconstructing an
+archive or changing any compiler/runtime claim. Preparation and resume pin the
+same selection; the original policy review, native checks, twelve actions, six
+node sessions and 1,200-second deadline still apply. Reading these inputs starts
+no signing, policy or candidate clock.
+
 An optional paired `--reviewed-policy-environment <absolute-review.json>` and
 `--reviewed-policy-environment-digest sha256:<exact-reviewed-bytes>` selects the
 separately reviewed recipient port/incarnation and ingress port. It retains the

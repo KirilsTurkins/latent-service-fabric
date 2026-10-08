@@ -39,6 +39,7 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/recovery.py", "tools/java_transaction_qualification/offline_campaign.py",
     "tools/java_transaction_qualification/staging.py", "tools/java_transaction_qualification/native_store.py",
     "tools/java_transaction_qualification/diagnostic_inputs.py",
+    "tools/java_transaction_qualification/compiler_exports.py",
     "tools/java_transaction_qualification/diagnostic_campaign.py",
     "tools/java_transaction_qualification/pending_restore.py",
     "tools/java_transaction_qualification/fixed_environment.py",
@@ -69,8 +70,8 @@ def parse():
                         help="Exact sha256 digest of the separately reviewed unsigned document")
     for name in diagnostic_inputs.ARGUMENTS:
         parser.add_argument("--" + name.replace("_", "-"), type=Path if name in
-                            {"diagnostic_capture", "diagnostic_receipt"} else str,
-                            help="Optional separate compiler capture; all six diagnostic inputs must be pinned")
+                            diagnostic_inputs.PATH_ARGUMENTS else str,
+                            help="Separate original compiler evidence; pin one complete archive or verified export selection")
     parser.add_argument("--timeout", type=int, default=1200)
     args = parser.parse_args()
     inputs.require(sys.platform == "linux" and sys.version_info >= (3, 13), "linux-python313-required")

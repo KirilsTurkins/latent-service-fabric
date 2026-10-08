@@ -15,6 +15,8 @@ import tarfile
 
 from tools.rust_capsule_project import inventory, read_file, snapshot
 
+from . import compiler_exports
+
 from .inputs import (ComponentInput, MAX_COMPONENT_BYTES, REQUIRED_IMPORTS,
                      TOOL_PRODUCER_SOURCE, WORLD, decode, digest, require)
 
@@ -22,8 +24,13 @@ NAME = "put-once-diagnostics"
 PREFIX = "capture/" + NAME + "/"
 SELECTORS = {"trapAfterStage": "4294967293", "loopAfterStage": "4294967294",
              "memoryAfterStage": "4294967292"}
-ARGUMENTS = ("diagnostic_capture", "diagnostic_receipt", "diagnostic_source_commit",
-             "diagnostic_component_digest", "diagnostic_capture_digest", "diagnostic_receipt_digest")
+LEGACY_ARGUMENTS = ("diagnostic_capture", "diagnostic_receipt", "diagnostic_source_commit",
+                    "diagnostic_component_digest", "diagnostic_capture_digest", "diagnostic_receipt_digest")
+EXPORT_ARGUMENTS = ("diagnostic_export_root", "diagnostic_export_receipt", "diagnostic_export_receipt_digest",
+                    "diagnostic_export_census", "diagnostic_export_census_digest")
+ARGUMENTS = LEGACY_ARGUMENTS + EXPORT_ARGUMENTS
+PATH_ARGUMENTS = {"diagnostic_capture", "diagnostic_receipt", "diagnostic_export_root",
+                  "diagnostic_export_receipt", "diagnostic_export_census"}
 LIMITS = {"cpuFuel": 1000000000, "memoryBytes": 67108864, "wallTimeLimitMillis": 120000,
           "childCalls": 0, "outboundRequests": 0, "stateReadBytes": 4194304,
           "stateWriteBytes": 2097152, "blobReadBytes": 0, "blobWriteBytes": 0,
@@ -32,6 +39,31 @@ LIMITS = {"cpuFuel": 1000000000, "memoryBytes": 67108864, "wallTimeLimitMillis":
 
 def selection(args):
     values = {name: getattr(args, name, None) for name in ARGUMENTS}
+    if any(value is not None for value in values.values()):
+        require(getattr(args, "recovery_helper", None) is None,
+                "diagnostic-and-offline-programs-require-separate-bounded-candidates")
+    if any(values[name] is not None for name in EXPORT_ARGUMENTS):
+        require(values["diagnostic_capture"] is None and values["diagnostic_capture_digest"] is None,
+                "original-export-and-legacy-archive-selections-are-exclusive")
+        names = ("diagnostic_receipt", "diagnostic_source_commit", "diagnostic_component_digest",
+                 "diagnostic_receipt_digest") + EXPORT_ARGUMENTS
+        require(all(values[name] is not None for name in names), "complete-explicit-compiler-export-inputs")
+        require(getattr(args, "recovery_helper", None) is None,
+                "diagnostic-and-offline-programs-require-separate-bounded-candidates")
+        for name in PATH_ARGUMENTS - {"diagnostic_capture"}:
+            path = values[name]
+            require(isinstance(path, Path) and path.is_absolute() and not path.is_symlink()
+                    and (path.is_dir() if name == "diagnostic_export_root" else path.is_file()),
+                    "original-diagnostic-export-regular-input-required")
+            values[name] = str(path)
+        require(re.fullmatch(r"[0-9a-f]{40}", values["diagnostic_source_commit"]),
+                "explicit-diagnostic-source-required")
+        for name in ("diagnostic_component_digest", "diagnostic_receipt_digest",
+                     "diagnostic_export_receipt_digest", "diagnostic_export_census_digest"):
+            require(isinstance(values[name], str) and re.fullmatch(r"sha256:[0-9a-f]{64}", values[name]),
+                    "explicit-diagnostic-evidence-digests-required")
+        return {name: values[name] for name in names}
+    values = {name: values[name] for name in LEGACY_ARGUMENTS}
     present = [value is not None for value in values.values()]
     require(not any(present) or all(present), "complete-explicit-diagnostic-inputs-required")
     if not any(present):
@@ -117,7 +149,7 @@ class DiagnosticInput:
                 "crashBeforeCommitQualified": False}
 
 
-def validate(files, receipt_raw, selected):
+def validate(files, receipt_raw, selected, exported=None):
     required = {"report.json", "compiled/component.wasm", "source-inputs.json", "source.tar.gz",
                 "recipe-inputs.json", "compiler-inputs.json", "project/transaction-binding.json",
                 "project/transaction-profile.json", "project/deferred-http-requirements.json",
@@ -125,12 +157,18 @@ def validate(files, receipt_raw, selected):
     require(isinstance(files, dict) and required <= set(files), "complete-diagnostic-compiler-materials-required")
     report_raw = files["report.json"]
     report, receipt = decode(report_raw), decode(receipt_raw)
-    require(receipt.get("schemaVersion") == "latent.java.transaction-diagnostic-compiler-process.v2"
+    if exported is None:
+        require(receipt.get("schemaVersion") == "latent.java.transaction-diagnostic-compiler-process.v2"
             and receipt.get("sourceCommit") == selected["diagnostic_source_commit"]
             and receipt.get("originalToolProducer") == TOOL_PRODUCER_SOURCE
             and all(receipt.get(name) is True for name in ("compilerOnly", "compiled", "componentExportAvailable"))
             and receipt.get("signedNodeExecutionQualified") is False,
-            "actual-separate-diagnostic-compiler-receipt-required")
+                "actual-separate-diagnostic-compiler-receipt-required")
+    else:
+        require(receipt_raw == exported.process
+                and receipt.get("sourceCommit") == selected["diagnostic_source_commit"],
+                "original-sealed-export-process-source")
+    identity = receipt if exported is None else exported.identity
     require(report.get("schemaVersion") == "latent.transaction-guest.compiler.v1"
             and report.get("language") == "java" and report.get("variant") == NAME and report.get("world") == WORLD
             and report.get("evidenceKind") == "authored-component-compiler" and report.get("status") == "compiled"
@@ -147,9 +185,9 @@ def validate(files, receipt_raw, selected):
             <= {row["stage"] for row in details["commands"]}, "actual-successful-diagnostic-compiler-stages")
     component = files["compiled/component.wasm"]
     require(component.startswith(b"\0asm\x0d\0\x01\0") and 0 < len(component) <= MAX_COMPONENT_BYTES
-            and type(report.get("componentBytes")) is int and type(receipt.get("componentBytes")) is int
-            and len(component) == report["componentBytes"] == receipt["componentBytes"]
-            and digest(component) == report.get("componentDigest") == receipt.get("componentDigest")
+            and type(report.get("componentBytes")) is int and type(identity.get("componentBytes")) is int
+            and len(component) == report["componentBytes"] == identity["componentBytes"]
+            and digest(component) == report.get("componentDigest") == identity.get("componentDigest")
             == selected["diagnostic_component_digest"], "original-diagnostic-component-identity")
     project = {name[8:]: raw for name, raw in files.items() if name.startswith("project/")}
     require(inventory(project) == files["source-inputs.json"], "original-diagnostic-project-inventory")
@@ -159,9 +197,11 @@ def validate(files, receipt_raw, selected):
                         ("diagnosticInputDigest", "project/transaction-diagnostic-inputs.json")):
         require(digest(files[path]) == report.get(field), "original-diagnostic-compiler-materials")
     for field in ("companionDigest", "deferredHttpRequirementsDigest"):
-        require(receipt.get(field) == report[field], "diagnostic-process-material-association")
+        key = "requirementsDigest" if exported is not None and field == "deferredHttpRequirementsDigest" else field
+        require(identity.get(key) == report[field], "diagnostic-process-material-association")
     closure = files["compiler-inputs.json"]
-    require(receipt.get("compilerClosure") == {"bytes": len(closure), "sha256": digest(closure)},
+    require((receipt.get("compilerClosure") == {"bytes": len(closure), "sha256": digest(closure)}
+             if exported is None else identity.get("compilerInputsDigest") == digest(closure)),
             "original-diagnostic-compiler-closure")
     profile = decode(project["transaction-profile.json"])
     require(profile.get("hostAbiDigest") == report.get("hostAbiDigest"), "diagnostic-actual-abi-association")
@@ -170,6 +210,8 @@ def validate(files, receipt_raw, selected):
             and len(imports) == len(set(imports)) and REQUIRED_IMPORTS <= set(imports)
             and set(imports) <= REQUIRED_IMPORTS | {"latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0"},
             "diagnostic-provider-free-command-imports")
+    if exported is not None:
+        require(imports == identity["actualImports"], "original-export-compiled-import-association")
     project_value = decode(project["capsule-project.json"])
     limits = project_value.get("limits")
     require(isinstance(limits, dict) and set(limits) == set(LIMITS)
@@ -187,6 +229,8 @@ def load(args, output):
     if selected is None:
         return None
     require(output.is_absolute() and not output.is_symlink(), "private-retained-diagnostic-root")
+    if "diagnostic_export_root" in selected:
+        return load_export(selected, output)
     capture = read_file(Path(selected["diagnostic_capture"]), 64 * 1024 * 1024)
     receipt = read_file(Path(selected["diagnostic_receipt"]), 262144)
     require(digest(capture) == selected["diagnostic_capture_digest"]
@@ -214,6 +258,39 @@ def load(args, output):
                      ("report.json", files["report.json"]), ("source-inputs.json", files["source-inputs.json"]),
                      ("source.tar.gz", files["source.tar.gz"]), ("recipe-inputs.json", files["recipe-inputs.json"]),
                      ("compiler-inputs.json", files["compiler-inputs.json"]))), "retained-diagnostic-evidence-drift")
+    item = ComponentInput(NAME, output, report["componentDigest"], report["companionDigest"], report["sourceDigest"],
+                          report["sourceRevision"], report["hostAbiDigest"], report["deferredHttpRequirementsDigest"])
+    return DiagnosticInput(item, selectors, selected, digest(files["report.json"]))
+
+
+def load_export(selected, output):
+    """Keep the original pre-export receipt and separately verified availability."""
+    exported = compiler_exports.load(Path(selected["diagnostic_export_root"]),
+        Path(selected["diagnostic_receipt"]), selected["diagnostic_receipt_digest"],
+        Path(selected["diagnostic_export_receipt"]), selected["diagnostic_export_receipt_digest"],
+        Path(selected["diagnostic_export_census"]), selected["diagnostic_export_census_digest"],
+        selected["diagnostic_source_commit"], NAME)
+    files = exported.files
+    report, selectors = validate(files, exported.process, selected, exported)
+    retained = {name: files[name] for name in ("report.json", "source-inputs.json", "source.tar.gz",
+                                             "recipe-inputs.json", "compiler-inputs.json")}
+    retained.update({name: raw for name, raw in files.items() if name.startswith("project/")})
+    retained.update({"component.wasm": files["compiled/component.wasm"],
+        "compiler-process-receipt.json": exported.process, "verified-export-receipt.json": exported.seal,
+        "original-export-census.json": exported.census})
+    if not output.exists():
+        output.mkdir(mode=0o700)
+        for name, raw in retained.items():
+            path = output / name
+            path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            with path.open("xb") as target:
+                target.write(raw)
+            path.chmod(0o600)
+    for name, raw in retained.items():
+        require(read_file(output / name, compiler_exports.MAX_FILE_BYTES) == raw,
+                "retained-original-export-diagnostic-drift")
+    require(inventory(snapshot(output / "project")) == files["source-inputs.json"],
+            "retained-original-export-project-drift")
     item = ComponentInput(NAME, output, report["componentDigest"], report["companionDigest"], report["sourceDigest"],
                           report["sourceRevision"], report["hostAbiDigest"], report["deferredHttpRequirementsDigest"])
     return DiagnosticInput(item, selectors, selected, digest(files["report.json"]))
