@@ -1,5 +1,9 @@
 {
   "cases": [
+    "InspectionLeaseOracle.test_changed_retained_inspection_never_uses_elapsed_lease_as_current_authority",
+    "InspectionLeaseOracle.test_inspection_lease_refuses_insufficient_original_deadline_without_starting_again",
+    "InspectionLeaseOracle.test_original_provisioning_waits_for_the_new_inspection_floor_before_its_next_start",
+    "InspectionLeaseOracle.test_original_retained_resume_waits_for_inspection_before_reopening_its_same_owner",
     "NativeCloseActionOracle.test_existing_native_close_actions_preserve_original_plan_ack_and_paused_outcome",
     "NativeCloseActionOracle.test_native_close_collection_refuses_unknown_actions_grants_and_unbounded_selection",
     "NativeCloseActionOracle.test_native_close_receipt_cannot_infer_remote_success_refresh_plan_or_advance_original_time",
@@ -103,6 +107,54 @@
       "fixtureGuards": [
         "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
         "class:setup-sha256:51d85aee0f126afb167d2e39932611f9520073ceba5b5d93c1f6d1a7ace9bb92"
+      ]
+    },
+    "InspectionLeaseOracle.test_original_provisioning_waits_for_the_new_inspection_floor_before_its_next_start": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:21f08b20ec565f097b83be28711a7de512f3fb02048c268ddf2bcfcc0765f5b3"
+      ]
+    },
+    "InspectionLeaseOracle.test_original_retained_resume_waits_for_inspection_before_reopening_its_same_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:21f08b20ec565f097b83be28711a7de512f3fb02048c268ddf2bcfcc0765f5b3"
+      ]
+    },
+    "InspectionLeaseOracle.test_inspection_lease_refuses_insufficient_original_deadline_without_starting_again": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:21f08b20ec565f097b83be28711a7de512f3fb02048c268ddf2bcfcc0765f5b3"
+      ]
+    },
+    "InspectionLeaseOracle.test_changed_retained_inspection_never_uses_elapsed_lease_as_current_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:21f08b20ec565f097b83be28711a7de512f3fb02048c268ddf2bcfcc0765f5b3"
       ]
     },
     "NativeRecoveryOracle.test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement": {
@@ -252,6 +304,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_recovery.py",
-  "reviewReason": "Preserve all seven original closed receipt and retirement cases; add five source-only original-generation, snapshot attribution, scoped epoch, deliberate root selection and coherent native input refusal cases.; add four closed native reconciliation collector oracles without changing any prior case or execution guard; retain every prior body and guard; add explicit current unresolved-workflow/source-pair and tampered-selection refusal oracles",
+  "reviewReason": "Preserve all seven original closed receipt and retirement cases; add five source-only original-generation, snapshot attribution, scoped epoch, deliberate root selection and coherent native input refusal cases.; add four closed native reconciliation collector oracles without changing any prior case or execution guard; retain every prior body and guard; add explicit current unresolved-workflow/source-pair and tampered-selection refusal oracles; retain every prior body and guard; add original provisioning/resume inspection-floor order and bounded-deadline/current-profile refusal oracles",
   "schemaVersion": "latent.ci.contracts.v1"
 }

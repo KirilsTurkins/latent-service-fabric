@@ -182,6 +182,113 @@ class OptionalRecoveryWorkflowOracle(unittest.TestCase):
                     runner.current_mode(args)
 
 
+class InspectionLeaseOracle(unittest.TestCase):
+    """Controlled clock/order oracles, never native startup or grant evidence."""
+
+    @staticmethod
+    def fixture(root, deadline=100, changed_hosts=False):
+        from contextlib import ExitStack
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import run_java_transaction_http_qualification as runner
+        from tools.java_transaction_qualification import lifecycle
+        clock = {"now": 0.0, "restartNotBefore": 0.0}
+        events = []
+        original_hosts = {"original": "captured-native-profile"}
+
+        def start(_path):
+            if clock["now"] < clock["restartNotBefore"]:
+                raise AssertionError("restart-before-original-inspection-floor")
+            events.append("start")
+
+        def inspect(*_args, **_kwargs):
+            events.append("inspection")
+            clock["restartNotBefore"] = clock["now"] + 5
+            return SimpleNamespace(value={"changed": "profile"} if changed_hosts else original_hosts)
+
+        def sleep(interval):
+            events.append("lease")
+            clock["now"] += interval
+
+        client = SimpleNamespace(deadline=deadline, cancellation=SimpleNamespace(check=lambda: None),
+            evidence=SimpleNamespace(record=lambda *_: None))
+        node = SimpleNamespace(start=start, stop=lambda: events.append("stop"))
+        configuration = SimpleNamespace(path=root / "bootstrap.json", authority="localhost:1",
+            selected=lambda *_args, **_kwargs: root / "full.json")
+        args = SimpleNamespace(node=root / "observed-node", peer=SimpleNamespace(incarnation="original-peer"),
+                               items=(SimpleNamespace(name="put-once-legacy-v1"),))
+        stack = ExitStack()
+        stack.enter_context(patch.object(lifecycle.time, "monotonic", lambda: clock["now"]))
+        stack.enter_context(patch.object(lifecycle.time, "sleep", sleep))
+        stack.enter_context(patch.object(lifecycle, "inspect", inspect))
+        stack.enter_context(patch.object(lifecycle, "publish", lambda *_: {"put-once-legacy-v1": "original-publication"}))
+        stack.enter_context(patch.object(lifecycle, "create_namespace", lambda *_: None))
+        stack.enter_context(patch.object(runner.cfg, "installed", lambda *_: []))
+        stack.enter_context(patch.object(runner.policies, "documents", lambda *_args, **_kwargs: {"original": "proposal"}))
+        stack.enter_context(patch.object(runner.policies, "apply", lambda *_: {"synthetic": "receipt"}))
+        stack.enter_context(patch.object(runner.policies, "apply_retained", lambda *_: {"synthetic": "receipt"}))
+        stack.enter_context(patch.object(runner.staging, "catalog", lambda *_: {"original": "catalog"}))
+        return stack, runner, client, node, configuration, args, events, clock, original_hosts
+
+    def test_original_provisioning_waits_for_the_new_inspection_floor_before_its_next_start(self):
+        from pathlib import Path
+        import tempfile
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            stack, runner, client, node, config, args, events, clock, _ = self.fixture(root)
+            with stack:
+                runner.provision(client, args, root / "signed", args.items, args.peer, config, node)
+            self.assertEqual(events.count("inspection"), 1)
+            self.assertEqual(events.count("start"), 3)
+            inspected = events.index("inspection")
+            following_start = events.index("start", inspected)
+            self.assertTrue(all(value == "lease" for value in events[inspected + 1:following_start]))
+            self.assertGreaterEqual(clock["now"], clock["restartNotBefore"])
+
+    def test_original_retained_resume_waits_for_inspection_before_reopening_its_same_owner(self):
+        from pathlib import Path
+        import tempfile
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            full = root / "full.json"
+            full.write_text(json.dumps({"state": {"operations": []}}))
+            stack, runner, client, node, config, args, events, clock, hosts = self.fixture(root)
+            prepared = {"hosts": hosts, "catalog": {"original": "catalog"},
+                        "publications": {}, "proposals": {}, "mutations": {}}
+            with stack:
+                runner.resume_authority(client, args, config, node, full, prepared)
+            self.assertEqual(events[0], "inspection")
+            self.assertEqual(events.count("start"), 2)
+            self.assertTrue(all(value == "lease" for value in events[1:events.index("start")]))
+            self.assertGreaterEqual(clock["now"], clock["restartNotBefore"])
+
+    def test_inspection_lease_refuses_insufficient_original_deadline_without_starting_again(self):
+        from pathlib import Path
+        import tempfile
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            stack, runner, client, node, config, args, events, _clock, _ = self.fixture(root, deadline=8)
+            with stack, self.assertRaisesRegex(ValueError, "original-admission-lease-interval"):
+                runner.provision(client, args, root / "signed", args.items, args.peer, config, node)
+            self.assertEqual(events.count("start"), 1)
+            self.assertEqual(events[-1], "inspection")
+            self.assertEqual(client.deadline, 8)
+
+    def test_changed_retained_inspection_never_uses_elapsed_lease_as_current_authority(self):
+        from pathlib import Path
+        import tempfile
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            full = root / "full.json"
+            full.write_text(json.dumps({"state": {"operations": []}}))
+            stack, runner, client, node, config, args, events, clock, _ = self.fixture(root, changed_hosts=True)
+            prepared = {"hosts": {"original": "captured-native-profile"}}
+            with stack, self.assertRaisesRegex(ValueError, "original-native-profile-drift"):
+                runner.resume_authority(client, args, config, node, full, prepared)
+            self.assertEqual(events, ["inspection"])
+            self.assertEqual(clock["now"], 0)
+
+
 class NativeRecoveryOracle(unittest.TestCase):
     def test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement(self):
         from types import SimpleNamespace

@@ -183,6 +183,7 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     diagnostic = any(item.name == diagnostic_inputs.NAME for item in items)
     full_path = configuration.selected(configuration.path.parent / "installed-node.json", operations, diagnostic=diagnostic)
     hosts = lifecycle.inspect(client, args.node, full_path, operations)
+    lifecycle.admission_lease_interval(client)
     proposals = policies.documents(hosts, publications, diagnostic=diagnostic)
     client.evidence.record("actual-native-hosts", hosts.value)
     client.evidence.record("reviewed-policy-proposals", proposals)
@@ -216,6 +217,7 @@ def resume_authority(client, args, configuration, node, full_path, prepared):
     hosts = lifecycle.inspect(client, args.node, full_path, read_json(full_path)["state"]["operations"],
                               stage="transaction-host-recheck")
     inputs.require(hosts.value == prepared["hosts"], "original-native-profile-drift")
+    lifecycle.admission_lease_interval(client)
     node.start(configuration.path)
     inputs.require(staging.catalog(client, prepared["publications"]) == prepared["catalog"],
                    "original-current-catalog-drift")
