@@ -405,12 +405,14 @@ class CatalogAndOrderingOracle(unittest.TestCase):
                     patches.enter_context(patch.object(conductor.lifecycle, "inspect", return_value=SimpleNamespace(
                         value={"profile": "changed"} if change == "profile" else prepared["hosts"])))
                     patches.enter_context(patch.object(staging, "catalog", return_value={"generation": "changed"}))
+                    lease = patches.enter_context(patch.object(conductor.lifecycle, "admission_lease_interval"))
                     apply = patches.enter_context(patch.object(conductor.policies, "apply_retained"))
                     with self.assertRaises(ValueError):
                         conductor.resume_authority(SimpleNamespace(), SimpleNamespace(node="native-source-only"),
                             SimpleNamespace(path=root / "bootstrap.json"), node, full, prepared)
                     apply.assert_not_called()
                     self.assertEqual(len(events), 0 if change == "profile" else 1)
+                    self.assertEqual(lease.call_count, 0 if change == "profile" else 1)
 
     def test_resume_applies_same_proposal_object_only_after_original_read_fences(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -440,7 +442,7 @@ class CatalogAndOrderingOracle(unittest.TestCase):
                                                   side_effect=lambda _: events.append(("original-lease",))))
                 result = conductor.resume_authority(client, SimpleNamespace(node="native-source-only"),
                     SimpleNamespace(path=root / "bootstrap.json"), node, full, prepared)
-            self.assertEqual([row[0] for row in events], ["inspect", "start", "catalog", "apply", "stop", "original-lease", "start"])
+            self.assertEqual([row[0] for row in events], ["inspect", "original-lease", "start", "catalog", "apply", "stop", "original-lease", "start"])
             self.assertEqual(result, {"sourceOnly": "mutation callback observed"})
             self.assertEqual(prepared["proposals"], {"reviewedBytes": "original"})
 
