@@ -1,0 +1,23 @@
+[
+  {
+    "run": 37755336245,
+    "id": 11541328334,
+    "name": "developer-linux-candidate-37b48cd8e485a826cd87e23aea184d99c17e4731",
+    "size_in_bytes": 34703338,
+    "expired": false
+  },
+  {
+    "run": 37755336245,
+    "id": 11540193329,
+    "name": "developer-java-tools-candidate-37b48cd8e485a826cd87e23aea184d99c17e4731",
+    "size_in_bytes": 516486081,
+    "expired": false
+  },
+  {
+    "run": 37755350322,
+    "id": 11540222831,
+    "name": "native-runtime-candidate-development-test-37b48cd8e485a826cd87e23aea184d99c17e4731",
+    "size_in_bytes": 31761365,
+    "expired": false
+  }
+]

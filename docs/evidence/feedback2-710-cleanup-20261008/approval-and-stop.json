@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "latent.feedback2.packaged710.approval-handoff.v1",
+  "sourceCommit": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "policySha256": "4ab98c833153bd9d9bb349a05aaa688f0d87394b8fb5afcdf185a158d1188658",
+  "userDecision": "Approve these exact policies and environments",
+  "approvalReceived": true,
+  "executionDispatched": false,
+  "stopInstructionReceivedBeforeDispatch": true,
+  "platform": "java-composition",
+  "java_diagnostics": false,
+  "developerRun": 37755336245,
+  "runtimeRun": 37755350322
+}
