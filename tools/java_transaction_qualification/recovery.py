@@ -12,7 +12,7 @@ from .inputs import decode, require
 REPORT_FIELDS = {"schemaVersion", "operationSucceeded", "failure", "result", "retirement", "catalogsRetired"}
 RETIREMENT_FIELDS = {"clean", "physicallyRetired", "liveWorkers", "acceptedJobs", "threadsJoined"}
 ACTIONS = {"snapshot", "inspect-namespace", "inspect-restore", "restore", "stage-migration",
-           "complete-migration", "review", "resume"}
+           "complete-migration", "review", "resume", "inspect-close-effects", "close-effects"}
 FAILURES = {"configuration", "busy", "destination", "input", "review", "target", "protected"}
 FAILURE_REASONS = {
     "platform": {"unavailable", "deadline-exceeded", "cancelled", "resource-exhausted", "permission-denied",
@@ -141,6 +141,9 @@ class Recovery:
                 and isinstance(request, dict) and request.get("action") in ACTIONS
                 and not ({"approved", "grant", "deadline", "continuity"} & set(request)),
                 "closed-native-recovery-action-data")
+        if request["action"] in {"inspect-close-effects", "close-effects"}:
+            from . import recovery_close
+            recovery_close.request(request)
         raw = encoded({"publication": publication, "request": request})
         require(len(raw) <= 16384, "original-native-recovery-input-bound")
         self.calls += 1
@@ -153,5 +156,7 @@ class Recovery:
         result = report(native(self.client, self.helper, stage, "--config", configuration,
             "--credential-file", self.credential, "--tenant", cfg.TENANT, "--request-file", path,
             timeout=90))
+        if result["operationSucceeded"] and request["action"] in {"inspect-close-effects", "close-effects"}:
+            recovery_close.result(request, result["result"])
         self.client.evidence.record(stage + "-report", result)
         return result
