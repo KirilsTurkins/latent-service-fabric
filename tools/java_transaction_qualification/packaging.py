@@ -164,10 +164,11 @@ def package_current(selections, output: Path, contracts_tool: Path, signer: Path
             and len({item.compiler_source for item in items}) == 1
             and {"aggregate", "forbidden-http"} <= {item.name for item in items},
             "distinct-current-java-original-and-negative-selection")
-    return _package_items(items, output, contracts_tool, signer, timeout=timeout)
+    return _package_items(items, output, contracts_tool, signer, timeout=timeout,
+                          compiler_source=items[0].compiler_source)
 
 
-def _package_items(items, output, contracts_tool, signer, *, timeout):
+def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_source=None):
     require(type(timeout) is int and 0 < timeout <= 1800, "original-packaging-deadline")
     output = fresh(output)
     command = Commands(output, output, build_environment(output), deadline_seconds=timeout, command_seconds=min(timeout,600))
@@ -183,7 +184,9 @@ def _package_items(items, output, contracts_tool, signer, *, timeout):
             else:
                 prepare(item, output / item.name, contracts_tool, signer, command)
         accepted = [item for item in items if item.name != "forbidden-http"]
-        command.run("fixture-sign-java-inputs", signer, "fixture-sign-java-inputs", output / "signed", *[output / item.name for item in accepted])
+        mode = "fixture-sign-java-inputs" if compiler_source is None else "fixture-sign-current-java-inputs"
+        arguments = [] if compiler_source is None else [compiler_source]
+        command.run(mode, signer, mode, output / "signed", *arguments, *[output / item.name for item in accepted])
         signed = decode(read_file(output / "signed/release-set.json"))
         require(signed["schemaVersion"] == "latent.component.signing-fixture.v1"
                 and signed["trust"] == "ephemeral-native-package-test-only", "explicit-fixture-trust-required")

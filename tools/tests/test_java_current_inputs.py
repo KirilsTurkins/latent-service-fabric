@@ -87,6 +87,21 @@ class CurrentJavaInputs(unittest.TestCase):
 
 
 class CurrentJavaPackaging(unittest.TestCase):
+    def test_current_package_selects_explicit_compiler_source_without_historical_fallback(self):
+        from pathlib import Path
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        from tools.java_transaction_qualification.inputs import ComponentInput
+        _, selected = fixture()
+        first = ComponentInput("aggregate", Path("one"), "sha256:" + "1" * 64, "companion", "source", "1" * 40, "abi", None)
+        negative = replace(first, name="forbidden-http", directory=Path("two"), component_digest="sha256:" + "2" * 64)
+        choices = ((Path("one"), selected), (Path("two"), replace(selected, variant="forbidden-http")))
+        with patch.object(current, "load_current", side_effect=(first, negative)), \
+                patch.object(packaging, "_package_items", return_value=Path("signed")) as signer:
+            self.assertEqual(packaging.package_current(choices, Path("output"), Path("contracts"), Path("signer")), Path("signed"))
+        signer.assert_called_once_with((first, negative), Path("output"), Path("contracts"), Path("signer"),
+                                       timeout=600, compiler_source="1" * 40)
+
     def test_current_selection_requires_both_original_and_forbidden_before_any_signing(self):
         from pathlib import Path
         from unittest.mock import patch
