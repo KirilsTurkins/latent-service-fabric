@@ -3051,6 +3051,7 @@
         "journal::tests::tree::cursor_freezes_membership_and_is_bound_to_tenant_anchor_and_journal",
         "journal::tests::tree::failed_preparation_child_is_visible_before_any_guest_or_capability_event",
         "journal::tests::tree::forged_lineage_and_cross_tenant_parent_reject_before_registration",
+        "journal::tests::tree::mapped_codec_trap_retains_terminal_observation_and_consumption_in_the_tree",
         "journal::tests::tree::retention_removes_index_entries_and_explains_expired_anchor_without_certifying_absence",
         "journal::tests::tree::root_discovery_is_scoped_bounded_filtered_and_keeps_one_serial_horizon",
         "journal::tests::tree::target_service_projection_preserves_identity_and_original_identifier_and_page_limits",
@@ -3074,7 +3075,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 106,
+      "minimumCases": 108,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -6718,7 +6719,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 352,
+      "minimumCases": 353,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
