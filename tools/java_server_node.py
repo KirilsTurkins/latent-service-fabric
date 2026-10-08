@@ -274,7 +274,7 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
                 write_json(evidence / ("route-control-" + str(value["call"]) + ".json"), value)
 
             route_cli = ObservedRouteClient(binary, client.config, root / "routes", deadline=client.deadline,
-                                            observer=observe_route_call, evidence=evidence)
+                                            evidence=evidence, observer=observe_route_call)
             selected = server_routes.observed_pin(route_cli, "examples", deployed["name"], record["componentDigest"])
             mounts = {"schemaVersion": server_source.CONFIGURATION, "profileDigest": digest(profile), "mounts": [{
                 "endpoint": "server", "name": "java-server", "scheme": scheme, "host": "java.server.test", "path": "/",
