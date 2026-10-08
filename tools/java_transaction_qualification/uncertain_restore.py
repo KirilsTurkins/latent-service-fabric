@@ -30,8 +30,15 @@ class UncertainRestoreCampaign(OfflineCampaign):
         campaign = self.campaign
         _before, aggregate = campaign.query(count)
         mode = campaign.peer.directory / "mode"
-        require(not mode.exists() and not mode.is_symlink(), "exclusive-original-recipient-mode")
-        provider.private_write(mode, b"accept-ambiguous")
+        require(not mode.is_symlink() and provider.mode(campaign.peer.directory) == "reply",
+                "original-recipient-reply-mode-before-unresolved-restore")
+        if mode.exists():
+            # The maintained base campaign owns this existing fault selector;
+            # preserve its real recipient and change only the deliberate fault.
+            with mode.open("wb") as output:
+                output.write(b"accept-ambiguous")
+        else:
+            provider.private_write(mode, b"accept-ambiguous")
         key = "java-remote-applied-before-unresolved-restore"
         committed = campaign.result(campaign.socket("command", original_key=key,
             body=command_input(1), condition=precondition(aggregate)))
@@ -42,10 +49,13 @@ class UncertainRestoreCampaign(OfflineCampaign):
             "EFFECT_DISPOSITION_UNCERTAIN_AFTER_DISPATCH")
         effect = committed["effect-ids"][0]
         remote = campaign.peer_record(effect)
-        observed_remote = self.recipient("unresolved-before-snapshot")
-        require(remote["state"] == "applied" and observed_remote["appliedRecords"] >= 1,
+        require(remote["state"] == "applied",
                 "actual-recipient-mutation-with-original-lost-reply")
         self.quiesce(self.publication, "java-unresolved-restore-quiesce")
+        # Counter observations become stable only after actual node retirement.
+        observed_remote = self.recipient("unresolved-before-snapshot")
+        require(observed_remote["appliedRecords"] >= 1,
+                "actual-recipient-mutation-retained-after-quiesced-retirement")
         file, snapshot = self.snapshot("unresolved-effect.snapshot", "java-unresolved-effect-backup")
         settings = read_json(self.configuration)
         destination = self.directory / "restored-unresolved-state"

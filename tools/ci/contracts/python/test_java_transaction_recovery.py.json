@@ -15,7 +15,10 @@
     "NativeRecoveryOracle.test_report_refuses_approval_fields_booleans_as_counts_and_duplicate_json_fields",
     "NativeRecoveryOracle.test_restored_selection_retains_catalogs_credentials_clock_and_quotas_without_mutating_original",
     "NativeRecoveryOracle.test_snapshot_keeps_original_native_manifest_and_refuses_changed_actor_scope_and_approval",
-    "NativeRecoveryOracle.test_success_receipt_requires_actual_physical_and_catalog_retirement"
+    "NativeRecoveryOracle.test_success_receipt_requires_actual_physical_and_catalog_retirement",
+    "OptionalRecoveryWorkflowOracle.test_current_unresolved_selection_refuses_changed_document_schema_and_inferred_approval",
+    "OptionalRecoveryWorkflowOracle.test_default_workflow_preserves_optional_helper_and_original_candidate_modes",
+    "OptionalRecoveryWorkflowOracle.test_unresolved_workflow_requires_current_inputs_paired_native_source_and_no_retained_candidate"
   ],
   "guards": {
     "NativeCloseActionOracle.test_existing_native_close_actions_preserve_original_plan_ack_and_paused_outcome": {
@@ -64,6 +67,42 @@
       "fixtureGuards": [
         "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
         "class:setup-sha256:ccc8e6367da6124e53ce55f8319e93e6ef1a170ecc534e8c58a6773d16b97a21"
+      ]
+    },
+    "OptionalRecoveryWorkflowOracle.test_default_workflow_preserves_optional_helper_and_original_candidate_modes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:51d85aee0f126afb167d2e39932611f9520073ceba5b5d93c1f6d1a7ace9bb92"
+      ]
+    },
+    "OptionalRecoveryWorkflowOracle.test_unresolved_workflow_requires_current_inputs_paired_native_source_and_no_retained_candidate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:51d85aee0f126afb167d2e39932611f9520073ceba5b5d93c1f6d1a7ace9bb92"
+      ]
+    },
+    "OptionalRecoveryWorkflowOracle.test_current_unresolved_selection_refuses_changed_document_schema_and_inferred_approval": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:51d85aee0f126afb167d2e39932611f9520073ceba5b5d93c1f6d1a7ace9bb92"
       ]
     },
     "NativeRecoveryOracle.test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement": {
@@ -213,6 +252,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_recovery.py",
-  "reviewReason": "Preserve all seven original closed receipt and retirement cases; add five source-only original-generation, snapshot attribution, scoped epoch, deliberate root selection and coherent native input refusal cases.; add four closed native reconciliation collector oracles without changing any prior case or execution guard",
+  "reviewReason": "Preserve all seven original closed receipt and retirement cases; add five source-only original-generation, snapshot attribution, scoped epoch, deliberate root selection and coherent native input refusal cases.; add four closed native reconciliation collector oracles without changing any prior case or execution guard; retain every prior body and guard; add explicit current unresolved-workflow/source-pair and tampered-selection refusal oracles",
   "schemaVersion": "latent.ci.contracts.v1"
 }

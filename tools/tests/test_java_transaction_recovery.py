@@ -110,6 +110,78 @@ class NativeCloseActionOracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 recovery_close.result(close, invalid)
 
+class OptionalRecoveryWorkflowOracle(unittest.TestCase):
+    """Explicit selection oracles; helper files and digests grant no authority."""
+
+    @staticmethod
+    def arguments(helper, root):
+        from types import SimpleNamespace
+        return SimpleNamespace(recovery_workflow="unresolved-effect-close", recovery_helper=helper,
+            recovery_source_commit="a" * 40, native_source_commit="a" * 40,
+            current_selections=root / "selected.json", current_selections_digest="sha256:" + "b" * 64,
+            portable=root, prepare_authority_only=False, resume_candidate=None)
+
+    def test_default_workflow_preserves_optional_helper_and_original_candidate_modes(self):
+        from types import SimpleNamespace
+        from tools import run_java_transaction_http_qualification as runner
+        for selected in (SimpleNamespace(), SimpleNamespace(recovery_workflow="schema-terminal"),
+                         SimpleNamespace(prepare_authority_only=True), SimpleNamespace(resume_candidate="original")):
+            self.assertEqual(runner.validate_recovery_workflow(selected), "schema-terminal")
+        for selected in (None, True, "retry", "resume", [], {"approved": True}):
+            with self.subTest(selected=selected), self.assertRaises(ValueError):
+                runner.validate_recovery_workflow(SimpleNamespace(recovery_workflow=selected))
+
+    def test_unresolved_workflow_requires_current_inputs_paired_native_source_and_no_retained_candidate(self):
+        from pathlib import Path
+        import tempfile
+        from types import SimpleNamespace
+        from tools import run_java_transaction_http_qualification as runner
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            helper = root / "observed-helper"
+            helper.write_bytes(b"synthetic selection oracle, not a native executable receipt")
+            original = self.arguments(helper, root)
+            self.assertEqual(runner.validate_recovery_workflow(original), "unresolved-effect-close")
+            for changed in ({"recovery_helper": None}, {"recovery_source_commit": None},
+                            {"native_source_commit": "c" * 40}, {"current_selections": None},
+                            {"current_selections_digest": "sha256:" + "B" * 64},
+                            {"current_selections_digest": True}, {"prepare_authority_only": True},
+                            {"resume_candidate": root / "historical-candidate"}, {"diagnostic_capture": root}):
+                with self.subTest(changed=changed), self.assertRaises(ValueError):
+                    runner.validate_recovery_workflow(SimpleNamespace(**(vars(original) | changed)))
+
+    def test_current_unresolved_selection_refuses_changed_document_schema_and_inferred_approval(self):
+        from pathlib import Path
+        import tempfile
+        from tools import run_java_transaction_http_qualification as runner
+        from tools.java_transaction_qualification import current_campaign, inputs
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            helper = root / "observed-helper"
+            helper.write_bytes(b"synthetic selection oracle, not native execution")
+            args = self.arguments(helper, root)
+            original = {"schemaVersion": "latent.java.current-campaign-selections.v1", "selections": [
+                {"sourceCommit": "a" * 40, "variant": name, "reportDigest": "sha256:" + "b" * 64,
+                 "componentDigest": "sha256:" + format(index + 1, "064x"),
+                 "compilerInputsDigest": "sha256:" + "c" * 64}
+                for index, name in enumerate(current_campaign.NAMES)]}
+            raw = json.dumps(original, separators=(",", ":")).encode()
+            args.current_selections.write_bytes(raw)
+            args.current_selections_digest = inputs.digest(raw)
+            runner.current_mode(args)
+            self.assertEqual(runner.validate_recovery_workflow(args), "unresolved-effect-close")
+            args.current_selections.write_bytes(raw + b" ")
+            with self.assertRaises(ValueError):
+                runner.current_mode(args)
+            for changed in ({"schemaVersion": "unknown"}, {"approved": True},
+                            {"selections": original["selections"][:-1]}):
+                tampered = json.dumps(original | changed, separators=(",", ":")).encode()
+                args.current_selections.write_bytes(tampered)
+                args.current_selections_digest = inputs.digest(tampered)
+                with self.subTest(changed=changed), self.assertRaises(ValueError):
+                    runner.current_mode(args)
+
+
 class NativeRecoveryOracle(unittest.TestCase):
     def test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement(self):
         from types import SimpleNamespace

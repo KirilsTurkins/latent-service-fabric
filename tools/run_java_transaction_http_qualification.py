@@ -24,6 +24,7 @@ from tools.java_transaction_qualification import diagnostic_inputs
 from tools.java_transaction_qualification.campaign import Campaign
 from tools.java_transaction_qualification.evidence import Evidence, RecordingClient, native
 from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
+from tools.java_transaction_qualification.uncertain_restore import UncertainRestoreCampaign
 from tools.phase2_operator_process import bounded_receipt, read_json, write_json
 from tools.rust_capsule_project import fresh
 
@@ -39,7 +40,9 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/diagnostic_inputs.py",
     "tools/java_transaction_qualification/diagnostic_campaign.py",
     "tools/java_transaction_qualification/current_inputs.py",
-    "tools/java_transaction_qualification/current_campaign.py")
+    "tools/java_transaction_qualification/current_campaign.py",
+    "tools/java_transaction_qualification/recovery_close.py",
+    "tools/java_transaction_qualification/uncertain_restore.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
@@ -54,6 +57,8 @@ def parse():
     parser.add_argument("--conductor-source-commit", required=True, help="Separate frozen collector source identity")
     parser.add_argument("--recovery-helper", type=Path, help="Optional actual installed native recovery executable")
     parser.add_argument("--recovery-source-commit", help="Must match the original coherent native build source")
+    parser.add_argument("--recovery-workflow", choices=("schema-terminal", "unresolved-effect-close"),
+                        default="schema-terminal", help="Explicit native workflow; the default keeps the original schema and terminal-history sequence")
     parser.add_argument("--prepare-authority-only", action="store_true", help="Stop before candidate policy mutations")
     parser.add_argument("--resume-candidate", type=Path, help="Consume the exact stopped original candidate once")
     parser.add_argument("--candidate-digest", help="Exact retained candidate digest supplied after review")
@@ -79,6 +84,7 @@ def parse():
     diagnostic_inputs.selection(args)
     staging.mode(args)
     current_mode(args)
+    validate_recovery_workflow(args)
     return args
 
 
@@ -102,6 +108,24 @@ def recovery_input(args):
         inputs.require(path.is_absolute() and path.is_file() and not path.is_symlink()
                        and args.recovery_source_commit == args.native_source_commit,
                        "coherent-original-native-recovery-source-required")
+
+
+def validate_recovery_workflow(args):
+    selected = getattr(args, "recovery_workflow", "schema-terminal")
+    inputs.require(isinstance(selected, str) and selected in {"schema-terminal", "unresolved-effect-close"},
+                   "unknown-native-recovery-workflow")
+    if selected == "unresolved-effect-close":
+        recovery_input(args)
+        selection_digest = getattr(args, "current_selections_digest", None)
+        inputs.require(args.recovery_helper is not None
+                       and getattr(args, "current_selections", None) is not None
+                       and isinstance(selection_digest, str)
+                       and re.fullmatch(r"sha256:[0-9a-f]{64}", selection_digest)
+                       and not getattr(args, "prepare_authority_only", False)
+                       and getattr(args, "resume_candidate", None) is None
+                       and all(getattr(args, name, None) is None for name in diagnostic_inputs.ARGUMENTS),
+                       "explicit-current-unresolved-restore-inputs-required")
+    return selected
 
 
 def tool_identity(args):
@@ -212,7 +236,13 @@ def execute_campaign(client, args, work, record, configuration, node, peer,
     record["campaign"] = campaign.execute()
     for name in record["campaign"].get("qualifiedDiagnosticScenarios", []):
         record["remainingScenarios"].remove(name)
-    if args.recovery_helper is not None:
+    if validate_recovery_workflow(args) == "unresolved-effect-close":
+        # The base campaign finishes on its actual compatible publication at
+        # count four. The explicit follow-up retains that same signed owner.
+        record["unresolvedEffectRestore"] = UncertainRestoreCampaign(
+            campaign, args.recovery_helper, work / "unresolved-effect-recovery",
+            "put-once-compatible-v2").execute(4)
+    elif args.recovery_helper is not None:
         record["offlineCampaign"] = OfflineCampaign(campaign, args.recovery_helper, work / "offline-recovery").execute()
         record["remainingScenarios"].remove("reviewed-schema-and-restore-original-results")
     node.stop()
@@ -259,6 +289,7 @@ def recheck_inputs(args, work, record):
 
 
 def run(args):
+    validate_recovery_workflow(args)
     if args.resume_candidate is not None:
         return resume(args)
     work = fresh(args.output)
