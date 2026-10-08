@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+use latent_state::embedded::RowKey;
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 use std::fs::OpenOptions;
 
 use crate::payload::tests as payload_fixture;
@@ -6,6 +10,75 @@ use super::*;
 
 mod validation;
 
+<<<<<<< HEAD
+=======
+fn physical_dispatch_rows(store: &EmbeddedStore) -> Vec<(RowKey, Vec<u8>)> {
+    let view = store.snapshot().unwrap();
+    [
+        Family::Outbox,
+        Family::PayloadReference,
+        Family::Attempt,
+        Family::Maintenance,
+    ]
+    .into_iter()
+    .flat_map(|family| {
+        view.scan_after(family, b"", None, 64, 1024 * 1024)
+            .unwrap()
+            .rows
+    })
+    .collect()
+}
+
+#[test]
+fn original_native_claim_fence_rejection_preserves_due_payload_and_every_attempt_row() {
+    let fixture = Fixture::new();
+    let due = seed(fixture.store(), 'a');
+    let epoch = DispatchCatalog::begin_exclusive_epoch(fixture.store(), time(100), None).unwrap();
+    let before = physical_dispatch_rows(fixture.store());
+    assert!(matches!(
+        DispatchCatalog::claim_fenced(fixture.store(), epoch, &due, time(101), || Err(
+            AuthorityError::Expired
+        )),
+        Err(DispatchStoreError::Authority(AuthorityError::Expired))
+    ));
+    assert_eq!(physical_dispatch_rows(fixture.store()), before);
+    assert_eq!(record(fixture.store(), &due.effect).attempts(), 0);
+    let claim =
+        DispatchCatalog::claim_fenced(fixture.store(), epoch, &due, time(102), || Ok(())).unwrap();
+    assert_eq!(claim.attempt.attempt(), 1);
+}
+
+#[test]
+fn original_native_send_fence_rejection_never_publishes_a_send_marker_or_receipt() {
+    let fixture = Fixture::new();
+    let due = seed(fixture.store(), 'b');
+    let epoch = DispatchCatalog::begin_exclusive_epoch(fixture.store(), time(100), None).unwrap();
+    let claim = DispatchCatalog::claim(fixture.store(), epoch, &due, time(101)).unwrap();
+    let before = physical_dispatch_rows(fixture.store());
+    assert!(matches!(
+        DispatchCatalog::begin_send_fenced(
+            fixture.store(),
+            epoch,
+            &claim.attempt,
+            time(102),
+            || Err(AuthorityError::PolicyBlocked)
+        ),
+        Err(DispatchStoreError::Authority(AuthorityError::PolicyBlocked))
+    ));
+    assert_eq!(physical_dispatch_rows(fixture.store()), before);
+    assert!(!record(fixture.store(), &due.effect).send_started());
+    DispatchCatalog::begin_send_fenced(
+        fixture.store(),
+        epoch,
+        &claim.attempt,
+        time(103),
+        || Ok(()),
+    )
+    .unwrap();
+    assert!(record(fixture.store(), &due.effect).send_started());
+}
+
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 struct Fixture {
     directory: tempfile::TempDir,
     store: Option<EmbeddedStore>,
@@ -59,7 +132,10 @@ fn seed(store: &EmbeddedStore, identity: char) -> DueRecord {
         .apply(AtomicBatch {
             expectations: vec![],
             mutations: vec![
+<<<<<<< HEAD
                 namespace_mutation(authority.scope()),
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
                 RowMutation {
                     key: effect_row_key(payload.effect()).unwrap(),
                     value: Some(record.encode().unwrap()),
@@ -98,6 +174,7 @@ fn receipt(disposition: Disposition, now: u64) -> AttemptReceipt {
 }
 
 #[test]
+<<<<<<< HEAD
 fn paused_namespace_blocks_due_claim_and_actual_send_marker_without_changing_original_effect() {
     for sending in [false, true] {
         for changed in 0..3 {
@@ -174,6 +251,8 @@ fn paused_namespace_blocks_due_claim_and_actual_send_marker_without_changing_ori
 }
 
 #[test]
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 fn native_claim_send_complete_and_history_are_generation_cas_atomic() {
     let fixture = Fixture::new();
     let store = fixture.store();
@@ -490,7 +569,11 @@ fn accepted_attempt_reserves_disposition_bytes_and_actual_history_row_under_full
 
     let directory = tempfile::tempdir().unwrap();
     let limits = StoreLimits {
+<<<<<<< HEAD
         maximum_rows: 7,
+=======
+        maximum_rows: 6,
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         maximum_logical_bytes: 96 * 1024,
         ..StoreLimits::default()
     };
@@ -510,7 +593,11 @@ fn accepted_attempt_reserves_disposition_bytes_and_actual_history_row_under_full
     let claim = DispatchCatalog::claim(&store, epoch, &due, time(101)).unwrap();
     let view = store.snapshot().unwrap();
     let (rows, logical_bytes) = charged_usage(&view);
+<<<<<<< HEAD
     assert_eq!(rows, 6);
+=======
+    assert_eq!(rows, 5);
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     let history = DispatchCatalog::history_page(&view, &due.effect, None, 16, 4096).unwrap();
     assert!(history.rows.is_empty());
     assert_eq!(history.pending_slots, 1);
@@ -579,7 +666,10 @@ fn charged_usage(view: &ReadView) -> (usize, usize) {
     let mut logical_bytes = 0;
     let mut rows = 0;
     for family in [
+<<<<<<< HEAD
         Family::Namespace,
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         Family::Outbox,
         Family::PayloadReference,
         Family::Maintenance,
@@ -600,6 +690,7 @@ fn charged_usage(view: &ReadView) -> (usize, usize) {
     }
     (rows, logical_bytes)
 }
+<<<<<<< HEAD
 
 fn namespace_mutation(scope: &crate::authority::EffectScope) -> RowMutation {
     use latent_state::namespace::{namespace_record_key, NamespaceQuota, NamespaceRecord};
@@ -621,3 +712,5 @@ fn namespace_mutation(scope: &crate::authority::EffectScope) -> RowMutation {
         value: Some(record.encode().unwrap()),
     }
 }
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a

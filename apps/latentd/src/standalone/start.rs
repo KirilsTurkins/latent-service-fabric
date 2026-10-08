@@ -794,7 +794,10 @@ impl StandaloneNode {
             audit: None,
             rollouts: None,
             effects: None,
+<<<<<<< HEAD
             state: None,
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
             policies: None,
             providers: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),

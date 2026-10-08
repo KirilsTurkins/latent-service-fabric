@@ -1,0 +1,1 @@
+Cleanup snapshot of an unfinished historical Feedback2 merge. Conflict markers are intentionally retained. Do not merge this draft before resolving and validating the source. Original index stages and staged patch are retained for recovery.

@@ -3,10 +3,18 @@
 
 mod adapter;
 mod admission;
+<<<<<<< HEAD
+=======
+mod capacity;
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 mod config;
 pub mod control;
 mod driver;
 mod owner;
+<<<<<<< HEAD
+=======
+mod reconciliation;
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 mod state;
 mod store;
 mod worker;
@@ -21,6 +29,13 @@ pub use control::{
     PreparedDispatcherControl,
 };
 pub use owner::DispatcherOwner;
+<<<<<<< HEAD
+=======
+pub use reconciliation::{
+    ProviderConfirmation, ProviderReconciliationOutcome, ProviderReconciliationReason,
+    ProviderReconciliationRequest,
+};
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 pub use state::{DispatcherShutdown, DispatcherSnapshot};
 pub use store::{RequiredProfilePage, RequiredProfileRow};
 

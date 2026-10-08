@@ -60,7 +60,10 @@ pub struct StandaloneNode {
     http: Option<http::HttpOwner>,
     audit: Option<audit::AuditRuntime>,
     effects: Option<effects::EffectRuntime>,
+<<<<<<< HEAD
     state: Option<Arc<state::StateRuntime>>,
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     rollouts: Option<rollouts::RolloutRuntime>,
     policies: Option<policies::PolicyRuntime>,
     providers: Option<Box<providers::ProviderRuntime>>,

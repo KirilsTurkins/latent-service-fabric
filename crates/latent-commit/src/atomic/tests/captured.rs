@@ -31,7 +31,11 @@ fn publish(
     }) else {
         panic!("expected durable captured disposition");
     };
+<<<<<<< HEAD
     *command
+=======
+    command
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 }
 
 fn stored_effect(store: &EmbeddedStore, effect: &str) -> DurableEffectAuthority {

@@ -5,6 +5,10 @@ use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+<<<<<<< HEAD
+=======
+use latent_core::native_capacity::{NativeCapacityLimits, NativeCapacityOwner};
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 use latent_core::test_support::coordination::{
     with_watchdog, PauseTicket, PollProbe, Registration, Rendezvous, Stage, WATCHDOG,
 };
@@ -29,6 +33,10 @@ use crate::payload::{payload_digest, PayloadRecord};
 use super::*;
 
 mod admission;
+<<<<<<< HEAD
+=======
+mod capacity;
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 mod control;
 mod ownership;
 mod pressure;
@@ -56,10 +64,22 @@ struct Fixture {
     store: Arc<ProtectedStoreOwner>,
     authority: EffectAuthorityOwner,
     clock: Arc<Clock>,
+<<<<<<< HEAD
+=======
+    capacity: NativeCapacityOwner,
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 }
 
 impl Fixture {
     async fn new() -> Self {
+<<<<<<< HEAD
+=======
+        Self::with_capacity(NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap())
+            .await
+    }
+
+    async fn with_capacity(capacity: NativeCapacityOwner) -> Self {
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
@@ -67,6 +87,10 @@ impl Fixture {
         let mut config = ProtectedStoreConfig::bounded_linux(root.path().to_path_buf());
         config.create_if_missing = true;
         let store = Arc::new(Self::open(config.clone()).await);
+<<<<<<< HEAD
+=======
+        store.bind_native_capacity(&capacity).unwrap();
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         Self {
             _root: root,
             config,
@@ -76,6 +100,10 @@ impl Fixture {
                 millis: AtomicU64::new(100),
                 continuous: AtomicBool::new(true),
             }),
+<<<<<<< HEAD
+=======
+            capacity,
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         }
     }
 
@@ -123,7 +151,10 @@ impl Fixture {
             .apply(AtomicBatch {
                 expectations: vec![],
                 mutations: vec![
+<<<<<<< HEAD
                     namespace_mutation(authority.scope()),
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
                     RowMutation {
                         key: effect_row_key(payload.effect()).unwrap(),
                         value: Some(record.encode().unwrap()),
@@ -148,6 +179,23 @@ impl Fixture {
         adapters: Vec<Arc<dyn DeferredEffectAdapter>>,
         checkpoint: Option<(u64, u64)>,
     ) -> Result<DispatcherOwner, DispatcherError> {
+<<<<<<< HEAD
+=======
+        let owner = self.start_unbound(config, adapters, checkpoint).await?;
+        if !owner.snapshot()?.control.restore_review_required {
+            owner.bind_native_capacity(&self.capacity)?;
+        }
+        owner.wake();
+        Ok(owner)
+    }
+
+    async fn start_unbound(
+        &self,
+        config: DispatcherConfig,
+        adapters: Vec<Arc<dyn DeferredEffectAdapter>>,
+        checkpoint: Option<(u64, u64)>,
+    ) -> Result<DispatcherOwner, DispatcherError> {
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         DispatcherOwner::start(
             config,
             Arc::clone(&self.store),
@@ -279,6 +327,7 @@ impl DeferredEffectAdapter for Adapter {
         &self.profile
     }
 
+<<<<<<< HEAD
     fn with_current_dispatch(
         &self,
         _authority: &crate::authority::DurableEffectAuthority,
@@ -288,6 +337,8 @@ impl DeferredEffectAdapter for Adapter {
         accept()
     }
 
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     fn accept(
         &self,
         grant: DispatchGrant,
@@ -374,6 +425,7 @@ fn config() -> DispatcherConfig {
         ..DispatcherConfig::default()
     }
 }
+<<<<<<< HEAD
 
 fn namespace_mutation(scope: &crate::authority::EffectScope) -> RowMutation {
     use latent_state::namespace::{namespace_record_key, NamespaceQuota, NamespaceRecord};
@@ -395,3 +447,5 @@ fn namespace_mutation(scope: &crate::authority::EffectScope) -> RowMutation {
         value: Some(record.encode().unwrap()),
     }
 }
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a

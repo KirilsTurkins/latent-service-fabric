@@ -3,7 +3,11 @@ use std::time::Instant;
 
 use super::{
     NativeAdmissionClass, NativeBuffer, NativeBufferClass, NativeBufferPermit, NativeCapacityError,
+<<<<<<< HEAD
     NativeReservationRequest, Owner, MAXIMUM_NATIVE_BUFFER_GUARDS,
+=======
+    NativeCapacityOwner, NativeReservationRequest, Owner, MAXIMUM_NATIVE_BUFFER_GUARDS,
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 };
 
 #[derive(Default)]
@@ -62,6 +66,14 @@ impl NativeReservation {
     }
 
     #[must_use]
+<<<<<<< HEAD
+=======
+    pub fn is_from_owner(&self, owner: &NativeCapacityOwner) -> bool {
+        Arc::ptr_eq(&self.lease.owner, &owner.0)
+    }
+
+    #[must_use]
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     pub fn reserved_bytes(&self) -> u64 {
         self.lease.bytes
     }

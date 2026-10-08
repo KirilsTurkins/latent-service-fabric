@@ -54,6 +54,19 @@ impl EffectRuntime {
     pub fn command_admission_source(&self) -> CommandAdmissionSource {
         self.owner.command_admission_source()
     }
+<<<<<<< HEAD
+=======
+    /// Install the same global native owner used by transaction and management
+    /// admission before the first command captures this protected node role.
+    pub fn bind_native_capacity(
+        &self,
+        owner: &latent_core::native_capacity::NativeCapacityOwner,
+    ) -> Result<(), PlatformError> {
+        self.owner
+            .bind_native_capacity(owner)
+            .map_err(runtime_error)
+    }
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     pub fn command_admission(&self) -> Result<CommandAdmission, PlatformError> {
         self.owner.command_admission().map_err(runtime_error)
     }

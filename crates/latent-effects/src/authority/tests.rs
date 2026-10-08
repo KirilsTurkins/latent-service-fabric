@@ -1,6 +1,256 @@
 use super::*;
 
 #[test]
+<<<<<<< HEAD
+=======
+fn original_queued_deadline_narrows_context_and_grant_without_late_reopening() {
+    let (owner, _, authority) = setup();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    let original = context
+        .deadline()
+        .checked_sub(Duration::from_millis(1))
+        .unwrap();
+    context.restrict_deadline(original).unwrap();
+    context
+        .restrict_deadline(original + Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(context.deadline(), original);
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    assert!(grant.deadline() <= original);
+    assert_eq!(
+        context.restrict_deadline(original + Duration::from_secs(2)),
+        Err(AuthorityError::Stale)
+    );
+    context.retire().unwrap();
+    assert_eq!(grant.check_current(time(103)), Err(AuthorityError::Stale));
+    let mut expired = owner.accept(&authority, 1, time(104)).unwrap();
+    assert_eq!(
+        expired.restrict_deadline(Instant::now()),
+        Err(AuthorityError::Expired)
+    );
+    expired.retire().unwrap();
+    assert_eq!(owner.owners().unwrap().physical, 0);
+}
+
+mod lookup;
+
+#[test]
+fn unretired_provider_context_quarantines_original_global_capacity_after_all_grants_drop() {
+    use latent_core::native_capacity::{
+        NativeAdmissionClass, NativeCapacityLimits, NativeCapacityOwner, NativeReservationRequest,
+    };
+    let capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+    let original = Arc::new(
+        capacity
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    request_bytes: 1,
+                    work_bytes: 1,
+                    response_bytes: 1,
+                },
+                Instant::now() + Duration::from_secs(30),
+            )
+            .unwrap(),
+    );
+    let witness = Arc::downgrade(&original);
+    let (owner, _, authority) = setup();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    context
+        .retain_owner(original.clone())
+        .unwrap_or_else(|_| panic!("original owner refused"));
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    drop(original);
+    drop(context);
+    drop(grant);
+    assert!(witness.upgrade().is_some());
+    assert_eq!(capacity.snapshot().unwrap().recovery.slots, 1);
+    assert_eq!(
+        owner.owners().unwrap(),
+        DispatchOwners {
+            physical: 1,
+            quarantined: 1
+        }
+    );
+}
+
+#[test]
+fn provider_grant_retains_original_native_capacity_after_context_retirement_and_refuses_replacement(
+) {
+    use latent_core::native_capacity::{
+        NativeAdmissionClass, NativeCapacityLimits, NativeCapacityOwner, NativeReservationRequest,
+    };
+    let mut limits = NativeCapacityLimits::default();
+    limits.recovery.slots = 1;
+    let capacity = NativeCapacityOwner::new(limits).unwrap();
+    let original = Arc::new(
+        capacity
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    request_bytes: 4096,
+                    work_bytes: 8192,
+                    response_bytes: 4096,
+                },
+                Instant::now() + Duration::from_secs(30),
+            )
+            .unwrap(),
+    );
+    let witness = Arc::downgrade(&original);
+    let (owner, _, authority) = setup();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    context
+        .retain_owner(original.clone())
+        .unwrap_or_else(|_| panic!("original owner refused"));
+    let replacement: Arc<dyn std::any::Any + Send + Sync> = Arc::new("foreign");
+    let refused = context
+        .retain_owner(Arc::clone(&replacement))
+        .err()
+        .unwrap();
+    assert!(Arc::ptr_eq(&replacement, &refused));
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    drop(original);
+    context.retire().unwrap();
+    assert_eq!(owner.owners().unwrap().physical, 0);
+    assert!(witness.upgrade().is_some());
+    assert_eq!(capacity.snapshot().unwrap().recovery.slots, 1);
+    assert_eq!(grant.check_current(time(103)), Err(AuthorityError::Stale));
+    drop(grant);
+    assert!(witness.upgrade().is_none());
+    assert_eq!(capacity.snapshot().unwrap().recovery.slots, 0);
+    let mut later = owner.accept(&authority, 1, time(104)).unwrap();
+    let grant = later
+        .accept_with(&authority, 1, time(104), |grant| grant)
+        .unwrap();
+    let refused = later.retain_owner(Arc::clone(&replacement)).err().unwrap();
+    assert!(Arc::ptr_eq(&replacement, &refused));
+    drop(grant);
+    later.retire().unwrap();
+}
+
+#[test]
+fn retained_grant_rechecks_original_owner_revocation_profile_ceiling_and_credential_epoch() {
+    for change in 0..5 {
+        let (owner, mut current, authority) = setup();
+        let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+        let grant = context
+            .accept_with(&authority, 1, time(102), |grant| grant)
+            .unwrap();
+        let original_deadline = grant.deadline();
+        let foreign = EffectAuthorityOwner::new(2, 2, 100).unwrap();
+        let mut foreign_rule = current.clone();
+        foreign_rule.enabled = false;
+        foreign.publish(foreign_rule).unwrap();
+        assert_eq!(grant.check_current(time(103)), Ok(()));
+        current.policy_revision = 2;
+        let expected = match change {
+            0 => {
+                current.enabled = false;
+                AuthorityError::PolicyBlocked
+            }
+            1 => {
+                current.profile.adapter = "replacement-adapter".into();
+                AuthorityError::UnsupportedFormat
+            }
+            2 => {
+                current.ceiling.maximum_response_bytes -= 1;
+                AuthorityError::Capacity
+            }
+            3 => {
+                current.credential_epoch += 1;
+                AuthorityError::PolicyBlocked
+            }
+            _ => {
+                current.protected_credential_reference = "replacement-secret".into();
+                AuthorityError::PolicyBlocked
+            }
+        };
+        owner.publish(current).unwrap();
+        assert_eq!(grant.check_current(time(104)), Err(expected));
+        assert_eq!(grant.deadline(), original_deadline);
+        assert_eq!(owner.owners().unwrap().physical, 1);
+        context.retire().unwrap();
+        assert_eq!(grant.check_current(time(105)), Err(AuthorityError::Stale));
+        assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+    }
+}
+
+#[test]
+fn retained_grant_compatible_widening_preserves_original_ceiling_expiry_deadline_and_clock() {
+    let (owner, mut current, authority) = setup();
+    current.policy_revision = 2;
+    current.ceiling.maximum_age_millis = 200;
+    owner.publish(current.clone()).unwrap();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    let deadline = grant.deadline();
+    let ceiling = grant.ceiling();
+    current.policy_revision = 3;
+    current.ceiling.maximum_age_millis = 2000;
+    current.ceiling.maximum_response_bytes = 4096;
+    current.ceiling.maximum_attempts = 8;
+    owner.publish(current).unwrap();
+    assert_eq!(grant.check_current(time(299)), Ok(()));
+    assert_eq!(grant.deadline(), deadline);
+    assert_eq!(grant.ceiling(), ceiling);
+    assert_eq!(grant.check_current(time(300)), Err(AuthorityError::Expired));
+    assert_eq!(
+        grant.check_current(time(299)),
+        Err(AuthorityError::ClockDiscontinuity)
+    );
+    assert_eq!(
+        grant.check_current(EffectTime {
+            unix_millis: 301,
+            continuity_proven: false
+        }),
+        Err(AuthorityError::ClockDiscontinuity)
+    );
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    context.retire().unwrap();
+}
+
+#[test]
+fn retired_or_quarantined_attempt_cannot_reauthorize_its_grant_through_another_live_owner() {
+    let (owner, _, authority) = setup();
+    let mut first = owner.accept(&authority, 1, time(101)).unwrap();
+    let first_grant = first
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    let mut second = owner.accept(&authority, 2, time(103)).unwrap();
+    let second_grant = second
+        .accept_with(&authority, 2, time(104), |grant| grant)
+        .unwrap();
+    first.retire().unwrap();
+    assert_eq!(
+        first_grant.check_current(time(105)),
+        Err(AuthorityError::Stale)
+    );
+    assert_eq!(second_grant.check_current(time(105)), Ok(()));
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    drop(second);
+    assert_eq!(
+        second_grant.check_current(time(106)),
+        Err(AuthorityError::Stale)
+    );
+    assert_eq!(
+        owner.owners().unwrap(),
+        DispatchOwners {
+            physical: 1,
+            quarantined: 1
+        }
+    );
+}
+
+#[test]
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_under_fence() {
     let (owner, mut rule, authority) = setup();
     let mut context = owner.accept(&authority, 1, time(101)).unwrap();
@@ -10,7 +260,10 @@ fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_un
     rule.protected_credential_reference = "rotated-secret".into();
     rule.ceiling.maximum_response_bytes = 128;
     rule.ceiling.attempt_timeout_millis = 50;
+<<<<<<< HEAD
     rule.ceiling.maximum_age_millis = 500;
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     owner.publish(rule).unwrap();
     context
         .accept_with(&authority, 1, time(102), |grant| {
@@ -21,10 +274,13 @@ fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_un
             assert_eq!(grant.credential_epoch(), 2);
             assert_eq!(grant.protected_credential_reference(), "rotated-secret");
             assert_eq!(grant.ceiling().maximum_response_bytes, 128);
+<<<<<<< HEAD
             assert_eq!(grant.ceiling().maximum_age_millis, 500);
             assert_eq!(grant.committed_at_millis(), 100);
             assert_eq!(grant.expires_at_millis(), 1100);
             assert_eq!(grant.expires_at_millis(), authority.expires_at_millis());
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
             assert!(grant.deadline() <= deadline);
             assert!(matches!(
                 owner.0.state.try_lock(),

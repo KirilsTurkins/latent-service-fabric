@@ -1,6 +1,11 @@
 //! Command admission derives from the actual protected node role and clock.
 use std::sync::Arc;
 
+<<<<<<< HEAD
+=======
+use latent_core::native_capacity::NativeCapacityOwner;
+
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 use crate::authority::{AuthorityError, EffectAuthorityOwner, EffectTime};
 
 use super::worker::Services;
@@ -23,6 +28,15 @@ pub struct CommandAdmissionSource {
     services: Arc<Services>,
 }
 
+<<<<<<< HEAD
+=======
+#[derive(Default)]
+pub(super) struct NativeCapacityBinding {
+    pub owner: Option<NativeCapacityOwner>,
+    pub admissions_started: bool,
+}
+
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 impl CommandAdmissionSource {
     /// Diagnostic original-clock projection. This reserves no command slot and
     /// must not be called recursively inside a held command acceptance fence.
@@ -46,6 +60,41 @@ impl CommandAdmissionSource {
         self.services.store.is_same_owner(store)
     }
 
+<<<<<<< HEAD
+=======
+    /// Projects the one installed physical capacity owner. A production node
+    /// must require this projection before admitting transactions; unbound
+    /// kernel fixtures cannot substitute a newly constructed counter owner.
+    pub fn native_capacity(&self) -> Result<NativeCapacityOwner, DispatcherError> {
+        let state = self
+            .services
+            .shared
+            .state
+            .lock()
+            .map_err(|_| DispatcherError::AdmissionClosed)?;
+        check(&self.services, &state)?;
+        self.services
+            .native_capacity
+            .lock()
+            .map_err(|_| DispatcherError::AdmissionClosed)?
+            .owner
+            .clone()
+            .ok_or(DispatcherError::InvalidConfiguration)
+    }
+
+    /// Identity only: this does not reserve bytes, grant admission or reopen a
+    /// closed capacity owner. Actual reservations keep their original fences.
+    #[must_use]
+    pub fn uses_native_capacity(&self, owner: &NativeCapacityOwner) -> bool {
+        self.services.native_capacity.lock().is_ok_and(|binding| {
+            binding
+                .owner
+                .as_ref()
+                .is_some_and(|installed| installed.is_same_owner(owner))
+        })
+    }
+
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     fn current_source(&self) -> Result<(u64, EffectTime), DispatcherError> {
         let mut state = self
             .services
@@ -70,6 +119,14 @@ impl CommandAdmissionSource {
             return Err(AuthorityError::Capacity.into());
         }
         let captured = observe(&self.services, &mut state)?;
+<<<<<<< HEAD
+=======
+        self.services
+            .native_capacity
+            .lock()
+            .map_err(|_| DispatcherError::AdmissionClosed)?
+            .admissions_started = true;
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         state.command_owners += 1;
         Ok(CommandAdmission {
             services: Arc::clone(&self.services),
@@ -81,6 +138,37 @@ impl CommandAdmissionSource {
 }
 
 impl DispatcherOwner {
+<<<<<<< HEAD
+=======
+    /// The trusted composition root installs its original global owner before
+    /// the first command capture. Captures permanently seal this binding, even
+    /// when every command owner later retires. Same-owner installation is
+    /// idempotent; a foreign owner or a first installation after capture fails.
+    pub fn bind_native_capacity(&self, owner: &NativeCapacityOwner) -> Result<(), DispatcherError> {
+        let state = self
+            .services
+            .shared
+            .state
+            .lock()
+            .map_err(|_| DispatcherError::AdmissionClosed)?;
+        check(&self.services, &state)?;
+        let mut binding = self
+            .services
+            .native_capacity
+            .lock()
+            .map_err(|_| DispatcherError::AdmissionClosed)?;
+        match &binding.owner {
+            Some(installed) if installed.is_same_owner(owner) => Ok(()),
+            Some(_) => Err(DispatcherError::InvalidConfiguration),
+            None if binding.admissions_started => Err(DispatcherError::InvalidConfiguration),
+            None => {
+                binding.owner = Some(owner.clone());
+                Ok(())
+            }
+        }
+    }
+
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     #[must_use]
     pub fn command_admission_source(&self) -> CommandAdmissionSource {
         CommandAdmissionSource {
@@ -177,7 +265,14 @@ impl Drop for CommandAdmission {
     }
 }
 
+<<<<<<< HEAD
 fn check(services: &Services, state: &super::state::State) -> Result<(), DispatcherError> {
+=======
+pub(super) fn check(
+    services: &Services,
+    state: &super::state::State,
+) -> Result<(), DispatcherError> {
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     if state.closed
         || state.scheduling_retired
         || state.pending_control.is_some()

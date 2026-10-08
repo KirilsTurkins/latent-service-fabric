@@ -156,6 +156,7 @@ impl WriteSet {
         self.batch.expectations.push(ExpectedRow { key, value });
     }
 
+<<<<<<< HEAD
     pub fn expect_ready_namespace(
         &mut self,
         view: &ReadView,
@@ -172,6 +173,8 @@ impl WriteSet {
         Ok(())
     }
 
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     pub fn expect_due(
         &mut self,
         view: &ReadView,
@@ -258,6 +261,22 @@ impl WriteSet {
     pub fn apply(self, store: &EmbeddedStore) -> Result<(), DispatchStoreError> {
         store.apply(self.batch).map_err(Into::into)
     }
+<<<<<<< HEAD
+=======
+
+    pub fn apply_fenced(
+        self,
+        store: &EmbeddedStore,
+        accept: impl FnOnce() -> Result<(), crate::authority::AuthorityError>,
+    ) -> Result<(), DispatchStoreError> {
+        store
+            .apply_fenced(self.batch, accept)
+            .map_err(|error| match error {
+                latent_state::embedded::FencedStoreError::Store(error) => error.into(),
+                latent_state::embedded::FencedStoreError::Fence(error) => error.into(),
+            })
+    }
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
 }
 
 pub(super) fn recover_one(

@@ -16,7 +16,11 @@ use super::{
 /// accepted physical work remains in fixed workers and the scheduling owner.
 pub struct DispatcherOwner {
     pub(super) services: Arc<Services>,
+<<<<<<< HEAD
     jobs: StoreIoOwner<Arc<Services>>,
+=======
+    pub(super) jobs: StoreIoOwner<Arc<Services>>,
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     driver: Option<tokio::task::JoinHandle<()>>,
     workers: usize,
     joined_workers: usize,
@@ -112,6 +116,12 @@ impl DispatcherOwner {
             epoch,
             runtime: runtime.clone(),
             shared,
+<<<<<<< HEAD
+=======
+            native_capacity: std::sync::Mutex::new(
+                super::admission::NativeCapacityBinding::default(),
+            ),
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
             receipts,
         });
         let jobs =

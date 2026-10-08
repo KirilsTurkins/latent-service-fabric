@@ -117,7 +117,10 @@ impl DispatchCatalog {
         maximum_rows: usize,
         maximum_bytes: usize,
     ) -> Result<DuePage, StoreError> {
+<<<<<<< HEAD
         latent_state::recovery::require_ready(view)?;
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         let page = view.scan_after(
             Family::Maintenance,
             DUE_PREFIX,
@@ -133,6 +136,7 @@ impl DispatchCatalog {
                 next_due_millis = Some(row.due_millis);
                 break;
             }
+<<<<<<< HEAD
             let loaded = write::Loaded::read(view, &row.effect).map_err(|error| match error {
                 DispatchStoreError::Storage(error) => error,
                 _ => StoreError::Corrupt,
@@ -151,6 +155,9 @@ impl DispatchCatalog {
                 Err(StoreError::Unavailable | StoreError::Conflict) => {}
                 Err(error) => return Err(error),
             }
+=======
+            rows.push(row);
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         }
         Ok(DuePage {
             rows,
@@ -171,6 +178,22 @@ impl DispatchCatalog {
         due: &DueRecord,
         time: EffectTime,
     ) -> Result<ClaimedEffect, DispatchStoreError> {
+<<<<<<< HEAD
+=======
+        Self::claim_fenced(store, epoch, due, time, || Ok(()))
+    }
+
+    /// The physical owner performs its original short admission fence only
+    /// after OCC/capacity preparation, immediately before acceptance. A failed
+    /// fence leaves the exact due record and payload unclaimed.
+    pub fn claim_fenced(
+        store: &EmbeddedStore,
+        epoch: DispatchEpoch,
+        due: &DueRecord,
+        time: EffectTime,
+        accept: impl FnOnce() -> Result<(), crate::authority::AuthorityError>,
+    ) -> Result<ClaimedEffect, DispatchStoreError> {
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, &due.effect)?;
@@ -179,7 +202,10 @@ impl DispatchCatalog {
         let payload_bytes = view.get(&payload_key)?.ok_or(StoreError::Corrupt)?;
         let payload = PayloadRecord::decode(&payload_bytes).map_err(storage_error)?;
         let authority = loaded.record.authority().map_err(storage_error)?;
+<<<<<<< HEAD
         writer.expect_ready_namespace(&view, authority.scope())?;
+=======
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         payload.verify(&authority).map_err(storage_error)?;
         let attempt = match loaded.record.claim(epoch.0, time) {
             Ok(attempt) => attempt,
@@ -192,7 +218,11 @@ impl DispatchCatalog {
                 ) {
                     writer.replace(loaded)?;
                     drop(view);
+<<<<<<< HEAD
                     writer.apply(store)?;
+=======
+                    writer.apply_fenced(store, accept)?;
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
                 }
                 return Err(error.into());
             }
@@ -201,7 +231,11 @@ impl DispatchCatalog {
         writer.reserve_attempt(&loaded.record)?;
         writer.replace(loaded)?;
         drop(view);
+<<<<<<< HEAD
         writer.apply(store)?;
+=======
+        writer.apply_fenced(store, accept)?;
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         Ok(ClaimedEffect {
             authority,
             attempt,
@@ -215,6 +249,7 @@ impl DispatchCatalog {
         claim: &AttemptIdentity,
         time: EffectTime,
     ) -> Result<(), DispatchStoreError> {
+<<<<<<< HEAD
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, claim.effect())?;
@@ -222,12 +257,33 @@ impl DispatchCatalog {
             &view,
             loaded.record.authority().map_err(storage_error)?.scope(),
         )?;
+=======
+        Self::begin_send_fenced(store, epoch, claim, time, || Ok(()))
+    }
+
+    /// A provider future remains unpolled until this same original native
+    /// deadline/role acceptance succeeds; no lock remains held during flush.
+    pub fn begin_send_fenced(
+        store: &EmbeddedStore,
+        epoch: DispatchEpoch,
+        claim: &AttemptIdentity,
+        time: EffectTime,
+        accept: impl FnOnce() -> Result<(), crate::authority::AuthorityError>,
+    ) -> Result<(), DispatchStoreError> {
+        let view = store.snapshot()?;
+        let mut writer = write::WriteSet::new(&view, epoch, time)?;
+        let mut loaded = write::Loaded::read(&view, claim.effect())?;
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
         loaded.record.check_claim(claim)?;
         writer.verify_attempt(&view, &loaded.record)?;
         loaded.record.begin_send(claim)?;
         writer.replace(loaded)?;
         drop(view);
+<<<<<<< HEAD
         writer.apply(store)
+=======
+        writer.apply_fenced(store, accept)
+>>>>>>> 53bf0f45de3696e8ad4e2efd884d63d7ec917a5a
     }
 
     pub fn complete(
