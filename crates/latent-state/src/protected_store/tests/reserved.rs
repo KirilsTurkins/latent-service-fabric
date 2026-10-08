@@ -225,6 +225,10 @@ fn recovery_snapshot_reads_and_retires_on_reserved_worker_under_ordinary_pressur
     assert_eq!(pressure.accepted, 4);
     assert_eq!(pressure.recovery_accepted, 0);
     assert_eq!(pressure.queued, 1);
+    assert_eq!(pressure.active_reads, 2);
+    assert_eq!(pressure.active_writes, 1);
+    // Both ordinary limits are full. Admission checks its queue ceiling first;
+    // the independent recovery partition still has its original capacity.
     assert!(matches!(
         owner.open_view(),
         Err(ProtectedStoreError::Io(StoreIoError::QueueFull))

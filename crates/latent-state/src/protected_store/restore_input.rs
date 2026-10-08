@@ -120,6 +120,18 @@ impl ProtectedRestoreInput {
         self.owners.current().map_err(SnapshotError::Review)
     }
 
+    pub(super) fn accept_read(&self) -> Result<(), StoreError> {
+        let consumed = Cell::new(false);
+        self.owners.accept_read(RestoreReadFence {
+            original: &self.original,
+            consumed: &consumed,
+        })?;
+        if !consumed.get() {
+            return Err(StoreError::Invalid);
+        }
+        Ok(())
+    }
+
     /// Encode only the finite descriptive loss window under the already prepaid
     /// response. The transport must retain this same owner through frame drop.
     pub fn encode_window(self) -> Result<ProtectedRestoreWindowFrame, SnapshotError> {

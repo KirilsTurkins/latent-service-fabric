@@ -73,10 +73,9 @@ fn rejected_opening_keeps_send_only_owner_until_actual_worker_retirement() {
         wait(job).unwrap().unwrap();
     }
     wait(queued).unwrap().unwrap();
-    owner
-        .ready
-        .wait_test_metadata_retirement(Instant::now() + WATCHDOG);
-    assert!(finish(&owner).clean);
+    let shutdown = finish(&owner);
+    assert!(shutdown.clean);
+    assert!(shutdown.snapshot.physically_retired());
     assert!(refused);
     assert!(physically_owned > 0);
     assert_eq!(dropped_before_retirement, 0);

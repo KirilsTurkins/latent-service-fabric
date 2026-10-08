@@ -364,6 +364,7 @@ fn write_transaction_guest_bindings(output: &Path, wit: &Path) -> io::Result<()>
         path: {guest_path},
         world: "latent:platform/transaction-bindings@0.5.0",
         generate_all,
+        type_section_suffix: "-phase4-transaction",
     }});"#
         ),
     )

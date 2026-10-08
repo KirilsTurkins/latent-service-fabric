@@ -27,10 +27,13 @@ external client coverage and compiler definition receipts are separate.
 Rust transaction projects select the `latent-guest` feature `transaction`, which
 enables the exact transaction guest bindings. The maintained transactional
 template captures this selection in its Cargo manifest and authoring validation.
-The default SDK leaves these bindings disabled. The binding generator gives the
-transaction SDK its private `transaction-bindings` metadata world while keeping
-the public Phase 4 WIT profile unchanged. These build selections confer no
-installed state, provider or invocation authority.
+The default SDK leaves these bindings disabled. `latent-component-bindings`
+also exposes `guest-activation` for the separate activation world; a Wasm guest
+selects either the activation `capsule@0.5.0` world or the SDK-only
+`transaction-bindings@0.5.0` staging world. The binding generator gives the
+transaction SDK this private metadata world while keeping the public Phase 4
+WIT profile and transaction host ABI unchanged. These build selections confer
+no installed state, provider or invocation authority.
 
 [Packaged application development](../start/application-development.md)
 is the starting point for installing their compilers and creating a project.
