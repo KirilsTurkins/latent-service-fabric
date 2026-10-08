@@ -1,5 +1,6 @@
 // Physical intrinsic reaction records and their pre-admitted future jobs.
 #pragma once
+#include "native_job_queue.h"
 #include "promise_records.h"
 
 namespace lsf::typescript::activation {
