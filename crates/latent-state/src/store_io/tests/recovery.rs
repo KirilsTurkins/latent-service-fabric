@@ -355,7 +355,7 @@ fn reserved_status_read_runs_while_ordinary_read_slots_and_queue_are_saturated()
     {
         let control = &owner.inner.control;
         let state = control.state.lock().unwrap();
-        let (_, timeout) = control
+        let (_retired, timeout) = control
             .changed
             .wait_timeout_while(state, WATCHDOG, |state| state.active_recovery_reads != 0)
             .unwrap();
