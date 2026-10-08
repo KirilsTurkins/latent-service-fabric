@@ -1,0 +1,104 @@
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling serde_derive v1.0.229
+   Compiling tokio-macros v2.7.2
+   Compiling once_cell v1.21.4
+   Compiling rustix v1.1.5
+   Compiling tokio v1.53.1
+   Compiling serde v1.0.229
+   Compiling latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+   Compiling smallvec v1.15.2
+   Compiling tracing-core v0.1.36
+   Compiling tracing-attributes v0.1.31
+   Compiling latent-routing v0.1.0-alpha.5 (/source/crates/latent-routing)
+   Compiling tokio-util v0.7.19
+   Compiling latent-activation v0.1.0-alpha.5 (/source/crates/latent-activation)
+   Compiling tracing v0.1.44
+   Compiling prost-derive v0.14.4
+   Compiling fs-set-times v0.20.3
+   Compiling latent-contracts v0.1.0-alpha.5 (/source/crates/latent-contracts)
+   Compiling latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+   Compiling rustix-linux-procfs v0.1.1
+   Compiling ipnet v2.12.2
+   Compiling anyhow v1.0.104
+   Compiling cap-primitives v4.0.3
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+   Compiling futures-task v0.3.34
+   Compiling futures-util v0.3.34
+   Compiling curve25519-dalek v5.0.0
+   Compiling cap-std v4.0.3
+   Compiling getrandom v0.4.3
+   Compiling latent-protected-files v0.1.0-alpha.5 (/source/crates/latent-protected-files)
+   Compiling wasmparser v0.259.0
+   Compiling hashbrown v0.17.1
+   Compiling h2 v0.4.19
+   Compiling wit-parser v0.259.0
+   Compiling prost v0.14.4
+   Compiling indexmap v2.14.1
+   Compiling latent-state v0.1.0-alpha.5 (/source/crates/latent-state)
+   Compiling cap-fs-ext v4.0.3
+   Compiling prettyplease v0.2.37
+   Compiling ed25519-dalek v3.0.0
+   Compiling spdx v0.13.5
+   Compiling futures-channel v0.3.34
+   Compiling petgraph v0.8.3
+   Compiling hyper v1.11.1
+   Compiling latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+   Compiling latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+   Compiling latent-effects v0.1.0-alpha.5 (/source/crates/latent-effects)
+   Compiling prost-types v0.14.4
+   Compiling prost-build v0.14.4
+   Compiling latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+   Compiling hyper-util v0.1.20
+   Compiling tower v0.5.3
+   Compiling tonic-build v0.14.6
+   Compiling latent-executor v0.1.0-alpha.5 (/source/crates/latent-executor)
+   Compiling latent-telemetry v0.1.0-alpha.5 (/source/crates/latent-telemetry)
+   Compiling latent-admission v0.1.0-alpha.5 (/source/crates/latent-admission)
+   Compiling pin-project-internal v1.1.13
+   Compiling axum v0.8.9
+   Compiling pin-project v1.1.13
+   Compiling latent-scheduler v0.1.0-alpha.5 (/source/crates/latent-scheduler)
+   Compiling latent-capabilities v0.1.0-alpha.5 (/source/crates/latent-capabilities)
+   Compiling tonic-prost-build v0.14.6
+   Compiling hyper-timeout v0.5.2
+   Compiling latent-commit v0.1.0-alpha.5 (/source/crates/latent-commit)
+   Compiling latent-triggers v0.1.0-alpha.5 (/source/crates/latent-triggers)
+   Compiling tokio-stream v0.1.19
+   Compiling async-trait v0.1.92
+   Compiling latent-ingress v0.1.0-alpha.5 (/source/crates/latent-ingress)
+   Compiling tonic v0.14.6
+   Compiling latent-node v0.1.0-alpha.5 (/source/crates/latent-node)
+   Compiling latent-rpc v0.1.0-alpha.5 (/source/crates/latent-rpc)
+   Compiling tonic-prost v0.14.6
+   Compiling latent-control-store v0.1.0-alpha.5 (/source/crates/latent-control-store)
+   Compiling latent-rollout v0.1.0-alpha.5 (/source/crates/latent-rollout)
+   Compiling latent-wire v0.1.0-alpha.5 (/source/crates/latent-wire)
+   Compiling tempfile v3.27.0
+    Finished `test` profile [unoptimized] target(s) in 1m 39s
+     Running tests/invocation_service.rs (/build/target/debug/deps/invocation_service-e4ea14ea6c9c5e25)
+
+running 19 tests
+test cleanup::deadline_handoff_preserves_explicit_cancel_priority_and_original_expiry ... ok
+test cleanup::full_cleanup_capacity_rejects_before_identity_and_ordinary_completion_refunds ... ok
+test cleanup::native_adapter_retention_survives_drop_until_real_lifecycle_cleanup ... ok
+test cleanup::running_drop_retains_real_lifecycle_until_ack_then_recovers_same_cell ... ok
+test cleanup::transient_tracking_retains_real_quota_refusal_without_guest_or_cleanup_ownership ... ok
+test deadlines::deadline_expiring_during_acceptance_aborts_before_first_lifecycle_poll ... ok
+test deadlines::submillisecond_transport_precision_reaches_the_shared_execution_ledger ... ok
+test identity::forged_auth_metadata_and_later_phase_budgets_fail_before_acceptance ... ok
+test identity::malformed_optional_identity_is_not_coerced_into_server_assignment ... ok
+test identity::manager_assigns_identity_and_preserves_opaque_lineage_and_uninterpreted_payload ... ok
+test identity::trusted_principal_is_required_and_administrators_keep_exact_tenant_scope ... ok
+test lifecycle::dropping_one_running_rpc_finalizes_only_its_own_activation ... ok
+test lifecycle::expired_deadline_rejects_before_identity_and_live_timeout_stops_owned_work ... ok
+test lifecycle::pending_id_supports_scoped_status_and_all_cancellation_dispositions ... ok
+test lifecycle::retained_duplicate_rejection_then_eviction_allows_a_new_id_owner ... ok
+test outcomes::accepted_failure_before_resolution_has_no_fabricated_pin ... ok
+test outcomes::artifact_failure_keeps_pin_and_next_call_reuses_unexecuted_cell ... ok
+test outcomes::immediate_and_retained_outcomes_preserve_categories_and_final_accounting ... ok
+test outcomes::rpc_receipt_and_execution_keep_one_pinned_catalog_generation ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+

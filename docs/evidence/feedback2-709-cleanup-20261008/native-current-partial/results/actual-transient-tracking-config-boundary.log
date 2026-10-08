@@ -1,0 +1,325 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling serde_core v1.0.229
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling serde_derive v1.0.229
+   Compiling serde v1.0.229
+   Compiling cfg-if v1.0.4
+   Compiling foldhash v0.2.0
+   Compiling libc v0.2.189
+   Compiling memchr v2.8.3
+   Compiling bitflags v2.13.1
+   Compiling equivalent v1.0.2
+   Compiling typenum v1.20.1
+   Compiling itoa v1.0.18
+   Compiling hashbrown v0.17.1
+   Compiling pin-project-lite v0.2.17
+   Compiling zmij v1.0.23
+   Compiling log v0.4.34
+   Compiling portable-atomic v1.15.0
+   Compiling const-oid v0.10.2
+   Compiling cpufeatures v0.3.1
+   Compiling bytes v1.12.1
+   Compiling indexmap v2.14.1
+   Compiling smallvec v1.15.2
+   Compiling critical-section v1.2.0
+   Compiling once_cell v1.21.4
+   Compiling hybrid-array v0.4.15
+   Compiling errno v0.3.14
+   Compiling rustix v1.1.5
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling serde_json v1.0.151
+   Compiling signal-hook-registry v1.4.8
+   Compiling mio v1.2.2
+   Compiling digest v0.11.3
+   Compiling socket2 v0.6.5
+   Compiling tokio-macros v2.7.2
+   Compiling latent-core v0.1.0-alpha.5 (/source/crates/latent-core)
+   Compiling linux-raw-sys v0.12.1
+   Compiling tokio v1.53.1
+   Compiling sha2 v0.11.0
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.11
+   Compiling cc v1.4.4
+   Compiling semver v1.0.28
+   Compiling zeroize v1.9.0
+   Compiling libm v0.2.16
+   Compiling anyhow v1.0.104
+   Compiling latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+   Compiling futures-core v0.3.34
+   Compiling heck v0.5.0
+   Compiling id-arena v2.3.0
+   Compiling fnv v1.0.7
+   Compiling synstructure v0.13.2
+   Compiling futures-sink v0.3.34
+   Compiling rand_core v0.10.1
+   Compiling io-lifetimes v3.0.1
+   Compiling thiserror v2.0.20
+   Compiling getrandom v0.4.3
+   Compiling io-lifetimes v2.0.4
+   Compiling zerofrom-derive v0.1.7
+   Compiling latent-routing v0.1.0-alpha.5 (/source/crates/latent-routing)
+   Compiling ipnet v2.12.2
+   Compiling thiserror-impl v2.0.20
+   Compiling io-extras v0.19.0
+   Compiling zerofrom v0.1.8
+   Compiling yoke-derive v0.8.2
+   Compiling rustc_version v0.4.1
+   Compiling der v0.8.2
+   Compiling slab v0.4.12
+   Compiling version_check v0.9.5
+   Compiling wasmtime-internal-core v48.0.4
+   Compiling stable_deref_trait v1.2.1
+   Compiling cap-primitives v4.0.3
+   Compiling subtle v2.6.1
+   Compiling yoke v0.8.3
+   Compiling generic-array v0.14.7
+   Compiling curve25519-dalek v5.0.0
+   Compiling fs-set-times v0.20.3
+   Compiling spki v0.8.0
+   Compiling latent-activation v0.1.0-alpha.5 (/source/crates/latent-activation)
+   Compiling futures-channel v0.3.34
+   Compiling latent-contracts v0.1.0-alpha.5 (/source/crates/latent-contracts)
+   Compiling latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+   Compiling rustix-linux-procfs v0.1.1
+   Compiling maybe-owned v0.3.4
+   Compiling cap-std v4.0.3
+   Compiling ambient-authority v0.0.2
+   Compiling either v1.18.0
+   Compiling redb v4.3.0
+   Compiling itertools v0.14.0
+   Compiling latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+   Compiling pkcs8 v0.11.0
+   Compiling tracing-core v0.1.36
+   Compiling tracing-attributes v0.1.31
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling zerovec-derive v0.11.6
+   Compiling futures-io v0.3.34
+   Compiling cap-fs-ext v4.0.3
+   Compiling signature v3.0.0
+   Compiling futures-task v0.3.34
+   Compiling cranelift-srcgen v0.135.4
+   Compiling cranelift-assembler-x64-meta v0.135.4
+   Compiling futures-util v0.3.34
+   Compiling ed25519 v3.0.0
+   Compiling zerovec v0.11.8
+   Compiling tracing v0.1.44
+   Compiling blake3 v1.8.7
+   Compiling latent-protected-files v0.1.0-alpha.5 (/source/crates/latent-protected-files)
+   Compiling wasmparser v0.259.0
+   Compiling http v1.5.0
+   Compiling displaydoc v0.2.7
+   Compiling leb128fmt v0.1.0
+   Compiling base64 v0.23.1
+   Compiling latent-state v0.1.0-alpha.5 (/source/crates/latent-state)
+   Compiling wit-parser v0.259.0
+   Compiling ed25519-dalek v3.0.0
+   Compiling cranelift-bitset v0.135.4
+   Compiling spdx v0.13.5
+   Compiling pulley-macros v48.0.4
+   Compiling constant_time_eq v0.4.2
+   Compiling crc32fast v1.5.1
+   Compiling arrayvec v0.7.8
+   Compiling latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+   Compiling latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+   Compiling latent-effects v0.1.0-alpha.5 (/source/crates/latent-effects)
+   Compiling http-body v1.1.0
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling tokio-util v0.7.19
+   Compiling target-lexicon v0.13.5
+   Compiling cranelift-isle v0.135.4
+   Compiling digest v0.10.7
+   Compiling latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+   Compiling pulley-interpreter v48.0.4
+   Compiling cranelift-entity v0.135.4
+   Compiling tinystr v0.8.4
+   Compiling latent-executor v0.1.0-alpha.5 (/source/crates/latent-executor)
+   Compiling latent-telemetry v0.1.0-alpha.5 (/source/crates/latent-telemetry)
+   Compiling cobs v0.3.0
+   Compiling tower-service v0.3.3
+   Compiling cpufeatures v0.2.17
+   Compiling hashbrown v0.16.1
+   Compiling httparse v1.10.1
+   Compiling cranelift-codegen-shared v0.135.4
+   Compiling writeable v0.6.4
+   Compiling litemap v0.8.3
+   Compiling percent-encoding v2.3.2
+   Compiling icu_locale_core v2.3.0
+   Compiling cranelift-codegen-meta v0.135.4
+   Compiling gimli v0.33.0
+   Compiling sha2 v0.10.9
+   Compiling postcard v1.1.3
+   Compiling latent-capabilities v0.1.0-alpha.5 (/source/crates/latent-capabilities)
+   Compiling cranelift-bforest v0.135.4
+   Compiling zerotrie v0.2.5
+   Compiling potential_utf v0.1.6
+   Compiling cranelift-assembler-x64 v0.135.4
+   Compiling prost-derive v0.14.4
+   Compiling atomic-waker v1.1.2
+   Compiling utf8_iter v1.0.4
+   Compiling icu_properties_data v2.3.0
+   Compiling icu_normalizer_data v2.3.0
+   Compiling allocator-api2 v0.2.21
+   Compiling try-lock v0.2.5
+   Compiling want v0.3.1
+   Compiling icu_collections v2.3.0
+   Compiling bumpalo v3.20.3
+   Compiling h2 v0.4.19
+   Compiling cranelift-codegen v0.135.4
+   Compiling icu_provider v2.3.1
+   Compiling wasmparser v0.254.2
+   Compiling ring v0.17.14
+   Compiling wasmtime-internal-versioned-export-macros v48.0.4
+   Compiling prettyplease v0.2.37
+   Compiling object v0.39.1
+   Compiling arbitrary v1.4.2
+   Compiling pulldown-cmark v0.13.4
+   Compiling httpdate v1.0.3
+   Compiling rustc-hash v2.1.3
+   Compiling hyper v1.11.1
+   Compiling regalloc2 v0.15.2
+   Compiling cranelift-control v0.135.4
+   Compiling http-body-util v0.1.5
+   Compiling fastrand v2.5.0
+   Compiling regex-syntax v0.8.11
+   Compiling wasmtime-internal-component-util v48.0.4
+   Compiling unicase v2.9.0
+   Compiling termcolor v1.4.1
+   Compiling foldhash v0.1.5
+   Compiling hashbrown v0.15.5
+   Compiling wasmprinter v0.254.2
+   Compiling regex-automata v0.4.18
+   Compiling prost v0.14.4
+   Compiling icu_normalizer v2.3.0
+   Compiling icu_properties v2.3.0
+   Compiling hyper-util v0.1.20
+   Compiling wasm-encoder v0.254.2
+   Compiling latent-admission v0.1.0-alpha.5 (/source/crates/latent-admission)
+   Compiling rustls-pki-types v1.15.1
+   Compiling getrandom v0.2.17
+   Compiling async-trait v0.1.92
+   Compiling fixedbitset v0.5.7
+   Compiling sync_wrapper v1.0.2
+   Compiling tower-layer v0.3.3
+   Compiling untrusted v0.9.0
+   Compiling tempfile v3.27.0
+   Compiling petgraph v0.8.3
+   Compiling latent-scheduler v0.1.0-alpha.5 (/source/crates/latent-scheduler)
+   Compiling wasmtime-environ v48.0.4
+   Compiling wasm-metadata v0.254.2
+   Compiling wit-parser v0.254.2
+   Compiling idna_adapter v1.2.2
+   Compiling prost-types v0.14.4
+   Compiling regex v1.13.1
+   Compiling pulldown-cmark-to-cmark v22.0.1
+   Compiling latent-commit v0.1.0-alpha.5 (/source/crates/latent-commit)
+   Compiling multimap v0.10.1
+   Compiling rustls v0.23.45
+   Compiling wasmtime-internal-unwinder v48.0.4
+   Compiling mime v0.3.17
+   Compiling axum-core v0.5.6
+   Compiling prost-build v0.14.4
+   Compiling latent-node v0.1.0-alpha.5 (/source/crates/latent-node)
+   Compiling idna v1.1.0
+   Compiling wit-component v0.254.2
+   Compiling rustls-webpki v0.103.15
+   Compiling tower v0.5.3
+   Compiling tonic-build v0.14.6
+   Compiling wasmtime-internal-fiber v48.0.4
+   Compiling form_urlencoded v1.2.2
+   Compiling chacha20 v0.10.2
+   Compiling pin-project-internal v1.1.13
+   Compiling protoc-bin-vendored-linux-s390_64 v3.2.0
+   Compiling matchit v0.8.4
+   Compiling protoc-bin-vendored-linux-x86_32 v3.2.0
+   Compiling protoc-bin-vendored-macos-aarch_64 v3.2.0
+   Compiling protoc-bin-vendored-linux-ppcle_64 v3.2.0
+   Compiling wasmtime-internal-cranelift v48.0.4
+   Compiling protoc-bin-vendored-linux-x86_64 v3.2.0
+   Compiling protoc-bin-vendored-linux-aarch_64 v3.2.0
+   Compiling protoc-bin-vendored-win32 v3.2.0
+   Compiling wasmtime-internal-component-macro v48.0.4
+   Compiling protoc-bin-vendored-macos-x86_64 v3.2.0
+   Compiling protoc-bin-vendored v3.2.0
+   Compiling axum v0.8.9
+   Compiling pin-project v1.1.13
+   Compiling rand v0.10.2
+   Compiling url v2.5.8
+   Compiling tonic-prost-build v0.14.6
+   Compiling wasmtime-internal-wit-bindgen v48.0.4
+   Compiling cranelift-native v0.135.4
+   Compiling cranelift-frontend v0.135.4
+   Compiling hyper-timeout v0.5.2
+   Compiling wasmtime v48.0.4
+   Compiling latent-triggers v0.1.0-alpha.5 (/source/crates/latent-triggers)
+   Compiling tokio-stream v0.1.19
+   Compiling latent-identity v0.1.0-alpha.5 (/source/crates/latent-identity)
+   Compiling base64 v0.22.1
+   Compiling adler2 v2.0.1
+   Compiling simd-adler32 v0.3.10
+   Compiling data-encoding v2.11.1
+   Compiling utf8parse v0.2.2
+   Compiling tinyvec v1.13.3
+   Compiling hickory-proto v0.26.3
+   Compiling anstyle-parse v1.0.0
+   Compiling miniz_oxide v0.9.1
+   Compiling tonic v0.14.6
+   Compiling latent-ingress v0.1.0-alpha.5 (/source/crates/latent-ingress)
+   Compiling tokio-rustls v0.26.5
+   Compiling latent-rpc v0.1.0-alpha.5 (/source/crates/latent-rpc)
+   Compiling webpki-roots v1.0.9
+   Compiling futures v0.3.34
+   Compiling wasmtime-internal-jit-icache-coherence v48.0.4
+   Compiling memfd v0.6.5
+   Compiling encoding_rs v0.8.35
+   Compiling enumflags2_derive v0.7.12
+   Compiling anstyle-query v1.1.5
+   Compiling time-core v0.1.9
+   Compiling colorchoice v1.0.5
+   Compiling latent-component-bindings v0.1.0-alpha.5 (/source/crates/latent-component-bindings)
+   Compiling anstyle v1.0.14
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling num-conv v0.2.2
+   Compiling time-macros v0.2.32
+   Compiling anstream v1.0.0
+   Compiling enumflags2 v0.7.12
+   Compiling tonic-prost v0.14.6
+   Compiling latent-control-store v0.1.0-alpha.5 (/source/crates/latent-control-store)
+   Compiling flate2 v1.1.10
+   Compiling latent-network v0.1.0-alpha.5 (/source/crates/latent-network)
+   Compiling strsim v0.11.1
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/source/crates/latent-wasmtime)
+   Compiling powerfmt v0.2.0
+   Compiling deranged v0.5.8
+   Compiling clap_lex v1.1.0
+   Compiling clap_builder v4.6.7
+   Compiling time v0.3.55
+   Compiling latent-http v0.1.0-alpha.5 (/source/crates/latent-http)
+   Compiling latent-rollout v0.1.0-alpha.5 (/source/crates/latent-rollout)
+   Compiling landlock v0.4.7
+   Compiling clap_derive v4.6.7
+   Compiling latent-test-process v0.1.0-alpha.5 (/source/crates/latent-test-process)
+   Compiling quick-xml v0.42.0
+   Compiling seccompiler v0.5.0
+   Compiling close_fds v0.3.2
+   Compiling latent-blobs v0.1.0-alpha.5 (/source/crates/latent-blobs)
+   Compiling latent-testkit v0.1.0-alpha.5 (/source/crates/latent-testkit)
+   Compiling clap v4.6.7
+   Compiling latent-wire v0.1.0-alpha.5 (/source/crates/latent-wire)
+   Compiling latent-nats v0.1.0-alpha.5 (/source/crates/latent-nats)
+   Compiling latent-secrets v0.1.0-alpha.5 (/source/crates/latent-secrets)
+   Compiling wasm-encoder v0.259.0
+   Compiling latent-optimization-workloads v0.1.0-alpha.5 (/source/tools/optimization-workloads)
+   Compiling latentd v0.1.0-alpha.5 (/source/apps/latentd)
+    Finished `test` profile [unoptimized] target(s) in 9m 35s
+     Running unittests src/lib_root.rs (/build/target/debug/deps/latentd-0167c83435c2e17d)
+
+running 1 test
+test config::tests::rejected_request_tracking_charges_one_record_without_growing_execution_limits ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 252 filtered out; finished in 0.01s
+
