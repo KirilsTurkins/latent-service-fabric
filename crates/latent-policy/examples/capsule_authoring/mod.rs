@@ -1,3 +1,4 @@
+mod diagnostic_fixtures;
 mod fixtures;
 mod freshness;
 mod inputs;
@@ -96,6 +97,20 @@ pub(super) fn sign_current_java_fixtures(
         }
         builds.push(build);
     }
+    sign_loaded(output, builds, false, true)
+}
+
+/// Explicit diagnostic-only source bridge; never a generic mixed-source signer.
+pub(super) fn sign_java_diagnostic_fixtures(
+    output: &Path,
+    compiler_source: &str,
+    diagnostic: &Path,
+    originals: &[OsString],
+) -> Result<()> {
+    if !output.is_absolute() || output.exists() {
+        return Err("choose a fresh absolute diagnostic fixture output".into());
+    }
+    let builds = diagnostic_fixtures::load(compiler_source, diagnostic, originals)?;
     sign_loaded(output, builds, false, true)
 }
 

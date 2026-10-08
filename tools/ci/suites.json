@@ -4291,6 +4291,8 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "authoring::diagnostic_fixtures::tests::diagnostic_bridge_refuses_source_aliases_wrong_recipe_and_original_link_drift",
+        "authoring::diagnostic_fixtures::tests::original_bridge_refuses_source_name_and_every_material_swap",
         "authoring::fixtures::tests::current_fixture_refuses_missing_failed_stages_and_host_or_execution_claims",
         "authoring::fixtures::tests::current_fixture_retains_explicit_source_and_report_associations",
         "authoring::inputs::tests::diagnostic_asset_inventory_cannot_cover_replaced_bytes",
@@ -4306,7 +4308,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 9,
+      "minimumCases": 11,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [

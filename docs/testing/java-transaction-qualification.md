@@ -27,6 +27,19 @@ the ordinary physical shutdown counters. Schema/restore and fault campaigns
 remain separate. These source controls do not close #718 without real signed
 execution and its coherent prerequisites.
 
+The separately selected diagnostic can have its own compiler source. Packaging
+then uses `fixture-sign-java-diagnostic-inputs` with exactly four preserved FF9
+positive packages and one explicit diagnostic. The native helper checks every
+original name, source and component/report/archive/snapshot/companion/requirements
+hash, plus successful compiler stages, closure, imports and exact signed profile
+before fixture key creation. The diagnostic source is explicitly supplied and
+independently checked; the standalone native mode does not hardcode CFA. The
+collector's export selection pins the original CFA materials independently.
+Its diagnostic must retain the original legacy companion, requirements and ABI.
+The ordinary five-input, current-six and value/child routes keep their existing
+source rules. This fixture bridge grants no runtime authority or new compiler
+claim and requires fresh affected native qualification before signing/execution.
+
 An already exported diagnostic capture can be selected independently of the
 legacy compressed archive. Supply `--diagnostic-export-root`, the original
 `--diagnostic-receipt` and its digest, and paired paths/digests for

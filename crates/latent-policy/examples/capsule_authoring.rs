@@ -44,6 +44,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &args[3..],
         );
     }
+    if args.len() == 8 && args[0] == "fixture-sign-java-diagnostic-inputs" {
+        return authoring::sign_java_diagnostic_fixtures(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("explicit UTF-8 diagnostic compiler source required")?,
+            std::path::Path::new(&args[3]),
+            &args[4..],
+        );
+    }
     if args.len() < 3
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))
         || args.len() > 18

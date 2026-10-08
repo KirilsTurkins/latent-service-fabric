@@ -188,9 +188,10 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
             else:
                 prepare(item, output / item.name, contracts_tool, signer, command)
         accepted = [item for item in items if item.name not in {"forbidden-http", "forbidden-child"}]
-        mode = "fixture-sign-java-inputs" if compiler_source is None else "fixture-sign-current-java-inputs"
-        arguments = [] if compiler_source is None else [compiler_source]
-        command.run(mode, signer, mode, output / "signed", *arguments, *[output / item.name for item in accepted])
+        mode, arguments, bridge = signing_plan(accepted, output, compiler_source)
+        if bridge is not None:
+            record["diagnosticSourceBridge"] = bridge
+        command.run(mode, signer, mode, output / "signed", *arguments)
         signed = decode(read_file(output / "signed/release-set.json"))
         require(signed["schemaVersion"] == "latent.component.signing-fixture.v1"
                 and signed["trust"] == "ephemeral-native-package-test-only", "explicit-fixture-trust-required")
@@ -205,6 +206,36 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
     finally:
         record["commands"], record["seconds"] = command.records, round(time.monotonic()-start,6)
         write_json(output / "package-fixture-receipt.json", record)
+
+
+def signing_plan(accepted, output, compiler_source):
+    """Only diagnostic extends historical source custody; other routes stay exact."""
+    from .diagnostic_inputs import NAME
+    from .inputs import COMPILER_SOURCE, COMPONENT_DIGESTS, VARIANTS
+    if compiler_source is not None:
+        return "fixture-sign-current-java-inputs", [compiler_source, *[output / item.name for item in accepted]], None
+    if not any(item.name == NAME for item in accepted):
+        return "fixture-sign-java-inputs", [output / item.name for item in accepted], None
+    original_names = set(VARIANTS) - {"forbidden-http"}
+    require(len(accepted) == 5 and {item.name for item in accepted} == original_names | {NAME},
+            "exact-four-originals-and-one-diagnostic-source-bridge")
+    diagnostic = next(item for item in accepted if item.name == NAME)
+    originals = [item for item in accepted if item.name != NAME]
+    legacy = next(item for item in originals if item.name == "put-once-legacy-v1")
+    require(all(item.compiler_source == COMPILER_SOURCE and item.component_digest == COMPONENT_DIGESTS[item.name]
+                for item in originals), "unchanged-original-diagnostic-bridge-components")
+    require(diagnostic.compiler_source != COMPILER_SOURCE
+            and diagnostic.companion_digest == legacy.companion_digest
+            and diagnostic.requirements_digest == legacy.requirements_digest
+            and diagnostic.host_abi_digest == legacy.host_abi_digest
+            and diagnostic.component_digest not in {item.component_digest for item in originals},
+            "independent-diagnostic-source-with-original-profile-links")
+    return "fixture-sign-java-diagnostic-inputs", [diagnostic.compiler_source, output / NAME,
+        *[output / item.name for item in originals]], {
+            "kind": "four-pinned-originals-and-one-explicit-diagnostic",
+            "originalCompilerSource": COMPILER_SOURCE, "diagnosticCompilerSource": diagnostic.compiler_source,
+            "originalInputs": [item.observation() for item in originals], "diagnosticInput": diagnostic.observation(),
+            "compilerExecutedAgain": False, "signedExecutionQualified": False}
 
 
 def _forbidden_profile(item, output, contracts, signer, command, record):
