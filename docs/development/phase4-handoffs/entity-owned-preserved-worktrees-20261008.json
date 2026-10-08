@@ -1,0 +1,304 @@
+[
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-command-recovery-lookup-v12",
+    "head": "5db66d80330c6e457cb946dbbc201edfbdfc88d4",
+    "branch": "refs/heads/docs/phase4-installed-command-recovery-v12",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/integration/lf-p4-command-recovery-lookup-v12",
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-command-recovery-lookup-v12"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-entity-v2-http-sync",
+    "head": "108c8a5a58f6662c8bfcf3714c10f1220d276449",
+    "branch": null,
+    "existsAtAudit": false,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-entity-v2-http-sync"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-entity-v2-pr-sync",
+    "head": "67bae47414722a22ac1cce8e565f9f1c0e6592eb",
+    "branch": null,
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-entity-v2-pr-sync"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-entity-v5-linked-expiry-20261006",
+    "head": "12e5ecc75b1d4630cb7305fe4f80a1acbd5ba6cb",
+    "branch": null,
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-entity-v5-linked-expiry-20261006"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-entity-v6-linked-expiry-20261006",
+    "head": "682daf657bc61c3478e971f1008e482026e6bece",
+    "branch": "refs/heads/feat/phase4-linked-expiry-391-v6",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-entity-v6-linked-expiry-20261006"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-entity394-runtime-v27",
+    "head": "0a5edf49678af2e7f2d0a2cd3e7533f60212277b",
+    "branch": "refs/heads/feat/phase4-entity394-runtime-v27",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-entity394-runtime-v27"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-entity394-select-diag-v38",
+    "head": "081767b999fe391c02776749ad0b40a5d8354954",
+    "branch": "refs/heads/fix/phase4-installed394-terminal-abort-v43",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-entity394-select-diag-v38"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-inbox395-capability-start-v29",
+    "head": "4093ecfb8e9d024ea7ebabf964fb52e104b97cdb",
+    "branch": "refs/heads/feat/phase4-inbox395-capability-start-v29",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-inbox395-capability-start-v29"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-inbox395-control-v53",
+    "head": "ee6bf728feba84af071ce43b72405dfca0c8f119",
+    "branch": "refs/heads/fix/phase4-inbox395-control-provider-v55",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-inbox395-control-v53",
+      "refs/heads/fix/phase4-inbox395-control-provider-v55"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-inbox395-installed-v34",
+    "head": "794a431e416fc9e78d06e21b1848ce36f38f2bc4",
+    "branch": "refs/heads/feat/phase4-installed-inbox-schedules-v34",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-inbox395-installed-v34",
+      "refs/heads/feat/phase4-installed-inbox-schedules-v34"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-inbox395-runtime-v21",
+    "head": "0b7be23c115c99df20f18cf038f24f8e036d1484",
+    "branch": "refs/heads/feat/phase4-transactional-inbox-395-v21",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-inbox395-runtime-v21"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-inbox395-standalone-v22",
+    "head": "7e15f108e1d87000e76e83ecddf50ccee4cae866",
+    "branch": "refs/heads/feat/phase4-inbox395-standalone-v22",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-inbox395-standalone-v22"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-inbox395-v20",
+    "head": "a93622261c7377f31c89556198d4bff81d20bcb4",
+    "branch": "refs/heads/feat/phase4-transactional-inbox-395-v20",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-inbox395-v20"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-native-close-collector-v70",
+    "head": "81ef8ce169528c6dd8ba0de323612dc5f45d0de9",
+    "branch": "refs/heads/feat/phase4-native-close-collector-v70",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-native-close-collector-v70"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-native-close-current-v74",
+    "head": "a458d7a6c69a3122f4317d566be4d5ff672278a0",
+    "branch": "refs/heads/fix/phase4-offline-helper-admission-floor-v79",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-native-close-current-v74",
+      "refs/heads/fix/phase4-offline-helper-admission-floor-v79"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-payload396-pin-v23",
+    "head": "35d6a3e85d7ba7258c57f7331b35dd96ca66644d",
+    "branch": "refs/heads/feat/phase4-payload396-real-pin-v23",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-payload396-pin-v23",
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-payload396-state-v26",
+      "refs/heads/feat/phase4-payload-page-classification-v18"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-payload396-state-v26",
+    "head": "35d6a3e85d7ba7258c57f7331b35dd96ca66644d",
+    "branch": "refs/heads/feat/phase4-payload396-state-effects-v26",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-payload396-pin-v23",
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-payload396-state-v26",
+      "refs/heads/feat/phase4-payload-page-classification-v18"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-pr808-completed-ci-v80",
+    "head": "9d9f1f3586e203d16733a05782a1785b6c7b7789",
+    "branch": "refs/heads/fix/phase4-pr808-sdk-producers-v81",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr808-completed-ci-v80",
+      "refs/heads/feat/feedback2-schema-history-398-399"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-pr808-current-model-v69",
+    "head": "efac396737b40e5f63435ea66a3620ff547552d0",
+    "branch": "refs/heads/fix/phase4-pr808-current-model-v69",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr808-current-model-v69"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-pr808-development-v71",
+    "head": "1e129ef0ed6682c998f81a498e76bd4de61c6fec",
+    "branch": "refs/heads/fix/phase4-pr808-development-fd-v75",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr808-development-v71"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-pr808-retirement-observation-v12",
+    "head": "ff9dc40aec70b53dc1a8c63e6600dd9acfb98acb",
+    "branch": "refs/heads/fix/phase4-pr808-positive-retirement-observation-v12",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/integration/lf-p4-pr808-retirement-observation-v12",
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr808-retirement-observation-v12"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-restore-reader-v67",
+    "head": "6a7bfa58acf4e396fbc4dde372b471bb4ea8cd53",
+    "branch": "refs/heads/test/phase4-restore-reader-retirement-v67",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-restore-reader-v67",
+      "refs/heads/test/phase4-restore-reader-retirement-v67"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-restore-receipt-v65",
+    "head": "f4ab131b3ec60b5206b50f4dd00fff83f05410bc",
+    "branch": "refs/heads/fix/phase4-restore-receipt-source-contract-v66",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-restore-receipt-v65",
+      "refs/heads/fix/phase4-restore-receipt-source-contract-v66"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-restore399-adoption-20261005",
+    "head": "4b30460c634b5e991fe92c7b3ace5740b1f9e1e8",
+    "branch": "refs/heads/feat/phase4-restore-adoption-399-v4",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-restore399-adoption-20261005"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-restore399-main-entity-v8-20261006",
+    "head": "0e0162f71127bfbd2a88e848f153f4c64c134e83",
+    "branch": "refs/heads/feat/phase4-restore399-scoped-main-v8",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-restore399-main-entity-v8-20261006"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-restore808-receipts-v68",
+    "head": "e9014ee1155f89bbe323f858fe02b87a55a8d11f",
+    "branch": "refs/heads/fix/phase4-recovery808-retained-receipts-v68",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-restore808-receipts-v68"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-restore808-review-entity-v9-20261006",
+    "head": "ce36e1a802376e0d9d6b7ceb5606180d8ba6b304",
+    "branch": "refs/heads/candidate/phase4-restore808-review-v9",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-restore808-review-entity-v9-20261006"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-runtime-compile-current-v63",
+    "head": "139e4a3aa4a9f2f749f7c2e33e055810cada6f10",
+    "branch": "refs/heads/fix/phase4-runtime-http-schema-v64",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-runtime-compile-current-v63"
+    ]
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-runtime-owner-union-v56",
+    "head": "869c89d6f23aed32d98d1a0a3c6d73b924f00507",
+    "branch": "refs/heads/fix/phase4-runtime-owner-sdk-generated-v61",
+    "existsAtAudit": true,
+    "cleanAtAudit": true,
+    "remoteRefs": [
+      "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-runtime-owner-union-v56"
+    ]
+  }
+]

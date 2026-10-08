@@ -1,0 +1,310 @@
+[
+  {
+    "label": "808-final-source",
+    "head": "9d9f1f3586e203d16733a05782a1785b6c7b7789",
+    "job": "entity-pr808-sdk-producer-source-20261008-v1",
+    "receiptSha256": "64e5d3a87322807c6b35c9b4bb1629048cbff92c28533a66e397be67230f8e96",
+    "passed": true,
+    "sourceClean": true,
+    "sourceHeadUnchanged": true,
+    "processesReaped": true,
+    "logs": [
+      {
+        "log": "step-1.log",
+        "bytes": 548,
+        "sha256": "26f2a5148dfa0b1d49234b87c5e029539dd7055651a43220b15871c240d4e011",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-2.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-3.log",
+        "bytes": 82,
+        "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-4.log",
+        "bytes": 85,
+        "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-5.log",
+        "bytes": 40,
+        "sha256": "45cacd576fba32b497d6f54a0f34f240c041399e4c68480a02030afe1b0d514d",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-6.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-7.log",
+        "bytes": 211,
+        "sha256": "ee39695f6ba0ea3ff753854c900c9e93a002e87d088c940f878d51e1804bd4b5",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      }
+    ],
+    "scopeOnly": true,
+    "completeCI": false
+  },
+  {
+    "label": "restore-receipt-source",
+    "head": "f4ab131b3ec60b5206b50f4dd00fff83f05410bc",
+    "job": "entity-restore-receipt-source-linux-20261007-v2",
+    "receiptSha256": "2833b43d018e374660d19b45e327b16d5e209582f259d8638019149021a3d14d",
+    "passed": true,
+    "sourceClean": true,
+    "sourceHeadUnchanged": true,
+    "processesReaped": true,
+    "logs": [
+      {
+        "log": "step-1.log",
+        "bytes": 305,
+        "sha256": "2cd04061541c715d1b74d7dba81212e86dfd02a345e3d2f06479fdbd0328d0dc",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-2.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-3.log",
+        "bytes": 82,
+        "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-4.log",
+        "bytes": 85,
+        "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-5.log",
+        "bytes": 40,
+        "sha256": "ab030786b2325df0a299606ebe1f0e12749d8dd8302f6a5924c1a6491a1d087c",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-6.log",
+        "bytes": 206,
+        "sha256": "5cf69adcbd2013eb342cc0a2793b85476fe19378e47339e9111b4f47e5ae4236",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-7.log",
+        "bytes": 44,
+        "sha256": "bd36fbf69bedc2df71512e4f39f1b10ba3aa723f66e0fef2ea845e11a82346ca",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      }
+    ],
+    "scopeOnly": true,
+    "completeCI": false
+  },
+  {
+    "label": "restore-reader-source",
+    "head": "6a7bfa58acf4e396fbc4dde372b471bb4ea8cd53",
+    "job": "entity-restore-reader-source-linux-20261007-v1",
+    "receiptSha256": "d14507b09f8101f072db3d015f3799b52776147851b1cd7140e24fea0706c9e6",
+    "passed": true,
+    "sourceClean": true,
+    "sourceHeadUnchanged": true,
+    "processesReaped": true,
+    "logs": [
+      {
+        "log": "step-1.log",
+        "bytes": 305,
+        "sha256": "34dc1c5417f360d031c630d97fc07afdf8458fbc156ca53fd2ceef64723ae451",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-2.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-3.log",
+        "bytes": 82,
+        "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-4.log",
+        "bytes": 85,
+        "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-5.log",
+        "bytes": 40,
+        "sha256": "ab030786b2325df0a299606ebe1f0e12749d8dd8302f6a5924c1a6491a1d087c",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-6.log",
+        "bytes": 206,
+        "sha256": "5cf69adcbd2013eb342cc0a2793b85476fe19378e47339e9111b4f47e5ae4236",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-7.log",
+        "bytes": 44,
+        "sha256": "bd36fbf69bedc2df71512e4f39f1b10ba3aa723f66e0fef2ea845e11a82346ca",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      }
+    ],
+    "scopeOnly": true,
+    "completeCI": false
+  },
+  {
+    "label": "restore-receipt-native",
+    "head": "f4ab131b3ec60b5206b50f4dd00fff83f05410bc",
+    "job": "portable-v2-state399-retained-receipts-native-20261007-v112",
+    "receiptSha256": "11e7738c06de4d4b9c554bfca8d424bb5ce97ce64ffe899b3b3a2536ddb4a41d",
+    "passed": true,
+    "sourceClean": true,
+    "sourceHeadUnchanged": true,
+    "processesReaped": true,
+    "logs": [
+      {
+        "log": "step-1.log",
+        "bytes": 1492,
+        "sha256": "feca510231ef468de9f8515ac326fd0bb5964b932f8f1545681dceac0b8d7a01",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-2.log",
+        "bytes": 2528,
+        "sha256": "65bb036f070fb6eef096c30058994a11033d8b6b09bd8dd841dba645ae586c91",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-3.log",
+        "bytes": 43890,
+        "sha256": "986a55f7a97b4684bf08a14c5dba85119ea7c5469bb767e659d224133be4cdc3",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-4.log",
+        "bytes": 2049,
+        "sha256": "1d85aa0261f0031e66bf9ebc9f61bae38adf410dc7c8ffdd7836850f9d087b9e",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-5.log",
+        "bytes": 34293,
+        "sha256": "35993dd318b1eaad65b23ca6d4bb4fbdde48bf7f37eda89967434ab52c6128d7",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-6.log",
+        "bytes": 37496,
+        "sha256": "4be71bda185a41b992153e64d81a243e16ae46a3d73aafff0f54a0c66728e08e",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      }
+    ],
+    "scopeOnly": true,
+    "completeCI": false
+  },
+  {
+    "label": "offline-helper-source",
+    "head": "a458d7a6c69a3122f4317d566be4d5ff672278a0",
+    "job": "entity-offline-helper-actor-21c-source-20261008-v1",
+    "receiptSha256": "448bc97ea3252938d3f67166abb2fafd41c819396a1218af4dfe154c48882959",
+    "passed": true,
+    "sourceClean": true,
+    "sourceHeadUnchanged": true,
+    "processesReaped": true,
+    "logs": [
+      {
+        "log": "step-1.log",
+        "bytes": 504,
+        "sha256": "567c344b01be3086fd274528eba81b94c6e09ff4bcb8045f8f94e4a286c52fbb",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-2.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-3.log",
+        "bytes": 82,
+        "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-4.log",
+        "bytes": 85,
+        "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-5.log",
+        "bytes": 40,
+        "sha256": "19d57fb7ca5653778e73d2432dbc5988d70eb9fa1440198649021c78714b96ff",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-6.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      },
+      {
+        "log": "step-7.log",
+        "bytes": 44,
+        "sha256": "bd36fbf69bedc2df71512e4f39f1b10ba3aa723f66e0fef2ea845e11a82346ca",
+        "exitCode": 0,
+        "originalProcessReaped": true
+      }
+    ],
+    "scopeOnly": true,
+    "completeCI": false
+  }
+]
