@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "latent.dev.retained-source-node-failure.v1",
+  "passed": false,
+  "pullRequest": 786,
+  "sourceHead": "55c79dc8f792203f7015af656a6dd133cadd24b9",
+  "actualCiMergeSource": "0e1ebad6234f7f3a93410cf356db69ec2bb2aebc",
+  "run": 36862212377,
+  "job": 110368916832,
+  "artifactId": 11169635043,
+  "artifactSha256": "b9b1fe51b4bb694f22ea0b1640c2d807c8773765be57c51dd9fe7fef65864344",
+  "files": [
+    {
+      "path": "probe.json",
+      "bytes": 23235,
+      "sha256": "7e73131b2ee6f7699eedb355306fa847ce050eb222c267893ea44641dc23377b"
+    },
+    {
+      "path": "node-tests.json",
+      "bytes": 10452,
+      "sha256": "a7421747738e3f9f26a49373be05f472423807e36ebf69debc1b3f2bd86938b7"
+    }
+  ],
+  "producerCauseKnown": false,
+  "diagnosticSourceTests": {
+    "platform": "linux",
+    "python": "3.13.5",
+    "cases": 44,
+    "passed": 44,
+    "skipped": 0
+  },
+  "historicalCaseGuardsPreserved": 41,
+  "invocationRetried": false
+}

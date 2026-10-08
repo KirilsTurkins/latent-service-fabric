@@ -145,13 +145,13 @@ guest fields must already be canonical lowercase HTTP tokens.
 <!-- response-ownership-v1:begin -->
 | Class | Names and prefixes | Behavior |
 | --- | --- | --- |
-| Host security | `content-security-policy`, `x-content-type-options`, `x-frame-options`, `referrer-policy`, `cross-origin-opener-policy`, `cross-origin-resource-policy`, `permissions-policy`, `strict-transport-security` | Reserved on HTTP and HTTPS; host emits fixed policy (HSTS on HTTPS only). Guest conflict returns empty no-store 502. |
-| Host transport/framing | `host`, `content-length`, `content-type`, `server`, `date`, `via`, `alt-svc` | Guest fields forbidden. Use typed media-type/representation-length/body; transport owns framing. Invalid output returns empty no-store 502. |
-| Hop-by-hop | `connection`, `keep-alive`, `proxy-connection`, `te`, `trailer`, `transfer-encoding`, `upgrade` | Forbidden in the buffered profile; no chunking, trailers, upgrades or guest connection control. Invalid output returns empty no-store 502. |
-| Identity/credential forwarding | `authorization`, `proxy-authorization`, `forwarded`, `traceparent`, `tracestate`, `baggage`, `x-real-ip`, `remote-user`, `x-remote-user`, `x-original-url`, `x-rewrite-url`, `x-forwarded-*`, `x-auth-request-*`, `x-authenticated-*` | Forbidden guest output; request identity fields are stripped by host mapping. Never an application principal channel; conflict returns empty no-store 502. |
-| Platform namespace | `x-lsf-*` | Reserved platform namespace. Guest output returns empty no-store 502. |
-| Unsupported browser policy | `refresh`, `content-location`, `link`, `clear-site-data`, `report-to`, `nel`, `content-security-policy-report-only`, `cross-origin-embedder-policy`, `access-control-*` | Forbidden; guests cannot add CORS, alternate navigation, reporting or embedding policy. Conflict returns empty no-store 502. |
-| Conditional application fields | `location`, `content-encoding`, `set-cookie`, `vary` | Location: singleton canonical root-relative redirect (or 201). Encoding: singleton identity. Set-Cookie: bounded unique HTTPS __Host- cookies with exact attributes. Vary: application field; private host caching needs approved dimensions. Failed value rules return empty no-store 502. |
+| Host security | `content-security-policy`, `x-content-type-options`, `x-frame-options`, `referrer-policy`, `cross-origin-opener-policy`, `cross-origin-resource-policy`, `permissions-policy`, `strict-transport-security` | Reserved on HTTP and HTTPS; host emits fixed policy (HSTS on HTTPS only). Guest conflict returns fixed no-store 502. |
+| Host transport/framing | `host`, `content-length`, `content-type`, `server`, `date`, `via`, `alt-svc` | Guest fields forbidden. Use typed media-type/representation-length/body; transport owns framing. Invalid output returns fixed no-store 502. |
+| Hop-by-hop | `connection`, `keep-alive`, `proxy-connection`, `te`, `trailer`, `transfer-encoding`, `upgrade` | Forbidden in the buffered profile; no chunking, trailers, upgrades or guest connection control. Invalid output returns fixed no-store 502. |
+| Identity/credential forwarding | `authorization`, `proxy-authorization`, `forwarded`, `traceparent`, `tracestate`, `baggage`, `x-real-ip`, `remote-user`, `x-remote-user`, `x-original-url`, `x-rewrite-url`, `x-forwarded-*`, `x-auth-request-*`, `x-authenticated-*` | Forbidden guest output; request identity fields are stripped by host mapping. Never an application principal channel; conflict returns fixed no-store 502. |
+| Platform namespace | `x-lsf-*` | Reserved platform namespace. Guest output returns fixed no-store 502. |
+| Unsupported browser policy | `refresh`, `content-location`, `link`, `clear-site-data`, `report-to`, `nel`, `content-security-policy-report-only`, `cross-origin-embedder-policy`, `access-control-*` | Forbidden; guests cannot add CORS, alternate navigation, reporting or embedding policy. Conflict returns fixed no-store 502. |
+| Conditional application fields | `location`, `content-encoding`, `set-cookie`, `vary` | Location: singleton canonical root-relative redirect (or 201). Encoding: singleton identity. Set-Cookie: bounded unique HTTPS __Host- cookies with exact attributes. Vary: application field; private host caching needs approved dimensions. Failed value rules return fixed no-store 502. |
 | Application cache input | `cache-control`, `age` | Accepted bounded input. Host strips supplied Cache-Control/Age from dynamic wire output and emits no-store plus its own local-hit Age. Duplicate/unsafe cache directives bypass host caching; they do not authorize shared browser/proxy caching. |
 | Credential-sensitive application data | `cookie`, `www-authenticate`, `proxy-authenticate`, `authentication-info`, `proxy-authentication-info` | Accepted as bounded application response fields; never platform authentication. Authors must classify their data and avoid disclosing credentials. Set-Cookie uses the separate strict conditional profile. |
 | Other application fields | Other valid names | Other canonical lowercase HTTP-token names are accepted (for example etag, last-modified, expires, content-language and x-app-*). Ordinary duplicate fields are retained; applications define their semantics. All fields obey the shared grammar and finite budgets. |
@@ -188,7 +188,9 @@ The runtime records only the bounded typed operator reason
 under the actual admitted tenant/activation scope and current diagnostic-read
 authorization. Execution success is distinct from accepted HTTP output. This
 does not expose a raw internal diagnostic in HTTP: public output remains the
-fixed empty 502 with host security headers and `no-store`. Use the local SDK
+fixed 502 with the 12-byte ASCII body `Bad gateway\n` (empty for HEAD), host
+security headers and `no-store`. Alpha.4 and development share these delivery
+failure bytes; a transport-level rejection instead has an empty body. Use the local SDK
 reason and this ownership table to correct output rather than copying raw
 application values into error messages.
 
