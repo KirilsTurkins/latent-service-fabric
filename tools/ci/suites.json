@@ -8646,14 +8646,16 @@
         "phase4::tests::missing_identity_and_wrong_tenant_cannot_touch_recovery_runtime",
         "phase4::tests::namespace_operations_require_management_role_before_domain_owner",
         "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation",
-        "phase4::state_management::tests::effects::controlled_dispatch_requires_the_actual_current_policy_and_source_before_provider_acceptance"
+        "phase4::state_management::tests::effects::controlled_dispatch_requires_the_actual_current_policy_and_source_before_provider_acceptance",
+        "phase4::state_management::tests::effects::direct_effect_inspection_requires_original_caller_link_and_current_read_policy",
+        "phase4::state_management::tests::effects::effect_history_projects_actual_original_dispatch_receipts_without_provider_reexecution"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.lib.latent-wire",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 193,
+      "minimumCases": 195,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

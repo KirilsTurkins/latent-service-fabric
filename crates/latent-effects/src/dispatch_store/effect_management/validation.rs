@@ -115,6 +115,26 @@ impl EffectManagementCatalog {
         })
     }
 
+    /// Read the actual latest management receipt after its durable target,
+    /// plan, reservation and dispatcher-stamp links have been verified.
+    pub fn receipt_for_effect(
+        view: &ReadView,
+        record: &EffectRecord,
+    ) -> Result<Option<EffectManagementReceipt>, StoreError> {
+        Self::validate_effect(view, record)?;
+        let Some(stamp) = record.management() else {
+            return Ok(None);
+        };
+        let operation =
+            crate::effect_identity::parse(stamp.operation_digest()).map_err(storage_error)?;
+        let key = codec::row(RECEIPT_PREFIX, &operation);
+        let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
+        validate_receipt(view, &key, &bytes)?;
+        EffectManagementReceipt::decode(&bytes)
+            .map(Some)
+            .map_err(codec::storage)
+    }
+
     pub(crate) fn validate_effect(
         view: &ReadView,
         record: &EffectRecord,
