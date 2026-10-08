@@ -98,8 +98,10 @@ async fn serve(
         .and_then(|duration| duration.checked_add(settings.telemetry.shutdown_timeout))
         .and_then(|duration| duration.checked_add(Duration::from_secs(1)))
         .ok_or_else(|| Failure::new("configuration", PlatformErrorCode::InvalidArgument))?;
-    let (startup, observation) =
-        crate::standalone::observe_startup(StandaloneNode::start(settings, control, threads)).await;
+    let (startup, observation) = Box::pin(crate::standalone::observe_startup(
+        StandaloneNode::start(settings, control, threads),
+    ))
+    .await;
     if let Some(observation) = observation {
         // Closed producer-owned codes only; retain the original startup error
         // and cleanup result even if writing the bounded diagnostic fails.
