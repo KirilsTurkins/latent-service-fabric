@@ -48,13 +48,6 @@ impl ActivationBudget {
         state.host_reserved_memory += bytes;
         state.outstanding_reservations = count;
         if transaction {
-            state.host_observed_memory += bytes;
-            let observed =
-                state.own_memory_peak + state.host_observed_memory + state.child_observed_memory;
-            state.consumption.peak_memory_bytes = state.consumption.peak_memory_bytes.max(observed);
-        }
-
-        if transaction {
             // The transaction host prepays its finite native working set.
             // Preserve that original Phase 4 observation while Phase 3 runtime
             // allocations remain explicitly confirmed after allocation.
@@ -157,7 +150,7 @@ mod tests {
         let mut owner = budget.reserve_host_memory(250).unwrap();
         owner.confirm();
         owner.confirm();
-        assert_eq!(budget.outstanding_reservations(), 0);
+        assert_eq!(budget.outstanding_reservations(), 1);
         budget.observe_peak_memory(600).unwrap();
         let terminal = budget.finalize_at(None, Instant::now());
         assert!(terminal.violation().is_none());
@@ -165,6 +158,7 @@ mod tests {
         assert_eq!(budget.host_memory_bytes(), 250);
         assert!(budget.reserve_host_memory(1).is_err());
         drop(owner);
+        assert_eq!(budget.outstanding_reservations(), 0);
         assert_eq!(budget.host_memory_bytes(), 0);
         assert_eq!(budget.finalize_at(None, Instant::now()), terminal);
     }
