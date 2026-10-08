@@ -20,7 +20,13 @@ pub use admission::{
 };
 pub use delivery::ResultDeliveryFence;
 #[cfg(test)]
-pub(crate) use effects::verify_link as verify_effect_link_for_test;
+pub(crate) fn verify_effect_link_for_test(
+    command: &latent_commit::atomic::CommandRecord,
+    effect: &str,
+    record: &latent_effects::dispatch::EffectRecord,
+) -> Result<(), latent_state::embedded::StoreError> {
+    effects::verify_link(command, effect, record)
+}
 pub use effects::CommandEffectInspection;
 pub use original::OriginalCommandMetadata;
 pub use output::{CanonicalCommandResult, CommandOutput, CommandResultCodec};
