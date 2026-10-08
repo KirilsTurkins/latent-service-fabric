@@ -1,36 +1,49 @@
 {
   "cases": [
     "NamespaceActorOracle.test_create_retains_exact_scoped_actor_schema_operation_and_audit_checks",
-    "NamespaceActorOracle.test_operator_actor_matches_actual_original_caller_framing"
+    "NamespaceActorOracle.test_operator_actor_matches_actual_original_caller_framing",
+    "OfflineQuiesceActorOracle.test_offline_quiesce_keeps_exact_scoped_actor_operation_audit_and_retirement_order"
   ],
   "guards": {
-    "NamespaceActorOracle.test_create_retains_exact_scoped_actor_schema_operation_and_audit_checks": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e4b4f650b54aeca0610d4888a1f39e29bf38cf19faa2d5149561a0213c4803f2",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
     "NamespaceActorOracle.test_operator_actor_matches_actual_original_caller_framing": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:e4b4f650b54aeca0610d4888a1f39e29bf38cf19faa2d5149561a0213c4803f2",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "NamespaceActorOracle.test_create_retains_exact_scoped_actor_schema_operation_and_audit_checks": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4b4f650b54aeca0610d4888a1f39e29bf38cf19faa2d5149561a0213c4803f2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "OfflineQuiesceActorOracle.test_offline_quiesce_keeps_exact_scoped_actor_operation_audit_and_retirement_order": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4b4f650b54aeca0610d4888a1f39e29bf38cf19faa2d5149561a0213c4803f2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_actor.py",
-  "reviewReason": "Validate the exact credential-free OriginalCaller operator identity, preserving namespace operation, signed schema and durable audit receipt checks; foreign tenant, subject, kind and absent audit are refused.",
+  "reviewReason": "Validate the exact credential-free OriginalCaller operator identity, preserving namespace operation, signed schema and durable audit receipt checks; foreign tenant, subject, kind and absent audit are refused.; preserve both original actor cases and guards; add exact offline quiesce actor/audit/operation and retirement-order refusal oracle",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -71,5 +71,47 @@ class NamespaceActorOracle(unittest.TestCase):
                 self.assertEqual(client.calls[0][:2], ("state", "create"))
 
 
+class OfflineQuiesceActorOracle(unittest.TestCase):
+    def test_offline_quiesce_keeps_exact_scoped_actor_operation_audit_and_retirement_order(self):
+        from types import SimpleNamespace
+        from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
+        for change in (None, "bare-subject", "foreign-tenant", "kind", "operation", "audit", "unknown"):
+            with self.subTest(change=change):
+                operation = "original-offline-quiesce"
+                value = {"outcomeKnown": True, "data": {"receipt": {
+                    "operationId": operation, "authenticatedOperator": ACTOR},
+                    "auditAcknowledgement": {"status": "AUDIT_ACK_STATUS_DURABLE"}}}
+                receipt = value["data"]["receipt"]
+                if change == "bare-subject":
+                    receipt["authenticatedOperator"] = cfg.OPERATOR
+                elif change == "foreign-tenant":
+                    with patch.object(cfg, "TENANT", "foreign"):
+                        receipt["authenticatedOperator"] = lifecycle.operator_actor()
+                elif change == "kind":
+                    receipt["authenticatedOperator"] = ACTOR.replace("administrator:", "user:", 1)
+                elif change == "operation":
+                    receipt["operationId"] = "other-operation"
+                elif change == "audit":
+                    value["data"]["auditAcknowledgement"] = None
+                elif change == "unknown":
+                    value["outcomeKnown"] = False
+                events, calls = [], []
+                subject = OfflineCampaign.__new__(OfflineCampaign)
+                subject.client = SimpleNamespace(call=lambda *args: (calls.append(args), value)[1],
+                    evidence=SimpleNamespace(passed=lambda *_: events.append("receipt")))
+                subject.node = SimpleNamespace(stop=lambda: events.append("stop"))
+                with patch.object(lifecycle, "inspect_namespace", return_value={"generation": "2"}), \
+                        patch.object(lifecycle, "admission_lease_interval", side_effect=lambda _: events.append("lease")):
+                    if change is None:
+                        subject.quiesce(PUBLICATION, operation)
+                        self.assertEqual(events, ["receipt", "stop", "lease"])
+                    else:
+                        with self.assertRaisesRegex(ValueError, "actual-current-authorized-quiesce"):
+                            subject.quiesce(PUBLICATION, operation)
+                        self.assertEqual(events, [])
+                self.assertEqual(len(calls), 1)
+                self.assertEqual(calls[0][-4:], ("--operation-id", operation, "--expected-generation", "2"))
+
+
 if __name__ == "__main__":
     unittest.main()

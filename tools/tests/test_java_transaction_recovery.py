@@ -289,6 +289,83 @@ class InspectionLeaseOracle(unittest.TestCase):
             self.assertEqual(clock["now"], 0)
 
 
+class OfflineHelperLeaseOracle(unittest.TestCase):
+    """Controlled helper floor/refusal observations, not native recovery evidence."""
+
+    @staticmethod
+    def fixture(deadline=100, change=None, cancelled=False):
+        from contextlib import ExitStack
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import lifecycle
+        from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
+        clock = {"now": 0.0, "restartNotBefore": 0.0}
+        reports, starts = [], []
+
+        def run(_configuration, _publication, request):
+            if clock["now"] < clock["restartNotBefore"]:
+                raise AssertionError("helper-open-before-original-catalog-floor")
+            starts.append(clock["now"])
+            clock["restartNotBefore"] = clock["now"] + 5
+            report = observed()
+            report["result"] = {"action": request["action"]}
+            if change == "catalog":
+                report["catalogsRetired"] = False
+            elif change == "physical":
+                report["retirement"]["physicallyRetired"] = False
+            elif change == "worker":
+                report["retirement"]["liveWorkers"] = 1
+            reports.append(copy.deepcopy(report))
+            return report
+
+        def cancellation():
+            if cancelled:
+                raise ValueError("original-cancellation")
+
+        subject = OfflineCampaign.__new__(OfflineCampaign)
+        subject.configuration = "original-owned-configuration"
+        subject.publication = "original-selected-publication"
+        subject.native = SimpleNamespace(run=run)
+        subject.client = SimpleNamespace(deadline=deadline, cancellation=SimpleNamespace(check=cancellation))
+        stack = ExitStack()
+        stack.enter_context(patch.object(lifecycle.time, "monotonic", lambda: clock["now"]))
+        stack.enter_context(patch.object(lifecycle.time, "sleep", lambda interval: clock.update(now=clock["now"] + interval)))
+        return stack, subject, reports, starts, clock
+
+    def test_each_successful_retired_helper_action_keeps_the_original_catalog_floor_before_reopen(self):
+        stack, subject, reports, starts, clock = self.fixture()
+        first, second = {"action": "inspect-namespace"}, {"action": "review"}
+        original = copy.deepcopy((first, second))
+        with stack:
+            self.assertEqual(subject.action(first), {"action": "inspect-namespace"})
+            self.assertEqual(subject.action(second), {"action": "review"})
+        self.assertEqual((first, second), original)
+        self.assertEqual(len(starts), 2)
+        self.assertGreaterEqual(starts[1], starts[0] + 5)
+        self.assertGreaterEqual(clock["now"], clock["restartNotBefore"])
+        self.assertTrue(all(report["operationSucceeded"] for report in reports))
+
+    def test_elapsed_helper_floor_never_substitutes_for_catalog_worker_or_physical_retirement(self):
+        for change in ("catalog", "physical", "worker"):
+            stack, subject, reports, starts, clock = self.fixture(change=change)
+            with self.subTest(change=change), stack, self.assertRaises(ValueError):
+                subject.action({"action": "inspect-namespace"})
+            self.assertEqual(len(starts), 1)
+            self.assertEqual(clock["now"], 0)
+            self.assertTrue(reports[0]["operationSucceeded"])
+            self.assertEqual(reports[0]["result"], {"action": "inspect-namespace"})
+
+    def test_helper_wait_keeps_the_original_success_report_and_refuses_deadline_or_cancellation(self):
+        for deadline, cancelled in ((5, False), (100, True)):
+            stack, subject, reports, starts, clock = self.fixture(deadline=deadline, cancelled=cancelled)
+            with self.subTest(deadline=deadline, cancelled=cancelled), stack, self.assertRaises(ValueError):
+                subject.action({"action": "inspect-namespace"})
+            self.assertEqual(len(starts), 1)
+            self.assertEqual(clock["now"], 0)
+            self.assertTrue(reports[0]["operationSucceeded"])
+            self.assertEqual(subject.client.deadline, deadline)
+
+
 class NativeRecoveryOracle(unittest.TestCase):
     def test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement(self):
         from types import SimpleNamespace
