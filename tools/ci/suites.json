@@ -683,6 +683,19 @@
       "suite": "latent-wasmtime.test.vault-secrets",
       "testThreads": 1,
       "timeoutSeconds": 300
+    },
+    "http-response-policy": {
+      "exact": true,
+      "filter": "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity",
+      "ignored": true,
+      "names": [
+        "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latentd.lib.latentd",
+      "testThreads": 1,
+      "timeoutSeconds": 180
     }
   },
   "sourceRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",

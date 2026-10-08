@@ -72,9 +72,11 @@ The current rules below continue to apply to running nodes.
 This is an origin-based CSRF profile, not a synchronizer-token or login/session
 framework. Legacy clients lacking an Origin on unsafe public calls fail closed.
 The host emits `Referrer-Policy: same-origin`: cross-origin referrers are withheld
-without making same-origin non-CORS POST Origin become `null`, as the
+without requiring a same-origin non-CORS POST Origin to become `null`, as the
 [Fetch Origin-header algorithm](https://fetch.spec.whatwg.org/#origin-header)
-would do for `no-referrer`. Browser tests exercise an actual same-origin POST.
+specifies for `no-referrer`. Browser tests record the actual Origin and response;
+browser implementations can differ from that algorithm. The maintained POST
+helper explicitly selects `same-origin` after removing consumed URL data.
 
 ## Host-owned response policy
 
@@ -218,8 +220,26 @@ same-origin unsafe-method Origin behavior in the application; the maintained
 POST helper uses an explicit `same-origin` policy after URL cleanup.
 
 The maintained controlled Angular/browser example includes the meta policy
-before its external bootstrap, exercises synthetic token-bearing document/fetch
-URLs, and verifies no token reaches unintended referrers or reused output.
+
+before its external bootstrap and verifies no token reaches unintended referrers
+or reused output. It loads a canonical signed asset URL, then uses browser history
+to give the document a synthetic query token before fetch/navigation probes.
+Immutable asset URLs still reject queries; this is not evidence that direct
+query-bearing asset navigation is supported. The public application helper
+removes the document token before its POST. A separate token-bearing POST using
+`no-referrer` verifies no Referer and records the browser's finite Origin/status
+pair: a same-origin Origin receives the normal 200, while `Origin: null` must
+receive empty no-store 403. The 2026-10-01 Chromium 153.0.8010.12 observation
+preserved its same-origin Origin; it is not evidence of an actual null-Origin
+browser rejection. Native wire tests separately require null-Origin rejection.
+The maintained opaque-document probe also records a bounded outcome without
+changing CSP, CORS or browser private-network policy. On that Chromium version,
+the data document had origin `null`, but the POST encountered a verified browser
+policy failure without exposing an Origin value or node response. The exact
+activation count verifies that it created no guest. This is neither a measured
+node 403 nor evidence about whether a request reached the network before the
+browser reported failure.
+
 Its actual host responses still report `same-origin`, strict CSP and `no-store`
 on application traffic. A meta element inserted after initial resource fetching
 cannot retroactively protect those requests. LSF never inserts it at runtime or
@@ -380,6 +400,10 @@ coverage. Ordinary test output marks missing component/browser prerequisites as
 ignored, not successful execution. CI runs the browser probe from its current
 Cargo artifact inventory and retains the compact observations; a missing test,
 browser, fixture or receipt is a failure, not substituted security evidence.
+The required renderer lane also runs the exact `http-response-policy` selection
+with that prepared public component. It checks the real fixed 502 response,
+successful subsequent requests and the admitted activation's bounded nonterminal
+output-validation diagnostic through tenant-scoped operator journal queries.
 
 See the [bounded local validation observations](../testing/browser-boundary.md)
 for exact tested code, dependency heads, counts and redacted artifact identities.
