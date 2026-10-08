@@ -1,0 +1,25 @@
+{
+  "head": "9d9f1f3586e203d16733a05782a1785b6c7b7789",
+  "parentPublishedHead": "1e129ef0ed6682c998f81a498e76bd4de61c6fec",
+  "reviewedPaths": [
+    "api/proto/phase1-descriptor-contract.json",
+    "crates/latent-state/src/protected_store/tests/migration/fixture.rs",
+    "docs/protocol/phase-1-contract-hardening.md",
+    "sdk/dotnet/Latent.Sdk.Transport.Tests/Vectors.cs",
+    "sdk/dotnet/protobuf.lock.json",
+    "sdk/typescript-client/src/node/protocol/generated.ts"
+  ],
+  "actualMaintainedBufAndLocked31_1NodeGeneration": true,
+  "dotnetGenerationReceiptAndAllSixInputsProjectsLocksValidatorAuthenticated": true,
+  "dotnetOnlyNodeInputAndNodeOutputHashesChange": true,
+  "exactFixtureSelectionCount": 62,
+  "all78OriginalFixtureBytesPreserved": true,
+  "originalContradictoryCasePreserved": true,
+  "allRoundtripAndBufferBoundsPreserved": true,
+  "restartWaitReusesActualMetadataRetirementWithinOriginalWatchdog": true,
+  "noSnapshotRetryOrMutationReplayAdded": true,
+  "allMigrationReplayAndReceiptAssertionsUnchanged": true,
+  "branchAncestryPreserved": true,
+  "finalSourceAndNativePendingAtReview": true,
+  "fullCIOrTicketClosureClaimed": false
+}

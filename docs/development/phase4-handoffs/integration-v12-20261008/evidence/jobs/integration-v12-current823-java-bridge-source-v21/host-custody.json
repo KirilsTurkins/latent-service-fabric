@@ -1,0 +1,50 @@
+{
+  "at": "2026-10-08T05:39:35.106407+00:00",
+  "receiptSha256": "4730e2a199fb51ecf449019572f80bc4e0f6c407fcd512a6d8d4eecdd5e2643e",
+  "logs": [
+    {
+      "path": "step-1.log",
+      "sha256": "9b48c32712a86e90020bf054a0c3866dc88de96ad4c91ae1a58a258e032f6f85",
+      "bytes": 487,
+      "matchesNativeReceipt": true
+    },
+    {
+      "path": "step-2.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "matchesNativeReceipt": true
+    },
+    {
+      "path": "step-3.log",
+      "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484",
+      "bytes": 82,
+      "matchesNativeReceipt": true
+    },
+    {
+      "path": "step-4.log",
+      "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e",
+      "bytes": 85,
+      "matchesNativeReceipt": true
+    },
+    {
+      "path": "step-5.log",
+      "sha256": "09d3c37f180a9f4231719e8b0b19fe21bcf1f3f422bed53a7c379de74c572825",
+      "bytes": 40,
+      "matchesNativeReceipt": true
+    },
+    {
+      "path": "step-6.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "matchesNativeReceipt": true
+    },
+    {
+      "path": "step-7.log",
+      "sha256": "bd36fbf69bedc2df71512e4f39f1b10ba3aa723f66e0fef2ea845e11a82346ca",
+      "bytes": 44,
+      "matchesNativeReceipt": true
+    }
+  ],
+  "dockerExitCode": 0,
+  "completeCI": false
+}

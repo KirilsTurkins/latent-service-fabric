@@ -1,0 +1,67 @@
+{
+  "at": "2026-10-08T03:42:39.260786+00:00",
+  "head": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+  "tree": "89456835c8ff43708a38e2209ccd1167dd67f872",
+  "steps": [
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "tools/compile_transaction_guests.py",
+        "--language",
+        "java",
+        "--output",
+        "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-six-compiler-v7/results",
+        "--wasi-sdk",
+        "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-tools-v1/wasi-sdk",
+        "--java-schema-put-once"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 225.89451653599826,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "tools/compile_transaction_guests.py",
+        "--language",
+        "java",
+        "--output",
+        "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-six-compiler-v7/diagnostic",
+        "--wasi-sdk",
+        "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-tools-v1/wasi-sdk",
+        "--java-post-stage-diagnostic"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 46.17328019400156,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-2.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ],
+  "passed": true,
+  "elapsedSeconds": 274.96119708400147,
+  "sourceClean": true,
+  "sourceHeadUnchanged": true,
+  "rustVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "deadlineSeconds": 1800,
+  "maximumTargetGrowthBytes": 17179869184,
+  "targetGrowthBytes": 0,
+  "originalProcessReaped": true,
+  "infrastructureError": null,
+  "completeCI": false,
+  "environment": "Root-owned Debian12 Linux x86_64/ext4, UID10001, pinned Rust1.97.1/Python3.13.5.",
+  "cargoBuildJobs": 2,
+  "checkout": "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3"
+}

@@ -1,0 +1,73 @@
+{
+  "parent": "76307dbbe24b51fb8b1316c4fbf7047914759a51",
+  "paths": [
+    {
+      "path": "sdk/c/tests/profile_vectors.h",
+      "beforeSha256": "1a3343ae237ae2899dfd508109af8b071560d9e2d8fdfc259de79032758c1893",
+      "afterSha256": "aac28155f1ce895450754d1f38e074b1e9d7646bbcc62acb63073f41fd243af0",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    },
+    {
+      "path": "sdk/dotnet/Latent.Sdk.SemanticTests/ProfileVectors.cs",
+      "beforeSha256": "04c208f9d5960c62561c0dc5afb5acd1df2d1dab580ee07a36cb8fa9c4e9ff00",
+      "afterSha256": "c93bfd7730c4c691b411be42780816dc8c4c5287add898c78ad451c275752cb2",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    },
+    {
+      "path": "sdk/dotnet/Latent.Sdk.Transport.Tests/Vectors.cs",
+      "beforeSha256": "f911a03099b05e984f0760dc98ecfed91a2c4a703a28562372f5cf38505300a6",
+      "afterSha256": "73c3b22f8ae4ce0654632d84dec61d7c85f4f200105e96bc6f9837b0631f6ecb",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    },
+    {
+      "path": "sdk/go/profile/vectors_test.go",
+      "beforeSha256": "6b34a0c4709b5d8f72c34be801366af9a0a52ec8b4d721a27806f840a4121f90",
+      "afterSha256": "de65a188293f24125fb3edb8ef974be1044aba60e20a9bc105c007291fb3e791",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    },
+    {
+      "path": "sdk/java-client/src/test/java/dev/latent/sdk/ProfileVectors.java",
+      "beforeSha256": "587c577e3c9190a11dcf45e09eb03f24aa1490fcbe7643b8ca14dbbdf34ba381",
+      "afterSha256": "b89e23d551d0ab4d349d46bbe4f0df63933d1ae1bceea7317f8aaff815447048",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    },
+    {
+      "path": "sdk/java-client/src/transportTest/java/dev/latent/sdk/transport/FixtureCodecTest.java",
+      "beforeSha256": "9d74cb52cd111548e5e51829e36504f0d5bdb4918c082b33e9b2c9f1b3e8e3b7",
+      "afterSha256": "9250f8e4a00199c5d860e4a4a8b351fd7a39d9cbaa6fc24a61a83825482eebe5",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    },
+    {
+      "path": "sdk/profile/fixtures.json",
+      "beforeSha256": "a91d7e31da84b141c727479aa8400727514ef31ec4bfb992145b552f24b4d62b",
+      "afterSha256": "2e682fbf95bf20ee3f9d93f5a294b01962acbf1ca59efcb124a518db7c8b5f0f",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    },
+    {
+      "path": "sdk/profile/test_profile.py",
+      "beforeSha256": "5793d51041acde3db53cf6e048ddc8788d0455710b27c91f98626289c4790599",
+      "afterSha256": "2f8eb315e4beb8f70891c3a3bfdf88f83ccfe6bc544437bde7a3c9f7128f6e36",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    },
+    {
+      "path": "sdk/rust/tests/client_profile_vectors.rs",
+      "beforeSha256": "f57d08193a41b778b36eba55029f6c530dca13b6f227cef3e5cff07b80ec6578",
+      "afterSha256": "6fb069b5123f7d80e67ae6a3f152f27bfd86e7dff51a3f4b11b3ec423decfe91",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    },
+    {
+      "path": "sdk/typescript-client/tests/profile-vectors.ts",
+      "beforeSha256": "ecb950f6c8c1a9645b23750e39df473a24635e7039c1c9bdf86ff58f3e63c994",
+      "afterSha256": "0697f157c685f4cccb225122746adee2818393e849d08499ecdb862ef65dcd36",
+      "allPriorFixtureAndAssertionContentPreserved": true
+    }
+  ],
+  "all13GeneratedFilesActualCheckPassed": true,
+  "actual12ProfileTestsPassed": true,
+  "original77FixturesUnchanged": true,
+  "newTotal78": true,
+  "JavaSuccessfulProtobuf61WithOriginalContradictory1": true,
+  "DotnetSelectedProtobuf62": true,
+  "noProductionModelProtoOrGrantChanges": true,
+  "linuxSourceAndNativePending": true
+}

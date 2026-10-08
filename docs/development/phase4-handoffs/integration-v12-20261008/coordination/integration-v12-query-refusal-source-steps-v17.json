@@ -1,0 +1,57 @@
+[
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "-c",
+    "import os,tempfile,subprocess; root=tempfile.mkdtemp(prefix='p4-lu-',dir='/tmp'); os.environ['TMPDIR']=root; subprocess.run(['python3', '-X', 'utf8', '-B', '-m', 'unittest', 'tools.tests.test_ci_contracts', 'tools.tests.test_ci_suite_inventory', 'tools.tests.test_build_snapshot', 'tools.tests.test_native_loader_boundary', 'tools.tests.test_node_security_profile_schema', 'tools.tests.test_security_npm_sources', 'tools.tests.test_phase1_conformance', 'tools.tests.test_transaction_guest_authoring', 'tools.tests.test_transaction_guest_compilers', 'tools.tests.test_java_resource_runtime', 'tools.tests.test_capability_policy_schema', 'tools.tests.test_node_audit_schema', 'tools.tests.test_rust_ownership_profile', 'tools.tests.test_java_transaction_campaign', 'tools.tests.test_java_transaction_diagnostics', 'tools.tests.test_java_transaction_fault_campaign', 'tools.tests.test_java_transaction_provision', 'tools.tests.test_java_transaction_qualification', 'tools.tests.test_java_transaction_recipient', 'tools.tests.test_java_transaction_recovery', 'tools.tests.test_java_transaction_schema', 'tools.tests.test_java_transaction_staging', 'tools.tests.test_ci_suite_discovery', 'tools.tests.test_ci_suite_fragments', 'tools.tests.test_manifest_codec_contract', 'tools.tests.test_manifest_integer_dialect', 'tools.tests.test_dev_workflow', 'tools.tests.test_java_current_inputs', 'tools.tests.test_java_diagnostic_program', 'tools.tests.test_java_provider_timeout', 'tools.tests.test_java_resource_diagnostics', 'tools.tests.test_java_transaction_actor', 'tools.tests.test_java_transaction_refusal_observation'],check=True)"
+  ],
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "tools/generate_transaction_contracts.py",
+    "--check"
+  ],
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "tools/validate_foundation.py"
+  ],
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "tools/ci_coverage.py",
+    "--receipt",
+    "target/ci/observed-query-refusal-v17-linux.json"
+  ],
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "tools/validate_repository.py"
+  ],
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "-c",
+    "import subprocess; subprocess.run(['cargo', '+1.97.1', 'fmt', '--all', '--', '--check'], check=True); subprocess.run(['cargo', '+1.97.1', 'metadata', '--locked', '--no-deps', '--format-version', '1'], check=True, stdout=subprocess.DEVNULL)"
+  ],
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "-c",
+    "import subprocess; subprocess.run(['cargo','+1.97.1','metadata','--locked','--offline','--all-features','--format-version','1'],check=True,stdout=subprocess.DEVNULL); import os; from pathlib import Path; fmt=Path('/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/root-private-go127-formatter-20261007-v1/go/bin'); env=dict(os.environ,PATH=str(fmt)+os.pathsep+os.environ['PATH']); subprocess.run(['python3','-X','utf8','-B','sdk/profile/generate.py','--check'],env=env,check=True)"
+  ]
+]

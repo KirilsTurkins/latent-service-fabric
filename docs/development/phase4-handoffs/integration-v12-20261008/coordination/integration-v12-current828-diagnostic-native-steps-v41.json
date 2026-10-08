@@ -1,0 +1,11 @@
+[
+  ["cargo", "+1.97.1", "check", "-p", "latent-control-store", "-p", "latent", "-p", "latent-rpc", "--all-targets", "--all-features", "--locked", "--offline"],
+  ["cargo", "+1.97.1", "test", "-p", "latent-control-store", "--lib", "--all-features", "--locked", "--offline", "deployments::control_admission::tests::closed_stage_preserves_failure_identity_and_never_copies_private_payload", "--", "--exact", "--nocapture"],
+  ["cargo", "+1.97.1", "test", "-p", "latent-control-store", "--lib", "--all-features", "--locked", "--offline", "deployments::tests::operations::lease::", "--", "--nocapture"],
+  ["cargo", "+1.97.1", "test", "-p", "latent", "--lib", "--all-features", "--locked", "--offline", "error::tests::control_preparation_stage_survives_wire_capture_without_disclosing_peer_data_or_certainty", "--", "--exact", "--nocapture"],
+  ["cargo", "+1.97.1", "test", "-p", "latent-rpc", "--lib", "--all-features", "--locked", "--offline", "--", "--list"],
+  ["cargo", "+1.97.1", "test", "-p", "latent-rpc", "--lib", "--all-features", "--locked", "--offline", "--", "--nocapture"],
+  ["cargo", "+1.97.1", "test", "-p", "latent-control-store", "--lib", "--all-features", "--locked", "--offline", "--", "--list"],
+  ["cargo", "+1.97.1", "test", "-p", "latent-control-store", "--lib", "--all-features", "--locked", "--offline", "--", "--nocapture"],
+  ["cargo", "+1.97.1", "clippy", "-p", "latent-control-store", "-p", "latent", "-p", "latent-rpc", "--all-targets", "--all-features", "--locked", "--offline"]
+]

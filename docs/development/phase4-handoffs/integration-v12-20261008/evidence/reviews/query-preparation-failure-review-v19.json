@@ -1,0 +1,13 @@
+{
+  "head": "528b2f59246855e3f3e23682d49b1fcd30940ad7",
+  "stoppedRecordSha256": "170463a3aad5c74f3fa36b8cd0f99b72d3fb0e64ca4b3509b77064c36728b011",
+  "actualOnePreparationJobStarted": true,
+  "actualPreparationJobsFailed": 1,
+  "actualPreparationJobsCompleted": 0,
+  "preparationWorkerPhysicallyJoined": true,
+  "compilationFailureStageReasonPending": true,
+  "actualGuestInvocationSuccessNotProven": true,
+  "nativeGuestStateOwnersPhysicallyRetired": true,
+  "noBudgetOrProfileRelaxation": true,
+  "originalFailedRootNotResumed": true
+}

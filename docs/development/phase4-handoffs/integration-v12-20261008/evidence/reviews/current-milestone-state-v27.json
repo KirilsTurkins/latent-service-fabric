@@ -1,0 +1,202 @@
+{
+  "at": "2026-10-08T06:09:31.629512+00:00",
+  "milestone": 7,
+  "exactTitle": "Phase 4 \u2014 Transactional State & Durable Effects",
+  "openCount": 25,
+  "closedCount": 7,
+  "rows": [
+    {
+      "number": 718,
+      "state": "open",
+      "title": "[Phase 4][Java] Implement and qualify guest transactions, queries and durable intents",
+      "updatedAt": "2026-09-28T17:12:27Z"
+    },
+    {
+      "number": 409,
+      "state": "open",
+      "title": "[Phase 4] Integrate transactional commands, queries and result recovery with shared HTTP ingress",
+      "updatedAt": "2026-09-28T17:24:18Z"
+    },
+    {
+      "number": 408,
+      "state": "open",
+      "title": "[Phase 4] Implement bounded read-only state queries without durable command writes",
+      "updatedAt": "2026-09-28T17:23:36Z"
+    },
+    {
+      "number": 407,
+      "state": "open",
+      "title": "[Phase 4 Gate] Validate atomic business state, durable effects, recovery and bounded resource ownership",
+      "updatedAt": "2026-09-30T15:45:37Z"
+    },
+    {
+      "number": 406,
+      "state": "open",
+      "title": "[Phase 4] Publish tested six-language guest, client, recovery and operations guides",
+      "updatedAt": "2026-09-28T17:20:26Z"
+    },
+    {
+      "number": 405,
+      "state": "open",
+      "title": "[Phase 4] Extend native and developer distributions for stateful capsules, upgrades and recovery",
+      "updatedAt": "2026-09-28T17:19:37Z"
+    },
+    {
+      "number": 404,
+      "state": "open",
+      "title": "[Phase 4] Measure stateful density, commit latency, backlog plateaus and recovery cost",
+      "updatedAt": "2026-09-28T17:24:59Z"
+    },
+    {
+      "number": 403,
+      "state": "open",
+      "title": "[Phase 4] Prove integrated atomicity, isolation, crash recovery and authority under adversarial failures",
+      "updatedAt": "2026-09-28T17:18:21Z"
+    },
+    {
+      "number": 402,
+      "state": "open",
+      "title": "[Phase 4] Deliver a stateful application proving commands, outbox, redelivery and browser recovery",
+      "updatedAt": "2026-09-28T17:17:39Z"
+    },
+    {
+      "number": 401,
+      "state": "open",
+      "title": "[Phase 4] Extend all six external clients with transactional commands, queries and recovery",
+      "updatedAt": "2026-09-28T17:16:55Z"
+    },
+    {
+      "number": 400,
+      "state": "open",
+      "title": "[Phase 4] Expose scoped state, command and effect management with CLI recovery workflows",
+      "updatedAt": "2026-09-28T17:27:11Z"
+    },
+    {
+      "number": 399,
+      "state": "open",
+      "title": "[Phase 4] Implement consistent backup and restore with external-effect reconciliation safeguards",
+      "updatedAt": "2026-09-19T19:28:38Z"
+    },
+    {
+      "number": 398,
+      "state": "open",
+      "title": "[Phase 4] Enforce state-schema compatibility across deployment, canary, rollback and explicit migration",
+      "updatedAt": "2026-09-19T19:28:17Z"
+    },
+    {
+      "number": 397,
+      "state": "open",
+      "title": "[Phase 4] Enforce durable quotas and bounded retention, garbage collection and compaction",
+      "updatedAt": "2026-09-19T19:27:38Z"
+    },
+    {
+      "number": 396,
+      "state": "open",
+      "title": "[Phase 4] Retain immutable payloads referenced by committed state, results and effects",
+      "updatedAt": "2026-09-19T19:26:59Z"
+    },
+    {
+      "number": 395,
+      "state": "open",
+      "title": "[Phase 4] Couple event-trigger processing to a transactional inbox and post-commit acknowledgement",
+      "updatedAt": "2026-09-28T17:26:33Z"
+    },
+    {
+      "number": 394,
+      "state": "open",
+      "title": "[Phase 4] Route entity commands through bounded ephemeral ownership lanes",
+      "updatedAt": "2026-09-19T18:17:04Z"
+    },
+    {
+      "number": 393,
+      "state": "closed",
+      "title": "[Phase 4] Add an explicitly qualified idempotent HTTP effect adapter with uncertain-outcome reconciliation",
+      "updatedAt": "2026-10-07T18:54:28Z"
+    },
+    {
+      "number": 392,
+      "state": "open",
+      "title": "[Phase 4] Deliver committed JetStream events with bounded deduplication and acknowledgement recovery",
+      "updatedAt": "2026-09-28T17:25:56Z"
+    },
+    {
+      "number": 391,
+      "state": "open",
+      "title": "[Phase 4] Implement the bounded durable effect dispatcher, claims and retry state machine",
+      "updatedAt": "2026-09-19T19:26:03Z"
+    },
+    {
+      "number": 390,
+      "state": "open",
+      "title": "[Phase 4] Seal durable effect authority and separate dispatch lifetime from activation lifetime",
+      "updatedAt": "2026-09-19T19:25:10Z"
+    },
+    {
+      "number": 389,
+      "state": "open",
+      "title": "[Phase 4] Extend all six guest SDKs with typed transactions, queries and deferred intents",
+      "updatedAt": "2026-09-28T17:11:56Z"
+    },
+    {
+      "number": 388,
+      "state": "open",
+      "title": "[Phase 4] Integrate host-owned transactions with guest execution, commit and cancellation",
+      "updatedAt": "2026-09-30T15:40:11Z"
+    },
+    {
+      "number": 387,
+      "state": "open",
+      "title": "[Phase 4] Implement durable command deduplication and bounded result recovery",
+      "updatedAt": "2026-09-19T19:24:23Z"
+    },
+    {
+      "number": 386,
+      "state": "open",
+      "title": "[Phase 4] Atomically persist state, outbox, command results and processed-input records",
+      "updatedAt": "2026-09-19T19:23:27Z"
+    },
+    {
+      "number": 385,
+      "state": "closed",
+      "title": "[Phase 4] Implement bounded optimistic state transactions with phantom-safe prefix scans",
+      "updatedAt": "2026-10-06T16:44:42Z"
+    },
+    {
+      "number": 384,
+      "state": "closed",
+      "title": "[Phase 4] Add tenant-scoped state namespaces, sealed grants and lifecycle fencing",
+      "updatedAt": "2026-10-03T16:16:36Z"
+    },
+    {
+      "number": 383,
+      "state": "closed",
+      "title": "[Phase 4] Implement the bounded local state-store owner and restart-safe storage format",
+      "updatedAt": "2026-10-07T18:54:25Z"
+    },
+    {
+      "number": 382,
+      "state": "closed",
+      "title": "[Phase 4] Version transaction, query, intent and recovery contracts for six guests and six clients",
+      "updatedAt": "2026-10-06T07:44:38Z"
+    },
+    {
+      "number": 381,
+      "state": "closed",
+      "title": "[Phase 4] Qualify one embedded transaction engine and its durability profile",
+      "updatedAt": "2026-10-07T18:54:22Z"
+    },
+    {
+      "number": 380,
+      "state": "closed",
+      "title": "[Phase 4] Specify the host-owned transaction, isolation and durable outcome contract",
+      "updatedAt": "2026-10-01T03:13:08Z"
+    },
+    {
+      "number": 379,
+      "state": "open",
+      "title": "[Phase 4 Epic] Deliver single-node transactional state and durable effects",
+      "updatedAt": "2026-09-30T15:41:41Z"
+    }
+  ],
+  "closureMutationPerformed": false
+}

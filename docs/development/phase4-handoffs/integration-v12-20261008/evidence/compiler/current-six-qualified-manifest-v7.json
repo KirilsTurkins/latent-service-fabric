@@ -1,0 +1,123 @@
+{
+  "actualCompilerHead": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+  "actualReceiptSha256": "a47241f528b673fbf10cf8b8ffdde4340839e7a730443c90a0eec4c2c0abbca5",
+  "receipt": "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-six-compiler-v7/receipt.json",
+  "captureRoot": "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-six-captures-v7",
+  "selectionPath": "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-six-selected-v7.json",
+  "selectionDigest": "sha256:c3c388d81eb396e0ca512e4fbfe3539d741d5d121049aa4019aa990e476cd5ab",
+  "all835CapturedFileHashesVerified": true,
+  "rows": [
+    {
+      "variant": "aggregate",
+      "sourceHead": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "componentDigest": "sha256:bcb4638ac6a1ebf15ace0748a935b7c8d0fce116ac1cce8c3e35d9f7322bdd27",
+      "componentBytes": 1047306,
+      "companionDigest": "sha256:6554b968e80b2e3132742d3c95e21ba2056fa4fa9f846b419c36daf2da3a57e4",
+      "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+      "recipeDigest": "sha256:ac39d61b886d56c5890f2d82be5c643be2c7c260946af82ce15c3d6f55362f42",
+      "deferredHttpRequirementsDigest": null,
+      "reportDigest": "sha256:49a743ecfceedb9fda4d4aa62dc7c47143456db9bdd988efb14a71586a87a18e",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ]
+    },
+    {
+      "variant": "forbidden-http",
+      "sourceHead": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "componentDigest": "sha256:ef2eebb6592a4677bb0c6a30fdf0299997c2d81a05010545f90197e46623f5c1",
+      "componentBytes": 1159028,
+      "companionDigest": "sha256:2b71f2d1e6151f97478c258a477ef06470fe43c1f13f37387de39efdd63541a3",
+      "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+      "recipeDigest": "sha256:ac39d61b886d56c5890f2d82be5c643be2c7c260946af82ce15c3d6f55362f42",
+      "deferredHttpRequirementsDigest": null,
+      "reportDigest": "sha256:fb30bbfac90a846e0eb4636e99c357458c107f0ed5fe6f319318633fc884c5d3",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:http/client@0.2.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ]
+    },
+    {
+      "variant": "put-once-compatible-v2",
+      "sourceHead": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "componentDigest": "sha256:123fb6a3d864328c2922174a5c17d7f90157d6719252e6d4d585c55e84204759",
+      "componentBytes": 1050559,
+      "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+      "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+      "recipeDigest": "sha256:7da4a35d71afb99c9946d5b65a7fe5804932ec2d9eff3a90622f6cc91af0ebab",
+      "deferredHttpRequirementsDigest": "sha256:f9c50d3923dea8e7973946c87d0a9b08abe5a7b1af67acbbc3709d7e37cdc205",
+      "reportDigest": "sha256:7943fde84bb710ab609ce82ed866e71f1e0d2fa26aa45250f5e0dd15585509ae",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ]
+    },
+    {
+      "variant": "put-once-diagnostics",
+      "sourceHead": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "componentDigest": "sha256:df4c216de10252f114ac578d631b21e5747d0f47bec4ea0f5a79f36d1f4c31cd",
+      "componentBytes": 1061002,
+      "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+      "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+      "recipeDigest": "sha256:991d0198c2dfca666b74713080f9642faf0a202508e95bb5b5b1f712b2bad363",
+      "deferredHttpRequirementsDigest": "sha256:f9c50d3923dea8e7973946c87d0a9b08abe5a7b1af67acbbc3709d7e37cdc205",
+      "reportDigest": "sha256:a56db2d918e549d28dd217ae64b70d2ad28a9c1f5ac01edbb50aeaf09aaa7cb0",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ]
+    },
+    {
+      "variant": "put-once-legacy-v1",
+      "sourceHead": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "componentDigest": "sha256:74204a92c7e8a8d38b8c573d9d539a0120bf388143ef88c891d912274d2aecd9",
+      "componentBytes": 1051669,
+      "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+      "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+      "recipeDigest": "sha256:7da4a35d71afb99c9946d5b65a7fe5804932ec2d9eff3a90622f6cc91af0ebab",
+      "deferredHttpRequirementsDigest": "sha256:f9c50d3923dea8e7973946c87d0a9b08abe5a7b1af67acbbc3709d7e37cdc205",
+      "reportDigest": "sha256:30290b0f73ce1d874208901afb54d2c002070f21d41394fef34b0f55aa8242cb",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ]
+    },
+    {
+      "variant": "put-once-writer-v2",
+      "sourceHead": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "componentDigest": "sha256:e016020c14e47f54bb2f21a64c2de95be063efaae950ed05f6df0778812117f2",
+      "componentBytes": 1050559,
+      "companionDigest": "sha256:e5719a610fb20811a402aed0531d13d71547978104048d9e275ae7b7ae061c49",
+      "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+      "recipeDigest": "sha256:7da4a35d71afb99c9946d5b65a7fe5804932ec2d9eff3a90622f6cc91af0ebab",
+      "deferredHttpRequirementsDigest": "sha256:23fdda7e19691d21bb832ac5e59113ddc2afdecfc8668715fb43d6ae9c23a275",
+      "reportDigest": "sha256:96dba559286bd3e46908ca12709b4be7d03262cfe16769c75b0dfc377e8c8fc6",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ]
+    }
+  ],
+  "allActualCompiledAndValidated": true,
+  "oldFailedV3ReceiptsPreserved": true,
+  "signingAdmissionGuestNodeFullCiQualification": false
+}

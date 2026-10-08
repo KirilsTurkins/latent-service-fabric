@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "latent.java.current-campaign-selections.v1",
+  "selections": [
+    {
+      "sourceCommit": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "variant": "forbidden-http",
+      "reportDigest": "sha256:fb30bbfac90a846e0eb4636e99c357458c107f0ed5fe6f319318633fc884c5d3",
+      "componentDigest": "sha256:ef2eebb6592a4677bb0c6a30fdf0299997c2d81a05010545f90197e46623f5c1",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+    },
+    {
+      "sourceCommit": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "variant": "put-once-writer-v2",
+      "reportDigest": "sha256:96dba559286bd3e46908ca12709b4be7d03262cfe16769c75b0dfc377e8c8fc6",
+      "componentDigest": "sha256:e016020c14e47f54bb2f21a64c2de95be063efaae950ed05f6df0778812117f2",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+    },
+    {
+      "sourceCommit": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "variant": "put-once-legacy-v1",
+      "reportDigest": "sha256:30290b0f73ce1d874208901afb54d2c002070f21d41394fef34b0f55aa8242cb",
+      "componentDigest": "sha256:74204a92c7e8a8d38b8c573d9d539a0120bf388143ef88c891d912274d2aecd9",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+    },
+    {
+      "sourceCommit": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "variant": "put-once-compatible-v2",
+      "reportDigest": "sha256:7943fde84bb710ab609ce82ed866e71f1e0d2fa26aa45250f5e0dd15585509ae",
+      "componentDigest": "sha256:123fb6a3d864328c2922174a5c17d7f90157d6719252e6d4d585c55e84204759",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+    },
+    {
+      "sourceCommit": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "variant": "aggregate",
+      "reportDigest": "sha256:49a743ecfceedb9fda4d4aa62dc7c47143456db9bdd988efb14a71586a87a18e",
+      "componentDigest": "sha256:bcb4638ac6a1ebf15ace0748a935b7c8d0fce116ac1cce8c3e35d9f7322bdd27",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+    },
+    {
+      "sourceCommit": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+      "variant": "put-once-diagnostics",
+      "reportDigest": "sha256:a56db2d918e549d28dd217ae64b70d2ad28a9c1f5ac01edbb50aeaf09aaa7cb0",
+      "componentDigest": "sha256:df4c216de10252f114ac578d631b21e5747d0f47bec4ea0f5a79f36d1f4c31cd",
+      "compilerInputsDigest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+    }
+  ]
+}

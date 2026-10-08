@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-08T06:34:16.106818+00:00",
+  "pr": 823,
+  "oldHead": "76307dbbe24b51fb8b1316c4fbf7047914759a51",
+  "head": "1417e360a96954ce8abcc845024e7b7ff0eccb99",
+  "normalPush": true,
+  "remoteVerified": true,
+  "forcePush": false,
+  "sourceReceiptSha256": "02bc45f676d84b8dfcf66ac33980c407bbcbf318d670e3f58dbbc7049bfb7622",
+  "allSevenLogsAuthenticated": true,
+  "sourceProcessesReaped": true,
+  "allOldAssertionsPreserved": true,
+  "currentSharedFixtures78": true,
+  "actualNativeExecuted": false,
+  "completeCI": false,
+  "issueClosed": false
+}

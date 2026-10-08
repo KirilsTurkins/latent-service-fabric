@@ -1,0 +1,17 @@
+{
+  "head": "1fcc6d0fa6ec8e19c3ffc11ca02dd9242d0a10e6",
+  "nativeReceiptSha256": "47bce5f67777e2b880a3495b958f9839ac278032ca3bda66415f3baf60aa385d",
+  "exactOriginalBuildsPassed": true,
+  "firstQuery503": true,
+  "actualOneRootAdmittedDependencyFailed": true,
+  "diagnosticAbsentNotInferred": true,
+  "rootRecordSha256": "008a0b45695fe132a3e0e1c68e41b30c001d357638fbf6ed5c3bc8c5f0f3083f",
+  "actualOnePreparationJobFailed": true,
+  "workerPhysicallyJoined": true,
+  "allStateOwnersRetired": true,
+  "originalFailureOraclePreserved": true,
+  "sourceAndAllProcessesCleanReaped": true,
+  "noBudgetOrGrantRelaxation": true,
+  "actualGuestSuccessNotQualified": true,
+  "exactPreparationSubstageAndFailureStillPending": true
+}

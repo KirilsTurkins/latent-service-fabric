@@ -1,0 +1,16 @@
+{
+  "head": "528b2f59246855e3f3e23682d49b1fcd30940ad7",
+  "nativeReceiptSha256": "51f0c057fb66704a93cdaf41c1dbcbecd25bfc109166ab8d6f1eb3f7143c64f5",
+  "exactOriginalBrowserOriginNowConfigured": true,
+  "priorRootless403NoLongerObserved": true,
+  "firstQueryStatus": 503,
+  "bodyBytes": 12,
+  "responseSha256": "3261337538083ab00eb866c79fe8f87ac319addb5477dc07c4f0bfaf52f6dde8",
+  "originalTransactionEnvelopeOracleStillRefusesGenericPlatformBody": true,
+  "actualActivationStagePending": true,
+  "signedGuestExecutionQualified": false,
+  "allProcessesReaped": true,
+  "originalDeadlineAndQuotasUnchanged": true,
+  "monitorCompletedWithoutSignals": true,
+  "originalFailedRootNotResumed": true
+}

@@ -1,0 +1,4 @@
+[
+  ["cargo", "+1.97.1", "test", "-p", "latentd", "--all-features", "--locked", "--offline", "standalone::http::tests::browser_config::browser_origin_bindings_are_closed_unique_tenant_scoped_and_optional_for_native_clients", "--", "--exact", "--test-threads=1"],
+  ["cargo", "+1.97.1", "test", "-p", "latent-ingress", "--lib", "--all-features", "--locked", "--offline", "http::browser::tests::browser_origin_is_exact_and_never_accepts_null_lists_siblings_or_forwarding", "--", "--exact", "--test-threads=1"]
+]

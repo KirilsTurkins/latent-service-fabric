@@ -1,0 +1,9 @@
+[
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-capture-current-java-authored-inputs-v3.py"
+  ]
+]

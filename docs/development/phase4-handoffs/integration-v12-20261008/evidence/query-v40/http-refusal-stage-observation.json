@@ -1,0 +1,1 @@
+{"schemaVersion":"latent.java.http-refusal-observation.v1","observationAvailable":true,"rootCount":1,"truncated":false,"roots":[{"phase":"admitted","terminalState":"dependency_failed","principalKind":"user","targetMatchesCurrentService":true,"diagnostic":null,"diagnosticIsTerminal":false}]}

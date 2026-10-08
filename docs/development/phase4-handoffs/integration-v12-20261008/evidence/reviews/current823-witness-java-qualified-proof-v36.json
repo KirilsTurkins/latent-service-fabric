@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-08T06:37:37.073094+00:00",
+  "head": "1417e360a96954ce8abcc845024e7b7ff0eccb99",
+  "receiptSha256": "1b1effa6049fafd17cf744d973634715ad4ab22bd6ffdd85ef58d54a2ede4fbd",
+  "allThreeLogsAuthenticated": true,
+  "originalProcessReaped": true,
+  "actualHostToolTests25": true,
+  "actualJavaSharedSemantic78": true,
+  "actualJavaSuccessfulProtobuf61": true,
+  "originalContradictory1": true,
+  "actualBoundedTcpProtocolSuites12": true,
+  "actualJava25NonPreviewClasses1471": true,
+  "completeCI": false,
+  "signedNodeQualification": false
+}

@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-08T05:12:09.066384+00:00",
+  "receiptSha256": "51f0c057fb66704a93cdaf41c1dbcbecd25bfc109166ab8d6f1eb3f7143c64f5",
+  "logs": [
+    {
+      "path": "step-1.log",
+      "sha256": "13fb3475ef767faf058ad0409a2c50e5b861a471356a0b8d4eadd8c20ce23e12",
+      "bytes": 1468,
+      "matchesNativeReceipt": true
+    },
+    {
+      "path": "step-2.log",
+      "sha256": "c66a92c5ea735eceb4eac1ab17c56afcf7260d293a8a5cf0f1d647089cc65bb5",
+      "bytes": 5566,
+      "matchesNativeReceipt": true
+    },
+    {
+      "path": "step-3.log",
+      "sha256": "59be6c6b02d4ca602636660403fabeaada73068989688593cad7af1a0f895e9c",
+      "bytes": 9187,
+      "matchesNativeReceipt": true
+    }
+  ],
+  "dockerExitCode": 1,
+  "completeCI": false
+}

@@ -1,0 +1,5 @@
+[
+  ["cargo", "+1.97.1", "check", "-p", "latent-rpc", "--all-targets", "--all-features", "--locked", "--offline"],
+  ["cargo", "+1.97.1", "test", "-p", "latent-rpc", "--lib", "--all-features", "--locked", "--offline", "--", "--list"],
+  ["cargo", "+1.97.1", "test", "-p", "latent-rpc", "--lib", "--all-features", "--locked", "--offline", "--", "--test-threads=1"]
+]

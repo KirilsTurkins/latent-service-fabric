@@ -1,0 +1,21 @@
+{
+  "parent": "3b7af5096198ae9453b5616bc124def18798911c",
+  "head": "76307dbbe24b51fb8b1316c4fbf7047914759a51",
+  "actualMaintainedGeneratorOutput": true,
+  "changedPath": "sdk/java-client/src/transport/java/dev/latent/sdk/transport/Wire.java",
+  "changedOriginalMethods": [
+    "latent.control.v1.Node.ActivationTreeNode toWire(Management.ActivationTreeNode value)",
+    "Management.ActivationTreeNode fromWire(latent.control.v1.Node.ActivationTreeNode value)"
+  ],
+  "newWitnessMethods": [
+    "Management.TransactionStagingWitness fromWire(latent.control.v1.Node.TransactionStagingWitness value)",
+    "latent.control.v1.Node.TransactionStagingWitness toWire(Management.TransactionStagingWitness value)"
+  ],
+  "allOtherOriginalMethodBytesUnchanged": true,
+  "allOriginalFixturesByteUnchanged": true,
+  "branchFixtureCount77": true,
+  "originalJavaCodecSuccess60AndRefusal1OracleUnchanged": true,
+  "generatorSha256": "824a3df4c3699c26292cc7b57235df5c3ad5f82549904914770038c0aab14c28",
+  "generatedOutputSha256": "0d75e56a920b454962a1d11961895a143aaf10aaf369f42892b2877e17aeba21",
+  "actualGradleQualificationPending": true
+}

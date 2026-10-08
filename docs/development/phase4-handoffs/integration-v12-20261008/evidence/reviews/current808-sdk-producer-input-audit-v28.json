@@ -1,0 +1,99 @@
+{
+  "heads": {
+    "808": "1e129ef0ed6682c998f81a498e76bd4de61c6fec",
+    "811": "335dca010d299e554a4ab351e9fb525ae15e8d5c"
+  },
+  "rows": [
+    {
+      "path": "sdk/profile/client-profile.json",
+      "hashes": {
+        "808": "23aeff492ad15335e9e9386e0068dc7e187196af33b53ffc7c15e10a22dba624",
+        "811": "23aeff492ad15335e9e9386e0068dc7e187196af33b53ffc7c15e10a22dba624"
+      },
+      "bytesIdentical": true,
+      "existsInBoth": true
+    },
+    {
+      "path": "tools/generate_node_rpc.py",
+      "hashes": {
+        "808": "cf13b7a020f168282982e361dc6bcc33b84690312b8a0ebab674109ed0508182",
+        "811": "cf13b7a020f168282982e361dc6bcc33b84690312b8a0ebab674109ed0508182"
+      },
+      "bytesIdentical": true,
+      "existsInBoth": true
+    },
+    {
+      "path": "sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj",
+      "hashes": {
+        "808": "5157111c5aacb5e1803d689b6c77a4c91e275d0eacc9f028aa74b432edc43765",
+        "811": "5157111c5aacb5e1803d689b6c77a4c91e275d0eacc9f028aa74b432edc43765"
+      },
+      "bytesIdentical": true,
+      "existsInBoth": true
+    },
+    {
+      "path": "sdk/dotnet/Latent.Sdk.Transport/Latent.Sdk.Transport.csproj",
+      "hashes": {
+        "808": "bb70ba1a37d593096898a8d40eeff33503570c86a6792c93cf42058e8fd8a618",
+        "811": "bb70ba1a37d593096898a8d40eeff33503570c86a6792c93cf42058e8fd8a618"
+      },
+      "bytesIdentical": true,
+      "existsInBoth": true
+    },
+    {
+      "path": "sdk/dotnet/Latent.Sdk.Transport/packages.lock.json",
+      "hashes": {
+        "808": "1015eb813c3c39ae6a1eaf1fb2778850787492b15c7a6cba59f1fa41cee301f9",
+        "811": "1015eb813c3c39ae6a1eaf1fb2778850787492b15c7a6cba59f1fa41cee301f9"
+      },
+      "bytesIdentical": true,
+      "existsInBoth": true
+    },
+    {
+      "path": "sdk/dotnet/Latent.Sdk.Transport.Tests/packages.lock.json",
+      "hashes": {
+        "808": "c13852eecec0c4d20c0770bb241bd10fe4e8624fd362b13589ca551c22e8f755",
+        "811": "c13852eecec0c4d20c0770bb241bd10fe4e8624fd362b13589ca551c22e8f755"
+      },
+      "bytesIdentical": true,
+      "existsInBoth": true
+    },
+    {
+      "path": "sdk/dotnet/validate.py",
+      "hashes": {
+        "808": "3e82f3199b9372adcb90c1236814e9420be4dce79bea3c4b248bdc9d518956ed",
+        "811": "3e82f3199b9372adcb90c1236814e9420be4dce79bea3c4b248bdc9d518956ed"
+      },
+      "bytesIdentical": true,
+      "existsInBoth": true
+    },
+    {
+      "path": "sdk/dotnet/global.json",
+      "hashes": {
+        "808": "0a73555a23740b38c70e1275c3a3dfe11ab358ff23aba3dd1e13f8b83d4ece07",
+        "811": "0a73555a23740b38c70e1275c3a3dfe11ab358ff23aba3dd1e13f8b83d4ece07"
+      },
+      "bytesIdentical": true,
+      "existsInBoth": true
+    },
+    {
+      "path": "sdk/dotnet/protobuf.lock.json",
+      "hashes": {
+        "808": "070486703451a44eaab9e25c1468d93a6144382c0cdc10934c2848702fa13e09",
+        "811": "798730205ea4bb95563c69079ef37760e5a66101971624d874bc38a13ed93ffe"
+      },
+      "bytesIdentical": false,
+      "existsInBoth": true
+    },
+    {
+      "path": "sdk/typescript-client/src/node/protocol/generated.ts",
+      "hashes": {
+        "808": "fd79e5c75cc5651a47cec91dab35206211b05756d32b2397b9dbf54245cfc268",
+        "811": "6dcb7b4c04b9dde402b3624de387a55f3898a7b780bd6e3d03ce5c82fbc989d9"
+      },
+      "bytesIdentical": false,
+      "existsInBoth": true
+    }
+  ],
+  "actualCodeGenerationOrBuildClaimed": false
+}

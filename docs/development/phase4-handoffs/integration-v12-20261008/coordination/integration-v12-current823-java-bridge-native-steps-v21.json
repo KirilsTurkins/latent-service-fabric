@@ -1,0 +1,33 @@
+[
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "sdk/java-client/tools/generate_bridge.py",
+    "--check"
+  ],
+  [
+    "python3",
+    "-X",
+    "utf8",
+    "-B",
+    "-m",
+    "unittest",
+    "tools.tests.test_check_tool_versions",
+    "tools.tests.test_java_toolchain"
+  ],
+  [
+    "timeout",
+    "540",
+    "gradle",
+    "--project-cache-dir",
+    "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current823-java-bridge-native-v21/gradle-project-cache",
+    "--no-daemon",
+    "--console=plain",
+    "-p",
+    "sdk/java-client",
+    "clean",
+    "check"
+  ]
+]

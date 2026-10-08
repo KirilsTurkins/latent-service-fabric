@@ -1,0 +1,79 @@
+{
+  "at": "2026-10-08T06:36:21.196873+00:00",
+  "head": "1417e360a96954ce8abcc845024e7b7ff0eccb99",
+  "tree": "c40dd130704e75cdff621991cd6954059f30e9d1",
+  "steps": [
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "sdk/java-client/tools/generate_bridge.py",
+        "--check"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 5.070717444000003,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "-m",
+        "unittest",
+        "tools.tests.test_check_tool_versions",
+        "tools.tests.test_java_toolchain"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 5.059542270999998,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-2.log",
+      "sha256": "9f3b3db169920b3bc7e0b6ba8d2eeac00d9e7f2f5c9e46c3e5f8cfdfae42baa0",
+      "bytes": 202
+    },
+    {
+      "argv": [
+        "timeout",
+        "540",
+        "gradle",
+        "--project-cache-dir",
+        "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current823-witness-java-native-v36/gradle-project-cache",
+        "--no-daemon",
+        "--console=plain",
+        "-p",
+        "sdk/java-client",
+        "clean",
+        "check"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 35.476268080000004,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-3.log",
+      "sha256": "cefa3bd186f1d8a3f3a8571b099e6ae78d011f8b149d832bd04e54b39995e444",
+      "bytes": 2514
+    }
+  ],
+  "passed": true,
+  "elapsedSeconds": 47.93325996,
+  "sourceClean": true,
+  "sourceHeadUnchanged": true,
+  "rustVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "deadlineSeconds": 1800,
+  "maximumTargetGrowthBytes": 17179869184,
+  "targetGrowthBytes": 0,
+  "originalProcessReaped": true,
+  "infrastructureError": null,
+  "completeCI": false,
+  "environment": "Root-owned Debian12 Linux x86_64/ext4, UID10001, pinned Rust1.97.1/Python3.13.5.",
+  "cargoBuildJobs": 2,
+  "checkout": "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3"
+}

@@ -1,0 +1,11 @@
+{
+  "head": "1fcc6d0fa6ec8e19c3ffc11ca02dd9242d0a10e6",
+  "receiptSha256": "fe25613a81e8f4eba226313b40b72730aea2614363400064fac7f777bbd28e6a",
+  "allSevenRawLogsAuthenticated": true,
+  "actual397Discovered396Pass1OriginalSkip": true,
+  "actual12ProfilePass": true,
+  "oldFrozenNativeRecipeUnchanged": true,
+  "productionAndCompilerClosureUnchanged": true,
+  "currentWitnessFixturesRetained": true,
+  "currentActualNativePending": true
+}

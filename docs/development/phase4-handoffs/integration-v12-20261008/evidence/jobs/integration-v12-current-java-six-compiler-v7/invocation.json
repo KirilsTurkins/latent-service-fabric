@@ -1,0 +1,38 @@
+{
+  "job": "integration-v12-current-java-six-compiler-v7",
+  "head": "0a0dc2818946111c8657e6b681ecef1f9f3fafab",
+  "base": "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data",
+  "steps": [
+    [
+      "python3",
+      "-X",
+      "utf8",
+      "-B",
+      "tools/compile_transaction_guests.py",
+      "--language",
+      "java",
+      "--output",
+      "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-six-compiler-v7/results",
+      "--wasi-sdk",
+      "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-tools-v1/wasi-sdk",
+      "--java-schema-put-once"
+    ],
+    [
+      "python3",
+      "-X",
+      "utf8",
+      "-B",
+      "tools/compile_transaction_guests.py",
+      "--language",
+      "java",
+      "--output",
+      "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-six-compiler-v7/diagnostic",
+      "--wasi-sdk",
+      "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-tools-v1/wasi-sdk",
+      "--java-post-stage-diagnostic"
+    ]
+  ],
+  "mode": "native",
+  "deadlineSeconds": 1800,
+  "maximumTargetGrowthBytes": 17179869184
+}

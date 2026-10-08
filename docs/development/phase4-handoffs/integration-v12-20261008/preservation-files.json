@@ -1,0 +1,2063 @@
+{
+  "at": "2026-10-08T11:31:11.907865+00:00",
+  "preservationOnly": true,
+  "sourceOwner": "/root/phase4_current_integration_v12",
+  "copiedFiles": [
+    {
+      "path": "owned-worktrees-and-remote-checkpoints.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-preservation-verified-v42.json",
+      "bytes": 31998,
+      "sha256": "884dfe9e1bd87f4b5210a365fa76067959d8fced817fe8b2f7a025dbdcafc68f"
+    },
+    {
+      "path": "previous-detailed-handoff.md",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-origin-and-delivery-handoff-v19.md",
+      "bytes": 34737,
+      "sha256": "ef3f803f5b00eb1474ec02b3c29a0fe5902baf92eae4e844dd823c5d48168ebd"
+    },
+    {
+      "path": "coordination/integration-v12-acceptance-finite-gap-review-v29.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-acceptance-finite-gap-review-v29.py",
+      "bytes": 799,
+      "sha256": "b46bfad7fa427c503d641612a7098d55bc001156911f99b0fa12820774ee4e10"
+    },
+    {
+      "path": "coordination/integration-v12-active-v15-v16-progress.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-active-v15-v16-progress.py",
+      "bytes": 611,
+      "sha256": "53fd8fad564e3b1af8c4fcb1f423b2943904d49a2b664fb37bbd16299cce6408"
+    },
+    {
+      "path": "coordination/integration-v12-actual-startup-diagnosis-controller.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-actual-startup-diagnosis-controller.py",
+      "bytes": 9317,
+      "sha256": "90b6d2c0026d85779425fbb263d718b654b3eadb864126bd0405336802080d26"
+    },
+    {
+      "path": "coordination/integration-v12-add-current823-witness-fixture-v35.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-add-current823-witness-fixture-v35.py",
+      "bytes": 2106,
+      "sha256": "fcb0915c90d82df87db2f07d7af9ea6fc8ba2ffcb6bf6f682ddcbaddd21bc9db"
+    },
+    {
+      "path": "coordination/integration-v12-adopt-actual-dotnet-lock-producer-823.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-adopt-actual-dotnet-lock-producer-823.py",
+      "bytes": 3160,
+      "sha256": "ac7fe5f762e50e1c8cf047c62ac633e0b2a714f26e83407b2740805cc351c24b"
+    },
+    {
+      "path": "coordination/integration-v12-all-open-milestone-earlier-merge-audit.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-all-open-milestone-earlier-merge-audit.py",
+      "bytes": 2682,
+      "sha256": "a1d6b3fa0e72a6c4e0ed5d99e01b0c0c3b783a4ee6a1f7e6b450b0b2d3b7f1f4"
+    },
+    {
+      "path": "coordination/integration-v12-aot-floor-source-reuse-controller-v9.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-aot-floor-source-reuse-controller-v9.py",
+      "bytes": 10202,
+      "sha256": "6ea040fae4abd7320a33373f76623853af9e7bc2c9550ed5d9da00968910fc39"
+    },
+    {
+      "path": "coordination/integration-v12-aot-historical-floor-audit.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-aot-historical-floor-audit.py",
+      "bytes": 972,
+      "sha256": "80235ee5b0462a4d7cdb329b61ee4b51f1e43509c10e8f0dc8221a077cad8cbd"
+    },
+    {
+      "path": "coordination/integration-v12-approved-origin-native-case-review-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-approved-origin-native-case-review-v19.py",
+      "bytes": 1391,
+      "sha256": "143b12e4663dd22855e9aee785d4f63cb6a9390a36c3ae8738870ab4ca793f9a"
+    },
+    {
+      "path": "coordination/integration-v12-approved-origin-native-preflight-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-approved-origin-native-preflight-v19.py",
+      "bytes": 2073,
+      "sha256": "54160536441038ff47a2976d27bfb81864e0b344af8df81e1093c50cca40ec7b"
+    },
+    {
+      "path": "coordination/integration-v12-approved-origin-qualified-source-proof-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-approved-origin-qualified-source-proof-v19.py",
+      "bytes": 2430,
+      "sha256": "c9d0a4dcfda919ac2eeec20b4c1b17b388221231b78995da24e412429597f698"
+    },
+    {
+      "path": "coordination/integration-v12-approved-origin-real-node-source-paired-controller-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-approved-origin-real-node-source-paired-controller-v19.py",
+      "bytes": 10729,
+      "sha256": "0792e319243ae8d4588fa06bcbdaedf019c9b3682f654f6f8b8b3baea3ada7a1"
+    },
+    {
+      "path": "coordination/integration-v12-approved-origin-reused-source-controller-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-approved-origin-reused-source-controller-v19.py",
+      "bytes": 10068,
+      "sha256": "ba0673fb10f7dca293b34895dc401792652adc4e1d869d44c3c4977d4c795d15"
+    },
+    {
+      "path": "coordination/integration-v12-audit-current-dotnet-protobuf-source-lock.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-audit-current-dotnet-protobuf-source-lock.py",
+      "bytes": 1160,
+      "sha256": "8f278f9defa1782be6c472083213391141064f07f0b52ad6eeb25fb70ff6f79a"
+    },
+    {
+      "path": "coordination/integration-v12-audit-private-windows-target-retirement-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-audit-private-windows-target-retirement-v19.py",
+      "bytes": 2011,
+      "sha256": "cb31311acb3e691b5f46dcd3f5ccb191b8ce5c0a383f0409f63a7b8a2d387758"
+    },
+    {
+      "path": "coordination/integration-v12-auth-current823-java-native-v36.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-auth-current823-java-native-v36.py",
+      "bytes": 3244,
+      "sha256": "bec4627f8790ec9cc21afe0575cacb0c84ba39e1102d3d3a84d4e8f357bae288"
+    },
+    {
+      "path": "coordination/integration-v12-auth-query-v40-failure.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-auth-query-v40-failure.py",
+      "bytes": 2284,
+      "sha256": "cfa9fb022b6695a2b7fd9598e66d16ef04cf0004c60b92582f21e14819f0603e"
+    },
+    {
+      "path": "coordination/integration-v12-auth-query-witness-source-v39.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-auth-query-witness-source-v39.py",
+      "bytes": 2030,
+      "sha256": "445a7b58f1ad9acbe4807457545c0348a3abeca894ff23c4655eaed62fa055a2"
+    },
+    {
+      "path": "coordination/integration-v12-authenticate-dotnet-host-proof-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-authenticate-dotnet-host-proof-v16.py",
+      "bytes": 1993,
+      "sha256": "94adf21581886111344494e02753e9748e6b999a9b937613147af04918e00146"
+    },
+    {
+      "path": "coordination/integration-v12-browser-origin-cause-review-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-browser-origin-cause-review-v19.py",
+      "bytes": 1974,
+      "sha256": "13edf864694445194898c7f40f5b9e1acd6d40267d94c89b1dc5ab8a2131bb3c"
+    },
+    {
+      "path": "coordination/integration-v12-c844-source-reuse-controller-v10.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-c844-source-reuse-controller-v10.py",
+      "bytes": 10170,
+      "sha256": "f65b672b5d31b06928082a10b5701d1381f223afc8603347bbe4216de0fe3844"
+    },
+    {
+      "path": "coordination/integration-v12-capture-current-java-authored-inputs-v3.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-capture-current-java-authored-inputs-v3.py",
+      "bytes": 1558,
+      "sha256": "98a6ef2dda427ea46a629ea5308586c8452e4c496791d85f044601e9be8f1470"
+    },
+    {
+      "path": "coordination/integration-v12-collect-c844-original-native-proof.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-collect-c844-original-native-proof.py",
+      "bytes": 1998,
+      "sha256": "b19ae14508fd22ba377090a04377cff912e77a763638d0a5c802e2ce4bc99920"
+    },
+    {
+      "path": "coordination/integration-v12-configured-startup-diagnosis-controller-v4.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-configured-startup-diagnosis-controller-v4.py",
+      "bytes": 9324,
+      "sha256": "98db174e45e2dcdeacfb900f7ae060a305332d12855cfc07badbd60cd9b926de"
+    },
+    {
+      "path": "coordination/integration-v12-current-c844-qualified-publish.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-c844-qualified-publish.py",
+      "bytes": 5230,
+      "sha256": "a99769596935e2e28db0e2189fd5b73f2aabe643ddc8c123fab0bae41cf9ff01"
+    },
+    {
+      "path": "coordination/integration-v12-current-collector-java-reused-source-controller-v22.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-reused-source-controller-v22.py",
+      "bytes": 10073,
+      "sha256": "5daf303c2ac6321f647a3a43526f718b67f2f8c37efb22013b08b9772e89b056"
+    },
+    {
+      "path": "coordination/integration-v12-current-collector-reused-source-controller-v18.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-reused-source-controller-v18.py",
+      "bytes": 10064,
+      "sha256": "7c35f2be31d5023ec0bb3e868b66521216a8a2a14cac82e627aca842146b4539"
+    },
+    {
+      "path": "coordination/integration-v12-current-delivery-refresh-v3.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-delivery-refresh-v3.py",
+      "bytes": 1500,
+      "sha256": "a458e8bb15e07368e9f6bad07487c64fe839888d9c409d3fbd6d4d651d1856d8"
+    },
+    {
+      "path": "coordination/integration-v12-current-descriptor-seam-audit-v24.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-descriptor-seam-audit-v24.py",
+      "bytes": 2776,
+      "sha256": "f7f9ead3a3a0fbf16a41519860616159b05ff17b25159ff3474577db2e9297d8"
+    },
+    {
+      "path": "coordination/integration-v12-current-fd-qualified-publish.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-fd-qualified-publish.py",
+      "bytes": 6471,
+      "sha256": "bd8161ac45bbfb9c0719f3b215c00f22feb26a7c1a85fe18baf6c531ec89b525"
+    },
+    {
+      "path": "coordination/integration-v12-current-fd-real-node-source-paired-controller-v13.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-fd-real-node-source-paired-controller-v13.py",
+      "bytes": 10884,
+      "sha256": "bb54be7cb11bba66cd8bcf05c4fcb260cf3f358b88c072034a91d5dd9b8ab435"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-capture-stage-v3.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-capture-stage-v3.py",
+      "bytes": 2892,
+      "sha256": "015622d3de8fd8e98da43942694b0b0cabe6bb13c2bab132d1a9551c6a12e37f"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-capture-stage-v4.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-capture-stage-v4.py",
+      "bytes": 2932,
+      "sha256": "a5bf4d2dd0854179d6a2f25446773d57bd25c20341db552f6e291f82bb1bdf29"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-capture-stage-v7.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-capture-stage-v7.py",
+      "bytes": 2932,
+      "sha256": "cc35c4d4e49d09e1c60128bf33f9f3f22bb4321eb22da172dcf60c027c45848e"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-capture-stage.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-capture-stage.py",
+      "bytes": 2605,
+      "sha256": "1621b957ab9d306d214b335042a888114dca1185f31eddf37384796e7aa856d6"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-compiler-progress-v3.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-compiler-progress-v3.py",
+      "bytes": 489,
+      "sha256": "41a728d2ff8d8cc7e5441d75544db65dde3ba37a0efd00196081987b6a535bc9"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-compiler-progress-v7.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-compiler-progress-v7.py",
+      "bytes": 489,
+      "sha256": "2ef63423c3ce84b327c0d08dc632bc37bf9dec056671005c6c4a69515f6cbc54"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-current-node-controller-v2.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-current-node-controller-v2.py",
+      "bytes": 10489,
+      "sha256": "527b346a9881531af5a93fab24d880385ca9516c608b27cd139042e445955e30"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-current-node-controller-v3.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-current-node-controller-v3.py",
+      "bytes": 10489,
+      "sha256": "a08e4180c262723ef8ff8202c91692a911ba5b1228c28285dc1a927b4f095410"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-current-node-controller-v4.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-current-node-controller-v4.py",
+      "bytes": 10489,
+      "sha256": "664851e12280061ad6f25101f747b8bf07c8994860e3fec941f61fda0204466e"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-current-node-controller-v5.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-current-node-controller-v5.py",
+      "bytes": 10489,
+      "sha256": "cbe22819b9f66696038d418b53463bf75d3bc441dbca42668e16d0357c3a5e97"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-current-node-controller-v6.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-current-node-controller-v6.py",
+      "bytes": 10489,
+      "sha256": "1d37a789a03e44927149ec8ce26f554a9209e697faf2ff2160493544b56f41f7"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-qualified-manifest-v7.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-qualified-manifest-v7.py",
+      "bytes": 2419,
+      "sha256": "2e32b6112de00c35364cd522b2d778bf1686f7706008b8348fc77328cde68e0a"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-real-node-controller.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-controller.py",
+      "bytes": 10489,
+      "sha256": "2d75e838d850c245321f37b829a029dcc8098784a1cd1345768507ee6c979ba5"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-real-node-source-paired-controller-v12.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-source-paired-controller-v12.py",
+      "bytes": 10884,
+      "sha256": "689f323d4a1a2c6c8caa79a7d58797d8f3e4a438819bda61b35ce381be4a7ed8"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-six-compiler-controller-v2.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-controller-v2.py",
+      "bytes": 10702,
+      "sha256": "77f9237ea51a6c9f75c943a34e69d5c7de24aa6be85abb930b3257d5768ebcd6"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-six-compiler-controller-v3.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-controller-v3.py",
+      "bytes": 10702,
+      "sha256": "eb39fbc54e5953778d96f6853ab3f8ccc5583a21c0e65a239e6ffe8f12a9d57a"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-six-compiler-controller-v4.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-controller-v4.py",
+      "bytes": 10702,
+      "sha256": "0c423942624e164d1a3c6cb423d1da6932c2e391627ce403022bf5d03385d386"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-six-compiler-controller-v5.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-controller-v5.py",
+      "bytes": 10702,
+      "sha256": "a5f455aaf19863a219dfa931e90f8de16f22b87e3e0024e38b646a589ea204c9"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-six-compiler-controller-v6.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-controller-v6.py",
+      "bytes": 10702,
+      "sha256": "c07a66fd01b4a3c4d85fa7ec50c37d818902a8c3a300a927dd6ee045b21dc732"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-six-compiler-controller-v7.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-controller-v7.py",
+      "bytes": 10702,
+      "sha256": "4195775bd3b2ec34bda17a57f4d6153c82503839d345e5e7c75bbd3653ad4882"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-six-compiler-controller.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-controller.py",
+      "bytes": 10702,
+      "sha256": "d2a6adfb6acfbacdf4753b0d50b21aa0d9c9254cdc0bc05569b467ac40d70913"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-six-package-controller.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-package-controller.py",
+      "bytes": 9695,
+      "sha256": "2d9376e294d9bd2facc305f80852911c60c95c0df5d91975d51dbea8b8435286"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-source-paired-node-controller-v7.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-source-paired-node-controller-v7.py",
+      "bytes": 10883,
+      "sha256": "47363a037d4e104e1c767892ea63b76ab0d3281a79e147b0e3375f7566059e79"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-tools-stage.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-tools-stage.py",
+      "bytes": 3472,
+      "sha256": "9a7e4ea9b5d39af9bd5565a0d1d337d0aa9361660ca78458219804560c366f93"
+    },
+    {
+      "path": "coordination/integration-v12-current-main-guarded-publication-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-main-guarded-publication-v16.py",
+      "bytes": 4480,
+      "sha256": "ffffd215a3bd2190ed31a9d27e71a5fd891e46e8365e37c474a6a584c0d8d760"
+    },
+    {
+      "path": "coordination/integration-v12-current-main-reused-source-controller-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-main-reused-source-controller-v16.py",
+      "bytes": 10073,
+      "sha256": "8764bd00d85c1a11279d5d530fae7925211e3c249ffefa70998ee8a95abc3da8"
+    },
+    {
+      "path": "coordination/integration-v12-current-milestone-reconcile.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-milestone-reconcile.py",
+      "bytes": 1007,
+      "sha256": "f6bb02bf4617cfb0c135f2ae820ab87d08dd3e7d2ff5fbf34b8113226eced60a"
+    },
+    {
+      "path": "coordination/integration-v12-current-milestone-state-v27.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-milestone-state-v27.py",
+      "bytes": 1132,
+      "sha256": "fe556306011e84d0f50c1f5da576b071109dd47b41d7a88fdbeddb25e1e29612"
+    },
+    {
+      "path": "coordination/integration-v12-current-query-real-node-source-paired-controller-v22.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-real-node-source-paired-controller-v22.py",
+      "bytes": 10729,
+      "sha256": "c9b118b8b386d62340827c3258e0f0d6361225801059b7f88d447d07c34485c0"
+    },
+    {
+      "path": "coordination/integration-v12-current-query-real-node-source-paired-controller-v40.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-real-node-source-paired-controller-v40.py",
+      "bytes": 10784,
+      "sha256": "a98adfaf88b32c6f2f666f87543c7449a759c13007d2081711910e03d021347c"
+    },
+    {
+      "path": "coordination/integration-v12-current-query-witness-reused-source-controller-v39.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-reused-source-controller-v39.py",
+      "bytes": 10124,
+      "sha256": "9965b53e1520dc7907a8c06e54c2dd20c75ac5cd51b29bb75e1b64456ed62387"
+    },
+    {
+      "path": "coordination/integration-v12-current-real-node-closed-failure-review-v13.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-real-node-closed-failure-review-v13.py",
+      "bytes": 1556,
+      "sha256": "c8b05345cd77e05de077acd536ba7ed2cd7c653702c1c63f30f7a8ba7cde386f"
+    },
+    {
+      "path": "coordination/integration-v12-current-shadow-schema-audit-v25.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-shadow-schema-audit-v25.py",
+      "bytes": 1534,
+      "sha256": "8221d87892e0008c8da40e2cc93b501f5f14d320dcfa37cd26f67f00bd7be8f2"
+    },
+    {
+      "path": "coordination/integration-v12-current0cd-source-recipe-prepare.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current0cd-source-recipe-prepare.py",
+      "bytes": 910,
+      "sha256": "130a15ea1f7e5bb85deb2e8e3c2c377092def72c01e0af4fcbdc1889729e6517"
+    },
+    {
+      "path": "coordination/integration-v12-current329-package-controller.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current329-package-controller.py",
+      "bytes": 9691,
+      "sha256": "578a2577a3eac38473992413b63e0e2fdd0597da57895046d2fb8f0619aba7e8"
+    },
+    {
+      "path": "coordination/integration-v12-current329-package.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current329-package.py",
+      "bytes": 2106,
+      "sha256": "b7e886f49dacdca8bbda3264db889015d646ed70796a79a5fcfb8a1097a48ad0"
+    },
+    {
+      "path": "coordination/integration-v12-current808-c-artifact-diagnostics-v1.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current808-c-artifact-diagnostics-v1.py",
+      "bytes": 1631,
+      "sha256": "9ddba446e65504c89c0b5f42ef70343c4fd1e377063a2d18a6859f9f96c6491a"
+    },
+    {
+      "path": "coordination/integration-v12-current808-sdk-producer-input-audit-v28.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current808-sdk-producer-input-audit-v28.py",
+      "bytes": 1400,
+      "sha256": "d362b40d85e24ef15c62a4e5668c6d4ee0434d03d089212ec32b67d9d96c2525"
+    },
+    {
+      "path": "coordination/integration-v12-current808-vector-selection-v33.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current808-vector-selection-v33.py",
+      "bytes": 1533,
+      "sha256": "2c627de096e9c07151a936ffd24ca85e0ce8df69bc672fd7bd8776199d7020a2"
+    },
+    {
+      "path": "coordination/integration-v12-current823-dotnet-host-controller-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-dotnet-host-controller-v16.py",
+      "bytes": 3779,
+      "sha256": "dd625b7930b4d1364c77db2d91fed1c5e7f4e0c9fc62a4ee3bf699ed79684449"
+    },
+    {
+      "path": "coordination/integration-v12-current823-java-bridge-native-controller-v21.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-native-controller-v21.py",
+      "bytes": 9892,
+      "sha256": "f88884b1df3439d2a82ad2840e50229f030d5bea1cf010c285b7bf21e01c57a0"
+    },
+    {
+      "path": "coordination/integration-v12-current823-java-bridge-preservation-v21.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-preservation-v21.py",
+      "bytes": 2078,
+      "sha256": "dfdbe291138623740a7d69ac2ff874b0aac82bf79dd8e5e58557402abc9e6f02"
+    },
+    {
+      "path": "coordination/integration-v12-current823-java-bridge-qualified-publication-v21.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-qualified-publication-v21.py",
+      "bytes": 3752,
+      "sha256": "8116d76cea8271cbb2326e2cf506e15aab0a8d3912e2c64a042bd43963d5d072"
+    },
+    {
+      "path": "coordination/integration-v12-current823-java-bridge-reused-source-controller-v21.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-reused-source-controller-v21.py",
+      "bytes": 10071,
+      "sha256": "6c676ad05166a32bd9388761494e5debc591732fa1fee21e2ef7efad5c9a99fc"
+    },
+    {
+      "path": "coordination/integration-v12-current823-java-cause-reviewed-v24.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-cause-reviewed-v24.py",
+      "bytes": 985,
+      "sha256": "48c40905127d3d91890401b5da8f247128c50d4231154daf03c6c2abd0ef5e87"
+    },
+    {
+      "path": "coordination/integration-v12-current823-sdk-failure-raw-v21.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-sdk-failure-raw-v21.py",
+      "bytes": 1300,
+      "sha256": "f6995f1288c6c9736a24e76a98e37d5f2f60a6268554f8c5e0be78c8e2333e0a"
+    },
+    {
+      "path": "coordination/integration-v12-current823-witness-java-native-controller-v36.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-java-native-controller-v36.py",
+      "bytes": 9948,
+      "sha256": "05221feea4065c1b0da5c856d4ad4e354387a33856c9ed54530b478045b63ce3"
+    },
+    {
+      "path": "coordination/integration-v12-current823-witness-reused-source-controller-v35.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-reused-source-controller-v35.py",
+      "bytes": 10128,
+      "sha256": "cd9c07be13f920da45aa6914598fc257df0fbabfef461fe85d21cd7dce0a46c1"
+    },
+    {
+      "path": "coordination/integration-v12-current825-infra-run-status-v22.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current825-infra-run-status-v22.py",
+      "bytes": 701,
+      "sha256": "082cb06c67690f50fd2d5f7b06ea459fd3db83212845ec55dc1823d14dd92990"
+    },
+    {
+      "path": "coordination/integration-v12-current828-failed-ci-raw-v20.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-failed-ci-raw-v20.py",
+      "bytes": 1309,
+      "sha256": "f51b9ff2c83d1f36b3b9e8a38afb33cf9344d75a8e4eebd7faab91c0f602384b"
+    },
+    {
+      "path": "coordination/integration-v12-current828-failure-closed-tail-v20.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-failure-closed-tail-v20.py",
+      "bytes": 1061,
+      "sha256": "abb63f9a1e3d32fae2ea9f62a434dcb2f4959a04a899bd8b1e381abf44658315"
+    },
+    {
+      "path": "coordination/integration-v12-current828-go-failure-class-v20.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-go-failure-class-v20.py",
+      "bytes": 1280,
+      "sha256": "f1d95a25cdabc90fd7adf4321dbc7b4ffb990c9b85669c718910770c5984e634"
+    },
+    {
+      "path": "coordination/integration-v12-current828-renderer-reused-source-controller-v23.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-reused-source-controller-v23.py",
+      "bytes": 10073,
+      "sha256": "9b06c033ca8e2ad6075321f611504d77e278d6121a468041ed9824f8d0afea8e"
+    },
+    {
+      "path": "coordination/integration-v12-current828-renderer-source-qualified-publication-v23.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-qualified-publication-v23.py",
+      "bytes": 4032,
+      "sha256": "02cb5262dd0c850290ca666f53213f1a8df600db8b648fcc6eb43caab2a9b4ee"
+    },
+    {
+      "path": "coordination/integration-v12-current828-renderer-web-failed-raw-v23.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-web-failed-raw-v23.py",
+      "bytes": 1414,
+      "sha256": "15bf061bc4f7e5f43b77e48ee5d2194df4bb46fc7749da675e02ab3959933615"
+    },
+    {
+      "path": "coordination/integration-v12-current828-reused-source-controller-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-reused-source-controller-v16.py",
+      "bytes": 10069,
+      "sha256": "199f9e8d1646eee5b73482bfcb751832e589d6ed0dac538206b261833986f048"
+    },
+    {
+      "path": "coordination/integration-v12-current828-rpc-inventory-review-v23.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-rpc-inventory-review-v23.py",
+      "bytes": 1146,
+      "sha256": "ad0d262ef04eaeff80b259895ae25bb546703c8d66fb508584a9bced728ed273"
+    },
+    {
+      "path": "coordination/integration-v12-current828-rpc-native-controller-v30.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-rpc-native-controller-v30.py",
+      "bytes": 9421,
+      "sha256": "62b736487a9f1e989ded988edadbf3dc5ad6e40f0c5c76e8ea87fbdc4b9b50ca"
+    },
+    {
+      "path": "coordination/integration-v12-currentmain-qualified-publish.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-currentmain-qualified-publish.py",
+      "bytes": 5002,
+      "sha256": "089e86f7dd6e9b1c0816cbebe70295835bf1f3d7df34fcc11136d18ed031c466"
+    },
+    {
+      "path": "coordination/integration-v12-currentmain-source-retry-controller-v8.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-currentmain-source-retry-controller-v8.py",
+      "bytes": 10251,
+      "sha256": "8bf11cd8ac1e62b39d369bd9ae0ffdb51e4678f05fd054b6a6ad015e86f20020"
+    },
+    {
+      "path": "coordination/integration-v12-currentmain-source-reuse-controller-v7.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-currentmain-source-reuse-controller-v7.py",
+      "bytes": 10231,
+      "sha256": "8a921e68b98e106cc173eece9c84b930e27b2403b0be752b04994c2b8ccee65b"
+    },
+    {
+      "path": "coordination/integration-v12-effect-actual-retention-receipt-child.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-effect-actual-retention-receipt-child.py",
+      "bytes": 4871,
+      "sha256": "1f1b1987a48d7af9877b94b02a7224a8e337b0e8bb3e8a6e6588a510ae8b13e5"
+    },
+    {
+      "path": "coordination/integration-v12-effect-current-provider-facts-child.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-effect-current-provider-facts-child.py",
+      "bytes": 2680,
+      "sha256": "eda5a45610d24c8bf52ac4838446b571b536c399fd87df3b50c905547ef00078"
+    },
+    {
+      "path": "coordination/integration-v12-effect-reader-existing-schedule-tests.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-effect-reader-existing-schedule-tests.py",
+      "bytes": 1754,
+      "sha256": "76eb78c81f23262e8972b14721d0f3443a615911d66b819da81100189b7487d8"
+    },
+    {
+      "path": "coordination/integration-v12-effect-retention-helper-refactor.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-effect-retention-helper-refactor.py",
+      "bytes": 1799,
+      "sha256": "2106c57a82e4e75d0f29916c04ce4a2485ac1b73589e82d54ce998426afab5d4"
+    },
+    {
+      "path": "coordination/integration-v12-effect-status-projection-refactor.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-effect-status-projection-refactor.py",
+      "bytes": 1519,
+      "sha256": "d2143c7a3145c1a5df1cd0cb0e45d6176a093cd61d772a32817ca63e73c5c3ce"
+    },
+    {
+      "path": "coordination/integration-v12-fd-source-reuse-controller-v12.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-fd-source-reuse-controller-v12.py",
+      "bytes": 10161,
+      "sha256": "8ffccd912b43595a055f25e5af73f3b34b1735009e64831b32ed5987f9209f6d"
+    },
+    {
+      "path": "coordination/integration-v12-fetch-current796-runtime-failure-v37.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-fetch-current796-runtime-failure-v37.py",
+      "bytes": 1074,
+      "sha256": "986186ca4dcca353c912f4bd24195ea06703e775f5932961cf74f46ca5da0078"
+    },
+    {
+      "path": "coordination/integration-v12-fix-current0cd-exact-union-counts.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-fix-current0cd-exact-union-counts.py",
+      "bytes": 682,
+      "sha256": "df2b6cf10f402e918d4c157291d63354335f1da5ff7b39c8c8e0fd9b8dd76613"
+    },
+    {
+      "path": "coordination/integration-v12-floor-preserved-qualified-publish.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-floor-preserved-qualified-publish.py",
+      "bytes": 5116,
+      "sha256": "116aa3330869f64a23016c7e78e54a565ac0e72f56442b1f95236f8b2c693740"
+    },
+    {
+      "path": "coordination/integration-v12-generate-current823-vectors-v35.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-generate-current823-vectors-v35.py",
+      "bytes": 1047,
+      "sha256": "68b07e7263d95b12d72eb2938320c587a38c3cd16c56608ebef7c57781767be2"
+    },
+    {
+      "path": "coordination/integration-v12-green-pr-final-check-review-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-green-pr-final-check-review-v19.py",
+      "bytes": 905,
+      "sha256": "7415d0639343f0e0fa13c7a3e9f79d21af654ac2a291550542f06de3b247caeb"
+    },
+    {
+      "path": "coordination/integration-v12-http-aot-floor-source-reuse-controller-v9.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-http-aot-floor-source-reuse-controller-v9.py",
+      "bytes": 10170,
+      "sha256": "1e9e0c5487beaec410f750be78c738835fab8c9636bb94db1fd97a831abbb501"
+    },
+    {
+      "path": "coordination/integration-v12-http-c844-source-reuse-controller-v10.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-http-c844-source-reuse-controller-v10.py",
+      "bytes": 10168,
+      "sha256": "649581401abab4ff833f4a630382b6540543241a9850b9e1a37a82feadfa60ea"
+    },
+    {
+      "path": "coordination/integration-v12-http-currentmain-source-reuse-controller-v8.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-http-currentmain-source-reuse-controller-v8.py",
+      "bytes": 10234,
+      "sha256": "421ac49b57f296df6342f39c92f5696db17426b57be32f15528aae3974346318"
+    },
+    {
+      "path": "coordination/integration-v12-http-fd-source-reuse-controller-v12.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-http-fd-source-reuse-controller-v12.py",
+      "bytes": 10166,
+      "sha256": "9c4216b945615d10d24e7ff38da5ad225b3562fc5dcf68fdad1f037b8dc29481"
+    },
+    {
+      "path": "coordination/integration-v12-http-shared-inspection-output-child.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-http-shared-inspection-output-child.py",
+      "bytes": 1390,
+      "sha256": "bd6e92d851f90ddc058226a15eff7b49963550169de2bea40c0bfe34f6475d47"
+    },
+    {
+      "path": "coordination/integration-v12-inspect-aot-current-contract.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-inspect-aot-current-contract.py",
+      "bytes": 921,
+      "sha256": "ca74b5d23c02668b9b504124ea3aa9ea72a6dbe470c9b673ec60358138170b84"
+    },
+    {
+      "path": "coordination/integration-v12-java-clock-source-reuse-controller-v6.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-java-clock-source-reuse-controller-v6.py",
+      "bytes": 10071,
+      "sha256": "74a8bce4015a33e9e33e17e3c27e2b9b4c9a72448c14e6942857471135326729"
+    },
+    {
+      "path": "coordination/integration-v12-java-recovery-world-clock-closure-fix.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-java-recovery-world-clock-closure-fix.py",
+      "bytes": 2093,
+      "sha256": "9b6965df1d26a0a27cd91629711afbf3a43e25d1909cb06ce0438fac4faa0f54"
+    },
+    {
+      "path": "coordination/integration-v12-lease-fixed-real-node-source-paired-controller-v14.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-lease-fixed-real-node-source-paired-controller-v14.py",
+      "bytes": 10884,
+      "sha256": "7512b77fe163a89a3d83961b96eae966f488d65958c6e24deaa70fd9c46ca8a3"
+    },
+    {
+      "path": "coordination/integration-v12-mark-earlier-merge-partial-evidence.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-mark-earlier-merge-partial-evidence.py",
+      "bytes": 1605,
+      "sha256": "10440ab3d423f19d0dd36154be7be483d664367a78c9e73ef29e47d8a452cc50"
+    },
+    {
+      "path": "coordination/integration-v12-observed-startup-source-paired-node-controller-v8.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-observed-startup-source-paired-node-controller-v8.py",
+      "bytes": 11198,
+      "sha256": "058078f48ca6e2f436e6bea1bbc103b66c7a65cc56d5d90aefddf84212754aae"
+    },
+    {
+      "path": "coordination/integration-v12-own-native-disk-monitor-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-own-native-disk-monitor-v19.py",
+      "bytes": 2873,
+      "sha256": "61461ca131fb4480a5b8e3a51c6332ab4585e3ab2cf6707b9e13aac4e8ddc86c"
+    },
+    {
+      "path": "coordination/integration-v12-owned-source-cache-audit.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-owned-source-cache-audit.py",
+      "bytes": 2533,
+      "sha256": "b642f713a67835913c29e08f33b2dc2b8fed23b3d25036c8b813f4316e7f0a88"
+    },
+    {
+      "path": "coordination/integration-v12-pr787-green-completion-review-v32.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-pr787-green-completion-review-v32.py",
+      "bytes": 818,
+      "sha256": "733ea3bbdb79262fc207451c99df2cbf356f6440c684f74f761c007c9882b3f3"
+    },
+    {
+      "path": "coordination/integration-v12-pr787-pending-detail-v31.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-pr787-pending-detail-v31.py",
+      "bytes": 691,
+      "sha256": "5417026977d465bc837d87dddc7eb2325f2c4189213ffc8085efd2cc4818414d"
+    },
+    {
+      "path": "coordination/integration-v12-pr823-current-sdk-proof-body-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-pr823-current-sdk-proof-body-v16.py",
+      "bytes": 1645,
+      "sha256": "193403abfc1c40a512b69bf9914e228f8bf377815ed7e311546b2002b3326a9b"
+    },
+    {
+      "path": "coordination/integration-v12-pr823-qualified-effect-publication.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-pr823-qualified-effect-publication.py",
+      "bytes": 3435,
+      "sha256": "002d79fe1daf1929ed9f5f46ab596829aacc2ac901c0dd3af15dc89eaf45d8c5"
+    },
+    {
+      "path": "coordination/integration-v12-pr828-current-java-qualified-publication.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-pr828-current-java-qualified-publication.py",
+      "bytes": 3335,
+      "sha256": "5fca24f7845cb62e21f1564e3aed92fa8aca5c78c0ca72ff900265f1f45a8467"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-aot-floor-source-reuse.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-aot-floor-source-reuse.py",
+      "bytes": 1582,
+      "sha256": "6400552ffd471efd58aa382419cbb13555babc852babcd5ff5756ee47fefe837"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-approved-origin-native-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-approved-origin-native-v19.py",
+      "bytes": 1688,
+      "sha256": "024d26be6cd85e30570810a841674d68686ddb3aebe1c2bab59ab3a078d3b9f4"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-approved-origin-source-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-approved-origin-source-v19.py",
+      "bytes": 2193,
+      "sha256": "1296be45fd4e9bfccff1fca4b77986fc5375b985371e11fc728c9a9436a3e83c"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-c844-original-clippy-native.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-c844-original-clippy-native.py",
+      "bytes": 675,
+      "sha256": "31ab962a6d7e742ec616fe261a990027f4d24fa30a0f67c1034d656c51f3c067"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-c844-source-reuse.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-c844-source-reuse.py",
+      "bytes": 1777,
+      "sha256": "d6c4f70a96a63c5469912d68c7c87e6ad913a3a4a6f372e48330ce3d2296a455"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-clock-fixed-capture-stage-v4.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-clock-fixed-capture-stage-v4.py",
+      "bytes": 869,
+      "sha256": "04ccb7f878949df1e876a0cde27f7862b2c5458a47427303836effe15933c98c"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-c844-capture-stage-v7.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-c844-capture-stage-v7.py",
+      "bytes": 847,
+      "sha256": "8127348a1577323c5ce0abf344066e12f6caed4013c4ace04d7af8c1495f29db"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-c844-java-compiler-v7.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-c844-java-compiler-v7.py",
+      "bytes": 1464,
+      "sha256": "d9d52461a3ebfdc8c66fa96993280450b91424b6362dd8b2b475b162fded7818"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-collector-java-source-v22.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-collector-java-source-v22.py",
+      "bytes": 2288,
+      "sha256": "95e5ec6b2efbf601dba5d227bdb9d77f7e58dff0716e5e8b81eec0448ba3221b"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-collector-source-v18.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-collector-source-v18.py",
+      "bytes": 1897,
+      "sha256": "9c52ff9cf9e4c467f8c710ed9e64b3942945f850bb15f574153ff3f43f2eb0ae"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-effect-native.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-effect-native.py",
+      "bytes": 888,
+      "sha256": "7bddb2a7933149cbfb9232f6911ddc842a6c0b8e30da492b870db0d35f1a84ed"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-fd-real-node-v13.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-fd-real-node-v13.py",
+      "bytes": 2003,
+      "sha256": "122efdedd613224dd25b1b9fb6590dbee81e0951364c2240577eba8290138902"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-floor-java-compiler-v6.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-floor-java-compiler-v6.py",
+      "bytes": 1349,
+      "sha256": "1ce263e26501a685fe525663d8602c377e9d2876ab00bb01c2d24093d461e452"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-java-final-compiler-v3.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-java-final-compiler-v3.py",
+      "bytes": 1535,
+      "sha256": "d7db9faa2e3011afd40c0b0da358b16f514fe4ee812c25486bc4b2811b3a70fa"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-main-sdk823-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-main-sdk823-v16.py",
+      "bytes": 4409,
+      "sha256": "9ef501cc2f23672c553e42ab385a52f53f1b65719314e296ffa3b256d3614406"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-main-source-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-main-source-v16.py",
+      "bytes": 3085,
+      "sha256": "a943352a6474cf7b4b85f231564483426b20a888a44efa3cb3d512e3fc1a9073"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-query-native-v22.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-query-native-v22.py",
+      "bytes": 2496,
+      "sha256": "8ade283cfffa307f3a523b575751922eb9deaf4fe6674f70cfd0a46d43965d76"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current-rpc-controller-v30.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current-rpc-controller-v30.py",
+      "bytes": 1397,
+      "sha256": "8a06a6ef4453226881e5be7e486fd53dd3a5c87519567e804f87fbcb4bee534e"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current823-dotnet-host-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current823-dotnet-host-v16.py",
+      "bytes": 2757,
+      "sha256": "88998c4cf987b4a20ed16398fbfdc754d4b30267f405bc227926447b79b54b4b"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current823-java-bridge-native-v21.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current823-java-bridge-native-v21.py",
+      "bytes": 1181,
+      "sha256": "53090f04655f969d767bec1b6473cb4ac5fc9d358e6bf495a7230cc6296ba1ad"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current823-java-bridge-source-v21.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current823-java-bridge-source-v21.py",
+      "bytes": 2318,
+      "sha256": "e9fc7650d3100e7e795d25c5af9683245313312fc85421a9b6450e3d4352006c"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current823-witness-native-v36.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current823-witness-native-v36.py",
+      "bytes": 1755,
+      "sha256": "8c718bfaa8ec51e8a7c84e8a6f56f4c042503eba3906994f5b978b2def60a80c"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current823-witness-reuse-v35.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current823-witness-reuse-v35.py",
+      "bytes": 2266,
+      "sha256": "6de941f5b430f8f2564d6a42871c616f145f843cf1bf3bbbf560509e1f5dd730"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current823-witness-source-v35.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current823-witness-source-v35.py",
+      "bytes": 1449,
+      "sha256": "5bc1a764f5b8634b78316a8e27acd3d96b027475f2a1a1ac4b1422c8a401cd35"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current828-renderer-source-v23.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current828-renderer-source-v23.py",
+      "bytes": 2108,
+      "sha256": "093b6888e456d6db6d0137fe957270c83906afd3224e2fe253bb8b1805319789"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current828-source-reuse-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current828-source-reuse-v16.py",
+      "bytes": 1429,
+      "sha256": "7791156a8531c0c0f9e3275301fc5130724bde841d47010d45ea0cc7c1a63856"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-current9f-java-compiler-v5.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-current9f-java-compiler-v5.py",
+      "bytes": 1383,
+      "sha256": "c3c0f6054fde7ae2d06c3bde20e411a07c1769d7637728b3f495171c1268fdf6"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-currentmain-source-retry.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-currentmain-source-retry.py",
+      "bytes": 1949,
+      "sha256": "31e551266e4c32a158aed26ca58efa9ff55b718e356f520f69d2bc3f4754533d"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-currentmain-source-reuse.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-currentmain-source-reuse.py",
+      "bytes": 1657,
+      "sha256": "3edecb7130498b716fc6f352e24b40b0cb1a54740eda8d9903fdf1a67ec13804"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-fd-source-reuse.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-fd-source-reuse.py",
+      "bytes": 1440,
+      "sha256": "6c21175e7b7353910b787414a9895185104eb1eb7b06e579ef0879a4e28fcd23"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-fresh-current-node-campaign-v9.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-fresh-current-node-campaign-v9.py",
+      "bytes": 1079,
+      "sha256": "4a78e61b60717a4fa9294ae3da84ed736338ff64a77f7d16a1a87e6e2c1259d0"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-http-c844-source-reuse.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-http-c844-source-reuse.py",
+      "bytes": 1776,
+      "sha256": "5f24fcadef586bf5bfd0a4cdbe1501ade335bf15c0d3f413773e1b5c4ebd50d0"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-http-currentmain-source-reuse.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-http-currentmain-source-reuse.py",
+      "bytes": 1628,
+      "sha256": "69096cf8c0f94fda72ea62cd95ca14350f5fab7c761be76a5346978387ecffc5"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-http-fd-source-reuse.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-http-fd-source-reuse.py",
+      "bytes": 1753,
+      "sha256": "88681cd5df648db8ba97afe69674490c95660bd478c4f83078994c085dfc7f57"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-http-floor-source-reuse.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-http-floor-source-reuse.py",
+      "bytes": 1802,
+      "sha256": "300dc1af02565663ec9a15a97f0e57ceb96e0851841319856f64da6a659a51a2"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-java-clock-fixed-compiler-v4.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-java-clock-fixed-compiler-v4.py",
+      "bytes": 1443,
+      "sha256": "056ca897bfb98211bddef526b0890b911338da089d45a6bd75ea4f9abf3b8857"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-java-clock-source-reuse-controller.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-java-clock-source-reuse-controller.py",
+      "bytes": 1526,
+      "sha256": "a89128c8305f2d852c4ff3360e0d9082d3ad50ca3dabb117296cd7b372683a2a"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-java-compiler-controller.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-java-compiler-controller.py",
+      "bytes": 2608,
+      "sha256": "af84c04041175a1eb8a08fc2af5fd5de82f42d818e1c43685b2906ed58acd07c"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-lease-fixed-real-node-v14.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-lease-fixed-real-node-v14.py",
+      "bytes": 2507,
+      "sha256": "ea0e295f168bdeeaa30f91389c4bfd1d1e620a65598c567c279f54849ea8650a"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-next-native-source-recipes.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-next-native-source-recipes.py",
+      "bytes": 934,
+      "sha256": "41c0f6aa1f2ca03461301ce8ef265938a0dbaa4ea0e3efd8e86030e861b2b100"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-observed-startup-campaign-v8.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-observed-startup-campaign-v8.py",
+      "bytes": 1996,
+      "sha256": "28fa59ccb2877e61783bd8f3f8db3467d682c616472e2f57f39acfc044ff8459"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-package-controller-v2.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-package-controller-v2.py",
+      "bytes": 1471,
+      "sha256": "59333b44b70759433711769a1b8fb181bcb18285b9edf8763749e13eb7e0b023"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-package-controller.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-package-controller.py",
+      "bytes": 1445,
+      "sha256": "afdeec75a912b55d58b7f569764737c8f5d9f3fc1d339e80e244c6d2196d0a91"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-query-witness-native-v40.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-query-witness-native-v40.py",
+      "bytes": 1705,
+      "sha256": "d3aa0a3de78cf41bab695beb0355896c9c77116ac6549f15ebe9a6ca3617c955"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-query-witness-source-v39.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-query-witness-source-v39.py",
+      "bytes": 2683,
+      "sha256": "05ab246c517c7d7aea98747aae420a66fbc2d6f6b71500aae7ca27a5841422a8"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-real-current-java-node-v12.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-real-current-java-node-v12.py",
+      "bytes": 2404,
+      "sha256": "a70e6555e34d8d4c887fb35e7ec4aa163e58834b86761d3a017627a6d282c542"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-refusal-observer-native-v17.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-refusal-observer-native-v17.py",
+      "bytes": 1508,
+      "sha256": "cebfc838d44fb06d319c1afbd57c38bf933eee91cbb1e7ae0306f723e3d749b9"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-refusal-observer-source-v17.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-refusal-observer-source-v17.py",
+      "bytes": 2324,
+      "sha256": "8b1b4f9cfe65c358e7a31dc953bf18a7731b8fe8ae245f49713c04b0ba818297"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-scoped-actor-real-node-v15.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-scoped-actor-real-node-v15.py",
+      "bytes": 2884,
+      "sha256": "335babaf55527bb9e0a3954d620280f99e77b8d0c572fddb807ad58424f0ddbf"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-scoped-actor-source-v15.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-scoped-actor-source-v15.py",
+      "bytes": 2770,
+      "sha256": "960d3a7eeb50cbc3fcbec6fc683fc15524c6ea6d6fd6e66264c6977669a4b088"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-source-paired-node-controller.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-source-paired-node-controller.py",
+      "bytes": 1868,
+      "sha256": "d648d6d17ff1c2a39fbe490b25277d76618d2a893a4576470608bf6e71d1c6ce"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-startup-failure-trace-child.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-startup-failure-trace-child.py",
+      "bytes": 4091,
+      "sha256": "29ff94b8f5becd5e11807d0fc6e35bffff7e7df4baf4e461491c7672ce20df27"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-unavailable-observer-native-v20.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-unavailable-observer-native-v20.py",
+      "bytes": 1562,
+      "sha256": "f8fa8afaec505b074b34dea7fc3e99a42e7e49b100b1682b859eaeccd9dd5c4f"
+    },
+    {
+      "path": "coordination/integration-v12-prepare-unavailable-observer-source-v20.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-prepare-unavailable-observer-source-v20.py",
+      "bytes": 2303,
+      "sha256": "97f4965fd1f596950374363bff074099f571e1fd669f285676438a148d8e23a2"
+    },
+    {
+      "path": "coordination/integration-v12-preservation-inventory-v42.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-preservation-inventory-v42.py",
+      "bytes": 1650,
+      "sha256": "77377d032033f8763a148c0fcdc1c8aa612d2e532d4a1206782b1e30b5e4a129"
+    },
+    {
+      "path": "coordination/integration-v12-preservation-other-names-v42.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-preservation-other-names-v42.py",
+      "bytes": 670,
+      "sha256": "37369fa9628b9836354790d7956e16f8389e53c0f4b3e61d78506e42f012eadb"
+    },
+    {
+      "path": "coordination/integration-v12-preservation-push-v42.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-preservation-push-v42.py",
+      "bytes": 2908,
+      "sha256": "be6a41b76ae0c64e5b92962bb84d0f08b20b4fa7caa47b87a270352cac930517"
+    },
+    {
+      "path": "coordination/integration-v12-publish-current823-witness-v35.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-publish-current823-witness-v35.py",
+      "bytes": 4094,
+      "sha256": "e31fe92e60b511324663b51379733bd7ab211192d7f44a709fda747bbcc488a9"
+    },
+    {
+      "path": "coordination/integration-v12-query-refusal-real-node-source-paired-controller-v17.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-query-refusal-real-node-source-paired-controller-v17.py",
+      "bytes": 10729,
+      "sha256": "08f92399ad58c0dc4e9aca28dda1ae067d6864775a870fcb3911e7f8e7ded88f"
+    },
+    {
+      "path": "coordination/integration-v12-query-refusal-reused-source-controller-v17.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-query-refusal-reused-source-controller-v17.py",
+      "bytes": 10074,
+      "sha256": "8906f4ea1b7d550deae647993ea385fa2934fa84b5f041b509612281bbbf23dd"
+    },
+    {
+      "path": "coordination/integration-v12-read-recent-merged-acceptance-candidates.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-read-recent-merged-acceptance-candidates.py",
+      "bytes": 752,
+      "sha256": "c6ea0e38cbf30dd29ae6c5737b48f4ac369ab7708bdaadeb6c4ad92f258e2efb"
+    },
+    {
+      "path": "coordination/integration-v12-real-node-result-closed-summary-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-real-node-result-closed-summary-v19.py",
+      "bytes": 547,
+      "sha256": "22c90eb903dce8df11409932b5ac22ab26ebb239acec800f1ed2c8f7a809e175"
+    },
+    {
+      "path": "coordination/integration-v12-record-current-source-boundaries.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-record-current-source-boundaries.py",
+      "bytes": 1886,
+      "sha256": "6c01a52f2fc477386ee703833fe0f86a3f864d66ed1a9805f01b54ed5d2d4c8d"
+    },
+    {
+      "path": "coordination/integration-v12-repair-current828-rpc-duplicates-v23.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-repair-current828-rpc-duplicates-v23.py",
+      "bytes": 2648,
+      "sha256": "5a8834a3ce779265b19d77b50b0d5e02003654204257b1661d6bc567daba3289"
+    },
+    {
+      "path": "coordination/integration-v12-rerun-current796-infra-job-v38.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-rerun-current796-infra-job-v38.py",
+      "bytes": 2119,
+      "sha256": "7f739a2adff9813ed235892aeef59f2cafb30fd9da7b59a32146a50275955ae7"
+    },
+    {
+      "path": "coordination/integration-v12-resolve-actor-additive-union-v17.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-resolve-actor-additive-union-v17.py",
+      "bytes": 2007,
+      "sha256": "681bff2729bf615c02ceb23f63d8e7725402f829af542c10e4307a73ece6a984"
+    },
+    {
+      "path": "coordination/integration-v12-resolve-current-route-diagnostic-v16.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-resolve-current-route-diagnostic-v16.py",
+      "bytes": 2592,
+      "sha256": "fc026d0282506b7624cef5c3408352d9a6a77e8bb556b72065b3cb7e5b724a38"
+    },
+    {
+      "path": "coordination/integration-v12-resolve-current0cd-suite-union.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-resolve-current0cd-suite-union.py",
+      "bytes": 3604,
+      "sha256": "90132a6251cbe57db39b8755ecfa4f9cf28f261ba0c5840eb3e9ea2bcf2cf87f"
+    },
+    {
+      "path": "coordination/integration-v12-resolve-http-workflow-records.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-resolve-http-workflow-records.py",
+      "bytes": 3128,
+      "sha256": "8c7b6c577052169114153305c4587c4b116fb94325c927e20991fac421dafe40"
+    },
+    {
+      "path": "coordination/integration-v12-resolve-keyword-order-union-v18.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-resolve-keyword-order-union-v18.py",
+      "bytes": 1526,
+      "sha256": "659842c942f9e3f028ac4888f4ae80f199580fdebd24bb0552b0712707fa193f"
+    },
+    {
+      "path": "coordination/integration-v12-restore-original-aot-required-floor.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-restore-original-aot-required-floor.py",
+      "bytes": 479,
+      "sha256": "16a04118e2695462f825be651ffb8cdad49ff4127e8c88704935429a36a7462b"
+    },
+    {
+      "path": "coordination/integration-v12-retain-current808-failures-v1.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-retain-current808-failures-v1.py",
+      "bytes": 1260,
+      "sha256": "4a24c45d07954a239bfdb4a326b4233b5824b2917d73e5fc2d0d1a883d332cfd"
+    },
+    {
+      "path": "coordination/integration-v12-retire-owned-source-cache.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-retire-owned-source-cache.py",
+      "bytes": 1818,
+      "sha256": "28eb676da540acf0414e94e322989254e31809ba6cf6a6b23e85502167c096e9"
+    },
+    {
+      "path": "coordination/integration-v12-review-aot-only-fixed-closure.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-aot-only-fixed-closure.py",
+      "bytes": 1572,
+      "sha256": "c1ecf5fc8fcfcdaa45e0aa4ecdd1e91d1e1d322fc03b90d4bff960a9ac614b6a"
+    },
+    {
+      "path": "coordination/integration-v12-review-current-effect-union.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-current-effect-union.py",
+      "bytes": 2025,
+      "sha256": "eda3fabe1bd503616215288cf8085b5aa8e6f1c0a6be3e99724fd31eac576eca"
+    },
+    {
+      "path": "coordination/integration-v12-review-current823-vectors-v35.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-current823-vectors-v35.py",
+      "bytes": 2694,
+      "sha256": "7ae479174f2b8f33f3c0ae45cb0dadd3fed7de72401f367f9e1581d21e55ad40"
+    },
+    {
+      "path": "coordination/integration-v12-review-effect-startup-current-union.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-effect-startup-current-union.py",
+      "bytes": 1852,
+      "sha256": "03756e3d1ca2bfc1c8723567c8f5cef37a67225bee5735a001ed7f1c6398d81b"
+    },
+    {
+      "path": "coordination/integration-v12-review-fd-native-compiler-closure.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-fd-native-compiler-closure.py",
+      "bytes": 2487,
+      "sha256": "a75307a6258d2410c708a17f7157043796f97560113b62547c815d16c69ea6c8"
+    },
+    {
+      "path": "coordination/integration-v12-review-java-clock-recipe-guards.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-java-clock-recipe-guards.py",
+      "bytes": 1772,
+      "sha256": "d2a3ff79f4875bd504d4081aec7863651b53e30bfa9e41285ad59c4a18a5ef84"
+    },
+    {
+      "path": "coordination/integration-v12-review-namespace-create-v14.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-namespace-create-v14.py",
+      "bytes": 2818,
+      "sha256": "16b99e7e489e372b2daf3220b637fa9e42c88fbf5f3fcc2fdd40a2696815c61f"
+    },
+    {
+      "path": "coordination/integration-v12-review-origin-query-unavailable-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-origin-query-unavailable-v19.py",
+      "bytes": 2087,
+      "sha256": "df20a1d7f77d82bd5bf714b83d0765b55c9324c29f66d13922e5f724988146a5"
+    },
+    {
+      "path": "coordination/integration-v12-review-pre-admission-http-v17.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-pre-admission-http-v17.py",
+      "bytes": 1926,
+      "sha256": "ad2e9361b59491a39a1c5a83f9e0417387331234c4242dc8213dee676f82a14d"
+    },
+    {
+      "path": "coordination/integration-v12-review-query-preparation-failure-v19.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-query-preparation-failure-v19.py",
+      "bytes": 1487,
+      "sha256": "180c6801664d82012132fce70aa21927bf8caac90de4a094c4b670ceb09efa38"
+    },
+    {
+      "path": "coordination/integration-v12-review-real-node-http-v15.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-real-node-http-v15.py",
+      "bytes": 2236,
+      "sha256": "bed5b1f5fd1ebfc14f5b2821c6a4d1e5b054ba577eadbd6c77a7e81a94852808"
+    },
+    {
+      "path": "coordination/integration-v12-review-website-only-currentmain-closure.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-review-website-only-currentmain-closure.py",
+      "bytes": 1876,
+      "sha256": "510d51d3a8e140f037a7ca56183bff5327c2ea2d7ea4f79d6b428aac4c3cc51e"
+    },
+    {
+      "path": "coordination/integration-v12-run-actual-startup-diagnosis.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-run-actual-startup-diagnosis.py",
+      "bytes": 1617,
+      "sha256": "a7ec1d81b37a81c189b7d11d9c07d190047b717b2d311f1cf2be04c2f5e07f8a"
+    },
+    {
+      "path": "coordination/integration-v12-run-configured-startup-diagnosis-v4.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-run-configured-startup-diagnosis-v4.py",
+      "bytes": 1648,
+      "sha256": "7816f4d1e42754a9bb51ce83e1e207b5b3f923828f70831ae78abc85612580ee"
+    },
+    {
+      "path": "coordination/integration-v12-scoped-actor-real-node-source-paired-controller-v15.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-scoped-actor-real-node-source-paired-controller-v15.py",
+      "bytes": 10729,
+      "sha256": "ac5ccacc13874b081ee03601f37599e8a612be93ad5f63eb09fc9a89c0b0827d"
+    },
+    {
+      "path": "coordination/integration-v12-scoped-actor-reused-source-controller-v15.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-scoped-actor-reused-source-controller-v15.py",
+      "bytes": 9925,
+      "sha256": "817a55e463ef830904394bebab9d39a4bc06e4d07ce3aa460a92ebf8db4b0ad1"
+    },
+    {
+      "path": "coordination/integration-v12-startup-wrapper-test-and-source-recipe.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-startup-wrapper-test-and-source-recipe.py",
+      "bytes": 1767,
+      "sha256": "2a18b6c64149f5ce1f9d091036e9fc5b6e6806ae39e7bae4025a6dfdd361babd"
+    },
+    {
+      "path": "coordination/integration-v12-stop-owned-readonly-inventory.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-stop-owned-readonly-inventory.py",
+      "bytes": 552,
+      "sha256": "9c06a58a358efc9a4ce1b518f9baec7bd1a7e6433f4f7961e51037dd69120fd1"
+    },
+    {
+      "path": "coordination/integration-v12-unavailable-observer-qualified-source-v20.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-unavailable-observer-qualified-source-v20.py",
+      "bytes": 2113,
+      "sha256": "807c9b3f80f53c050843049784d04c6d78d255ee40406bb9a1290d1ba09245c6"
+    },
+    {
+      "path": "coordination/integration-v12-unavailable-observer-real-node-source-paired-controller-v20.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-unavailable-observer-real-node-source-paired-controller-v20.py",
+      "bytes": 10729,
+      "sha256": "24a19eeb5b23312f480df2d28279bb94cce742067684bf3d6f56d165db7f309c"
+    },
+    {
+      "path": "coordination/integration-v12-unavailable-observer-reused-source-controller-v20.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-unavailable-observer-reused-source-controller-v20.py",
+      "bytes": 10066,
+      "sha256": "a814d4d48925aae676fbee4cd80fb488ae33d163c8b15e3bb4aaf40d39aba81c"
+    },
+    {
+      "path": "coordination/integration-v12-v17-progress.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-v17-progress.py",
+      "bytes": 530,
+      "sha256": "28e7952caf5d93171ba2057ba4c577a55f6f19a68a1fa0dbe137ca097451e311"
+    },
+    {
+      "path": "coordination/integration-v12-v19-progress.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-v19-progress.py",
+      "bytes": 530,
+      "sha256": "112a18b512560ce73f1381b2548afb401af52c6a7d7b0eec1d85a6df9d47ea3e"
+    },
+    {
+      "path": "coordination/integration-v12-verify-c844-native-runtime.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-verify-c844-native-runtime.py",
+      "bytes": 1050,
+      "sha256": "ecf8a5a633f5d4abd02ff6243f705329c46aad6067097878f06689191dc803e9"
+    },
+    {
+      "path": "coordination/integration-v12-verify-current-effect-native.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-verify-current-effect-native.py",
+      "bytes": 776,
+      "sha256": "3d6e781b7a877acd786dca8be3f15cee8f3ef055e089e8a2b1ad07e9b2ed0d59"
+    },
+    {
+      "path": "coordination/integration-v12-verify-current-http-native.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-verify-current-http-native.py",
+      "bytes": 2578,
+      "sha256": "d619ffaacc2922b8f91458b59219b755067dfbb1f39d493e5dd376a3caece76e"
+    },
+    {
+      "path": "coordination/integration-v12-verify-current-main-native.py",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-verify-current-main-native.py",
+      "bytes": 847,
+      "sha256": "a895df2b6c05a6b7bef3c21dd9b5a56a2e38ad737daaeb429c1b1ef5b92c749f"
+    },
+    {
+      "path": "coordination/integration-v12-approved-origin-native-fence-steps-v19.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-approved-origin-native-fence-steps-v19.json",
+      "bytes": 510,
+      "sha256": "2abf34be023d6c37b846685a8b44c04a9ae463b2d39b154c17bf8637cb26ff32"
+    },
+    {
+      "path": "coordination/integration-v12-approved-origin-source-steps-v19.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-approved-origin-source-steps-v19.json",
+      "bytes": 3144,
+      "sha256": "8f6c5e2d3db790140b698b4166bde6a7869b2fcffe4c181076fb4c2cf6c40f5c"
+    },
+    {
+      "path": "coordination/integration-v12-current-collector-java-source-steps-v22.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-steps-v22.json",
+      "bytes": 3322,
+      "sha256": "857965252ef3915362a55c7193b64fa862fab2094ab7660d69a2394b846d199c"
+    },
+    {
+      "path": "coordination/integration-v12-current-collector-source-steps-v18.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-source-steps-v18.json",
+      "bytes": 3102,
+      "sha256": "c9a39842cf22ccc545a1ce9e822d1a3a4643cf4a909e7c5cfb6f426e2fdc0d3e"
+    },
+    {
+      "path": "coordination/integration-v12-current-java-authored-capture-source-steps-v3.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-authored-capture-source-steps-v3.json",
+      "bytes": 193,
+      "sha256": "d232950aad2f4063c70d72977b6d1eeff1ca9435b0c73d7d05bfb657d6e02371"
+    },
+    {
+      "path": "coordination/integration-v12-current-query-witness-source-steps-v39.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-steps-v39.json",
+      "bytes": 3688,
+      "sha256": "128d732e680c0787b5b7d7083290c35f4600d3e202d444e33a7ec0fc1346b7b9"
+    },
+    {
+      "path": "coordination/integration-v12-current823-java-bridge-native-steps-v21.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-native-steps-v21.json",
+      "bytes": 641,
+      "sha256": "da32a00de7d3d4f819650a3c76e4d7c958dc877163aab27788600212bc441315"
+    },
+    {
+      "path": "coordination/integration-v12-current823-java-bridge-source-steps-v21.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-steps-v21.json",
+      "bytes": 3392,
+      "sha256": "f67ddc7288e9957256bc3c276f0361ceed74fe50860915c03ba7ab46a4cd6e64"
+    },
+    {
+      "path": "coordination/integration-v12-current823-witness-java-native-steps-v36.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-java-native-steps-v36.json",
+      "bytes": 642,
+      "sha256": "58e3b3fda10eeeb867010ce1752444dd6ddbf0fc964987573abe1bbd06c23144"
+    },
+    {
+      "path": "coordination/integration-v12-current823-witness-source-steps-v35.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-steps-v35.json",
+      "bytes": 3755,
+      "sha256": "bdc3a066a036e272c9c42f2ed75ca26b33270d654f16bf12c7405a17e3bb6059"
+    },
+    {
+      "path": "coordination/integration-v12-current828-diagnostic-native-steps-v41.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-diagnostic-native-steps-v41.json",
+      "bytes": 1510,
+      "sha256": "3be8a700befbecbdfab02b5241e553049dfd659ba660a2f6da5ecc0e6da9d41c"
+    },
+    {
+      "path": "coordination/integration-v12-current828-renderer-source-steps-v23.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-steps-v23.json",
+      "bytes": 3279,
+      "sha256": "3fe92dc6e40b47890752eef188bb0dec4b70fe2072ea36bed73e5251fcf96e33"
+    },
+    {
+      "path": "coordination/integration-v12-current828-rpc-native-steps-v23.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-rpc-native-steps-v23.json",
+      "bytes": 366,
+      "sha256": "bdba440735568518c9dace0eb132d0457bd71f9c7b51f9a48b3528d6ae6543a8"
+    },
+    {
+      "path": "coordination/integration-v12-pr823-current-main-source-steps-v16.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-pr823-current-main-source-steps-v16.json",
+      "bytes": 3276,
+      "sha256": "8fb428ea93b1084fec2e183d1a3ddf92ea93f54a28313ec7f8e9e22edf35af1f"
+    },
+    {
+      "path": "coordination/integration-v12-pr828-current-main-source-steps-v16.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-pr828-current-main-source-steps-v16.json",
+      "bytes": 3276,
+      "sha256": "4c45fc6639803be8562bb1ef419e43aef501330911872ca0bf167cbc30e5331e"
+    },
+    {
+      "path": "coordination/integration-v12-query-refusal-source-steps-v17.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-query-refusal-source-steps-v17.json",
+      "bytes": 3098,
+      "sha256": "0764244d0e35ea0ca1fee6d27d6a35be187e9cbf9ef8bee63eff8be45da7a6a8"
+    },
+    {
+      "path": "coordination/integration-v12-scoped-actor-source-steps-v15.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-scoped-actor-source-steps-v15.json",
+      "bytes": 3040,
+      "sha256": "487e78da6a35c05c9b53a6c70028b2daf7360244d6c0968a98dfe14b861b15d0"
+    },
+    {
+      "path": "coordination/integration-v12-unavailable-observer-source-steps-v20.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-unavailable-observer-source-steps-v20.json",
+      "bytes": 3207,
+      "sha256": "c38f6d4bf1a18125b91917c492279b6cd8b6c896123a0ee29cd25d6ccb685986"
+    },
+    {
+      "path": "evidence/reviews/current-descriptor-seam-audit-v24.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-descriptor-seam-audit-v24.json",
+      "bytes": 5380,
+      "sha256": "518b1c2368c51835e954ee5e75ed472cb798294f1dbf1fa50e58cfee07a299ec"
+    },
+    {
+      "path": "evidence/reviews/current-shadow-schema-input-audit-v25.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-shadow-schema-input-audit-v25.json",
+      "bytes": 9423,
+      "sha256": "fbb6eebdb1348b6a5adf9807c7e969d1bf5591b6c8661395bddd1539d4b3d06b"
+    },
+    {
+      "path": "evidence/reviews/current808-sdk-producer-input-audit-v28.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current808-sdk-producer-input-audit-v28.json",
+      "bytes": 3480,
+      "sha256": "1b1534946bb0c7cce7111f74ae70b0572493d951a07de1c54ee68a5a4663a3ce"
+    },
+    {
+      "path": "evidence/reviews/current808-vector-selection-v33.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current808-vector-selection-v33.json",
+      "bytes": 3325,
+      "sha256": "59946dd61345e8488661025c2892d874c030071f7c8ef3bd2bad41e8344ebba8"
+    },
+    {
+      "path": "evidence/reviews/pr808-combined-review-v34.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\pr808-combined-review-v34.json",
+      "bytes": 1158,
+      "sha256": "e5a607798b30f2a087784fe4e1b7c905daacaf2fa7c934f71440539defb30f82"
+    },
+    {
+      "path": "evidence/reviews/pr823-witness-source-qualified-publication-v35.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\pr823-witness-source-qualified-publication-v35.json",
+      "bytes": 573,
+      "sha256": "d7e4bc10ae7a1ea92140a7ba65d46bc8673bf5a7d00b8dc5e87fd4442b0a1dd7"
+    },
+    {
+      "path": "evidence/reviews/current823-witness-addition-review-v35.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current823-witness-addition-review-v35.json",
+      "bytes": 3608,
+      "sha256": "d28ace63b739dd710c9f855414106df8d35050332f8d4dc23fe7416547150e31"
+    },
+    {
+      "path": "evidence/reviews/current823-witness-source-steps-preflight-v35.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current823-witness-source-steps-preflight-v35.json",
+      "bytes": 345,
+      "sha256": "663d8e12090cacc080b40349b043a1ac618e876d1836d40e500aa0d4b67f43fd"
+    },
+    {
+      "path": "evidence/reviews/current823-witness-java-qualified-proof-v36.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current823-witness-java-qualified-proof-v36.json",
+      "bytes": 568,
+      "sha256": "dcc1d57164051b12fbe038379a8643ba1101c5780f9c0001424ea6f9a0a61c25"
+    },
+    {
+      "path": "evidence/reviews/current-query-witness-source-qualified-v39.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-query-witness-source-qualified-v39.json",
+      "bytes": 448,
+      "sha256": "18fe837d8350a45de9ccd548cfe36be6969123d5e5733d452475634a94e4130f"
+    },
+    {
+      "path": "evidence/reviews/current-query-witness-node-descriptor-check-v39.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-query-witness-node-descriptor-check-v39.json",
+      "bytes": 443,
+      "sha256": "379415d72b389dcfe55de2f63b06e5cfefa8415a2d433c6ffc7cefe2917c0a8c"
+    },
+    {
+      "path": "evidence/reviews/current-query-actual-failure-review-v40.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-query-actual-failure-review-v40.json",
+      "bytes": 738,
+      "sha256": "d405c8881df3c153088a8833ae61f8644d09645430dfde3724247da1aa931346"
+    },
+    {
+      "path": "evidence/reviews/current-finite-acceptance-gaps-v29.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-finite-acceptance-gaps-v29.json",
+      "bytes": 38481,
+      "sha256": "c6b50d26a165dfabf680ac39833aa366e1284cfc1912d2157e693589d209d732"
+    },
+    {
+      "path": "evidence/reviews/current-milestone-state-v27.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-milestone-state-v27.json",
+      "bytes": 7098,
+      "sha256": "c147ec96922a8bb219c6ea923457ca24b601982f3557ffe07a644c5ae0fff20f"
+    },
+    {
+      "path": "evidence/reviews/query-preparation-failure-review-v19.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\query-preparation-failure-review-v19.json",
+      "bytes": 552,
+      "sha256": "06cbd7ede05da8688130574d7aee26d237ba17cea69cf998079fae889527d96b"
+    },
+    {
+      "path": "evidence/reviews/current-real-node-approved-origin-unavailable-review-v19.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-real-node-approved-origin-unavailable-review-v19.json",
+      "bytes": 711,
+      "sha256": "385a6308ea2d8ff8100dd8df379ab60e059c819657c4def26bac18fae6b26891"
+    },
+    {
+      "path": "evidence/reviews/current-query-real-node-source-paired-steps-v40.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-query-real-node-source-paired-steps-v40.json",
+      "bytes": 2054,
+      "sha256": "f4361ae30e1e70b72c419daec03a844542c0ad141998b2eb62a7aa87e0bbae6e"
+    },
+    {
+      "path": "evidence/reviews/current-query-real-node-source-paired-steps-v22.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-query-real-node-source-paired-steps-v22.json",
+      "bytes": 2054,
+      "sha256": "78071865d2ed5d5b2560b1f9ce6fa9e5f2993b2bfdf73ce318d35de9d5b4acd9"
+    },
+    {
+      "path": "evidence/reviews/current-query-witness-native-preflight-v40.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-query-witness-native-preflight-v40.json",
+      "bytes": 500,
+      "sha256": "1b5e7a3a312a3e8cb9977b2efb3693a02caa2f2f077d8e1ac7c747c81d9ef10a"
+    },
+    {
+      "path": "evidence/reviews/current-rpc-controller-preflight-v30.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current-rpc-controller-preflight-v30.json",
+      "bytes": 429,
+      "sha256": "6b0ebd1c639550ddb1925a374ccba472aa88c7eb8e27dafa824fa3e23f4d7c70"
+    },
+    {
+      "path": "evidence/reviews/current823-java-bridge-preservation-v21.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current823-java-bridge-preservation-v21.json",
+      "bytes": 1150,
+      "sha256": "3c89f58ab0063f2598c51eba9dbabf2795fc731c206f126a95bf2dcc31d0173f"
+    },
+    {
+      "path": "evidence/reviews/current828-rpc-inventory-review-v23.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\current828-rpc-inventory-review-v23.json",
+      "bytes": 3616,
+      "sha256": "0c1834261fa6d0eadbac24e86be4b273561896d8497feeb16e605d7d5e776774"
+    },
+    {
+      "path": "evidence/reviews/private-windows-target-retired-v19.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-union-review\\private-windows-target-retired-v19.json",
+      "bytes": 397,
+      "sha256": "ee1cb7b5b027625d14731cafa331c4f16e725c052b55fd9bb50dc1cb5f3d869b"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/receipt.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\receipt.json",
+      "bytes": 6608,
+      "sha256": "02bc45f676d84b8dfcf66ac33980c407bbcbf318d670e3f58dbbc7049bfb7622"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/host-custody.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\host-custody.json",
+      "bytes": 1499,
+      "sha256": "e046b313049f52ad5a2b19bf417c547b244467c0df83908cd818aa5047123864"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/invocation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\invocation.json",
+      "bytes": 4169,
+      "sha256": "fe02e441e382d24be4266d5e3c1c7343a87be5a03db48d670555dc09d82a1068"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/step-1.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\step-1.log",
+      "bytes": 487,
+      "sha256": "db737b5314fb8e1d5669bc8f59f6e243d317a88f27e228174ba94bca524d8e5f"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/step-2.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\step-2.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/step-3.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\step-3.log",
+      "bytes": 82,
+      "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/step-4.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\step-4.log",
+      "bytes": 85,
+      "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/step-5.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\step-5.log",
+      "bytes": 40,
+      "sha256": "09d3c37f180a9f4231719e8b0b19fe21bcf1f3f422bed53a7c379de74c572825"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/step-6.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\step-6.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-source-v35/step-7.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-source-v35\\step-7.log",
+      "bytes": 155,
+      "sha256": "1444728f8b0403652c6b71749d4ae41e48da051fca44c0f146151754815d1ab1"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-java-native-v36/receipt.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-java-native-v36\\receipt.json",
+      "bytes": 2311,
+      "sha256": "1b1effa6049fafd17cf744d973634715ad4ab22bd6ffdd85ef58d54a2ede4fbd"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-java-native-v36/host-custody.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-java-native-v36\\host-custody.json",
+      "bytes": 761,
+      "sha256": "3d585785757a0471d1ec460c3f7405f61720ae0c00b5ae23de3a791347047d77"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-java-native-v36/invocation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-java-native-v36\\invocation.json",
+      "bytes": 1013,
+      "sha256": "c116c039baaec028796dcf66c8b5c8f94313eb962e7bd583fec3f205310f437d"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-java-native-v36/step-1.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-java-native-v36\\step-1.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-java-native-v36/step-2.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-java-native-v36\\step-2.log",
+      "bytes": 202,
+      "sha256": "9f3b3db169920b3bc7e0b6ba8d2eeac00d9e7f2f5c9e46c3e5f8cfdfae42baa0"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-witness-java-native-v36/step-3.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-witness-java-native-v36\\step-3.log",
+      "bytes": 2514,
+      "sha256": "cefa3bd186f1d8a3f3a8571b099e6ae78d011f8b149d832bd04e54b39995e444"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/receipt.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\receipt.json",
+      "bytes": 6541,
+      "sha256": "fe25613a81e8f4eba226313b40b72730aea2614363400064fac7f777bbd28e6a"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/host-custody.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\host-custody.json",
+      "bytes": 1499,
+      "sha256": "907856e3e78e15e5bb9b065a617fe24d06a479c99316a8ebedad7aa90ac39ec9"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/invocation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\invocation.json",
+      "bytes": 4105,
+      "sha256": "2de41f780e6e0ce7aed25bab802d77de2c6ec40d33c382ced436edf02278ee74"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/step-1.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\step-1.log",
+      "bytes": 510,
+      "sha256": "2db58ab10f8b75c016d61bf9e1b96e37a4ac58560b84bcc989c8c1992b25c0e3"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/step-2.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\step-2.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/step-3.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\step-3.log",
+      "bytes": 82,
+      "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/step-4.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\step-4.log",
+      "bytes": 85,
+      "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/step-5.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\step-5.log",
+      "bytes": 40,
+      "sha256": "09cb462c4ad65c6c5ea6afdf357959680da3761e47e0ee2111ac0ec24ea24085"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/step-6.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\step-6.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-query-witness-source-v39/step-7.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-query-witness-source-v39\\step-7.log",
+      "bytes": 155,
+      "sha256": "0ab73649d14ddfc6e83fdba14ee6f55d0f7789795eff5d47fc631fae12aa9297"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v40/receipt.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v40\\receipt.json",
+      "bytes": 3842,
+      "sha256": "47bce5f67777e2b880a3495b958f9839ac278032ca3bda66415f3baf60aa385d"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v40/host-custody.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v40\\host-custody.json",
+      "bytes": 765,
+      "sha256": "950ff8a007f3389f1519588afc0a103cd4466cb8c8300f19c41b43669428fb8f"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v40/invocation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v40\\invocation.json",
+      "bytes": 2489,
+      "sha256": "64473e3f05a47608879f593add7b2a96b9bdc0accfa7bbdc93aeaae7b5d0e4fd"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v40/step-1.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v40\\step-1.log",
+      "bytes": 1468,
+      "sha256": "4bd3323503520f89d706ec259655a564448712c50db96da9fad0d14769b04b47"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v40/step-2.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v40\\step-2.log",
+      "bytes": 5566,
+      "sha256": "d523d5a624c121b884ae81ae0fd077d801b1b87e38989b3c253487044942e9e5"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v40/step-3.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v40\\step-3.log",
+      "bytes": 9187,
+      "sha256": "eaec746546ff7090ac6f44c417352a9913aba712eabeade9a9d067db48f1b346"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/receipt.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\receipt.json",
+      "bytes": 6243,
+      "sha256": "4730e2a199fb51ecf449019572f80bc4e0f6c407fcd512a6d8d4eecdd5e2643e"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/host-custody.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\host-custody.json",
+      "bytes": 1498,
+      "sha256": "dca7d4c2e96de50291faef13217c18f4d832c70a5069ff9dc92437b996fed181"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/invocation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\invocation.json",
+      "bytes": 3810,
+      "sha256": "dc28f6bc59832f5a4136d58fb21356bda13295d98efa833687eac25f8a70e764"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/step-1.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\step-1.log",
+      "bytes": 487,
+      "sha256": "9b48c32712a86e90020bf054a0c3866dc88de96ad4c91ae1a58a258e032f6f85"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/step-2.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\step-2.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/step-3.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\step-3.log",
+      "bytes": 82,
+      "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/step-4.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\step-4.log",
+      "bytes": 85,
+      "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/step-5.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\step-5.log",
+      "bytes": 40,
+      "sha256": "09d3c37f180a9f4231719e8b0b19fe21bcf1f3f422bed53a7c379de74c572825"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/step-6.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\step-6.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current823-java-bridge-source-v21/step-7.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current823-java-bridge-source-v21\\step-7.log",
+      "bytes": 44,
+      "sha256": "bd36fbf69bedc2df71512e4f39f1b10ba3aa723f66e0fef2ea845e11a82346ca"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/receipt.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\receipt.json",
+      "bytes": 6131,
+      "sha256": "f2413106532408996b2251a246c5e392967273b56f02d2847706aaee58925f0f"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/host-custody.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\host-custody.json",
+      "bytes": 1498,
+      "sha256": "e932e7c9b56c66dcb9efeb35ded2f804157f49fe8aa8e24578cdcef5d6d0296b"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/invocation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\invocation.json",
+      "bytes": 3694,
+      "sha256": "51fb6f93ed22a035999df6682a3c8c3817387e66666836c7a27d28e022cb90b3"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/step-1.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\step-1.log",
+      "bytes": 488,
+      "sha256": "92b01164288769480893b83cd7726e0a22b343feedf518def6e94e500120dbef"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/step-2.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\step-2.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/step-3.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\step-3.log",
+      "bytes": 82,
+      "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/step-4.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\step-4.log",
+      "bytes": 85,
+      "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/step-5.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\step-5.log",
+      "bytes": 40,
+      "sha256": "976ecabf66eb28c258bacb6271eabcce1990d540d788de41998df2d244c0ff3e"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/step-6.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\step-6.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current828-renderer-source-v23/step-7.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current828-renderer-source-v23\\step-7.log",
+      "bytes": 44,
+      "sha256": "bd36fbf69bedc2df71512e4f39f1b10ba3aa723f66e0fef2ea845e11a82346ca"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-six-compiler-v7/receipt.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-v7\\receipt.json",
+      "bytes": 2316,
+      "sha256": "a47241f528b673fbf10cf8b8ffdde4340839e7a730443c90a0eec4c2c0abbca5"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-six-compiler-v7/host-custody.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-v7\\host-custody.json",
+      "bytes": 572,
+      "sha256": "7ba7508dae06e8428911556cb3f71d52f8516f328cdd4dc97f0886dca6af6554"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-six-compiler-v7/invocation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-v7\\invocation.json",
+      "bytes": 1289,
+      "sha256": "55a63a2c4d9abc2071a19b15917faf1cd86ad6085d20268741fc0d81829f368a"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-six-compiler-v7/step-1.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-v7\\step-1.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-six-compiler-v7/step-2.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-six-compiler-v7\\step-2.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/receipt.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\receipt.json",
+      "bytes": 6173,
+      "sha256": "dc208b40ba026944a3028a3ae305a4272a326a6fba63e7a097457034014dc401"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/host-custody.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\host-custody.json",
+      "bytes": 1498,
+      "sha256": "3691196ed55ddab11d880233a240243c51db899b0ab4bbaaf243954c2b07b749"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/invocation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\invocation.json",
+      "bytes": 3740,
+      "sha256": "effdaa45efc8bb44f68a6ece256a5cc0b48163c68b8b107122dacf38dceb07d3"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/step-1.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\step-1.log",
+      "bytes": 510,
+      "sha256": "f47c78df0f8254cb42cba842069f248a9d0a2403983702cd58f6d018d4e0e891"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/step-2.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\step-2.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/step-3.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\step-3.log",
+      "bytes": 82,
+      "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/step-4.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\step-4.log",
+      "bytes": 85,
+      "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/step-5.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\step-5.log",
+      "bytes": 40,
+      "sha256": "09cb462c4ad65c6c5ea6afdf357959680da3761e47e0ee2111ac0ec24ea24085"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/step-6.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\step-6.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-collector-java-source-v22/step-7.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-collector-java-source-v22\\step-7.log",
+      "bytes": 44,
+      "sha256": "bd36fbf69bedc2df71512e4f39f1b10ba3aa723f66e0fef2ea845e11a82346ca"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v19/receipt.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v19\\receipt.json",
+      "bytes": 3847,
+      "sha256": "51f0c057fb66704a93cdaf41c1dbcbecd25bfc109166ab8d6f1eb3f7143c64f5"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v19/host-custody.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v19\\host-custody.json",
+      "bytes": 765,
+      "sha256": "50668949b972ba6357aced497335d9e1c49ee62f9111d9ccf053650c30eade89"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v19/invocation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v19\\invocation.json",
+      "bytes": 2489,
+      "sha256": "c97114533cea66256275200cb0f9ddbd7ffe0d198445934ef32f88b3b9d55cd4"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v19/step-1.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v19\\step-1.log",
+      "bytes": 1468,
+      "sha256": "13fb3475ef767faf058ad0409a2c50e5b861a471356a0b8d4eadd8c20ce23e12"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v19/step-2.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v19\\step-2.log",
+      "bytes": 5566,
+      "sha256": "c66a92c5ea735eceb4eac1ab17c56afcf7260d293a8a5cf0f1d647089cc65bb5"
+    },
+    {
+      "path": "evidence/jobs/integration-v12-current-java-real-node-v19/step-3.log",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v19\\step-3.log",
+      "bytes": 9187,
+      "sha256": "59be6c6b02d4ca602636660403fabeaada73068989688593cad7af1a0f895e9c"
+    },
+    {
+      "path": "evidence/query-v40/http-refusal-stage-observation.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v40\\campaign\\evidence\\http-refusal-stage-observation.json",
+      "bytes": 291,
+      "sha256": "008a0b45695fe132a3e0e1c68e41b30c001d357638fbf6ed5c3bc8c5f0f3083f"
+    },
+    {
+      "path": "evidence/query-v40/http-001-response.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v40\\campaign\\evidence\\http-001-response.json",
+      "bytes": 699,
+      "sha256": "3261337538083ab00eb866c79fe8f87ac319addb5477dc07c4f0bfaf52f6dde8"
+    },
+    {
+      "path": "evidence/query-v40/node-3-stopped.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-real-node-v40\\campaign\\evidence\\node-3-stopped.json",
+      "bytes": 4026,
+      "sha256": "eca97c8c1c4a404d8f0020ca1d0606a468de51353a3444a47bfddb2932cec47a"
+    },
+    {
+      "path": "evidence/compiler/current-six-qualified-manifest-v7.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-tools-custody\\current-six-qualified-manifest-v7.json",
+      "bytes": 7055,
+      "sha256": "3d08ad833ecb9bc4b8d06824dbf4d0039f13b46dcdcd8a861d6424c2e07bf5f0"
+    },
+    {
+      "path": "evidence/compiler/current-six-selected-v7.json",
+      "source": "C:\\Users\\turkins\\Desktop\\latent-phase4-coordination\\integration-v12-current-java-tools-custody\\current-six-selected-v7.json",
+      "bytes": 2597,
+      "sha256": "c3c388d81eb396e0ca512e4fbfe3539d741d5d121049aa4019aa990e476cd5ab"
+    }
+  ],
+  "totalCopiedBytes": 1209916,
+  "all44HeadsPushedVerified": true,
+  "activeValidationJobs": false,
+  "noRawCredentialsOrToolArchivesCopied": true
+}
