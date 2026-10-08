@@ -1,0 +1,1714 @@
+{
+  "at": "2026-10-08T11:34:04.996297+00:00",
+  "owner": "/root/portable_dependencies_v2",
+  "worktreeCount": 89,
+  "allOwnedWorktreesClean": true,
+  "uncommittedSourceFiles": 0,
+  "allHeadsRemoteVerified": true,
+  "normalPushOnly": true,
+  "worktreesRemoved": false,
+  "implementationTestsOrBuildsLaunched": false,
+  "ownedWorktrees": [
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-control-preparation-stages-v301",
+      "HEAD": "1b7a8073f9ec7b354a4dd00a365deb1c4094e3aa",
+      "branch": "refs/heads/fix/phase4-control-preparation-stages-v301",
+      "portableFilesMentioningPath": [
+        "portable-v2-control-preparation-stage-review-v302.py",
+        "portable-v2-control-stage-source-publication-v306.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-control-preparation-stage-review-v302.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-control-preparation-stages-v301",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-control-preparation-stages-v301",
+        "refs/heads/feat/phase4-http-409"
+      ],
+      "remoteArchiveSha": "1b7a8073f9ec7b354a4dd00a365deb1c4094e3aa",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-go-service-accounting-v125",
+      "HEAD": "d6ff5a2048d53166b274503cbbcb5fbfae35e07e",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-go-service-accounting-candidate-v125.json",
+        "portable-v2-go-service-accounting-draft-v125.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-go-service-accounting-v125",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-go-service-accounting-v125"
+      ],
+      "remoteArchiveSha": "d6ff5a2048d53166b274503cbbcb5fbfae35e07e",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-http-deferred-admission-v96",
+      "HEAD": "c7663996caa7722cd2a9ccc298f656e6c27a01e5",
+      "branch": "refs/heads/fix/phase4-deferred-http-bookkeeping-v96",
+      "portableFilesMentioningPath": [
+        "portable-v2-authenticate-http-final-20261007-v109.py",
+        "portable-v2-http-deferred-admission-regressions-20261007-v96.py",
+        "portable-v2-launch-http-fixture-source-20261007-v105.py",
+        "portable-v2-launch-http-qualified-native-20261007-v107.py",
+        "portable-v2-launch-http-retirement-source-20261007-v106.py",
+        "portable-v2-launch-http-source-20261007-v102.py",
+        "portable-v2-launch-qualified-http-native-20261007-v103.py",
+        "portable-v2-launch-verified-http-source-20261007-v99.py",
+        "portable-v2-prepare-http-bookkeeping-candidate-20261007-v96.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-http-deferred-admission-v96",
+      "originalBranchRemoteHeadBefore": "c7663996caa7722cd2a9ccc298f656e6c27a01e5",
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/root/lf-p4-http-deferred-admission-v96",
+        "refs/heads/fix/phase4-deferred-http-bookkeeping-v96"
+      ],
+      "remoteArchiveSha": "c7663996caa7722cd2a9ccc298f656e6c27a01e5",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-java-route-diagnostic-v127",
+      "HEAD": "4ce8b2ec3a9f35569948e72679f82975c4e056d7",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-java-route-diagnostic-v127",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-java-route-diagnostic-v127"
+      ],
+      "remoteArchiveSha": "4ce8b2ec3a9f35569948e72679f82975c4e056d7",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-policy-test-strict-v178",
+      "HEAD": "16bc0aef037fd207e57644a8ac4d14c5aa9d059f",
+      "branch": "refs/heads/fix/phase4-policy-test-strict-v178",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-policy-tests-strict-reviewed-v178.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-policy-test-strict-v178",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-policy-test-strict-v178"
+      ],
+      "remoteArchiveSha": "16bc0aef037fd207e57644a8ac4d14c5aa9d059f",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr784-21c-main-v272",
+      "HEAD": "b43ab914f9ffbdd4fa26c26b66c913daf3342aef",
+      "branch": "refs/heads/fix/phase4-pr784-21c-main-v272",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr784-21c-main-union-v272.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr784-21c-main-v272",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr784-21c-main-v272",
+        "refs/heads/feat/phase4-guests-389"
+      ],
+      "remoteArchiveSha": "b43ab914f9ffbdd4fa26c26b66c913daf3342aef",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr784-current-main-v217",
+      "HEAD": "c628f225442717668c80f97b919b5fa5d0432d37",
+      "branch": "refs/heads/fix/phase4-pr784-current-main-v217",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr784-current-main-v217",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr784-current-main-v217"
+      ],
+      "remoteArchiveSha": "c628f225442717668c80f97b919b5fa5d0432d37",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr784-current-main-v238",
+      "HEAD": "190f609ede6c2029739e6c9114a7142ee137fd26",
+      "branch": "refs/heads/fix/phase4-pr784-current-main-v238",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr784-current-main-v238",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr784-current-main-v238"
+      ],
+      "remoteArchiveSha": "190f609ede6c2029739e6c9114a7142ee137fd26",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr784-empty-trigger-box-v199",
+      "HEAD": "bd2176b8a0ec608b3c407dd5855538044f18ddaa",
+      "branch": "refs/heads/fix/phase4-pr784-empty-trigger-box-v199",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr784-empty-trigger-box-prepared-v199.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr784-empty-trigger-box-v199",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr784-empty-trigger-box-v199"
+      ],
+      "remoteArchiveSha": "bd2176b8a0ec608b3c407dd5855538044f18ddaa",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr784-empty-trigger-lookup-v188",
+      "HEAD": "dce2d0c2f84dbdb2e465f2252535960cb3ef2db8",
+      "branch": "refs/heads/fix/phase4-pr784-empty-trigger-lookup-v188",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr784-empty-trigger-lookup-prepared-v188.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr784-empty-trigger-lookup-v188",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr784-empty-trigger-lookup-v188"
+      ],
+      "remoteArchiveSha": "dce2d0c2f84dbdb2e465f2252535960cb3ef2db8",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr784-fd-main-v251",
+      "HEAD": "e80426e13c4eceb2b6b5a806522afa989d4ca2d0",
+      "branch": "refs/heads/fix/phase4-pr784-fd-main-v251",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr784-fd-main-union-v251.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr784-fd-main-v251",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr784-fd-main-v251"
+      ],
+      "remoteArchiveSha": "e80426e13c4eceb2b6b5a806522afa989d4ca2d0",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr784-java-fixture-v153",
+      "HEAD": "ac3db0ad6cdb7c3db75b684508ea621bb3ba4af2",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr784-java-fixture-v153",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr784-java-fixture-v153"
+      ],
+      "remoteArchiveSha": "ac3db0ad6cdb7c3db75b684508ea621bb3ba4af2",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr784-website-main-v224",
+      "HEAD": "a5af2349bcc14ef6ef43d37378fa9c93546d5ddc",
+      "branch": "refs/heads/fix/phase4-pr784-website-main-v224",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr784-website-main-union-v224.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr784-website-main-v224",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr784-website-main-v224"
+      ],
+      "remoteArchiveSha": "a5af2349bcc14ef6ef43d37378fa9c93546d5ddc",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr787-21c-main-v272",
+      "HEAD": "4ce4eb63a04cded8bbb4b875c1b6863a3cc84678",
+      "branch": "refs/heads/fix/phase4-pr787-21c-main-v272",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr787-21c-main-union-v272.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr787-21c-main-v272",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr787-21c-main-v272",
+        "refs/heads/feat/phase4-atomic-envelope-386"
+      ],
+      "remoteArchiveSha": "4ce4eb63a04cded8bbb4b875c1b6863a3cc84678",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr787-aot-floor-v233",
+      "HEAD": "d3698187c482967a99113a8df9be9910718327b4",
+      "branch": "refs/heads/fix/phase4-pr787-aot-floor-v233",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-owned-aot-floor-restored-v233.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr787-aot-floor-v233",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr787-aot-floor-v233"
+      ],
+      "remoteArchiveSha": "d3698187c482967a99113a8df9be9910718327b4",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr787-current-main-v217",
+      "HEAD": "45a6cbcf9e9c52dacb95225c1e75f0e5d0f980ea",
+      "branch": "refs/heads/fix/phase4-pr787-current-main-v217",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr787-current-main-v217",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr787-current-main-v217"
+      ],
+      "remoteArchiveSha": "45a6cbcf9e9c52dacb95225c1e75f0e5d0f980ea",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr787-current-main-v238",
+      "HEAD": "78c83f036ae657799e10b14678d84754cb1a895b",
+      "branch": "refs/heads/fix/phase4-pr787-current-main-v238",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr787-current-main-v238",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr787-current-main-v238"
+      ],
+      "remoteArchiveSha": "78c83f036ae657799e10b14678d84754cb1a895b",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr787-effects-module-v134",
+      "HEAD": "9c8a76e4087fab9454ef1b75420a5a955100e23f",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr787-effects-module-v134",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr787-effects-module-v134"
+      ],
+      "remoteArchiveSha": "9c8a76e4087fab9454ef1b75420a5a955100e23f",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr787-fd-main-v251",
+      "HEAD": "66142de2f07a9ac45ed9cae469227bf6f7d1e505",
+      "branch": "refs/heads/fix/phase4-pr787-fd-main-v251",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr787-fd-main-union-v251.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr787-fd-main-v251",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr787-fd-main-v251"
+      ],
+      "remoteArchiveSha": "66142de2f07a9ac45ed9cae469227bf6f7d1e505",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr787-java-fixture-v159",
+      "HEAD": "9b30480ed89915bd0a75ba39495de27ad4915359",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-java-fixture-prepared-continuations-v159.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr787-java-fixture-v159",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr787-java-fixture-v159"
+      ],
+      "remoteArchiveSha": "9b30480ed89915bd0a75ba39495de27ad4915359",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr787-website-main-v224",
+      "HEAD": "88c0ee8a4ad1533d15247bea4172641315d74bd3",
+      "branch": "refs/heads/fix/phase4-pr787-website-main-v224",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr787-website-main-union-v224.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr787-website-main-v224",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr787-website-main-v224"
+      ],
+      "remoteArchiveSha": "88c0ee8a4ad1533d15247bea4172641315d74bd3",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr790-21c-main-v272",
+      "HEAD": "9977333b18c3990e52b5aebb7e0382a26dfa35aa",
+      "branch": "refs/heads/fix/phase4-pr790-21c-main-v272",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr790-21c-main-union-v272.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr790-21c-main-v272",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr790-21c-main-v272",
+        "refs/heads/feat/phase4-command-waiters-387"
+      ],
+      "remoteArchiveSha": "9977333b18c3990e52b5aebb7e0382a26dfa35aa",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr790-aot-floor-v233",
+      "HEAD": "4ced0ab06857f7a22d822315359818ed353830a9",
+      "branch": "refs/heads/fix/phase4-pr790-aot-floor-v233",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-owned-aot-floor-restored-v233.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr790-aot-floor-v233",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr790-aot-floor-v233"
+      ],
+      "remoteArchiveSha": "4ced0ab06857f7a22d822315359818ed353830a9",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr790-binding-native-v208",
+      "HEAD": "221645876350b9790d5255df588f0ce2ca728871",
+      "branch": "refs/heads/fix/phase4-pr790-binding-native-v208",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr790-binding-native-v208",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr790-binding-native-v208"
+      ],
+      "remoteArchiveSha": "221645876350b9790d5255df588f0ce2ca728871",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr790-completed-ci-source-v152",
+      "HEAD": "a3fb527eb067259865e22777e743614967695551",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr790-completed-ci-source-v152",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr790-completed-ci-source-v152"
+      ],
+      "remoteArchiveSha": "a3fb527eb067259865e22777e743614967695551",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr790-current-binding-v216",
+      "HEAD": "63ca20b1d2d1faf93030283d86272cfcb6d51994",
+      "branch": "refs/heads/fix/phase4-pr790-current-binding-v216",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr790-current-merge-finish-v216.py",
+        "portable-v2-pr790-current-merge-v216.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr790-current-binding-v216",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr790-current-binding-v216"
+      ],
+      "remoteArchiveSha": "63ca20b1d2d1faf93030283d86272cfcb6d51994",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr790-current-main-v238",
+      "HEAD": "b35a1a374ad76622393da92a42f9103842be3da0",
+      "branch": "refs/heads/fix/phase4-pr790-current-main-v238",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr790-current-main-v238",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr790-current-main-v238"
+      ],
+      "remoteArchiveSha": "b35a1a374ad76622393da92a42f9103842be3da0",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr790-fd-main-v251",
+      "HEAD": "9cfe58a9587d08adf8fdbee29e7d0360fd788f3e",
+      "branch": "refs/heads/fix/phase4-pr790-fd-main-v251",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr790-fd-main-union-v251.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr790-fd-main-v251",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr790-fd-main-v251"
+      ],
+      "remoteArchiveSha": "9cfe58a9587d08adf8fdbee29e7d0360fd788f3e",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr790-guard-layout-v202",
+      "HEAD": "6ab38845e5a266f38229416dc63fe57df471a40f",
+      "branch": "refs/heads/fix/phase4-pr790-guard-layout-v202",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr790-maintained-guard-layout-prepared-v202.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr790-guard-layout-v202",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr790-guard-layout-v202"
+      ],
+      "remoteArchiveSha": "6ab38845e5a266f38229416dc63fe57df471a40f",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr790-website-main-v224",
+      "HEAD": "b7376b3fedb9d5e44f327cdeb28822d425cc78be",
+      "branch": "refs/heads/fix/phase4-pr790-website-main-v224",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr790-website-main-union-v224.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr790-website-main-v224",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr790-website-main-v224"
+      ],
+      "remoteArchiveSha": "b7376b3fedb9d5e44f327cdeb28822d425cc78be",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-21c-main-v272",
+      "HEAD": "a129773f52c4fc15c59b4ce62b52744a233cd4cd",
+      "branch": "refs/heads/fix/phase4-pr791-21c-main-v272",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr791-21c-main-union-v272.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-21c-main-v272",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-21c-main-v272",
+        "refs/heads/feat/phase4-node-transactions-388"
+      ],
+      "remoteArchiveSha": "a129773f52c4fc15c59b4ce62b52744a233cd4cd",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-aot-floor-v233",
+      "HEAD": "be1d669f77b5947a94654d377e858f022927c8b7",
+      "branch": "refs/heads/fix/phase4-pr791-aot-floor-v233",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-owned-aot-floor-restored-v233.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-aot-floor-v233",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-aot-floor-v233"
+      ],
+      "remoteArchiveSha": "be1d669f77b5947a94654d377e858f022927c8b7",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-core-owner-v247",
+      "HEAD": "ebaf5292189b842ce368d998622b200b27747e91",
+      "branch": "refs/heads/fix/phase4-pr791-core-owner-v247",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr791-core-owner-repair-v247.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr791-core-owner-repair-prepared-v247.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-core-owner-v247",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-core-owner-v247"
+      ],
+      "remoteArchiveSha": "ebaf5292189b842ce368d998622b200b27747e91",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-current-main-v217",
+      "HEAD": "af40f10cf214742cc519bb1a8d41fc190f3c56e6",
+      "branch": "refs/heads/fix/phase4-pr791-current-main-v217",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-current-main-v217",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-current-main-v217"
+      ],
+      "remoteArchiveSha": "af40f10cf214742cc519bb1a8d41fc190f3c56e6",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-current-main-v238",
+      "HEAD": "c2bac5e3015c2166c70825c91ece7833f701742b",
+      "branch": "refs/heads/fix/phase4-pr791-current-main-v238",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-current-main-v238",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-current-main-v238"
+      ],
+      "remoteArchiveSha": "c2bac5e3015c2166c70825c91ece7833f701742b",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-fd-main-v251",
+      "HEAD": "f470e9178a58eedd433da348dd700e0f856a55dd",
+      "branch": "refs/heads/fix/phase4-pr791-fd-main-v251",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr791-fd-main-union-v251.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-fd-main-v251",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-fd-main-v251"
+      ],
+      "remoteArchiveSha": "f470e9178a58eedd433da348dd700e0f856a55dd",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-go-preparation-diag-v195",
+      "HEAD": "cde3ab8ed99aa4cb62c071b66263d83d870a7afa",
+      "branch": "refs/heads/fix/phase4-pr791-go-preparation-diag-v195",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr791-go-preparation-diagnostic-prepared-v195.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-go-preparation-diag-v195",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-go-preparation-diag-v195"
+      ],
+      "remoteArchiveSha": "cde3ab8ed99aa4cb62c071b66263d83d870a7afa",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-guard-layout-v209",
+      "HEAD": "f69c330cd0f77a4c5ddf68d26250b01dcc2ed64f",
+      "branch": "refs/heads/fix/phase4-pr791-guard-layout-v209",
+      "portableFilesMentioningPath": [
+        "portable-v2-800-791-isolated-prepare-v209.py",
+        "portable-v2-pr791-layout-qualified-publish-v214.py",
+        "portable-v2-pr791-own-record-layout-v210.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr791-own-record-layout-prepared-v210.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-guard-layout-v209",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-guard-layout-v209"
+      ],
+      "remoteArchiveSha": "f69c330cd0f77a4c5ddf68d26250b01dcc2ed64f",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-java-fixture-v158",
+      "HEAD": "866416fb57f2a11211fc6ecdf8896c2e5343a36a",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-java-fixture-prepared-continuations-v159.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-java-fixture-v158",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-java-fixture-v158"
+      ],
+      "remoteArchiveSha": "866416fb57f2a11211fc6ecdf8896c2e5343a36a",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-website-main-v224",
+      "HEAD": "296803404ba43ac56917feab3b996e6d57e1ac4e",
+      "branch": "refs/heads/fix/phase4-pr791-website-main-v224",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr791-website-main-union-v224.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr791-website-main-v224",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr791-website-main-v224"
+      ],
+      "remoteArchiveSha": "296803404ba43ac56917feab3b996e6d57e1ac4e",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr796-21c-main-v272",
+      "HEAD": "8f85a60021786138a25f75b8fbc22c32f8789844",
+      "branch": "refs/heads/fix/phase4-pr796-21c-main-v272",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr796-observer-behavior-v274.py",
+        "portable-v2-pr796-route-observer-union-v273.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr796-21c-main-union-v272.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr796-21c-main-v272",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr796-21c-main-v272",
+        "refs/heads/feat/phase4-retention-397"
+      ],
+      "remoteArchiveSha": "8f85a60021786138a25f75b8fbc22c32f8789844",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr796-aot-floor-v233",
+      "HEAD": "5e7824e790c1fba26a7024bc6f1fa35eaecc62d6",
+      "branch": "refs/heads/fix/phase4-pr796-aot-floor-v233",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-owned-aot-floor-restored-v233.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr796-aot-floor-v233",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr796-aot-floor-v233"
+      ],
+      "remoteArchiveSha": "5e7824e790c1fba26a7024bc6f1fa35eaecc62d6",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr796-completed-ci-v164",
+      "HEAD": "43503d8cfbd9e938aa6d798ccd00059efdae8e9e",
+      "branch": "refs/heads/fix/phase4-pr796-completed-ci-v164",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr796-qualified-publication-v166.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr796-completed-ci-prepared-v164.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr796-completed-ci-v164",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr796-completed-ci-v164"
+      ],
+      "remoteArchiveSha": "43503d8cfbd9e938aa6d798ccd00059efdae8e9e",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr796-current-main-v217",
+      "HEAD": "c4c5403ed4d2f1d64a07465eca1c669f6db4ab07",
+      "branch": "refs/heads/fix/phase4-pr796-current-main-v217",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr796-current-merge-finish-v218.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr796-current-main-v217",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr796-current-main-v217"
+      ],
+      "remoteArchiveSha": "c4c5403ed4d2f1d64a07465eca1c669f6db4ab07",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr796-current-main-v238",
+      "HEAD": "d81e71fde71b28cef0f41d808c275746c5b3ffab",
+      "branch": "refs/heads/fix/phase4-pr796-current-main-v238",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr796-current-main-v238",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr796-current-main-v238"
+      ],
+      "remoteArchiveSha": "d81e71fde71b28cef0f41d808c275746c5b3ffab",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr796-fd-main-v251",
+      "HEAD": "cdb25931de74109140b5a4dd5597e8b138f56f2d",
+      "branch": "refs/heads/fix/phase4-pr796-fd-main-v251",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr796-fd-main-union-v251.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr796-fd-main-v251",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr796-fd-main-v251"
+      ],
+      "remoteArchiveSha": "cdb25931de74109140b5a4dd5597e8b138f56f2d",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr796-java-fixture-v162",
+      "HEAD": "eb2e47f1178de94616f57915e10aeaa677c9a59c",
+      "branch": "refs/heads/fix/phase4-pr796-java-fixture-v162",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr796-java-fixture-prepared-v162.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr796-java-fixture-v162",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr796-java-fixture-v162"
+      ],
+      "remoteArchiveSha": "eb2e47f1178de94616f57915e10aeaa677c9a59c",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr796-website-main-v224",
+      "HEAD": "d8ca576980d49408c1164db6f62c96a6895294b4",
+      "branch": "refs/heads/fix/phase4-pr796-website-main-v224",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr796-website-main-union-v224.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr796-website-main-v224",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr796-website-main-v224"
+      ],
+      "remoteArchiveSha": "d8ca576980d49408c1164db6f62c96a6895294b4",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-21c-main-v272",
+      "HEAD": "5d41e9b481e78818db4ac2a8ff30095301e61f94",
+      "branch": "refs/heads/fix/phase4-pr800-21c-main-v272",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr800-21c-main-union-v272.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-21c-main-v272",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-21c-main-v272",
+        "refs/heads/feat/phase4-clients-401"
+      ],
+      "remoteArchiveSha": "5d41e9b481e78818db4ac2a8ff30095301e61f94",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-aot-floor-v233",
+      "HEAD": "aa46b960be1e50a7366d5ccd1118d7defe7c9081",
+      "branch": "refs/heads/fix/phase4-pr800-aot-floor-v233",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-owned-aot-floor-restored-v233.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-aot-floor-v233",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-aot-floor-v233"
+      ],
+      "remoteArchiveSha": "aa46b960be1e50a7366d5ccd1118d7defe7c9081",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-current-main-v217",
+      "HEAD": "0055f9778e0d4ee2ace92dfdafabfd3e8ad57b7c",
+      "branch": "refs/heads/fix/phase4-pr800-current-main-v217",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-current-main-v217",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-current-main-v217"
+      ],
+      "remoteArchiveSha": "0055f9778e0d4ee2ace92dfdafabfd3e8ad57b7c",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-current-main-v238",
+      "HEAD": "44de06300cdfdb34a76cd9ba2d356c8837960318",
+      "branch": "refs/heads/fix/phase4-pr800-current-main-v238",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-current-main-v238",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-current-main-v238"
+      ],
+      "remoteArchiveSha": "44de06300cdfdb34a76cd9ba2d356c8837960318",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-dotnet-lock-v260",
+      "HEAD": "592db6f7b7a677a0a5a502e82d4333776ca71d6e",
+      "branch": "refs/heads/fix/phase4-pr800-dotnet-lock-v260",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr800-derived-lock-qualified-publish-v266.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-dotnet-lock-v260",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-dotnet-lock-v260"
+      ],
+      "remoteArchiveSha": "592db6f7b7a677a0a5a502e82d4333776ca71d6e",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-dotnet-vectors-v209",
+      "HEAD": "a94e696f13a1d22a37c962d7b577ea7535a54f85",
+      "branch": "refs/heads/fix/phase4-pr800-dotnet-vectors-v209",
+      "portableFilesMentioningPath": [
+        "portable-v2-800-791-isolated-prepare-v209.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-dotnet-vectors-v209",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-dotnet-vectors-v209"
+      ],
+      "remoteArchiveSha": "a94e696f13a1d22a37c962d7b577ea7535a54f85",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-fd-main-v251",
+      "HEAD": "f6f4a95b2dfe5f38295a70ea485f9d797d8786d8",
+      "branch": "refs/heads/fix/phase4-pr800-fd-main-v251",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr800-fd-main-union-v251.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-fd-main-v251",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-fd-main-v251"
+      ],
+      "remoteArchiveSha": "f6f4a95b2dfe5f38295a70ea485f9d797d8786d8",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-java-bridge-v145",
+      "HEAD": "c83bf0c26055c9ef3d2f7705f684f630336eeb5d",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-java-bridge-v145",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-java-bridge-v145"
+      ],
+      "remoteArchiveSha": "c83bf0c26055c9ef3d2f7705f684f630336eeb5d",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-java-fixture-v157",
+      "HEAD": "017385709f321b43f28a5851aca29eb2a37617d7",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-java-fixture-v157",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-java-fixture-v157"
+      ],
+      "remoteArchiveSha": "017385709f321b43f28a5851aca29eb2a37617d7",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr800-website-main-v224",
+      "HEAD": "ec254f6c7979bd0aaec0886f88c1051d95e6c350",
+      "branch": "refs/heads/fix/phase4-pr800-website-main-v224",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr800-website-main-union-v224.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr800-website-main-v224",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr800-website-main-v224"
+      ],
+      "remoteArchiveSha": "ec254f6c7979bd0aaec0886f88c1051d95e6c350",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-21c-main-v272",
+      "HEAD": "335dca010d299e554a4ab351e9fb525ae15e8d5c",
+      "branch": "refs/heads/fix/phase4-pr811-21c-main-v272",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr811-current-qualified-publish-v285.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr811-21c-main-union-v272.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-21c-main-v272",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-21c-main-v272"
+      ],
+      "remoteArchiveSha": "335dca010d299e554a4ab351e9fb525ae15e8d5c",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-buf-golden-v307",
+      "HEAD": "f149bb009952e823c6d6f3877af80b298c5c7258",
+      "branch": "refs/heads/fix/phase4-pr811-buf-golden-v307",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr811-buf-golden-final-verification-v311.py",
+        "portable-v2-pr811-buf-golden-producer-v308.py",
+        "portable-v2-pr811-buf-golden-producer-v309.py",
+        "portable-v2-pr811-buf-golden-publication-v313.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-buf-golden-v307",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-buf-golden-v307",
+        "refs/heads/feat/phase4-command-completion-388"
+      ],
+      "remoteArchiveSha": "f149bb009952e823c6d6f3877af80b298c5c7258",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-current-main-v217",
+      "HEAD": "62940f5a04e6deb96a568afdf225ca06969ce242",
+      "branch": "refs/heads/fix/phase4-pr811-current-main-v217",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-current-main-v217",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-current-main-v217"
+      ],
+      "remoteArchiveSha": "62940f5a04e6deb96a568afdf225ca06969ce242",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-current-main-v238",
+      "HEAD": "060d3c07a51a6b2d690a9aca7816d5f7fe5e22a0",
+      "branch": "refs/heads/fix/phase4-pr811-current-main-v238",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-current-main-v238",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-current-main-v238"
+      ],
+      "remoteArchiveSha": "060d3c07a51a6b2d690a9aca7816d5f7fe5e22a0",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-current-main-v243",
+      "HEAD": "091c4b2f2e323a4d2242246d4d1c362c7aa1248a",
+      "branch": "refs/heads/fix/phase4-pr811-current-main-v243",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr811-peer-merge-finish-v243.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-current-main-v243",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-current-main-v243"
+      ],
+      "remoteArchiveSha": "091c4b2f2e323a4d2242246d4d1c362c7aa1248a",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-dotnet-lock-v263",
+      "HEAD": "f8253b33ce6987663ff423bafce1946f901ba66f",
+      "branch": "refs/heads/fix/phase4-pr811-dotnet-lock-v263",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr811-derived-six-lock-child-v263.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr811-derived-six-lock-child-v263.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-dotnet-lock-v263",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-dotnet-lock-v263"
+      ],
+      "remoteArchiveSha": "f8253b33ce6987663ff423bafce1946f901ba66f",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-fd-main-v251",
+      "HEAD": "3a991d9922390edb3251c84aa8f926a717687d0b",
+      "branch": "refs/heads/fix/phase4-pr811-fd-main-v251",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr811-fd-main-union-v251.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-fd-main-v251",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-fd-main-v251"
+      ],
+      "remoteArchiveSha": "3a991d9922390edb3251c84aa8f926a717687d0b",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-generated-fields-v177",
+      "HEAD": "e378fde6f67e1a34eb090d1adfc8abf4e9c20009",
+      "branch": "refs/heads/fix/phase4-pr811-generated-control-fields-v177",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr811-generated-fields-guarded-publication-v183.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr811-generated-fields-draft-v177.json",
+        "portable-v2-pr811-generated-fields-reviewed-v177.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-generated-fields-v177",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-generated-fields-v177"
+      ],
+      "remoteArchiveSha": "e378fde6f67e1a34eb090d1adfc8abf4e9c20009",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-network-fields-v184",
+      "HEAD": "fc048e5f27a8f8dc751f92865cc149fa21e36400",
+      "branch": "refs/heads/fix/phase4-pr811-network-profile-fields-v184",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr811-network-fields-guarded-publication-v185.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr811-network-fields-prepared-v184.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-network-fields-v184",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-network-fields-v184"
+      ],
+      "remoteArchiveSha": "fc048e5f27a8f8dc751f92865cc149fa21e36400",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-peer-signing-v250",
+      "HEAD": "a2f9ab0ab1a30edf7355844f47c1434f739c5b28",
+      "branch": "refs/heads/fix/phase4-pr811-peer-signing-v250",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr811-peer-signing-merge-finish-v250.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-peer-signing-v250",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-peer-signing-v250"
+      ],
+      "remoteArchiveSha": "a2f9ab0ab1a30edf7355844f47c1434f739c5b28",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-sdk-protocol-v236",
+      "HEAD": "d494df0c73ccec8b5af66263c45b2e8ea4f562b5",
+      "branch": "refs/heads/fix/phase4-pr811-sdk-protocol-v236",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-sdk-protocol-v236",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-sdk-protocol-v236"
+      ],
+      "remoteArchiveSha": "d494df0c73ccec8b5af66263c45b2e8ea4f562b5",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr811-website-main-v224",
+      "HEAD": "12bccf261ef0a3c8ff71e84304721ded9463456f",
+      "branch": "refs/heads/fix/phase4-pr811-website-main-v224",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr811-website-main-union-v224.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr811-website-main-v224",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr811-website-main-v224"
+      ],
+      "remoteArchiveSha": "12bccf261ef0a3c8ff71e84304721ded9463456f",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-21c-main-v272",
+      "HEAD": "601038c2b908144dadd11bcb48ddbab51606b5d4",
+      "branch": "refs/heads/fix/phase4-pr825-21c-main-v272",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr825-21c-main-union-v272.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-21c-main-v272",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-21c-main-v272",
+        "refs/heads/feat/phase4-391-dispatch-capacity"
+      ],
+      "remoteArchiveSha": "601038c2b908144dadd11bcb48ddbab51606b5d4",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-aggregate-contract-v139",
+      "HEAD": "329dbca9fc84a8bf45be26facd35b378b9e49cfb",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr825-current-compiler-preparation-v144.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-aggregate-contract-v139",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-aggregate-contract-v139"
+      ],
+      "remoteArchiveSha": "329dbca9fc84a8bf45be26facd35b378b9e49cfb",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-aggregate-templates-v124",
+      "HEAD": "ba47f1d4b48f8bb331f3b0137acbe72046612b14",
+      "branch": "refs/heads/fix/phase4-pr825-aggregate-templates-v124",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr825-template-propagation-v124.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-aggregate-templates-v124",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-aggregate-templates-v124"
+      ],
+      "remoteArchiveSha": "ba47f1d4b48f8bb331f3b0137acbe72046612b14",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-aot-floor-v233",
+      "HEAD": "ec1e1aa0c2d54a48b2af4370e5a73bf0028c197c",
+      "branch": "refs/heads/fix/phase4-pr825-aot-floor-v233",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-owned-aot-floor-restored-v233.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-aot-floor-v233",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-aot-floor-v233"
+      ],
+      "remoteArchiveSha": "ec1e1aa0c2d54a48b2af4370e5a73bf0028c197c",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-core-owner-v244",
+      "HEAD": "8e0125db0bb21b3e456f5450fd64a24b0caee3d5",
+      "branch": "refs/heads/fix/phase4-pr825-core-owner-v244",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr825-core-owner-repair-v244.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr825-core-owner-repair-prepared-v244.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-core-owner-v244",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-core-owner-v244"
+      ],
+      "remoteArchiveSha": "8e0125db0bb21b3e456f5450fd64a24b0caee3d5",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-current-main-v217",
+      "HEAD": "17c20ed1a381dc670132d9fc8411fa0ff4fbed07",
+      "branch": "refs/heads/fix/phase4-pr825-current-main-v217",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-current-main-v217",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-current-main-v217"
+      ],
+      "remoteArchiveSha": "17c20ed1a381dc670132d9fc8411fa0ff4fbed07",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-current-main-v238",
+      "HEAD": "9a8fcb8a960a1ddf7261266202dea76eeff54d51",
+      "branch": "refs/heads/fix/phase4-pr825-current-main-v238",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-current-main-v238",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-current-main-v238"
+      ],
+      "remoteArchiveSha": "9a8fcb8a960a1ddf7261266202dea76eeff54d51",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-effects-source-union-20261007-v83",
+      "HEAD": "76d8a7a7852c7ebcd646c7ca787412df4c495d4d",
+      "branch": "refs/heads/fix/phase4-effects-case-union-20261007-v83",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-effects-source-union-20261007-v83",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-effects-source-union-20261007-v83"
+      ],
+      "remoteArchiveSha": "76d8a7a7852c7ebcd646c7ca787412df4c495d4d",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-fd-main-v251",
+      "HEAD": "03466b9062da20222e6fcdd8b0c6a2ed6dec5fbd",
+      "branch": "refs/heads/fix/phase4-pr825-fd-main-v251",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr825-current-fd-publish-v255.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr825-fd-main-union-v251.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-fd-main-v251",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-fd-main-v251"
+      ],
+      "remoteArchiveSha": "03466b9062da20222e6fcdd8b0c6a2ed6dec5fbd",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-java-fixture-v156",
+      "HEAD": "668993309745f4c2053623225ea7f0760d595f57",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-java-fixture-v156",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-java-fixture-v156"
+      ],
+      "remoteArchiveSha": "668993309745f4c2053623225ea7f0760d595f57",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-service-accounting-v192",
+      "HEAD": "ab1acbcf8db005af21ecef88e01cccb393d1f7a6",
+      "branch": "refs/heads/fix/phase4-pr825-service-accounting-v192",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr825-service-accounting-prepared-v192.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-service-accounting-v192",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-service-accounting-v192"
+      ],
+      "remoteArchiveSha": "ab1acbcf8db005af21ecef88e01cccb393d1f7a6",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr825-website-main-v224",
+      "HEAD": "61bf7306e816469e2df0d29253c60840a6ac4f61",
+      "branch": "refs/heads/fix/phase4-pr825-website-main-v224",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr825-website-main-union-v224.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr825-website-main-v224",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr825-website-main-v224"
+      ],
+      "remoteArchiveSha": "61bf7306e816469e2df0d29253c60840a6ac4f61",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-c-fields-v168",
+      "HEAD": "ed2254f1c7300ec11cbf827c4e1ed9fe364e8776",
+      "branch": "refs/heads/fix/phase4-pr828-c-aggregate-fields-v168",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr828-c-fields-prepared-v168.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr828-c-fields-v168",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr828-c-fields-v168"
+      ],
+      "remoteArchiveSha": "ed2254f1c7300ec11cbf827c4e1ed9fe364e8776",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-current-prep-diag-v257",
+      "HEAD": "8fe134c08c0535e2eddf9cac7579fcdbacca90af",
+      "branch": "refs/heads/fix/phase4-pr828-current-prep-diag-v257",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr828-current-prep-merge-finish-v257.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr828-current-prep-diagnostic-prepared-v257.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr828-current-prep-diag-v257",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr828-current-prep-diag-v257"
+      ],
+      "remoteArchiveSha": "8fe134c08c0535e2eddf9cac7579fcdbacca90af",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-go-preparation-diag-v231",
+      "HEAD": "b31328f4b1bfaafe8e59b73ce6b61e950f87826d",
+      "branch": "refs/heads/fix/phase4-pr828-go-preparation-diag-v231",
+      "portableFilesMentioningPath": [
+        "portable-v2-pr828-preparation-diagnostic-prepare-v231.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-pr828-preparation-diagnostic-prepared-v231.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr828-go-preparation-diag-v231",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr828-go-preparation-diag-v231"
+      ],
+      "remoteArchiveSha": "b31328f4b1bfaafe8e59b73ce6b61e950f87826d",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-signature-diag-v254",
+      "HEAD": "1da58713c254b81501c1594dac68f9d15ec104a8",
+      "branch": "refs/heads/fix/phase4-pr828-signature-diag-v254",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-pr828-signature-diag-v254",
+      "originalBranchRemoteHeadBefore": null,
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-pr828-signature-diag-v254"
+      ],
+      "remoteArchiveSha": "1da58713c254b81501c1594dac68f9d15ec104a8",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-reference402-current-foundation-v292",
+      "HEAD": "7bc1ca796e5b1a2125a0fb6be905484fec6e8b63",
+      "branch": "refs/heads/feat/phase4-reference402-current-foundation-v292",
+      "portableFilesMentioningPath": [
+        "portable-v2-reference402-current-merge-finish-v292.py",
+        "portable-v2-reference402-current-source-checkpoint-v298.py",
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-reference402-current-merge-review-v292.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-reference402-current-foundation-v292",
+      "originalBranchRemoteHeadBefore": "7bc1ca796e5b1a2125a0fb6be905484fec6e8b63",
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-reference402-current-foundation-v292",
+        "refs/heads/feat/phase4-reference402-current-foundation-v292"
+      ],
+      "remoteArchiveSha": "7bc1ca796e5b1a2125a0fb6be905484fec6e8b63",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-reference402-current-v173",
+      "HEAD": "0429371476cca028c2884fd5d0db26d17af5f410",
+      "branch": "refs/heads/feat/phase4-reference402-current-v173",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-reference402-current-source-union-v173.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-reference402-current-v173",
+      "originalBranchRemoteHeadBefore": "0429371476cca028c2884fd5d0db26d17af5f410",
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-reference402-current-v173",
+        "refs/heads/feat/phase4-reference402-current-v173"
+      ],
+      "remoteArchiveSha": "0429371476cca028c2884fd5d0db26d17af5f410",
+      "remotePushedAndVerified": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/lf-p4-reference402-qualified-foundation-v198",
+      "HEAD": "3abbb63cd18729e3c94145066d957e286d9e2de2",
+      "branch": "refs/heads/feat/phase4-reference402-qualified-foundation-v198",
+      "portableFilesMentioningPath": [
+        "portable-v2-cleanup-candidate-worktrees-v319.json",
+        "portable-v2-reference402-qualified-foundation-union-v198.json"
+      ],
+      "strongPortableName": true,
+      "statusLines": [],
+      "trackedDirtyLines": [],
+      "archiveRef": "refs/heads/checkpoint/phase4-cleanup-20261008/portable/lf-p4-reference402-qualified-foundation-v198",
+      "originalBranchRemoteHeadBefore": "3abbb63cd18729e3c94145066d957e286d9e2de2",
+      "otherRemoteRefsAlreadyCoveringHead": [
+        "refs/heads/checkpoint/phase4-cleanup-20261008/phase4/lf-p4-reference402-qualified-foundation-v198",
+        "refs/heads/feat/phase4-reference402-qualified-foundation-v198"
+      ],
+      "remoteArchiveSha": "3abbb63cd18729e3c94145066d957e286d9e2de2",
+      "remotePushedAndVerified": true
+    }
+  ]
+}
