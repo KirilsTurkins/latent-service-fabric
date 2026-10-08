@@ -61,3 +61,27 @@ The existing [historical report](../../../runtime/outbound-stream-current-native
 remains bound to `55906321`; it is not rewritten to this source. Current checks,
 default-installation refusal and strict lint outcomes are reported in the PR.
 Full hosted CI remains required and is not awaited for source publication.
+
+## Current CI follow-up
+
+PR head `60ad35bd2318ccc9b2aa2889de31caf18ba29544` was tested at merge
+`0e8c7159a659819e939f7f4373d7511e16f290e4`. The Python lane in
+[run 37796499912](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37796499912)
+found stale composition source references for the native surface and provider
+configuration. Those two records now bind the reviewed current source; every
+support row, profile axis, HTTP bound and non-authorization flag remains unchanged.
+
+The Rust developer bundle in
+[run 37796499569](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37796499569)
+failed on the pinned Zig archive's first-response timeout before receiving bytes.
+The transport wait is now at most 60 seconds, capped by original remaining time.
+The 600-second acceptance deadline, exact URL/digest/byte ceiling, single attempt,
+cache verification and owned partial cleanup remain enforced. No retry, mirror
+fallback or partial archive acceptance is added.
+
+All 43 focused composition/download/preflight/packaging tests pass on Python
+3.13.5 Linux without skips. All twelve original download cases and guards remain,
+with one additional narrow/absolute-budget case. A separate Windows download
+verified the exact 55,478,392-byte archive against pinned SHA-256
+`70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00`;
+that network observation is distinct from full developer-bundle or CI qualification.
