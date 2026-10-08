@@ -83,7 +83,7 @@ class Campaign:
         try:
             return http.response(observed["status"], observed["body"], observed["headers"])
         except ValueError:
-            if observed.get("status") in {400, 401, 403, 404, 405, 502}:
+            if observed.get("status") in {400, 401, 403, 404, 405, 502, 503}:
                 from .refusal_observation import observe
                 observe(self.client)
             raise
