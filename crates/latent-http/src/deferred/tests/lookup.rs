@@ -127,15 +127,21 @@ async fn uncertain(fixture: &Fixture, effect: &DurableEffectAuthority) {
     fixture.settled(effect, Disposition::RetryScheduled).await;
     fixture.owner.as_ref().unwrap().pause();
     tokio::time::timeout(WATCHDOG, async {
-        while fixture
-            .owner
-            .as_ref()
-            .unwrap()
-            .snapshot()
-            .unwrap()
-            .accepted_effects
-            != 0
-        {
+        loop {
+            let effects_retired = fixture
+                .owner
+                .as_ref()
+                .unwrap()
+                .snapshot()
+                .unwrap()
+                .accepted_effects
+                == 0;
+            // Receipt completion can wake the effect worker before the receipt
+            // writer drops its last shared native-capacity keeper.
+            let ordinary_retired = fixture.native_capacity.snapshot().unwrap().ordinary.slots == 0;
+            if effects_retired && ordinary_retired {
+                break;
+            }
             tokio::task::yield_now().await;
         }
     })
