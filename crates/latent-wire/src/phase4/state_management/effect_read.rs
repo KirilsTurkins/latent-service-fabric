@@ -144,12 +144,7 @@ pub(super) async fn execute(
         deadline,
         input_bytes: request.encoded_len(),
     }
-    .seal("inspect-effect")
-    .map_err(|error| {
-        #[cfg(test)]
-        eprintln!("effect-read denied at current inspect-effect seal");
-        error
-    })?;
+    .seal("inspect-effect")?;
     if decision.requires_audit() && inner.services.audit.is_none() {
         return Err(super::unsupported());
     }
@@ -164,11 +159,7 @@ pub(super) async fn execute(
         permit,
         deadline,
     });
-    keeper.before().map_err(|error| {
-        #[cfg(test)]
-        eprintln!("effect-read denied at retained original policy tuple");
-        error
-    })?;
+    keeper.before()?;
     let view = inner
         .services
         .store
@@ -212,11 +203,7 @@ pub(super) async fn execute(
     let (view, result) = job.await.map_err(io_error)?;
     let (result, finish) = result.map_err(protected_error)?;
     inspection::read_ack(finish).await?;
-    let (read, response) = result.map_err(|error| {
-        #[cfg(test)]
-        eprintln!("effect-read denied during native original record or response gate");
-        error
-    })?;
+    let (read, response) = result?;
     let needed = response
         .encoded_len()
         .checked_mul(4)

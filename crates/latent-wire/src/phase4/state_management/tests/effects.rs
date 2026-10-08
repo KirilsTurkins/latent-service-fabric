@@ -81,6 +81,53 @@ async fn direct_effect_inspection_requires_original_caller_link_and_current_read
 }
 
 #[tokio::test]
+async fn effect_history_projects_actual_original_dispatch_receipts_without_provider_reexecution() {
+    let mut effect =
+        fixture::setup_with_provider(Some(latent_effects::dispatch::Disposition::KnownFailed))
+            .await;
+    effect.settle_original().await;
+    let request = latent_rpc::transaction::v1::ListEffectHistoryRequest {
+        effect: effect.request("actual-history").effect,
+        page: Some(latent_rpc::transaction::v1::PageRequest {
+            limit: 1,
+            cursor: None,
+        }),
+    };
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), request.clone().into())
+        .await
+        .unwrap();
+    let contract::Response::ListEffectHistory(page) = &response.response else {
+        panic!("actual history required");
+    };
+    assert_eq!(page.receipts.len(), 1);
+    assert_eq!(page.receipts[0].effect_id, effect.effect);
+    assert_eq!(
+        page.receipts[0].disposition,
+        latent_rpc::transaction::v1::EffectDisposition::KnownFailure as i32
+    );
+    assert_eq!(page.receipts[0].dispatch_attempt, 1);
+    assert_eq!(page.receipts[0].provider_receipt, None);
+    assert!(page.receipts[0].owner_epoch.is_some());
+    contract::Response::ListEffectHistory(page.clone())
+        .validate_for(&contract::Request::from(request))
+        .unwrap();
+    assert_eq!(
+        effect
+            .provider
+            .as_ref()
+            .unwrap()
+            .sends
+            .load(std::sync::atomic::Ordering::SeqCst),
+        1
+    );
+    drop(response);
+    effect.finish().await;
+}
+
+#[tokio::test]
 async fn controlled_dispatch_requires_the_actual_current_policy_and_source_before_provider_acceptance(
 ) {
     let mut effect =
