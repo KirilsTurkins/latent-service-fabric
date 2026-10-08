@@ -127,9 +127,10 @@ Pass the actual request method/scheme and actual current response fields;
 nullable media/representation length mean omitted typed fields. Reuse the
 decoded body bytes when constructing the generated response. `validate` returns
 a fixed `Reason` and `requireValid` throws its fixed code, with no raw header,
-token or body. The host remains authoritative and rejects invalid output with an
-empty `no-store` 502. It consumes application cache inputs but keeps dynamic
-browser/proxy output `no-store`. See the complete
+token or body. The host remains authoritative and rejects invalid output with a
+fixed `no-store` 502 and the 12-byte ASCII body `Bad gateway\n` (empty for HEAD).
+It consumes application cache inputs but keeps dynamic browser/proxy output
+`no-store`. See the complete
 [header ownership and referrer decision](../../docs/security/browser-boundary.md#response-headers).
 
 The maintained authoring qualification compiles this SDK helper, exercises its
