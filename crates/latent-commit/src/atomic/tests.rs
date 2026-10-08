@@ -18,6 +18,8 @@ use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
 mod captured;
 
+mod retention_cases;
+
 fn time(now: u64) -> CommandTime {
     CommandTime {
         unix_millis: now,

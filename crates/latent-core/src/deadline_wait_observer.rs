@@ -157,15 +157,15 @@ mod tests {
     #[test]
     fn unwinding_releases_the_guard_without_retaining_its_creator() {
         let observer = DeadlineWaitObserver::new();
-        let retained = observer.clone();
+        let worker_observer = observer.clone();
         let result = std::panic::catch_unwind(move || {
             let _wait = observer.arm();
             panic!("injected deadline owner failure");
         });
         assert!(result.is_err());
-        assert_eq!(retained.snapshot().live, 0);
-        assert_eq!(retained.snapshot().dropped, 1);
-        assert_eq!(Arc::strong_count(&retained.inner), 1);
+        assert_eq!(worker_observer.snapshot().live, 0);
+        assert_eq!(worker_observer.snapshot().dropped, 1);
+        assert_eq!(Arc::strong_count(&worker_observer.inner), 1);
     }
 
     #[test]

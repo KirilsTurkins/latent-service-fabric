@@ -63,7 +63,7 @@ final class ProfileVectors {
             check(value.fromUnixMillis().get() == Long.parseUnsignedLong("18446744073709551615"), "activation-roots-service-time-selector.from_unix_millis");
         }
         {
-            Management.InspectActivationTreeResponse value = new Management.InspectActivationTreeResponse(Integer.parseUnsignedInt("1"), List.of(new Management.ActivationTreeNode("host-generated-root", Optional.empty(), "host-generated-root", "running", Optional.empty(), Long.parseUnsignedLong("0"), Optional.empty(), "trigger", Optional.empty(), Optional.empty(), Optional.empty(), false, "examples/java-http-adapter", Long.parseUnsignedLong("18446744073709551615"))), Optional.of(new Management.PageResponse(Optional.empty())), true, false, true);
+            Management.InspectActivationTreeResponse value = new Management.InspectActivationTreeResponse(Integer.parseUnsignedInt("1"), List.of(new Management.ActivationTreeNode("host-generated-root", Optional.empty(), "host-generated-root", "running", Optional.empty(), Long.parseUnsignedLong("0"), Optional.empty(), "trigger", Optional.empty(), Optional.empty(), Optional.empty(), false, "examples/java-http-adapter", Long.parseUnsignedLong("18446744073709551615"), Optional.empty())), Optional.of(new Management.PageResponse(Optional.empty())), true, false, true);
             check(value.schemaVersion() == Integer.parseUnsignedInt("1"), "activation-root-real-ingress-identity.schema_version");
             check(value.nodes().size() == 1, "activation-root-real-ingress-identity.nodes.count");
             check(value.nodes().get(0).activationId().equals("host-generated-root"), "activation-root-real-ingress-identity.nodes.0.activation_id");
@@ -80,6 +80,7 @@ final class ProfileVectors {
             check(value.nodes().get(0).diagnosticIsTerminal() == false, "activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal");
             check(value.nodes().get(0).targetService().equals("examples/java-http-adapter"), "activation-root-real-ingress-identity.nodes.0.target_service");
             check(value.nodes().get(0).receivedAtUnixMillis() == Long.parseUnsignedLong("18446744073709551615"), "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis");
+            check(!(value.nodes().get(0).transactionStaging().isPresent()), "activation-root-real-ingress-identity.nodes.0.transaction_staging.presence");
             check(value.page().isPresent(), "activation-root-real-ingress-identity.page.presence");
             check(!(value.page().get().nextPageToken().isPresent()), "activation-root-real-ingress-identity.page.next_page_token.presence");
             check(value.historyAvailable() == true, "activation-root-real-ingress-identity.history_available");
@@ -97,7 +98,7 @@ final class ProfileVectors {
             check(value.retainedHistoryOnly() == true, "activation-tree-expired-is-not-absence-proof.retained_history_only");
         }
         {
-            Management.InspectActivationTreeResponse value = new Management.InspectActivationTreeResponse(Integer.parseUnsignedInt("1"), List.of(new Management.ActivationTreeNode("child-a", Optional.of("root-a"), "root-a", "received", Optional.of("resource_exhausted"), Long.parseUnsignedLong("18446744073709551615"), Optional.of(new Management.ActivationDiagnostic(Integer.parseUnsignedInt("1"), new Management.DiagnosticStage(3), new Management.DiagnosticReason(1), Optional.of(new Management.DiagnosticProfile(1)), Optional.empty(), Optional.of(Long.parseUnsignedLong("16777216")), Optional.of(Long.parseUnsignedLong("67108864")), Optional.empty(), Optional.empty(), Optional.empty())), "service", Optional.of("adapter"), Optional.empty(), Optional.empty(), true, "", Long.parseUnsignedLong("0"))), Optional.of(new Management.PageResponse(Optional.of("opaque-scoped-cursor"))), true, false, true);
+            Management.InspectActivationTreeResponse value = new Management.InspectActivationTreeResponse(Integer.parseUnsignedInt("1"), List.of(new Management.ActivationTreeNode("child-a", Optional.of("root-a"), "root-a", "received", Optional.of("resource_exhausted"), Long.parseUnsignedLong("18446744073709551615"), Optional.of(new Management.ActivationDiagnostic(Integer.parseUnsignedInt("1"), new Management.DiagnosticStage(3), new Management.DiagnosticReason(1), Optional.of(new Management.DiagnosticProfile(1)), Optional.empty(), Optional.of(Long.parseUnsignedLong("16777216")), Optional.of(Long.parseUnsignedLong("67108864")), Optional.empty(), Optional.empty(), Optional.empty())), "service", Optional.of("adapter"), Optional.empty(), Optional.empty(), true, "", Long.parseUnsignedLong("0"), Optional.empty())), Optional.of(new Management.PageResponse(Optional.of("opaque-scoped-cursor"))), true, false, true);
             check(value.schemaVersion() == Integer.parseUnsignedInt("1"), "activation-tree-failed-preparation-before-guest.schema_version");
             check(value.nodes().size() == 1, "activation-tree-failed-preparation-before-guest.nodes.count");
             check(value.nodes().get(0).activationId().equals("child-a"), "activation-tree-failed-preparation-before-guest.nodes.0.activation_id");
@@ -130,6 +131,7 @@ final class ProfileVectors {
             check(value.nodes().get(0).diagnosticIsTerminal() == true, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
             check(value.nodes().get(0).targetService().equals(""), "activation-tree-failed-preparation-before-guest.nodes.0.target_service");
             check(value.nodes().get(0).receivedAtUnixMillis() == Long.parseUnsignedLong("0"), "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis");
+            check(!(value.nodes().get(0).transactionStaging().isPresent()), "activation-tree-failed-preparation-before-guest.nodes.0.transaction_staging.presence");
             check(value.page().isPresent(), "activation-tree-failed-preparation-before-guest.page.presence");
             check(value.page().get().nextPageToken().isPresent(), "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
             check(value.page().get().nextPageToken().get().equals("opaque-scoped-cursor"), "activation-tree-failed-preparation-before-guest.page.next_page_token");
@@ -1220,6 +1222,52 @@ final class ProfileVectors {
             check(!(value.selectedRevisionId().isPresent()), "target-inspection-future-states-remain-descriptive.selected_revision_id.presence");
             check(value.liveGrantsChecked() == false, "target-inspection-future-states-remain-descriptive.live_grants_checked");
         }
+        {
+            Management.InspectActivationTreeResponse value = new Management.InspectActivationTreeResponse(Integer.parseUnsignedInt("1"), List.of(new Management.ActivationTreeNode("original-command", Optional.empty(), "original-command", "running", Optional.empty(), Long.parseUnsignedLong("0"), Optional.empty(), "user", Optional.empty(), Optional.of(new Management.ResourceBudget(Long.parseUnsignedLong("0"), Long.parseUnsignedLong("0"), Integer.parseUnsignedInt("0"), Integer.parseUnsignedInt("0"), Long.parseUnsignedLong("0"), Long.parseUnsignedLong("18446744073709551615"), Long.parseUnsignedLong("0"), Long.parseUnsignedLong("0"), Long.parseUnsignedLong("0"), Integer.parseUnsignedInt("2"), Optional.empty())), Optional.empty(), false, "examples/aggregate", Long.parseUnsignedLong("1000"), Optional.of(new Management.TransactionStagingWitness(Integer.parseUnsignedInt("1"), Long.parseUnsignedLong("18446744073709551615"), "1111111111111111111111111111111111111111111111111111111111111111", "2222222222222222222222222222222222222222222222222222222222222222", "3333333333333333333333333333333333333333333333333333333333333333", "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444", Integer.parseUnsignedInt("2"), Integer.parseUnsignedInt("2"), Long.parseUnsignedLong("18446744073709551615"), Long.parseUnsignedLong("18446744073709551615"))))), Optional.of(new Management.PageResponse(Optional.empty())), true, false, true);
+            check(value.schemaVersion() == Integer.parseUnsignedInt("1"), "activation-tree-original-captured-intent-witness.schema_version");
+            check(value.nodes().size() == 1, "activation-tree-original-captured-intent-witness.nodes.count");
+            check(value.nodes().get(0).activationId().equals("original-command"), "activation-tree-original-captured-intent-witness.nodes.0.activation_id");
+            check(!(value.nodes().get(0).parentActivationId().isPresent()), "activation-tree-original-captured-intent-witness.nodes.0.parent_activation_id.presence");
+            check(value.nodes().get(0).rootActivationId().equals("original-command"), "activation-tree-original-captured-intent-witness.nodes.0.root_activation_id");
+            check(value.nodes().get(0).phase().equals("running"), "activation-tree-original-captured-intent-witness.nodes.0.phase");
+            check(!(value.nodes().get(0).terminalState().isPresent()), "activation-tree-original-captured-intent-witness.nodes.0.terminal_state.presence");
+            check(value.nodes().get(0).lastUpdatedUnixMillis() == Long.parseUnsignedLong("0"), "activation-tree-original-captured-intent-witness.nodes.0.last_updated_unix_millis");
+            check(!(value.nodes().get(0).diagnostic().isPresent()), "activation-tree-original-captured-intent-witness.nodes.0.diagnostic.presence");
+            check(value.nodes().get(0).principalKind().equals("user"), "activation-tree-original-captured-intent-witness.nodes.0.principal_kind");
+            check(!(value.nodes().get(0).callerService().isPresent()), "activation-tree-original-captured-intent-witness.nodes.0.caller_service.presence");
+            check(value.nodes().get(0).grantedBudget().isPresent(), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.presence");
+            check(value.nodes().get(0).grantedBudget().get().cpuFuel() == Long.parseUnsignedLong("0"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.cpu_fuel");
+            check(value.nodes().get(0).grantedBudget().get().memoryBytes() == Long.parseUnsignedLong("0"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.memory_bytes");
+            check(value.nodes().get(0).grantedBudget().get().childCalls() == Integer.parseUnsignedInt("0"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.child_calls");
+            check(value.nodes().get(0).grantedBudget().get().outboundRequests() == Integer.parseUnsignedInt("0"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.outbound_requests");
+            check(value.nodes().get(0).grantedBudget().get().stateReadBytes() == Long.parseUnsignedLong("0"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_read_bytes");
+            check(value.nodes().get(0).grantedBudget().get().stateWriteBytes() == Long.parseUnsignedLong("18446744073709551615"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_write_bytes");
+            check(value.nodes().get(0).grantedBudget().get().blobReadBytes() == Long.parseUnsignedLong("0"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_read_bytes");
+            check(value.nodes().get(0).grantedBudget().get().blobWriteBytes() == Long.parseUnsignedLong("0"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_write_bytes");
+            check(value.nodes().get(0).grantedBudget().get().logBytes() == Long.parseUnsignedLong("0"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.log_bytes");
+            check(value.nodes().get(0).grantedBudget().get().effectCount() == Integer.parseUnsignedInt("2"), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.effect_count");
+            check(!(value.nodes().get(0).grantedBudget().get().wallTimeLimitMillis().isPresent()), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.wall_time_limit_millis.presence");
+            check(!(value.nodes().get(0).effectiveDeadlineUnixMillis().isPresent()), "activation-tree-original-captured-intent-witness.nodes.0.effective_deadline_unix_millis.presence");
+            check(value.nodes().get(0).diagnosticIsTerminal() == false, "activation-tree-original-captured-intent-witness.nodes.0.diagnostic_is_terminal");
+            check(value.nodes().get(0).targetService().equals("examples/aggregate"), "activation-tree-original-captured-intent-witness.nodes.0.target_service");
+            check(value.nodes().get(0).receivedAtUnixMillis() == Long.parseUnsignedLong("1000"), "activation-tree-original-captured-intent-witness.nodes.0.received_at_unix_millis");
+            check(value.nodes().get(0).transactionStaging().isPresent(), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.presence");
+            check(value.nodes().get(0).transactionStaging().get().schemaVersion() == Integer.parseUnsignedInt("1"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.schema_version");
+            check(value.nodes().get(0).transactionStaging().get().activationSerial() == Long.parseUnsignedLong("18446744073709551615"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.activation_serial");
+            check(value.nodes().get(0).transactionStaging().get().commandId().equals("1111111111111111111111111111111111111111111111111111111111111111"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.command_id");
+            check(value.nodes().get(0).transactionStaging().get().attemptId().equals("2222222222222222222222222222222222222222222222222222222222222222"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.attempt_id");
+            check(value.nodes().get(0).transactionStaging().get().transactionId().equals("3333333333333333333333333333333333333333333333333333333333333333"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.transaction_id");
+            check(value.nodes().get(0).transactionStaging().get().publicationId().equals("publication:sha256:4444444444444444444444444444444444444444444444444444444444444444"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.publication_id");
+            check(value.nodes().get(0).transactionStaging().get().stagedMutations() == Integer.parseUnsignedInt("2"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.staged_mutations");
+            check(value.nodes().get(0).transactionStaging().get().capturedIntents() == Integer.parseUnsignedInt("2"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.captured_intents");
+            check(value.nodes().get(0).transactionStaging().get().stateWriteBytes() == Long.parseUnsignedLong("18446744073709551615"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.state_write_bytes");
+            check(value.nodes().get(0).transactionStaging().get().observedAtUnixMillis() == Long.parseUnsignedLong("18446744073709551615"), "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.observed_at_unix_millis");
+            check(value.page().isPresent(), "activation-tree-original-captured-intent-witness.page.presence");
+            check(!(value.page().get().nextPageToken().isPresent()), "activation-tree-original-captured-intent-witness.page.next_page_token.presence");
+            check(value.historyAvailable() == true, "activation-tree-original-captured-intent-witness.history_available");
+            check(value.cursorExpired() == false, "activation-tree-original-captured-intent-witness.cursor_expired");
+            check(value.retainedHistoryOnly() == true, "activation-tree-original-captured-intent-witness.retained_history_only");
+        }
         check(Management.formatU64Decimal(Management.parseU64Decimal("0")).equals("0"), "uint64 roundtrip");
         check(Management.formatU64Decimal(Management.parseU64Decimal("9007199254740993")).equals("9007199254740993"), "uint64 roundtrip");
         check(Management.formatU64Decimal(Management.parseU64Decimal("9223372036854775808")).equals("9223372036854775808"), "uint64 roundtrip");
@@ -1236,6 +1284,6 @@ final class ProfileVectors {
         try { Management.parseU64Decimal("1\000"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
         try { Management.parseU64Decimal("1\r\n"); throw new AssertionError("uint64 rejected"); } catch (NumberFormatException expected) { }
-        System.out.println("shared profile vectors: 77");
+        System.out.println("shared profile vectors: 78");
     }
 }

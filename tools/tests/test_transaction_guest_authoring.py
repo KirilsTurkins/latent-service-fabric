@@ -10,6 +10,27 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_java_authored_wit_captures_runtime_clocks_before_compiler_staging(self):
+        from tools.compile_transaction_guests import authored_project, VARIANTS
+        from tools.java_capsule_project import validate
+        from tools.stage_runtime_wit import dependencies, stage
+        with tempfile.TemporaryDirectory() as temporary:
+            for variant in VARIANTS:
+                with self.subTest(variant=variant):
+                    source = authored_project("java", variant, Path(temporary) / variant)
+                    files = snapshot(source)
+                    validate(files)
+                    clock = files["wit/deps/clock/package.wit"]
+                    self.assertEqual(clock, files["vendor/lsf/wit/platform/clock/package.wit"])
+                    self.assertEqual(clock, (ROOT / "wit/platform/clock/package.wit").read_bytes())
+                    # Raw WIT inspection has a complete declared dependency
+                    # tree, including clocks required by both runtime worlds.
+                    self.assertEqual(dependencies(source / "wit", source / "vendor/lsf/wit/platform"), [])
+                    staged = Path(temporary) / (variant + "-staged")
+                    stage(staged, source / "wit")
+                    self.assertEqual(snapshot(staged), snapshot(source / "wit"))
+                    self.assertEqual(snapshot(source), files)
+
     def test_rust_authored_projects_select_and_pin_their_guest_binding_profile(self):
         import tomllib
         from tools.rust_capsule_project import create

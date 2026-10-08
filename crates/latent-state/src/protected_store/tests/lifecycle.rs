@@ -1,11 +1,26 @@
 use super::*;
 
 #[test]
-fn detached_view_response_witness_waits_for_actual_native_retirement_after_close() {
+fn detached_view_response_witness_waits_for_actual_native_retirement_after_close_retaining_owner() {
+    struct PhysicalOwner(mpsc::Sender<std::thread::ThreadId>);
+    impl Drop for PhysicalOwner {
+        fn drop(&mut self) {
+            let _ = self.0.send(std::thread::current().id());
+        }
+    }
     let (_root, config) = fixture();
     let owner = start(config.clone());
-    let mut view = wait(owner.open_view().unwrap()).unwrap().unwrap();
-    let witness = view.retirement_witness().unwrap();
+    let caller = std::thread::current().id();
+    let (retired, retirement) = mpsc::channel();
+    let (opening, witness) = owner
+        .open_view_observed_retaining(PhysicalOwner(retired))
+        .unwrap();
+    assert!(!witness.has_retired());
+    assert!(matches!(
+        retirement.try_recv(),
+        Err(mpsc::TryRecvError::Empty)
+    ));
+    let mut view = wait(opening).unwrap().unwrap();
     assert!(view.retirement_witness().is_none());
     let gates = Rendezvous::new(1);
     let worker_gates = gates.clone();
@@ -38,6 +53,7 @@ fn detached_view_response_witness_waits_for_actual_native_retirement_after_close
     let report = finish(&owner);
     assert!(report.clean);
     assert!(witness.has_retired());
+    assert_ne!(retirement.recv_timeout(WATCHDOG).unwrap(), caller);
     assert_eq!(report.snapshot.physical_owners, 0);
     let reopened = start(config);
     assert!(finish(&reopened).clean);
@@ -313,4 +329,47 @@ fn lost_protected_fence_after_flush_reports_commit_uncertain_and_never_business_
     assert_eq!(values, vec![Some(b"committed-original".to_vec()); 3]);
     drop(view);
     assert!(finish(&recovered).clean);
+}
+
+#[test]
+fn detached_view_response_witness_waits_for_actual_native_retirement_after_close() {
+    let (_root, config) = fixture();
+    let owner = start(config.clone());
+    let mut view = wait(owner.open_view().unwrap()).unwrap().unwrap();
+    let witness = view.retirement_witness().unwrap();
+    assert!(view.retirement_witness().is_none());
+    let gates = Rendezvous::new(1);
+    let worker_gates = gates.clone();
+    let (notice, receiver) = mpsc::channel();
+    let operation = owner
+        .with_view(view, 1024, move |native| {
+            let (registration, mut tracked) = worker_gates.track(vec![0_u8; 1024]).unwrap();
+            tracked.commit(Stage::Entered).unwrap();
+            wait(async {
+                let mut pause = Box::pin(tracked.pause());
+                PollProbe::default().pending(pause.as_mut());
+                let ticket = worker_gates.blocked(registration, Stage::Entered).unwrap();
+                notice.send(ticket).unwrap();
+                pause.await;
+            });
+            native.get(&key(Family::State, "missing"))
+        })
+        .unwrap();
+    let ticket = receiver.recv_timeout(WATCHDOG).unwrap();
+    drop(operation);
+    owner.close();
+    assert!(!witness.has_retired());
+    assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
+    assert_eq!(owner.snapshot().unwrap().active_reads, 1);
+    assert_eq!(
+        failed_start(config.clone()),
+        ProtectedStoreError::Store(StoreError::Unavailable)
+    );
+    gates.release(ticket).unwrap();
+    let report = finish(&owner);
+    assert!(report.clean);
+    assert!(witness.has_retired());
+    assert_eq!(report.snapshot.physical_owners, 0);
+    let reopened = start(config);
+    assert!(finish(&reopened).clean);
 }
