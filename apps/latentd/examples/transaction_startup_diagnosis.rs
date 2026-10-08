@@ -2,6 +2,7 @@
 //! This never replaces startup, grants policy or executes a business command.
 use clap::Parser;
 use std::{
+    io::Write,
     path::PathBuf,
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -64,7 +65,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if bytes.len() > 262_144 {
         return Err("bounded report required".into());
     }
-    use std::io::Write;
     let mut stdout = std::io::stdout().lock();
     stdout.write_all(&bytes)?;
     stdout.write_all(b"\n")?;
