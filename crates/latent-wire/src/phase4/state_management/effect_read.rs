@@ -51,7 +51,10 @@ impl Keeper {
             &mut |inputs| {
                 let actual = inputs.get(1).ok_or_else(denied)?;
                 let binding = &self.access.binding;
-                if actual.principal != &self.principal
+                if actual.principal.subject != self.principal.subject
+                    || actual.principal.kind != self.principal.kind
+                    || actual.principal.tenant != self.principal.tenant
+                    || actual.principal.service != self.principal.service
                     || actual.service != binding.service.0
                     || actual.publication != binding.publication.id.as_str()
                     || actual.operation != "inspect-effect"
