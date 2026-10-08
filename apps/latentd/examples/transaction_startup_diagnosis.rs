@@ -39,8 +39,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let started = Arc::clone(&workers);
     let stopped = Arc::clone(&workers);
     let runtime = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(1)
-        .max_blocking_threads(1)
+        .worker_threads(settings.control_workers())
+        .max_blocking_threads(settings.control_blocking_threads())
         .on_thread_start(move || {
             started.fetch_add(1, Ordering::SeqCst);
         })
