@@ -452,9 +452,6 @@ fn history_in(
                 return Err(super::unsupported());
             }
         }
-        if row.receipt.observed_at_millis > current.occurred_at_unix_millis {
-            return Err(super::unsupported());
-        }
         let mut item = current.clone();
         item.disposition = disposition(row.receipt.disposition) as i32;
         item.provider_receipt = row.receipt.provider_receipt;
