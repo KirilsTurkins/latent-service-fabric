@@ -16,13 +16,13 @@
     },
     "host-recognition": {
       "path": "crates/latent-core/src/host_profile.rs",
-      "digest": "sha256:6b39b48a7b080d6de3185bd1bd8958d9e27ed458cf480d75b5231f447af6ecd7",
-      "commit": "00624a46691cf4373d5e3cafb3e1f960a34ad21e"
+      "digest": "sha256:29fced4966b8c62dab9fb8ebc595657c69c81c5fd8c163972612fa7491acadca",
+      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
     },
     "native-surface": {
       "path": "crates/latent-wasmtime/src/surface.rs",
-      "digest": "sha256:ea9816fe6bf699183536265055fb41ca607d0ab4c47a2d3f2a90d3aceea43c9b",
-      "commit": "00624a46691cf4373d5e3cafb3e1f960a34ad21e"
+      "digest": "sha256:82af0af93ca9f52405c62e54804435a68b9d3f0acc492427a9725b57572f8d9f",
+      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
@@ -56,8 +56,8 @@
     },
     "static-capture-owner": {
       "path": "tools/static_site.py",
-      "digest": "sha256:bf037162dcb6b332b50f4dd88175425b87bd2b209645e754ad6bddf74daedbd3",
-      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+      "digest": "sha256:27e7d215ffd0205d3b149eae7986f1dc5602510a8c0845b53e7325652391cebc",
+      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
     },
     "capture-budget-schema": {
       "path": "schemas/static-site-budget.schema.json",
@@ -71,8 +71,8 @@
     },
     "publication-identity": {
       "path": "crates/latent-core/src/publication.rs",
-      "digest": "sha256:7ff30d73bd2359e08b8216bf92ef3efbb487d3f8db74a3ad7bdfd41524feb0dd",
-      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+      "digest": "sha256:eb21318b4c58828db5c71636a5243386aa96138289cd9dc7cc32d2e2eee24ac8",
+      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
     },
     "revision-identity": {
       "path": "crates/latent-manifest/src/schema.rs",
@@ -91,8 +91,8 @@
     },
     "structural-engine-profile": {
       "path": "crates/latent-wasmtime/src/config/profile.rs",
-      "digest": "sha256:9a223dab57bc153e5404133ef8fafac6347dd4aa8c9f49ffdf3f1e74fc596bdb",
-      "commit": "00624a46691cf4373d5e3cafb3e1f960a34ad21e"
+      "digest": "sha256:285124d89006dedbf591a9c96aba882952a6d510b9a2560aee91c935117ecc94",
+      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
     },
     "ready-inspection": {
       "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",
