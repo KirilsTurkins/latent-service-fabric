@@ -17,7 +17,7 @@ assert.deepEqual(result.imports, profile.allowedComponentImports);
 assert.ok(result.component.length <= 32 * 1024 * 1024);
 await writeFile('dist/renderer.wasm', result.component);
 const report = {
-  componentizeJs: '0.22.0', node: process.version,
+  componentizeJs: '0.23.0', node: process.version,
   bytes: result.component.length, imports: result.imports,
   sha256: digest(result.component),
   profileSha256: digest(profileBytes),
