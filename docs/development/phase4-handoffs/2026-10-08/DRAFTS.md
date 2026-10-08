@@ -17,3 +17,5 @@ The restore receipt integration e9014ee1 is already an ancestor of current #808,
 - [#959](https://github.com/KirilsTurkins/latent-service-fabric/pull/959): integration session preservation, 44 exact worktrees and compact validation/continuation evidence.
 
 - [#966](https://github.com/KirilsTurkins/latent-service-fabric/pull/966): entity, storage and restore preservation handoff with exact owned checkpoints and essential proof excerpts.
+
+- [#978](https://github.com/KirilsTurkins/latent-service-fabric/pull/978): Portable source/CI preservation handoff, 89 verified clean worktree heads and bounded receipts/logs/scripts.

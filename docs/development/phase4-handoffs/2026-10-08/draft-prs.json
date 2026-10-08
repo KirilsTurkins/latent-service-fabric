@@ -59,5 +59,11 @@
     "exit": 0,
     "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/966",
     "error": ""
+  },
+  {
+    "branch": "docs/phase4-portable-cleanup-handoff-20261008",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/978",
+    "error": ""
   }
 ]
