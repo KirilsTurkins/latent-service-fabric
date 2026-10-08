@@ -298,7 +298,6 @@ mod tests {
             assert!(latent_core::diagnostic::ActivationDiagnostic::from_error(&error).is_none());
         }
     }
-
     #[test]
     fn fixed_trap_kinds_survive_mapping_without_private_context() {
         for kind in GuestTrapKind::ALL {

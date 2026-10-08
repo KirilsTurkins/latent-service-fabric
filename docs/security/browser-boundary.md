@@ -190,11 +190,9 @@ The runtime records only the bounded typed operator reason
 under the actual admitted tenant/activation scope and current diagnostic-read
 authorization. Execution success is distinct from accepted HTTP output. This
 does not expose a raw internal diagnostic in HTTP: public output remains the
-
 fixed 502 with the 12-byte ASCII body `Bad gateway\n` (empty for HEAD), host
 security headers and `no-store`. Alpha.4 and development share these delivery
 failure bytes; a transport-level rejection instead has an empty body. Use the local SDK
-
 reason and this ownership table to correct output rather than copying raw
 application values into error messages.
 

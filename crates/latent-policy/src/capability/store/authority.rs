@@ -404,7 +404,6 @@ impl PolicySnapshot {
         {
             return Err(denied());
         }
-        publication.check_current()?;
         restrictions.deployment.validate(input.capability)?;
         restrictions
             .provider_configuration
@@ -443,6 +442,12 @@ impl PolicySnapshot {
         {
             return Err(capacity());
         }
+        // An immutable current policy can prove a selection is denied without
+        // acquiring positive publication authority. Check positive currentness
+        // only after every narrowing succeeds: clock-lease maintenance cannot
+        // disguise an actual denial as transient provider unavailability.
+        // Every successful decision still requires this original publication.
+        publication.check_current()?;
         Ok(SealedPolicyDecision {
             snapshot: self,
             publication,
