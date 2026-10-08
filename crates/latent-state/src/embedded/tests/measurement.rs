@@ -21,11 +21,15 @@ fn finite_engine_qualification_records_actual_commit_conflict_snapshot_and_recov
         store.apply(batch).unwrap();
     }
     let sequential = start.elapsed().as_micros();
-    let snapshot = store.snapshot().unwrap();
+    let mut snapshot = store.snapshot().unwrap();
     let start = Instant::now();
     store.apply(bundle("new")).unwrap();
     let snapshot_writer = start.elapsed().as_micros();
-    assert_eq!(snapshot.get(&key(Family::Command, "command-1")), Ok(None));
+    // Snapshot consistency and its unchanged 20 ms age boundary are distinct
+    // from the real writer duration, which may exceed 20 ms on a loaded host.
+    let row = key(Family::Command, "command-1");
+    assert_eq!(snapshot.get_at_age(&row, Duration::ZERO), Ok(None));
+    assert_eq!(snapshot.get_at_age(&row, limits.maximum_view_age), Ok(None));
     let conflict = AtomicBatch {
         expectations: vec![ExpectedRow {
             key: key(Family::Command, "command-1"),
@@ -36,11 +40,12 @@ fn finite_engine_qualification_records_actual_commit_conflict_snapshot_and_recov
     let start = Instant::now();
     assert_eq!(store.apply(conflict), Err(StoreError::Conflict));
     let conflict_cost = start.elapsed().as_micros();
-    std::thread::sleep(Duration::from_millis(25));
     assert_eq!(
-        snapshot.get(&key(Family::Command, "command-1")),
+        snapshot.get_at_age(&row, limits.maximum_view_age + Duration::from_nanos(1)),
         Err(StoreError::SnapshotExpired)
     );
+    snapshot.opened -= limits.maximum_view_age + Duration::from_nanos(1);
+    assert_eq!(snapshot.get(&row), Err(StoreError::SnapshotExpired));
     assert_eq!(store.compact(), Err(StoreError::Capacity));
     drop(snapshot);
     let start = Instant::now();
@@ -59,7 +64,7 @@ fn finite_engine_qualification_records_actual_commit_conflict_snapshot_and_recov
         restored
             .snapshot()
             .unwrap()
-            .get(&key(Family::Command, "command-1")),
+            .get_at_age(&row, Duration::ZERO),
         Ok(Some(b"new".to_vec()))
     );
     let resources = CurrentProcessProbe.capture().unwrap();
@@ -71,6 +76,7 @@ fn finite_engine_qualification_records_actual_commit_conflict_snapshot_and_recov
             "initializeMicros":initialize,"sequentialMicros":sequential,"writerWithReadViewMicros":snapshot_writer,
             "conflictMicros":conflict_cost,"compactionMicros":compact,"closedBackupMicros":backup_cost,
             "backupBytes":backup_bytes,"reopenMicros":reopen,"snapshotAgeBoundMillis":20,
+            "snapshotAgeObservation":"controlled-age-boundary",
             "resources":resources,"processCrashTests":2,"powerLossQualified":false,
             "productionStoreOwnerQualified":false,"networkFilesystemQualified":false
         })

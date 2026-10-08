@@ -62,3 +62,29 @@ This is a focused startup/ownership follow-up under
 It closes no additional ticket. #391's remaining dispatcher, ordering, installed
 startup and recovery acceptance, and Phase 4 gate #407 remain separate. Full
 hosted CI must assess the pushed head; no CI wait or merge is part of this work.
+
+## CI failure repair
+
+CI run [37784858546](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37784858546)
+tested merge `31ad77184f0e38365f37eda70223e1015fc6cd19` for PR head
+`5c09473a73ca226c6da6faa44de9fff7549fb800`. Three concrete failures were retained:
+
+- Fast host correctness: the engine measurement's 20 ms snapshot expired during
+  a real durable writer. Snapshot consistency and the exact age boundary now use
+  controlled ages through the private read implementation, while the public
+  monotonic-expiry path is separately exercised. The bound remains 20 ms and
+  actual commit/conflict/backup/reopen costs remain measured.
+- Measurement collection: a full-tree Git status observation exceeded its
+  10-second metadata timeout. Status now has a finite 60-second budget and avoids
+  optional index writes. Revision probes retain 10 seconds, all tracked/untracked
+  dirt remains included, and timeout/failure cannot become clean source or retry.
+- Rust tests: the management binding fixture expected foreign dispatcher binding
+  to succeed. It now checks immediate refusal and a valid original-owner binding,
+  then corrupts only its private fixture to retain the independent management
+  mismatch check. No request or foreign reservation may be admitted.
+
+All 450 state/effects/wire library cases pass on Linux/ext4, and all 143 state
+cases also pass with parallel execution. All 75 focused measurement/conformance
+Python cases pass on pinned Python 3.13.5 Linux without skips. The CI contract
+proposal retains every original case and execution guard, adding three metadata
+regressions. These local results do not claim a passing rerun of full hosted CI.
