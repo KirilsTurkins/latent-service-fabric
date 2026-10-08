@@ -20,7 +20,7 @@ pub(super) fn configuration(report: &crate::config::ExecutionProfileReport) -> R
 
 #[cfg(target_os = "linux")]
 pub(super) fn inspection(
-    report: &crate::standalone::NativeTransactionHostInspection,
+    report: &crate::standalone::state::NativeTransactionHostInspection,
 ) -> Result<(), Failure> {
     let bytes = serde_json::to_vec(report)
         .map_err(|_| Failure::new("output", PlatformErrorCode::Internal))?;
