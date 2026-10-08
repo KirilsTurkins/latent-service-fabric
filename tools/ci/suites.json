@@ -4257,6 +4257,34 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "exact_companion_selects_transaction_manifest_validation_before_inspection",
+        "missing_or_forged_companion_never_adopts_transaction_budget_hints",
+        "transaction_profile_keeps_wit_component_and_resource_checks_authoritative"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-packaging.test.transaction-profile",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 3,
+      "mode": "libtest",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/transaction_profile.rs",
+      "target": "transaction_profile",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
         "authoring::fixtures::tests::current_fixture_refuses_missing_failed_stages_and_host_or_execution_claims",
         "authoring::fixtures::tests::current_fixture_retains_explicit_source_and_report_associations",
         "authoring::inputs::tests::diagnostic_asset_inventory_cannot_cover_replaced_bytes",
