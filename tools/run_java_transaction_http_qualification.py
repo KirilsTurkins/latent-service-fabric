@@ -23,6 +23,7 @@ from tools.java_transaction_qualification import configuration as cfg, inputs, l
 from tools.java_transaction_qualification import diagnostic_inputs
 from tools.java_transaction_qualification import fixed_environment
 from tools.java_transaction_qualification import reviewed_tls
+from tools.java_transaction_qualification import acceptance_inputs
 from tools.java_transaction_qualification.campaign import Campaign
 from tools.java_transaction_qualification.evidence import Evidence, RecordingClient, native
 from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
@@ -46,6 +47,8 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/pending_restore.py",
     "tools/java_transaction_qualification/fixed_environment.py",
     "tools/java_transaction_qualification/reviewed_tls.py",
+    "tools/java_transaction_qualification/acceptance_inputs.py",
+    "tools/java_transaction_qualification/acceptance_campaign.py",
     "contracts/state/java-aggregate-v1-to-v2-migration.json")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
@@ -63,6 +66,11 @@ def parse():
     parser.add_argument("--recovery-source-commit", help="Must match the original coherent native build source")
     parser.add_argument("--pending-restore-only", action="store_true",
                         help="Separate 12-action V3 unresolved-effect restore and close programme")
+    parser.add_argument("--value-child-acceptance-only", action="store_true",
+                        help="Separate signed full-width/null/UTF-8 and actual forbidden-child programme")
+    for name in acceptance_inputs.ARGUMENTS:
+        parser.add_argument("--" + name.replace("_", "-"), type=Path if name in acceptance_inputs.PATH_ARGUMENTS else str,
+                            help="Exact original value/child compiler receipt and separate export pins")
     parser.add_argument("--prepare-authority-only", action="store_true", help="Stop before candidate policy mutations")
     parser.add_argument("--resume-candidate", type=Path, help="Consume the exact stopped original candidate once")
     parser.add_argument("--candidate-digest", help="Exact retained candidate digest supplied after review")
@@ -92,6 +100,7 @@ def parse():
     diagnostic_inputs.selection(args)
     staging.mode(args)
     current_mode(args)
+    acceptance_inputs.selection(args)
     fixed_environment.load(args)
     fixed_environment.check_tools(args, tool_identity(args))
     return args
@@ -180,11 +189,15 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     catalog = staging.catalog(client, publications) if retained else None
     node.stop()
     lifecycle.admission_lease_interval(client)
-    operations = cfg.installed(items, publications, peer.incarnation)
+    acceptance = getattr(args, "value_child_acceptance_only", False)
+    operations = (cfg.installed(items, publications, peer.incarnation, acceptance=True) if acceptance
+                  else cfg.installed(items, publications, peer.incarnation))
     diagnostic = any(item.name == diagnostic_inputs.NAME for item in items)
     full_path = configuration.selected(configuration.path.parent / "installed-node.json", operations, diagnostic=diagnostic)
-    hosts = lifecycle.inspect(client, args.node, full_path, operations)
-    proposals = policies.documents(hosts, publications, diagnostic=diagnostic)
+    hosts = (lifecycle.inspect(client, args.node, full_path, operations, acceptance=True) if acceptance
+             else lifecycle.inspect(client, args.node, full_path, operations))
+    proposals = (policies.documents(hosts, publications, acceptance=True) if acceptance
+                 else policies.documents(hosts, publications, diagnostic=diagnostic))
     client.evidence.record("actual-native-hosts", hosts.value)
     client.evidence.record("reviewed-policy-proposals", proposals)
     mutations = policies.prepare_mutations(client, proposals) if retained or fixed_environment.load(args) is not None else None
@@ -219,8 +232,9 @@ def provision(client, args, signed, items, peer, configuration, node):
 
 
 def resume_authority(client, args, configuration, node, full_path, prepared):
+    selected = {"acceptance": True} if getattr(args, "value_child_acceptance_only", False) else {}
     hosts = lifecycle.inspect(client, args.node, full_path, read_json(full_path)["state"]["operations"],
-                              stage="transaction-host-recheck")
+                              stage="transaction-host-recheck", **selected)
     inputs.require(hosts.value == prepared["hosts"], "original-native-profile-drift")
     fixed_environment.check_authority(args, client, hosts.value, prepared["mutations"])
     lifecycle.admission_lease_interval(client)
@@ -241,6 +255,15 @@ def execute_campaign(client, args, work, record, configuration, node, peer,
                      signed, items, full_path, publications, proposals, receipts, diagnostic=None):
     campaign = Campaign(client, configuration, full_path, signed, items, publications, proposals, receipts, peer, node)
     campaign.diagnostic = diagnostic
+    if getattr(args, "value_child_acceptance_only", False):
+        from tools.java_transaction_qualification.acceptance_campaign import AcceptanceCampaign
+        record["acceptanceCampaign"] = AcceptanceCampaign(campaign).execute()
+        node.stop()
+        peer.stop()
+        client.evidence.passed("actual-physical-retirement", {
+            "cleanNodeSessions": len(node.shutdown), "originalNodeReports": node.shutdown,
+            "recipient": peer.shutdown})
+        return
     if getattr(args, "pending_restore_only", False):
         from tools.java_transaction_qualification.pending_restore import PendingRestore
         record["pendingCampaign"] = PendingRestore(campaign, args.recovery_helper,
@@ -271,8 +294,12 @@ def failure(record, stage, error):
         record["fixedFailureReason"] = reason
 
 
-def package_selected(args, output, diagnostic, deadline):
+def package_selected(args, output, diagnostic, deadline, *, acceptance_items=None):
     timeout = max(1, int(min(600, deadline - time.monotonic())))
+    if getattr(args, "value_child_acceptance_only", False):
+        inputs.require(acceptance_items is not None, "original-loaded-value-child-inputs-required")
+        inputs.require(time.monotonic() < deadline, "original-value-child-packaging-deadline")
+        return packaging.package_acceptance(acceptance_items, output, args.contracts_tool, args.signer, timeout=timeout)
     if getattr(args, "current_selections", None) is not None:
         from tools.java_transaction_qualification import current_campaign
         selected = current_campaign.selections(args.portable, args.current_selections,
@@ -283,6 +310,10 @@ def package_selected(args, output, diagnostic, deadline):
 
 
 def loaded_inputs(args, work):
+    if getattr(args, "value_child_acceptance_only", False):
+        selected = acceptance_inputs.load(args, work / "acceptance-inputs")
+        fixed_environment.check_inputs(args, selected.items)
+        return selected.items, None
     if getattr(args, "current_selections", None) is not None:
         from tools.java_transaction_qualification import current_campaign
         return current_campaign.load(args)
@@ -343,7 +374,9 @@ def run(args):
             client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence)
             try:
                 stage = "package"
-                signed = package_selected(args, work / "packages", diagnostic, deadline)
+                signed = (package_selected(args, work / "packages", diagnostic, deadline, acceptance_items=items)
+                          if getattr(args, "value_child_acceptance_only", False)
+                          else package_selected(args, work / "packages", diagnostic, deadline))
                 evidence.record("actual-package-fixture", read_json(work / "packages/package-fixture-receipt.json"))
                 stage = "bootstrap"
                 peer, configuration, node = prepare_environment(client, args, work, signed)
@@ -438,8 +471,10 @@ def resume(args):
                     staging.path(work, prior["credential"]), prior["incarnation"], session=prior["session"] + 1, port=prior["port"])
                 stage = "current-authority-recheck"
                 receipts = resume_authority(client, args, configuration, node, full_path, prepared)
-                legacy = next(item for item in items if item.name == "put-once-legacy-v1")
-                observed = policies.ObservedHosts.read(prepared["hosts"], read_json(full_path)["state"]["operations"])
+                wanted = acceptance_inputs.VALUE if getattr(args, "value_child_acceptance_only", False) else "put-once-legacy-v1"
+                legacy = next(item for item in items if item.name == wanted)
+                selected = {"acceptance": True} if getattr(args, "value_child_acceptance_only", False) else {}
+                observed = policies.ObservedHosts.read(prepared["hosts"], read_json(full_path)["state"]["operations"], **selected)
                 lifecycle.create_namespace(client, legacy, publications[legacy.name], operator=observed.operator)
                 stage = "actual-http"
                 execute_campaign(client, args, work, record, configuration, node, peer,

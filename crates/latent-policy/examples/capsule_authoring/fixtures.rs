@@ -215,6 +215,7 @@ fn check_report(report: &Value, fixture: &Fixture) -> Result<()> {
                     | "put-once-compatible-v2"
                     | "put-once-writer-v2"
                     | "put-once-diagnostics"
+                    | "put-once-values"
             )
         )
     {

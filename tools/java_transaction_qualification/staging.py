@@ -162,6 +162,9 @@ def catalog(client, publications):
     expected = set(VARIANTS) - {"forbidden-http"}
     if NAME in publications:
         expected.add(NAME)
+    from .acceptance_inputs import VALUE
+    if set(publications) == {VALUE}:
+        expected = {VALUE}
     require(isinstance(publications, dict) and set(publications) == expected
             and all(isinstance(value, str) and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", value)
                     for value in publications.values()) and len(set(publications.values())) == len(expected),
@@ -194,6 +197,11 @@ def sources(args):
     current = current_selection(args)
     if current is not None:
         result["currentInputSelection"] = current
+    from .acceptance_inputs import selection as acceptance_selection
+    acceptance = acceptance_selection(args)
+    if acceptance is not None:
+        result["valueChildAcceptance"] = acceptance
+        result["programme"] = "signed-java-values-and-forbidden-child"
     if getattr(args, "pending_restore_only", False):
         result["programme"] = "signed-java-unresolved-effect-restore-v3"
     from .fixed_environment import identity

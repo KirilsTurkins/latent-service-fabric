@@ -56,7 +56,7 @@ class ObservedHosts:
     effects: tuple[dict, ...]
 
     @classmethod
-    def read(cls, value: dict, operations: list[dict], *, diagnostic=False):
+    def read(cls, value: dict, operations: list[dict], *, diagnostic=False, acceptance=False):
         require(isinstance(value, dict) and set(value) == INSPECTION_FIELDS
                 and value["schemaVersion"] == "latent.transaction-host-inspection.v1", "actual-native-host-inspection")
         identifier(value["stateProviderProfile"])
@@ -93,7 +93,8 @@ class ObservedHosts:
             require(row["capability"] == expected, "actual-installed-provider-contract")
             providers[row["id"]] = row
         effects = value["deferredHttp"]
-        require(type(diagnostic) is bool and isinstance(effects, list) and len(effects) == (4 if diagnostic else 3),
+        require(type(diagnostic) is bool and type(acceptance) is bool and not (diagnostic and acceptance)
+                and isinstance(effects, list) and len(effects) == (1 if acceptance else 4 if diagnostic else 3),
                 "exact-selected-signed-effect-installations")
         require(all(isinstance(row, dict) and set(row) == EFFECT_FIELDS for row in effects),
                 "closed-native-effect-observation")
@@ -149,13 +150,17 @@ def rule(name, kind, subject, publications, capability, operations, resources, *
                         "outputBytes": output_bytes, "wallTimeMillis": wall}}
 
 
-def documents(hosts: ObservedHosts, publications: dict[str, str], *, diagnostic=False) -> dict:
+def documents(hosts: ObservedHosts, publications: dict[str, str], *, diagnostic=False, acceptance=False) -> dict:
     """Reviewed test policy proposals only; they become authority solely via apply."""
     pubs = sorted(publications.values())
     from .diagnostic_inputs import NAME
-    expected = 5 if diagnostic else 4
+    from .acceptance_inputs import VALUE
+    expected = 1 if acceptance else 5 if diagnostic else 4
     require(type(diagnostic) is bool and (NAME in publications) is diagnostic
-            and len(pubs) == expected and len(set(pubs)) == expected and len(hosts.effects) == expected - 1
+            and type(acceptance) is bool and not (diagnostic and acceptance)
+            and (VALUE in publications) is acceptance
+            and len(pubs) == expected and len(set(pubs)) == expected
+            and len(hosts.effects) == (1 if acceptance else expected - 1)
             and all(re.fullmatch(r"publication:sha256:[0-9a-f]{64}", pub) for pub in pubs),
             "actual-distinct-selected-admitted-publications")
     result = {"bindings": {}, "policies": {}, "deploymentGrants": []}

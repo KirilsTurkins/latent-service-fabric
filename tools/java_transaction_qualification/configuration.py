@@ -149,16 +149,22 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
 
 
 def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
-              recipient_incarnation: str) -> list[dict]:
+              recipient_incarnation: str, *, acceptance=False) -> list[dict]:
     import re
     require(re.fullmatch(r"[0-9a-f]{64}", recipient_incarnation), "actual-recipient-incarnation")
     result = []
-    accepted = tuple(item for item in items if item.name != "forbidden-http")
+    require(type(acceptance) is bool, "explicit-value-child-installation")
+    accepted = tuple(item for item in items if item.name not in {"forbidden-http", "forbidden-child"})
     from .diagnostic_inputs import NAME
     from .inputs import VARIANTS
     expected_names = set(VARIANTS) - {"forbidden-http"}
     if any(item.name == NAME for item in accepted):
         expected_names.add(NAME)
+    if acceptance:
+        from .acceptance_inputs import VALUE, CHILD
+        require(len(items) == 2 and {item.name for item in items} == {VALUE, CHILD},
+                "exact-separate-value-child-installation")
+        expected_names = {VALUE}
     require(len(accepted) == len(expected_names) and {item.name for item in accepted} == expected_names,
             "exact-original-components-and-optional-diagnostic")
     require(set(publications) == {item.name for item in accepted}, "exact-admitted-publication-set")

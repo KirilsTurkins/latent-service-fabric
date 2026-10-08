@@ -1,5 +1,32 @@
 # Signed Java transaction qualification
 
+`--value-child-acceptance-only` selects a separate programme with the original
+sealed `put-once-values` and `forbidden-child` captures. Supply every paired
+`--acceptance-*` path/digest and the original compiler source/component digests.
+The collector retains the original pre-export process receipt and the separate
+export seal. It refuses partial inputs, direct execution, the diagnostic/current
+six-input modes, offline/pending recovery, and the old reviewed policy packet.
+Preparation stops for exact candidate review; resume pins the same materials,
+tools, policy documents, current hosts, physical root and original clock.
+
+Only the value component is signed and admitted. The maintained native contract
+owner must reject the actual child import before signing. The positive current
+fixture whitelist adds only the value recipe; its source, model, compiler report,
+imports and package checks remain mandatory. Fresh affected signer qualification
+is required before execution.
+
+The programme commits the high-bit and unsigned-maximum vectors, performs fresh
+queries and replays each original result without another mutation. The immutable
+guest query checks the exact `[null, non-ASCII text]` state bytes and absent key
+before returning. Its pinned query-body and literal-payload digests are recorded
+beside each actual returned query; a source witness alone grants no execution
+claim. Original pre-edit key versions remain distinct from subsequent native
+query versions. The programme performs no offline native actions and preserves
+the six-session, twelve-action and nonrenewable 1,200-second limits, along with
+the ordinary physical shutdown counters. Schema/restore and fault campaigns
+remain separate. These source controls do not close #718 without real signed
+execution and its coherent prerequisites.
+
 An already exported diagnostic capture can be selected independently of the
 legacy compressed archive. Supply `--diagnostic-export-root`, the original
 `--diagnostic-receipt` and its digest, and paired paths/digests for

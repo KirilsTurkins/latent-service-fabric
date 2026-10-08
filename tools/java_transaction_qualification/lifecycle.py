@@ -176,7 +176,7 @@ def publish(client, signed: Path, items) -> dict[str, str]:
             and int(release_set["expiresAtUnixSeconds"]) > time.time() + 300, "fresh-native-package-fixture-trust")
     result = {}
     for item in items:
-        if item.name == "forbidden-http":
+        if item.name in {"forbidden-http", "forbidden-child"}:
             continue
         selected = [row for row in release_set["releases"] if row["name"] == "java718-" + item.name]
         require(len(selected) == 1 and selected[0]["componentDigest"] == item.component_digest,
@@ -194,16 +194,18 @@ def publish(client, signed: Path, items) -> dict[str, str]:
         result[item.name] = actual["publication"]["id"]
         client.evidence.passed("publish-" + item.name, {"signed": original, "admission": actual})
     from .diagnostic_inputs import NAME
-    expected = 5 if any(item.name == NAME for item in items) else 4
+    from .acceptance_inputs import VALUE, CHILD
+    acceptance = {item.name for item in items} == {VALUE, CHILD} and len(items) == 2
+    expected = 1 if acceptance else 5 if any(item.name == NAME for item in items) else 4
     require(len(result) == expected and len(set(result.values())) == expected, "exact-distinct-original-publications")
     return result
 
 
-def inspect(client, node: Path, configuration: Path, operations, *, stage="transaction-host-inspection"):
+def inspect(client, node: Path, configuration: Path, operations, *, stage="transaction-host-inspection", acceptance=False):
     from .policies import ObservedHosts
     value = decode(native(client, node, stage, "inspect-transaction-hosts",
                           "--config", configuration, timeout=120), 262144)
-    return ObservedHosts.read(value, operations, diagnostic=len(operations) == 15)
+    return ObservedHosts.read(value, operations, diagnostic=len(operations) == 15, acceptance=acceptance)
 
 
 def namespace_arguments(publication: str):

@@ -82,6 +82,10 @@ def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, c
         from .diagnostic_inputs import declaration
         declaration(files["transaction-diagnostic-inputs.json"], files)
         assets["transaction-diagnostic-inputs.json"] = files["transaction-diagnostic-inputs.json"]
+    if "transaction-value-inputs.json" in files:
+        from .acceptance_inputs import declaration
+        declaration(files["transaction-value-inputs.json"], files)
+        assets["transaction-value-inputs.json"] = files["transaction-value-inputs.json"]
     if "application-schema-inputs.json" in files:
         recipe = Path(__file__).resolve().parents[2] / "contracts/state/java-aggregate-v1-to-v2-migration.json"
         assets["java-aggregate-v1-to-v2-migration.json"] = read_file(recipe)
@@ -179,11 +183,11 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
     start = time.monotonic()
     try:
         for item in items:
-            if item.name == "forbidden-http":
+            if item.name in {"forbidden-http", "forbidden-child"}:
                 _forbidden_profile(item, output, contracts_tool, signer, command, record)
             else:
                 prepare(item, output / item.name, contracts_tool, signer, command)
-        accepted = [item for item in items if item.name != "forbidden-http"]
+        accepted = [item for item in items if item.name not in {"forbidden-http", "forbidden-child"}]
         mode = "fixture-sign-java-inputs" if compiler_source is None else "fixture-sign-current-java-inputs"
         arguments = [] if compiler_source is None else [compiler_source]
         command.run(mode, signer, mode, output / "signed", *arguments, *[output / item.name for item in accepted])
@@ -210,8 +214,8 @@ def _forbidden_profile(item, output, contracts, signer, command, record):
     except ValueError:
         require(len(command.records) == ordinal + 1, "expected-profile-rejection-at-contract-validation")
         observation = command.records[-1]
-        stderr = read_file(output / "logs" / f"{ordinal:02d}-forbidden-http-contracts.stderr.txt", 256)
-        require(observation["stage"] == "forbidden-http-contracts" and observation["exitCode"] == 1
+        stderr = read_file(output / "logs" / f"{ordinal:02d}-{item.name}-contracts.stderr.txt", 256)
+        require(observation["stage"] == item.name + "-contracts" and observation["exitCode"] == 1
                 and stderr == b"capsule contract generation failed: unsupported-host-import\n",
                 "concrete-strict-profile-refusal-required")
         rejected = {"variant": item.name, "componentDigest": item.component_digest,
@@ -221,4 +225,15 @@ def _forbidden_profile(item, output, contracts, signer, command, record):
         record["profileRejections"].append(rejected)
         write_json(output / item.name / "profile-rejection.json", rejected)
         return
-    raise ValueError("strict-profile-must-refuse-immediate-http-import")
+    raise ValueError("strict-profile-must-refuse-immediate-http-import" if item.name == "forbidden-http"
+                     else "strict-profile-must-refuse-forbidden-child-import")
+
+
+def package_acceptance(items, output, contracts_tool, signer, *, timeout=600):
+    from .acceptance_inputs import VALUE, CHILD
+    require(isinstance(items, tuple) and len(items) == 2 and {item.name for item in items} == {VALUE, CHILD}
+            and len({item.compiler_source for item in items}) == 1
+            and len({item.component_digest for item in items}) == 2,
+            "exact-separate-value-child-package-inputs")
+    return _package_items(items, output, contracts_tool, signer, timeout=timeout,
+                          compiler_source=items[0].compiler_source)
