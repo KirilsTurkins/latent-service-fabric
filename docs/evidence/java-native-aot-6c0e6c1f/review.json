@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "latent.native-aot.review.v1",
+  "issue": 708,
+  "status": "passed",
+  "source": "6c0e6c1fb4645f72b7ecd6545bc4c34888236c89",
+  "sourceTree": "0dde73eefd15e7fe025a17c35f2c4fec2dee7a31",
+  "wholeRegisteredSuiteRan": true,
+  "unchangedOriginalSuiteTimeoutSeconds": 900,
+  "elapsedSeconds": 183.4451918430001,
+  "debugAssertionsEnabled": true,
+  "overflowChecksEnabled": true,
+  "nativeProcessTestsRequired": true,
+  "uid": 10001,
+  "gid": 10001,
+  "sourceMountedReadOnly": true,
+  "containerExitCode": 0,
+  "containerOomKilled": false,
+  "compiledTestExecutable": {
+    "path": "debug/deps/native_aot_cache-0598e9e895d75a3e",
+    "sha256": "49370c9beb808d50a886483dd0d0a2118feadc4d94fd41d699708d23ea8c3e74"
+  },
+  "cacheUse": {
+    "retiredInputMountedReadOnlyDuringFork": true,
+    "newPrivateTarget": "lsf-fb2-java708-native-aot-6c0e6c1f-20261006-r1-target",
+    "freshCommittedSourceMounted": true,
+    "oldResultsUsedAsPass": false
+  },
+  "earlierAttempt": {
+    "state": "runner-startup-failure-existing-output-log",
+    "passed": false,
+    "compilerLogSha256": "7b137b94212a87bed69065f26c1fbd1329c2aa9b51384c731c60c70bf3be5779",
+    "startupLogSha256": "e4466863e279b736a66305a32035b8b6acc9cbfb036e9e2e1c5dbd33e557a5fa",
+    "retainedOutsideDisposableWorktree": true
+  },
+  "fullRepositoryCI": false,
+  "privateReportingApplicationExecuted": false,
+  "javaComponentsLoadedFromNativeCacheClaimed": false,
+  "files": [
+    {
+      "path": "original-native-aot-cache-suite.log",
+      "bytes": 5469,
+      "sha256": "e26b2500b88db62546660caaf0f29b656b1985aa16f85c29bc92df68b1c1e086"
+    },
+    {
+      "path": "original-suite.json",
+      "bytes": 1708,
+      "sha256": "ac2e91816de8eba51734f9a92429f4e23c45ea5593a108090614f125ab3c88ee"
+    },
+    {
+      "path": "source-identity.json",
+      "bytes": 1066,
+      "sha256": "a3b383e4e25d5c412d2435ba1989621ddb4ccb76b8c319192c40c7ec206a6dc8"
+    },
+    {
+      "path": "verified-suite.json",
+      "bytes": 1883,
+      "sha256": "ef1c9fe281be05d8a6c2d5580f4f407b483a45c1cd68a2086ae77e2b858fee89"
+    }
+  ]
+}
