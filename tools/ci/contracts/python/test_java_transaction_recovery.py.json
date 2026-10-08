@@ -20,6 +20,9 @@
     "NativeRecoveryOracle.test_restored_selection_retains_catalogs_credentials_clock_and_quotas_without_mutating_original",
     "NativeRecoveryOracle.test_snapshot_keeps_original_native_manifest_and_refuses_changed_actor_scope_and_approval",
     "NativeRecoveryOracle.test_success_receipt_requires_actual_physical_and_catalog_retirement",
+    "OfflineHelperLeaseOracle.test_each_successful_retired_helper_action_keeps_the_original_catalog_floor_before_reopen",
+    "OfflineHelperLeaseOracle.test_elapsed_helper_floor_never_substitutes_for_catalog_worker_or_physical_retirement",
+    "OfflineHelperLeaseOracle.test_helper_wait_keeps_the_original_success_report_and_refuses_deadline_or_cancellation",
     "OptionalRecoveryWorkflowOracle.test_current_unresolved_selection_refuses_changed_document_schema_and_inferred_approval",
     "OptionalRecoveryWorkflowOracle.test_default_workflow_preserves_optional_helper_and_original_candidate_modes",
     "OptionalRecoveryWorkflowOracle.test_unresolved_workflow_requires_current_inputs_paired_native_source_and_no_retained_candidate"
@@ -155,6 +158,42 @@
       "fixtureGuards": [
         "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
         "class:setup-sha256:21f08b20ec565f097b83be28711a7de512f3fb02048c268ddf2bcfcc0765f5b3"
+      ]
+    },
+    "OfflineHelperLeaseOracle.test_each_successful_retired_helper_action_keeps_the_original_catalog_floor_before_reopen": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:28173091c2637b489eb3a02bada948b9c30135f29fb06a7cc819053b125a1733"
+      ]
+    },
+    "OfflineHelperLeaseOracle.test_elapsed_helper_floor_never_substitutes_for_catalog_worker_or_physical_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:28173091c2637b489eb3a02bada948b9c30135f29fb06a7cc819053b125a1733"
+      ]
+    },
+    "OfflineHelperLeaseOracle.test_helper_wait_keeps_the_original_success_report_and_refuses_deadline_or_cancellation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b7c645f18e7a2e1dff04820924971f9ffaa7e24a0b2a752eb12ce2aaa2d15a10",
+        "class:setup-sha256:28173091c2637b489eb3a02bada948b9c30135f29fb06a7cc819053b125a1733"
       ]
     },
     "NativeRecoveryOracle.test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement": {
@@ -304,6 +343,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_recovery.py",
-  "reviewReason": "Preserve all seven original closed receipt and retirement cases; add five source-only original-generation, snapshot attribution, scoped epoch, deliberate root selection and coherent native input refusal cases.; add four closed native reconciliation collector oracles without changing any prior case or execution guard; retain every prior body and guard; add explicit current unresolved-workflow/source-pair and tampered-selection refusal oracles; retain every prior body and guard; add original provisioning/resume inspection-floor order and bounded-deadline/current-profile refusal oracles",
+  "reviewReason": "Preserve all seven original closed receipt and retirement cases; add five source-only original-generation, snapshot attribution, scoped epoch, deliberate root selection and coherent native input refusal cases.; add four closed native reconciliation collector oracles without changing any prior case or execution guard; retain every prior body and guard; add explicit current unresolved-workflow/source-pair and tampered-selection refusal oracles; retain every prior body and guard; add original provisioning/resume inspection-floor order and bounded-deadline/current-profile refusal oracles; retain every prior body and guard; add retired helper floor sequencing and deadline/cancellation/physical-retirement refusal oracles",
   "schemaVersion": "latent.ci.contracts.v1"
 }

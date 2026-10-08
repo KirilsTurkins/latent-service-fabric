@@ -74,6 +74,7 @@ class OfflineCampaign:
         original = self.native.run(self.configuration, self.publication, request)
         result = recovery.require_success(original)
         require(result.get("action") == (action or request["action"]), "actual-native-action-result")
+        lifecycle.admission_lease_interval(self.client)
         return result
 
     def inspect(self):
