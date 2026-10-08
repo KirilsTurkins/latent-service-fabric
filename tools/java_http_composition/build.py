@@ -10,6 +10,7 @@ from tools.java_http_generation.probes import qualify as qualify_generation
 from tools.rust_capsule_project import ROOT, digest, read_json, snapshot, write_json
 
 COMPOSITION_CPU_FUEL = 10_000_000_000
+SPIN_CPU_FUEL = COMPOSITION_CPU_FUEL
 
 
 def qualification_budget(project: Path, *, inherited=False) -> dict:
@@ -34,7 +35,8 @@ def qualification_budget(project: Path, *, inherited=False) -> dict:
         "signedExecutionQualified": False}
 
 
-def projects(output: Path, *, generation_cases: Path | None = None) -> dict[str, Path]:
+def projects(output: Path, *, generation_cases: Path | None = None,
+             diagnostic_adaptations: dict | None = None) -> dict[str, Path]:
     result = {}
     budgets = {}
     for name in ("domain", "context-required"):
@@ -55,6 +57,11 @@ def projects(output: Path, *, generation_cases: Path | None = None) -> dict[str,
         if name == "domain":
             budgets[name] = qualification_budget(project)
         result[name] = project
+
+    if diagnostic_adaptations is not None:
+        from tools.java_http_composition import provider_timeout
+        diagnostic_adaptations["domain"] = provider_timeout.adapt_domain(result["domain"])
+
     selection = ROOT / "examples/java-http-composition/routes.json"
     result["adapter"] = generate(result["domain"], selection, output / "adapter")
     check(result["domain"], selection, result["adapter"])
@@ -73,9 +80,20 @@ def projects(output: Path, *, generation_cases: Path | None = None) -> dict[str,
     return result
 
 
-def compile_pair(output: Path, wasi_sdk: Path, binaries: dict) -> dict[str, Path]:
-    selected = projects(output / "projects", generation_cases=output / "generation-cases")
+
+def compile_pair(output: Path, wasi_sdk: Path, binaries: dict, *, diagnostics=False) -> dict[str, Path]:
+    if type(diagnostics) is not bool:
+        raise ValueError("Java diagnostic build selection must be explicit")
+    adaptations = {} if diagnostics else None
+    selected = projects(output / "projects", generation_cases=output / "generation-cases",
+                        diagnostic_adaptations=adaptations)
+    if diagnostics:
+        from tools.java_http_composition import provider_timeout
+        for name in ("adapter", "adapter-next"):
+            adaptations[name] = provider_timeout.adapt_adapter(selected[name])
+        write_json(output / "diagnostic-adaptations.json", adaptations)
     return {name: build(project, output / "builds" / name,
-        binaries["examples/capsule_contracts"], binaries["examples/package"],
+        binaries["examples/capsule_contracts"], binaries.get("examples/package"),
+
         "https://github.com/KirilsTurkins/latent-service-fabric", wasi_sdk)
         for name, project in selected.items()}
