@@ -21,18 +21,18 @@
     },
     "native-surface": {
       "path": "crates/latent-wasmtime/src/surface.rs",
-      "digest": "sha256:82af0af93ca9f52405c62e54804435a68b9d3f0acc492427a9725b57572f8d9f",
-      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
+      "digest": "sha256:eadbb2be7500f9fed1c809869ea6480f6b0cd236eb068ed88890ab92aea50f9f",
+      "commit": "78d171539dd43d325afe6d461559608d51c1bb7f"
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
-      "digest": "sha256:1c3b5774dc2e3e950a77167794aca4f550537eed2816b7b12a6da9be3baf51a8",
-      "commit": "2f56a3f5f0b3d30bef6b8793f3bf7034c50ed78d"
+      "digest": "sha256:7c81445a46cd2ea90dc0dbacf7dc7c0337a8fe13eb99c3da67d4a87de39b207b",
+      "commit": "78d171539dd43d325afe6d461559608d51c1bb7f"
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",
-      "digest": "sha256:3e2ff204afdc39ab0ef45ac02177cee31bfc297a9cc63800be36b9c2738770bf",
-      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+      "digest": "sha256:32a8019866d4a856511649f600b2550277911d8eaae0f5897a79e01fd9da21de",
+      "commit": "78d171539dd43d325afe6d461559608d51c1bb7f"
     },
     "sealed-web-projection": {
       "path": "crates/latent-artifacts/src/local_repository/web/projection/metadata.rs",
