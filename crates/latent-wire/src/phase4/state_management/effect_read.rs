@@ -229,7 +229,7 @@ fn inspect_in(
         recovery_scope: keeper.caller.scope.clone(),
         operation: selector.operation.clone(),
         entity: selector.entity.clone(),
-        client_id: selector.client_key.clone(),
+        client_key: selector.client_key.clone(),
     };
     let id = command_identity(&key).map_err(|_| StoreError::Invalid)?;
     let Some(raw) = view.get(&command_row_key(id))? else {
@@ -301,7 +301,7 @@ fn inspect_in(
     let effect = t::EffectReceipt {
         effect_id: request.effect_id.clone(),
         command_id: command.id().hex(),
-        command_attempt_id: command.attempt(),
+        command_attempt_id: command.attempt_id().hex(),
         dispatch_attempt: record.attempts(),
         disposition: disposition as i32,
         provider_receipt: latest.and_then(|r| r.provider_receipt.clone()),
