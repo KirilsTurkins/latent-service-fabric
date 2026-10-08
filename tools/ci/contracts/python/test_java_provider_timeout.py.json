@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "JavaProviderTimeoutTests.test_actual_non_get_cannot_publish_a_get_observation",
+    "JavaProviderTimeoutTests.test_actual_received_get_and_physical_socket_close_publish_distinct_complete_markers",
+    "JavaProviderTimeoutTests.test_adaptation_uses_actual_http_template_and_preserves_vendor_exports_and_ordinary_text",
+    "JavaProviderTimeoutTests.test_adapter_changes_only_declared_outbound_allowance_before_compiler_capture",
+    "JavaProviderTimeoutTests.test_common_provider_configuration_is_same_bounded_owner_and_never_replaces_existing_http",
+    "JavaProviderTimeoutTests.test_diagnostic_build_observes_async_text_before_generation_and_keeps_ordinary_build_sync",
+    "JavaProviderTimeoutTests.test_failed_http_response_retains_bounded_digest_and_authorized_closed_child_before_assertion",
+    "JavaProviderTimeoutTests.test_missing_synchronous_text_export_rejects_before_any_project_mutation",
+    "JavaProviderTimeoutTests.test_only_finite_nonterminal_provider_timeout_counts_and_absence_remains_unavailable",
+    "JavaProviderTimeoutTests.test_oversized_http_response_retains_existing_read_bound_without_inventing_a_root",
+    "JavaProviderTimeoutTests.test_shutdown_requires_original_reaped_report_and_every_known_pool_counter"
+  ],
+  "guards": {
+    "JavaProviderTimeoutTests.test_actual_non_get_cannot_publish_a_get_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_actual_received_get_and_physical_socket_close_publish_distinct_complete_markers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_adaptation_uses_actual_http_template_and_preserves_vendor_exports_and_ordinary_text": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_adapter_changes_only_declared_outbound_allowance_before_compiler_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_common_provider_configuration_is_same_bounded_owner_and_never_replaces_existing_http": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_diagnostic_build_observes_async_text_before_generation_and_keeps_ordinary_build_sync": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_failed_http_response_retains_bounded_digest_and_authorized_closed_child_before_assertion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_missing_synchronous_text_export_rejects_before_any_project_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_only_finite_nonterminal_provider_timeout_counts_and_absence_remains_unavailable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_oversized_http_response_retains_existing_read_bound_without_inventing_a_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderTimeoutTests.test_shutdown_requires_original_reaped_report_and_every_known_pool_counter": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e241a81dff7d2fedefd0ebe8b26634c3628477a98bd91cb6d46bd5d29ba7d4c0",
+        "class:setup-sha256:249ed9932fa05596c89f620bdce481eedcd3af68dff70923ef043ab581140676"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_provider_timeout.py",
+  "reviewReason": "Add seven bounded Java timeout fixture contracts, including actual authenticated peer GET and physical socket closure; preserve every historical provider and SDK case Retain bounded HTTP failure response and original authorized activation before asserting success. Declare provider-calling diagnostic text async before generation and source observation, preserving ordinary synchronous builds, original request/response limits, skip/decorator controls and physical cleanup. The controlled HTTP fixture consumes the exact bounded POST body before closing its socket.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
