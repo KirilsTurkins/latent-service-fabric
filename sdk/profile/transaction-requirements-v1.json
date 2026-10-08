@@ -181,7 +181,7 @@
       {
         "service": "latent.control.v1.StateService",
         "source": "api/proto/latent/control/v1/state.proto",
-        "sourceSha256": "sha256:f2f98d9974ef0afe014b30978eacee03310bb86f25d70cefb7e8591130e19901",
+        "sourceSha256": "sha256:92a7e12495b9bafb17d0d97ed417ece33ce7ea9041fbea17ed79bdf0151cdb34",
         "operations": [
           {
             "name": "MutateNamespace",
