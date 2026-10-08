@@ -551,6 +551,9 @@ impl Setup {
         let owner = start(&config, Arc::clone(&clock));
         owner.bind_native_capacity(&native).unwrap();
         let original = reserve(&native, clock.as_ref(), response_bytes, work_bytes);
+        owner
+            .ready
+            .wait_test_metadata_retirement(Instant::now() + WATCHDOG);
         Self {
             root,
             target,

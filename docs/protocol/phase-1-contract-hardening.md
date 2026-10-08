@@ -602,3 +602,18 @@ The golden matches the frozen sixteen-operation client descriptor and was
 reviewed against every prior named row using actual Buf output. The
 [transaction reference](transactions.md) describes the separate guest ABI,
 durable-format, authority and production qualification boundaries.
+
+## Additive captured transaction observations
+
+The reviewed Buf 1.72.0 descriptor adds the ten-field
+`TransactionStagingWitness` message and optional
+`ActivationTreeNode.transaction_staging` at field 15. It also adds optional
+`NamespaceInspection.policy_digest` at field 12. Existing fields, enum values,
+service signatures, reservations and oneof members remain unchanged, including
+the separate namespace policy digest at field 11.
+
+These fields match the maintained Wire producers and six SDK models. Staging
+witnesses describe captured work; they do not prove commitment or grant access.
+The optional policy digest identifies the retained policy decision and supplies
+no current authority. The descriptor baseline was regenerated from the actual
+Buf output and reviewed for precisely these additions.
