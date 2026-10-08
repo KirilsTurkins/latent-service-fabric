@@ -78,12 +78,24 @@ async fn foreign_global_owner_cannot_claim_against_another_protected_store_capac
         .seed(5, "tenant-a", "publication", profile("test.v1"))
         .await;
     let (adapter, _entered) = Adapter::new("test.v1", None);
+    let mut paused = config();
+    paused.start_paused = true;
     let mut owner = fixture
-        .start_unbound(config(), vec![adapter.clone()], None)
+        .start_unbound(paused, vec![adapter.clone()], None)
         .await
         .unwrap();
     let foreign = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
-    owner.bind_native_capacity(&foreign).unwrap();
+    assert!(matches!(
+        owner.bind_native_capacity(&foreign),
+        Err(DispatcherError::InvalidConfiguration)
+    ));
+    let source = owner.command_admission_source();
+    assert!(source.uses_native_capacity(&fixture.capacity));
+    assert!(!source.uses_native_capacity(&foreign));
+    // A deliberately corrupted internal binding must still hit the original
+    // independent physical-store identity check before any provider admission.
+    owner.services.native_capacity.lock().unwrap().owner = Some(foreign.clone());
+    owner.resume().unwrap();
     owner.wake();
     with_watchdog(WATCHDOG, async {
         loop {
@@ -105,7 +117,7 @@ async fn foreign_global_owner_cannot_claim_against_another_protected_store_capac
 
 #[tokio::test]
 async fn unbound_dispatcher_leaves_due_payload_unclaimed_until_exact_global_owner_is_installed() {
-    let fixture = Fixture::new().await;
+    let mut fixture = Fixture::unbound().await;
     let authority = fixture
         .seed(1, "tenant-a", "publication", profile("test.v1"))
         .await;
@@ -120,6 +132,39 @@ async fn unbound_dispatcher_leaves_due_payload_unclaimed_until_exact_global_owne
     assert_eq!(pending.attempts(), 0);
     assert_eq!(adapter.sent.load(Ordering::SeqCst), 0);
     assert_eq!(fixture.capacity.snapshot().unwrap().ordinary.slots, 0);
+    assert!(matches!(
+        owner.command_admission_source().native_capacity(),
+        Err(DispatcherError::InvalidConfiguration)
+    ));
+    // Publishing the original unbound engine epoch seals that physical owner.
+    // A late counter cannot be substituted for its missing startup binding.
+    assert!(matches!(
+        fixture.store.bind_native_capacity(&fixture.capacity),
+        Err(ProtectedStoreError::InvalidConfiguration)
+    ));
+    assert!(
+        owner
+            .shutdown(Instant::now() + WATCHDOG)
+            .await
+            .unwrap()
+            .clean
+    );
+    fixture.finish().await;
+    drop(owner);
+    // Reopen the same retained pending effect, installing the original global
+    // owner before any native epoch/job. Startup inherits it before workers run.
+    fixture.store = Arc::new(Fixture::open(fixture.config.clone()).await);
+    fixture
+        .store
+        .bind_native_capacity(&fixture.capacity)
+        .unwrap();
+    let mut owner = fixture
+        .start_unbound(config(), vec![adapter.clone()], Some((1, 100)))
+        .await
+        .unwrap();
+    assert!(owner
+        .command_admission_source()
+        .uses_native_capacity(&fixture.capacity));
     owner.bind_native_capacity(&fixture.capacity).unwrap();
     owner.wake();
     let parked = event(&mut entered).await;
