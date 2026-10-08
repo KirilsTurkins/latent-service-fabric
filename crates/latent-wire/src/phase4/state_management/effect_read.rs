@@ -466,7 +466,7 @@ fn history_in(
     }
     let next = history
         .resume
-        .map(|after| {
+        .map(|after| -> Result<Vec<u8>, PlatformError> {
             let sequence = after
                 .get(after.len().checked_sub(8).ok_or_else(invalid)?..)
                 .ok_or_else(invalid)?;
