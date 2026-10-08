@@ -1,5 +1,5 @@
 {
-  "observedUtc": "2026-10-08T11:36:45.207355+00:00",
+  "observedUtc": "2026-10-08T11:38:08.205119+00:00",
   "files": [
     {
       "path": "acceptance-audit/CLOSURE-AUDIT.json",
@@ -500,6 +500,11 @@
       "path": "evidence/networking-handoff/C684publicSetup.json",
       "bytes": 1190,
       "sha256": "96448d96e5eed3da0fe88993b79bcd74cc3c41f4b54538ed6486bc1ca69e1fc3"
+    },
+    {
+      "path": "evidence/networking-handoff/FILES.json",
+      "bytes": 935,
+      "sha256": "121777e79f6ae361bedbd8b70beb3938bf8ac9327e7d6a1d0052c4c676b6ab9f"
     },
     {
       "path": "evidence/networking-handoff/HANDOFF.json",
