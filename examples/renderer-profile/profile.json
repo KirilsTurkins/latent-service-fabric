@@ -3,7 +3,7 @@
   "candidate": "angular-ssr-component-v1",
   "angular": "22.2.0",
   "nodeBuild": "24.19.0",
-  "componentizeJs": "0.22.0",
+  "componentizeJs": "0.23.0",
   "enableAot": false,
   "disableFeatures": ["stdio", "random", "clocks", "http", "fetch-event"],
   "allowedComponentImports": [],
