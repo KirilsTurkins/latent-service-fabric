@@ -231,15 +231,9 @@ impl StateManagementBackend {
                 authorization::authorize(&self.0.services, &binding, &context, &request, deadline)
                     .await?;
             if effect_read::handles(&request) {
-                return effect_read::execute(
-                    Arc::clone(&self.0),
-                    context,
-                    request,
-                    access,
-                    permit,
-                    deadline,
-                )
-                .await;
+                return self
+                    .read_effect(context, request, access, permit, deadline)
+                    .await;
             }
             if effects::handles(&request) {
                 return effects::execute(
@@ -313,6 +307,24 @@ impl StateManagementBackend {
                 _ => Err(unsupported()),
             }
         })
+    }
+    async fn read_effect(
+        &self,
+        context: AuthenticatedInvocationContext,
+        request: contract::Request,
+        access: authorization::Access,
+        permit: Arc<dyn StateManagementReservation>,
+        deadline: Instant,
+    ) -> Result<OwnedPhase4Response, PlatformError> {
+        effect_read::execute(
+            Arc::clone(&self.0),
+            context,
+            request,
+            access,
+            permit,
+            deadline,
+        )
+        .await
     }
     /// Closed installed management-receipt codec for the same protected view.
     /// It never supplies mutation, artifact or recovery authority.

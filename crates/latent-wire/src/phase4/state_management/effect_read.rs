@@ -173,19 +173,19 @@ pub(super) async fn execute(
         .services
         .store
         .with_view(view, WORK_BYTES as u64, move |view| {
-            let result = inspect_in(view, &worker, &original).and_then(|result| match result {
+            let result = inspect_in(view, &worker, &original).map(|result| match result {
                 Ok((read, effect)) => {
                     let response = if let Some(page) = &page {
-                        history_in(view, &worker, &read, &original, effect, page)
+                        history_in(view, &worker, &read, &original, &effect, page)
                     } else {
                         Ok(t::GetEffectResponse {
                             effect: Some(effect),
                         }
                         .into())
                     };
-                    Ok(response.map(|response| (read, response)))
+                    response.map(|response| (read, response))
                 }
-                Err(error) => Ok(Err(error)),
+                Err(error) => Err(error),
             });
             let finish = pending.finish(
                 if result.as_ref().is_ok_and(Result::is_ok) {
@@ -294,23 +294,7 @@ fn inspect_in(
     latent_effects::dispatch_store::validate_row(&row, &raw)?;
     let record = EffectRecord::decode(&raw).map_err(|_| StoreError::Corrupt)?;
     let authority = record.authority().map_err(|_| StoreError::Corrupt)?;
-    let link = authority.link();
-    let scope = authority.scope();
-    if scope.tenant != key.tenant
-        || scope.namespace != key.namespace
-        || scope.incarnation != binding.incarnation
-        || scope.publication != command.source().publication
-        || link.command != command.id().hex()
-        || link.caller_scope != key.recovery_scope
-        || link.attempt != command.attempt()
-        || link.commit != command.disposition_id().hex()
-        || link.effect != request.effect_id
-        || link.sequence >= 128
-        || command.effect_id(link.sequence).hex() != request.effect_id
-        || !command
-            .effect_ids()
-            .contains(&command.effect_id(link.sequence))
-    {
+    if !valid_link(&command, &record, &request.effect_id, binding.incarnation)? {
         return Ok(Err(denied()));
     }
     let management = record.management();
@@ -352,6 +336,35 @@ fn inspect_in(
         return Ok(Err(error));
     }
     Ok(Ok((read, effect)))
+}
+fn valid_link(
+    command: &CommandRecord,
+    record: &EffectRecord,
+    effect: &str,
+    incarnation: u64,
+) -> Result<bool, StoreError> {
+    let authority = record.authority().map_err(|_| StoreError::Corrupt)?;
+    let key = command.key();
+    let link = authority.link();
+    let scope = authority.scope();
+    if scope.tenant != key.tenant
+        || scope.namespace != key.namespace
+        || scope.incarnation != incarnation
+        || scope.publication != command.source().publication
+        || link.command != command.id().hex()
+        || link.caller_scope != key.recovery_scope
+        || link.attempt != command.attempt()
+        || link.commit != command.disposition_id().hex()
+        || link.effect != effect
+        || link.sequence >= 128
+        || command.effect_id(link.sequence).hex() != effect
+        || !command
+            .effect_ids()
+            .contains(&command.effect_id(link.sequence))
+    {
+        return Ok(false);
+    }
+    Ok(true)
 }
 fn disposition(value: Disposition) -> t::EffectDisposition {
     match value {
@@ -395,7 +408,7 @@ fn history_in(
     keeper: &Keeper,
     read: &NamespaceRead,
     original: &t::GetEffectRequest,
-    current: t::EffectReceipt,
+    current: &t::EffectReceipt,
     page: &t::PageRequest,
 ) -> Result<contract::Response, PlatformError> {
     let version =
@@ -462,9 +475,18 @@ fn history_in(
         item.occurred_at_unix_millis = row.receipt.observed_at_millis;
         item.record_version.clear();
         item.management_operation_receipt_id = None;
-        item.dispatch_attempt = row.attempt.as_ref().map_or(0, |a| a.attempt());
-        item.owner_epoch = row.attempt.as_ref().map(|a| a.owner_epoch());
-        item.claim_generation = row.attempt.as_ref().map(|a| a.claim_generation());
+        item.dispatch_attempt = row
+            .attempt
+            .as_ref()
+            .map_or(0, latent_effects::dispatch::AttemptIdentity::attempt);
+        item.owner_epoch = row
+            .attempt
+            .as_ref()
+            .map(latent_effects::dispatch::AttemptIdentity::owner_epoch);
+        item.claim_generation = row
+            .attempt
+            .as_ref()
+            .map(latent_effects::dispatch::AttemptIdentity::claim_generation);
         rows.push(item);
     }
     let next = history
@@ -491,7 +513,7 @@ fn history_in(
     Ok(t::ListEffectHistoryResponse {
         page: Some(t::PageResponse {
             next_cursor: next,
-            returned_count: rows.len() as u32,
+            returned_count: u32::try_from(rows.len()).map_err(|_| capacity())?,
             encoded_bytes: encoded as u64,
         }),
         receipts: rows,
