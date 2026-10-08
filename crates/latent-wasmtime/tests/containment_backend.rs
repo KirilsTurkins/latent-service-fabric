@@ -8,7 +8,6 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use latent_activation::{ActivationEnvelope, ActivationManager, ActivationOutcome, TraceContext};
 use latent_artifacts::{ArtifactDescriptor, CapsuleArtifact};
-use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
 use latent_core::{
     ActivationId, ArtifactReference, CapabilityId, CellId, ContractId, FunctionId,
     InvocationPrincipal, Metadata, NodeId, PrincipalKind, ReleaseDigest, ResourceBudget, ServiceId,
@@ -589,7 +588,7 @@ async fn healthy_activations_remain_correct_while_an_infinite_activation_times_o
         latent_core::ActivationTerminalState::DeadlineExceeded,
         latent_core::PlatformErrorCode::DeadlineExceeded,
         "activation.deadline-exceeded",
-        Some(DiagnosticReason::DeadlineExceeded),
+        Some(latent_core::diagnostic::DiagnosticReason::DeadlineExceeded),
     );
     assert!(consumption.wall_time_micros > 0);
     assert_deadline_tolerance(elapsed, requested_deadline, &config);
@@ -715,7 +714,7 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
         latent_core::ActivationTerminalState::ResourceExhausted,
         latent_core::PlatformErrorCode::ResourceExhausted,
         "activation.memory-exhausted",
-        Some(DiagnosticReason::GuestMemoryExhausted),
+        Some(latent_core::diagnostic::DiagnosticReason::GuestMemoryExhausted),
     );
     assert!(
         consumption.peak_memory_bytes <= granted_memory,
@@ -991,7 +990,7 @@ fn assert_activation_failure(
     terminal_state: latent_core::ActivationTerminalState,
     code: latent_core::PlatformErrorCode,
     detail_kind: &str,
-    diagnostic_reason: Option<DiagnosticReason>,
+    diagnostic_reason: Option<latent_core::diagnostic::DiagnosticReason>,
 ) -> latent_core::BudgetConsumption {
     match outcome {
         ActivationOutcome::Failed {
@@ -1003,6 +1002,10 @@ fn assert_activation_failure(
             assert_eq!(error.code, code);
             assert!(!error.retryable);
             assert!(error.message.len() <= 512);
+            use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticStage};
+            let expected = diagnostic_reason
+                .map(|reason| ActivationDiagnostic::new(DiagnosticStage::Execution, reason));
+            assert_eq!(ActivationDiagnostic::from_error(&error), expected);
             if code == latent_core::PlatformErrorCode::GuestTrap {
                 let detail = error.details.pop().expect("closed guest trap kind");
                 assert_eq!(detail.kind, "activation.guest-trap-kind");
@@ -1016,22 +1019,12 @@ fn assert_activation_failure(
                     )])
                 );
             }
-            assert_eq!(
-                error.details.len(),
-                1 + usize::from(diagnostic_reason.is_some())
-            );
+            assert_eq!(error.details.len(), 1 + usize::from(expected.is_some()));
             assert_eq!(error.details[0].kind, detail_kind);
             assert!(error.details[0]
                 .fields
                 .iter()
                 .all(|(name, value)| name.len() <= 64 && value.len() <= 256));
-            if let Some(reason) = diagnostic_reason {
-                assert_eq!(
-                    error.details[1],
-                    ActivationDiagnostic::new(DiagnosticStage::Execution, reason).detail(),
-                    "only the exact producer-owned diagnostic accompanies the failure"
-                );
-            }
             consumption
         }
         ActivationOutcome::Succeeded(success) => {

@@ -31,7 +31,7 @@ fn publish(
     }) else {
         panic!("expected durable captured disposition");
     };
-    command
+    *command
 }
 
 fn stored_effect(store: &EmbeddedStore, effect: &str) -> DurableEffectAuthority {

@@ -44,9 +44,59 @@ intersects it with current authority without extending its original lifetime.
 A narrower rule after preparation prevents writer acceptance. Audit-required
 profiles currently fail closed until a real audit reservation owner is installed.
 
-These ports are an intermediate implementation of issue #388. The complete
-state runtime must still supply authenticated companion selection, original
-durable command admission, final envelope acceptance, physical cleanup and
-current-authorized response release across the existing activation manager. The
-six-language signed component campaign, RPC/HTTP delivery and crash/restart
-qualification remain required; this page does not record them as passing.
+`NativeTransactionAdmission` accepts only a trusted installation with verified
+publication metadata, its exact deployment and companion policy bindings. It
+checks the selected source and current policy before native lookup. Commands
+retain the protected node's actual role guard, publish Pending before opening
+guest state, and carry that same guard through final writer acceptance and
+physical retirement. Replays require current result-read authority and never
+open a second command host. Fresh queries open a frozen read-only snapshot and
+create no Command, Attempt, Result or Outbox rows.
+
+Each query exposes the 67-byte token captured from its actual native snapshot.
+The token binds tenant, namespace, entity, schema and recovery history as well
+as the original unsigned incarnation and generation. A minimum from a future
+generation conflicts; a token from another schema or recovery history refuses
+without refreshing the original request. A restored global guard awaiting
+review denies queries and Pending admission without quarantining a healthy
+physical store.
+
+Command/result format 3 retains that same original opaque history token in the
+complete terminal envelope. Later namespace changes and reopening cannot
+replace it. Formats 1 and 2 explicitly reject because they omit this history.
+No-state rejection and technical-abort envelopes compare both the exact
+namespace-history row and the original absent or reviewed recovery guard.
+
+The original activation handle invokes native completion after actual guest
+cleanup and accounting observation, before publishing its terminal journal
+entry or removing its cancellation registration. Accounting stays frozen; a
+narrow retained-authority check permits no further execution or spending.
+The final namespace/effect fence retains the original cancellation CAS through
+acceptance. Cancellation that wins first denies the business envelope; a late
+deadline, disconnect or cancellation cannot rewrite a known durable outcome.
+Acceptance without a known physical result remains recovery-required. Large
+result bodies stay in a once-only native completion owner, rather than being
+duplicated into the bounded activation journal.
+
+`CommandCompletion` publishes a successful state/result/intent envelope under
+the original role, current policy, namespace lifecycle, effect authority and
+cancellation fences. Declared rejection first retires the discarded business
+state and intents, then publishes only its terminal result. Known durable
+results survive a later cleanup failure. A failed activation can expose a
+noncommit proof only after actual guest, native view and attempt owners retire;
+an uncertain native outcome remains recovery-required.
+
+The integrated pinned Linux campaign passed 267 library cases: State126,
+Commit49 and Node92. The original activation, cancellation, namespace, atomic
+and cleanup schedules remain required. Three new node schedules cover actual
+future minimums, changed schema/recovery histories and paused restore admission.
+Node all-target/all-feature Clippy completed without transaction-runtime
+warnings. These native tests do not execute guest components.
+
+The same protected store and dispatcher must bind the original global native
+capacity owner before the first command. Physical views, writer callbacks and
+actual response owners retain the finite prepaid reservation after a lost
+waiter and ledger finalization. Ordinary standalone/RPC composition, authorized
+response-frame release, technical-abort/replay composition, audit reservations,
+all six signed guest components and crash/restart qualification remain required
+for #388 and the wider gate.

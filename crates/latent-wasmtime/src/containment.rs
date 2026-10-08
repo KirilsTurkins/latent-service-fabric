@@ -334,6 +334,7 @@ fn classify_runtime_failure(
         metadata.insert("trap".to_owned(), label.to_owned());
         return Ok(GuestOutcome::Trapped {
             trap: GuestTrap {
+                diagnostic: None,
                 code: "guest-trap".to_owned(),
                 message: bounded_text(&format!("guest trapped: {label}"), MAX_DIAGNOSTIC_BYTES),
                 guest_backtrace: Vec::new(),
@@ -351,6 +352,7 @@ fn classify_runtime_failure(
     metadata.insert("classification".to_owned(), "runtime-error".to_owned());
     Ok(GuestOutcome::Trapped {
         trap: GuestTrap {
+            diagnostic: None,
             code: "guest-runtime-error".to_owned(),
             message: "guest execution failed".to_owned(),
             guest_backtrace: Vec::new(),
