@@ -6,6 +6,7 @@ import { basename, dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { coreIntegerLowering } from './signed64.mjs';
 import { explicitResourceOwners } from './resources.mjs';
+import { selectedSourceSplicer } from './source_splicer.mjs';
 
 const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer] = process.argv.slice(2);
 const prepareImport = witPath === '--source-import-adapter';
@@ -30,7 +31,9 @@ if (useImportAdapter) {
     throw new Error('compiler-source-splicer-hook-drift');
   }
   adapted = adapted.replace(importAnchor, "import { splicer as publicSplicer } from '../lib/spidermonkey-embedding-splicer.js';")
-    .replace(selectionAnchor, selectionAnchor + '\n  const splicer = opts.lsfSplicer || publicSplicer;');
+    .replace(selectionAnchor, selectionAnchor +
+      "\n  if (typeof opts.lsfSplicer !== 'function') throw new Error('source-built-splicer-callable-export-required');" +
+      '\n  const splicer = opts.lsfSplicer;');
 }
 const path = join(dirname(compiler), useImportAdapter ? 'componentize.lsf-import-v1.mjs' : 'componentize.lsf-core-v2.mjs');
 try {
@@ -71,7 +74,7 @@ if (engine || selectionPath) {
         throw new Error('source-built-splicer-byte-identity-changed');
       }
     }
-    ({splicer:selectedSplicer} = await import(pathToFileURL(sourceSplicer)));
+    selectedSplicer = selectedSourceSplicer(await import(pathToFileURL(sourceSplicer)));
   } else if (sourceSplicer) throw new Error('source-splicer-requires-import-profile');
   selectedEngine = { digest: actual, size: raw.byteLength, profile: selection.profile,
     qualification: 'unknown', apiSupport: 'not-evaluated' };

@@ -27,6 +27,12 @@ def declaration_aliases(source: str) -> str:
     return source.replace(expected, expected.replace("\nfunction ", "\ndeclare function "))
 
 
+def discovered_host_tool(name: str, search_path: str) -> Path:
+    """Bind a trusted host executable alias to its physical input bytes."""
+    selected = shutil.which(name, path=search_path)
+    return Path(selected).resolve(strict=True) if selected else Path('missing-' + name)
+
+
 def import_identities(graph: dict, selected: str) -> list[str]:
     def identity(package, name):
         base, separator, version = graph["packages"][package]["name"].rpartition("@")
@@ -96,8 +102,8 @@ class Compiler:
         self.recipe = ROOT / "tools/typescript_guest"
         self.original_tools, self.original_before = None, None
         self.expected = expected
-        self.node = Path(shutil.which("node", path=commands.environment["PATH"]) or "missing-node")
-        self.wasm = Path(shutil.which("wasm-tools", path=commands.environment["PATH"]) or "missing-wasm-tools")
+        self.node = discovered_host_tool("node", commands.environment["PATH"])
+        self.wasm = discovered_host_tool("wasm-tools", commands.environment["PATH"])
         if commands.run("node-version", self.node, "--version").strip() != b"v24.19.0":
             raise ValueError("unreviewed Node compiler host")
         if commands.run("wasm-tools-version", self.wasm, "--version").split()[:2] != [b"wasm-tools", b"1.254.0"]:
@@ -116,7 +122,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"

@@ -52,7 +52,9 @@ def componentizer_adapter(original:bytes)->tuple[bytes,dict]:
       (b"import { splicer } from '../lib/spidermonkey-embedding-splicer.js';",
        b"import { splicer as publicSplicer } from '../lib/spidermonkey-embedding-splicer.js';"),
       (b'  const engine = getEnginePath(opts);',
-       b'  const engine = getEnginePath(opts);\n  const splicer = opts.lsfSplicer || publicSplicer;'),
+       b'  const engine = getEnginePath(opts);\n'
+       b"  if (typeof opts.lsfSplicer !== 'function') throw new Error('source-built-splicer-callable-export-required');\n"
+       b'  const splicer = opts.lsfSplicer;'),
       (b'  return {\n    component,\n',b'  return {\n    core: finalBin,\n    component,\n'),
       (b'  await writeFile(initializerPath, jsBindings);',
        b'  jsBindings = opts.lsfBindings(jsBindings);\n  await writeFile(initializerPath, jsBindings);'),

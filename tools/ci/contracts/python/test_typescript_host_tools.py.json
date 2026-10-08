@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "TypeScriptHostToolTests.test_discovered_regular_tool_binds_its_resolved_bytes",
+    "TypeScriptHostToolTests.test_missing_tool_keeps_existing_concrete_diagnostic_path",
+    "TypeScriptHostToolTests.test_only_discovered_host_path_is_resolved_strictly"
+  ],
+  "guards": {
+    "TypeScriptHostToolTests.test_discovered_regular_tool_binds_its_resolved_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3f2c568fe574e61a0619082c1368b308f15a8642fd7ac9697422ea38e15111a2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptHostToolTests.test_missing_tool_keeps_existing_concrete_diagnostic_path": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3f2c568fe574e61a0619082c1368b308f15a8642fd7ac9697422ea38e15111a2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptHostToolTests.test_only_discovered_host_path_is_resolved_strictly": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3f2c568fe574e61a0619082c1368b308f15a8642fd7ac9697422ea38e15111a2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_host_tools.py",
+  "reviewReason": "Three discovered-host executable identity controls preserve missing-tool diagnostics and strict physical byte resolution without changing untrusted input link rules",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
