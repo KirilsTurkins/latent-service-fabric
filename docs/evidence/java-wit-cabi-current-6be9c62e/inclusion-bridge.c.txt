@@ -1,0 +1,21 @@
+/* Generated from authoritative WIT. DO NOT EDIT. */
+#include "bridge.h"
+void exports_examples_inclusion_api_echo(probe_string_t *arg0, probe_string_t *arg1) {
+lsf_wire output = {0};
+lsf_require((*arg0).len <= LSF_MAX_BYTES); lsf_put(&output, (*arg0).len, 4);
+for (size_t local_1 = 0; local_1 < (*arg0).len; local_1++) lsf_put(&output, (*arg0).ptr[local_1], 1);
+lsf_release((*arg0).ptr, (*arg0).len); (*arg0).ptr = NULL; (*arg0).len = 0;
+void *owned; lsf_wire input = lsf_invoke(0, &output, &owned);
+(*arg1).len = (size_t)lsf_get(&input, 4);
+lsf_require((*arg1).len <= LSF_MAX_BYTES);
+(*arg1).ptr = lsf_allocate((*arg1).len, 1);
+for (size_t local_3 = 0; local_3 < (*arg1).len; local_3++) (*arg1).ptr[local_3] = (uint8_t)lsf_get(&input, 1);
+lsf_finish(&input); lsf_java_free(owned);
+}
+void *lsf_java_host(int32_t operation, void *bytes, int32_t length) {
+lsf_require(length >= 0 && (uint32_t)length <= LSF_MAX_BYTES);
+lsf_wire input = {bytes, (size_t)length, 0, (size_t)length}; lsf_wire output = {0};
+switch (operation) {
+default: __builtin_trap(); }
+return lsf_result(&output);
+}
