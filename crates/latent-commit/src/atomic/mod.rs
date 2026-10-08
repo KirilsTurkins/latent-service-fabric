@@ -15,8 +15,8 @@ pub use record::{
 };
 pub use validation::{validate_linked_row, validate_row, validate_view};
 pub use writer::{
-    inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, PreparedAdmission,
-    PreparedDisposition, RetryRequest, StagedIntent,
+    inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
+    PreparedAdmission, PreparedDisposition, RetryRequest, StagedIntent,
 };
 
 use latent_core::transaction_contract::{self as contract, CommandFingerprint, CommandKey};

@@ -152,7 +152,7 @@ fn publish_envelope(
         drop(guard);
         Ok(())
     }) {
-        PreparedDisposition::Confirmed { command, .. } => command,
+        PreparedDisposition::Confirmed { command, .. } => *command,
         _ => panic!("the child must positively observe its original disposition"),
     }
 }

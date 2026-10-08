@@ -1,6 +1,7 @@
 //! The Linux kernel denies native growth of the selected engine's original
 //! file, after durable admission and before one complete envelope publication.
-//! This is actual file-size-limit I/O, not device ENOSPC or power-loss evidence.
+//! The bounded engine backend also denies growth with its storage-full error.
+//! Neither schedule claims device ENOSPC or power-loss evidence.
 use super::*;
 use latent_test_process::process::{OwnedProcess, ProcessLimits};
 use rustix::process::{getrlimit, setrlimit, Resource, Rlimit};
@@ -45,6 +46,78 @@ fn pressured_state(view: &latent_state::embedded::ReadView) -> latent_state::ses
             .unwrap();
     }
     session.seal(view, state_permission).unwrap()
+}
+
+#[test]
+fn original_backend_storage_full_retains_pending_identity_without_partial_envelope() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("state.redb");
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create_new(true)
+        .open(&path)
+        .unwrap();
+    let (store, status) = EmbeddedStore::open_bounded_file(
+        file,
+        StoreLimits {
+            maximum_key_bytes: 4096,
+            maximum_value_bytes: 2 * 1024 * 1024,
+            maximum_batch_rows: 1024,
+            ..StoreLimits::default()
+        },
+        2 * 1024 * 1024,
+    )
+    .unwrap();
+    let effects = seed(&store);
+    let input = request();
+    let owner = claim(&store, request());
+    let view = store.snapshot().unwrap();
+    let original = inspect(&view, &input.key, time(100), permission).unwrap().0;
+    let complete = CompleteEnvelope::success(
+        &view,
+        owner,
+        Some(pressured_state(&view)),
+        vec![intent()],
+        value(b"must not partially persist"),
+        &effects,
+        time(101),
+    )
+    .unwrap();
+    // This plan passes logical byte/count preflight. The selected engine's
+    // original physical backend must refuse the larger native allocation.
+    match complete.publish(&store, |_| Ok(())) {
+        PreparedDisposition::RecoveryRequired { identity } => {
+            assert_eq!(identity.id, original.id);
+            assert_eq!(identity.attempt(), original.attempt());
+            assert_eq!(identity.outcome(), Outcome::Pending);
+        }
+        _ => panic!("physical storage failure cannot prove commit or safe retry"),
+    }
+    drop(view);
+    drop(store);
+    assert!(status.close_observed());
+    let store = open(&path);
+    let view = store.snapshot().unwrap();
+    let (command, result) = inspect(&view, &input.key, time(103), permission).unwrap();
+    assert_eq!(command.encode().unwrap(), original.encode().unwrap());
+    assert!(result.is_none());
+    for family in [
+        Family::State,
+        Family::Outbox,
+        Family::Inbox,
+        Family::PayloadReference,
+    ] {
+        assert!(view
+            .scan_after(family, b"", None, 128, 1024 * 1024)
+            .unwrap()
+            .rows
+            .is_empty());
+    }
+    assert!(matches!(
+        PreparedAdmission::prepare(&view, request(), time(104), permission).unwrap(),
+        AdmissionDecision::Existing(existing) if existing.outcome() == Outcome::Pending
+    ));
 }
 
 #[test]
