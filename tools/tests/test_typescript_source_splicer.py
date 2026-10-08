@@ -23,7 +23,7 @@ class TypeScriptSourceSplicerTests(unittest.TestCase):
 import * as selected from './selected.mjs';
 try {
   const splicer = selectedSourceSplicer(selected);
-  console.log(JSON.stringify({accepted:true,value:splicer()}));
+  console.log(JSON.stringify({accepted:true,value:splicer.spliceBindings(),stub:splicer.stubWasi()}));
 } catch (error) {
   console.log(JSON.stringify({accepted:false,error:error.message}));
 }
@@ -53,8 +53,25 @@ try {
             'accepted': False, 'error': 'source-built-splicer-callable-export-required'})
 
     def test_exact_selected_callable_is_invoked(self):
-        self.assertEqual(self.run_module('export function splicer() { return "selected"; }'), {
-            'accepted': True, 'value': 'selected'})
+        self.assertEqual(self.run_module(
+            'export const splicer = {spliceBindings() { return "selected"; }, '
+            'stubWasi() { return "selected-stub"; }};'), {
+            'accepted': True, 'value': 'selected', 'stub': 'selected-stub'})
+
+    def test_missing_stub_method_rejected(self):
+        self.assertEqual(self.run_module(
+            'export const splicer = {spliceBindings() { return "selected"; }};'), {
+            'accepted': False, 'error': 'source-built-splicer-callable-export-required'})
+
+    def test_non_callable_splice_method_rejected(self):
+        self.assertEqual(self.run_module(
+            'export const splicer = {spliceBindings: {}, stubWasi() {}};'), {
+            'accepted': False, 'error': 'source-built-splicer-callable-export-required'})
+
+    def test_non_callable_stub_method_rejected(self):
+        self.assertEqual(self.run_module(
+            'export const splicer = {spliceBindings() {}, stubWasi: {}};'), {
+            'accepted': False, 'error': 'source-built-splicer-callable-export-required'})
 
 
 if __name__ == '__main__':

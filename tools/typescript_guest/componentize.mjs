@@ -32,7 +32,7 @@ if (useImportAdapter) {
   }
   adapted = adapted.replace(importAnchor, "import { splicer as publicSplicer } from '../lib/spidermonkey-embedding-splicer.js';")
     .replace(selectionAnchor, selectionAnchor +
-      "\n  if (typeof opts.lsfSplicer !== 'function') throw new Error('source-built-splicer-callable-export-required');" +
+      "\n  if (!opts.lsfSplicer || typeof opts.lsfSplicer !== 'object' || typeof opts.lsfSplicer.spliceBindings !== 'function' || typeof opts.lsfSplicer.stubWasi !== 'function') throw new Error('source-built-splicer-callable-export-required');" +
       '\n  const splicer = opts.lsfSplicer;');
 }
 const path = join(dirname(compiler), useImportAdapter ? 'componentize.lsf-import-v1.mjs' : 'componentize.lsf-core-v2.mjs');

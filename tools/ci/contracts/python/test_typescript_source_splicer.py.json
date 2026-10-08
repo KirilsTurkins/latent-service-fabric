@@ -1,59 +1,30 @@
 {
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Eight actual Node controls for exact pinned splicer interface; five prior cases retain decorators/skip/execution/module guards; class helper now invokes both authentic interface methods; no compiler fallback",
+  "module": "tools/tests/test_typescript_source_splicer.py",
   "cases": [
     "TypeScriptSourceSplicerTests.test_exact_selected_callable_is_invoked",
     "TypeScriptSourceSplicerTests.test_false_export_rejected",
     "TypeScriptSourceSplicerTests.test_missing_export_rejected",
+    "TypeScriptSourceSplicerTests.test_missing_stub_method_rejected",
+    "TypeScriptSourceSplicerTests.test_non_callable_splice_method_rejected",
+    "TypeScriptSourceSplicerTests.test_non_callable_stub_method_rejected",
     "TypeScriptSourceSplicerTests.test_non_function_truthy_export_rejected",
     "TypeScriptSourceSplicerTests.test_null_export_rejected"
   ],
   "guards": {
-    "TypeScriptSourceSplicerTests.test_exact_selected_callable_is_invoked": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
-        "class:setup-sha256:7570a1b0881f45d38f8e4e2b9098181c20621ac3622aaa065d74708ff05cfa81"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptSourceSplicerTests.test_false_export_rejected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
-        "class:setup-sha256:7570a1b0881f45d38f8e4e2b9098181c20621ac3622aaa065d74708ff05cfa81"
-      ],
-      "skipSites": []
-    },
     "TypeScriptSourceSplicerTests.test_missing_export_rejected": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
-        "class:setup-sha256:7570a1b0881f45d38f8e4e2b9098181c20621ac3622aaa065d74708ff05cfa81"
-      ],
-      "skipSites": []
-    },
-    "TypeScriptSourceSplicerTests.test_non_function_truthy_export_rejected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
-        "class:setup-sha256:7570a1b0881f45d38f8e4e2b9098181c20621ac3622aaa065d74708ff05cfa81"
-      ],
-      "skipSites": []
+        "class:setup-sha256:826b5577ebb0e9e8f94a76c3348fb5c18809bf674aabcc17eeb141af15905fd6"
+      ]
     },
     "TypeScriptSourceSplicerTests.test_null_export_rejected": {
       "bases": [
@@ -61,15 +32,83 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
-        "class:setup-sha256:7570a1b0881f45d38f8e4e2b9098181c20621ac3622aaa065d74708ff05cfa81"
+        "class:setup-sha256:826b5577ebb0e9e8f94a76c3348fb5c18809bf674aabcc17eeb141af15905fd6"
+      ]
+    },
+    "TypeScriptSourceSplicerTests.test_false_export_rejected": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
+        "class:setup-sha256:826b5577ebb0e9e8f94a76c3348fb5c18809bf674aabcc17eeb141af15905fd6"
+      ]
+    },
+    "TypeScriptSourceSplicerTests.test_non_function_truthy_export_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
+        "class:setup-sha256:826b5577ebb0e9e8f94a76c3348fb5c18809bf674aabcc17eeb141af15905fd6"
+      ]
+    },
+    "TypeScriptSourceSplicerTests.test_exact_selected_callable_is_invoked": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
+        "class:setup-sha256:826b5577ebb0e9e8f94a76c3348fb5c18809bf674aabcc17eeb141af15905fd6"
+      ]
+    },
+    "TypeScriptSourceSplicerTests.test_missing_stub_method_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
+        "class:setup-sha256:826b5577ebb0e9e8f94a76c3348fb5c18809bf674aabcc17eeb141af15905fd6"
+      ]
+    },
+    "TypeScriptSourceSplicerTests.test_non_callable_splice_method_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
+        "class:setup-sha256:826b5577ebb0e9e8f94a76c3348fb5c18809bf674aabcc17eeb141af15905fd6"
+      ]
+    },
+    "TypeScriptSourceSplicerTests.test_non_callable_stub_method_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f7eb09e4f3385c0776100e7e88650378cd6b6701791069686f701181ff3cf3a9",
+        "class:setup-sha256:826b5577ebb0e9e8f94a76c3348fb5c18809bf674aabcc17eeb141af15905fd6"
+      ]
     }
-  },
-  "kind": "python",
-  "module": "tools/tests/test_typescript_source_splicer.py",
-  "reviewReason": "Five actual Node module controls reject missing, null, false and non-callable selected source splicers and preserve the exact chosen callable; no public compiler fallback or runtime qualification",
-  "schemaVersion": "latent.ci.contracts.v1"
+  }
 }
