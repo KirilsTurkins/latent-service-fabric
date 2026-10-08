@@ -8,6 +8,7 @@ use latent_capabilities::broker::{
     CapabilityBindingSpec, InvocationBindingTarget, LOCAL_SERVICE_INVOCATION_PROFILE,
     SERVICE_INVOCATION_CAPABILITY,
 };
+use latent_capabilities::namespace::{INTENT_CONTRACT, STATE_CONTRACT};
 use latent_core::{ContractId, FunctionId, Metadata, PlatformError, PlatformErrorCode};
 use latent_manifest::BindingMode;
 use latent_packaging::{PackageBundle, PackageComparisonLimits};
@@ -434,6 +435,14 @@ async fn plan<'a>(
     let mut local_targets = Vec::new();
     let mut invocation_targets = Vec::new();
     for interface in surface.capability_imports() {
+        // The selected profile and checked package surface identify native
+        // transaction imports. Their runtime owner admits the namespace; an
+        // ordinary binding plan neither supplies nor authorizes that owner.
+        if owner.manifest_profile.transactional()
+            && matches!(interface, STATE_CONTRACT | INTENT_CONTRACT)
+        {
+            continue;
+        }
         let d = definition(record, definitions, interface)?;
         let provider = selected(d, owner)?;
         let is_invocation = interface == SERVICE_INVOCATION_CAPABILITY
