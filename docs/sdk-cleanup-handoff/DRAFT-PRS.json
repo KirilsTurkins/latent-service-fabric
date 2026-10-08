@@ -333,7 +333,7 @@
     },
     {
       "branch": "handoff/sdk-cleanup-20261008/sdk-rust-canonical-thread-bootstrap-20261007-r1",
-      "source": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+      "source": "0be99712751a4b67830914cba42d060f091219db",
       "number": 902,
       "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/902",
       "reused": false

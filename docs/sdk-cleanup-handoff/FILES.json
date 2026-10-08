@@ -1,5 +1,5 @@
 {
-  "observedUtc": "2026-10-08T11:32:03.920973+00:00",
+  "observedUtc": "2026-10-08T11:36:45.207355+00:00",
   "files": [
     {
       "path": "acceptance-audit/CLOSURE-AUDIT.json",
@@ -19,7 +19,7 @@
     {
       "path": "DRAFT-PRS.json",
       "bytes": 29362,
-      "sha256": "10f80518b9a7d805d44bae3c8c1d8676b44927f4c72b76b1be914eb98802e9f5"
+      "sha256": "881623547bcb2cdf7a476a7eaa2593847e65983d2b31fb14dc5acbca7b40387c"
     },
     {
       "path": "evidence/dependency-handoff/audit/CLOSURE-AUDIT.json",
@@ -502,11 +502,6 @@
       "sha256": "96448d96e5eed3da0fe88993b79bcd74cc3c41f4b54538ed6486bc1ca69e1fc3"
     },
     {
-      "path": "evidence/networking-handoff/FILES.json",
-      "bytes": 935,
-      "sha256": "121777e79f6ae361bedbd8b70beb3938bf8ac9327e7d6a1d0052c4c676b6ab9f"
-    },
-    {
       "path": "evidence/networking-handoff/HANDOFF.json",
       "bytes": 94015,
       "sha256": "b84e4635b8375ca5bd55603cf4dd617ad1ac446c2b2df375d5c9029238bf728d"
@@ -552,9 +547,19 @@
       "sha256": "11e26fc6a110e97101aa9aaa33cd69467fbeaa7dfcf0ff04143566a09d556aa6"
     },
     {
+      "path": "EXISTING-PR-UPDATES.json",
+      "bytes": 8758,
+      "sha256": "f5a2be4f7c12cb9c0995c03519fedd060eea00084b249a49934e5e4f19d764ed"
+    },
+    {
       "path": "FINAL-SOURCE-AUDIT.json",
       "bytes": 40370,
       "sha256": "bcec17b4972f0f34996a53cda9ac0b85bd78155877203e1686c8bf5bf1e5645b"
+    },
+    {
+      "path": "ISSUE-COMMENTS.json",
+      "bytes": 60918,
+      "sha256": "a78ad0fd10da7b08ec719c8dcdf95475841e99ce41d19e59640abe56e50d9385"
     },
     {
       "path": "issue-current-progress.json",
@@ -585,6 +590,11 @@
       "path": "README.md",
       "bytes": 29945,
       "sha256": "c83ca780cc7af0c3ff22da148aee5dca33e4c64329694ce270e0cc1914f258a6"
+    },
+    {
+      "path": "REMOTE-HANDOFF-VERIFICATION.json",
+      "bytes": 7118,
+      "sha256": "15229f0423bde5f1cd1e2affe2f5db7d30179e69f7410f47b49374686d6b8cff"
     },
     {
       "path": "SNAPSHOT-PLAN.json",
