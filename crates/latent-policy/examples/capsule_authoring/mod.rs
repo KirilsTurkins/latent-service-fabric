@@ -218,17 +218,7 @@ fn sign_loaded(
         )
         .map_err(|error| error.message)?;
         write(&destination.join("deployment.json"), &build.deployment)?;
-        write(
-            &destination.join(if fixture {
-                "fixture-provenance-model.json"
-            } else {
-                "build-observation.json"
-            }),
-            &serde_json::to_vec(&build.observation)?,
-        )?;
-        if let Some(raw) = &build.fixture_evidence {
-            write(&destination.join("fixture-evidence.json"), raw)?;
-        }
+        write_observation(&destination, &build, fixture)?;
         let mut release = json!({"name": name, "world": build.world, "service": build.service,
             "buildType": build.observation.build_type,
             "packageDigest": digest.to_string(), "componentDigest": build.observation.component_digest,
@@ -257,6 +247,20 @@ fn demo_publisher() -> Result<(LocalSigner, [u8; 32])> {
     let public = *key.public_key();
     let signer = LocalSigner::from_pkcs8(key.into_pkcs8(), PublisherId(PUBLISHER.into()), public)?;
     Ok((signer, public))
+}
+fn write_observation(destination: &Path, build: &inputs::Build, fixture: bool) -> Result<()> {
+    write(
+        &destination.join(if fixture {
+            "fixture-provenance-model.json"
+        } else {
+            "build-observation.json"
+        }),
+        &serde_json::to_vec(&build.observation)?,
+    )?;
+    if let Some(raw) = &build.fixture_evidence {
+        write(&destination.join("fixture-evidence.json"), raw)?;
+    }
+    Ok(())
 }
 fn demo_builders(
     count: usize,
