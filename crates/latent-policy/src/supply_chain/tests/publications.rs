@@ -71,7 +71,7 @@ fn corrected_embedded_inventory_and_two_tenants_share_wasm_without_sharing_autho
             .component_digest
     );
     let path = root.path().join("catalog");
-    let repo = open(path, authority);
+    let repo = open(&path, &authority);
     let publish = |tenant, upload, operation| {
         ready(repo.publish_managed(
             context(tenant, operation, 0),
