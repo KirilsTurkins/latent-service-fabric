@@ -154,9 +154,6 @@ pub(super) fn response(value: &Response) -> Value {
         Response::PlanEffectMutation(value) => {
             json!({"plan":value.plan.as_ref().map(effect_management::plan),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
         }
-        Response::PlanEffectMutation(value) => {
-            json!({"plan":value.plan.as_ref().map(effect_management::plan),"replayed":value.replayed,"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
-        }
         Response::GetStateOperationReceipt(value) => {
             json!({"stateReceipt":value.receipt.as_ref().map(state_receipt),"namespaceReceipt":value.namespace_receipt.as_ref().map(namespace_receipt),"auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
         }
