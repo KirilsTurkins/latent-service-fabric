@@ -495,6 +495,56 @@ async fn fresh_lookup_after_execution_expiry_uses_reserved_capacity_and_preserve
             .load(Ordering::SeqCst),
         1
     );
+    let actual_receipt_id = receipt.receipt_id.clone();
+    drop(response);
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(
+            operator("alice"),
+            effect
+                .request("confirmed-effect-status")
+                .effect
+                .unwrap()
+                .into(),
+        )
+        .await
+        .unwrap();
+    let contract::Response::GetEffect(value) = &response.response else {
+        panic!("actual provider-confirmed status required");
+    };
+    let status = value.effect.as_ref().unwrap();
+    assert_eq!(
+        status.disposition,
+        latent_rpc::transaction::v1::EffectDisposition::ProviderAcknowledged as i32
+    );
+    assert_eq!(
+        status.provider_receipt.as_deref(),
+        Some("controlled-positive-provider-receipt")
+    );
+    assert!(status.failure_code.is_none());
+    assert_eq!(
+        status.management_operation_receipt_id.as_deref(),
+        Some(actual_receipt_id.as_str())
+    );
+    assert_eq!(
+        effect
+            .provider
+            .as_ref()
+            .unwrap()
+            .sends
+            .load(Ordering::SeqCst),
+        1
+    );
+    assert_eq!(
+        effect
+            .provider
+            .as_ref()
+            .unwrap()
+            .lookups
+            .load(Ordering::SeqCst),
+        1
+    );
     drop(response);
     drop(ordinary);
     effect.finish().await;

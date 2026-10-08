@@ -293,12 +293,25 @@ fn inspect_in(
     };
     latent_effects::dispatch_store::validate_row(&row, &raw)?;
     let record = EffectRecord::decode(&raw).map_err(|_| StoreError::Corrupt)?;
-    let authority = record.authority().map_err(|_| StoreError::Corrupt)?;
     if !valid_link(&command, &record, &request.effect_id, binding.incarnation)? {
         return Ok(Err(denied()));
     }
-    let payload_available = payload_available(view, &record)?;
-    let management_operation_receipt_id = management_receipt_id(view, &record)?;
+    let effect = effect_status(view, &command, &record, &raw, &request.effect_id)?;
+    if let Err(error) = keeper.current(&read, &mut || {}) {
+        return Ok(Err(error));
+    }
+    Ok(Ok((read, effect)))
+}
+fn effect_status(
+    view: &ReadView,
+    command: &CommandRecord,
+    record: &EffectRecord,
+    raw: &[u8],
+    effect_id: &str,
+) -> Result<t::EffectReceipt, StoreError> {
+    let authority = record.authority().map_err(|_| StoreError::Corrupt)?;
+    let payload_available = payload_available(view, record)?;
+    let management_operation_receipt_id = management_receipt_id(view, record)?;
     let management = record.management();
     let latest = record.latest();
     let disposition =
@@ -308,15 +321,29 @@ fn inspect_in(
             disposition(record.disposition())
         };
     let effect = t::EffectReceipt {
-        effect_id: request.effect_id.clone(),
+        effect_id: effect_id.into(),
         command_id: command.id().hex(),
         command_attempt_id: command.attempt_id().hex(),
         dispatch_attempt: record.attempts(),
         disposition: disposition as i32,
-        provider_receipt: latest.and_then(|r| r.provider_receipt.clone()),
-        failure_code: latest.map(|r| r.reason.clone()),
-        occurred_at_unix_millis: latest
-            .map_or(authority.committed_at_millis(), |r| r.observed_at_millis),
+        provider_receipt: management
+            .and_then(|stamp| stamp.provider_receipt().map(str::to_owned))
+            .or_else(|| latest.and_then(|receipt| receipt.provider_receipt.clone())),
+        failure_code: if management
+            .is_some_and(|stamp| stamp.fact() == EffectManagementFact::ProviderConfirmed)
+        {
+            None
+        } else {
+            latest.map(|receipt| receipt.reason.clone())
+        },
+        occurred_at_unix_millis: management.map_or_else(
+            || {
+                latest.map_or(authority.committed_at_millis(), |receipt| {
+                    receipt.observed_at_millis
+                })
+            },
+            latent_effects::dispatch::EffectManagementStamp::observed_at_millis,
+        ),
         retention: Some(t::LinkedRetention {
             record_format: "lsf-effect-record".into(),
             record_version: 1,
@@ -328,17 +355,15 @@ fn inspect_in(
         }),
         management_operation_receipt_id,
         provider_profile: authority.profile().adapter.clone(),
-        record_version: effect_record_version(&raw)
+        record_version: effect_record_version(raw)
             .map_err(|_| StoreError::Corrupt)?
             .to_vec(),
         owner_epoch: (record.owner_epoch() != 0).then_some(record.owner_epoch()),
         claim_generation: (record.claim_generation() != 0).then_some(record.claim_generation()),
     };
-    if let Err(error) = keeper.current(&read, &mut || {}) {
-        return Ok(Err(error));
-    }
-    Ok(Ok((read, effect)))
+    Ok(effect)
 }
+
 fn payload_available(view: &ReadView, record: &EffectRecord) -> Result<bool, StoreError> {
     let authority = record.authority().map_err(|_| StoreError::Corrupt)?;
     match view.get(&latent_effects::dispatch_store::effect_payload_key(
