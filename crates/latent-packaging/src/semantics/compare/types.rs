@@ -81,7 +81,8 @@ impl Comparison<'_> {
                         let actual = resource_identity(self.right, right_id)?;
                         if self.resources.is_empty()
                             || expected != actual
-                            || latent_core::PHASE3_HOST_ABI_CURRENT
+                            || self
+                                .host_profile
                                 .interface(&expected.0)
                                 .is_none_or(|profile| {
                                     !profile.resource_types().contains(&expected.1)
