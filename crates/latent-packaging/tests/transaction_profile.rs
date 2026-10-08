@@ -100,7 +100,7 @@ fn transaction_profile_keeps_wit_component_and_resource_checks_authoritative() {
                     .iter_mut()
                     .find(|layer| layer.path == "wit/service.wit")
                     .unwrap()
-                    .bytes = b"package foreign:surface@1.0.0; world different {}".to_vec()
+                    .bytes = b"package foreign:surface@1.0.0; world different {}".to_vec();
             }
         }
         assert!(build_package(invalid, PackagingLimits::default()).is_err());
