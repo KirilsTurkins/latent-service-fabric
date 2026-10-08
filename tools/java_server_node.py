@@ -30,6 +30,47 @@ IDLE_OWNERS = {
 }
 
 
+class ObservedRouteClient(RouteClient):
+    """Retain only a bounded, non-sensitive summary of a rejected route delete."""
+
+    def __init__(self, *args, evidence: Path, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.evidence = evidence
+
+    def call(self, *arguments, **kwargs):
+        result = super().call(*arguments, **kwargs)  # One request; never retry a mutation.
+        if arguments[:2] == ("trigger", "delete") and result.get("category") != "success":
+            error = result.get("error")
+            data = result.get("data")
+            declared = data.get("declaredError") if isinstance(data, dict) else None
+            code = error.get("code") if isinstance(error, dict) else None
+            if code is None and isinstance(declared, dict):
+                code = declared.get("code")
+            if not (isinstance(code, str) and 1 <= len(code) <= 64 and code.isascii()
+                    and all(character.islower() or character.isdigit() or character == "-" for character in code)):
+                code = None
+
+            def fence(flag):
+                if flag not in arguments:
+                    return None
+                offset = arguments.index(flag) + 1
+                value = str(arguments[offset]) if offset < len(arguments) else ""
+                return value if value.isascii() and value.isdecimal() and len(value) <= 20 else None
+
+            category = result.get("category")
+            summary = {"schemaVersion": "lsf.java.server.route-rejection.v1", "command": "trigger delete",
+                "category": category if category in {"local-error", "declared-error", "platform-failure",
+                    "transport-failure", "not-found", "interrupted"} else "unrecognized",
+                "errorCode": code, "outcomeKnown": result.get("outcomeKnown") is True,
+                "requestDispatched": result.get("requestDispatched") is True,
+                "expectedGeneration": fence("--expected-generation"),
+                "expectedStateVersion": fence("--expected-state-version")}
+            require(len(json.dumps(summary, separators=(",", ":")).encode()) <= 8192,
+                    "java-server-route-rejection-summary-limit")
+            write_json(self.evidence / "route-delete-rejection.json", summary)
+        return result
+
+
 def runtime_config(settings: dict, service: str) -> None:
     settings["providers"] = {"formatVersion": 1, "bindings": []}
     for name, (capability, _profile, _operation, _kind) in {**profiles("java"), "context": CONTEXT}.items():
@@ -219,7 +260,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             declaration = read_file(build / "server-source.json")
             profile = read_file(build / "server-profile.json")
             source = read_file(build / "source-inputs.json", 4 * 1024 * 1024)
-            route_cli = RouteClient(binary, client.config, root / "routes", deadline=client.deadline)
+            route_cli = ObservedRouteClient(binary, client.config, root / "routes",
+                deadline=client.deadline, evidence=evidence)
             selected = server_routes.observed_pin(route_cli, "examples", deployed["name"], record["componentDigest"])
             mounts = {"schemaVersion": server_source.CONFIGURATION, "profileDigest": digest(profile), "mounts": [{
                 "endpoint": "server", "name": "java-server", "scheme": scheme, "host": "java.server.test", "path": "/",
