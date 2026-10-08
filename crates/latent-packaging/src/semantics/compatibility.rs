@@ -36,7 +36,7 @@ pub fn compare_packages(
     {
         analysis.issue(Level::Unsupported, Code::UnsupportedPackage, &[]);
     } else {
-        let result = compare_inner(previous, candidate, limits, &mut analysis);
+        let result = compare_inner(previous, candidate, &limits, &mut analysis);
         match result {
             Err(error) if error.code == PlatformErrorCode::ResourceExhausted => {
                 analysis.exhausted();
@@ -71,7 +71,7 @@ fn lock(bundle: &PackageBundle) -> Result<WitLock, PlatformError> {
 fn preflight(
     bundle: &PackageBundle,
     lock: &WitLock,
-    limits: PackageComparisonLimits,
+    limits: &PackageComparisonLimits,
     total_bytes: &mut usize,
     total_packages: &mut usize,
     a: &mut Analysis,
@@ -125,7 +125,7 @@ fn resolved(
 fn compare_inner(
     old: &PackageBundle,
     new: &PackageBundle,
-    limits: PackageComparisonLimits,
+    limits: &PackageComparisonLimits,
     a: &mut Analysis,
 ) -> Result<(), PlatformError> {
     let old_lock = lock(old)?;

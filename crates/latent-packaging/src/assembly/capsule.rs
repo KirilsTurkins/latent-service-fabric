@@ -18,7 +18,7 @@ use crate::{CheckedSurface, LayerInput, PackagingLimits};
 pub(super) fn canonicalize(
     config: &PackageConfig,
     layers: &mut [LayerInput],
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<(), PlatformError> {
     let manifest_index = role_index(layers, LayerRole::CapsuleManifest)?;
     let contracts_index = role_index(layers, LayerRole::Contracts)?;
@@ -51,7 +51,7 @@ fn role_index(layers: &[LayerInput], role: LayerRole) -> Result<usize, PlatformE
 pub(crate) fn inspect_capsule(
     config: &PackageConfig,
     blobs: &[(String, Vec<u8>)],
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<CheckedSurface, PlatformError> {
     let content = |role| -> Result<&[u8], PlatformError> {
         let index = config
@@ -136,7 +136,7 @@ fn host_profile(
     Ok(latent_core::PHASE4_HOST_ABI_V1)
 }
 
-fn manifest_codec(limits: PackagingLimits) -> JsonManifestCodec {
+fn manifest_codec(limits: &PackagingLimits) -> JsonManifestCodec {
     JsonManifestCodec::new(ManifestLimits {
         max_document_bytes: limits.package.max_document_bytes,
         max_nesting_depth: limits.package.max_depth,
@@ -146,7 +146,7 @@ fn manifest_codec(limits: PackagingLimits) -> JsonManifestCodec {
     })
 }
 
-fn contract_limits(limits: PackagingLimits) -> ContractMetadataLimits {
+fn contract_limits(limits: &PackagingLimits) -> ContractMetadataLimits {
     ContractMetadataLimits {
         max_document_bytes: limits.package.max_document_bytes,
         max_nodes: limits.package.max_nodes,
