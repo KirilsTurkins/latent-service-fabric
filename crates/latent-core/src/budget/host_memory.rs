@@ -150,12 +150,15 @@ mod tests {
         let mut owner = budget.reserve_host_memory(250).unwrap();
         owner.confirm();
         owner.confirm();
+        assert_eq!(budget.outstanding_reservations(), 1);
         budget.observe_peak_memory(600).unwrap();
         let terminal = budget.finalize_at(None, Instant::now());
+        assert!(terminal.violation().is_none());
         assert_eq!(terminal.consumption().peak_memory_bytes, 850);
         assert_eq!(budget.host_memory_bytes(), 250);
         assert!(budget.reserve_host_memory(1).is_err());
         drop(owner);
+        assert_eq!(budget.outstanding_reservations(), 0);
         assert_eq!(budget.host_memory_bytes(), 0);
         assert_eq!(budget.finalize_at(None, Instant::now()), terminal);
     }

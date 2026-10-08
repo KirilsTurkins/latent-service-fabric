@@ -9,7 +9,7 @@ import shutil
 
 from tools.build_observation import file_identity
 from tools.go_guest.runtime import overlay
-from tools.go_guest.sdk import install
+from tools.go_guest.sdk import export_declarations, install
 from tools.rust_capsule_project import digest, inventory, read_file, snapshot, write_json
 
 
@@ -155,7 +155,7 @@ class Compiler:
                     raise ValueError("Go export stub does not match the authoritative WIT")
                 # This is a generated stub in this fresh compiler-owned output,
                 # never a user source or shared module cache.
-                stub.unlink()
+                stub.write_text(export_declarations(stub.read_text()), encoding="utf-8")
                 replaced.add(destination.name)
             target = destination / Path(name).name
             if target.exists():

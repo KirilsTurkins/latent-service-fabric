@@ -10,8 +10,7 @@ mod public_error;
 mod state_management;
 pub use state_management::{
     StateManagementAdmission, StateManagementBackend, StateManagementBinding,
-    StateManagementRecoveryAdmission, StateManagementRecoveryBinding, StateManagementReservation,
-    StateManagementServices,
+    StateManagementRecoveryAdmission, StateManagementReservation, StateManagementServices,
 };
 #[cfg(test)]
 mod tests;
