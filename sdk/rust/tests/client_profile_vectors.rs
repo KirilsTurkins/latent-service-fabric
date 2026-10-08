@@ -4864,6 +4864,133 @@ fn shared_profile_vectors() {
             "target-inspection-future-states-remain-descriptive.live_grants_checked"
         );
     }
+    {
+        let value = InspectActivationTreeResponse{schema_version: 1_u32, nodes: vec![ActivationTreeNode{activation_id: "original-command".into(), root_activation_id: "original-command".into(), phase: "running".into(), last_updated_unix_millis: 0_u64, principal_kind: "user".into(), granted_budget: Some(ResourceBudget{cpu_fuel: 0_u64, memory_bytes: 0_u64, child_calls: 0_u32, outbound_requests: 0_u32, state_read_bytes: 0_u64, state_write_bytes: 18_446_744_073_709_551_615_u64, blob_read_bytes: 0_u64, blob_write_bytes: 0_u64, log_bytes: 0_u64, effect_count: 2_u32, ..Default::default()}), diagnostic_is_terminal: false, target_service: "examples/aggregate".into(), received_at_unix_millis: 1_000_u64, transaction_staging: Some(TransactionStagingWitness{schema_version: 1_u32, activation_serial: 18_446_744_073_709_551_615_u64, command_id: "1111111111111111111111111111111111111111111111111111111111111111".into(), attempt_id: "2222222222222222222222222222222222222222222222222222222222222222".into(), transaction_id: "3333333333333333333333333333333333333333333333333333333333333333".into(), publication_id: "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444".into(), staged_mutations: 2_u32, captured_intents: 2_u32, state_write_bytes: 18_446_744_073_709_551_615_u64, observed_at_unix_millis: 18_446_744_073_709_551_615_u64}), ..Default::default()}], page: Some(PageResponse{..Default::default()}), history_available: true, cursor_expired: false, retained_history_only: true};
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "activation-tree-original-captured-intent-witness.schema_version"
+        );
+        assert_eq!(
+            value.nodes.len(),
+            1,
+            "activation-tree-original-captured-intent-witness.nodes.count"
+        );
+        assert_eq!(
+            value.nodes[0].activation_id, "original-command",
+            "activation-tree-original-captured-intent-witness.nodes.0.activation_id"
+        );
+        assert!(value.nodes[0].parent_activation_id.is_none(), "activation-tree-original-captured-intent-witness.nodes.0.parent_activation_id.presence");
+        assert_eq!(
+            value.nodes[0].root_activation_id, "original-command",
+            "activation-tree-original-captured-intent-witness.nodes.0.root_activation_id"
+        );
+        assert_eq!(
+            value.nodes[0].phase, "running",
+            "activation-tree-original-captured-intent-witness.nodes.0.phase"
+        );
+        assert!(
+            value.nodes[0].terminal_state.is_none(),
+            "activation-tree-original-captured-intent-witness.nodes.0.terminal_state.presence"
+        );
+        assert_eq!(
+            value.nodes[0].last_updated_unix_millis, 0_u64,
+            "activation-tree-original-captured-intent-witness.nodes.0.last_updated_unix_millis"
+        );
+        assert!(
+            value.nodes[0].diagnostic.is_none(),
+            "activation-tree-original-captured-intent-witness.nodes.0.diagnostic.presence"
+        );
+        assert_eq!(
+            value.nodes[0].principal_kind, "user",
+            "activation-tree-original-captured-intent-witness.nodes.0.principal_kind"
+        );
+        assert!(
+            value.nodes[0].caller_service.is_none(),
+            "activation-tree-original-captured-intent-witness.nodes.0.caller_service.presence"
+        );
+        assert!(
+            value.nodes[0].granted_budget.is_some(),
+            "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.presence"
+        );
+        assert_eq!(
+            value.nodes[0].granted_budget.as_ref().unwrap().cpu_fuel,
+            0_u64,
+            "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.cpu_fuel"
+        );
+        assert_eq!(
+            value.nodes[0].granted_budget.as_ref().unwrap().memory_bytes,
+            0_u64,
+            "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.memory_bytes"
+        );
+        assert_eq!(
+            value.nodes[0].granted_budget.as_ref().unwrap().child_calls,
+            0_u32,
+            "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.child_calls"
+        );
+        assert_eq!(value.nodes[0].granted_budget.as_ref().unwrap().outbound_requests, 0_u32, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.outbound_requests");
+        assert_eq!(value.nodes[0].granted_budget.as_ref().unwrap().state_read_bytes, 0_u64, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_read_bytes");
+        assert_eq!(value.nodes[0].granted_budget.as_ref().unwrap().state_write_bytes, 18_446_744_073_709_551_615_u64, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_write_bytes");
+        assert_eq!(value.nodes[0].granted_budget.as_ref().unwrap().blob_read_bytes, 0_u64, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_read_bytes");
+        assert_eq!(value.nodes[0].granted_budget.as_ref().unwrap().blob_write_bytes, 0_u64, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_write_bytes");
+        assert_eq!(
+            value.nodes[0].granted_budget.as_ref().unwrap().log_bytes,
+            0_u64,
+            "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.log_bytes"
+        );
+        assert_eq!(
+            value.nodes[0].granted_budget.as_ref().unwrap().effect_count,
+            2_u32,
+            "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.effect_count"
+        );
+        assert!(value.nodes[0].granted_budget.as_ref().unwrap().wall_time_limit_millis.is_none(), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.wall_time_limit_millis.presence");
+        assert!(value.nodes[0].effective_deadline_unix_millis.is_none(), "activation-tree-original-captured-intent-witness.nodes.0.effective_deadline_unix_millis.presence");
+        assert!(
+            !value.nodes[0].diagnostic_is_terminal,
+            "activation-tree-original-captured-intent-witness.nodes.0.diagnostic_is_terminal"
+        );
+        assert_eq!(
+            value.nodes[0].target_service, "examples/aggregate",
+            "activation-tree-original-captured-intent-witness.nodes.0.target_service"
+        );
+        assert_eq!(
+            value.nodes[0].received_at_unix_millis, 1_000_u64,
+            "activation-tree-original-captured-intent-witness.nodes.0.received_at_unix_millis"
+        );
+        assert!(
+            value.nodes[0].transaction_staging.is_some(),
+            "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.presence"
+        );
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().schema_version, 1_u32, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.schema_version");
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().activation_serial, 18_446_744_073_709_551_615_u64, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.activation_serial");
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().command_id, "1111111111111111111111111111111111111111111111111111111111111111", "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.command_id");
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().attempt_id, "2222222222222222222222222222222222222222222222222222222222222222", "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.attempt_id");
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().transaction_id, "3333333333333333333333333333333333333333333333333333333333333333", "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.transaction_id");
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().publication_id, "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444", "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.publication_id");
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().staged_mutations, 2_u32, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.staged_mutations");
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().captured_intents, 2_u32, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.captured_intents");
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().state_write_bytes, 18_446_744_073_709_551_615_u64, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.state_write_bytes");
+        assert_eq!(value.nodes[0].transaction_staging.as_ref().unwrap().observed_at_unix_millis, 18_446_744_073_709_551_615_u64, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.observed_at_unix_millis");
+        assert!(
+            value.page.is_some(),
+            "activation-tree-original-captured-intent-witness.page.presence"
+        );
+        assert!(
+            value.page.as_ref().unwrap().next_page_token.is_none(),
+            "activation-tree-original-captured-intent-witness.page.next_page_token.presence"
+        );
+        assert!(
+            value.history_available,
+            "activation-tree-original-captured-intent-witness.history_available"
+        );
+        assert!(
+            !value.cursor_expired,
+            "activation-tree-original-captured-intent-witness.cursor_expired"
+        );
+        assert!(
+            value.retained_history_only,
+            "activation-tree-original-captured-intent-witness.retained_history_only"
+        );
+    }
     assert!(parse_u64_decimal("0").is_some(), "uint64 decimal");
     assert_eq!(
         parse_u64_decimal("0").unwrap().to_string(),
