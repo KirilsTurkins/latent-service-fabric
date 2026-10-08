@@ -1994,9 +1994,9 @@
       ],
       "prerequisites": [
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
         "proc-vmhwm",
-        "real-writable-filesystem"
+        "real-writable-filesystem",
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -3146,6 +3146,7 @@
         "journal::tests::tree::forged_lineage_and_cross_tenant_parent_reject_before_registration",
         "journal::tests::tree::retention_removes_index_entries_and_explains_expired_anchor_without_certifying_absence",
         "journal::tests::tree::root_discovery_is_scoped_bounded_filtered_and_keeps_one_serial_horizon",
+        "journal::tests::tree::target_service_projection_preserves_identity_and_original_identifier_and_page_limits",
         "journal::tests::unowned_append_is_rejected_without_changing_a_live_history",
         "transaction_runtime::factory::completion::tests::refused_completion_binding_preserves_exact_denial_consumption_and_no_publication",
         "transaction_runtime::factory::completion::tests::successful_completion_binding_publishes_the_original_observation_once",
@@ -3176,7 +3177,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 132,
+      "minimumCases": 133,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -3214,6 +3215,7 @@
         "deadline_abort::queued_transport_expiry_reclaims_only_its_owned_waiter",
         "deadline_abort::transport_expiry_before_first_poll_has_deadline_status_without_admission",
         "identity::assigns_absent_identity_and_preserves_explicit_correlation_without_local_ancestry",
+        "identity::assigns_absent_identity_and_rejects_untrusted_ancestry",
         "identity::caller_id_is_available_before_poll_and_foreign_status_cancel_reveal_nothing",
         "identity::duplicate_ids_and_bounded_terminal_eviction_never_replace_an_active_invocation",
         "identity::effective_ids_drive_deterministic_selection_and_catalog_state_stays_pinned",
@@ -3266,7 +3268,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 65,
+      "minimumCases": 66,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -7167,10 +7169,10 @@
         "linux-x86_64"
       ],
       "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
         "Linux x86_64 unprivileged child and kernel sandbox support",
-        "Python 3 (aot_sandbox syscall fixture)"
+        "Python 3 (aot_sandbox syscall fixture)",
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -7317,10 +7319,10 @@
         "linux-x86_64"
       ],
       "prerequisites": [
-        "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
         "Linux x86_64 unprivileged child and kernel sandbox support",
-        "Python 3 (aot_sandbox syscall fixture)"
+        "Python 3 (aot_sandbox syscall fixture)",
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -7560,9 +7562,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "compiled NativeAOT and composed .NET probe components in LSF_DOTNET_PROBE; executed by .github/workflows/dotnet-guest.yml"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -8282,9 +8284,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "Linux procfs and loopback provider fixtures",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "Linux procfs and loopback provider fixtures"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -9108,9 +9110,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "Bash and Fish installed for actual offline shell execution",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "Bash and Fish installed for actual offline shell execution"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -9661,9 +9663,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "actual Angular build",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "actual Angular build"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
@@ -9723,9 +9725,9 @@
         "linux-x86_64"
       ],
       "prerequisites": [
+        "actual static-site reference builds and a fresh private fixture root",
         "pinned Rust toolchain",
-        "successful source-matched Cargo artifact inventory",
-        "actual static-site reference builds and a fresh private fixture root"
+        "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
