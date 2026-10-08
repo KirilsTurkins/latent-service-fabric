@@ -109,7 +109,7 @@ pub(super) fn manager(config: &NodeConfig, capacity: &Capacity) -> LocalActivati
             maximum_input_bytes: config.limits.maximum_payload_bytes,
         },
         journal: LocalActivationJournalConfig {
-            maximum_active: capacity.reservations as usize,
+            maximum_active: capacity.tracked_requests,
             maximum_terminal: config.retention.terminal_entries,
             maximum_record_bytes: JOURNAL_RECORD_BYTES,
             maximum_retained_bytes: config.retention.bytes,

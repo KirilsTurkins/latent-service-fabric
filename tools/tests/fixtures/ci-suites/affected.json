@@ -14,7 +14,7 @@
       "paths": [
         "crates/latent-workflows/src/lib.rs"
       ],
-      "profile": "full",
+      "profile": "fast",
       "renderer": false,
       "packages": [
         "latent-core",

@@ -38,8 +38,8 @@ class SnapshotError(RuntimeError):
 # The committed tools tree includes ownership-local CI contracts. Keep a
 # fixed, reviewed file budget shared with the downstream attribution reader;
 # directory, per-file, total-byte and archive-byte budgets remain independent.
-# The Phase 4 source selection measures 35,719,675 bytes in 4,827 files;
-# retain every selected compiler input within a fixed 40 MiB source envelope.
+# Retain every selected compiler input within the fixed 64 MiB source and
+# 72 MiB archive envelopes; all per-file and entry limits remain independent.
 MAX_SOURCE_FILES = 8192
 
 

@@ -322,7 +322,7 @@ impl StateAuthorization {
             &self.state
         };
         let now = Instant::now();
-        if self.budget.deadline().is_expired_at(now) || self.budget.descendant_is_cancelled() {
+        if self.budget.retained_authority_is_cancelled_at(now) {
             return Err(denied());
         }
         // Current data permission also fences already-owned terminal buffers

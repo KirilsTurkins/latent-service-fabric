@@ -166,11 +166,38 @@ impl Harness {
         clock: Arc<Clock>,
         observer: Option<Arc<dyn latent_telemetry::ActivationObserver>>,
     ) -> Self {
+        Self::with_tracking(parallelism, maximum_terminal, clock, observer, 8, 8, 8)
+    }
+
+    pub fn with_transient_tracking() -> Self {
+        Self::with_tracking(2, 8, Arc::new(Clock::default()), None, 3, 1, 4)
+    }
+
+    fn with_tracking(
+        parallelism: u32,
+        maximum_terminal: usize,
+        clock: Arc<Clock>,
+        observer: Option<Arc<dyn latent_telemetry::ActivationObserver>>,
+        reservations: u32,
+        queue_capacity: u32,
+        tracked_requests: usize,
+    ) -> Self {
         let ids = Arc::new(Ids::default());
         let catalog = Arc::new(CatalogSource::default());
         let artifacts = Arc::new(Artifacts::default());
         let backend = Arc::new(Backend::default());
-        let quotas = LocalQuotaProvider::new(model::node_policy(parallelism)).expect("quotas");
+        let mut policy = model::node_policy(parallelism);
+        policy.limits.maximum_concurrent_activations = reservations;
+        policy.limits.maximum_queued_activations = reservations;
+        for tenant in policy.tenants.values_mut() {
+            tenant.limits.maximum_concurrent_activations = reservations;
+            tenant.limits.maximum_queued_activations = reservations;
+        }
+        for class in policy.trust_classes.values_mut() {
+            class.limits.maximum_concurrent_activations = reservations;
+            class.limits.maximum_queued_activations = reservations;
+        }
+        let quotas = LocalQuotaProvider::new(policy).expect("quotas");
         let load = Arc::new(
             NodeLoadState::new(NodeLoadSnapshot {
                 accepting: true,
@@ -186,7 +213,7 @@ impl Harness {
             LocalScheduler::new(
                 LocalSchedulerConfig {
                     node: NodeId("lifecycle-node".to_owned()),
-                    queue_capacity_per_class: BTreeMap::from([(CellClass::Tiny, 8)]),
+                    queue_capacity_per_class: BTreeMap::from([(CellClass::Tiny, queue_capacity)]),
                     starvation_after: Duration::from_secs(1),
                 },
                 quotas.clone(),
@@ -197,7 +224,7 @@ impl Harness {
             LocalActivationManagerConfig {
                 requests: ActivationRequestLimits::default(),
                 journal: LocalActivationJournalConfig {
-                    maximum_active: 8,
+                    maximum_active: tracked_requests,
                     maximum_terminal,
                     maximum_record_bytes: 16 * 1024,
                     maximum_retained_bytes: 1024 * 1024,

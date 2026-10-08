@@ -134,6 +134,14 @@ impl Inner {
             )
             .await?;
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
+        let control = child_control.unwrap_or_else(|| root_control(lifecycle, &transport, &budget));
+        if let Some(permit) = &permit {
+            if budget.profile().supports_descendants() {
+                // Bind the original cancellation owner before transactional
+                // admission or code preparation can inspect retained authority.
+                budget.enable_descendants(permit.delegation_limits(), control.clone())?;
+            }
+        }
         bind_transaction_control(&envelope, lifecycle, &budget)?;
         if lifecycle
             .transaction_admission
@@ -169,11 +177,7 @@ impl Inner {
             self.prepare_ready(&envelope, &token, &budget, &transport)
                 .await?
         };
-        let control = child_control.unwrap_or_else(|| root_control(lifecycle, &transport, &budget));
         let scheduled = if let Some(permit) = permit {
-            if budget.profile().supports_descendants() {
-                budget.enable_descendants(permit.delegation_limits(), control.clone())?;
-            }
             stage(
                 self.dependencies
                     .scheduler

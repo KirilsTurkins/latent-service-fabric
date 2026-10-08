@@ -103,6 +103,10 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         constraints = SCHEMAS["capability-policy"]["$defs"]["rule"]["allOf"]
         self.assertEqual({v["if"]["properties"]["capability"]["const"]:
                           set(v["then"]["properties"]["operations"]["items"]["enum"]) for v in constraints}, expected)
+        bindings = SCHEMAS["capability-provider-binding"]["allOf"]
+        self.assertEqual({v["if"]["properties"]["capability"]["const"]:
+                          set(v["then"]["properties"]["restriction"]["properties"]["operations"]["items"]["enum"])
+                          for v in bindings}, expected)
 
     def test_state_scopes_require_explicit_entity_and_bounded_exact_policy_tuple(self):
         scope = {"namespace": "orders", "incarnation": 1, "entity": None,

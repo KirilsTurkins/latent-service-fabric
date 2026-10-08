@@ -43,6 +43,28 @@ def _exports(metadata: dict, names: list[str]):
     return result
 
 
+def _imports(metadata: dict, surface: dict) -> list[str]:
+    # The independent compiler surface lists callable interfaces. Nominal WIT
+    # type owners are declared in the original signed contract metadata, and
+    # the runtime's validated typeImports projection observes those same names.
+    # Read declarations from those original bytes, never from the observation.
+    result = set(surface["imports"])
+    exported = set(surface["exports"])
+    for name in surface["exports"]:
+        declarations = [row for row in metadata["contracts"] if row["id"] == name]
+        require(len(declarations) == 1, "composition-probe-original-contract-required")
+        dependencies = declarations[0]["dependencies"]
+        require(isinstance(dependencies, list) and len(dependencies) <= 64
+                and all(isinstance(dependency, str) for dependency in dependencies)
+                and len(set(dependencies)) == len(dependencies),
+                "composition-probe-original-type-dependencies")
+        for dependency in dependencies:
+            preflight.contract(dependency)
+        result.update(dependency for dependency in dependencies if dependency not in exported)
+    require(len(result) <= 64, "composition-probe-original-import-bound")
+    return sorted(result)
+
+
 def java_component(package: Path, build: Path, target: dict, output: Path, identifier: str) -> dict:
     """Freeze a declaration from one independently built, already signed package.
 
@@ -73,12 +95,14 @@ def java_component(package: Path, build: Path, target: dict, output: Path, ident
             "composition-probe-build-and-original-package-mismatch")
     budget = {name: None if value is None else str(value)
               for name, value in capsule["execution"]["limits"].items()}
+    exports = _exports(metadata, surface["exports"])
+    imports = _imports(metadata, surface)
     selected = {"id": identifier, "packageDigest": digest(descriptor),
                 "componentDigest": component_digest, "releaseDigest": component_digest,
                 "contractMetadataDigest": metadata_digest, "language": "java",
                 "witShape": "nested-values-v1", "publicationKind": "capsule",
-                "target": target, "imports": surface["imports"],
-                "exports": _exports(metadata, surface["exports"]), "budget": budget,
+                "target": target, "imports": imports,
+                "exports": exports, "budget": budget,
                 "componentPath": identifier + "/component.wasm",
                 "manifestPath": identifier + "/capsule.json", "manifestDigest": manifest_digest,
                 "metadataPath": identifier + "/contracts.json"}

@@ -197,7 +197,10 @@
     "latent-angular-renderer-adapter"
   ],
   "narrowPackages": [
-    "latent-effects"
+    "latent-effects",
+    "latent-commit",
+    "latent-state",
+    "latent-workflows"
   ],
   "processContracts": {
     "angular-renderer": {
@@ -1961,7 +1964,8 @@
         "deployments::tests::versioned::versioned_apply_compares_caller_preconditions_and_returns_normalized_committed_state",
         "deployments::tests::weighting_is_deterministic_order_independent_and_restart_stable",
         "http_routes::tests::exact_publication_selector_survives_manifest_codec_and_canonical_matching",
-        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny"
+        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny",
+        "deployments::tests::bindings::rejections::absent_deployment_grant_retains_scoped_producer_reason_and_recovers"
       ],
       "expectedIgnored": [
         "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set"
@@ -1972,7 +1976,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 252,
+      "minimumCases": 253,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
@@ -2141,14 +2145,16 @@
         "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up",
         "transaction_contract::tests::byte_and_presence_boundaries_are_exact",
         "transaction_contract::tests::caller_and_incarnation_prevent_foreign_replay",
-        "transaction_contract::tests::fingerprint_sorts_but_never_erases_presence_or_stale_edit_inputs"
+        "transaction_contract::tests::fingerprint_sorts_but_never_erases_presence_or_stale_edit_inputs",
+        "budget::descendants::tests::retained_completion_ignores_only_own_terminal_and_never_reopens_execution",
+        "budget::descendants::tests::retained_completion_keeps_original_cancelled_and_terminal_ancestor_fences"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 125,
+      "minimumCases": 127,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -3194,14 +3200,31 @@
         "journal::tests::unowned_append_is_rejected_without_changing_a_live_history",
         "transaction_runtime::command_completion::history::tests::actual_retained_view_allows_business_advance_and_refuses_new_recovery_or_schema",
         "transaction_runtime::staging::tests::competing_trusted_staging_observers_bind_exactly_one_original_slot",
-        "transaction_runtime::staging::tests::staging_observer_binding_refuses_closed_released_and_reused_guest_access"
+        "transaction_runtime::staging::tests::staging_observer_binding_refuses_closed_released_and_reused_guest_access",
+        "activation_runner::diagnostics::tests::codec_metadata_alone_never_classifies_guest_traps",
+        "cancellation::tests::commit_acceptance_keeps_registration_live_and_preserves_actual_disposition",
+        "cancellation::tests::original_commit_acceptance_and_cancellation_have_one_winner",
+        "transaction_runtime::tests::capacity::durable_response_owner_retains_global_slot_after_native_view_and_admission_retire",
+        "transaction_runtime::tests::capacity::frozen_query_and_lost_waiter_retain_original_global_slot_through_real_retirement",
+        "transaction_runtime::tests::capacity::global_close_before_original_commit_cas_discards_business_mutations",
+        "transaction_runtime::tests::history::original_restored_store_refuses_queries_and_pending_before_review",
+        "transaction_runtime::tests::history::real_query_refuses_old_schema_or_recovery_history_without_business_changes",
+        "transaction_runtime::tests::history::real_query_returns_original_history_token_and_enforces_future_minimum",
+        "transaction_runtime::tests::native_admission_persists_pending_before_host_and_success_commits_once",
+        "transaction_runtime::tests::native_declared_rejection_discards_state_and_preserves_exact_result",
+        "transaction_runtime::tests::native_fresh_query_is_read_only_and_creates_no_command_journal",
+        "transaction_runtime::tests::native_incompatible_selected_source_rejects_before_durable_admission",
+        "transaction_runtime::tests::native_manager_completion_hook_commits_once_and_retains_affine_result",
+        "transaction_runtime::tests::native_original_cancellation_before_commit_preserves_pending_without_business_rows",
+        "transaction_runtime::tests::native_policy_revocation_denies_access_without_false_physical_retirement",
+        "journal::tests::tree::mapped_codec_trap_retains_terminal_observation_and_consumption_in_the_tree"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 116,
+      "minimumCases": 133,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -3286,14 +3309,15 @@
         "transport_cleanup::unpolled_and_preparation_stops_do_not_start_or_reconstruct_work",
         "transport_cleanup_failures::backend_refusal_or_panic_keeps_quarantine_even_after_a_driven_disconnect",
         "transport_cleanup_failures::unacknowledged_disconnect_quarantines_after_the_original_grace",
-        "transport_cleanup_pool::transport_handoff_during_pool_disposition_keeps_its_original_owner_and_timer"
+        "transport_cleanup_pool::transport_handoff_during_pool_disposition_keeps_its_original_owner_and_timer",
+        "observations::pre_child_grant_denial_reaches_the_real_root_journal_without_new_owners"
       ],
       "expectedIgnored": [],
       "id": "latent-node.test.activation-lifecycle",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 67,
+      "minimumCases": 68,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -4451,7 +4475,8 @@
         "supply_chain::tests::web_catalog::web_catalog_current_grants_do_not_hide_missing_or_changed_original_content_on_restart",
         "supply_chain::tests::web_catalog::web_catalog_preflight_rejection_and_bad_evidence_leave_no_publication_or_mode_upgrade",
         "supply_chain::tests::web_catalog::web_catalog_reclaims_only_unselected_evidence_and_keeps_the_current_revision_after_restart",
-        "supply_chain::tests::web_catalog::web_catalog_renewal_replaces_only_evidence_and_invalidates_old_use_tokens_after_restart"
+        "supply_chain::tests::web_catalog::web_catalog_renewal_replaces_only_evidence_and_invalidates_old_use_tokens_after_restart",
+        "capability::store::tests::authority::publication::known_policy_denial_does_not_request_positive_publication_authority"
       ],
       "expectedIgnored": [
         "supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture",
@@ -4474,7 +4499,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 125,
+      "minimumCases": 126,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -6956,7 +6981,10 @@
         "values::tests::transactions::transaction_owned_signatures_fit_the_existing_http_preparation_profile",
         "values::tests::transactions::transaction_resources_need_an_explicit_allowlist_and_nested_pages_reject",
         "values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan",
-        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults"
+        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults",
+        "backend::dispatch_tests::accounting_failure_keeps_the_original_observation_and_consumption",
+        "backend::dispatch_tests::result_codec_limit_keeps_only_the_closed_producer_observation",
+        "backend::dispatch_tests::result_codec_untyped_and_invalid_details_stay_unclassified"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -6969,7 +6997,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 352,
+      "minimumCases": 355,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -7185,7 +7213,7 @@
       "kind": "test",
       "listContract": "unsupported",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
+      "minimumCases": 1,
       "mode": "custom",
       "package": "latent-wasmtime",
       "platforms": [
@@ -7204,7 +7232,9 @@
       "sourceSha256": "2715e19a626446efff35a2c03623b2d2f78fa4143eab62422e1f265181b4c83f",
       "successMarker": "AOT sandbox: 12 unprivileged real-entry probes and exact-policy syscall probe passed",
       "target": "aot_sandbox",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
@@ -7352,7 +7382,9 @@
       "sourceSha256": "4c1a85079da0baefb6178caa493f15aed5a528e6cc88808d2e75c56fc91149fb",
       "successMarker": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
       "target": "aot_supervisor",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
@@ -8700,14 +8732,15 @@
         "outcomes::accepted_failure_before_resolution_has_no_fabricated_pin",
         "outcomes::artifact_failure_keeps_pin_and_next_call_reuses_unexecuted_cell",
         "outcomes::immediate_and_retained_outcomes_preserve_categories_and_final_accounting",
-        "outcomes::rpc_receipt_and_execution_keep_one_pinned_catalog_generation"
+        "outcomes::rpc_receipt_and_execution_keep_one_pinned_catalog_generation",
+        "cleanup::transient_tracking_retains_real_quota_refusal_without_guest_or_cleanup_ownership"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.test.invocation-service",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 18,
+      "minimumCases": 19,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -9559,7 +9592,8 @@
         "standalone::transport::tests::shutdown::already_panicked_server_is_joined_without_repolling_its_handle",
         "standalone::transport::tests::shutdown::timed_out_server_is_aborted_and_joined_before_returning_failure",
         "standalone::transport::tests::web_preparation::only_exact_web_control_paths_get_separate_bounded_transport_waits",
-        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication"
+        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication",
+        "config::tests::rejected_request_tracking_charges_one_record_without_growing_execution_limits"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -9622,7 +9656,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 309,
+      "minimumCases": 310,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

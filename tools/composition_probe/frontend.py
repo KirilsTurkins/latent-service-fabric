@@ -24,7 +24,7 @@ class Frontend:
         self.state_root, self.workspace = state_root, workspace
         self.cases = []
         self._verify()
-        self.operator_digest = file_digest(client.executable, 256 * 1024 * 1024,
+        self.operator_digest = file_digest(Path(client.executable), 256 * 1024 * 1024,
             client.cancellation, client.deadline)
 
     def _verify(self):

@@ -16,6 +16,7 @@ import re
 import time
 
 from tools.java_http_composition.context import hops, roots, tree
+from tools.dev_workflow.node_output import PROVIDER_COUNTERS
 from tools.java_http_composition.node import ADAPTER, CHILD_SUBJECT, DOMAIN, MEDIA, TENANT, idle
 from tools.phase2_operator_process import read_json, require, write_json
 from tools.phase3_management_scenario import http_provider
@@ -232,9 +233,20 @@ def verify_shutdown(shutdown: dict) -> dict:
     """Only the original reaped node report proves all common pool counters zero."""
     require(shutdown.get("reaped") is True and shutdown["record"].get("clean") is True,
             "java-provider-node-not-reaped")
-    report = shutdown["record"]["report"]["providers"]
-    counters = ("controlOwners", "connections", "pendingRequests", "runningRequests", "workers", "cleanupJobs",
-        "failedCleanup", "sessions", "handles", "calls", "results", "ioCalls", "ioRetainedBytes")
+    return _pool_shutdown(shutdown["record"]["report"]["providers"])
+
+
+def verify_managed_shutdown(shutdown: dict) -> dict:
+    """Accept the actual shipped dev-down projection without reconstructing it."""
+    require(shutdown.get("state") == "stopped" and shutdown.get("reaped") is True
+            and shutdown.get("cleanShutdown") is True, "java-provider-managed-node-not-reaped")
+    return _pool_shutdown(shutdown.get("providerShutdown", {}))
+
+
+def _pool_shutdown(report: dict) -> dict:
+    extra = ("secretGenerations", "secretReferences") if any(
+        name in report for name in ("secretGenerations", "secretReferences")) else ()
+    counters = (*PROVIDER_COUNTERS, *extra)
     require(report.get("clean") is True and all(type(report.get(name)) is int and report[name] == 0 for name in counters),
             "java-provider-physical-pool-not-retired")
     return {"reaped": True, "clean": True, "counters": {name: report[name] for name in counters}}

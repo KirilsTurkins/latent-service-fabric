@@ -68,6 +68,14 @@ impl TransactionAdmissionControl {
             .bind_commit_gate(authorization.cancellation())
     }
 
+    #[cfg(all(test, unix))]
+    pub(crate) fn for_native_test(
+        registration: &crate::CancellationRegistration,
+        budget: &ActivationBudget,
+    ) -> Self {
+        Self::new(registration.handle(), budget.clone())
+    }
+
     #[must_use]
     pub(crate) fn token(&self) -> crate::CancellationToken {
         self.cancellation.token()
@@ -100,6 +108,10 @@ pub struct TransactionExecution {
     pub(crate) host: Arc<dyn TransactionHost>,
     pub(crate) completion: Arc<dyn TransactionCompletionHook>,
     pub(crate) cancellation: Option<latent_capabilities::namespace::CommitCancellation>,
+    #[cfg(test)]
+    pub(crate) retirement: Option<latent_commit::atomic::AttemptRetirement>,
+    #[cfg(test)]
+    pub(crate) native_host: Option<Arc<crate::transaction_runtime::StateTransactionHost>>,
 }
 impl TransactionExecution {
     pub fn query(
@@ -116,6 +128,10 @@ impl TransactionExecution {
             host,
             completion,
             cancellation: None,
+            #[cfg(test)]
+            retirement: None,
+            #[cfg(test)]
+            native_host: None,
         })
     }
 }

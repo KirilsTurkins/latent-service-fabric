@@ -1,0 +1,32 @@
+Traceback (most recent call last):
+  File "/controller/qualify.py", line 16, in <module>
+    result=qualify(json.loads((root/'inputs.json').read_bytes()),root/'campaign-r1')
+  File "/qualification-work/conductor-5cb1/tools/java_http_composition/packaged.py", line 369, in qualify
+    report["formerProfile"] = _former(frontend, api, former, former_root,
+                              ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        fresh(output / "former-profile"), releases, cancellation, provider_port=provider_port)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/qualification-work/conductor-5cb1/tools/java_http_composition/packaged.py", line 265, in _former
+    schedules = _schedules(frontend, api, workspace, client, releases, output,
+                          {"domain": original}, config, former=True)
+  File "/qualification-work/conductor-5cb1/tools/java_http_composition/packaged.py", line 235, in _schedules
+    schedule, result = frontend.schedule(client, releases, output / ("preflight-" + mode),
+                       ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        snapshots, config, former=former,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        state_root=api.state if mode == "workspace" else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        workspace=workspace if mode == "workspace" else None)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/qualification-work/conductor-5cb1/tools/java_http_composition/preflight.py", line 104, in schedule
+    frontend = Frontend(self.binary, self.binary_identity["sha256"], output, client,
+                        state_root=state_root, workspace=workspace)
+  File "/qualification-work/conductor-5cb1/tools/composition_probe/frontend.py", line 27, in __init__
+    self.operator_digest = file_digest(client.executable, 256 * 1024 * 1024,
+                           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        client.cancellation, client.deadline)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/qualification-work/conductor-5cb1/tools/phase2_operator_process.py", line 137, in file_digest
+    require(path.is_file() and not path.is_symlink(), "identity-file")
+            ^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'is_file'

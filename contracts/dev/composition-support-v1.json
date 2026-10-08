@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.composition.support.v1",
   "inputVersion": "latent.composition.v1",
-  "sourceRevision": "00624a46691cf4373d5e3cafb3e1f960a34ad21e",
+  "sourceRevision": "068988e0d118fd50675d4cece3c76c799eb78830",
   "selectionRule": "first-matching-row-after-closed-input-and-Java-interface-ambiguity-checks",
   "unlistedCombination": "selected-combination-needs-source-matched-owner-evidence",
   "unlistedState": "untested",
@@ -12,27 +12,27 @@
     "java-authoring": {
       "path": "tools/java_guest/model.py",
       "digest": "sha256:9659786c8ae6c021047ede0075980399d3a2cdb773778dbe34b9edaf023bf231",
-      "commit": "2f56a3f5f0b3d30bef6b8793f3bf7034c50ed78d"
+      "commit": "94cd489b692ba31c822baca12776f2deb2d24f9b"
     },
     "host-recognition": {
       "path": "crates/latent-core/src/host_profile.rs",
       "digest": "sha256:29fced4966b8c62dab9fb8ebc595657c69c81c5fd8c163972612fa7491acadca",
-      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
+      "commit": "cbef28330f87de778141017cfedf1faa32bb520a"
     },
     "native-surface": {
       "path": "crates/latent-wasmtime/src/surface.rs",
-      "digest": "sha256:eadbb2be7500f9fed1c809869ea6480f6b0cd236eb068ed88890ab92aea50f9f",
-      "commit": "78d171539dd43d325afe6d461559608d51c1bb7f"
+      "digest": "sha256:f640d411099024bbfab0cea9885c8078b377889b77b6a77860451343661f15e5",
+      "commit": "cbef28330f87de778141017cfedf1faa32bb520a"
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
-      "digest": "sha256:aaf0e24c0030c770f503c8d9e8c719e260d83a2ffb79bde4ea4e84eb54d87546",
-      "commit": "433d0e522dae54cac6c93adf37a694e5bff36a5e"
+      "digest": "sha256:7c81445a46cd2ea90dc0dbacf7dc7c0337a8fe13eb99c3da67d4a87de39b207b",
+      "commit": "cbef28330f87de778141017cfedf1faa32bb520a"
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",
-      "digest": "sha256:6664c2d716c2e85023166b669d7a5171b4036e2263d6821c636a03fdec407388",
-      "commit": "433d0e522dae54cac6c93adf37a694e5bff36a5e"
+      "digest": "sha256:32a8019866d4a856511649f600b2550277911d8eaae0f5897a79e01fd9da21de",
+      "commit": "cbef28330f87de778141017cfedf1faa32bb520a"
     },
     "sealed-web-projection": {
       "path": "crates/latent-artifacts/src/local_repository/web/projection/metadata.rs",
@@ -41,8 +41,8 @@
     },
     "sealed-web-validation": {
       "path": "crates/latent-manifest/src/validation.rs",
-      "digest": "sha256:2eb3a43f7c00de6542c029b3edc3eb918da8a9d542b136dcc8b9a49c3de60136",
-      "commit": "433d0e522dae54cac6c93adf37a694e5bff36a5e"
+      "digest": "sha256:edb83d9bb3b0eb18bcb121f9dadce6d7cbaff30307a473f16a6e8a4361470918",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
     },
     "former-reproduction": {
       "path": "apps/latentd/src/config/development_preparation.rs",
@@ -57,7 +57,7 @@
     "static-capture-owner": {
       "path": "tools/static_site.py",
       "digest": "sha256:27e7d215ffd0205d3b149eae7986f1dc5602510a8c0845b53e7325652391cebc",
-      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
+      "commit": "068988e0d118fd50675d4cece3c76c799eb78830"
     },
     "capture-budget-schema": {
       "path": "schemas/static-site-budget.schema.json",
@@ -66,18 +66,18 @@
     },
     "resource-budget": {
       "path": "crates/latent-core/src/budget.rs",
-      "digest": "sha256:1bda0527604d624f00d42120d1d70dec13bc2ef667eeac444f0478d05d9443c3",
-      "commit": "433d0e522dae54cac6c93adf37a694e5bff36a5e"
+      "digest": "sha256:757867aaca42a8ecad35318a04099d7f89047e31ee33b27daf91841537817499",
+      "commit": "cbef28330f87de778141017cfedf1faa32bb520a"
     },
     "publication-identity": {
       "path": "crates/latent-core/src/publication.rs",
       "digest": "sha256:eb21318b4c58828db5c71636a5243386aa96138289cd9dc7cc32d2e2eee24ac8",
-      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
+      "commit": "068988e0d118fd50675d4cece3c76c799eb78830"
     },
     "revision-identity": {
       "path": "crates/latent-manifest/src/schema.rs",
-      "digest": "sha256:0d273b381aa32409d4b7c51249a86eab1758bd844e0c23b08ab8c810e35ea6f7",
-      "commit": "433d0e522dae54cac6c93adf37a694e5bff36a5e"
+      "digest": "sha256:4872d23d309989eb60dcb4fc1edc9ca7f94a492753d3f29d6aec8209d1795a4e",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
     },
     "static-trigger-owner": {
       "path": "apps/latent/src/management/phase2/projection/trigger.rs",
@@ -86,18 +86,18 @@
     },
     "structural-packaging": {
       "path": "crates/latent-packaging/src/semantics/host.rs",
-      "digest": "sha256:b91764c7b44e286a1d9e8a56ccc6ca5f6be11aa95f3376d6d3aa22058f2fd206",
-      "commit": "433d0e522dae54cac6c93adf37a694e5bff36a5e"
+      "digest": "sha256:da68c0c7186ec6eb2b64587d519870a2e82c2ed22692adf986ff217c8f9313bb",
+      "commit": "1c30a98d70b7dbb89bed52414f75571f7b7b407f"
     },
     "structural-engine-profile": {
       "path": "crates/latent-wasmtime/src/config/profile.rs",
       "digest": "sha256:285124d89006dedbf591a9c96aba882952a6d510b9a2560aee91c935117ecc94",
-      "commit": "351c4c28137cee9cd44a703f214fc55d9c75f03a"
+      "commit": "cbef28330f87de778141017cfedf1faa32bb520a"
     },
     "ready-inspection": {
       "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",
-      "digest": "sha256:e594ee47aa60f440b8b3b687b897fdf5062d542534d79471db080f93d544dd7e",
-      "commit": "433d0e522dae54cac6c93adf37a694e5bff36a5e"
+      "digest": "sha256:2f062d6af24f7dd09d94060c766705d8398cab549c71885db5e51269e7a6094e",
+      "commit": "9c8d836c6ac950c27b2d8add4fbd7e150fd55c7d"
     },
     "browser-response-ownership": {
       "path": "contracts/http/browser-response-ownership-v1.json",
@@ -106,8 +106,8 @@
     },
     "http-ingress-bounds": {
       "path": "crates/latent-ingress/src/http.rs",
-      "digest": "sha256:153593c6ee8c7ec6f756f93c6b8cc3dd48b69f71a71acb64b76190151e98518d",
-      "commit": "433d0e522dae54cac6c93adf37a694e5bff36a5e"
+      "digest": "sha256:6c0511c60c0397abb3b0a43535fe463d9e07b27ef79379222db6fe0f45ccd179",
+      "commit": "e4c754fac57fa9d568637348a0abd7410dd3d182"
     }
   },
   "axes": {

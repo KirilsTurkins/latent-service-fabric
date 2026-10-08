@@ -1,11 +1,15 @@
 //! Activation-scoped native state sessions over the existing protected owner.
+mod admission_time;
 mod authorization;
+pub use admission_time::TransactionAdmissionTime;
 pub mod command_completion;
 mod host;
 mod initialization;
 mod io;
 pub mod query;
 mod staging;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod tests;
 pub use authorization::{IntentPolicyBinding, PolicyCallBinding, StateAuthorization};
 
 use latent_commit::atomic::{
@@ -134,6 +138,7 @@ pub struct StateTransactionHost {
     session: Mutex<Option<OwnedSession>>,
     witness: StoreIoRetirementWitness,
     physical: Mutex<Option<Physical>>,
+    native_retired: AtomicBool,
     acquired: AtomicU8,
     released: AtomicBool,
     guest_closed: AtomicBool,
@@ -193,12 +198,21 @@ impl StateTransactionHost {
             .physical
             .lock()
             .map_err(|_| StateFailure::Unavailable)?
-            .take()
-            .ok_or(StateFailure::HandleClosed)?;
+            .take();
+        let Some(physical) = physical else {
+            // Another cleanup caller can own a still-running retirement.
+            // Only positive completion makes subsequent cleanup idempotent.
+            return if self.native_retired.load(Ordering::Acquire) {
+                Ok(())
+            } else {
+                Err(StateFailure::Unavailable)
+            };
+        };
         physical.operation.retire().await;
         if let Some(work) = physical.work {
             work.retire();
         }
+        self.native_retired.store(true, Ordering::Release);
         Ok(())
     }
 

@@ -107,6 +107,7 @@ impl StateTransactionHost {
             session: Mutex::new(Some(owned)),
             witness,
             physical: Mutex::new(Some(Physical { operation, work })),
+            native_retired: AtomicBool::new(false),
             acquired: AtomicU8::new(0),
             released: AtomicBool::new(false),
             guest_closed: AtomicBool::new(false),

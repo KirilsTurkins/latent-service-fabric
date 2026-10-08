@@ -520,6 +520,8 @@ impl CommandAdmission {
                     .await)
             }
         };
+        #[cfg(test)]
+        let retirement = claim.retirement();
         let completion = Arc::new(CommandCompletion::new(
             self.coordinator.clone(),
             Arc::clone(&host),
@@ -531,9 +533,13 @@ impl CommandAdmission {
             selected.memory,
         ));
         Ok(TransactionAdmission::Execute(TransactionExecution {
+            #[cfg(test)]
+            native_host: Some(Arc::clone(&host)),
             host,
             completion,
             cancellation: Some(selected.execution.cancellation()),
+            #[cfg(test)]
+            retirement: Some(retirement),
         }))
     }
 

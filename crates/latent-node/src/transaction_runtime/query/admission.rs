@@ -279,7 +279,15 @@ impl QueryAdmission {
             }
         }
         let completion = Arc::new(QueryCompletion::new(Arc::clone(&host)));
-        TransactionExecution::query(host, completion)
+        #[cfg(test)]
+        let native_host = Arc::clone(&host);
+        let execution = TransactionExecution::query(host, completion);
+        #[cfg(test)]
+        let execution = execution.map(|mut execution| {
+            execution.native_host = Some(native_host);
+            execution
+        });
+        execution
     }
 }
 

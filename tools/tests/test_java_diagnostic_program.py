@@ -2,8 +2,11 @@
 from copy import deepcopy
 import hashlib
 import json
+import os
 from pathlib import Path
+import sys
 import tempfile
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -286,6 +289,38 @@ class JavaDiagnosticMaterialTests(unittest.TestCase):
 
 
 class JavaDiagnosticReviewTests(unittest.TestCase):
+    def test_prepare_session_captures_store_only_after_reaped_shutdown(self):
+        from contextlib import nullcontext
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary) / "node"; work.mkdir()
+            output = Path(temporary) / "prepare"
+            node = SimpleNamespace(buffers=[bytearray(), bytearray()], close=Mock())
+            client = SimpleNamespace(node=node)
+            order = []
+            def stopped(_node):
+                order.append("reaped")
+                return {"reaped": True}
+            def captured(_work, _deadline, evidence):
+                self.assertEqual(evidence, output)
+                self.assertEqual(order, ["reaped", "verified"])
+                order.append("captured")
+                return {"sha256": "sha256:" + "a" * 64}
+            with patch.object(program, "owned_cancellation", return_value=nullcontext(None)), \
+                 patch.object(program, "deadline", return_value=100), \
+                 patch.object(program, "RecordingClient", return_value=client), \
+                 patch.object(program, "connect", return_value=node), \
+                 patch.object(program, "idle"), patch.object(program, "stop"), \
+                 patch.object(program, "stopped_record", side_effect=stopped), \
+                 patch.object(provider_timeout, "verify_shutdown", side_effect=lambda _row: order.append("verified")), \
+                 patch.object(program, "private_store", side_effect=captured):
+                with program.session(Path("node"), Path("cli"), work, Path("config"), output,
+                                     {"original": True}, ordinal=1) as (_client, _node, physical):
+                    self.assertFalse(physical["cleanPhysicalRetirement"])
+            self.assertEqual(order, ["reaped", "verified", "captured"])
+            self.assertTrue(physical["cleanPhysicalRetirement"])
+            self.assertEqual(physical["privateStoreCapture"]["sha256"], "sha256:" + "a" * 64)
+
     def test_prepared_execution_creates_each_session_output_once_and_retires_both_owners(self):
         from contextlib import ExitStack
         from unittest.mock import Mock
@@ -296,7 +331,7 @@ class JavaDiagnosticReviewTests(unittest.TestCase):
                 work = output / (name + "-node"); work.mkdir()
                 config = work / "node.json"; write_json(config, {})
                 prepared[name] = {"configFile": "node.json", "configSha256": file_identity(config, 262144),
-                                  "host": "localhost"}
+                                  "host": "localhost", "physical": {"privateStoreCapture": {"source": "stopped"}}}
             candidate = {"clock": {"original": True}, "inputs": {}, "recipientPort": 12345, "cases": prepared}
             client = SimpleNamespace(node=None)
             node = SimpleNamespace(buffers=[bytearray(), bytearray()], close=Mock())
@@ -312,6 +347,7 @@ class JavaDiagnosticReviewTests(unittest.TestCase):
                 stop = stack.enter_context(patch.object(program, "stop"))
                 stack.enter_context(patch.object(program, "idle"))
                 stack.enter_context(patch.object(program, "stopped_record", return_value={"closed": True}))
+                stack.enter_context(patch.object(program, "private_store", return_value={"source": "stopped"}))
                 stack.enter_context(patch.object(provider_timeout, "verify_shutdown"))
                 stack.enter_context(patch.object(provider_timeout, "stop_peer", return_value={"closed": True}))
                 stack.enter_context(patch.object(program, "_admit", return_value=({}, None)))
@@ -330,6 +366,33 @@ class JavaDiagnosticReviewTests(unittest.TestCase):
             self.assertFalse(result["allAcceptanceCriteriaPassed"])
             self.assertFalse(result["packagedDistributionQualified"])
 
+    def test_execution_refuses_private_store_drift_before_node_reconnect(self):
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            work = output / "current-node"; work.mkdir()
+            config = work / "node.json"; write_json(config, {})
+            original = {"sha256": "sha256:" + "a" * 64}
+            candidate = {"clock": {"original": True}, "inputs": {}, "recipientPort": 12345,
+                         "cases": {"current": {"configFile": "node.json",
+                             "configSha256": file_identity(config, 262144),
+                             "physical": {"privateStoreCapture": original}}}}
+            with patch.object(program, "_review", return_value=candidate), \
+                 patch.object(program, "deadline", return_value=100), \
+                 patch.object(program, "inputs", return_value=({"latent": Path("cli"),
+                     "latentd": Path("node")}, {})), \
+                 patch.object(program, "RecordingClient", return_value=SimpleNamespace()), \
+                 patch.object(program, "start_provider", return_value=(object(), 12345)), \
+                 patch.object(program, "close_failed_provider", return_value={"closed": True}), \
+                 patch.object(program, "private_store", return_value={"sha256": "sha256:" + "b" * 64}), \
+                 patch.object(program, "connect") as connect, self.assertRaises(WorkflowError):
+                program.execute(Path("native"), Path("receipt"), Path("builds"), Path("releases"),
+                                output, approved_sha256="0" * 64)
+            connect.assert_not_called()
+            self.assertFalse((output / "execution.json").exists())
+            self.assertEqual(json.loads((output / "EXECUTION-FAILED.json").read_bytes())["reason"],
+                             "java-diagnostic-retained-private-store-drift")
+
     def test_original_boot_and_deadline_cannot_be_extended_or_expired(self):
         original = {"bootId": "original", "deadlineMonotonicNanos": "150000000000"}
         with patch.object(Path, "read_text", return_value="original"), patch.object(program.time, "monotonic", return_value=100):
@@ -340,20 +403,30 @@ class JavaDiagnosticReviewTests(unittest.TestCase):
             with self.assertRaises(WorkflowError): program.deadline(original)
 
     def test_review_refuses_changed_bytes_nonzero_activity_and_unknown_physical_retirement(self):
+        raw_inventory = b'{"data":{"kind":"directory"}}'
+        capture = {"root": "data", "entries": 1, "files": 0, "ownerUid": 1000, "ownerGid": 1000,
+                   "sha256": "sha256:" + hashlib.sha256(raw_inventory).hexdigest(), "bytes": len(raw_inventory)}
         original = {"schemaVersion": program.SCHEMA, "status": "prepared", "applicationCapabilityPolicyMutations": 0,
             "guestInvocations": 0, "providerRequests": 0, "independentPolicyApprovalRequired": True,
-            "cases": {"current": {"physical": {"cleanPhysicalRetirement": True}}}}
+            "cases": {"current": {"physical": {"cleanPhysicalRetirement": True,
+                "privateStoreCapture": capture}}}}
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            evidence = root / "current-prepare"; evidence.mkdir()
+            (evidence / "private-store-capture.json").write_bytes(raw_inventory)
             for index, value in enumerate((original, {**original, "providerRequests": 1},
                 {**original, "providerRequests": False}, {**original, "cases": {}},
-                {**original, "cases": {"current": {"physical": {"cleanPhysicalRetirement": "unknown"}}}})):
+                {**original, "cases": {"current": {"physical": {"cleanPhysicalRetirement": "unknown"}}}},
+                {**original, "cases": {"current": {"physical": {"cleanPhysicalRetirement": True}}}})):
                 path = root / f"candidate-{index}.json"; write_json(path, value)
                 approved = file_identity(path)["sha256"][7:]
                 if index == 0: self.assertEqual(program._review(path, approved), original)
                 else:
                     with self.assertRaises(WorkflowError): program._review(path, approved)
                 with self.assertRaises(WorkflowError): program._review(path, "0" * 64)
+            (evidence / "private-store-capture.json").write_bytes(b"changed")
+            with self.assertRaises(WorkflowError): program._review(root / "candidate-0.json",
+                file_identity(root / "candidate-0.json")["sha256"][7:])
 
     def test_current_policy_absence_is_authoritative_known_and_scoped_before_any_mutation(self):
         row = {"kind": "policy", "id": "original-policy"}
@@ -368,6 +441,52 @@ class JavaDiagnosticReviewTests(unittest.TestCase):
             else:
                 with self.assertRaises(WorkflowError): program._absent_policies(client, {"initial": [row]})
             self.assertEqual(calls, [("policy", "--kind", "policy", "get", "--id", "original-policy")])
+
+
+@unittest.skipUnless(sys.platform == "linux" and hasattr(os, "geteuid"), "Linux descriptor scan")
+class JavaDiagnosticPrivateStoreTests(unittest.TestCase):
+    def test_shared_scan_accepts_coupled_links_and_refuses_external_links_and_symlinks(self):
+        from tools.container_runtime import storage
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); root.chmod(0o700)
+            work = root / "work"; work.mkdir(mode=0o700)
+            data = work / "data"; data.mkdir(mode=0o700)
+            (data / "a").write_bytes(b"retained-original")
+            os.link(data / "a", data / "b")
+            owner = (os.geteuid(), os.getegid())
+            def scan(): return storage.scan(work, time.monotonic() + 5, roots=("data",), owner=owner)
+            observed = scan()
+            self.assertEqual(observed["data/a"]["linkGroup"], observed["data/b"]["linkGroup"])
+            self.assertEqual(observed["data/a"]["links"], 2)
+            os.link(data / "a", root / "outside")
+            with self.assertRaisesRegex(Exception, "snapshot-hardlink-outside-coupled-roots"): scan()
+            (root / "outside").unlink()
+            (data / "link").symlink_to("a")
+            with self.assertRaises(Exception): scan()
+
+    def test_shared_scan_refuses_mutation_and_entry_byte_time_limits(self):
+        from tools.container_runtime import storage
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary) / "work"; work.mkdir(mode=0o700)
+            data = work / "data"; data.mkdir(mode=0o700)
+            source = data / "a"; source.write_bytes(b"two bytes")
+            owner = (os.geteuid(), os.getegid())
+            with patch.object(storage, "MAX_ENTRIES", 1), self.assertRaises(Exception):
+                storage.scan(work, time.monotonic() + 5, roots=("data",), owner=owner)
+            with patch.object(storage, "MAX_BYTES", 1), self.assertRaises(Exception):
+                storage.scan(work, time.monotonic() + 5, roots=("data",), owner=owner)
+            with self.assertRaises(Exception):
+                storage.scan(work, time.monotonic() - 1, roots=("data",), owner=owner)
+            with source.open("rb") as stream, self.assertRaisesRegex(Exception, "file-read-time-bound"):
+                storage.files.digest_fd(stream.fileno(), deadline=time.monotonic() - 1)
+            original = storage.files.digest_fd
+            def mutate(fd, maximum, **options):
+                result = original(fd, maximum, **options)
+                source.write_bytes(b"new bytes")
+                return result
+            with patch.object(storage.files, "digest_fd", side_effect=mutate), \
+                 self.assertRaisesRegex(Exception, "snapshot-source-changed"):
+                storage.scan(work, time.monotonic() + 5, roots=("data",), owner=owner)
 
 
 if __name__ == "__main__":

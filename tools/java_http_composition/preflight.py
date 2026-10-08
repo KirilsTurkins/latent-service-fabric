@@ -37,12 +37,51 @@ class NativeFrontend:
             "publisherAuthenticated": built["publisherAuthenticated"],
             "qualification": built["qualification"]}
 
+    @classmethod
+    def authenticate_release(cls, configuration, output: Path):
+        """Use the original authenticated release without inventing a build receipt.
+
+        The maintained bootstrap verifies the independently approved publisher
+        policy and original Sigstore inventory before extracting executable code.
+        The signed file inventory then binds the four exact embedded contracts.
+        This observation establishes artifact identity; execution is recorded by
+        the separate finite preflight schedule.
+        """
+        from tools.dev_packaged_bootstrap import authenticate, extract
+
+        output = fresh(output)
+        manifest, verification = authenticate(configuration, output, target="linux-x86_64")
+        release = Path(configuration["artifacts"]["linux"])
+        binary = extract(release, manifest, output / "frontend")
+        expected = [{"path": name, "sha256": digest(raw), "size": len(raw)}
+                    for name, raw in preflight_resources()]
+        inventory = {row["path"]: row for row in manifest["files"]}
+        for row in expected:
+            embedded = "bin/_internal/tools/dev_workflow/data/" + row["path"]
+            require(embedded in inventory
+                and inventory[embedded]["sha256"] == row["sha256"]
+                and inventory[embedded]["size"] == row["size"],
+                "java-native-frontend-current-contract-resources-required")
+        selected = cls.__new__(cls)
+        selected.binary, selected.build_receipt = binary, release / "developer-bundle.json"
+        selected.binary_identity = file_identity(binary, 256 * 1024 * 1024)
+        selected.build_identity = file_identity(selected.build_receipt, 262144)
+        selected.observation = {"schemaVersion": "latent.java-http.authenticated-frontend.v1",
+            "sourceCommit": manifest["sourceCommit"], "target": manifest["target"],
+            "frontend": selected.binary_identity, "originalManifest": selected.build_identity,
+            "originalArchive": file_identity(release / manifest["archive"]["name"], 1024 * 1024 * 1024),
+            "preflightResources": expected, "publisherAuthenticated": True,
+            "authentication": verification, "executionQualified": False}
+        write_json(output / "authenticated-frontend.json", selected.observation)
+        return selected
+
     def unchanged(self):
         require(self.binary_identity == file_identity(self.binary, 256 * 1024 * 1024)
             and self.build_identity == file_identity(self.build_receipt, 262144),
             "java-native-frontend-original-build-changed")
 
-    def schedule(self, client, releases, output, snapshots, node_config, *, former=False):
+    def schedule(self, client, releases, output, snapshots, node_config, *, former=False,
+                 state_root=None, workspace=None):
         self.unchanged()
         output = fresh(output)
         settings = read_json(node_config)
@@ -62,8 +101,10 @@ class NativeFrontend:
         original = freeze(releases.parent / "builds", releases, snapshots, output, profile,
                           grant_digest=grant_digest)
         write_json(output / "native-frontend-build-observation.json", self.observation)
-        frontend = Frontend(self.binary, self.binary_identity["sha256"], output, client)
+        frontend = Frontend(self.binary, self.binary_identity["sha256"], output, client,
+                            state_root=state_root, workspace=workspace)
         schedule = Schedule(frontend, original)
-        return schedule, {"frontendBuild": self.observation, "entry": "standalone",
+        return schedule, {"frontendBuild": self.observation,
+            "entry": "workspace" if workspace is not None else "standalone",
             "contractSource": "original-signed-OCI-layers-and-independent-build",
             "cases": frontend.cases, "executionQualified": False}
