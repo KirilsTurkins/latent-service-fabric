@@ -4,6 +4,30 @@ use serde_json::json;
 use super::{status, Command, CommandLine};
 
 #[test]
+fn transaction_host_inspection_requires_exact_configuration_without_serving() {
+    let parsed = CommandLine::try_parse_from([
+        "latentd",
+        "inspect-transaction-hosts",
+        "--config",
+        "node.json",
+    ])
+    .unwrap();
+    let Command::InspectTransactionHosts { config } = parsed.command else {
+        panic!("inspection selected");
+    };
+    assert_eq!(config, std::path::PathBuf::from("node.json"));
+    assert!(CommandLine::try_parse_from(["latentd", "inspect-transaction-hosts"]).is_err());
+    assert!(CommandLine::try_parse_from([
+        "latentd",
+        "inspect-transaction-hosts",
+        "--config",
+        "node.json",
+        "--serve"
+    ])
+    .is_err());
+}
+
+#[test]
 fn check_config_requires_an_explicit_file_and_never_selects_serve() {
     let parsed =
         CommandLine::try_parse_from(["latentd", "check-config", "--config", "node.json"]).unwrap();

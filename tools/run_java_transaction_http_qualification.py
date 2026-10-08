@@ -40,6 +40,8 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/staging.py", "tools/java_transaction_qualification/native_store.py",
     "tools/java_transaction_qualification/diagnostic_inputs.py",
     "tools/java_transaction_qualification/compiler_exports.py",
+    "tools/java_transaction_qualification/current_inputs.py",
+    "tools/java_transaction_qualification/current_campaign.py",
     "tools/java_transaction_qualification/diagnostic_campaign.py",
     "tools/java_transaction_qualification/pending_restore.py",
     "tools/java_transaction_qualification/fixed_environment.py",
@@ -68,6 +70,8 @@ def parse():
                         help="Optional original exact unsigned policy/environment review")
     parser.add_argument("--reviewed-policy-environment-digest",
                         help="Exact sha256 digest of the separately reviewed unsigned document")
+    parser.add_argument("--current-selections", type=Path, help="Pinned independent current six-component selection document")
+    parser.add_argument("--current-selections-digest", help="Exact current material-selection document digest")
     for name in diagnostic_inputs.ARGUMENTS:
         parser.add_argument("--" + name.replace("_", "-"), type=Path if name in
                             diagnostic_inputs.PATH_ARGUMENTS else str,
@@ -87,9 +91,24 @@ def parse():
     recovery_input(args)
     diagnostic_inputs.selection(args)
     staging.mode(args)
+    current_mode(args)
     fixed_environment.load(args)
     fixed_environment.check_tools(args, tool_identity(args))
     return args
+
+
+def current_mode(args):
+    from tools.java_transaction_qualification import current_campaign
+    selected = current_campaign.selection(args)
+    if selected is not None:
+        inputs.require(getattr(args, "prepare_authority_only", False)
+                       or getattr(args, "resume_candidate", None) is not None,
+                       "current-campaign-requires-stopped-candidate-review")
+        inputs.require(all(getattr(args, name, None) is None for name in diagnostic_inputs.ARGUMENTS),
+                       "current-campaign-and-original-diagnostic-inputs-are-exclusive")
+        inputs.require(getattr(args, "recovery_helper", None) is None,
+                       "diagnostic-and-offline-programs-require-separate-bounded-candidates")
+    return selected
 
 
 def recovery_input(args):
@@ -252,7 +271,21 @@ def failure(record, stage, error):
         record["fixedFailureReason"] = reason
 
 
+def package_selected(args, output, diagnostic, deadline):
+    timeout = max(1, int(min(600, deadline - time.monotonic())))
+    if getattr(args, "current_selections", None) is not None:
+        from tools.java_transaction_qualification import current_campaign
+        selected = current_campaign.selections(args.portable, args.current_selections,
+                                                args.current_selections_digest)
+        return packaging.package_current(selected, output, args.contracts_tool, args.signer, timeout=timeout)
+    return packaging.package(args.portable, output, args.contracts_tool, args.signer, timeout=timeout,
+                             diagnostic=None if diagnostic is None else diagnostic.item)
+
+
 def loaded_inputs(args, work):
+    if getattr(args, "current_selections", None) is not None:
+        from tools.java_transaction_qualification import current_campaign
+        return current_campaign.load(args)
     original = inputs.load(args.portable)
     diagnostic = diagnostic_inputs.load(args, work / "diagnostic-input")
     if diagnostic is not None:
@@ -267,6 +300,7 @@ def loaded_inputs(args, work):
 
 
 def input_identity(record, items, diagnostic):
+    record["compilerSourceCommit"] = items[0].compiler_source
     record["originalInputs"] = [item.observation() for item in items if item.name != diagnostic_inputs.NAME]
     if diagnostic is not None:
         record["diagnosticInput"] = diagnostic.observation()
@@ -309,9 +343,7 @@ def run(args):
             client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence)
             try:
                 stage = "package"
-                signed = packaging.package(args.portable, work / "packages", args.contracts_tool, args.signer,
-                    timeout=max(1, int(min(600, deadline - time.monotonic()))),
-                    diagnostic=None if diagnostic is None else diagnostic.item)
+                signed = package_selected(args, work / "packages", diagnostic, deadline)
                 evidence.record("actual-package-fixture", read_json(work / "packages/package-fixture-receipt.json"))
                 stage = "bootstrap"
                 peer, configuration, node = prepare_environment(client, args, work, signed)

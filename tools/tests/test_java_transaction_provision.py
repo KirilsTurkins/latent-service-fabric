@@ -79,6 +79,24 @@ class ProvisioningOracle(unittest.TestCase):
                 changed['data']['auditAcknowledgement'] = None
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual-authorized-namespace-create'):
                 namespace_receipt(changed, state_schema, operator)
+    def test_named_management_recovery_selection_schema_is_closed_bounded_and_grants_no_scope(self):
+        from jsonschema import Draft202012Validator
+        root = Path(__file__).resolve().parents[2]
+        schema = json.loads((root / "schemas/node-state-recovery-selections.schema.json").read_text())
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(schema)
+        valid = [{"selector":"readers", "selection":{"kind":"shared","name":"orders-team"}},
+                 {"selector":"delegated", "selection":{"kind":"delegated","delegation":"review-42","service":"orders-worker"}}]
+        validator.validate(valid)
+        validator.validate([])
+        for invalid in [None, valid * 65,
+                        [{"selector":"readers","selection":{"kind":"shared","name":""}}],
+                        [{"selector":"readers","selection":{"kind":"shared","name":"orders","grant":True}}],
+                        [{"selector":"readers","selection":{"kind":"future"}}],
+                        [{"selector":"readers","selection":{"kind":"delegated","delegation":"x","service":None}}]]:
+            self.assertTrue(list(validator.iter_errors(invalid)))
+        self.assertEqual(schema["maxItems"], 128)
+        self.assertFalse(schema["items"]["additionalProperties"])
 
     def test_prior_runtime_without_transport_principal_observation_refuses(self):
         value, operations, _ = observation()

@@ -18,6 +18,23 @@ pub(super) fn configuration(report: &crate::config::ExecutionProfileReport) -> R
     output(report)
 }
 
+#[cfg(target_os = "linux")]
+pub(super) fn inspection(
+    report: &crate::standalone::state::NativeTransactionHostInspection,
+) -> Result<(), Failure> {
+    let bytes = serde_json::to_vec(report)
+        .map_err(|_| Failure::new("output", PlatformErrorCode::Internal))?;
+    if bytes.len() > 262_144 {
+        return Err(Failure::new("output", PlatformErrorCode::ResourceExhausted));
+    }
+    let mut stdout = io::stdout().lock();
+    stdout
+        .write_all(&bytes)
+        .and_then(|()| stdout.write_all(b"\n"))
+        .and_then(|()| stdout.flush())
+        .map_err(|_| Failure::new("output", PlatformErrorCode::Unavailable))
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg(target_os = "linux")]

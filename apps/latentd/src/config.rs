@@ -20,6 +20,7 @@ mod renderer;
 mod rollouts;
 mod runtime;
 mod security;
+pub(crate) mod state;
 mod supply_chain;
 #[cfg(test)]
 mod tests;
@@ -55,6 +56,10 @@ pub use providers::{
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
 pub use security::ExecutionProfileReport;
+pub use state::{
+    DeferredHttpConfig, RecoverySelectionConfig, RecoverySelectorConfig, StateConfig,
+    StateOperationConfig, TenantLimitsConfig, TenantQuotaConfig,
+};
 pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
@@ -74,6 +79,7 @@ pub struct NodeSettings {
     pub(crate) audit: Option<latent_audit::AuditLimits>,
     pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
+    pub(crate) state: Option<state::StateSettings>,
     pub(crate) providers: Option<Box<ConfiguredProviders>>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) budget_profile: latent_core::BudgetProfile,

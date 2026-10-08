@@ -299,6 +299,10 @@ fn shared_profile_vectors() {
             "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis"
         );
         assert!(
+            value.nodes[0].transaction_staging.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.transaction_staging.presence"
+        );
+        assert!(
             value.page.is_some(),
             "activation-root-real-ingress-identity.page.presence"
         );
@@ -521,6 +525,10 @@ fn shared_profile_vectors() {
         assert_eq!(
             value.nodes[0].received_at_unix_millis, 0_u64,
             "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis"
+        );
+        assert!(
+            value.nodes[0].transaction_staging.is_none(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.transaction_staging.presence"
         );
         assert!(
             value.page.is_some(),

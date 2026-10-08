@@ -49,6 +49,40 @@ releases those locks before committing the receipt. Receipt lookup uses the
 same engine's reserved recovery reader. Accepted worker completion and response
 frames retain the original request owner after the caller disappears.
 
+The standalone state host attaches that existing dispatcher handle before
+publishing readiness and registers `DispatcherService` on the same private
+management transport. Node inspection is available before any signed
+application operation is installed. Empty application bindings still cannot
+resolve namespace selectors. Application command admission still binds the original caller. Named
+management effect-recovery selectors may be explicitly installed in
+`state.recoverySelections`; unknown names remain denied before native admission. Durable audit and trusted node-operator
+identity remain required for dispatcher calls.
+
+The same finite private RPC reserve used for cancellation/status also admits
+exact maintained Phase 4 recovery methods while ordinary command/query RPCs
+retain their slots. Response destruction releases that original reserve;
+unknown method paths and new command/query execution remain ordinary. This
+classification does not authorize a caller or raise the configured RPC,
+control-job, connection, response-byte or deadline limits.
+
+A selector table carries constraints, never a grant. For example, a protected
+node configuration can declare:
+
+```json
+"recoverySelections": [
+  {"selector": "order-readers", "selection": {"kind": "shared", "name": "orders-team"}},
+  {"selector": "orders-worker", "selection": {"kind": "delegated", "delegation": "review-42", "service": "orders-worker"}}
+]
+```
+
+Current state policies must separately authorize the authenticated principal,
+exact tenant/publication, namespace/incarnation, selected recovery kind/scope
+and read/action purpose. Delegated selections retain the authenticated subject, installed delegation
+and target service in their distinct policy tuple. Selector strings, token rotation,
+claims and knowledge of an operation ID cannot replace those checks. Omission
+keeps the table empty, and application command/query admission keeps its
+original-caller behavior.
+
 The CLI requires an explicit node scope:
 
 ```shell
@@ -73,3 +107,49 @@ readiness from the caller having received an error.
 Full authenticated CLI-to-node qualification,
 manual effect reconciliation and restored-store operations remain separate
 requirements of issue #400.
+
+The standalone private transport composes application `InvokeCommand` and
+`Query` with the same installed state runtime and activation manager. A typed
+selector must match the exact resolved admitted operation, namespace,
+incarnation, entity and mode. The normal backend's captured WIT signature
+canonicalizes the input before a command claim. Original expected versions and
+explicit abort retry fences are retained; opaque selectors create no grant.
+The initial direct RPC slice uses original-caller application scopes and a
+64 KiB result representation preflight within the existing native response
+reservation. Management remains on its original backend. `LookupCommand` and
+`LookupCommit` use the installed current authorization publication and the
+existing read-only result admission. They check original command, attempt and
+receipt associations and current original-source/result permission without
+preparing a component, executing a guest or submitting a business mutation.
+Effect history, cancellation and shared/delegated application RPC scopes need
+their separate integration and execution evidence before #387/#400/#401 close.
+
+Result admission selects the existing recovery native partition. Authorized
+result metadata work uses the protected store's recovery read lane; ordinary
+command namespace reads retain their ordinary lane. The response retains its
+original native owner and current delivery fence through physical frame drop.
+Manager activation quotas still apply, so this slice does not promise progress
+when those quotas are exhausted. The native tests prove reserved native capacity
+under ordinary slot pressure and preserve the original finite deadline.
+
+The transaction conversion receives the node's configured admission ceiling
+for state reads, writes and staged effects. The generic invocation endpoint
+continues to reject these dimensions. Both paths keep the normal authenticated
+target, lineage, retained-message bounds and original arrival deadline. Query
+and command RPC payloads are checked before projection against the 64 KiB
+representation limit and the original native response reservation.
+
+`latentd`'s `transaction_rpc_probe` example consumes an already signed,
+installed Java aggregate on a private loopback endpoint. Protected credential
+files identify the actual original caller and a foreign tenant caller. It
+checks missing/foreign identity refusal for both query and command, a fresh
+query, one command with the original absent-key precondition, explicit replay
+of that unchanged command, and a final query at the acknowledged commit view.
+It requires exactly one original durable command/effect and a final count of
+one. It also checks original command and commit lookup, rejects a foreign
+caller and wrong original attempt/receipt associations, and compares retained
+source, commit, fingerprint and payload with the first result. The probe
+provisions no authority and runs no compiler. Its success receipt is produced
+only after those assertions execute; building the example or running source
+checks supplies no signed runtime qualification. Current signed execution of
+these added lookup checks remains outstanding.

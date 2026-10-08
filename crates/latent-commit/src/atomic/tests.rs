@@ -16,7 +16,12 @@ use latent_state::{
 };
 use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
+mod accounted;
 mod captured;
+mod census;
+mod view_tokens;
+
+mod retention_cases;
 
 fn time(now: u64) -> CommandTime {
     CommandTime {
@@ -150,6 +155,9 @@ fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
             }],
         })
         .unwrap();
+    (dir, store, effect_owner())
+}
+fn effect_owner() -> EffectAuthorityOwner {
     let effects = EffectAuthorityOwner::new(4, 4, 0).unwrap();
     effects
         .publish(EffectRule {
@@ -182,7 +190,7 @@ fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
             enabled: true,
         })
         .unwrap();
-    (dir, store, effects)
+    effects
 }
 fn claim(store: &EmbeddedStore, input: AdmissionInput) -> AdmittedCommand {
     let view = store.snapshot().unwrap();
@@ -241,7 +249,7 @@ fn confirm(
         drop(guard);
         Ok(())
     }) {
-        PreparedDisposition::Confirmed { command, .. } => command,
+        PreparedDisposition::Confirmed { command, .. } => *command,
         _ => panic!("expected durable disposition"),
     }
 }
@@ -430,7 +438,9 @@ fn pre_fence_revocation_and_occ_failure_leave_all_business_families_untouched() 
     };
     assert_eq!(reason, AtomicError::PermissionDenied);
     assert!(watch.proven_noncommit().is_err());
+    assert!(!watch.physically_retired());
     drop(command);
+    assert!(watch.physically_retired());
     let retired = watch.proven_noncommit().unwrap();
     drop(view);
     let view = store.snapshot().unwrap();
@@ -955,7 +965,7 @@ fn startup_rejects_uninstalled_formats_key_aliases_and_orphan_results() {
     let result_key = record::result_row_key(committed.id, committed.attempt);
     let result_bytes = view.get(&result_key).unwrap().unwrap();
     let mut wrong_format = result_bytes.clone();
-    wrong_format[4] = 2;
+    wrong_format[4] = 1;
     assert_eq!(
         validate_row(&result_key, &wrong_format),
         Err(StoreError::UnsupportedFormat)
@@ -1006,9 +1016,155 @@ fn receipt_only_replay_and_malformed_record_lengths_remain_explicit() {
     malformed[5..7].copy_from_slice(&u16::MAX.to_le_bytes());
     assert_eq!(CommandRecord::decode(&malformed), Err(AtomicError::Corrupt));
     let mut unsupported = encoded;
-    unsupported[4] = 2;
+    unsupported[4] = 1;
     assert_eq!(
         CommandRecord::decode(&unsupported),
+        Err(AtomicError::UnsupportedFormat)
+    );
+}
+
+#[test]
+fn original_terminal_namespace_version_survives_later_commit_and_reopen() {
+    let (dir, store, effects) = setup();
+    let first_key = input("original-version").key;
+    let first = claim(&store, input("original-version"));
+    assert_eq!(first.record().committed_version(), None);
+    let view = store.snapshot().unwrap();
+    let state = stage(&view);
+    let original_version = state.version();
+    let first = confirm(
+        CompleteEnvelope::success(
+            &view,
+            first,
+            Some(state),
+            vec![],
+            value(b"original"),
+            &effects,
+            time(101),
+        )
+        .unwrap(),
+        &store,
+        &effects,
+    );
+    assert_eq!(first.committed_version(), Some(original_version));
+    drop(view);
+    let second = claim(&store, input("later-version"));
+    let view = store.snapshot().unwrap();
+    let second = confirm(
+        CompleteEnvelope::success(
+            &view,
+            second,
+            None,
+            vec![],
+            value(b"later"),
+            &effects,
+            time(102),
+        )
+        .unwrap(),
+        &store,
+        &effects,
+    );
+    assert!(second.committed_version().unwrap().generation > original_version.generation);
+    drop(view);
+    drop(store);
+    let store = open(&dir.path().join("state.redb"));
+    let view = store.snapshot().unwrap();
+    let (replayed, result) = inspect(&view, &first_key, time(103), permission).unwrap();
+    let namespace = NamespaceRecord::decode(&view.get(&namespace_key()).unwrap().unwrap()).unwrap();
+    assert_eq!(replayed, first);
+    assert_eq!(replayed.committed_version(), Some(original_version));
+    assert_eq!(
+        result.as_ref().unwrap().committed_version(),
+        original_version
+    );
+    assert_eq!(result.as_ref().unwrap().value(), Some(&value(b"original")));
+    assert_eq!(namespace.version, second.committed_version().unwrap());
+    assert_ne!(namespace.version, original_version);
+}
+
+#[test]
+fn terminal_namespace_version_codec_rejects_forgery_absence_and_legacy_format() {
+    let (_dir, store, effects) = setup();
+    let key = input("version-codec").key;
+    let claim = claim(&store, input("version-codec"));
+    let mut pending = claim.record().clone();
+    pending.committed_version = Some(NamespaceVersion {
+        incarnation: 1,
+        generation: 2,
+    });
+    assert_eq!(pending.encode(), Err(AtomicError::Invalid));
+    let view = store.snapshot().unwrap();
+    let original = confirm(
+        CompleteEnvelope::rejection(
+            &view,
+            claim,
+            "business-rejected".into(),
+            value(b"rejected"),
+            time(101),
+        )
+        .unwrap(),
+        &store,
+        &effects,
+    );
+    drop(view);
+    let (replayed, result) =
+        inspect(&store.snapshot().unwrap(), &key, time(102), permission).unwrap();
+    let result = result.unwrap();
+    assert_eq!(
+        result.committed_version(),
+        original.committed_version().unwrap()
+    );
+    for version in [
+        None,
+        Some(NamespaceVersion {
+            incarnation: 1,
+            generation: 0,
+        }),
+        Some(NamespaceVersion {
+            incarnation: 2,
+            generation: 3,
+        }),
+    ] {
+        let mut wrong = replayed.clone();
+        wrong.committed_version = version;
+        assert_eq!(wrong.encode(), Err(AtomicError::Invalid));
+    }
+    let mut maximum = replayed.clone();
+    maximum.committed_version = Some(NamespaceVersion {
+        incarnation: 1,
+        generation: u64::MAX,
+    });
+    let scope = super::record::record_scope(&maximum).unwrap();
+    let mut identity = latent_state::session::version::ViewIdentity::from_token(
+        &scope,
+        &maximum.committed_view_token,
+    )
+    .unwrap();
+    identity.namespace = maximum.committed_version.unwrap();
+    maximum.committed_view_token = identity.token(&scope).unwrap();
+    assert_eq!(
+        CommandRecord::decode(&maximum.encode().unwrap()).unwrap(),
+        maximum
+    );
+    assert_eq!(result.verify(&maximum), Err(AtomicError::Corrupt));
+    let mut bytes = result.encode().unwrap();
+    // Fixed bounded result header: magic, command, attempt, transaction, outcome.
+    let generation = 5 + 32 + 8 + 32 + 1 + 8;
+    bytes[generation..generation + 8].copy_from_slice(&0u64.to_le_bytes());
+    assert_eq!(DurableResult::decode(&bytes), Err(AtomicError::Corrupt));
+    bytes = result.encode().unwrap();
+    bytes[generation..generation + 8].copy_from_slice(&u64::MAX.to_le_bytes());
+    assert_eq!(DurableResult::decode(&bytes), Err(AtomicError::Corrupt));
+    let mut historic = original.encode().unwrap();
+    historic[4] = 1;
+    assert_eq!(
+        CommandRecord::decode(&historic),
+        Err(AtomicError::UnsupportedFormat)
+    );
+    let mut historic = result.encode().unwrap();
+    historic[4] = 1;
+    assert_eq!(
+        DurableResult::decode(&historic),
         Err(AtomicError::UnsupportedFormat)
     );
 }

@@ -570,7 +570,6 @@ impl WasmtimeBackend {
             capabilities,
             transaction,
             runtime.surface.hostcall_fuel,
-            transaction,
         )?);
         // Decoding and every borrowed validation have completed. The Store now
         // owns only the moved context; destroy the actual raw input before call.
@@ -691,7 +690,7 @@ impl WasmtimeBackend {
                 false,
             ));
         }
-        Self::validate_bound_imports(&request.imports, &runtime.surface.binding_imports)?;
+        Self::validate_bound_imports(&request.imports, &runtime.surface.imports)?;
         self.validate_invocation_budget(&request.budget, &runtime.declared_budget)?;
         let function = runtime
             .surface
@@ -717,7 +716,6 @@ impl WasmtimeBackend {
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
         transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
         hostcall_fuel: usize,
-        transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -882,6 +880,25 @@ impl WasmtimeBackend {
 }
 
 impl ExecutionBackend for WasmtimeBackend {
+    fn canonicalize_transaction_input<'a>(
+        &'a self,
+        ready: latent_executor::PreparedReadiness,
+        envelope: &'a latent_activation::ActivationEnvelope,
+        budget: &'a latent_core::ActivationBudget,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            (
+                latent_executor::PreparedReadiness,
+                latent_executor::CanonicalTransactionInput,
+            ),
+            PlatformError,
+        >,
+    > {
+        Box::pin(self.canonicalize_readiness_input(ready, envelope, budget, wait))
+    }
+
     fn prepare_ready_from_repository<'a>(
         &'a self,
         repository: Arc<dyn ArtifactRepository>,

@@ -13,7 +13,7 @@ pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
 pub use operation::ProtectedStoreOperation;
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
-pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
+pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewOpenJob, ProtectedViewResult};
 
 use std::future::Future;
 use std::sync::Arc;
@@ -51,6 +51,21 @@ pub struct ProtectedStoreOwner {
     native_capacity: Arc<native_capacity::NativeBinding>,
 }
 
+/// One original protected startup may initialize a wholly empty new database.
+/// Only its accepted native worker constructs this affine same-engine witness
+/// after exclusive creation of both retained physical owner anchors. It cannot
+/// escape that borrowed worker or certify a reopened, replaced or restored file.
+pub struct FreshStoreInitialization<'a> {
+    store: &'a crate::embedded::EmbeddedStore,
+}
+
+impl FreshStoreInitialization<'_> {
+    #[must_use]
+    pub fn matches_store(&self, store: &crate::embedded::EmbeddedStore) -> bool {
+        std::ptr::eq(self.store, store)
+    }
+}
+
 impl Clone for ProtectedStoreOwner {
     fn clone(&self) -> Self {
         Self {
@@ -63,33 +78,77 @@ impl Clone for ProtectedStoreOwner {
 }
 
 impl ProtectedStoreOwner {
+    /// Trusted one-time dispatcher initialization on the original storage
+    /// writer. Ordinary reopening receives no fresh witness, even when the
+    /// configured create option is true or the dispatch owner row is missing.
+    pub fn with_initializing_store<T: Send + 'static>(
+        &self,
+        retained_payload_bytes: u64,
+        operation: impl FnOnce(
+                &crate::embedded::EmbeddedStore,
+                Option<FreshStoreInitialization<'_>>,
+            ) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit(StoreIoKind::Write, retained_payload_bytes, move |store| {
+                store.with_initialization(operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
     /// Describes this actual selected engine/configuration. The digest binds
     /// native limits and the current format; it is not a qualification receipt.
     #[must_use]
     pub fn inspection_profile(&self) -> (&'static str, [u8; 32]) {
-        use sha2::{Digest, Sha256};
-        let mut digest = Sha256::new();
-        digest.update(b"lsf-protected-redb-4.3.0-immediate-ext4-v1\0");
-        digest.update(b"latent.transaction-store.v1\0");
-        for value in [
-            self.limits.cache_bytes,
-            self.limits.maximum_rows,
-            self.limits.maximum_logical_bytes,
-            self.limits.maximum_key_bytes,
-            self.limits.maximum_value_bytes,
-            self.limits.maximum_batch_rows,
-            self.limits.maximum_read_views,
-        ] {
-            digest.update((value as u64).to_le_bytes());
-        }
-        digest.update(self.limits.maximum_view_age.as_nanos().to_le_bytes());
-        ("protected-redb-immediate-ext4-v1", digest.finalize().into())
+        config::inspection_profile(self.limits)
     }
     /// Compares sealed physical ownership, including clones of this same owner.
     /// Paths, epochs and caller descriptions cannot establish this identity.
     #[must_use]
     pub fn is_same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.failure, &other.failure)
+    }
+
+    /// The trusted node carves status/reconciliation/maintenance capacity before
+    /// ordinary admission. This supplies no result-read or mutation authority.
+    pub fn install_recovery_capacity(
+        &self,
+        reserve: crate::store_io::StoreIoRecoveryCapacity,
+    ) -> Result<(), ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .install_recovery_capacity(reserve)
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    pub fn recovery_snapshot(
+        &self,
+    ) -> Result<crate::store_io::StoreIoRecoverySnapshot, ProtectedStoreError> {
+        self.ready
+            .recovery_snapshot()
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    /// Use only after current purpose-specific policy authorization. A bounded
+    /// read can use the reserved worker while ordinary jobs saturate admission;
+    /// a blocked physical writer remains owned and cannot be bypassed.
+    pub fn with_recovery_store<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_payload_bytes: u64,
+        operation: impl FnOnce(&crate::embedded::EmbeddedStore) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit_recovery(kind, retained_payload_bytes, move |store| {
+                store.with_store(kind, operation)
+            })
+            .map_err(ProtectedStoreError::Io)
     }
 
     /// Trusted namespace/command control operations use this same physical
@@ -195,6 +254,12 @@ impl ProtectedStoreOwner {
     pub fn reap_retired_threads(&self) -> Result<usize, ProtectedStoreError> {
         self.ready
             .reap_retired_threads()
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    pub fn pending_thread_joins(&self) -> Result<usize, ProtectedStoreError> {
+        self.ready
+            .pending_thread_joins()
             .map_err(ProtectedStoreError::Io)
     }
 

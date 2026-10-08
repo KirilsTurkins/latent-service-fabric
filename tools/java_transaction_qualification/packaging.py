@@ -147,6 +147,29 @@ def package(portable: Path, output: Path, contracts_tool: Path, signer: Path, *,
                 and diagnostic.component_digest not in {item.component_digest for item in items},
                 "one-separate-diagnostic-component-required")
         items += (diagnostic,)
+    return _package_items(items, output, contracts_tool, signer, timeout=timeout)
+
+
+def package_current(selections, output: Path, contracts_tool: Path, signer: Path, *, timeout=600) -> Path:
+    """Sign explicit current selections without accepting or rewriting historical r3."""
+    from .current_inputs import CurrentSelection, load_current
+    require(isinstance(selections, tuple) and 0 < len(selections) <= 6,
+            "bounded-explicit-current-java-selection")
+    require(all(isinstance(row, tuple) and len(row) == 2 and isinstance(row[0], Path)
+                and isinstance(row[1], CurrentSelection) for row in selections),
+            "current-java-directory-and-material-selection")
+    items = tuple(load_current(directory, selected) for directory, selected in selections)
+    require(len({item.name for item in items}) == len(items)
+            and len({item.component_digest for item in items}) == len(items)
+            and len({item.compiler_source for item in items}) == 1
+            and {"aggregate", "forbidden-http"} <= {item.name for item in items},
+            "distinct-current-java-original-and-negative-selection")
+    return _package_items(items, output, contracts_tool, signer, timeout=timeout,
+                          compiler_source=items[0].compiler_source)
+
+
+def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_source=None):
+    require(type(timeout) is int and 0 < timeout <= 1800, "original-packaging-deadline")
     output = fresh(output)
     command = Commands(output, output, build_environment(output), deadline_seconds=timeout, command_seconds=min(timeout,600))
     record = {"schemaVersion": "latent.java-transaction-package-fixture.v1", "passed": False,
@@ -161,7 +184,9 @@ def package(portable: Path, output: Path, contracts_tool: Path, signer: Path, *,
             else:
                 prepare(item, output / item.name, contracts_tool, signer, command)
         accepted = [item for item in items if item.name != "forbidden-http"]
-        command.run("fixture-sign-java-inputs", signer, "fixture-sign-java-inputs", output / "signed", *[output / item.name for item in accepted])
+        mode = "fixture-sign-java-inputs" if compiler_source is None else "fixture-sign-current-java-inputs"
+        arguments = [] if compiler_source is None else [compiler_source]
+        command.run(mode, signer, mode, output / "signed", *arguments, *[output / item.name for item in accepted])
         signed = decode(read_file(output / "signed/release-set.json"))
         require(signed["schemaVersion"] == "latent.component.signing-fixture.v1"
                 and signed["trust"] == "ephemeral-native-package-test-only", "explicit-fixture-trust-required")

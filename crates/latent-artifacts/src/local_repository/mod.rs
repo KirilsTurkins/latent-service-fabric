@@ -20,6 +20,7 @@ mod shared_content;
 pub use capacity::PublicationCapacitySnapshot;
 pub use shared_content::{PublicationContentReclamation, PublicationStorageSnapshot};
 mod sha256;
+mod transaction_profile;
 mod web;
 
 #[cfg(test)]
@@ -37,9 +38,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use latent_core::{BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest};
-use latent_manifest::{
-    JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator,
-};
+use latent_manifest::{JsonManifestCodec, ManifestCodec};
 
 use crate::preparation::{repository_stamp, RepositoryEpoch};
 use crate::verification_statistics::{add, VerificationStatistics};
@@ -172,7 +171,6 @@ pub struct DirectoryArtifactRepository {
     config: DirectoryArtifactRepositoryConfig,
     lifecycle_limits: crate::LifecycleLimits,
     codec: JsonManifestCodec,
-    validator: Phase1ManifestValidator,
     index: RwLock<CatalogIndex>,
     pagination_fingerprint: RandomState,
     preparation_epoch: Arc<RepositoryEpoch>,
@@ -306,7 +304,6 @@ impl DirectoryArtifactRepository {
             config,
             lifecycle_limits,
             codec: JsonManifestCodec::default(),
-            validator: Phase1ManifestValidator::new(),
             index: RwLock::new(CatalogIndex::default()),
             pagination_fingerprint: RandomState::new(),
             preparation_epoch: Arc::new(RepositoryEpoch),
@@ -496,9 +493,19 @@ impl DirectoryArtifactRepository {
             .codec
             .decode_capsule(&manifest_bytes)
             .map_err(|_| corrupt("stored capsule manifest is invalid"))?;
-        self.validator
-            .validate_capsule(&manifest)
-            .map_err(|_| corrupt("stored capsule manifest violates Phase 1 rules"))?;
+        let transaction_profile = match (&admission, &self.admission) {
+            (Some(stored), Some(config)) => {
+                stored.transaction_profile(path, &manifest, config.limits)?
+            }
+            _ => false,
+        };
+        transaction_profile::validate_capsule(&manifest, transaction_profile).map_err(|_| {
+            corrupt(if transaction_profile {
+                "stored capsule manifest violates its admitted transaction profile"
+            } else {
+                "stored capsule manifest violates Phase 1 rules"
+            })
+        })?;
         let canonical = self
             .codec
             .encode_capsule(&manifest)
@@ -549,7 +556,8 @@ impl DirectoryArtifactRepository {
                 manifest,
                 contracts,
                 component.digest,
-            ),
+            )
+            .with_transaction_execution_profile(transaction_profile),
             component_bytes: component.bytes,
             completion,
             admission,
@@ -591,17 +599,19 @@ impl DirectoryArtifactRepository {
 
     fn prepare_publication(
         &self,
+        artifact: CapsuleArtifact,
+    ) -> Result<PreparedPublication, PlatformError> {
+        self.prepare_publication_with_transaction_profile(artifact, false)
+    }
+
+    fn prepare_publication_with_transaction_profile(
+        &self,
         mut artifact: CapsuleArtifact,
+        transaction_profile: bool,
     ) -> Result<PreparedPublication, PlatformError> {
         lifecycle::input::check(&artifact, self.config)?;
-        self.validator
-            .validate_capsule(&artifact.manifest)
-            .map_err(|_| {
-                error(
-                    PlatformErrorCode::InvalidArgument,
-                    "capsule manifest validation failed",
-                )
-            })?;
+        transaction_profile::validate_capsule(&artifact.manifest, transaction_profile)
+            .map_err(|_| transaction_profile::publication_error())?;
         let manifest_bytes = self.codec.encode_capsule(&artifact.manifest).map_err(|_| {
             error(
                 PlatformErrorCode::InvalidArgument,

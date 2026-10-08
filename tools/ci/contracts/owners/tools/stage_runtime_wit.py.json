@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reconcile reviewed Java transaction and development source with all existing tests, skip guards, qualification bounds, profile/cache controls and artifact obligations retained; source definitions and fixture setup are independently reviewed.",
+  "reviewReason": "Review current Phase4 and Java source union while retaining every original test, skip, before/baseline, full-profile, cache-freshness, security and retained-artifact requirement; immutable source and merged fixture setup are explicit.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4cd0556eecc99f1a2d06a9220ece2476dba1ab9e586c2872d11da6904e7afaee"
+  "sha256": "a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828"
 }

@@ -190,6 +190,10 @@ def sources(args):
     selected = selection(args)
     if selected is not None:
         result["diagnostic"] = selected
+    from .current_campaign import selection as current_selection
+    current = current_selection(args)
+    if current is not None:
+        result["currentInputSelection"] = current
     if getattr(args, "pending_restore_only", False):
         result["programme"] = "signed-java-unresolved-effect-restore-v3"
     from .fixed_environment import identity

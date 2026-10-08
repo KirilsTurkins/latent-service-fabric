@@ -67,7 +67,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Reconcile reviewed development and Java transaction source; preserve every original test, skip, baseline, profile, cache-freshness and retained-artifact obligation. Only exact source definitions and reviewed merged fixture setup change.",
+  "reviewReason": "Review current Phase4 and Java source union while retaining every original test, skip, before/baseline, full-profile, cache-freshness, security and retained-artifact requirement; immutable source and merged fixture setup are explicit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

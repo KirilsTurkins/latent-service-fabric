@@ -27,11 +27,7 @@ pub(super) fn authenticate(
     if authorization.next().is_some() {
         return Err(unauthenticated());
     }
-    let credential = config
-        .credentials
-        .iter()
-        .find(|value| value.token == token)
-        .ok_or_else(unauthenticated)?;
+    let principal = credential_principal(config, token).ok_or_else(unauthenticated)?;
     let mut timeouts = request.headers().get_all("grpc-timeout").iter();
     let maximum = match request.uri().path() {
         latent_wire::management::WEB_PREPARATION_RPC_PATH => {
@@ -83,7 +79,7 @@ pub(super) fn authenticate(
         .unix_millis()
         .checked_add(millis)
         .ok_or_else(invalid_timeout)?;
-    let mut context = AuthenticatedInvocationContext::new(credential.principal.clone())
+    let mut context = AuthenticatedInvocationContext::new(principal.clone())
         .with_transport_deadline_at(unix, expiry);
     if request.uri().path() == "/latent.invocation.v1.InvocationService/Invoke" {
         if let Some(observer) = clock.deadline_diagnostic_observer() {
@@ -109,6 +105,22 @@ pub(super) fn authenticate(
     }
     request.extensions_mut().insert(context);
     Ok(())
+}
+
+/// The same exact bounded bearer lookup used by native transport admission.
+/// This returns configured identity only; purpose-specific policy is separate.
+pub(in crate::standalone) fn credential_principal<'a>(
+    config: &'a TransportConfig,
+    token: &str,
+) -> Option<&'a latent_core::InvocationPrincipal> {
+    if token.is_empty() || token.len() > 512 {
+        return None;
+    }
+    config
+        .credentials
+        .iter()
+        .find(|credential| credential.token == token)
+        .map(|credential| &credential.principal)
 }
 
 fn parse_timeout(value: &str) -> Result<Duration, Status> {

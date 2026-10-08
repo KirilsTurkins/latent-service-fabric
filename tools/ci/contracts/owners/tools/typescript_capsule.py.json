@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reconcile reviewed Java transaction and development source with all existing tests, skip guards, qualification bounds, profile/cache controls and artifact obligations retained; source definitions and fixture setup are independently reviewed.",
+  "reviewReason": "Review current Phase4 and Java source union while retaining every original test, skip, before/baseline, full-profile, cache-freshness, security and retained-artifact requirement; immutable source and merged fixture setup are explicit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "367d96d80363772a1769daf4c6145f63968760dc07301c558c817c5472086a66"
 }

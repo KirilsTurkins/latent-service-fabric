@@ -1594,6 +1594,7 @@ dependencies = [
  "latent-activation",
  "latent-artifacts",
  "latent-audit",
+ "latent-commit",
  "latent-core",
  "latent-effects",
  "latent-executor",
@@ -1822,6 +1823,7 @@ dependencies = [
 name = "latent-node"
 version = "0.1.0-alpha.5"
 dependencies = [
+ "base64 0.23.1",
  "latent-activation",
  "latent-admission",
  "latent-artifacts",
@@ -1837,6 +1839,7 @@ dependencies = [
  "latent-state",
  "latent-telemetry",
  "sha2 0.11.0",
+ "tempfile",
  "tokio",
 ]
 
@@ -2099,6 +2102,8 @@ dependencies = [
  "latent-protected-files",
  "latent-test-process",
  "redb",
+ "rustix",
+ "serde",
  "serde_json",
  "sha2 0.11.0",
  "tempfile",
@@ -2257,6 +2262,7 @@ dependencies = [
  "latent-core",
  "latent-effects",
  "latent-executor",
+ "latent-ingress",
  "latent-manifest",
  "latent-node",
  "latent-policy",
@@ -2308,6 +2314,7 @@ dependencies = [
  "latent-audit",
  "latent-blobs",
  "latent-capabilities",
+ "latent-commit",
  "latent-control-store",
  "latent-core",
  "latent-effects",

@@ -612,6 +612,14 @@ Engine configuration digests and internal sealed metadata fingerprints retain
 their separate meanings. Live grant checks are explicitly absent; an inspection
 does not grant execution or mutation authority. Public invocation and browser
 error projections retain their existing disclosure rules.
+The additive baseline also includes the three `DispatcherService` management
+methods and their typed request, response, generation, snapshot and operation
+receipt messages, together with the typed audit state and dispatcher targets.
+The 2026-10-03 regeneration used Buf 1.72.0 and retained all field names, numbers,
+types, nested messages, oneof membership, enum values and service signatures
+from both the earlier transaction source and current development. These are
+contract definitions; they do not qualify installed dispatch or transport
+execution.
 `PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
 reconciliation and termination require that complete original plan when calling
 `MutateState`. Receipt recovery preserves the original action, record version,

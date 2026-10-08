@@ -155,10 +155,16 @@ jobs:
           from tools import ci_suite_inventory as registry
           state = classify_paths(['crates/latent-state/src/lib.rs'])
           assert state.profile == 'full' and state.renderer
+          identity = classify_paths(['crates/latent-identity/src/lib.rs'])
+          assert identity.profile == 'full' and identity.renderer
           selection = classify_paths(['crates/latent-workflows/src/lib.rs'])
-          assert selection.profile == 'full'
+          assert selection.profile == 'full' and not selection.renderer
           assert selection.fast_packages
           assert set(selection.fast_packages) < set(registry.load()['fastPackages'])
+          # Production dependency closure remains full; the controlled graph
+          # separately proves the preserved offline fast-profile selection.
+          from tools.tests.test_ci_suite_inventory import qualify_narrow_fixture
+          qualify_narrow_fixture()
           print(selection.outputs()['fast_packages'])
           PYCODE
           )"

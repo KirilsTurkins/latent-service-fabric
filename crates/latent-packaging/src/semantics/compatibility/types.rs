@@ -1,6 +1,6 @@
 use super::{Code, Level, Walker};
 use latent_contracts::Analysis;
-use latent_core::PlatformError;
+use latent_core::{HostAbiProfile, PlatformError, PHASE3_HOST_ABI_CURRENT};
 use wit_parser::{
     Function, FunctionKind, Handle, InterfaceId, Resolve, Type, TypeDefKind, TypeId, TypeOwner,
 };
@@ -10,32 +10,42 @@ pub(super) fn inspect_interface(
     id: InterfaceId,
     a: &mut Analysis,
 ) -> Result<(), PlatformError> {
-    inspect_interface_inner(resolve, id, a, false)
+    inspect_interface_inner(resolve, id, a, false, PHASE3_HOST_ABI_CURRENT)
 }
 pub(super) fn inspect_host_interface(
     resolve: &Resolve,
     id: InterfaceId,
     a: &mut Analysis,
 ) -> Result<(), PlatformError> {
+    inspect_host_interface_for_profile(resolve, id, a, PHASE3_HOST_ABI_CURRENT)
+}
+
+pub(super) fn inspect_host_interface_for_profile(
+    resolve: &Resolve,
+    id: InterfaceId,
+    a: &mut Analysis,
+    profile: HostAbiProfile,
+) -> Result<(), PlatformError> {
     let resources = resolve.id_of(id).is_some_and(|name| {
-        latent_core::PHASE3_HOST_ABI_CURRENT
+        profile
             .interface(&name)
             .is_some_and(|profile| !profile.resource_types().is_empty())
     });
-    inspect_interface_inner(resolve, id, a, resources)
+    inspect_interface_inner(resolve, id, a, resources, profile)
 }
 fn inspect_interface_inner(
     resolve: &Resolve,
     id: InterfaceId,
     a: &mut Analysis,
     resources: bool,
+    profile: HostAbiProfile,
 ) -> Result<(), PlatformError> {
     let interface = &resolve.interfaces[id];
     a.node(1)?;
     for (name, id) in &interface.types {
         a.name(name)?;
         a.edge(1)?;
-        inspect_type(resolve, Type::Id(*id), a, 1, resources)?;
+        inspect_type(resolve, Type::Id(*id), a, 1, resources, profile)?;
     }
     for (name, function) in &interface.functions {
         a.node(1)?;
@@ -49,11 +59,11 @@ fn inspect_interface_inner(
         for parameter in &function.params {
             a.name(&parameter.name)?;
             a.edge(1)?;
-            inspect_type(resolve, parameter.ty, a, 1, resources)?;
+            inspect_type(resolve, parameter.ty, a, 1, resources, profile)?;
         }
         if let Some(result) = function.result {
             a.edge(1)?;
-            inspect_type(resolve, result, a, 1, resources)?;
+            inspect_type(resolve, result, a, 1, resources, profile)?;
         }
     }
     Ok(())
@@ -64,6 +74,7 @@ fn inspect_type(
     a: &mut Analysis,
     depth: usize,
     resources: bool,
+    profile: HostAbiProfile,
 ) -> Result<(), PlatformError> {
     a.node(depth)?;
     let Type::Id(id) = ty else {
@@ -79,13 +90,13 @@ fn inspect_type(
     match &ty.kind {
         TypeDefKind::Type(inner) | TypeDefKind::List(inner) | TypeDefKind::Option(inner) => {
             a.edge(1)?;
-            inspect_type(resolve, *inner, a, depth + 1, resources)?;
+            inspect_type(resolve, *inner, a, depth + 1, resources, profile)?;
         }
         TypeDefKind::Record(record) => {
             for field in &record.fields {
                 a.name(&field.name)?;
                 a.edge(1)?;
-                inspect_type(resolve, field.ty, a, depth + 1, resources)?;
+                inspect_type(resolve, field.ty, a, depth + 1, resources, profile)?;
             }
         }
         TypeDefKind::Variant(variant) => {
@@ -93,7 +104,7 @@ fn inspect_type(
                 a.name(&case.name)?;
                 a.edge(1)?;
                 if let Some(ty) = case.ty {
-                    inspect_type(resolve, ty, a, depth + 1, resources)?;
+                    inspect_type(resolve, ty, a, depth + 1, resources, profile)?;
                 }
             }
         }
@@ -106,19 +117,19 @@ fn inspect_type(
         TypeDefKind::Tuple(tuple) => {
             for ty in &tuple.types {
                 a.edge(1)?;
-                inspect_type(resolve, *ty, a, depth + 1, resources)?;
+                inspect_type(resolve, *ty, a, depth + 1, resources, profile)?;
             }
         }
         TypeDefKind::Result(result) => {
             for ty in [result.ok, result.err].into_iter().flatten() {
                 a.edge(1)?;
-                inspect_type(resolve, ty, a, depth + 1, resources)?;
+                inspect_type(resolve, ty, a, depth + 1, resources, profile)?;
             }
         }
-        TypeDefKind::Resource if resources && resource_allowed(resolve, id, a)? => (),
+        TypeDefKind::Resource if resources && resource_allowed(resolve, id, a, profile)? => (),
         TypeDefKind::Handle(Handle::Own(id) | Handle::Borrow(id)) if resources => {
             a.edge(1)?;
-            inspect_type(resolve, Type::Id(*id), a, depth + 1, resources)?;
+            inspect_type(resolve, Type::Id(*id), a, depth + 1, resources, profile)?;
         }
         _ => a.issue(Level::Unsupported, Code::UnsupportedType, &[]),
     }
@@ -261,10 +272,12 @@ impl Walker<'_, '_> {
     fn resource(&mut self, left: TypeId, right: TypeId) -> Result<bool, PlatformError> {
         let old = &self.left.types[left];
         let new = &self.right.types[right];
-        Ok(resource_allowed(self.left, left, self.analysis)?
-            && resource_allowed(self.right, right, self.analysis)?
-            && old.name == new.name
-            && owner_equal(self.left, old.owner, self.right, new.owner, self.analysis)?)
+        Ok(
+            resource_allowed(self.left, left, self.analysis, self.host_profile)?
+                && resource_allowed(self.right, right, self.analysis, self.host_profile)?
+                && old.name == new.name
+                && owner_equal(self.left, old.owner, self.right, new.owner, self.analysis)?,
+        )
     }
     fn optional(
         &mut self,
@@ -319,6 +332,7 @@ fn resource_allowed(
     resolve: &Resolve,
     id: TypeId,
     a: &mut Analysis,
+    profile: HostAbiProfile,
 ) -> Result<bool, PlatformError> {
     let value = &resolve.types[id];
     let TypeOwner::Interface(interface) = value.owner else {
@@ -332,7 +346,7 @@ fn resource_allowed(
     };
     a.name(name)?;
     a.name(&interface)?;
-    Ok(latent_core::PHASE3_HOST_ABI_CURRENT
+    Ok(profile
         .interface(&interface)
         .is_some_and(|profile| profile.resource_types().contains(&name)))
 }

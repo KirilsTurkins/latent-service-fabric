@@ -20,8 +20,6 @@ struct frame {
     uint8_t bytes[8];
     probe_list_u8_t prefix;
     probe_option_list_u8_t cursor;
-    probe_list_u8_t view_version;
-    probe_option_list_u8_t key_version;
     latent_state_key_value_value_t value;
     latent_state_key_value_result_option_versioned_value_state_error_t read;
     latent_state_key_value_result_void_state_error_t write;
@@ -29,6 +27,8 @@ struct frame {
     latent_state_key_value_result_own_page_state_error_t scan;
     latent_state_key_value_result_option_entry_state_error_t entry;
     latent_state_key_value_page_info_t page_info;
+    probe_list_u8_t view_version;
+    probe_option_list_u8_t key_version;
 };
 static uint8_t key_bytes[] = "aggregate/count";
 static const char media[] = "application/vnd.lsf.aggregate-v1";
@@ -64,10 +64,8 @@ static probe_callback_code_t aggregate_return(struct frame *frame, bool is_error
     if (operation == UPDATE) exports_examples_transactional_aggregate_api_update_return(result);
     else exports_examples_transactional_aggregate_api_query_return(result);
     /* The pinned generator's aggregate result-free skips reused list types. */
-    if (!is_error) {
-        if (result.val.ok.view_version.len) free(result.val.ok.view_version.ptr);
-        if (result.val.ok.key_version.is_some && result.val.ok.key_version.val.len) free(result.val.ok.key_version.val.ptr);
-    }
+    if (!is_error && result.val.ok.view_version.len) free(result.val.ok.view_version.ptr);
+    if (!is_error && result.val.ok.key_version.is_some && result.val.ok.key_version.val.len) free(result.val.ok.key_version.val.ptr);
     return PROBE_CALLBACK_CODE_EXIT;
 }
 static bool decode(struct frame *frame) {
@@ -99,7 +97,6 @@ static probe_callback_code_t pump(struct frame *frame, lsf_async_result_t state)
             if (!decode(frame)) return aggregate_return(frame, true,
                 EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_MALFORMED_STATE);
             if (frame->read.val.ok.is_some) {
-                /* Retain the original key observation across staging; never read a replacement token. */
                 frame->key_version = (probe_option_list_u8_t){true,
                     {frame->read.val.ok.val.version.ptr, frame->read.val.ok.val.version.len}};
                 frame->read.val.ok.val.version = (latent_state_key_value_version_t){0};

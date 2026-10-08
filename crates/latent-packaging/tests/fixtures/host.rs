@@ -103,27 +103,32 @@ impl Encoder<'_> {
         index
     }
 
+    fn resource_type(&mut self, id: TypeId) -> Value {
+        let def = &self.resolve.types[id];
+        let index = self.host.type_count();
+        self.host.export(
+            def.name.as_deref().expect("named fixture resource"),
+            ComponentTypeRef::Type(TypeBounds::SubResource),
+        );
+        let value = Value::Type(index);
+        assert!(self
+            .names
+            .insert(def.name.clone().unwrap(), value)
+            .is_none());
+        self.types.insert(id, value);
+        value
+    }
+
     fn defined(&mut self, id: TypeId) -> Value {
         if let Some(value) = self.types.get(&id) {
             return *value;
         }
         // This encoder only consumes small acyclic fixture sources. Production
         // parser, arena and comparison budgets are independently exercised.
-        let def = &self.resolve.types[id];
-        if matches!(def.kind, TypeDefKind::Resource) {
-            let index = self.host.type_count();
-            self.host.export(
-                def.name.as_deref().expect("named fixture resource"),
-                ComponentTypeRef::Type(TypeBounds::SubResource),
-            );
-            let value = Value::Type(index);
-            assert!(self
-                .names
-                .insert(def.name.clone().unwrap(), value)
-                .is_none());
-            self.types.insert(id, value);
-            return value;
+        if matches!(self.resolve.types[id].kind, TypeDefKind::Resource) {
+            return self.resource_type(id);
         }
+        let def = &self.resolve.types[id];
         let index = match &def.kind {
             TypeDefKind::Handle(handle) => self.handle(handle),
             TypeDefKind::Type(ty) => {

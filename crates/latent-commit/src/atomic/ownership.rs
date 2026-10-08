@@ -28,6 +28,7 @@ impl AttemptState {
         })
     }
 }
+#[derive(Clone)]
 pub struct AttemptRetirement {
     pub(super) state: Arc<AttemptState>,
 }
@@ -66,6 +67,14 @@ impl AdmittedCommand {
     }
 }
 impl AttemptRetirement {
+    /// Positive physical retirement is independent of durable disposition.
+    /// This does not prove abort, noncommit, replay safety or retry permission.
+    #[must_use]
+    pub fn physically_retired(&self) -> bool {
+        self.state.owners.load(Ordering::Acquire) == 0
+            && !self.state.quarantined.load(Ordering::Acquire)
+    }
+
     pub fn proven_noncommit(&self) -> Result<RetiredAttempt, AtomicError> {
         if self.state.owners.load(Ordering::Acquire) != 0
             || self.state.quarantined.load(Ordering::Acquire)

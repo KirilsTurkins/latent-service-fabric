@@ -81,6 +81,7 @@ function rejects(action: () => unknown): void {
     check(value.nodes[0]!.diagnosticIsTerminal == false, "activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal");
     check(value.nodes[0]!.targetService == "examples/java-http-adapter", "activation-root-real-ingress-identity.nodes.0.target_service");
     check(value.nodes[0]!.receivedAtUnixMillis == 18446744073709551615n, "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis");
+    check(!(value.nodes[0]!.transactionStaging !== undefined), "activation-root-real-ingress-identity.nodes.0.transaction_staging.presence");
     check(value.page !== undefined, "activation-root-real-ingress-identity.page.presence");
     check(!(value.page!.nextPageToken !== undefined), "activation-root-real-ingress-identity.page.next_page_token.presence");
     check(value.historyAvailable == true, "activation-root-real-ingress-identity.history_available");
@@ -131,6 +132,7 @@ function rejects(action: () => unknown): void {
     check(value.nodes[0]!.diagnosticIsTerminal == true, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
     check(value.nodes[0]!.targetService == "", "activation-tree-failed-preparation-before-guest.nodes.0.target_service");
     check(value.nodes[0]!.receivedAtUnixMillis == 0n, "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis");
+    check(!(value.nodes[0]!.transactionStaging !== undefined), "activation-tree-failed-preparation-before-guest.nodes.0.transaction_staging.presence");
     check(value.page !== undefined, "activation-tree-failed-preparation-before-guest.page.presence");
     check(value.page!.nextPageToken !== undefined, "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
     check(value.page!.nextPageToken! == "opaque-scoped-cursor", "activation-tree-failed-preparation-before-guest.page.next_page_token");

@@ -20,6 +20,8 @@ pub struct ShutdownReport {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub effects: Option<super::EffectShutdownReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<super::state::StateShutdownReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub metrics: Option<super::providers::MetricObservation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub http: Option<super::http::HttpSnapshot>,
@@ -63,6 +65,7 @@ impl ShutdownReport {
             && self.policies.is_none_or(super::PolicyShutdownReport::clean)
             && self.providers.is_none_or(|report| report.clean)
             && self.effects.is_none_or(|report| report.clean)
+            && self.state.is_none_or(|report| report.clean)
             && self
                 .rollouts
                 .is_none_or(super::RolloutShutdownReport::clean)
@@ -101,6 +104,9 @@ impl StandaloneNode {
         reason = "one ordered teardown keeps forced cleanup, resource observations and native joins together"
     )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
+        if let Some(state) = &self.state {
+            state.close_ordinary();
+        }
         if let Some(effects) = &self.effects {
             effects.close();
         }
@@ -233,6 +239,27 @@ impl StandaloneNode {
         } else {
             None
         };
+        let state_report = if let Some(state) = &self.state {
+            match state.shutdown(drain_deadline.into_std()).await {
+                Ok(report) => {
+                    if !report.clean {
+                        failure.get_or_insert_with(|| {
+                            error(
+                                PlatformErrorCode::DeadlineExceeded,
+                                "protected state work did not stop cleanly",
+                            )
+                        });
+                    }
+                    Some(report)
+                }
+                Err(error) => {
+                    failure.get_or_insert(error);
+                    None
+                }
+            }
+        } else {
+            None
+        };
         let policies = self.policies.take();
         let policy_report = if let Some(policies) = &policies {
             let report = policies.shutdown(drain_deadline.into_std()).await;
@@ -307,6 +334,7 @@ impl StandaloneNode {
             report.policies = policy_report;
             report.providers = provider_report;
             report.effects = effect_report;
+            report.state = state_report;
             report.http = http_handle.as_ref().map(super::http::HttpHandle::snapshot);
         }
         // This diagnostic contains no caller identifiers, payload, or private error.
@@ -397,6 +425,7 @@ impl StandaloneNode {
             policies: None,
             providers: None,
             effects: None,
+            state: None,
             http: None,
             clean: false,
             active_connections: transport.active_connections,

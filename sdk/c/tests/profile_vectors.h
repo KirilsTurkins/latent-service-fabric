@@ -82,6 +82,7 @@ static void profile_vectors(void) {
         assert((value.nodes[0].target_service.length == 26) && "activation-root-real-ingress-identity.nodes.0.target_service.length");
         assert((memcmp(value.nodes[0].target_service.data, "examples/java-http-adapter", 26) == 0) && "activation-root-real-ingress-identity.nodes.0.target_service");
         assert((value.nodes[0].received_at_unix_millis == UINT64_C(18446744073709551615)) && "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis");
+        assert((!(value.nodes[0].has_transaction_staging)) && "activation-root-real-ingress-identity.nodes.0.transaction_staging.presence");
         assert((value.has_page) && "activation-root-real-ingress-identity.page.presence");
         assert((!(value.page.has_next_page_token)) && "activation-root-real-ingress-identity.page.next_page_token.presence");
         assert((value.history_available == true) && "activation-root-real-ingress-identity.history_available");
@@ -139,6 +140,7 @@ static void profile_vectors(void) {
         assert((value.nodes[0].diagnostic_is_terminal == true) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
         assert((value.nodes[0].target_service.length == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.target_service.length");
         assert((value.nodes[0].received_at_unix_millis == UINT64_C(0)) && "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis");
+        assert((!(value.nodes[0].has_transaction_staging)) && "activation-tree-failed-preparation-before-guest.nodes.0.transaction_staging.presence");
         assert((value.has_page) && "activation-tree-failed-preparation-before-guest.page.presence");
         assert((value.page.has_next_page_token) && "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
         assert((value.page.next_page_token.length == 20) && "activation-tree-failed-preparation-before-guest.page.next_page_token.length");
