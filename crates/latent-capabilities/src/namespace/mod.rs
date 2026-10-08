@@ -14,7 +14,9 @@ pub use control::{
     PreparedRetainedNamespaceControl, RetainedNamespaceControlFence,
     RetainedNamespaceControlRequest,
 };
-pub use gate::{AcceptedCommit, CommitCancellation, CommitIoAcceptance};
+pub use gate::{
+    AcceptedCommit, CommitCancellation, CommitCancellationDisposition, CommitIoAcceptance,
+};
 pub use page::ScopedPage;
 pub use scope::{CallerScope, RecoverySelection};
 
@@ -48,7 +50,7 @@ pub struct ResultOwnership {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Mode {
+pub enum Mode {
     Command,
     Query,
     Inspection,
@@ -58,7 +60,7 @@ enum Mode {
 /// publication and policy generations; public copied descriptors cannot revive
 /// it after current policy/publication revocation or namespace reincarnation.
 pub struct NamespaceAuthority {
-    initial: OwnedPolicyDecision,
+    initial: Arc<OwnedPolicyDecision>,
     ownership: ResultOwnership,
     publication: String,
     version: NamespaceVersion,
@@ -68,7 +70,7 @@ pub struct NamespaceAuthority {
     deadline: Instant,
     gate: Arc<gate::Gate>,
     selection: RecoverySelection,
-    lifecycle: latent_state::namespace::lifecycle::NamespaceLifecycleHandle,
+    lifecycle: Arc<latent_state::namespace::lifecycle::NamespaceLifecycleHandle>,
 }
 
 /// Trusted activation/binding facts, without permission or storage ownership.
@@ -177,7 +179,7 @@ impl NamespaceAuthority {
         let deadline =
             deadline.min(Instant::now() + Duration::from_millis(ceiling.wall_time_millis));
         Ok(Self {
-            initial,
+            initial: Arc::new(initial),
             ownership,
             publication,
             version: namespace.record().version,
@@ -187,7 +189,7 @@ impl NamespaceAuthority {
             deadline,
             gate: gate::Gate::new(),
             selection: selection.clone(),
-            lifecycle,
+            lifecycle: Arc::new(lifecycle),
         })
     }
 
@@ -195,6 +197,11 @@ impl NamespaceAuthority {
     #[must_use]
     pub const fn activation_id(&self) -> &ActivationId {
         &self.activation
+    }
+
+    #[must_use]
+    pub const fn mode(&self) -> Mode {
+        self.mode
     }
 
     /// Original admitted deadline narrowed by the original policy ceiling.
@@ -207,6 +214,114 @@ impl NamespaceAuthority {
     #[must_use]
     pub fn ownership(&self) -> &ResultOwnership {
         &self.ownership
+    }
+
+    /// Consume only the actual host claim's one namespace advance. The original
+    /// retained decision, gate, caller and deadline survive unchanged. Raw rows
+    /// or decoded receipts cannot supply the affine claim required here.
+    pub fn rebind_command_after_claim(
+        &self,
+        store: &PolicyStore,
+        claim: &latent_commit::atomic::AdmittedCommand,
+        original: &NamespaceRead,
+        namespace: &NamespaceRead,
+    ) -> Result<Self, PlatformError> {
+        use latent_commit::atomic::Outcome;
+        let command = claim.record();
+        let ownership = &self.ownership;
+        let mut expected = original.record().clone();
+        if self.mode != Mode::Command
+            || expected.version != self.version
+            || expected.tenant != ownership.tenant
+            || expected.id.0 != ownership.namespace
+            || expected.version.incarnation != ownership.incarnation
+            || expected.status != NamespaceStatus::Active
+            || Instant::now() >= self.deadline
+            || command.outcome() != Outcome::Pending
+            || command.key().tenant != ownership.tenant.0
+            || command.key().namespace != ownership.namespace
+            || command.key().incarnation != ownership.incarnation.to_string()
+            || command.key().entity != ownership.entity
+            || command.key().recovery_scope != ownership.caller.scope
+            || command.result_read_policy() != ownership.result_policy
+            || command.source().publication != self.publication
+            || command.source().state_schema != expected.state_schema
+        {
+            return Err(denied());
+        }
+        self.gate.check()?;
+        expected.version.generation = expected
+            .version
+            .generation
+            .checked_add(1)
+            .ok_or_else(denied)?;
+        expected.pins.retained_results = expected
+            .pins
+            .retained_results
+            .checked_add(1)
+            .ok_or_else(denied)?;
+        if &expected != namespace.record() {
+            return Err(denied());
+        }
+        store.with_retained_decision(&self.initial, &mut |actual, _| {
+            self.check_target(actual, "acquire-command")?;
+            self.lifecycle
+                .with_current(namespace, true, || Ok(()))
+                .map_err(|_| denied())
+        })?;
+        Ok(Self {
+            initial: Arc::clone(&self.initial),
+            ownership: self.ownership.clone(),
+            publication: self.publication.clone(),
+            version: expected.version,
+            activation: self.activation.clone(),
+            mode: Mode::Command,
+            ceiling: self.ceiling,
+            deadline: self.deadline,
+            gate: Arc::clone(&self.gate),
+            selection: self.selection.clone(),
+            lifecycle: Arc::clone(&self.lifecycle),
+        })
+    }
+
+    /// Reobserve the current row for an originally sealed read-result owner.
+    /// This preserves its actual retained decision, scope and original deadline;
+    /// it cannot acquire command authority or reopen an accepted command gate.
+    pub fn rebind_result_read(
+        &self,
+        store: &PolicyStore,
+        namespace: &NamespaceRead,
+    ) -> Result<Self, PlatformError> {
+        let record = namespace.record();
+        if self.mode != Mode::Inspection
+            || Instant::now() >= self.deadline
+            || record.tenant != self.ownership.tenant
+            || record.id.0 != self.ownership.namespace
+            || record.version.incarnation != self.ownership.incarnation
+            || record.status == NamespaceStatus::Tombstone
+        {
+            return Err(denied());
+        }
+        self.gate.check()?;
+        store.with_retained_decision(&self.initial, &mut |actual, _| {
+            self.check_target(actual, "read-result")?;
+            self.lifecycle
+                .with_current(namespace, false, || Ok(()))
+                .map_err(|_| denied())
+        })?;
+        Ok(Self {
+            initial: Arc::clone(&self.initial),
+            ownership: self.ownership.clone(),
+            publication: self.publication.clone(),
+            version: record.version,
+            activation: self.activation.clone(),
+            mode: Mode::Inspection,
+            ceiling: self.ceiling,
+            deadline: self.deadline,
+            gate: Arc::clone(&self.gate),
+            selection: self.selection.clone(),
+            lifecycle: Arc::clone(&self.lifecycle),
+        })
     }
     #[must_use]
     pub fn version(&self) -> NamespaceVersion {
@@ -221,7 +336,7 @@ impl NamespaceAuthority {
     /// The transaction/audit owner must honor this captured requirement and any
     /// stricter fresh operation requirement. This getter allocates no audit slot.
     #[must_use]
-    pub const fn requires_audit(&self) -> bool {
+    pub fn requires_audit(&self) -> bool {
         self.initial.requires_audit()
     }
     #[must_use]
@@ -314,6 +429,48 @@ impl NamespaceAuthority {
             operation,
             namespace,
         })
+    }
+
+    /// Accept only the namespace expectation from an actual prepared complete
+    /// envelope. The original policy/lifecycle/cancellation fence still applies.
+    pub fn prepare_envelope_commit_io<'owner>(
+        &'owner self,
+        store: &'owner PolicyStore,
+        operation: &'owner SealedPolicyDecision<'owner>,
+        namespace: &'owner NamespaceRead,
+        envelope: &latent_commit::atomic::EnvelopeNamespaceExpectation,
+    ) -> Result<CommitIoAcceptance<'owner>, PlatformError> {
+        if self.mode != Mode::Command
+            || envelope.is_technical_abort()
+            || !envelope.matches(&namespace.expectation())
+        {
+            return Err(denied());
+        }
+        Ok(CommitIoAcceptance {
+            authority: self,
+            store,
+            operation,
+            namespace,
+        })
+    }
+
+    /// Terminal technical metadata requires the lower owner's positive physical
+    /// retirement proof and explicit current command-control permission. This
+    /// read/control owner never reopens or accepts the original command gate.
+    pub fn accept_terminal_abort(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        envelope: &latent_commit::atomic::EnvelopeNamespaceExpectation,
+    ) -> Result<(), PlatformError> {
+        if self.mode != Mode::Inspection
+            || !envelope.is_technical_abort()
+            || !envelope.matches(&namespace.expectation())
+        {
+            return Err(denied());
+        }
+        self.with_operation(store, operation, namespace, "cancel-command", || Ok(()))
     }
 
     fn same_result_scope(&self, historical: &ResultOwnership) -> bool {

@@ -127,6 +127,10 @@ fn closed_constructor_shapes_have_distinct_safe_reasons() {
         failure.retryable = false;
         support::assert_reason(failure, expected);
     }
+    let mut fixture_busy = error("fixture-busy");
+    fixture_busy.code = PlatformErrorCode::PermissionDenied;
+    fixture_busy.retryable = false;
+    support::assert_reason(fixture_busy, Reason::FixtureCurrentnessBusy);
 }
 
 #[test]
@@ -155,6 +159,14 @@ fn unknown_malformed_and_missing_details_are_explicitly_unclassified() {
     wrong_currentness_retry.retryable = false;
     let mut wrong_scheduler_retry = detail_error("scheduler.limit", "handoff-closed");
     wrong_scheduler_retry.retryable = false;
+    let mut wrong_fixture_code = error("fixture-busy");
+    wrong_fixture_code.retryable = false;
+    let mut wrong_fixture_retry = error("fixture-busy");
+    wrong_fixture_retry.code = PlatformErrorCode::PermissionDenied;
+    let mut extra_fixture_detail = error("fixture-busy");
+    extra_fixture_detail.code = PlatformErrorCode::PermissionDenied;
+    extra_fixture_detail.retryable = false;
+    extra_fixture_detail.details = extra_field.details.clone();
     for failure in [
         missing_reason,
         extra_field,
@@ -165,6 +177,9 @@ fn unknown_malformed_and_missing_details_are_explicitly_unclassified() {
         wrong_currentness_code,
         wrong_currentness_retry,
         wrong_scheduler_retry,
+        wrong_fixture_code,
+        wrong_fixture_retry,
+        extra_fixture_detail,
         error(support::PRIVATE),
         error("admission-authority-busy"), // not a currentness constructor without its detail
         error("compiler-job-panicked private-token"),

@@ -4,8 +4,9 @@ use super::*;
 fn detached_view_response_witness_waits_for_actual_native_retirement_after_close() {
     let (_root, config) = fixture();
     let owner = start(config.clone());
-    let mut view = wait(owner.open_view().unwrap()).unwrap().unwrap();
-    let witness = view.retirement_witness().unwrap();
+    let (opening, witness) = owner.open_view_observed().unwrap();
+    assert!(!witness.has_retired());
+    let mut view = wait(opening).unwrap().unwrap();
     assert!(view.retirement_witness().is_none());
     let gates = Rendezvous::new(1);
     let worker_gates = gates.clone();

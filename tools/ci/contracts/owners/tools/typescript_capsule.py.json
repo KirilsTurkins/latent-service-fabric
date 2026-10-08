@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/typescript_capsule.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Select the captured transaction template explicitly without changing stateless cases Preserve install-tools/new/build behavior while adding exact reviewed npm lock status and bounded authenticated maintained test/watch delegates with static redacted failures Preserve the complete incoming TypeScript dependency CLI, with only the existing reviewed transaction template namespace import and parser selection added.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "367d96d80363772a1769daf4c6145f63968760dc07301c558c817c5472086a66"
-}
+{"kind":"owner","path":"tools/typescript_capsule.py","reviewBoundary":"committed-fingerprint","reviewReason":"Select the captured transaction template explicitly without changing stateless cases. Incoming independently reviewed addition: Preserve install-tools/new/build behavior while adding exact reviewed npm lock status and bounded authenticated maintained test/watch delegates with static redacted failures","schemaVersion":"latent.ci.contracts.v1","sha256":"367d96d80363772a1769daf4c6145f63968760dc07301c558c817c5472086a66"}

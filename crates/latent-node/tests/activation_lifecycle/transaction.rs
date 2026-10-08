@@ -4,8 +4,7 @@ use super::{
 };
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{ActivationBudget, BoxFuture, BudgetProfile, PlatformError, PlatformErrorCode};
-use latent_executor::transaction::TransactionHost;
-use latent_node::TransactionActivationAdmission;
+use latent_node::{TransactionActivationAdmission, TransactionAdmission};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
@@ -17,7 +16,7 @@ impl TransactionActivationAdmission for DeniedAdmission {
         &'a self,
         envelope: &'a ActivationEnvelope,
         budget: &'a ActivationBudget,
-    ) -> BoxFuture<'a, Result<Arc<dyn TransactionHost>, PlatformError>> {
+    ) -> BoxFuture<'a, Result<TransactionAdmission, PlatformError>> {
         Box::pin(async move {
             assert_eq!(budget.profile(), BudgetProfile::Phase4);
             assert!(envelope.resolved_revision.is_some());

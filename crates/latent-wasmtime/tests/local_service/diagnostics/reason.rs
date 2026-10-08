@@ -38,6 +38,7 @@ pub enum Reason {
     ReleaseLifecycleBusy,
     ReleaseLifecycleUnavailable,
     AdmissionRepositoryRetired,
+    FixtureCurrentnessBusy,
     Unclassified,
 }
 
@@ -109,6 +110,14 @@ fn currentness_shape(error: &PlatformError, reason: &str) -> bool {
 }
 
 fn empty_detail_reason(error: &PlatformError) -> Reason {
+    // Exact test-authority constructor only. Observe the existing denial while
+    // keeping arbitrary permission errors and all messages out of the record.
+    if error.code == PlatformErrorCode::PermissionDenied
+        && !error.retryable
+        && error.message == "fixture-busy"
+    {
+        return Reason::FixtureCurrentnessBusy;
+    }
     if error.code != PlatformErrorCode::Unavailable {
         return Reason::Unclassified;
     }

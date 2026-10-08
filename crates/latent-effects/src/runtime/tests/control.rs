@@ -46,6 +46,12 @@ async fn detached_control_waiter_keeps_actual_writer_and_original_receipt_on_sha
             match owner.lookup_control(request.clone()) {
                 Ok(job) => {
                     if let Some(receipt) = job.await.unwrap().unwrap() {
+                        // The durable receipt can be read before the original
+                        // writer publishes its control state. Observe that same
+                        // owner's completion within the existing watchdog.
+                        while owner.snapshot().unwrap().control.pending {
+                            tokio::task::yield_now().await;
+                        }
                         break receipt;
                     }
                 }

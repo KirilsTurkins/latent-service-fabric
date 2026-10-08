@@ -120,12 +120,7 @@ pub(crate) async fn connect_for(
     let peer = stream
         .peer_addr()
         .map_err(|_| HttpError::ConnectionFailed)?;
-    if !answers.contains(canonical(peer.ip()))
-        || !destination.addresses.permits(peer.ip())
-        || peer.port() != destination.origin.port
-    {
-        return Err(HttpError::PermissionDenied);
-    }
+    validate_connected_peer(peer, destination, answers)?;
     stream
         .set_nodelay(true)
         .map_err(|_| HttpError::ConnectionFailed)?;
@@ -186,7 +181,9 @@ async fn checkout_for(
     Ok(match scope {
         crate::protocol::ProtocolScope::Invocation(call) => client.checkout_wait(call).await?,
         crate::protocol::ProtocolScope::Maintenance(_) => None,
-        crate::protocol::ProtocolScope::Deferred(request) => client.checkout_deferred(request)?,
+        crate::protocol::ProtocolScope::Deferred(request) => {
+            client.checkout_deferred_wait(request).await?
+        }
     })
 }
 
@@ -202,9 +199,23 @@ async fn reserve_for(
             client.reserve_maintenance_connection(request)?
         }
         crate::protocol::ProtocolScope::Deferred(request) => {
-            client.reserve_deferred_connection(request)?
+            client.reserve_deferred_connection_wait(request).await?
         }
     })
+}
+
+fn validate_connected_peer(
+    peer: SocketAddr,
+    destination: &HttpDestination,
+    answers: &Answers,
+) -> Result<(), HttpError> {
+    if !answers.contains(canonical(peer.ip()))
+        || !destination.addresses.permits(peer.ip())
+        || peer.port() != destination.origin.port
+    {
+        return Err(HttpError::PermissionDenied);
+    }
+    Ok(())
 }
 
 /// Drive the connection and its consumer in the caller's original future. The

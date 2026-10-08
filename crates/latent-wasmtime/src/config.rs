@@ -107,8 +107,8 @@ pub struct WasmtimeConfig {
     /// Explicit TeaVM C profile: standard Wasm exceptions, no Wasm GC values.
     /// Its fixed exception heap is charged before every activation Store.
     pub java_guest: bool,
-    /// Installs the scoped Phase 4 linker. Actual access still requires an
-    /// activation-owned transaction host with the same ledger and identity.
+    /// Installs the scoped Phase 4 linker. Access still requires the original
+    /// activation-owned transaction host, identity, ledger and deadline.
     pub transactional_state: bool,
     pub target_triple: String,
     pub cpu_feature_set: String,

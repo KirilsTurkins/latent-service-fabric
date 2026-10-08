@@ -44,3 +44,10 @@ Other trigger kinds, the public application listener and clustered
 registration/watch remain separate later deliveries.
 
 The Phase 1 pre-stabilization compatibility record and checked-in descriptor contract are in [`docs/protocol/phase-1-contract-hardening.md`](../../docs/protocol/phase-1-contract-hardening.md) and `phase1-descriptor-contract.json`, which is validated from a Buf-built `FileDescriptorSet` by `tools/validate_phase1_descriptor.py`.
+
+Phase 4 adds the explicitly negotiated transaction profile in
+`latent/transaction/v1/transaction.proto` and the management state API in
+`latent/control/v1/state.proto`. The descriptor also adds the state resource
+class at audit enum number 11. Existing fields, methods, reservations and enum
+numbers retain their meaning. See the [transaction contract](../../docs/protocol/transactions.md)
+for command identity, retained outcomes, version preconditions and recovery.

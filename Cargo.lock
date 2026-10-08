@@ -1594,6 +1594,7 @@ dependencies = [
  "latent-activation",
  "latent-artifacts",
  "latent-audit",
+ "latent-commit",
  "latent-core",
  "latent-effects",
  "latent-executor",
@@ -1822,6 +1823,7 @@ dependencies = [
 name = "latent-node"
 version = "0.1.0-alpha.5"
 dependencies = [
+ "base64 0.23.1",
  "latent-activation",
  "latent-admission",
  "latent-artifacts",
@@ -1837,6 +1839,7 @@ dependencies = [
  "latent-state",
  "latent-telemetry",
  "sha2 0.11.0",
+ "tempfile",
  "tokio",
 ]
 

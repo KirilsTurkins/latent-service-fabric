@@ -7,6 +7,8 @@ mod activation_runner;
 mod budgeted_activation;
 mod budgeted_execution;
 mod cancellation;
+/// Finite delivery notifications; durable command outcomes remain in `latent-commit`.
+pub mod command_waiters;
 mod currentness_read_timer;
 mod inventory;
 mod journal;
@@ -22,7 +24,8 @@ pub use activation_manager::{
     ActivationHandle, ActivationObservationSnapshot, ActivationReceipt,
     ActivationTransportInterruption, InboundActivationReservation, LocalActivationDependencies,
     LocalActivationManager, LocalActivationManagerConfig, LocalActivationServices,
-    TransactionActivationAdmission,
+    TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
+    TransactionCompletion, TransactionCompletionHook, TransactionDisposition, TransactionExecution,
 };
 pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,

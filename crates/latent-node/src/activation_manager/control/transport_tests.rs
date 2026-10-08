@@ -19,7 +19,7 @@ async fn explicit_then_deadline_then_transport_then_ready_work_is_the_stage_prio
             let stop = TransportStop::default();
             stop.mark(Cause::Disconnected);
             if explicit {
-                registration.handle().cancel("explicit winner");
+                assert!(registration.handle().cancel("explicit winner"));
             }
             let expiry = clock.monotonic_now()
                 + if expired {
@@ -150,7 +150,7 @@ async fn disconnect_during_explicit_cleanup_keeps_its_original_grace() {
         &stop,
     ));
     assert!(poll(work.as_mut()).is_pending());
-    registration.handle().cancel("original explicit cleanup");
+    assert!(registration.handle().cancel("original explicit cleanup"));
     assert!(poll(work.as_mut()).is_pending());
     tokio::time::advance(Duration::from_millis(60)).await;
     stop.mark(Cause::Disconnected);

@@ -135,6 +135,7 @@ async fn uncertain(fixture: &Fixture, effect: &DurableEffectAuthority) {
             .unwrap()
             .accepted_effects
             != 0
+            || fixture.native_capacity.snapshot().unwrap().ordinary.slots != 0
         {
             tokio::task::yield_now().await;
         }

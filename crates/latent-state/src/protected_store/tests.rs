@@ -15,6 +15,7 @@ use crate::embedded::{Family, RowKey, RowMutation};
 
 mod lifecycle;
 mod native_capacity;
+mod opening_owner;
 mod recovery;
 mod reserved;
 mod validation;

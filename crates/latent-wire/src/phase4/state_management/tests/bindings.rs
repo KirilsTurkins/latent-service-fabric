@@ -88,15 +88,25 @@ async fn management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_sam
     .await
     .unwrap();
     let foreign = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
-    dispatcher.bind_native_capacity(&foreign).unwrap();
+    // Startup inherits the store's actual owner before workers are admitted;
+    // a foreign binding is refused at installation, before management lookup.
+    assert!(matches!(
+        dispatcher.bind_native_capacity(&foreign),
+        Err(latent_effects::runtime::DispatcherError::InvalidConfiguration)
+    ));
     assert!(dispatcher.management_port().uses_store(&fixture.store));
-    assert!(!dispatcher
+    assert!(dispatcher
         .management_port()
         .uses_native_capacity(&fixture.admission.native));
+    assert!(!dispatcher.management_port().uses_native_capacity(&foreign));
+    let accepted = fixture.store.snapshot().unwrap().accepted;
+    let mut foreign_services = services(&fixture);
+    foreign_services.admission = Arc::new(StateManagementRecoveryAdmission::new(foreign.clone()));
+    assert!(StateManagementBackend::new(foreign_services, bindings(&fixture)).is_err());
     let backend = StateManagementBackend::new(services(&fixture), bindings(&fixture)).unwrap();
-    assert!(backend
+    let installed = backend
         .with_dispatcher(dispatcher.management_port())
-        .is_err());
+        .unwrap();
     assert_eq!(
         fixture
             .admission
@@ -104,6 +114,9 @@ async fn management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_sam
             .load(std::sync::atomic::Ordering::Relaxed),
         0
     );
+    assert_eq!(fixture.store.snapshot().unwrap().accepted, accepted);
+    assert!(foreign.snapshot().unwrap().physically_retired());
+    drop(installed);
     assert!(dispatcher.shutdown(deadline()).await.unwrap().clean);
     fixture.finish().await;
 }

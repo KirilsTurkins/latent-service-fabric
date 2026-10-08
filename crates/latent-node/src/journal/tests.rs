@@ -285,7 +285,7 @@ fn tenant_queries_and_cancellation_never_expose_another_tenants_record() {
         journal
             .cancel_with(&foreign, &input.activation_id, || {
                 calls.fetch_add(1, Ordering::Relaxed);
-                CancelDisposition::Accepted
+                Ok(CancelDisposition::Accepted)
             })
             .expect("valid foreign scope"),
         CancelDisposition::NotFound
@@ -294,7 +294,7 @@ fn tenant_queries_and_cancellation_never_expose_another_tenants_record() {
         journal
             .cancel_with(&input.target.tenant, &input.activation_id, || {
                 calls.fetch_add(1, Ordering::Relaxed);
-                CancelDisposition::Accepted
+                Ok(CancelDisposition::Accepted)
             })
             .expect("valid scope"),
         CancelDisposition::Accepted
@@ -304,7 +304,7 @@ fn tenant_queries_and_cancellation_never_expose_another_tenants_record() {
         journal
             .cancel_with(&input.target.tenant, &input.activation_id, || {
                 calls.fetch_add(1, Ordering::Relaxed);
-                CancelDisposition::Accepted
+                Ok(CancelDisposition::Accepted)
             })
             .expect("valid terminal scope"),
         CancelDisposition::AlreadyTerminal(ActivationTerminalState::Completed)
