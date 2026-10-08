@@ -84,6 +84,7 @@ pub(super) async fn begin(
         contract::Request::InspectNamespace(value) => hash.update(value.encode_to_vec()),
         contract::Request::SelectEntity(value) => hash.update(value.encode_to_vec()),
         contract::Request::GetStateOperationReceipt(value) => hash.update(value.encode_to_vec()),
+        contract::Request::GetEffect(value) => hash.update(value.encode_to_vec()),
         _ => return Err(unsupported()),
     }
     begin_operation(
@@ -219,6 +220,13 @@ fn operation(
     if matches!(request, contract::Request::SelectEntity(_)) {
         return Ok((
             read_operation_id("entities")?,
+            AuditControlAction::StateOperationRead,
+            None,
+        ));
+    }
+    if matches!(request, contract::Request::GetEffect(_)) {
+        return Ok((
+            read_operation_id("effect")?,
             AuditControlAction::StateOperationRead,
             None,
         ));

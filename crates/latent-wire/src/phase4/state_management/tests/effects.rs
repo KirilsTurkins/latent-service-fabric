@@ -5,6 +5,52 @@ mod provider;
 use fixture::{mutation, operator, setup};
 
 #[tokio::test]
+async fn direct_effect_inspection_requires_original_caller_link_and_current_read_policy() {
+    let mut effect = setup().await;
+    let request = effect.request("original-effect-read").effect.unwrap();
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), request.clone().into())
+        .await
+        .unwrap();
+    let contract::Response::GetEffect(value) = &response.response else {
+        panic!("effect status required");
+    };
+    let status = value.effect.as_ref().unwrap();
+    assert_eq!(status.effect_id, effect.effect);
+    assert!(!status.command_id.is_empty());
+    assert!(!status.command_attempt_id.is_empty());
+    assert_eq!(status.record_version, effect.version);
+    assert_eq!(
+        status.disposition,
+        latent_rpc::transaction::v1::EffectDisposition::Pending as i32
+    );
+    assert!(status.provider_receipt.is_none());
+    contract::Response::GetEffect(value.clone())
+        .validate_for(&contract::Request::from(request.clone()))
+        .unwrap();
+    assert!(effect
+        .fixture
+        .backend
+        .execute_state(operator("bob"), request.clone().into())
+        .await
+        .is_err());
+    let mut foreign = request.clone();
+    foreign.command.as_mut().unwrap().client_key = "different-original-key".into();
+    assert!(effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), foreign.into())
+        .await
+        .is_err());
+    effect.fixture.update(None, "revoke-original-effect-read");
+    assert!(response.owner.with_current(&mut || {}).is_err());
+    drop(response);
+    effect.finish().await;
+}
+
+#[tokio::test]
 async fn controlled_dispatch_requires_the_actual_current_policy_and_source_before_provider_acceptance(
 ) {
     let mut effect =
