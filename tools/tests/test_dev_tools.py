@@ -386,7 +386,7 @@ class CompilerDownloadBounds(unittest.TestCase):
         with patch.object(self.builder.urllib.request, "urlopen", return_value=incoming) as opened, \
                 patch.object(self.builder.time, "monotonic", side_effect=lambda: self.clock):
             self.builder.download(self.path, self.source)
-        opened.assert_called_once_with(self.source["url"], timeout=min(30, self.source.get("timeoutSeconds", self.builder.DOWNLOAD_TIMEOUT_SECONDS)))
+        opened.assert_called_once_with(self.source["url"], timeout=min(60, self.source.get("timeoutSeconds", self.builder.DOWNLOAD_TIMEOUT_SECONDS)))
         self.assertTrue(all(0 < call.args[0] <= len(self.data) + 1 for call in incoming.read1.call_args_list))
 
     def test_small_default_transfer_accepts_only_pinned_bytes(self):

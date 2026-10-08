@@ -85,3 +85,19 @@ with one additional narrow/absolute-budget case. A separate Windows download
 verified the exact 55,478,392-byte archive against pinned SHA-256
 `70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00`;
 that network observation is distinct from full developer-bundle or CI qualification.
+
+The next PR head `839dc880431f2118a8bf1d596dd046ef1083164d` exposed a missed
+30-second assertion in the shared `CompilerDownloadBounds.transfer` test helper.
+It caused the same two failures in both controller jobs in
+[run 37800469884](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37800469884)
+and the repository Python lane in
+[run 37800470925](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37800470925).
+The assertion now expects the reviewed 60-second transport bound. The contract
+refresh changes only the class fixture fingerprint for its ten cases; every case,
+skip predicate and other guard is retained. Production code is unchanged.
+
+The full Linux controller selection runs 257 tests successfully with its three
+original skips, and all 13 download tests pass without skips on Python 3.13.5.
+Both previously failing cases also pass independently on Windows. Full Windows
+controller execution remains a hosted check because this local account lacks
+symlink privileges. Read-only CI coverage passes; new hosted CI is not awaited.
