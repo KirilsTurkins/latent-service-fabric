@@ -120,7 +120,7 @@
       },
       {
         "name": "Validate explicit TypeScript runtime selection and preserved public contracts",
-        "run": "python3 -m unittest tools.tests.test_typescript_runtime_profile tools.tests.test_typescript_event_ownership tools.tests.test_typescript_clock_source tools.tests.test_typescript_import_source tools.tests.test_typescript_splicer_input tools.tests.test_typescript_import_adapter tools.tests.test_typescript_import_selection tools.tests.test_typescript_source_splicer tools.tests.test_typescript_host_tools tools.tests.test_typescript_runtime_materials tools.tests.test_typescript_runtime_bundle\n"
+        "run": "python3 -m unittest tools.tests.test_typescript_runtime_profile tools.tests.test_typescript_event_ownership tools.tests.test_typescript_clock_source tools.tests.test_typescript_import_source tools.tests.test_typescript_splicer_input tools.tests.test_typescript_import_adapter tools.tests.test_typescript_import_selection tools.tests.test_typescript_source_splicer tools.tests.test_typescript_host_tools tools.tests.test_typescript_runtime_materials tools.tests.test_typescript_runtime_bundle tools.tests.test_typescript_text_codec_source\n"
       },
       {
         "name": "Preserve attempted runtime test evidence",
@@ -137,7 +137,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Append nine toolkit runtime input controls, preserving all previous cases/commands and baseline obligations; no supported-profile promotion",
+  "reviewReason": "Append exact pinned native text-codec source controls after real service Wizer failure; all prior cases/baselines/deadlines remain unchanged, no runtime qualification claim",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

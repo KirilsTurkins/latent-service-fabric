@@ -14,7 +14,8 @@ def source_paths()->tuple[str,...]:
     from tools.typescript_guest.activation_engine import engine_input_paths
     from tools.typescript_guest.runtime_profile import CLOCK_PROFILE
     paths=engine_input_paths(CLOCK_PROFILE)+tuple('sdk/typescript-guest/activation/'+name for name in NATIVE_IMPORT_SOURCES)
-    return tuple(dict.fromkeys(paths+splicer_input.input_paths()+('tools/typescript_guest/splicer_input.py','tools/typescript_guest/import_profile.py')))
+    return tuple(dict.fromkeys(paths+splicer_input.input_paths()+('tools/typescript_guest/splicer_input.py','tools/typescript_guest/import_profile.py',
+        'tools/typescript_guest/text_codec_engine.py')))
 
 def splicer_files(root:Path)->dict[str,bytes]:
     if not root.is_dir() or root.is_symlink():
