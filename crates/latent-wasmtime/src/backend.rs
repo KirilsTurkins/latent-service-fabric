@@ -568,6 +568,7 @@ impl WasmtimeBackend {
             &stop,
             accounting,
             capabilities,
+            transaction,
             runtime.surface.hostcall_fuel,
             transaction,
         )?);
@@ -714,6 +715,7 @@ impl WasmtimeBackend {
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
+        transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
         hostcall_fuel: usize,
         transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
     ) -> Result<Store<HostState>, PlatformError> {

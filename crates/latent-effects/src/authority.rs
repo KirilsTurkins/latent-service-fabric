@@ -8,12 +8,17 @@
 
 mod grant;
 mod lookup;
+mod namespace;
+mod rejection;
 pub use grant::DispatchGrant;
 pub use lookup::{DispatchPurpose, ProviderLookupAuthorization};
+pub use namespace::NamespaceEffectCloseFence;
 
+use latent_core::authority_rejection::{AuthorityRejectionOwner, AuthorityRejectionToken};
+use rejection::InstalledRule;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex, MutexGuard,
@@ -315,8 +320,10 @@ pub struct DispatchOwners {
 }
 
 struct State {
-    rules: BTreeMap<EffectScope, EffectRule>,
+    rules: BTreeMap<EffectScope, InstalledRule>,
+    closed_namespaces: BTreeSet<namespace::NamespaceScope>,
     physical: usize,
+    lookup_physical: usize,
     quarantined: usize,
     clock_floor: u64,
     generation: u64,
@@ -324,6 +331,7 @@ struct State {
 
 struct Owner {
     state: Mutex<State>,
+    rejections: AuthorityRejectionOwner,
     maximum_rules: usize,
     maximum_physical: usize,
 }
@@ -342,6 +350,9 @@ pub struct EffectCommitFence<'a> {
 }
 
 impl EffectAuthorityOwner {
+    /// Fixed recovery contexts in this same owner, independent of ordinary
+    /// execution capacity. They can authorize only a receipt lookup.
+    pub const MAXIMUM_LOOKUP_OWNERS: usize = 4;
     pub(crate) fn same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.0, &other.0)
     }
@@ -355,9 +366,13 @@ impl EffectAuthorityOwner {
             return Err(AuthorityError::Invalid);
         }
         Ok(Self(Arc::new(Owner {
+            rejections: AuthorityRejectionOwner::new(maximum_rules + Self::MAXIMUM_LOOKUP_OWNERS)
+                .map_err(|error| rejection::error(error.code))?,
             state: Mutex::new(State {
                 rules: BTreeMap::new(),
+                closed_namespaces: BTreeSet::new(),
                 physical: 0,
+                lookup_physical: 0,
                 quarantined: 0,
                 clock_floor,
                 generation: 1,
@@ -370,6 +385,9 @@ impl EffectAuthorityOwner {
     /// Called by the trusted binding/policy owner, never from a guest host import.
     /// Same-revision changes and generation rollback fail. Destination/profile
     /// replacement remains incompatible with already captured intent envelopes.
+    /// Rejected installations require a newer actually approved policy revision;
+    /// identical historical configuration cannot reopen an accepted old grant.
+    /// Call from the actual current policy/publication installation fence.
     pub fn publish(&self, rule: EffectRule) -> Result<(), AuthorityError> {
         if !rule.valid() {
             return Err(AuthorityError::Invalid);
@@ -379,14 +397,23 @@ impl EffectAuthorityOwner {
             .state
             .lock()
             .map_err(|_| AuthorityError::Unavailable)?;
+        if rule.enabled
+            && state
+                .closed_namespaces
+                .contains(&namespace::NamespaceScope::from_effect(&rule.scope))
+        {
+            return Err(AuthorityError::PolicyBlocked);
+        }
         if let Some(previous) = state.rules.get(&rule.scope) {
             if rule.policy_revision < previous.policy_revision
-                || (rule.policy_revision == previous.policy_revision && rule != *previous)
+                || (rule.policy_revision == previous.policy_revision && rule != previous.rule)
                 || rule.credential_epoch < previous.credential_epoch
+                || (!previous.rejection.is_current()
+                    && rule.policy_revision <= previous.policy_revision)
             {
                 return Err(AuthorityError::Stale);
             }
-            if rule == *previous {
+            if rule == previous.rule {
                 return Ok(());
             }
         } else if state.rules.len() >= self.0.maximum_rules {
@@ -396,7 +423,22 @@ impl EffectAuthorityOwner {
             .generation
             .checked_add(1)
             .ok_or(AuthorityError::Capacity)?;
-        state.rules.insert(rule.scope.clone(), rule);
+        let previous = state.rules.get(&rule.scope);
+        let rejection = match previous.filter(|previous| rejection::compatible(previous, &rule)) {
+            Some(previous) => previous.rejection.clone(),
+            None => self
+                .0
+                .rejections
+                .install(
+                    &rule.scope.tenant,
+                    &rule.scope.publication,
+                    previous.map(|previous| &previous.rejection),
+                )
+                .map_err(|error| rejection::error(error.code))?,
+        };
+        state
+            .rules
+            .insert(rule.scope.clone(), InstalledRule { rule, rejection });
         state.generation = generation;
         Ok(())
     }
@@ -437,7 +479,7 @@ impl EffectAuthorityOwner {
         let rule = state
             .rules
             .get(scope)
-            .filter(|rule| rule.enabled)
+            .filter(|rule| rule.enabled && rule.rejection.is_current())
             .ok_or(AuthorityError::PolicyBlocked)?;
         if payload_bytes > rule.ceiling.maximum_payload_bytes {
             return Err(AuthorityError::Capacity);
@@ -537,6 +579,36 @@ impl EffectAuthorityOwner {
         Ok(EffectCommitFence { _state: state })
     }
 
+    /// Current original effect rules for an explicit admitted redrive. The
+    /// current ceiling may narrow the captured ceiling; neither publication nor
+    /// delay can renew the immutable expiry. Hold only through the final short
+    /// acceptance CAS, then drop before disk or provider I/O.
+    pub fn retry_fence<'a>(
+        &'a self,
+        authority: &DurableEffectAuthority,
+        next_attempt: u32,
+        retry_at_millis: u64,
+        time: EffectTime,
+    ) -> Result<EffectCommitFence<'a>, AuthorityError> {
+        if next_attempt == 0 || retry_at_millis <= time.unix_millis {
+            return Err(AuthorityError::Invalid);
+        }
+        let mut state = self
+            .0
+            .state
+            .lock()
+            .map_err(|_| AuthorityError::Unavailable)?;
+        check_time(&mut state, time)?;
+        let (ceiling, expiry) = current_ceiling(&state, authority, time)?;
+        if next_attempt > ceiling.maximum_attempts {
+            return Err(AuthorityError::Capacity);
+        }
+        if retry_at_millis >= expiry {
+            return Err(AuthorityError::Expired);
+        }
+        Ok(EffectCommitFence { _state: state })
+    }
+
     /// Accept one physical attempt. Local expiry of this owner never permits a
     /// concurrent resend; the dispatcher owns claim/attempt CAS and passes the
     /// resulting once-only attempt here. Provider uncertainty is not abort proof.
@@ -556,15 +628,16 @@ impl EffectAuthorityOwner {
         let rule = state
             .rules
             .get(&authority.scope)
-            .filter(|rule| rule.enabled)
+            .filter(|rule| rule.enabled && rule.rejection.is_current())
             .ok_or(AuthorityError::PolicyBlocked)?;
         if attempt == 0 || attempt > ceiling.maximum_attempts {
             return Err(AuthorityError::Capacity);
         }
-        if state.physical >= self.0.maximum_physical {
+        if state.physical - state.lookup_physical >= self.0.maximum_physical {
             return Err(AuthorityError::Capacity);
         }
         let credential_epoch = rule.credential_epoch;
+        let rejection = rule.rejection.clone();
         let reference = rule.protected_credential_reference.clone();
         let expiry_remaining = expiry - time.unix_millis;
         let timeout = Duration::from_millis(ceiling.attempt_timeout_millis.min(expiry_remaining));
@@ -575,6 +648,7 @@ impl EffectAuthorityOwner {
         Ok(DispatchContext {
             owner: Arc::clone(&self.0),
             live: Arc::new(AtomicBool::new(true)),
+            rejection,
             profile: authority.profile.clone(),
             scope: authority.scope.clone(),
             effect: authority.link.effect.clone(),
@@ -611,7 +685,7 @@ fn current_rule<'a>(
     let rule = state
         .rules
         .get(&authority.scope)
-        .filter(|rule| rule.enabled)
+        .filter(|rule| rule.enabled && rule.rejection.is_current())
         .ok_or(AuthorityError::PolicyBlocked)?;
     if rule.profile != authority.profile {
         return Err(AuthorityError::UnsupportedFormat);
@@ -652,6 +726,7 @@ fn current_ceiling(
 pub struct DispatchContext {
     owner: Arc<Owner>,
     live: Arc<AtomicBool>,
+    rejection: AuthorityRejectionToken,
     scope: EffectScope,
     profile: DispatchProfile,
     effect: String,
@@ -726,6 +801,13 @@ impl DispatchContext {
             .physical
             .checked_sub(1)
             .ok_or(AuthorityError::Unavailable)?;
+        if self.lookup.is_some() {
+            state.lookup_physical = state
+                .lookup_physical
+                .checked_sub(1)
+                .ok_or(AuthorityError::Unavailable)?;
+            self.rejection.reject();
+        }
         self.live.store(false, Ordering::Release);
         self.retired = true;
         Ok(())
@@ -736,6 +818,9 @@ impl Drop for DispatchContext {
     fn drop(&mut self) {
         if !self.retired {
             self.live.store(false, Ordering::Release);
+            if self.lookup.is_some() {
+                self.rejection.reject();
+            }
             if let Some(owner) = self.retained_owner.take() {
                 // Preserve the exact original capacity while physical ownership
                 // is unresolved. The existing finite physical/global caps bound

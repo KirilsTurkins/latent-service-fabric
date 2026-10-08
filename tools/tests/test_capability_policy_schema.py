@@ -82,7 +82,9 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         # operations, never extra guest WIT imports or guest commit authority.
         host_operations = {"commit", "read-result", "inspect-effect", "cancel-command",
                            "namespace-create", "namespace-inspect", "namespace-list",
-                           "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate"}
+                           "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate",
+                           "effect-plan", "effect-reconcile", "effect-redrive", "effect-terminate",
+                           "state-checkpoint", "purge-expired-payload"}
         self.assertTrue(expected["latent:state/key-value@0.2.0"].isdisjoint(host_operations))
         expected["latent:state/key-value@0.2.0"].update(host_operations)
         self.assertEqual(actual, expected)
@@ -101,6 +103,14 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
                 "ceiling": {"operations": 1, "inputBytes": 1024, "outputBytes": 1024, "wallTimeMillis": 100}}
         policy = self.validator("capability-policy")
         policy.validate({"formatVersion": 1, "tenant": "a", "rules": [rule]})
+        for operation in ("effect-plan", "effect-reconcile", "effect-redrive", "effect-terminate",
+                          "state-checkpoint", "purge-expired-payload"):
+            with self.subTest(operation=operation):
+                policy.validate({"formatVersion": 1, "tenant": "a",
+                                 "rules": [{**rule, "operations": [operation]}]})
+        for change in ({"operations": ["effect-confirm"]},
+                       {"capability": "latent:intents/staging@0.1.0", "operations": ["effect-reconcile"]}):
+            self.assertFalse(policy.is_valid({"formatVersion": 1, "tenant": "a", "rules": [{**rule, **change}]}))
         resource = self.validator("capability-policy-resource")
         request = {"kind": "state", **scope}
         resource.validate(request)

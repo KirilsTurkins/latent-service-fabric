@@ -304,7 +304,6 @@ fn validate_imports(
     providers: Providers,
 ) -> Result<(BTreeSet<String>, BTreeSet<String>), PlatformError> {
     let mut imports = BTreeSet::new();
-    let mut type_imports = BTreeSet::new();
     let transactional = component_type
         .imports(engine)
         .any(|(name, _)| name == transaction::STATE || name == transaction::INTENTS);
@@ -317,6 +316,7 @@ fn validate_imports(
         latent_core::PHASE3_HOST_ABI_CURRENT
     };
     let transaction_resource = transaction::command_resource(component_type, engine);
+    let mut type_imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
         let ComponentItem::ComponentInstance(interface) = item.ty else {

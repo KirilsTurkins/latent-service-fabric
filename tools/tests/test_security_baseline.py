@@ -139,6 +139,30 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertTrue(any(package.path == "examples/renderer-profile/package-lock.json" for package in packages))
         self.assertTrue(any(package.path == "tools/requirements.lock" for package in packages))
 
+    def test_source_repair_classifies_only_the_proved_braces_advisory(self) -> None:
+        from tools.security_npm_sources import resolve_findings
+
+        paths = ("website/package-lock.json", "examples/framework-compatibility/package-lock.json")
+        revision = "2026-10-02T22:45:04.328737Z"
+        advisory = {"id": "GHSA-vfj7-8cjw-p6xm", "modified": revision}
+        receipts = [{"name": "braces", "version": "3.0.3", "locks": list(paths), "advisories": [advisory]}]
+        observations = [{"advisories": [{"package": {"name": "braces", "version": "3.0.3", "path": path},
+                                          **advisory} for path in paths]}]
+        known = [finding("osv", "GHSA-vfj7-8cjw-p6xm", path, "npm:braces@3.0.3") for path in paths]
+        unrelated = [finding("osv", "GHSA-different", paths[0], "npm:braces@3.0.3"),
+                     finding("osv", "GHSA-vfj7-8cjw-p6xm", "sdk/typescript-client/package-lock.json",
+                             "npm:braces@3.0.3"),
+                     finding("osv", "GHSA-vfj7-8cjw-p6xm", paths[0], "npm:braces@3.0.4")]
+        remaining, remediated = resolve_findings(known + unrelated, observations, receipts)
+        self.assertEqual(remediated, known)
+        self.assertEqual(remaining, unrelated)
+        with self.assertRaisesRegex(SecurityError, "npm-repair-advisory-policy"):
+            resolve_findings(known, observations, [{**receipts[0], "advisories": [{"id": advisory["id"]}]}])
+        # A different upstream advisory revision never inherits the old repair.
+        changed = [{"advisories": [{**row, "modified": "2026-10-03T00:00:00Z"}
+                                    for row in observations[0]["advisories"]]}]
+        self.assertEqual(resolve_findings(known, changed, receipts), (known, []))
+
     def test_new_manifest_missing_lock_or_unresolved_requirement_cannot_pass(self) -> None:
         self.write("package.json", '{"dependencies":{"fixture":"1.0.0"}}')
         with self.assertRaises(OSError):

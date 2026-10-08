@@ -213,7 +213,6 @@ fn dynamic_record_lifting_charges_host_allocations_before_acceptance() {
                 };
                 assert_eq!(fields.len(), 10);
             }
-            run.post_return(&mut store).unwrap();
         }
     }
 }

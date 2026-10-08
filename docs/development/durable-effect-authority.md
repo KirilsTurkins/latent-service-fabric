@@ -83,6 +83,13 @@ by a Docker Desktop engine HTTP 500; it supplies no new Linux evidence.
 
 ## Rechecking a retained transport grant
 
+Accepted policy and publication changes also close each affected grant's
+original irreversible installation token. Reapproval cannot revive a held
+grant; its original physical and request owners survive until cleanup. See
+[the scoped rejection observer contract](effect-rejection-observers.md) for the
+required pre-exposure owner attachment and qualification boundary.
+
+
 `DispatchGrant::check_current(EffectTime)` checks the exact original sealed
 effect owner after any awaited connection or qualification work and before
 protocol writes. It reads bounded current metadata under the same short rule
@@ -106,6 +113,40 @@ all-target/all-feature effect Clippy passed. The exact Linux inventory is now
 owned provider fixture; these metadata tests do not establish broker or HTTP
 endpoint qualification.
 
+## Accepted namespace closure and retained provider grants
+
+Namespace management uses `prepare_namespace_close` inside its actual final
+Policy -> Namespace -> Effects acceptance fence. The affine metadata fence
+checks finite sticky-closure capacity before invoking the original native
+request gate. Rejected native acceptance changes no rule. Successful acceptance
+disables every rule for the exact tenant, namespace and incarnation before
+engine I/O. It preserves all original physical provider owners and deadlines.
+
+The same rules owner backs `DispatchGrant::check_current`, so a provider waiting
+for connection/TLS cannot use a retained grant to write after accepted closure.
+Rule publication cannot re-enable that closed incarnation, including under a
+newer publication. A recreated namespace has a distinct incarnation. An
+uncertain durable close remains conservatively closed; no management response,
+timeout or policy replacement supplies physical retirement or an abort proof.
+The closure registry is bounded by the existing configured maximum rule count.
+
+The actual state-management adapter attaches this fence to quiesce, retire,
+destroy and recreate, using the installed dispatcher's same rules/store owner.
+It also binds the original global request keeper before native submission, so
+callback errors and protected-root checks cannot release it early. This bridge
+is separate from publication policy mutation, whose trusted installation owner
+must publish the corresponding current effect rule revocation.
+
+On the pinned Linux Rust 1.97.1 image, all 95 effect library cases and all 19
+state-management cases passed; the latter selected the actual native management
+adapter rather than unrelated Wire cases. Strict all-target/all-feature effect
+Clippy passed. The new Wire schedule creates a real namespace, retains an
+accepted provider grant, commits authenticated quiescence, and proves its
+original grant is denied while the physical permit remains charged. These
+checks establish the metadata/engine bridge; the provider's held-TLS schedule
+separately establishes transport behavior.
+
+
 `DispatchContext::retain_owner` binds one already reserved original request or
 global owner before any grant is issued. Refused replacement or late retention
 returns the exact owner unchanged. Every issued grant retains the same opaque
@@ -119,6 +160,9 @@ cleanup. Unexpected context drop instead preserves the exact keeper with the
 already quarantined physical permit, bounded by the existing physical/global
 capacity limits. Dropping all grants or response waiters cannot refund that
 unresolved capacity; process loss remains the conservative recovery boundary.
+
+All 97 effect library cases and strict all-target/all-feature Clippy passed on
+the pinned Linux Rust 1.97.1 image. The two new cases use real shared native
 
 The original management port milestone recorded 97 effect cases and strict
 all-target/all-feature Clippy on pinned Linux Rust 1.97.1. Provider branch

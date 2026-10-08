@@ -10,11 +10,13 @@ mod cancellation;
 mod currentness_read_timer;
 mod inventory;
 mod journal;
+mod policy_call_binding;
 /// Actual scoped state hosts over the one protected physical store owner.
 pub mod transaction_runtime;
 
 use latent_core::{BoxFuture, Metadata, NodeId, PlatformError, RouteGeneration};
 use latent_routing::RouteSnapshot;
+pub use policy_call_binding::PolicyCallBinding;
 
 pub use activation_manager::{
     ActivationHandle, ActivationObservationSnapshot, ActivationReceipt,

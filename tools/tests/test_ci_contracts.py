@@ -888,7 +888,7 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "assert selection.profile == 'fast'\n",
                     "from tools import ci_suite_inventory as registry\n"
                     "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
-                    "assert state.profile == 'full'\n"
+                    "assert state.profile == 'full' and state.renderer\n"
                     "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
                     "assert selection.profile == 'full'\n"
                     "assert selection.fast_packages\n"

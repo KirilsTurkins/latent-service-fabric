@@ -1,4 +1,5 @@
 """Actual authoring captures for the finite composed drain fixture."""
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -23,11 +24,14 @@ class JavaCompositionBudgetTests(unittest.TestCase):
                 fixture = ROOT / "examples/java-http-composition/adapter"
                 for source, target in (("Capsule.java", "src/dev/latent/app/Capsule.java"), ("world.wit", "wit/world.wit")):
                     (parent / target).write_bytes((fixture / source).read_bytes())
+                descriptor = read_json(parent / "capsule-project.json")
+                descriptor["limits"]["cpuFuel"] = read_json(_domain / "capsule-project.json")["limits"]["cpuFuel"]
+                (parent / "capsule-project.json").write_text(json.dumps(descriptor, indent=2) + "\n", encoding="utf-8")
                 return parent
 
             def checked(domain, _selection, adapter, *extra):
                 self.assertEqual(read_json(domain / "capsule-project.json")["limits"]["cpuFuel"], COMPOSITION_CPU_FUEL)
-                self.assertEqual(read_json(adapter / "capsule-project.json")["limits"]["cpuFuel"], 1_000_000_000)
+                self.assertEqual(read_json(adapter / "capsule-project.json")["limits"]["cpuFuel"], COMPOSITION_CPU_FUEL)
                 observed.append("negatives" if extra else "check")
 
             with patch.object(composition, "generate", side_effect=generated), \
@@ -39,6 +43,26 @@ class JavaCompositionBudgetTests(unittest.TestCase):
                 self.assertEqual(read_json(projects[name] / "capsule-project.json")["limits"]["cpuFuel"], COMPOSITION_CPU_FUEL)
             self.assertEqual(read_json(projects["adapter-next"] / "capsule-project.json")["limits"]["cpuFuel"], COMPOSITION_CPU_FUEL - 1)
             self.assertEqual(read_json(projects["context-required"] / "capsule-project.json")["limits"]["cpuFuel"], 1_000_000_000)
+            receipt = read_json(directory / "projects/qualification-budgets.json")["captures"]["adapter"]
+            self.assertEqual(receipt["beforeDescriptorDigest"], receipt["afterDescriptorDigest"])
+            self.assertEqual(receipt["beforeLimits"], receipt["afterLimits"])
+
+    def test_inherited_generation_budget_is_verified_without_rewriting_any_project_bytes(self):
+        with tempfile.TemporaryDirectory() as owned:
+            project = create(Path(owned) / "adapter", "greeting", "java-http-adapter")
+            original = snapshot(project)
+            with self.assertRaisesRegex(ValueError, "default-cpu-budget-changed"):
+                qualification_budget(project, inherited=True)
+            self.assertEqual(snapshot(project), original)
+            descriptor = read_json(project / "capsule-project.json")
+            descriptor["limits"]["cpuFuel"] = COMPOSITION_CPU_FUEL
+            (project / "capsule-project.json").write_text(json.dumps(descriptor, indent=2) + "\n", encoding="utf-8")
+            captured = snapshot(project)
+            observed = qualification_budget(project, inherited=True)
+            self.assertEqual(snapshot(project), captured)
+            self.assertEqual(observed["beforeDescriptorDigest"], observed["afterDescriptorDigest"])
+            self.assertEqual(observed["beforeLimits"], observed["afterLimits"])
+            self.assertFalse(observed["signedExecutionQualified"])
 
     def test_fresh_capture_preserves_source_and_every_other_budget_dimension(self):
         with tempfile.TemporaryDirectory() as owned:
