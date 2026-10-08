@@ -3,6 +3,7 @@
 #include "jobs.h"
 #include "jsapi.h"
 #include "native_ownership.h"
+#include "native_cancel.h"
 
 namespace lsf::typescript::activation {
 class ReadinessSet;
@@ -16,6 +17,7 @@ class Subtask final {
   jobs_subtask_state_t state_ = JOBS_SUBTASK_RETURNED;
   bool live_ = false;
   bool joined_ = false;
+  bool cancel_requested_ = false;
   ReadinessSet* owner_set_ = nullptr;
   Subtask* next_in_set_ = nullptr;
 
@@ -45,6 +47,7 @@ public:
     if (!known(state_) || (!returned(state_) && !handle_)) return invalid(cx);
     live_ = true;
     joined_ = false;
+    cancel_requested_ = false;
     return true;
   }
   bool join(JSContext* cx, jobs_waitable_set_t set) {
@@ -69,7 +72,13 @@ public:
   bool cancel(JSContext* cx) {
     if (!live_) return true;
     if (returned(state_)) return true;
-    auto status = jobs_subtask_cancel(handle_);
+    if (cancel_requested_) return true;
+    cancel_requested_ = true;
+    auto status = lsf_async_subtask_cancel(handle_);
+    // The original asynchronous intrinsic returns BLOCKED while actual stop
+    // remains pending. Keep the existing handle/state/set registration and
+    // every result/capture owner until its eventual terminal event arrives.
+    if (status == SubtaskCancellationBlocked) return true;
     auto next = JOBS_SUBTASK_STATE(status);
     // Original v0.62 cancellation returns a state code, not another packed
     // start status. The existing nonzero handle remains the physical owner.

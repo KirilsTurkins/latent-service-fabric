@@ -30,6 +30,7 @@ NATIVE_SOURCES = (
     "native_retirement.h", "native_objects.h", "native_ownership.h",
     "native_import_lifecycle.h", "native_imports.h", "broker_import_accounting.h",
     "native_import_values.h",
+    "native_cancel.h",
 )
 DERIVATION_SOURCES = (
     "activation_engine.py", "promise_engine.py", "timer_engine.py", "abort_engine.py",

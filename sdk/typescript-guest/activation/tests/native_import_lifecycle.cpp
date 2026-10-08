@@ -7,6 +7,7 @@
 using namespace lsf::typescript::activation;
 namespace {
 unsigned joined = 0, drops = 0, waits = 0, polls = 0, sets = 0;
+unsigned cancel_calls = 0;
 uint32_t event_handle = 7;
 jobs_subtask_state_t event_state = JOBS_SUBTASK_RETURNED;
 bool defer_cancel = false, ack_refused = false, error = false;
@@ -63,7 +64,12 @@ void jobs_waitable_set_wait(jobs_waitable_set_t, jobs_event_t* event) {
 }
 void jobs_waitable_set_poll(jobs_waitable_set_t, jobs_event_t* event) { ++polls; *event = {}; }
 jobs_subtask_status_t jobs_subtask_cancel(jobs_subtask_t) {
+  ++cancel_calls;
   return defer_cancel ? JOBS_SUBTASK_STARTED : JOBS_SUBTASK_STARTED_CANCELLED;
+}
+uint32_t lsf_async_subtask_cancel(uint32_t handle) {
+  const auto state=jobs_subtask_cancel(handle);
+  return state==JOBS_SUBTASK_STARTED ? SubtaskCancellationBlocked : state;
 }
 void jobs_subtask_drop(jobs_subtask_t) { ++drops; }
 }
@@ -104,7 +110,18 @@ int main(int argc, char** argv) {
     } else {
       ok = ok && import.started(&cx, (7u << 4) | JOBS_SUBTASK_STARTED) && joined == 1 &&
            broker.tasks == 1 && !import.resultMayBeRead();
-      if (!std::strcmp(name, "eligible-work-polls-without-blocking")) {
+      if (!std::strcmp(name,"typed-result-retains-subtask-through-lifting")) {
+        ok=ok && readiness.dispatch(&cx,true) && import.observe(&cx) && import.beginLifting(&cx) &&
+           drops==0 && import.hasPhysicalSubtask() && import.resultMayBeRead() &&
+           import.liftCompleted(&cx) && drops==1 && !import.hasPhysicalSubtask() &&
+           import.physicalRetirementAcknowledged(&cx);
+      } else if (!std::strcmp(name,"blocked-cancel-is-requested-only-once")) {
+        defer_cancel=true;
+        ok=ok && import.cancel(&cx) && import.cancel(&cx) && cancel_calls==1 && drops==0 &&
+           import.hasPhysicalSubtask() && broker.result_live==1 && readiness.dispatch(&cx,true) &&
+           import.observe(&cx) && import.cancel(&cx) && drops==1 && cancel_calls==1 &&
+           import.physicalRetirementAcknowledged(&cx);
+      } else if (!std::strcmp(name, "eligible-work-polls-without-blocking")) {
         ok = ok && readiness.dispatch(&cx, false) && polls == 1 && waits == 0 &&
              import.phase() == ImportLifecycle::Phase::Pending;
       } else if (!std::strcmp(name, "unknown-readiness-keeps-storage")) {

@@ -90,13 +90,16 @@ public:
     if (phase_ != Phase::Returned || cancelled_ || !subtask_.resultReady())
       return invalid(cx);
     // The typed result remains reserved/rooted through this exact JS lift.
-    if (!subtask_.drop(cx) || !accounting_.resume(cx, work_)) return false;
+    if (!accounting_.resume(cx, work_)) return false;
     phase_ = Phase::Lifting;
     return true;
   }
   bool liftCompleted(JSContext* cx) {
     if (phase_ != Phase::Lifting) return invalid(cx);
-    if (!accounting_.complete(cx, work_)) return false;
+    // Typed lifting and original borrow/resource reconstruction have returned.
+    // Keep the real canonical handle until this point, matching v0.62's own
+    // result-lift-before-InProgress-destructor/drop sequence.
+    if (!subtask_.drop(cx) || !accounting_.complete(cx, work_)) return false;
     phase_ = Phase::Retiring;
     return true;
   }

@@ -159,6 +159,11 @@ jobs_subtask_status_t jobs_subtask_cancel(jobs_subtask_t handle) {
     wait.state = JOBS_SUBTASK_STARTED_CANCELLED;
   return wait.state; // original plain cancellation state, no new packed handle
 }
+uint32_t lsf_async_subtask_cancel(uint32_t handle) {
+  const auto state = jobs_subtask_cancel(handle);
+  return state == JOBS_SUBTASK_STARTING || state == JOBS_SUBTASK_STARTED
+      ? SubtaskCancellationBlocked : state;
+}
 void jobs_subtask_drop(jobs_subtask_t handle) {
   note_host();
   auto& wait = waits[handle];
