@@ -349,6 +349,21 @@ fn reserved_status_read_runs_while_ordinary_read_slots_and_queue_are_saturated()
         .unwrap(),
         23
     );
+    // The response can arrive before the worker retires its running job. Wait
+    // for that actual recovery-read bookkeeping while the ordinary read stays
+    // physically paused and its original queue remains saturated.
+    {
+        let control = &owner.inner.control;
+        let state = control.state.lock().unwrap();
+        let (_, timeout) = control
+            .changed
+            .wait_timeout_while(state, WATCHDOG, |state| state.active_recovery_reads != 0)
+            .unwrap();
+        assert!(
+            !timeout.timed_out(),
+            "recovery read did not physically retire"
+        );
+    }
     assert_eq!(owner.snapshot().unwrap().active_reads, 1);
     rendezvous.release(ticket).unwrap();
     wait(read).unwrap();

@@ -235,6 +235,10 @@ fn detached_custody_destructor_keeps_original_global_reservation_and_gate_charge
     );
     gate.release(ticket).unwrap();
     metadata_retired(&owner);
+    // Metadata refund is published before the final retirement signal. One
+    // real operation on this single recovery worker proves it completed that
+    // prior destructor and witness publication before the status assertions.
+    wait(owner.submit(StoreIoKind::RecoveryRead, 0, |_| ()).unwrap()).unwrap();
     assert!(witness.has_retired());
     assert!(weak.upgrade().is_none());
     assert_eq!(native.snapshot().unwrap().recovery.slots, 0);
