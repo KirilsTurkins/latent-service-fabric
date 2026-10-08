@@ -1,0 +1,14 @@
+[
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-abi-dedup387-execution-20261006",
+    "head": "6dbbf49f6bcf61bee863b9c00b2513e29f884bd3",
+    "remainingStatusLines": 51,
+    "preservation": "unresolved index/stages/working files committed in cleanup draft850"
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-native-currentness787-20261006-v11",
+    "head": "e0d03b14fd724f2e9218beb00ceea843262cc6bd",
+    "remainingStatusLines": 0,
+    "preservation": "WIP committed and pushed"
+  }
+]

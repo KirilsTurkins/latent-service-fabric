@@ -13,3 +13,7 @@ Implementation and validation are stopped. These drafts make distinct unpublishe
 The restore receipt integration e9014ee1 is already an ancestor of current #808, while the abandoned-reader leaf 6a7bfa58/f4ab is draft #957. The actual helper/actor/Origin continuations are included in the current query/witness union exposed through #879. The reference application leaf is #956. Qualified shared HTTP and Go/accounting fixes already delivered to existing PRs remain attributed there; historical diagnostic forks stay in the checkpoint index.
 
 - [#958](https://github.com/KirilsTurkins/latent-service-fabric/pull/958): archival private effect-status RPC test wrapper; semantically superseded by integrated runtime, retained for review.
+
+- [#959](https://github.com/KirilsTurkins/latent-service-fabric/pull/959): integration session preservation, 44 exact worktrees and compact validation/continuation evidence.
+
+- [#966](https://github.com/KirilsTurkins/latent-service-fabric/pull/966): entity, storage and restore preservation handoff with exact owned checkpoints and essential proof excerpts.

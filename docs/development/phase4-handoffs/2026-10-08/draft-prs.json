@@ -46,5 +46,18 @@
     "exit": 0,
     "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/958",
     "error": ""
+  },
+  {
+    "branch": "docs/phase4-integration-preservation-20261008",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/959",
+    "error": ""
+  },
+  {
+    "branch": "docs/phase4-entity-preservation-20261008",
+    "head": "0b0d19e331715138eb327af0ffa02bdec7e12168",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/966",
+    "error": ""
   }
 ]
