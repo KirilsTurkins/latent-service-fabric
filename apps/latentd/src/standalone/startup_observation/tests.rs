@@ -27,9 +27,10 @@ async fn finite_startup_trace_preserves_original_failure_and_excludes_private_er
     let report = report.unwrap();
     assert!(!report.startup_succeeded);
     assert!(report.shutdown.is_none());
-    let (successful, report) = observe_startup(async { Ok::<_, PlatformError>(7) }).await;
+    let (successful, successful_report) =
+        observe_startup(async { Ok::<_, PlatformError>(7) }).await;
     assert_eq!(successful, Ok(7));
-    assert!(report.is_none());
+    assert!(successful_report.is_none());
     let encoded = serde_json::to_string(&report).unwrap();
     let json: serde_json::Value = serde_json::from_str(&encoded).unwrap();
     assert_eq!(json["observations"][0]["failure"]["owner"], "storage");
