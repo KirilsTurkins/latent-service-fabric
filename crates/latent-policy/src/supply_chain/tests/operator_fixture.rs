@@ -55,87 +55,15 @@ fn export_fixture(publications: bool) {
     write_json(&root.join("policy.json"), &policy);
     let approved = SupplyChainPolicy::from_json(&serde_json::to_vec(&policy).unwrap()).unwrap();
     for (name, alternate) in [("blue", false), ("green", true)] {
-        let directory = root.join(name);
-        std::fs::create_dir(&directory).unwrap();
-        let mut input = packaging::capsule(packaging::component::Options::default());
-        if publications {
-            packaging::mutate_json(&mut input, "capsule.json", |manifest| {
-                let metadata = manifest["metadata"].as_object_mut().unwrap();
-                metadata.remove("tenant");
-                metadata.remove("namespace");
-                metadata.insert("name".into(), json!("packaging"));
-            });
-        }
-        if alternate && !publications {
-            let component = input
-                .layers
-                .iter_mut()
-                .find(|layer| layer.path == "component.wasm")
-                .unwrap();
-            // An inert, valid custom section creates a distinct compatible revision.
-            component.bytes.extend_from_slice(&[0, 2, 1, b'g']);
-            let digest = artifact_blob_digest(&component.bytes).to_string();
-            packaging::mutate_json(&mut input, "capsule.json", |manifest| {
-                manifest["component"]["digest"] = json!(digest);
-            });
-        }
-        let mut inventory = sbom::inventory(&input);
-        if publications && alternate {
-            // Correct authenticated inventory without changing executable or capsule metadata.
-            inventory.entries[0].license_expression = Some("MIT".into());
-        }
-        export_source(&directory, &input, &inventory);
-        let bundle = build_package_with_sbom(input, inventory, PackagingLimits::default()).unwrap();
-        let subject = PackageSigningSubject::from_package(
-            bundle.manifest_bytes(),
-            bundle.config_bytes(),
-            PackageLimits::default(),
-        )
-        .unwrap();
-        let evidence = signed_evidence(&subject, &publisher, &builder, now, now + 1800);
-        if publications {
-            let renewed = signed_evidence(&subject, &publisher, &builder, now, now + 1799);
-            latent_packaging::write_package_evidence(
-                bundle.layout().digest(),
-                &renewed,
-                &directory.join("renewed-evidence"),
-                16 * 1024 * 1024,
-            )
-            .unwrap();
-        }
-        crate::supply_chain::verify_package_once(
+        export_package(
+            root,
+            name,
+            alternate,
+            publications,
             &approved,
-            crate::supply_chain::PackageVerificationRequest {
-                tenant: &latent_core::TenantId("tests".into()),
-                package: &bundle,
-                evidence: &evidence,
-                unix_seconds: now,
-            },
-        )
-        .unwrap();
-        latent_packaging::write_package_directory(&bundle, &directory.join("package")).unwrap();
-        latent_packaging::write_package_evidence(
-            bundle.layout().digest(),
-            &evidence,
-            &directory.join("evidence"),
-            16 * 1024 * 1024,
-        )
-        .unwrap();
-        let mut deployment: Value = serde_json::from_slice(include_bytes!(
-            "../../../../../examples/echo-contract/deployment.json"
-        ))
-        .unwrap();
-        deployment["metadata"] = json!({"name":name,"tenant":"tests"});
-        deployment["spec"]["service"] = json!(if publications {
-            "packaging"
-        } else {
-            "tests/packaging"
-        });
-        deployment["spec"]["release"] = json!(subject.component_digest().unwrap().to_string());
-        deployment["spec"]["grants"] = json!([
-            {"capability":packaging::component::CLOCK,"policy":"tests/clock"}
-        ]);
-        write_json(&directory.join("deployment.json"), &deployment);
+            (&publisher, &builder),
+            now,
+        );
     }
     write_json(
         &root.join("fixture.json"),
@@ -265,4 +193,105 @@ fn export_source(
 
 fn write_json(path: &Path, value: &impl serde::Serialize) {
     std::fs::write(path, serde_json::to_vec(value).unwrap()).unwrap();
+}
+
+fn export_package(
+    root: &Path,
+    name: &str,
+    alternate: bool,
+    publications: bool,
+    approved: &SupplyChainPolicy,
+    (publisher, builder): (&LocalSigner, &LocalBuilderSigner),
+    now: u64,
+) {
+    let directory = root.join(name);
+    std::fs::create_dir(&directory).unwrap();
+    let mut input = packaging::capsule(packaging::component::Options::default());
+    if publications {
+        packaging::mutate_json(&mut input, "capsule.json", |manifest| {
+            let metadata = manifest["metadata"].as_object_mut().unwrap();
+            metadata.remove("tenant");
+            metadata.remove("namespace");
+            metadata.insert("name".into(), json!("packaging"));
+        });
+    }
+    if alternate && !publications {
+        let component = input
+            .layers
+            .iter_mut()
+            .find(|layer| layer.path == "component.wasm")
+            .unwrap();
+        // An inert, valid custom section creates a distinct compatible revision.
+        component.bytes.extend_from_slice(&[0, 2, 1, b'g']);
+        let digest = artifact_blob_digest(&component.bytes).to_string();
+        packaging::mutate_json(&mut input, "capsule.json", |manifest| {
+            manifest["component"]["digest"] = json!(digest);
+        });
+    }
+    let mut inventory = sbom::inventory(&input);
+    if publications && alternate {
+        // Correct authenticated inventory without changing executable or capsule metadata.
+        inventory.entries[0].license_expression = Some("MIT".into());
+    }
+    export_source(&directory, &input, &inventory);
+    let bundle = build_package_with_sbom(input, inventory, PackagingLimits::default()).unwrap();
+    let subject = PackageSigningSubject::from_package(
+        bundle.manifest_bytes(),
+        bundle.config_bytes(),
+        PackageLimits::default(),
+    )
+    .unwrap();
+    let evidence = signed_evidence(&subject, publisher, builder, now, now + 1800);
+    if publications {
+        let renewed = signed_evidence(&subject, publisher, builder, now, now + 1799);
+        latent_packaging::write_package_evidence(
+            bundle.layout().digest(),
+            &renewed,
+            &directory.join("renewed-evidence"),
+            16 * 1024 * 1024,
+        )
+        .unwrap();
+    }
+    crate::supply_chain::verify_package_once(
+        approved,
+        crate::supply_chain::PackageVerificationRequest {
+            tenant: &latent_core::TenantId("tests".into()),
+            package: &bundle,
+            evidence: &evidence,
+            unix_seconds: now,
+        },
+    )
+    .unwrap();
+    latent_packaging::write_package_directory(&bundle, &directory.join("package")).unwrap();
+    latent_packaging::write_package_evidence(
+        bundle.layout().digest(),
+        &evidence,
+        &directory.join("evidence"),
+        16 * 1024 * 1024,
+    )
+    .unwrap();
+    export_deployment(&directory, name, publications, &subject);
+}
+
+fn export_deployment(
+    directory: &Path,
+    name: &str,
+    publications: bool,
+    subject: &PackageSigningSubject,
+) {
+    let mut deployment: Value = serde_json::from_slice(include_bytes!(
+        "../../../../../examples/echo-contract/deployment.json"
+    ))
+    .unwrap();
+    deployment["metadata"] = json!({"name":name,"tenant":"tests"});
+    deployment["spec"]["service"] = json!(if publications {
+        "packaging"
+    } else {
+        "tests/packaging"
+    });
+    deployment["spec"]["release"] = json!(subject.component_digest().unwrap().to_string());
+    deployment["spec"]["grants"] = json!([
+        {"capability":packaging::component::CLOCK,"policy":"tests/clock"}
+    ]);
+    write_json(&directory.join("deployment.json"), &deployment);
 }

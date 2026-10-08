@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "CurrentJavaCampaign.test_current_campaign_refuses_partial_duplicate_mixed_source_or_claimed_authority",
+    "CurrentJavaCampaign.test_current_campaign_requires_all_six_distinct_explicit_captures_with_original_digest",
+    "CurrentJavaInputs.test_changed_component_report_source_or_tool_closure_refuses",
+    "CurrentJavaInputs.test_declared_import_profile_and_selection_bounds_refuse",
+    "CurrentJavaInputs.test_failed_missing_stages_and_claimed_signed_execution_refuse_even_with_reselected_report_digest",
+    "CurrentJavaInputs.test_independent_selected_report_and_source_materials_preserve_original_bytes",
+    "CurrentJavaPackaging.test_current_package_selects_explicit_compiler_source_without_historical_fallback",
+    "CurrentJavaPackaging.test_current_selection_requires_both_original_and_forbidden_before_any_signing",
+    "CurrentJavaPackaging.test_duplicate_variant_or_mixed_source_refuses_without_invoking_signer"
+  ],
+  "guards": {
+    "CurrentJavaCampaign.test_current_campaign_refuses_partial_duplicate_mixed_source_or_claimed_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:a8dc6bc6beff3e301053a9b1c2a4fd04119d2a4c4ecbef7ce0b0548ff7c4846e"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaCampaign.test_current_campaign_requires_all_six_distinct_explicit_captures_with_original_digest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:a8dc6bc6beff3e301053a9b1c2a4fd04119d2a4c4ecbef7ce0b0548ff7c4846e"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaInputs.test_changed_component_report_source_or_tool_closure_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaInputs.test_declared_import_profile_and_selection_bounds_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaInputs.test_failed_missing_stages_and_claimed_signed_execution_refuse_even_with_reselected_report_digest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaInputs.test_independent_selected_report_and_source_materials_preserve_original_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_current_package_selects_explicit_compiler_source_without_historical_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_current_selection_requires_both_original_and_forbidden_before_any_signing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_duplicate_variant_or_mixed_source_refuses_without_invoking_signer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_current_inputs.py",
+  "reviewReason": "Preserve all seven current-material and package cases with exact guards; add actual six-component selection digest and missing/duplicate/mixed-source/authority refusal cases before any node or signer execution.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

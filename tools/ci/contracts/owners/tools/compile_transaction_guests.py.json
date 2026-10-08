@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain actual authored transaction compiler source, recipe, binding and failure evidence separately from node execution",
+  "reviewReason": "Preserve original compiler plan and guards while porting separately captured Java schema and post-stage diagnostic compiler plans Incoming reviewed obligation: Retain actual authored transaction compiler source, recipe, binding and failure evidence separately from node execution Retain both parent source cases and execution guards with current state/transaction API unions and actual current source owner identities. Incoming reviewed obligation: Preserve every current authored compiler path and separately captured Java schema/post-stage diagnostic mode, all fail-before-output guards and compiler-input evidence; reviewed semantic union against current development. Preserve both original source case and nonhash guard inventories, existing deadline/resource bounds, compiled-profile freshness, truthful full renderer gates, and exact source owner identities.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "884b621796445429b29258651b7d6252c5db98aa264d4f9f50673a493d99068f"
+  "sha256": "ecc484a5a994f8185b1c2e6e927c42fa103858b0ce89d15ca4f8e3bb835b4705"
 }

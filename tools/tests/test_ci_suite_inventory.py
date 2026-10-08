@@ -10,7 +10,26 @@ from tools import ci_profile, ci_suite_inventory as registry
 from tools.ci_fast import selected_packages
 
 
+def qualify_narrow_fixture():
+    """Use actual registered manifest names in a controlled offline graph."""
+    graph = registry.workspace(registry.ROOT)
+    # Only this explicit fixture removes reverse consumers of its leaf; the
+    # classifier reads the unchanged real source file and full inventory.
+    graph = {name: registry.Package(package.name, package.directory,
+                                   package.dependencies - {'latent-effects'})
+             for name, package in graph.items()}
+    with patch.object(registry, 'workspace', return_value=graph), \
+            patch('subprocess.Popen', side_effect=AssertionError('selection spawned a command')):
+        decision = ci_profile.classify_paths(['crates/latent-effects/src/lib.rs'])
+    assert decision.profile == 'fast' and not decision.renderer
+    assert decision.fast_packages
+    assert set(decision.fast_packages) < set(registry.load()['fastPackages'])
+
+
 class InventoryTests(unittest.TestCase):
+    def test_controlled_narrow_graph_keeps_fast_profile_and_real_registered_subset(self):
+        qualify_narrow_fixture()
+
     def test_inventory_has_all_four_boundaries_and_preserved_recipes(self):
         data = registry.load()
         self.assertEqual(set(data['boundaries']), registry.BOUNDARIES)
@@ -61,13 +80,18 @@ class InventoryTests(unittest.TestCase):
 
     def test_a_new_reverse_dependency_prevents_filename_allowlist_bypass(self):
         graph = registry.workspace(registry.ROOT)
-        self.assertEqual(ci_profile.classify_paths(['crates/latent-workflows/src/lib.rs']).profile, 'fast')
+        original = ci_profile.classify_paths(['crates/latent-workflows/src/lib.rs'])
+        self.assertEqual(original.profile, 'full')
+        self.assertFalse(original.renderer)
+        self.assertTrue(original.fast_packages)
+        self.assertLess(set(original.fast_packages), set(registry.load()['fastPackages']))
         node = graph['latent-node']
         graph['latent-node'] = registry.Package(node.name, node.directory, node.dependencies | {'latent-workflows'})
         with patch.object(registry, 'workspace', return_value=graph):
             decision = ci_profile.classify_paths(['crates/latent-workflows/src/lib.rs'])
         self.assertEqual(decision.profile, 'full')
         self.assertTrue(decision.renderer)
+        self.assertLess(set(original.fast_packages), set(decision.fast_packages))
 
     def test_workspace_alias_inherited_optional_dev_build_and_platform_edges(self):
         with tempfile.TemporaryDirectory() as directory:

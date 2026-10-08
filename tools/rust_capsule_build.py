@@ -28,6 +28,7 @@ RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
            "tools/dev_workflow/resource_inputs.py",
            "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
            "tools/dev_workflow/windows.py")
+RECIPE += ("tools/transaction_guest_project.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
@@ -212,10 +213,13 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
             layers.append((name, "asset", "text/plain"))
-    from tools.transaction_guest_project import package_companion
+    from tools.transaction_guest_project import package_companion, package_effect_requirements
     companion = package_companion(output, project, files)
     if companion is not None:
         layers.append(companion)
+    effect_requirements = package_effect_requirements(output, project, files)
+    if effect_requirements is not None:
+        layers.append(effect_requirements)
     write_json(output / "package-source.json", {
         "formatVersion": 1, "kind": "capsule", "name": project["name"], "version": project["version"],
         "entrypoint": "component.wasm", "annotations": {},

@@ -9,9 +9,9 @@ mod lease;
 mod public_error;
 mod state_management;
 pub use state_management::{
-    StateManagementAdmission, StateManagementBackend, StateManagementBinding,
-    StateManagementRecoveryAdmission, StateManagementRecoveryBinding, StateManagementReservation,
-    StateManagementServices,
+    StateMaintenanceClock, StateManagementAdmission, StateManagementBackend,
+    StateManagementBinding, StateManagementRecoveryAdmission, StateManagementRecoveryBinding,
+    StateManagementReservation, StateManagementServices,
 };
 #[cfg(test)]
 mod tests;
@@ -23,7 +23,13 @@ use crate::{
     },
 };
 use latent_core::{ActivationClock, BoxFuture, PlatformError, PlatformErrorCode};
-use latent_rpc::{control::v1 as c, phase4 as contract, transaction::v1 as t};
+/// The maintained typed protocol used by embedding runtimes and listeners.
+pub use latent_rpc::phase4 as contract;
+/// Exact recovery routes without creating another path registry.
+pub use latent_rpc::phase4::is_recovery_rpc_path;
+/// Maintained application transaction messages for embedding runtimes.
+pub use latent_rpc::transaction::v1 as transaction;
+use latent_rpc::{control::v1 as c, transaction::v1 as t};
 pub use lease::Phase4ResponseService;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};

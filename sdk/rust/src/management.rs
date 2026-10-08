@@ -467,6 +467,20 @@ pub struct ActivationDiagnostic {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TransactionStagingWitness {
+    pub schema_version: u32,
+    pub activation_serial: u64,
+    pub command_id: String,
+    pub attempt_id: String,
+    pub transaction_id: String,
+    pub publication_id: String,
+    pub staged_mutations: u32,
+    pub captured_intents: u32,
+    pub state_write_bytes: u64,
+    pub observed_at_unix_millis: u64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ActivationTreeNode {
     pub activation_id: String,
     pub parent_activation_id: Option<String>,
@@ -482,6 +496,7 @@ pub struct ActivationTreeNode {
     pub diagnostic_is_terminal: bool,
     pub target_service: String,
     pub received_at_unix_millis: u64,
+    pub transaction_staging: Option<TransactionStagingWitness>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

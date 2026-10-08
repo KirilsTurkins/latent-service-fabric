@@ -360,3 +360,62 @@ class DevcontainerOwnership(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RouteResponseObservations(unittest.TestCase):
+    def test_empty_reply_keeps_original_failure_and_records_only_finite_status(self):
+        from tools.dev_workflow.client import Client
+        observations = []
+        client = Client(Path("latent"), Path("private-config"), Path("."), observer=observations.append)
+        with patch("tools.dev_workflow.client.process.run", return_value=subprocess.CompletedProcess([], 101, b"", b"private token")) as invoked:
+            with self.assertRaisesRegex(common.DevError, "document-byte-limit"):
+                client.call("trigger", "apply", "secret-argument")
+        self.assertEqual(invoked.call_count, 1)
+        self.assertEqual(observations[0]["exitStatus"], 101)
+        self.assertEqual(observations[0]["stdoutBytes"], 0)
+        self.assertEqual(observations[0]["stderrBytes"], 13)
+        self.assertEqual(observations[0]["validationCode"], "document-byte-limit")
+        self.assertNotIn("private token", str(observations))
+        self.assertNotIn("secret-argument", str(observations))
+        self.assertEqual(client.failed_call, observations[0])
+
+    def test_declared_refusal_keeps_original_result_and_closed_public_code(self):
+        from tools.dev_workflow.client import Client
+        observations = []
+        client = Client(Path("latent"), Path("private-config"), Path("."), observer=observations.append)
+        value = {"schemaVersion": "latent.cli.result.v1", "category": "platform-failure",
+            "command": "trigger delete", "outcomeKnown": True, "requestDispatched": True,
+            "data": {}, "error": {"code": "permission-denied", "message": "private payload", "grpcCode": "permission-denied"}}
+        with patch("tools.dev_workflow.client.process.run", return_value=subprocess.CompletedProcess([], 4, common.encode(value), b"")) as invoked:
+            self.assertEqual(client.call("trigger", "delete", "private-id"), value)
+        self.assertEqual(invoked.call_count, 1)
+        self.assertEqual(observations[0]["publicCode"], "permission-denied")
+        self.assertEqual(observations[0]["validationCode"], None)
+        self.assertNotIn("private payload", str(observations))
+        self.assertNotIn("private-id", str(observations))
+        self.assertEqual(client.failed_call, observations[0])
+
+    def test_oversized_reply_preserves_one_mib_rejection_without_recording_bytes(self):
+        from tools.dev_workflow.client import Client
+        observations = []
+        client = Client(Path("latent"), Path("private-config"), Path("."), observer=observations.append)
+        raw = b"x" * 1048577
+        with patch("tools.dev_workflow.client.process.run", return_value=subprocess.CompletedProcess([], 0, raw, b"")) as invoked:
+            with self.assertRaisesRegex(common.DevError, "document-byte-limit"):
+                client.call("trigger", "operation", "private-id")
+        self.assertEqual(invoked.call_count, 1)
+        self.assertEqual(invoked.call_args.kwargs["maximum"], 1048576)
+        self.assertEqual(observations[0]["stdoutBytes"], len(raw))
+        self.assertLess(len(str(observations)), 1024)
+
+    def test_observation_write_failure_never_replaces_original_response_error(self):
+        from tools.dev_workflow.client import Client
+        def failed_write(_value):
+            raise OSError("private output")
+        client = Client(Path("latent"), Path("private-config"), Path("."), observer=failed_write)
+        with patch("tools.dev_workflow.client.process.run", return_value=subprocess.CompletedProcess([], 101, b"", b"")) as invoked:
+            with self.assertRaisesRegex(common.DevError, "document-byte-limit"):
+                client.call("trigger", "apply", "private-id")
+        self.assertEqual(invoked.call_count, 1)
+        self.assertTrue(client.observation_failed)
+        self.assertEqual(client.failed_call["validationCode"], "document-byte-limit")

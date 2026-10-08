@@ -10,7 +10,9 @@ mod limits;
 mod local;
 mod service;
 mod trace;
+mod transaction;
 mod validation;
+pub use transaction::{transaction_activation_request, transaction_invocation_response};
 
 use latent_activation::{ActivationOutcome, ActivationStatus, TraceContext};
 use latent_core::{

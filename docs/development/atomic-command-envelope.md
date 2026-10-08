@@ -79,8 +79,28 @@ identity expiry are separate. Existing linked identities are conservatively
 retained until the maintenance owner can prove safe reclamation. Current read
 permission and proven nonregressing clock continuity are required for inspection.
 
-All initial command codecs are closed binary v1 records: command/attempt
-`LCM`, result `LCR`, pending result `LCP`, input `LIC`, usage `LCU` and retry `LCT`.
+Command/attempt `LCM` and terminal result `LCR` use closed binary format 3.
+Both retain the original incarnation and namespace generation installed by
+that terminal physical envelope. A later command, rollout or lookup cannot
+substitute its current namespace version. The result digest includes this
+original version and the original opaque view token, and startup checks exact
+command/result version and token linkage. The token includes the scope digest
+and original schema/recovery epochs captured from the same state plan. No-state
+rejection/abort envelopes capture and CAS the exact same history row. Initial
+typed receipts and replay encode that original opaque token as canonical padded
+base64; they never reconstruct it from the latest namespace history.
+Pending records have no committed version; committed, rejected and technical
+abort metadata retain their own original durable envelope version.
+
+Historic `LCM`/`LCR` formats 1 and 2 are explicitly unsupported because neither
+retained the complete original epoch-qualified token. Readiness and inspection
+refuse these rows; this change
+provides no backward reader, migration or version reconstruction. Operators must
+retain the previous codec/profile and its protected data until an approved
+migration or new store/incarnation is installed. Removing that codec cannot be
+claimed as compatible retained-work recovery.
+
+Pending result `LCP`, input `LIC`, usage `LCU` and retry `LCT` remain format 1.
 Lengths, counts, discriminants, key identities, body digests and trailing bytes
 are checked before acceptance. `validate_view` scans all ten families in coherent
 pages of at most 128 rows/2 MiB and performs bounded point checks for every

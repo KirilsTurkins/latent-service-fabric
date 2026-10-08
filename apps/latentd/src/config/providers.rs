@@ -136,7 +136,7 @@ pub(super) fn derive(
         || !cfg!(all(target_os = "linux", target_arch = "x86_64"))
         || config.capability_policies.is_none()
         || config.audit.is_none()
-        || config.budget_profile.profile() != BudgetProfile::Phase3
+        || !provider_budget(config.budget_profile.profile())
         || providers.format_version != 1
         || providers.no_installations()
         || providers.bindings.is_empty()
@@ -332,6 +332,10 @@ pub(super) fn anchor(config: &mut ConfiguredProviders, parent: &Path) -> Result<
         }
     }
     Ok(())
+}
+
+fn provider_budget(profile: BudgetProfile) -> bool {
+    matches!(profile, BudgetProfile::Phase3 | BudgetProfile::Phase4)
 }
 
 fn validate_http_credentials(

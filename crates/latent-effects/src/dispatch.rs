@@ -115,9 +115,34 @@ pub struct EffectRecord {
     latest: Option<AttemptReceipt>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     management: Option<EffectManagementStamp>,
+    /// V3 only: exact immutable operator reconciliation receipt, never a
+    /// provider acknowledgement or another delivery attempt.
+    #[serde(skip)]
+    recovery_close: Option<[u8; 32]>,
+}
+
+// V3 has its own closed envelope. The nested record keeps the exact v1/v2
+// JSON shape and rejects a close field under either historical header.
+#[derive(Serialize)]
+struct ClosedRecordBody<'a> {
+    record: &'a EffectRecord,
+    receipt_digest: [u8; 32],
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ClosedRecordBodyOwned {
+    record: EffectRecord,
+    receipt_digest: [u8; 32],
 }
 
 impl EffectRecord {
+    /// Immutable authority bytes do not grow after commit. The remaining fixed
+    /// fields can add at most 4 KiB: two bounded escaped receipt strings,
+    /// disposition tags and ten fixed-width integer/optional observations.
+    pub fn retained_bound(authority: &DurableEffectAuthority) -> Result<u64, AuthorityError> {
+        let initial = Self::committed(authority)?.encode()?.len() as u64;
+        initial.checked_add(4096).ok_or(AuthorityError::Invalid)
+    }
     pub fn committed(authority: &DurableEffectAuthority) -> Result<Self, AuthorityError> {
         Ok(Self {
             authority_record: authority.encode()?,
@@ -132,6 +157,7 @@ impl EffectRecord {
             history_sequence: 0,
             latest: None,
             management: None,
+            recovery_close: None,
         })
     }
 
@@ -195,6 +221,69 @@ impl EffectRecord {
     #[must_use]
     pub fn latest(&self) -> Option<&AttemptReceipt> {
         self.latest.as_ref()
+    }
+
+    #[must_use]
+    pub const fn recovery_close_digest(&self) -> Option<[u8; 32]> {
+        self.recovery_close
+    }
+
+    pub(crate) const fn clock_floor(&self) -> u64 {
+        self.last_clock_millis
+    }
+
+    pub(crate) fn recovery_original_digest(
+        &self,
+        disposition: Disposition,
+        clock: u64,
+    ) -> Result<[u8; 32], AuthorityError> {
+        use sha2::{Digest, Sha256};
+        if self.recovery_close.is_none() {
+            return Err(AuthorityError::Invalid);
+        }
+        let mut original = self.clone();
+        original.recovery_close = None;
+        original.disposition = disposition;
+        original.last_clock_millis = clock;
+        Ok(Sha256::digest(original.encode()?).into())
+    }
+
+    /// The installed exclusive offline reconciler persists the matching
+    /// reviewed receipt in the SAME transaction. No send or retry is granted.
+    pub(crate) fn close_without_redrive(
+        &mut self,
+        receipt: [u8; 32],
+        time: EffectTime,
+    ) -> Result<(), AuthorityError> {
+        if receipt == [0; 32]
+            || self.recovery_close.is_some()
+            || self.disposition.terminal()
+            || self.disposition == Disposition::Dispatching
+        {
+            return Err(AuthorityError::Stale);
+        }
+        self.check_clock(time)?;
+        self.disposition = Disposition::DeadLettered;
+        self.recovery_close = Some(receipt);
+        self.validate()
+    }
+
+    /// Host-audited retention may stop unresolved work only after the original
+    /// delivery horizon and actual attempt retirement. Its audit is persisted
+    /// by the complete maintenance envelope. Keep the last measured receipt;
+    /// expiry is never a fabricated provider acknowledgement or nonexecution.
+    pub fn expire_retired(&mut self, time: EffectTime) -> Result<(), AuthorityError> {
+        self.check_clock(time)?;
+        if self.disposition == Disposition::Dispatching {
+            return Err(AuthorityError::Unavailable);
+        }
+        if time.unix_millis < self.authority()?.expires_at_millis() {
+            return Err(AuthorityError::Expired);
+        }
+        if !self.disposition.terminal() {
+            self.disposition = Disposition::Expired;
+        }
+        Ok(())
     }
 
     #[must_use]
@@ -417,11 +506,23 @@ impl EffectRecord {
 
     pub fn encode(&self) -> Result<Vec<u8>, AuthorityError> {
         self.validate()?;
-        let body = serde_json::to_vec(self).map_err(|_| AuthorityError::Invalid)?;
-        if body.len() > 65_536 {
+        let body = if let Some(receipt_digest) = self.recovery_close {
+            serde_json::to_vec(&ClosedRecordBody {
+                record: self,
+                receipt_digest,
+            })
+        } else {
+            serde_json::to_vec(self)
+        }
+        .map_err(|_| AuthorityError::Invalid)?;
+        let initial = serde_json::to_vec(&Self::committed(&self.authority()?)?)
+            .map_err(|_| AuthorityError::Invalid)?;
+        if body.len() > 65_536 || body.len() > initial.len().saturating_add(4096) {
             return Err(AuthorityError::Capacity);
         }
-        let mut bytes = if self.management.is_some() {
+        let mut bytes = if self.recovery_close.is_some() {
+            b"LER\0\x03".to_vec()
+        } else if self.management.is_some() {
             b"LER\0\x02".to_vec()
         } else {
             b"LER\0\x01".to_vec()
@@ -434,15 +535,26 @@ impl EffectRecord {
         if bytes.len() > 65_541 {
             return Err(AuthorityError::Capacity);
         }
-        let managed_format = bytes.starts_with(b"LER\0\x02");
-        if !managed_format && !bytes.starts_with(b"LER\0\x01") {
-            return Err(AuthorityError::UnsupportedFormat);
-        }
-        let record: Self =
-            serde_json::from_slice(&bytes[5..]).map_err(|_| AuthorityError::Invalid)?;
-        if record.management.is_some() != managed_format {
-            return Err(AuthorityError::UnsupportedFormat);
-        }
+        let record = if bytes.starts_with(b"LER\0\x03") {
+            let closed: ClosedRecordBodyOwned =
+                serde_json::from_slice(&bytes[5..]).map_err(|_| AuthorityError::Invalid)?;
+            let mut record = closed.record;
+            record.recovery_close = Some(closed.receipt_digest);
+            record
+        } else {
+            // Preserve the exact installed v1/v2 management reader. Its closed
+            // serde shape rejects every v3 field, including a null marker.
+            let managed_format = bytes.starts_with(b"LER\0\x02");
+            if !managed_format && !bytes.starts_with(b"LER\0\x01") {
+                return Err(AuthorityError::UnsupportedFormat);
+            }
+            let record: Self =
+                serde_json::from_slice(&bytes[5..]).map_err(|_| AuthorityError::Invalid)?;
+            if record.management.is_some() != managed_format {
+                return Err(AuthorityError::UnsupportedFormat);
+            }
+            record
+        };
         record.validate()?;
         Ok(record)
     }
@@ -451,6 +563,11 @@ impl EffectRecord {
         let authority = self.authority()?;
         if let Some(stamp) = &self.management {
             stamp.validate(self)?;
+        }
+        if self.recovery_close.is_some_and(|digest| {
+            digest == [0; 32] || self.disposition != Disposition::DeadLettered
+        }) {
+            return Err(AuthorityError::Invalid);
         }
         if self.attempt > authority.ceiling().maximum_attempts
             || self.last_clock_millis < authority.committed_at_millis()
@@ -489,9 +606,10 @@ impl EffectRecord {
                         || has_receipt(Disposition::Uncertain))
             }
             Disposition::DeadLettered => {
-                (self.attempt == authority.ceiling().maximum_attempts
-                    && (has_receipt(Disposition::KnownFailed)
-                        || has_receipt(Disposition::Uncertain)))
+                self.recovery_close.is_some()
+                    || (self.attempt == authority.ceiling().maximum_attempts
+                        && (has_receipt(Disposition::KnownFailed)
+                            || has_receipt(Disposition::Uncertain)))
                     || self.management.as_ref().is_some_and(|stamp| {
                         stamp.fact() == EffectManagementFact::AdministratorTerminated
                     })
