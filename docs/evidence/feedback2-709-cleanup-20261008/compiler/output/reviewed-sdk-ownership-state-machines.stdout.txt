@@ -1,0 +1,2 @@
+Java buffered response validation passed; runtime remains authoritative
+Java ownership state machines passed; component gate remains required

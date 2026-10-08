@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "latent.java.composition-diagnostic-compiler-process.v1",
+  "sourceCommit": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "originalToolProducer": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "originalToolArchive": "sha256:37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+  "originalToolPolicy": "sha256:ce36420661807326255232c0542f334045af5a637a157ad3c99b7e77328ffcba",
+  "compilerOnly": true,
+  "historicalNodeApprovalReused": false,
+  "signedNodeExecutionQualified": false,
+  "compiled": false,
+  "componentExportAvailable": false,
+  "privateOriginalSource": {
+    "sourceTree": "1a1745ebbddab81ea30279e4f43ff554b83306cc",
+    "shallowBoundary": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+    "syntheticCommits": false,
+    "actualObjectSetMatches": true,
+    "trackedBytes": 40909217,
+    "originalGitMutated": false
+  },
+  "seconds": 9.300848,
+  "failedReason": "incompatible-host-abi",
+  "failedException": "DevError"
+}

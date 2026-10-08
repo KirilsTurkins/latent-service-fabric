@@ -1,0 +1,5 @@
+*.json -text
+*.log -text
+*.txt -text
+*.tar.gz -text
+*.py -text

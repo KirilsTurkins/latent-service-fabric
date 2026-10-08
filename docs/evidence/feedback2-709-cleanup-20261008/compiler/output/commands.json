@@ -1,0 +1,138 @@
+[
+  {
+    "stage": "source-init",
+    "command": [
+      "git",
+      "init",
+      "--initial-branch=frozen",
+      "/work/java709-four-fresh-37b48cd8-r2/source"
+    ],
+    "exitCode": 0,
+    "seconds": 0.020508,
+    "timeoutSeconds": 180,
+    "stdoutBytes": 86,
+    "stderrBytes": 0
+  },
+  {
+    "stage": "source-origin",
+    "command": [
+      "git",
+      "remote",
+      "add",
+      "origin",
+      "https://github.com/KirilsTurkins/latent-service-fabric.git"
+    ],
+    "exitCode": 0,
+    "seconds": 0.006786,
+    "timeoutSeconds": 180,
+    "stdoutBytes": 0,
+    "stderrBytes": 0
+  },
+  {
+    "stage": "source-sparse-init",
+    "command": [
+      "git",
+      "sparse-checkout",
+      "init",
+      "--no-cone"
+    ],
+    "exitCode": 0,
+    "seconds": 0.006238,
+    "timeoutSeconds": 180,
+    "stdoutBytes": 0,
+    "stderrBytes": 0
+  },
+  {
+    "stage": "source-checkout",
+    "command": [
+      "git",
+      "checkout",
+      "--detach",
+      "37b48cd8e485a826cd87e23aea184d99c17e4731"
+    ],
+    "exitCode": 0,
+    "seconds": 0.506698,
+    "timeoutSeconds": 180,
+    "stdoutBytes": 0,
+    "stderrBytes": 316
+  },
+  {
+    "stage": "ensurepip",
+    "command": [
+      "/usr/local/bin/python3",
+      "-m",
+      "ensurepip",
+      "--user"
+    ],
+    "exitCode": 0,
+    "seconds": 2.540336,
+    "timeoutSeconds": 180,
+    "stdoutBytes": 160,
+    "stderrBytes": 250
+  },
+  {
+    "stage": "python-requirements",
+    "command": [
+      "/usr/local/bin/python3",
+      "-m",
+      "pip",
+      "install",
+      "--user",
+      "--retries",
+      "0",
+      "-r",
+      "tools/requirements.lock"
+    ],
+    "exitCode": 0,
+    "seconds": 2.868129,
+    "timeoutSeconds": 180,
+    "stdoutBytes": 1811,
+    "stderrBytes": 366
+  },
+  {
+    "stage": "original-producer-owned-material-extraction",
+    "command": [
+      "/usr/local/bin/python3",
+      "-B",
+      "/controller/extract-original-compiler-materials.py"
+    ],
+    "exitCode": 0,
+    "seconds": 23.828517,
+    "timeoutSeconds": 300,
+    "stdoutBytes": 150,
+    "stderrBytes": 0
+  },
+  {
+    "stage": "reviewed-sdk-ownership-compile",
+    "command": [
+      "/work/java709-four-fresh-37b48cd8-r2/managed/jdk/bin/javac",
+      "-d",
+      "/work/java709-four-fresh-37b48cd8-r2/ownership-classes",
+      "/work/java709-four-fresh-37b48cd8-r2/source/sdk/java-guest/tests/Ownership.java",
+      "/work/java709-four-fresh-37b48cd8-r2/source/sdk/java-guest/tests/ResponseValidation.java",
+      "/work/java709-four-fresh-37b48cd8-r2/source/sdk/java-guest/runtime/dev/latent/guest/Handle.java",
+      "/work/java709-four-fresh-37b48cd8-r2/source/sdk/java-guest/runtime/dev/latent/guest/SensitiveBytes.java",
+      "/work/java709-four-fresh-37b48cd8-r2/source/sdk/java-guest/runtime/dev/latent/guest/Unsigned64.java",
+      "/work/java709-four-fresh-37b48cd8-r2/source/sdk/java-guest/runtime/dev/latent/guest/BufferedWebResponseValidator.java"
+    ],
+    "exitCode": 0,
+    "seconds": 1.005927,
+    "timeoutSeconds": 180,
+    "stdoutBytes": 0,
+    "stderrBytes": 0
+  },
+  {
+    "stage": "reviewed-sdk-ownership-state-machines",
+    "command": [
+      "/work/java709-four-fresh-37b48cd8-r2/managed/jdk/bin/java",
+      "-cp",
+      "/work/java709-four-fresh-37b48cd8-r2/ownership-classes",
+      "dev.latent.guest.Ownership"
+    ],
+    "exitCode": 0,
+    "seconds": 0.052574,
+    "timeoutSeconds": 180,
+    "stdoutBytes": 142,
+    "stderrBytes": 0
+  }
+]

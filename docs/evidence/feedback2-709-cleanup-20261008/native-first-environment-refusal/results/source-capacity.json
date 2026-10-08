@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "tools.tests.test_build_source_capacity"
+  ],
+  "exitCode": 1,
+  "source": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "committedFiniteSourceLimitsUsed": true
+}

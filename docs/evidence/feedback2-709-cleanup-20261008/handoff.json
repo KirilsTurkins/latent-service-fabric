@@ -1,0 +1,297 @@
+{
+  "schemaVersion": "latent.feedback2.cleanup-handoff.v1",
+  "observedAtUtc": "2026-10-08T11:13:44.717278+00:00",
+  "issue": 709,
+  "sourceCommit": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "sourceTree": "1a1745ebbddab81ea30279e4f43ff554b83306cc",
+  "status": "incomplete-user-stopped-for-cleanup",
+  "implementationChanged": false,
+  "currentPublisherOwnerImplementation": "planned only; no product code, tests or new input schema implemented",
+  "sourceContractDeliveredByPr768": "ee3039e2463929672b53d2e23dd91d6fbdc1e408",
+  "fullActualDiagnosticProgrammeComplete": false,
+  "issueClosureJustified": false,
+  "currentSixQualified": false,
+  "legacySixFortyReceiptGuardUnchanged": true,
+  "completed": {
+    "freshCurrentJavaComponents": 4,
+    "actualSuccessfulBuildCommands": 104,
+    "rawFreshCaptureFilesRehashed": 1123,
+    "rawFreshCaptureBytes": 26841218,
+    "allFourWasmBytesEqualHistorical5602Outputs": true,
+    "originalCompilerSourceRoleOnly": "761172002e4a4d02102f8c757235b888fe4859e1",
+    "originalBuildOnlyHelperSource": "20d1c62aa5bcaea9ce4da67e7fb5a86b0580ca57",
+    "currentPartialNativePassedPhases": 6,
+    "ownedMergedPr768WorktreeRemoved": true,
+    "actualBytesFreedByMergedWorktreeRemoval": 3908169728
+  },
+  "nativeRunDisposition": {
+    "userRequestedStop": true,
+    "running": false,
+    "pid": 0,
+    "exitCode": 137,
+    "stoppedAtUtc": "2026-10-08T11:08:38.627493+00:00",
+    "original4500sNativeClockNotRenewed": true,
+    "noJava900sDiagnosticClockStarted": true,
+    "noSigningOrCapabilityGrantOrGuestProgramme": true
+  },
+  "currentRuntimeBlocker": "Frozen37b lacks transaction_recovery example and10 old native40 selectors. Many belong to unmerged Phase4 prerequisites; that original six/40 proof cannot be fabricated from current source. #709 does not require those unmerged state/recovery modules.",
+  "approvedNextDesign": "Add an explicit current-publisher input owner for the same full900s programme, keeping legacy six/40 validation unchanged. Bind authenticated native3 + Java helper2 to exact current source/ref/manifests/archives/checksums/Sigstore provenance and genuine current profile/signature regressions. Keep every diagnostic case/control/private-store check/deadline and exact raw candidate approval. No PR/push of feature implementation was started.",
+  "remaining": [
+    "Implement and test additive current-publisher input path in an isolated current-source worktree; preserve legacy refusals",
+    "Actual cryptographic verification through maintained independently provisioned trust/verifier owners; no success flags or receipt hashes alone as authentication",
+    "Complete current profile/signature/public-projection regression evidence with actual discovery and execution, never zero-match filtered tests",
+    "Ordinary separated signing using authenticated current source helper; record exact material and ephemeral proof identities",
+    "Fresh complete protected private-store capture and independently reviewed actual20-policy candidate; include two outputBytes8192-to14336 deltas",
+    "Explicit approval of exact full raw candidate hash before execute under original900-second same-boot deadline; then full real cases/paging/expiry/concurrency/cleanup",
+    "Reconcile every criterion and close#709/#707 only after completion"
+  ],
+  "cleanupSafety": "Only bounded public source/progress/test/setup/failed-run and unsigned compiler materials are preserved here. No private stores, credentials, signing keys, live runtime workspaces, bulk native executables, Docker image layers or Cargo caches are published.",
+  "files": [
+    {
+      "path": "compiler/controller.py",
+      "bytes": 12899,
+      "sha256": "dec71aaf4d14780ef282ce8f37c7cfd0b2874fadacc33268af525ce60c4aa81e"
+    },
+    {
+      "path": "compiler/controller-review.json",
+      "bytes": 683,
+      "sha256": "8dac61301a18de0b8a7023c41cc7a5ea774f5c423ff44e22ba801897e9603f02"
+    },
+    {
+      "path": "compiler/extract-original-compiler-materials.py",
+      "bytes": 4250,
+      "sha256": "d0398ce2e59be403af0b52cfe58caf3be5f10c6ff89234f28d1be75a67a98dfa"
+    },
+    {
+      "path": "compiler/independent-fresh-capture-review.json",
+      "bytes": 2400,
+      "sha256": "f589cf48a4601170ca883322b44493f0704dd467eeeb2fe4caf5f96b9e90a12b"
+    },
+    {
+      "path": "compiler/controller-completion.json",
+      "bytes": 2142,
+      "sha256": "848b127aae92d56376365c842b878988f55cf7eb80fa851b702917c46742ad7a"
+    },
+    {
+      "path": "compiler/output/compiler-process-receipt.json",
+      "bytes": 5343,
+      "sha256": "ab8d4fb1dc24ea3604c4bc71540da35a094c11acbae621aa420c97cb1a83821d"
+    },
+    {
+      "path": "compiler/output/complete-compiler-capture.tar.gz",
+      "bytes": 5387377,
+      "sha256": "45fe3d4a7275051b86aa01df4f89c095808a3a79e91dc5f49ebf31d46510422b"
+    },
+    {
+      "path": "compiler/output/retained-capture-inventory.json",
+      "bytes": 241562,
+      "sha256": "19d4fb6b5b1645b864a988a65b575602676314c7dd05e287783a4138b9d5e1fc"
+    },
+    {
+      "path": "compiler/output/commands.json",
+      "bytes": 3404,
+      "sha256": "a3a5087946c80627d53b08b750c9fe9448e9546b259c690dcdd50c538927004a"
+    },
+    {
+      "path": "compiler/output/original-compiler-inputs.json",
+      "bytes": 2902802,
+      "sha256": "46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+    },
+    {
+      "path": "compiler/output/original-compiler-material-owner-handoff.json",
+      "bytes": 1235,
+      "sha256": "f247f9600b71d5902ee8ffb69152196f4784effdf5604a7161b092b98e77ccc4"
+    },
+    {
+      "path": "compiler/output/reviewed-sdk-ownership-state-machines.stdout.txt",
+      "bytes": 142,
+      "sha256": "37816073fe137b1b41accabb0f5763111adc4b72190c8e82bd9b6fde3a6ba351"
+    },
+    {
+      "path": "compiler/output/verified-original-tracked-source.json",
+      "bytes": 1431039,
+      "sha256": "30a73e690997724657fc326d5cb22f56f0880da1962f8056d883370ad838470c"
+    },
+    {
+      "path": "compiler-first-refusal/controller.stderr.log",
+      "bytes": 934,
+      "sha256": "a0b43c0e74df7fb4fa2782deba153a90f636f8ce5a76126ea2b19331d1f6c915"
+    },
+    {
+      "path": "compiler-first-refusal/controller-completion.json",
+      "bytes": 2141,
+      "sha256": "55a079030ea9f2e156dd2b0ceed971f6035819043d9c6d211879072da3515e3a"
+    },
+    {
+      "path": "compiler-first-refusal/output/compiler-process-receipt.json",
+      "bytes": 966,
+      "sha256": "8afdbc6f99795ad613deaa9bf38051cdf9f1fb9e59d6494dda67dca620c9754f"
+    },
+    {
+      "path": "native-current-partial/phases.json",
+      "bytes": 9491,
+      "sha256": "b0ddd7aa5d6b8720d559c7fb77b5685a8f23c657dc13ef16b5d81fbc7becd429"
+    },
+    {
+      "path": "native-current-partial/prelaunch-review.json",
+      "bytes": 1121,
+      "sha256": "153e07a1808c978a19800a1210aa1411637bdedb60b2e4476a8a276f14f58f88"
+    },
+    {
+      "path": "native-current-partial/original40-current-source-selector-audit.json",
+      "bytes": 10088,
+      "sha256": "860705aeb6d706548603a62b7d4f88c8b015b591f7012186c668200cae92b6c6"
+    },
+    {
+      "path": "native-current-partial/keeper-handoff-completed.json",
+      "bytes": 224,
+      "sha256": "0820b048ee53925fade81c726ab0292ce6abe5b8410f256196ecc0de5dfdb20f"
+    },
+    {
+      "path": "native-current-partial/user-stop-reaped.json",
+      "bytes": 785,
+      "sha256": "023c4d369f74ba2a6222fdf7f98cb9f31e1189a78ff72b874c18f824e5754105"
+    },
+    {
+      "path": "native-current-partial/results/source-capacity.json",
+      "bytes": 222,
+      "sha256": "8b504ec47ec2f98c49acdfe4579f8423b795fcbfe5727a02080caea681a97a89"
+    },
+    {
+      "path": "native-current-partial/results/source-capacity.log",
+      "bytes": 102,
+      "sha256": "3f6cd484fd79cb3c88d99ba9c0662e772b1f329bd36d5bd8468eded1fb0467e5"
+    },
+    {
+      "path": "native-current-partial/results/setup-steps.json",
+      "bytes": 1012,
+      "sha256": "6429e73ed2cc7f4bcb0c24c0e1b941dbe431850a4ca25cf5a6535a1e160c2abb"
+    },
+    {
+      "path": "native-current-partial/results/native40-setup-ready.json",
+      "bytes": 1762,
+      "sha256": "f7f3fd41d27d68e9bc07314695eea47f4d3e53c8f3312ba4a93962944c4315be"
+    },
+    {
+      "path": "native-current-partial/results/setup-clippy.stderr.log",
+      "bytes": 35,
+      "sha256": "08cc3e5ddf8fdac43e355fa0e3215ff51d62897f38c2b9748679f1984a32d562"
+    },
+    {
+      "path": "native-current-partial/results/setup-clippy-version.stdout.log",
+      "bytes": 38,
+      "sha256": "2177fec2a490ec6a4209350f975997920bceb7ad2e675217abf0c0a6fb904cad"
+    },
+    {
+      "path": "native-current-partial/results/run.json",
+      "bytes": 16278,
+      "sha256": "35ac6af696bccc713a4fb432f9013490dac4462f7dc9ad95cc85ce9d65b2f64c"
+    },
+    {
+      "path": "native-current-partial/results/actual-transient-tracking-config-boundary.json",
+      "bytes": 2226,
+      "sha256": "56c57bcda6f3fd8d4e6e19c79ac2bd8cd069d76808deb9699465c9f6db1a025c"
+    },
+    {
+      "path": "native-current-partial/results/actual-transient-tracking-config-boundary.log",
+      "bytes": 12519,
+      "sha256": "83b17100736ff98b9ad66a95683f2d032c0253602f4e4977ea6fa55431bebdf7"
+    },
+    {
+      "path": "native-current-partial/results/actual-transient-tracking-wire-suite.json",
+      "bytes": 2137,
+      "sha256": "7b8caa28e7c5784a06e1529e601b57199a84744c187e4055c2bb65c60a82b98f"
+    },
+    {
+      "path": "native-current-partial/results/actual-transient-tracking-wire-suite.log",
+      "bytes": 5622,
+      "sha256": "045fc1cf68124b1a866a7c445bba251e51609ed9639ebdf75f36c597a753c95f"
+    },
+    {
+      "path": "native-current-partial/results/actual-scoped-missing-grant-producer-regression.json",
+      "bytes": 2178,
+      "sha256": "47c59731eb4be8905e88c9744c751735e9eeb7f1c2af514284525e44d03cf163"
+    },
+    {
+      "path": "native-current-partial/results/actual-scoped-missing-grant-producer-regression.log",
+      "bytes": 3472,
+      "sha256": "86b70a6beb2774e10092db91741fdc9da62a9f39cbff7e6825d2c53a965d0040"
+    },
+    {
+      "path": "native-current-partial/results/actual-root-journal-retirement-regression.json",
+      "bytes": 2145,
+      "sha256": "12523e08521802a738e9f662f04ea1d24a0a0c39a7a86df2efbf453ad9b02e36"
+    },
+    {
+      "path": "native-current-partial/results/actual-root-journal-retirement-regression.log",
+      "bytes": 7293,
+      "sha256": "5b87d0dbf86420e7bd31d59f5f8a7c013ecde2a5d23194d1989fcec8320eb850"
+    },
+    {
+      "path": "native-current-partial/results/ci-selected-strict-clippy.json",
+      "bytes": 2215,
+      "sha256": "d26fc07d8d722be0c7ebd9c992eccc13798d818a1b1cff4ce70a95f5bd721896"
+    },
+    {
+      "path": "native-current-partial/results/ci-selected-strict-clippy.log",
+      "bytes": 10313,
+      "sha256": "b80bc6114e6f97b23d32964d560357e7bdd96805a93de0df1098dc474bfff0ed"
+    },
+    {
+      "path": "native-current-partial/results/journal-staging-and-broker-owners.json",
+      "bytes": 2123,
+      "sha256": "5d7b64a59dd0b63d97578c00f713de257caebe3b948a650f392e174bff0b08cf"
+    },
+    {
+      "path": "native-current-partial/results/journal-staging-and-broker-owners.log",
+      "bytes": 2661,
+      "sha256": "c9841bdda005e88183defba027c8721357efaa851e44376ad2583abff28836b7"
+    },
+    {
+      "path": "native-first-environment-refusal/environment-interruption-review.json",
+      "bytes": 1715,
+      "sha256": "7cd3344e363ed0cea790cb4e55135e3fde5c2a76300744042c39dfc0368a192c"
+    },
+    {
+      "path": "native-first-environment-refusal/public-tools-probe.stdout.json",
+      "bytes": 490,
+      "sha256": "15dc8007a16976effe73da5c5d26e4f9d13764dbff00bd457b0dc1e0009a0da8"
+    },
+    {
+      "path": "native-first-environment-refusal/extra-public-tools-probe.stdout.json",
+      "bytes": 382,
+      "sha256": "7cad46e85936a27f79c211f9be43f52fb506379a61fa28230190189f6e4716f8"
+    },
+    {
+      "path": "native-first-environment-refusal/results/source-capacity.log",
+      "bytes": 558,
+      "sha256": "ae46074af071c2988f171a5b2013fbb30cdf21cd9ddfdaa9d3b602ffb8f89ef8"
+    },
+    {
+      "path": "native-first-environment-refusal/results/source-capacity.json",
+      "bytes": 222,
+      "sha256": "7b5472a10a852e9bb89b99e916f964811c87a02e987c1734132dcd27fbb97f35"
+    },
+    {
+      "path": "native-first-environment-refusal/results/native40-setup-ready.json",
+      "bytes": 1762,
+      "sha256": "df6234ecec408978e8899b5c1ca2f965d352cb92eb107004593f089597acd55f"
+    },
+    {
+      "path": "native-first-environment-refusal/results/setup-steps.json",
+      "bytes": 1012,
+      "sha256": "ea78e05740acd7153bfd911d9e245e3e1ba261a49e990fece457fa706534e692"
+    },
+    {
+      "path": "native-first-environment-refusal/failed-source-capacity-environment-probe.stderr.txt",
+      "bytes": 224,
+      "sha256": "e9133cf10b02b0b91c8b119848513db0ac541e7c3c19681266939e4b9952f7cc"
+    },
+    {
+      "path": "merged-worktree-cleanup/cleanup-completed.json",
+      "bytes": 329,
+      "sha256": "7cb39f88eeb08769dacb8b383cec75e0132c34ca31a1c53ab3eb17874c3f4eb0"
+    }
+  ],
+  "totalPreservedBytes": 10102075
+}

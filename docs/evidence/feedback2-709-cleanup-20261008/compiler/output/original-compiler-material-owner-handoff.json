@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "latent.original-compiler-material-owner-handoff.v1",
+  "originalProducer": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "producerOwnerTree": "52504b41ca1d5405d37f0f401f1b47adb1142118",
+  "producerOwnerArchiveSha256": "1827a28e738243157b2bcb9939aa6254b7ed44b2e800f90796bced26d287f6d8",
+  "originalToolArchive": "sha256:37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+  "historicalCompilerRoleReceiptVerified": true,
+  "originalHostAbi": "lsf-host-abi-phase3-v4",
+  "originalGuestToolInventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+  "originalCompilerClosureBytes": 2902802,
+  "originalCompilerClosureSha256": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+  "originalAbiGuardUnchanged": true,
+  "currentAbiGuardUnchanged": true,
+  "originalBundleInstalledAsCurrentProfile": false,
+  "runtimeAuthorityGranted": false,
+  "signingOperations": 0,
+  "diagnosticClockStarted": false,
+  "thirdPartyCompilerMaterialPaths": {
+    "jdk": "/work/java709-four-fresh-37b48cd8-r2/managed/jdk",
+    "gradle": "/work/java709-four-fresh-37b48cd8-r2/managed/gradle",
+    "wasi-sdk": "/work/java709-four-fresh-37b48cd8-r2/managed/wasi-sdk"
+  }
+}
