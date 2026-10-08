@@ -307,6 +307,14 @@ mod tests {
         let archive = hash('3');
         let companion = hash('4');
         let source = "a".repeat(40);
+        let commands = [
+            "java-to-c",
+            "c-to-wasm",
+            "component-new",
+            "component-validate",
+            "compiled-wit",
+        ]
+        .map(|stage| json!({"stage":stage,"exitCode":0}));
         let fixture: Fixture = serde_json::from_value(json!({
             "schemaVersion":"latent.component.signing-fixture-input.v1",
             "evidenceKind":"synthetic-native-package-trust", "compilerSource":source,
@@ -338,8 +346,7 @@ mod tests {
             "componentBytes":123, "sourceDigest":snapshot, "sourceArchiveDigest":archive,
             "companionDigest":companion, "variant":"aggregate",
             "actualImports":["latent:state/key-value@0.2.0", "latent:intents/staging@0.1.0"],
-            "details":{"commands":["java-to-c", "c-to-wasm", "component-new",
-                "component-validate", "compiled-wit"].map(|stage|json!({"stage":stage,"exitCode":0}))}
+            "details":{"commands":commands}
         });
         (fixture, report)
     }
