@@ -1,20 +1,20 @@
 {
-  "kind": "python",
-  "module": "tools/tests/test_node_security_profile_schema.py",
-  "reviewReason": "Reconcile reviewed development and Java transaction source; preserve every original test, skip, baseline, profile, cache-freshness and retained-artifact obligation. Only exact source definitions and reviewed merged fixture setup change.",
   "schemaVersion": "latent.ci.contracts.v2",
+  "kind": "python",
+  "reviewReason": "Reconcile reviewed development and Java transaction source; preserve every original test, skip, baseline, profile, cache-freshness and retained-artifact obligation. Only exact source definitions and reviewed merged fixture setup change. Dependency consolidation: only active Wasmtime 48.0.4 to 48.0.5 fixture literals change. Complete Python ASTs normalize exactly to prior source; every original case, decorator, skip, setup/teardown and finite guard remains.",
+  "module": "tools/tests/test_node_security_profile_schema.py",
   "cases": [
     "SecurityProfileSchema.test_external_report_requires_every_observed_control",
     "SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings",
     "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement"
   ],
   "guards": {
-    "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement": "0ca953ea92ed2d303431bf1950fd5a1bbf267c9a28e05061e688c433f98952ec",
-    "SecurityProfileSchema.test_external_report_requires_every_observed_control": "0ca953ea92ed2d303431bf1950fd5a1bbf267c9a28e05061e688c433f98952ec",
-    "SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings": "0ca953ea92ed2d303431bf1950fd5a1bbf267c9a28e05061e688c433f98952ec"
+    "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement": "be7680f937903609ed0ecbcf325576c2a306a99258e5fba90affbfa129fc12d5",
+    "SecurityProfileSchema.test_external_report_requires_every_observed_control": "be7680f937903609ed0ecbcf325576c2a306a99258e5fba90affbfa129fc12d5",
+    "SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings": "be7680f937903609ed0ecbcf325576c2a306a99258e5fba90affbfa129fc12d5"
   },
   "guardDefinitions": {
-    "0ca953ea92ed2d303431bf1950fd5a1bbf267c9a28e05061e688c433f98952ec": {
+    "be7680f937903609ed0ecbcf325576c2a306a99258e5fba90affbfa129fc12d5": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -22,7 +22,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:8bec8c80b269f94360063ed63bbeb88c72d1ff0a813f7b3655c990919283ebb5",
+        "module:setup-sha256:9359e096871b478141c65e237a07680375845ffede42abfa0ad310735856d6c8",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     }

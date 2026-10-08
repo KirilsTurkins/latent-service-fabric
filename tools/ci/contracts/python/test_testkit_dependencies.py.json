@@ -1,34 +1,46 @@
 {
-  "cases":["TestkitDependencyTests.test_alias_cannot_hide_a_path_dependency_cycle","TestkitDependencyTests.test_empty_workspace_is_not_success","TestkitDependencyTests.test_missing_test_support_feature_fails","TestkitDependencyTests.test_neutral_core_direction_is_acyclic","TestkitDependencyTests.test_neutral_process_helpers_cannot_gain_even_optional_workspace_edges","TestkitDependencyTests.test_original_feature_hidden_admission_and_scheduler_cycles_fail","TestkitDependencyTests.test_phase4_storage_cannot_select_feature_hidden_testkit_runtime_cycle","TestkitDependencyTests.test_repository_itself_obeys_unconditional_graph_contract","TestkitDependencyTests.test_selected_checks_include_test_dependencies","TestkitDependencyTests.test_selected_graph_rejects_empty_or_heavy_results","TestkitDependencyTests.test_target_specific_optional_and_build_cycles_remain_errors"],
-  "guards":{
-    "TestkitDependencyTests.test_alias_cannot_hide_a_path_dependency_cycle":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_empty_workspace_is_not_success":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_missing_test_support_feature_fails":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_neutral_core_direction_is_acyclic":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_neutral_process_helpers_cannot_gain_even_optional_workspace_edges":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_original_feature_hidden_admission_and_scheduler_cycles_fail":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_phase4_storage_cannot_select_feature_hidden_testkit_runtime_cycle":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_repository_itself_obeys_unconditional_graph_contract":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_selected_checks_include_test_dependencies":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_selected_graph_rejects_empty_or_heavy_results":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
-    "TestkitDependencyTests.test_target_specific_optional_and_build_cycles_remain_errors":
-      "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54"
+  "schemaVersion": "latent.ci.contracts.v2",
+  "kind": "python",
+  "reviewReason": "Retain all graph regressions and add Phase 4 storage and neutral process owner cases. Reviewed class fixture adds only graph owners/edges; bases, decorators, skip sites and module setup are unchanged. Dependency consolidation: only active Wasmtime 48.0.4 to 48.0.5 fixture literals change. Complete Python ASTs normalize exactly to prior source; every original case, decorator, skip, setup/teardown and finite guard remains.",
+  "module": "tools/tests/test_testkit_dependencies.py",
+  "cases": [
+    "TestkitDependencyTests.test_alias_cannot_hide_a_path_dependency_cycle",
+    "TestkitDependencyTests.test_empty_workspace_is_not_success",
+    "TestkitDependencyTests.test_missing_test_support_feature_fails",
+    "TestkitDependencyTests.test_neutral_core_direction_is_acyclic",
+    "TestkitDependencyTests.test_neutral_process_helpers_cannot_gain_even_optional_workspace_edges",
+    "TestkitDependencyTests.test_original_feature_hidden_admission_and_scheduler_cycles_fail",
+    "TestkitDependencyTests.test_phase4_storage_cannot_select_feature_hidden_testkit_runtime_cycle",
+    "TestkitDependencyTests.test_repository_itself_obeys_unconditional_graph_contract",
+    "TestkitDependencyTests.test_selected_checks_include_test_dependencies",
+    "TestkitDependencyTests.test_selected_graph_rejects_empty_or_heavy_results",
+    "TestkitDependencyTests.test_target_specific_optional_and_build_cycles_remain_errors"
+  ],
+  "guards": {
+    "TestkitDependencyTests.test_neutral_core_direction_is_acyclic": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_original_feature_hidden_admission_and_scheduler_cycles_fail": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_phase4_storage_cannot_select_feature_hidden_testkit_runtime_cycle": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_neutral_process_helpers_cannot_gain_even_optional_workspace_edges": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_target_specific_optional_and_build_cycles_remain_errors": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_alias_cannot_hide_a_path_dependency_cycle": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_missing_test_support_feature_fails": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_empty_workspace_is_not_success": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_selected_graph_rejects_empty_or_heavy_results": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_selected_checks_include_test_dependencies": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54",
+    "TestkitDependencyTests.test_repository_itself_obeys_unconditional_graph_contract": "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54"
   },
-  "kind":"python",
-  "module":"tools/tests/test_testkit_dependencies.py",
-  "reviewReason":"Retain all graph regressions and add Phase 4 storage and neutral process owner cases. Reviewed class fixture adds only graph owners/edges; bases, decorators, skip sites and module setup are unchanged.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db","class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"],"skipSites":[]}
+  "guardDefinitions": {
+    "8f06dbf2e83a94cbdccb5e54811f58c0562a5bc5504e14a26ca62280836f9e54": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
+      ]
+    }
   }
 }

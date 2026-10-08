@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.transaction-contract.preparation-profile.v1",
   "profile": "lsf-transaction-http-preparation-v1",
-  "engine": "wasmtime@48.0.4",
+  "engine": "wasmtime@48.0.5",
   "componentAsync": true,
   "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
   "codec": "application/vnd.latent.wit-values.v1+json",
