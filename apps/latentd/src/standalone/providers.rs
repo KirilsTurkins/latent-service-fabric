@@ -15,6 +15,8 @@ pub(in crate::standalone) struct ProviderServices {
 mod runtime;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub(super) use runtime::ProviderRuntime;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod native_effects;
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 mod unsupported;
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
@@ -64,7 +66,7 @@ impl super::StandaloneNode {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderDescriptor {
     id: String,

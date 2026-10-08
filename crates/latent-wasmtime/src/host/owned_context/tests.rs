@@ -62,7 +62,7 @@ fn unselected_or_mismatched_execution_cannot_spoof_the_reserved_web_identity() {
                     .resolved_revision
                     .as_mut()
                     .unwrap()
-                    .publication = None
+                    .publication = None;
             }
         }
         let context = ActivationHostContext::from_request(request, None);

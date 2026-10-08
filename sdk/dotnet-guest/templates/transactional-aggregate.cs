@@ -18,23 +18,27 @@ public class ApiExportsImpl : IApiExports
     }
     public static Result<IApiExports.Aggregate, IApiExports.BusinessError> Update(IApiExports.UpdateRequest request) {
         using var command = State.AcquireCommand().AsOk;
-        var old = Count(command.Get(Key).AsOk);
+        var stored = command.Get(Key).AsOk;
+        var old = Count(stored);
         if (!old.HasValue) return Result<IApiExports.Aggregate, IApiExports.BusinessError>.Err(IApiExports.BusinessError.MALFORMED_STATE);
         if (ulong.MaxValue - old.Value < request.delta) return Result<IApiExports.Aggregate, IApiExports.BusinessError>.Err(IApiExports.BusinessError.OVERFLOW);
         var next = old.Value + request.delta;
+        var viewVersion = command.Info().AsOk.view.version;
+        var keyVersion = stored.HasValue ? stored.Value.version : null;
         byte[] bytes = new byte[8]; BinaryPrimitives.WriteUInt64LittleEndian(bytes, next);
         var payload = new Raw.Value(bytes, Media, []);
         _ = command.Put(Key, payload).AsOk;
         _ = new Intent("approved-event", "event", payload).Stage(command).AsOk;
         if (request.reject) return Result<IApiExports.Aggregate, IApiExports.BusinessError>.Err(IApiExports.BusinessError.REJECTED);
-        var version = command.Get(Key).AsOk!.Value.version;
-        return Result<IApiExports.Aggregate, IApiExports.BusinessError>.Ok(new(next, version));
+        return Result<IApiExports.Aggregate, IApiExports.BusinessError>.Ok(new(next, viewVersion, keyVersion));
     }
     public static Result<IApiExports.Aggregate, IApiExports.BusinessError> Query() {
         using var query = State.AcquireQuery().AsOk;
-        var count = Count(query.Get(Key).AsOk);
+        var stored = query.Get(Key).AsOk;
+        var count = Count(stored);
         return count.HasValue
-            ? Result<IApiExports.Aggregate, IApiExports.BusinessError>.Ok(new(count.Value, query.Info().AsOk.version))
+            ? Result<IApiExports.Aggregate, IApiExports.BusinessError>.Ok(new(count.Value, query.Info().AsOk.version,
+                stored.HasValue ? stored.Value.version : null))
             : Result<IApiExports.Aggregate, IApiExports.BusinessError>.Err(IApiExports.BusinessError.MALFORMED_STATE);
     }
     public static Result<IApiExports.ScanResult, IApiExports.BusinessError> Scan(byte[] prefix, uint limit, byte[]? cursor) {

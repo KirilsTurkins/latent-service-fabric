@@ -244,6 +244,67 @@ fn guest_trap_currentness_keeps_known_invocation_failure_and_closed_details() {
 }
 
 #[test]
+fn control_preparation_stage_survives_wire_capture_without_disclosing_peer_data_or_certainty() {
+    for (known, stage) in [
+        (true, "prepare-lease"),
+        (true, "package-lease"),
+        (true, "package-read"),
+        (true, "package-lifecycle"),
+        (true, "package-tenant"),
+        (true, "inherited-bindings"),
+        (false, "unknown-private-stage"),
+        (false, "package-read\n"),
+        (false, "Package-read"),
+        (false, "package-read/private"),
+        (false, ""),
+    ] {
+        let error = proto::PlatformError {
+            code: "unavailable".into(),
+            message: "private engine /private/path".into(),
+            retryable: true,
+            detail_items: vec![
+                proto::ErrorDetail {
+                    kind: "admission.currentness".into(),
+                    fields: [("reason".into(), "admission-clock-lease-uncovered".into())].into(),
+                },
+                proto::ErrorDetail {
+                    kind: "admission.control-stage".into(),
+                    fields: [
+                        ("stage".into(), stage.into()),
+                        ("secret".into(), "private".into()),
+                    ]
+                    .into(),
+                },
+            ],
+        };
+        let status =
+            Status::with_details(Code::Unavailable, "private", error.encode_to_vec().into());
+        let result = Failure::from_status(&status);
+        assert_eq!(result.category, Category::PlatformError);
+        assert!(!result.outcome_known);
+        assert!(result.request_dispatched);
+        assert_eq!(result.error["code"], "unavailable");
+        assert_eq!(result.error["retryable"], true);
+        assert_eq!(
+            result.error["details"][0],
+            json!({"kind":"admission.currentness",
+                "fields":{"reason":"admission-clock-lease-uncovered"}})
+        );
+        assert!(!result.error.to_string().contains("private"));
+        let details = result.error["details"].as_array().unwrap();
+        if known {
+            assert_eq!(details.len(), 2);
+            assert_eq!(
+                details[1],
+                json!({"kind":"admission.control-stage", "fields":{"stage":stage}})
+            );
+        } else {
+            assert_eq!(details.len(), 1);
+        }
+    }
+}
+
+#[test]
 fn guest_trap_private_metadata_cannot_expand_public_diagnostic_vocabulary() {
     for (kind, key, value) in [
         (

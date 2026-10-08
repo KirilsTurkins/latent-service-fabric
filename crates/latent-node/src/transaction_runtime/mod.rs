@@ -1,9 +1,12 @@
 //! Activation-scoped native state sessions over the existing protected owner.
 mod authorization;
+pub mod command_completion;
 mod host;
 mod initialization;
 mod io;
-pub use authorization::{PolicyCallBinding, StateAuthorization};
+pub mod query;
+mod staging;
+pub use authorization::{IntentPolicyBinding, PolicyCallBinding, StateAuthorization};
 
 use latent_commit::atomic::{
     AdmittedCommand, CapturedIntent, CommandTime, IntentCaptureContext, PhysicalAttemptWork,
@@ -25,6 +28,46 @@ use std::sync::{
 /// time alone cannot assert continuity after an older restore or process loss.
 pub trait CommandTimeSource: Send + Sync {
     fn sample(&self) -> CommandTime;
+
+    /// Normal composition reserves its original ordinary native capacity from
+    /// the actual admitted envelope and budget before accepting metadata work.
+    fn retain_admission(
+        &self,
+        _envelope: &latent_activation::ActivationEnvelope,
+        _budget: &latent_core::ActivationBudget,
+    ) -> Result<(), latent_core::PlatformError> {
+        Ok(())
+    }
+
+    /// Bytes prepaid by this actual original response owner. A default clock
+    /// supplies no transport reservation and cannot authorize a wire response.
+    fn reserved_response_bytes(&self) -> u64 {
+        0
+    }
+
+    /// Retained physical response owner; no guest accounting is consumed.
+    fn with_delivery(
+        &self,
+        action: &mut dyn FnMut() -> Result<(), latent_core::PlatformError>,
+    ) -> Result<(), latent_core::PlatformError> {
+        action()
+    }
+
+    /// Managed composition retains the original protected command-role guard
+    /// through this short acceptance callback. No callback performs I/O.
+    fn with_acceptance(
+        &self,
+        action: &mut dyn FnMut(CommandTime) -> Result<(), latent_core::PlatformError>,
+    ) -> Result<(), latent_core::PlatformError> {
+        action(self.sample())
+    }
+
+    /// Only a positively retired original attempt can retire its role owner.
+    fn retire_attempt(&self, _original: &latent_commit::atomic::AttemptRetirement) {}
+
+    /// The coordinator invokes this only after an actual unclaimed native
+    /// operation has retired, or positive refusal before worker acceptance.
+    fn retire_without_claim(&self) {}
 }
 
 pub struct CommandHostSelection {
@@ -33,6 +76,7 @@ pub struct CommandHostSelection {
     work: PhysicalAttemptWork,
     key: latent_core::transaction_contract::CommandKey,
     publication: String,
+    staging_identity: latent_executor::transaction::TransactionStagingIdentity,
 }
 impl CommandHostSelection {
     pub fn from_claim(
@@ -50,6 +94,12 @@ impl CommandHostSelection {
             context: claim.intent_capture_context(),
             key: record.key().clone(),
             publication: record.source().publication.clone(),
+            staging_identity: latent_executor::transaction::TransactionStagingIdentity {
+                command_id: record.id().hex(),
+                attempt_id: record.attempt_id().hex(),
+                transaction_id: record.transaction_id().hex(),
+                publication_id: record.source().publication.clone(),
+            },
             info: CommandInfo {
                 view,
                 command_id: record.id().hex(),
@@ -78,6 +128,7 @@ pub struct StateTransactionHost {
     activation: ActivationId,
     mode: Mode,
     scope: StateScope,
+    view_identity: latent_state::session::version::ViewIdentity,
     authorization: Arc<StateAuthorization>,
     store: Arc<ProtectedStoreOwner>,
     session: Mutex<Option<OwnedSession>>,
@@ -89,6 +140,9 @@ pub struct StateTransactionHost {
     technical_fault: AtomicBool,
     context: Option<IntentCaptureContext>,
     command: Option<CommandInfo>,
+    staging_identity: Option<latent_executor::transaction::TransactionStagingIdentity>,
+    staging_observer:
+        Mutex<Option<Arc<dyn latent_executor::transaction::TransactionStagingObserver>>>,
     effects: Option<EffectAuthorityOwner>,
     time: Arc<dyn CommandTimeSource>,
     retained_bytes: u64,
@@ -103,6 +157,13 @@ pub struct StateHandoff {
     pub memory: Arc<HostMemoryReservation>,
 }
 impl StateTransactionHost {
+    /// Descriptive identity captured from this session's actual native view.
+    /// It grants no read permission and never refreshes during the activation.
+    #[must_use]
+    pub fn retained_view_identity(&self) -> latent_state::session::version::ViewIdentity {
+        self.view_identity
+    }
+
     #[must_use]
     pub fn authority(&self) -> &StateAuthorization {
         &self.authorization

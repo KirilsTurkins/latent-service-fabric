@@ -1,38 +1,106 @@
 {
-  "cases":["AngularBuildInputTests.test_backend_authority_is_an_explicit_closed_optional_profile","AngularBuildInputTests.test_capture_excludes_unlisted_files_and_uses_fixed_destination_bytes","AngularBuildInputTests.test_capture_rejects_a_selected_link_before_compilers_run","AngularBuildInputTests.test_closed_build_schema_accepts_the_real_application_and_rejects_hooks","AngularBuildInputTests.test_identical_installation_aliases_deduplicate_without_hiding_conflicting_attribution","AngularBuildInputTests.test_profile_rejects_commands_native_modules_cross_area_assets_and_excessive_inputs","AngularBuildInputTests.test_selected_file_limit_duplicate_json_and_prerender_hydration_are_bounded","AngularBuildInputTests.test_supplied_html_matches_runtime_transfer_recognition_and_recovers","AngularHydrationWrapperTests.test_actual_typescript_preflight_rejects_server_templates_and_outside_reference_directives","AngularHydrationWrapperTests.test_production_adapter_rejects_shorthand_resources_before_package_output","AngularHydrationWrapperTests.test_real_wrapper_enforces_aggregate_data_complete_tags_and_closed_attributes"],
-  "guards":{
-    "AngularBuildInputTests.test_backend_authority_is_an_explicit_closed_optional_profile":
-      "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
-    "AngularBuildInputTests.test_capture_excludes_unlisted_files_and_uses_fixed_destination_bytes":
-      "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
-    "AngularBuildInputTests.test_capture_rejects_a_selected_link_before_compilers_run":
-      "e47a56250e5b2aa2b72a79dcd0025708ef1a9eacbdc581f581700968c0e227f8",
-    "AngularBuildInputTests.test_closed_build_schema_accepts_the_real_application_and_rejects_hooks":
-      "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
-    "AngularBuildInputTests.test_identical_installation_aliases_deduplicate_without_hiding_conflicting_attribution":
-      "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
-    "AngularBuildInputTests.test_profile_rejects_commands_native_modules_cross_area_assets_and_excessive_inputs":
-      "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
-    "AngularBuildInputTests.test_selected_file_limit_duplicate_json_and_prerender_hydration_are_bounded":
-      "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
-    "AngularBuildInputTests.test_supplied_html_matches_runtime_transfer_recognition_and_recovers":
-      "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
-    "AngularHydrationWrapperTests.test_actual_typescript_preflight_rejects_server_templates_and_outside_reference_directives":
-      "510b29d23e6db59bea43c479e420f8a096464fb8089fc621aeedfacfb4a6f218",
-    "AngularHydrationWrapperTests.test_production_adapter_rejects_shorthand_resources_before_package_output":
-      "3383bcde4b3dc14e501dfcf815f0e8f23fd16c526f48fe9d27d80565f552d020",
-    "AngularHydrationWrapperTests.test_real_wrapper_enforces_aggregate_data_complete_tags_and_closed_attributes":
-      "c43e2588248f8d85b80b784400b8e46b92c4d7b6b55666a8b86cb4eb1b26e420"
+  "cases": [
+    "AngularBuildInputTests.test_backend_authority_is_an_explicit_closed_optional_profile",
+    "AngularBuildInputTests.test_capture_excludes_unlisted_files_and_uses_fixed_destination_bytes",
+    "AngularBuildInputTests.test_capture_rejects_a_selected_link_before_compilers_run",
+    "AngularBuildInputTests.test_closed_build_schema_accepts_the_real_application_and_rejects_hooks",
+    "AngularBuildInputTests.test_identical_installation_aliases_deduplicate_without_hiding_conflicting_attribution",
+    "AngularBuildInputTests.test_profile_rejects_commands_native_modules_cross_area_assets_and_excessive_inputs",
+    "AngularBuildInputTests.test_selected_file_limit_duplicate_json_and_prerender_hydration_are_bounded",
+    "AngularBuildInputTests.test_supplied_html_matches_runtime_transfer_recognition_and_recovers",
+    "AngularHydrationWrapperTests.test_actual_typescript_preflight_rejects_server_templates_and_outside_reference_directives",
+    "AngularHydrationWrapperTests.test_production_adapter_rejects_shorthand_resources_before_package_output",
+    "AngularHydrationWrapperTests.test_real_wrapper_enforces_aggregate_data_complete_tags_and_closed_attributes"
+  ],
+  "guards": {
+    "AngularBuildInputTests.test_backend_authority_is_an_explicit_closed_optional_profile": "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
+    "AngularBuildInputTests.test_capture_excludes_unlisted_files_and_uses_fixed_destination_bytes": "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
+    "AngularBuildInputTests.test_capture_rejects_a_selected_link_before_compilers_run": "e47a56250e5b2aa2b72a79dcd0025708ef1a9eacbdc581f581700968c0e227f8",
+    "AngularBuildInputTests.test_closed_build_schema_accepts_the_real_application_and_rejects_hooks": "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
+    "AngularBuildInputTests.test_identical_installation_aliases_deduplicate_without_hiding_conflicting_attribution": "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
+    "AngularBuildInputTests.test_profile_rejects_commands_native_modules_cross_area_assets_and_excessive_inputs": "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
+    "AngularBuildInputTests.test_selected_file_limit_duplicate_json_and_prerender_hydration_are_bounded": "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
+    "AngularBuildInputTests.test_supplied_html_matches_runtime_transfer_recognition_and_recovers": "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2",
+    "AngularHydrationWrapperTests.test_actual_typescript_preflight_rejects_server_templates_and_outside_reference_directives": "510b29d23e6db59bea43c479e420f8a096464fb8089fc621aeedfacfb4a6f218",
+    "AngularHydrationWrapperTests.test_production_adapter_rejects_shorthand_resources_before_package_output": "3383bcde4b3dc14e501dfcf815f0e8f23fd16c526f48fe9d27d80565f552d020",
+    "AngularHydrationWrapperTests.test_real_wrapper_enforces_aggregate_data_complete_tags_and_closed_attributes": "c43e2588248f8d85b80b784400b8e46b92c4d7b6b55666a8b86cb4eb1b26e420"
   },
-  "kind":"python",
-  "module":"tools/tests/test_build_angular_package.py",
-  "reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "e47a56250e5b2aa2b72a79dcd0025708ef1a9eacbdc581f581700968c0e227f8":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["self.skipTest('Windows user cannot create symlinks; Linux gate is required')","skip-control-sha256:0cf96ad8b956c14aac4b20f02b9ada80c1faecce838b986acc2fb76544439b49"]},
-    "510b29d23e6db59bea43c479e420f8a096464fb8089fc621aeedfacfb4a6f218":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["self.skipTest('the renderer gate provisions the exact Node/TypeScript toolchain')","skip-control-sha256:86580921b7588fd20339ffb429c8f4db0ec41c3fe0d85a2299ed6366014845d5"]},
-    "3383bcde4b3dc14e501dfcf815f0e8f23fd16c526f48fe9d27d80565f552d020":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["self.skipTest('the renderer gate provisions the exact Node/TypeScript toolchain')","skip-control-sha256:173faa504e3281aefdbab30a2b0d4d4cc04acb10354e59fc92658b44e6d8564b"]},
-    "c43e2588248f8d85b80b784400b8e46b92c4d7b6b55666a8b86cb4eb1b26e420":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["self.skipTest('Node required for executable JavaScript wrapper checks')","skip-control-sha256:6dffd2913aa2e4e25d1d7311fa6b68be29f60380c64c3d7edbe66a2acc05177e"]}
+  "kind": "python",
+  "module": "tools/tests/test_build_angular_package.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced. Restore the actual module fixture identity from source bytes identical to both current remote feature and development; every original case, class fixture, skip, decorator and execution guard is unchanged.",
+  "schemaVersion": "latent.ci.contracts.v2",
+  "guardDefinitions": {
+    "af69627b3deb8153b159cf4a9525966ccefa00484ac0e81142dd40cbd110d0e2": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "e47a56250e5b2aa2b72a79dcd0025708ef1a9eacbdc581f581700968c0e227f8": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [
+        "self.skipTest('Windows user cannot create symlinks; Linux gate is required')",
+        "skip-control-sha256:0cf96ad8b956c14aac4b20f02b9ada80c1faecce838b986acc2fb76544439b49"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "510b29d23e6db59bea43c479e420f8a096464fb8089fc621aeedfacfb4a6f218": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [
+        "self.skipTest('the renderer gate provisions the exact Node/TypeScript toolchain')",
+        "skip-control-sha256:86580921b7588fd20339ffb429c8f4db0ec41c3fe0d85a2299ed6366014845d5"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "3383bcde4b3dc14e501dfcf815f0e8f23fd16c526f48fe9d27d80565f552d020": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [
+        "self.skipTest('the renderer gate provisions the exact Node/TypeScript toolchain')",
+        "skip-control-sha256:173faa504e3281aefdbab30a2b0d4d4cc04acb10354e59fc92658b44e6d8564b"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "c43e2588248f8d85b80b784400b8e46b92c4d7b6b55666a8b86cb4eb1b26e420": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [
+        "self.skipTest('Node required for executable JavaScript wrapper checks')",
+        "skip-control-sha256:6dffd2913aa2e4e25d1d7311fa6b68be29f60380c64c3d7edbe66a2acc05177e"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    }
   }
 }

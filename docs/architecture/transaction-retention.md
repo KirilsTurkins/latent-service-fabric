@@ -1,0 +1,320 @@
+# Response retention and reserved storage recovery
+
+This implemented first retention profile uses the existing
+[atomic command envelope](../../crates/latent-commit/src/atomic/mod.rs),
+[protected storage owner](../../crates/latent-state/src/protected_store.rs) and
+[serializable transaction contract](state-and-effects.md). It contributes the
+linked response-expiry and physical recovery-capacity parts of #397.
+
+## Explicit tenant aggregate profile
+
+The lower [tenant accounting ports](../../crates/latent-state/src/tenant.rs)
+accept at most 32 explicit `TenantQuota` declarations. Their limits come from
+reviewed configuration. They are not calculated by adding namespace ceilings.
+The immutable `LTG1` guard selects exact declaration digests, and each tenant's
+preinstalled 1024-byte `LTQ1` row stores those limits and its current usage.
+Counts are bounded by 65,536 and byte allowances by 1 GiB. Zero can explicitly
+disable a category. Node engine, physical file and worker bounds still apply.
+
+State cells, tombstones, command/results and inbox protection, effects and their
+finite history allowance, inline payloads and recovery obligations have separate
+counters. Namespace, schema, history and management rows use a separate finite
+metadata row/byte allowance. Encoded row charges include the actual key and value,
+the family byte and a conservative 64-byte index allowance. Installation charges
+its own tenant row to that metadata allowance before business admission.
+
+`prepare_install` is a descriptive setup plan for the existing reserved writer.
+Its physical `publish` fence rechecks that no business rows appeared since
+preparation and repeats current host review. It refuses an inferred upgrade of
+existing legacy data. An exact repeated installation is a read-only success;
+changed limits or missing tenant rows refuse. Installed Phase 4 startup must
+require the selected installation, bind every domain accounting hook and verify
+the counters against actual durable ownership before admitting targets. The
+absent guard remains the explicit lower legacy fixture profile.
+
+`PreparedTenantUpdate::append_to` merges original state, command and maintenance
+contributions into one tenant counter mutation with one original compare-and-swap.
+It checks removal, addition, limits and the complete bounded candidate before
+changing the supplied plan. The generation advances once for the whole physical
+envelope. A stale counter refuses the complete write. Legacy plans capture the
+absent guard without adding a mutation, retaining the original six-row fixtures
+and preventing an old prepared plan from crossing installation.
+
+`prepare_metadata_update` and `metadata_slice` account the original bounded
+namespace/history/operation slice. Every mutation requires its exact old row
+expectation; a management receipt is at most 8192 bytes. Its metadata charge and
+any released protective floor must share the same tenant update and physical
+writer fence. No quota descriptor, checksum or operation identity grants
+permission, proves lifecycle drain or creates a recovery worker.
+
+The state session captures the original accounting row in its already charged
+read view. Real catalog changes, state plans, claim/retry, terminal command
+envelopes, response expiry and reviewed terminalization/purge compose their
+actual ownership changes into that same physical batch. Live state and tombstone
+bytes use their complete encoded keys and cells. Command, effect and payload
+charges retain the original upper ledger's promised recovery reservations.
+Missing tenant declarations refuse read admission as well as mutation preparation.
+
+`PreparedTenantUpdate::rebuild_batch` lets the complete-envelope owner recompute
+the lower state and metadata slice from exact original row expectations, then
+combine it with the upper ledger contribution. A floor release can append the
+management owner's immutable receipt while charging both the actual old/new
+namespace encodings and that receipt in one original quota CAS. Failed composition
+leaves the prepared plan unchanged. Legacy catalog compositions canonicalize only
+identical read-only installation-absence expectations; ordinary duplicate keys
+still reject and installation still conflicts with an earlier legacy plan.
+
+`TenantCensus` accumulates the original producer-validated startup scan, with at
+most 32 tenant totals, 65,536 rows, 128 MiB of charged bytes and the original
+deadline capped at one minute. It requires exact installation and counter
+originals and strict family/key order. Missing, duplicate, unconfigured or
+inconsistent ownership refuses; it never repairs counters. Upper owners supply
+their original reserved ownership and covered linked rows. Only the installation,
+recovery, retention and two dispatcher singleton controls, plus closed immutable
+dispatcher control receipts, can use `INSTALLED_GLOBAL_ALLOWANCE`: 64 total rows
+and 256 KiB. Unknown metadata cannot become an exclusion. The accumulator retains
+no business bytes or native view and creates no second store, worker or scan.
+
+`validate_view_observed` calls the installed census observer during the same
+original finite command/startup walk. The lower, command and dispatcher codec
+owners describe each row. Original `LCU2` ledgers supply promised result, effect,
+payload and recovery charges; their linked physical rows are covered once rather
+than charged a second time. The observer must default-deny every unowned row.
+Management operation rows require the original management producer's description.
+
+Installed retries write the same bounded receipt and backpointer as `LCT2`, with
+its original tenant, namespace, incarnation, command and retry identities. The
+receipt's exact encoded charge joins the original tenant CAS and reserved result
+ledger. These fields are verified against the actual attempt and retry index;
+they supply no authority. The explicit absent-guard legacy profile keeps the
+original 77-byte `LCT1` encoding and cannot become installed census evidence.
+
+The original dispatcher control plan uses that same fixed global allowance. It
+reserves five worst-case singleton row/byte slots, leaving at most 59 immutable
+receipts. The existing recovery writer scans receipts in pages of at most three
+rows and 16 KiB, validates every original codec/key, and checks actual encoded
+key/value/index charges. The original 64 KiB job reservation remains sufficient;
+no larger page, worker or capacity is created. Original owner/control and tenant
+installation-guard compare-and-swap expectations serialize the accepted plan.
+An exact historical replay performs no mutation or counter generation change.
+
+The fixed migration and explicit resume compose actual state, usage, history and
+progress/receipt changes with that same tenant CAS. Migration checks transformed
+state capacity before pausing. Its existing checkpoint remembers original tenant
+counter bytes to distinguish the known staging change from unrelated writes;
+historical progress bytes retain their legacy encoding. Replays preserve quota
+generations. Restore imports original counters while Staging, then charges each
+new paused history against the exact restored origin before completing. Original
+business identities and immutable quota limits remain unchanged.
+
+Portable engine fixtures cover real catalog/state writes, independent tenants,
+live-to-tombstone changes, command/effect refusal, response expiry and bounded
+floor/management append. Census cases reject validly encoded drift and orphaned
+state after reopen. Upper cases exercise actual inbox, pending delivery reserve,
+uncertain effect history, installed retry/replay/purge, ledger drift and reopen.
+Global control cases verify saturation with singleton headroom, stale writes,
+installation races and malformed original receipt refusal. Migration/resume and
+restore cases verify actual changed bytes, capacity refusal, replay and paused
+history. Installed runtime composition, protected-worker and operator endpoint
+qualification remain consuming requirements before enabling mandatory startup.
+
+## Linked response expiry
+
+One node-owned `ResultMaintenanceOwner` inspects one indexed command per step.
+Its durable cursor, generation, clock checkpoint and reclaimed-byte counters
+commit in the same engine transaction as response retirement. A restart resumes
+the cursor; concurrent owners must satisfy the original progress CAS. The owner
+creates no worker or timer. Each submitted physical callback reserves 8 MiB for
+the page, codecs, compare-and-swap copies and bounded dependency metadata.
+
+Eligible terminal responses become a 94-byte `LCE` protective receipt containing
+the original command, attempt, outcome, response digest, expiry and retirement
+time. Command and latest attempt retain their original fingerprint, source,
+formats, policy, horizons, inbox identity and effect links. Result-row count
+stays reserved; encoded response-byte accounting shrinks atomically. The current
+namespace incarnation and all existing result/inbox/effect/payload chains must
+validate before reclamation. Missing or corrupt links fail visibly.
+
+Pending commands retain their reserved disposition capacity. Response expiry
+keeps outstanding effects and payloads, terminal inbox rows and required source
+metadata. An original key with such dependencies remains an existing command;
+changed input conflicts. A native reader still sees its original snapshot and
+prevents compaction until physical view retirement. This profile retains the
+protective metadata under the existing finite admission quotas. Explicit
+terminalization, dependency purge and explicit command-floor release use the
+separate review below. Public management composition and bounded compaction
+remain part of the broader #397 acceptance work.
+
+## Explicit review and dependency purge
+
+`ResultMaintenanceOwner::terminalize` advances at most one original effect with
+its finite history closure. The command identity and effect's original delivery
+window must have expired; an inbox requires its original host-verified horizon.
+Current host policy is checked before lookup and again at durable acceptance.
+An active dispatch claim, corrupt linkage, paused restore/history or uncertain
+clock refuses the whole callback. Pending commands need explicit physical-owner
+recovery before they can be reviewed.
+
+The review records authenticated attribution, original command digest, policy,
+operation identity, reviewed time and a further retention horizon of at most
+seven days. It resides in the existing command and current attempt, bounded to
+2 KiB per copy. An expired uncertain effect retains its last uncertain receipt,
+history and exact original payload; terminalization does not fabricate provider
+acknowledgement. Required inbox, schema/source and original version/token metadata
+remain linked until the later destructive release.
+
+`purge` needs a fresh destructive policy and the recorded retention horizon.
+Each callback deletes one validated original effect/payload/history closure or
+one original attempt/result/retry-index closure. Durable audit progress supports
+reopen between callbacks. Physical native readers prevent the destructive writer
+fence, even after their public deadline; permits are never stolen. Final purge
+keeps a bounded `LCX` identity floor in the original command row. The original
+key reports expired and cannot become a fresh command in that incarnation.
+Explicit drained namespace release must remove this final pin before destruction
+and recreation. These ports provide no guest or administrator authority by
+themselves and create no store, worker, timer or background dispatcher.
+
+`prepare_floor_release` prepares one descriptive `PreparedFloorRelease` for the
+existing namespace management owner. It requires the exact namespace generation,
+a retired namespace, ready history/global restore guards and drained result
+reservations, effects, payload and inbox dependencies. It checks all sixteen
+original attempt/result slots and bounded retry backpointers are absent. The
+native writer compares the original floor, fixed quota, namespace and history
+rows; a missing or malformed chain refuses release. Active or merely quiescing
+namespaces retain their identity floors.
+
+The prepared plan holds the same single maintenance step through physical
+publication. Management may append its bounded operation and audit rows without
+overriding cleanup expectations or mutations. `publish` uses the existing native
+reader reclamation gate and the host's final current namespace-destroy policy
+and actual lifecycle drain callback. The final floor releases its accounting
+pin and empty quota row. Namespace incarnation stays unchanged; only the normal
+explicit destruction and recreation transitions advance it. A partial cleanup
+is not a completed namespace destruction. The consuming management bridge must
+retain its own attributable operation receipt and uncertain-commit recovery.
+
+New admission uses closed version-4 command metadata and a fixed 256-byte
+version-2 quota row. It charges encoded command, attempt, result, inbox, payload
+and retry-index keys/values plus a conservative 65-byte table/index allowance per
+row; effect metadata includes its bounded future history slots. Pending result
+and later review capacity are reserved in the same atomic admission/commit.
+The physical engine charges the quota reservation once; each pending command
+still carries an exact ownership marker. Terminal review consumes a 24 KiB
+reservation in already charged rows, so it needs no seventh row at the original
+six-row result/inbox boundary. Namespace ceilings further narrow the existing
+finite node limits and physical file high-water protection.
+
+`anchor_review` installs an explicitly authorized clock anchor in that fixed
+quota row. Subsequent review callbacks advance the same row without increasing
+its encoded size. Generation, actual namespace/global/history rows and current
+policy are fenced. Boot changes require explicit re-anchoring and never extend
+original business horizons. An explicitly installed original global maintenance
+anchor may seed the first namespace observation; ordinary body-expiry progress
+continues to use its original global cursor.
+
+Version-3 commands and version-1 quota rows remain readable under their original
+accounting. Their bytes do not prove the new review reservation, so destructive
+review and new admissions into that legacy quota refuse with an unsupported
+format. No implicit accounting upgrade authorizes deletion. Mixed reservation
+formats, nonzero quota padding and malformed reference chains fail coherent
+startup validation.
+
+## Conservative time and current permission
+
+The host supplies a trusted clock sample and boot identity. Ordinary steps
+require the recorded boot, nonregressing monotonic and wall clocks, an elapsed
+interval of at most 60 seconds, and at most one second of wall/monotonic drift
+both since the prior step and cumulatively since the authorized anchor. The
+146-byte maximum version-2 progress record persists that anchor through restart;
+repeated small wall-only jumps cannot reset the drift tolerance. Older progress
+encodings refuse explicitly rather than inventing an approved clock anchor.
+Unknown continuity, boot changes, regressions, large jumps and overflow hold
+reclamation. A delayed operator schedule needs an explicit new anchor.
+
+Anchoring requires current maintenance permission, the exact prior progress
+generation and host-verified clock/history continuity. It writes only progress,
+restarts the bounded scan and preserves original recovery horizons. It removes
+no response. Older-history restore and a new boot must use this deliberate
+recovery operation before maintenance resumes. Guest or request fields supply
+neither clock proof nor maintenance authority.
+
+Permission is checked before lookup, for the selected original command, and at
+the actual engine fence. Expired responses expose no business body; current
+result-read policy still controls status/replay. Retirement raises the original
+command/attempt clock floor, preventing a regressed clock from making a removed
+body appear current. Clock holds are domain results and must remain distinct
+from engine corruption or uncertain commitment in the physical-owner wrapper.
+
+## Bounded physical compaction
+
+`ResultMaintenanceOwner::compact` uses that same maintenance guard and the
+original recovery writer. The host reserves the declared scratch allowance and
+bounded request/response buffers before queueing. The physical callback retains
+its permit until it actually returns. Namespace, ready history/restore and the
+explicitly approved clock anchor are checked from the same engine and fenced
+again with current maintenance permission. Compaction changes physical layout;
+original business records, source/schema references, protective floors and
+version tokens retain their exact bytes.
+
+`EmbeddedStore::compact_fenced` refuses native views and active writer work,
+including readers whose public lifetime expired. It uses the original view
+counter and a short exclusive engine gate. The bounded file backend charges the
+final cold-page format/row checks and actual compaction reads, writes and syncs.
+Compiled ceilings are 256 MiB for each read/write allowance, 8192 native I/O
+operations, 64 MiB additional space in the same file, 64 MiB declared scratch
+and a deadline at most five seconds away. These are ceilings; the installed
+worker profile may require narrower values. The physical file high-water limit
+still applies. There is no scratch file, new worker, timer or durability change.
+
+The scratch model is tied to redb 4.3.0 and its 4096-byte page profile, checked
+through the engine's public stats API when opening. It conservatively charges
+8192 bytes per possible physical page across the initial file plus permitted
+growth, capped by the actual file ceiling, plus 256 KiB for fixed checks and
+metadata. This covers transient relocation data, paths, relocation/freed-page
+collections and the bounded final row checks; the engine cache remains separately
+reserved. If this requirement exceeds the declared scratch allowance, compaction
+refuses before host acceptance. An ordinary 8 MiB maintenance reservation cannot
+silently authorize larger-file compaction. The host must select compatible fixed
+file, scratch and recovery-job limits.
+
+A fixed last observation distinguishes preflight refusal, byte/operation/growth
+exhaustion, deadline and physical failure. Attempted I/O is charged even if a
+device fails; transferred bytes remain unknown after such a failure. Interrupted
+compaction reports unknown physical change and quarantines the original engine.
+A late native return also requires recovery. An elapsed deadline cannot stop a
+native call, retire its permit or publish clean completion. The unbounded bare
+engine qualification helper refuses the protected bounded backend.
+
+Engine fixtures retain all original compaction/crash cases and add successful
+bounded compaction, stale/revoked acceptance, real writer/reader refusal, physical
+growth/byte caps, an exhausted I/O lease, failed sync and a late native return.
+They reopen the original file and verify durable business bytes. The linked
+maintenance fixture also preserves original command/result/effect/payload/clock
+rows and proves another retention callback cannot overlap the compaction guard.
+These lower engine tests do not qualify an operator endpoint or a packaged node.
+
+## Physical recovery reserve
+
+The startup configuration selects a finite reserve within the storage owner's
+original fixed workers, queue slots, accepted jobs, response bytes and read
+slots. `install_recovery_capacity` only validates that exact installed profile;
+it refuses missing, changed or live configuration and cannot create capacity
+after startup. Ordinary work cannot consume that reserve. Authorized status,
+pause/reconciliation and maintenance callbacks use `with_recovery_store`; the
+resource class supplies no read or mutation permission.
+
+A reserved read can run while the ordinary queue and native writer/read owner
+are saturated. Writes share the original engine writer lock. A stalled writer
+remains owned; its deadline cannot prove retirement or supply a bypass. Dropping
+a public waiter retains its accepted job, buffers and byte reservation until
+the physical callback and result owner retire. Unreadable storage and exhausted
+recovery resources produce finite failures.
+
+The maintained engine tests cover response expiry with an unresolved effect,
+inbox redelivery and changed-input conflict after reopen, current-policy
+revocation, corrupt payload links, clock/boot holds, durable page restart,
+overlap refusal, native snapshot pinning and saturation of the protected store.
+These tests qualify this finite profile. Public node/Java/HTTP execution evidence
+is supplied by the consuming runtime and application integration tickets.
+
+The [source-matched Linux evidence](../evidence/transaction-retention-foundation-397.json) records all 109 state and 45 commit cases and strict owner Clippy. The same native schedule first reproduced the old cumulative-clock failure, then passed the fixed source after a real database reopen. Original qualified source and failed attempts remain preserved. This evidence covers the linked retention and physical reserve foundations, while the consuming Java/HTTP qualification and the remaining #397 operations stay separate.

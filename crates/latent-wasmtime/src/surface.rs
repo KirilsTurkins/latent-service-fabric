@@ -111,10 +111,22 @@ fn lookup_function<'a, T>(
 pub(crate) struct Providers {
     pub activation_runtime: bool,
     pub local_services: bool,
+    pub network: NetworkProviders,
+    pub storage: StorageProviders,
+    pub signals: SignalProviders,
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct NetworkProviders {
     pub http: bool,
     pub streaming_http: bool,
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct StorageProviders {
     pub blobs: bool,
     pub secrets: bool,
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct SignalProviders {
     pub events: bool,
     pub random: bool,
     pub metrics: bool,
@@ -122,15 +134,19 @@ pub(crate) struct Providers {
 impl Providers {
     fn supports(self, name: &str) -> bool {
         (self.activation_runtime && name == crate::host::runtime::CAPABILITY)
-            || (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
-            || (self.random && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
-            || (self.metrics && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
-            || (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
-            || (self.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
+            || (self.signals.events
+                && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+            || (self.signals.random
+                && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
+            || (self.signals.metrics
+                && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
+            || (self.storage.secrets
+                && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
+            || (self.storage.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
             || (self.local_services
                 && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
-            || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
-            || (self.streaming_http
+            || (self.network.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
+            || (self.network.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
     }
 }
@@ -290,6 +306,7 @@ fn validate_imports(
     providers: Providers,
 ) -> Result<(BTreeSet<String>, BTreeSet<String>), PlatformError> {
     let mut imports = BTreeSet::new();
+    let mut type_imports = BTreeSet::new();
     let transactional = component_type
         .imports(engine)
         .any(|(name, _)| name == transaction::STATE || name == transaction::INTENTS);
@@ -302,7 +319,6 @@ fn validate_imports(
         latent_core::PHASE3_HOST_ABI_CURRENT
     };
     let transaction_resource = transaction::command_resource(component_type, engine);
-    let mut type_imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
         let ComponentItem::ComponentInstance(interface) = item.ty else {

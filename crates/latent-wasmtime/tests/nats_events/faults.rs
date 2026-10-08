@@ -38,7 +38,7 @@ async fn real_nats_lost_ack_cancelled_guest_outage_and_fresh_connection_recovery
             ["1007"]
         ),
         Ok(GuestOutcome::Interrupted { kind, .. }) => {
-            assert_eq!(kind, latent_executor::GuestInterruptionKind::Cancelled)
+            assert_eq!(kind, latent_executor::GuestInterruptionKind::Cancelled);
         }
         Err(error) => assert_eq!(error.code, latent_core::PlatformErrorCode::Cancelled),
         other => panic!("unexpected cancellation outcome: {other:?}"),

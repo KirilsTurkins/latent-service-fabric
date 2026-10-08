@@ -104,10 +104,11 @@ fn last_waiter_stop_retains_worker_source_and_all_reservations_until_retirement(
     drop(second);
     assert!(control.is_stopped());
     held(&pool);
-    assert!(
-        latent_artifacts::DirectoryArtifactRepository::open(&directory.0, Default::default())
-            .is_err()
-    );
+    assert!(latent_artifacts::DirectoryArtifactRepository::open(
+        &directory.0,
+        latent_artifacts::DirectoryArtifactRepositoryConfig::default()
+    )
+    .is_err());
     release.send(()).unwrap();
     retired(&pool);
     drop(directory.open());
@@ -129,10 +130,11 @@ fn pool_shutdown_signals_worker_before_releasing_owned_source_and_capacity() {
     assert!(control.is_stopped());
     assert!(complete(waiter).is_err());
     held(&pool);
-    assert!(
-        latent_artifacts::DirectoryArtifactRepository::open(&directory.0, Default::default())
-            .is_err()
-    );
+    assert!(latent_artifacts::DirectoryArtifactRepository::open(
+        &directory.0,
+        latent_artifacts::DirectoryArtifactRepositoryConfig::default()
+    )
+    .is_err());
     release.send(()).unwrap();
     complete(shutdown).unwrap();
     retired(&pool);

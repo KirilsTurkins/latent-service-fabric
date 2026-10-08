@@ -1,0 +1,295 @@
+use super::{
+    progress_prefix, schema_ids, AggregateMigrationRecipe, AggregateMigrationRequest,
+    PROGRESS_BYTES, PROGRESS_PREFIX,
+};
+use crate::embedded::{Family, RowKey};
+use crate::{
+    embedded::{ExpectedRow, ReadView, StoreError},
+    namespace::{
+        compatibility::ReviewedSchema,
+        history::{history_key, HistoryStatus, NamespaceHistory},
+        namespace_record_key, NamespaceRecord, NamespaceStatus,
+    },
+    recovery::{guard_key, resume::NamespaceRecoveryView},
+    session::version::ViewIdentity,
+};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AggregateMigrationProgress {
+    format: u16,
+    key_digest: [u8; 32],
+    fingerprint: [u8; 32],
+    checkpoint_digest: [u8; 32],
+    checkpoint_manifest_digest: [u8; 32],
+    package_digest: [u8; 32],
+    declaration_digest: [u8; 32],
+    schema_proof_digest: [u8; 32],
+    recipe_digest: [u8; 32],
+    namespace_row: Vec<u8>,
+    history_row: Option<Vec<u8>>,
+    guard_row: Option<Vec<u8>>,
+    result_namespace_row: Option<Vec<u8>>,
+    /// Original installed accounting bytes belong to the same checkpoint.
+    /// Absence preserves the exact historical lower-store legacy encoding.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tenant_quota_row: Option<Vec<u8>>,
+}
+impl AggregateMigrationProgress {
+    pub(super) fn new(
+        view: &ReadView,
+        current: &NamespaceRecoveryView,
+        request: &AggregateMigrationRequest,
+        schema: &ReviewedSchema,
+        recipe: AggregateMigrationRecipe,
+    ) -> Result<Self, StoreError> {
+        let key = request.progress_key()?;
+        let (_, history_row) = NamespaceHistory::capture(view, &current.namespace)?;
+        Ok(Self {
+            format: 1,
+            key_digest: key.key[key.key.len() - 32..]
+                .try_into()
+                .map_err(|_| StoreError::Corrupt)?,
+            fingerprint: request.fingerprint(recipe)?,
+            checkpoint_digest: request.checkpoint_digest,
+            checkpoint_manifest_digest: request.checkpoint_manifest_digest,
+            package_digest: request.package_digest,
+            declaration_digest: schema.declaration_digest(),
+            schema_proof_digest: schema.proof_digest(),
+            recipe_digest: recipe.digest(),
+            namespace_row: current
+                .namespace
+                .encode()
+                .map_err(|_| StoreError::Corrupt)?,
+            history_row,
+            guard_row: view.get(&guard_key())?,
+            result_namespace_row: None,
+            tenant_quota_row: view.get_bounded(
+                &crate::tenant::quota_key(&current.namespace.tenant)?,
+                crate::tenant::RECORD_BYTES,
+            )?,
+        })
+    }
+    #[must_use]
+    pub fn completed(&self) -> bool {
+        self.result_namespace_row.is_some()
+    }
+    /// The original retained recipe, never inferred from the latest package.
+    pub fn recipe(&self) -> Result<AggregateMigrationRecipe, StoreError> {
+        AggregateMigrationRecipe::from_digest(self.recipe_digest)
+    }
+    pub fn source_namespace(&self) -> Result<NamespaceRecord, StoreError> {
+        NamespaceRecord::decode(&self.namespace_row).map_err(|_| StoreError::Corrupt)
+    }
+    pub(super) fn source_quota_expectation(&self) -> Result<Option<ExpectedRow>, StoreError> {
+        self.tenant_quota_row
+            .as_ref()
+            .map(|bytes| {
+                let namespace = self.source_namespace()?;
+                let record = crate::tenant::TenantRecord::decode(bytes)?;
+                if record.quota.tenant != namespace.tenant {
+                    return Err(StoreError::Corrupt);
+                }
+                Ok(ExpectedRow {
+                    key: crate::tenant::quota_key(&namespace.tenant)?,
+                    value: Some(bytes.clone()),
+                })
+            })
+            .transpose()
+    }
+    pub(super) fn source_history(&self) -> Result<NamespaceHistory, StoreError> {
+        let namespace = self.source_namespace()?;
+        let history = self
+            .history_row
+            .as_deref()
+            .map(NamespaceHistory::decode)
+            .transpose()
+            .map_err(|_| StoreError::Corrupt)?
+            .unwrap_or_else(|| NamespaceHistory::initial(&namespace));
+        history
+            .check_namespace(&namespace)
+            .map_err(|_| StoreError::Corrupt)?;
+        Ok(history)
+    }
+    pub fn result_namespace(&self) -> Result<NamespaceRecord, StoreError> {
+        NamespaceRecord::decode(
+            self.result_namespace_row
+                .as_deref()
+                .ok_or(StoreError::Unavailable)?,
+        )
+        .map_err(|_| StoreError::Corrupt)
+    }
+    pub fn result_history(&self) -> Result<NamespaceHistory, StoreError> {
+        if !self.completed() {
+            return Err(StoreError::Unavailable);
+        }
+        let mut history = self.source_history()?;
+        history.state_schema = schema_ids()?.1.as_str().into();
+        history.epochs.schema = history
+            .epochs
+            .schema
+            .checked_add(1)
+            .ok_or(StoreError::Capacity)?;
+        history.status = HistoryStatus::ReconciliationRequired;
+        Ok(history)
+    }
+    pub fn result_view_token(&self) -> Result<Vec<u8>, StoreError> {
+        let namespace = self.result_namespace()?;
+        let history = self.result_history()?;
+        let scope = NamespaceRecoveryView {
+            namespace: namespace.clone(),
+            history: history.clone(),
+            guard: None,
+        }
+        .scope();
+        ViewIdentity {
+            namespace: namespace.version,
+            epochs: history.epochs,
+        }
+        .token(&scope)
+        .map_err(|_| StoreError::Corrupt)
+    }
+    pub(super) fn finish(&mut self) -> Result<(), StoreError> {
+        if self.completed() {
+            return Err(StoreError::Conflict);
+        }
+        let mut namespace = self.source_namespace()?;
+        namespace.version.generation = namespace
+            .version
+            .generation
+            .checked_add(1)
+            .ok_or(StoreError::Capacity)?;
+        namespace.state_schema = schema_ids()?.1.as_str().into();
+        self.result_namespace_row = Some(namespace.encode().map_err(|_| StoreError::Corrupt)?);
+        self.validate()
+    }
+    pub(super) fn require_request(
+        &self,
+        request: &AggregateMigrationRequest,
+        schema: &ReviewedSchema,
+        recipe: AggregateMigrationRecipe,
+    ) -> Result<(), StoreError> {
+        self.validate()?;
+        if self.recipe()? != recipe
+            || self.fingerprint != request.fingerprint(recipe)?
+            || self.package_digest != schema.declaration().package_digest
+            || self.declaration_digest != schema.declaration_digest()
+            || self.schema_proof_digest != schema.proof_digest()
+        {
+            return Err(StoreError::Conflict);
+        }
+        Ok(())
+    }
+    pub fn encode(&self) -> Result<Vec<u8>, StoreError> {
+        self.validate()?;
+        let bytes = serde_json::to_vec(self).map_err(|_| StoreError::Invalid)?;
+        if bytes.len() > PROGRESS_BYTES {
+            return Err(StoreError::Capacity);
+        }
+        Ok(bytes)
+    }
+    pub fn decode(bytes: &[u8]) -> Result<Self, StoreError> {
+        if bytes.is_empty() || bytes.len() > PROGRESS_BYTES {
+            return Err(StoreError::Capacity);
+        }
+        let progress: Self = serde_json::from_slice(bytes).map_err(|_| StoreError::Corrupt)?;
+        progress.validate()?;
+        if progress.encode()? != bytes {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(progress)
+    }
+    pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        if key.family != Family::Maintenance || !key.key.starts_with(PROGRESS_PREFIX) {
+            return Err(StoreError::UnsupportedFormat);
+        }
+        let p = Self::decode(bytes)?;
+        let n = p.source_namespace()?;
+        let prefix = progress_prefix(&n.tenant, &n.id, n.version.incarnation)?;
+        if key.family != Family::Maintenance
+            || key.key.len() != prefix.len() + 32
+            || !key.key.starts_with(&prefix)
+            || key.key[prefix.len()..] != p.key_digest
+        {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(())
+    }
+    pub(super) fn history_key(&self) -> Result<RowKey, StoreError> {
+        let n = self.source_namespace()?;
+        self.source_quota_expectation()?;
+        history_key(&n.tenant, &n.id, n.version.incarnation).map_err(|_| StoreError::Corrupt)
+    }
+    pub(super) fn namespace_expectation(&self) -> Result<ExpectedRow, StoreError> {
+        let n = self.source_namespace()?;
+        Ok(ExpectedRow {
+            key: RowKey {
+                family: Family::Namespace,
+                key: namespace_record_key(&n.tenant, &n.id).map_err(|_| StoreError::Corrupt)?,
+            },
+            value: Some(self.namespace_row.clone()),
+        })
+    }
+    pub(super) fn history_expectation(&self) -> Result<ExpectedRow, StoreError> {
+        Ok(ExpectedRow {
+            key: self.history_key()?,
+            value: self.history_row.clone(),
+        })
+    }
+    pub(super) fn guard_expectation(&self) -> ExpectedRow {
+        ExpectedRow {
+            key: guard_key(),
+            value: self.guard_row.clone(),
+        }
+    }
+    pub(super) fn staged_history(&self) -> Result<Vec<u8>, StoreError> {
+        let mut h = self.source_history()?;
+        h.status = HistoryStatus::ReconciliationRequired;
+        h.encode().map_err(|_| StoreError::Corrupt)
+    }
+    fn validate(&self) -> Result<(), StoreError> {
+        if self.format != 1
+            || self.recipe().is_err()
+            || [
+                self.key_digest,
+                self.fingerprint,
+                self.checkpoint_digest,
+                self.checkpoint_manifest_digest,
+                self.package_digest,
+                self.declaration_digest,
+                self.schema_proof_digest,
+            ]
+            .contains(&[0; 32])
+        {
+            return Err(StoreError::Corrupt);
+        }
+        let n = self.source_namespace()?;
+        let h = self.source_history()?;
+        if n.status != NamespaceStatus::Quiescing
+            || n.state_schema != schema_ids()?.0.as_str()
+            || h.status != HistoryStatus::Ready
+        {
+            return Err(StoreError::Corrupt);
+        }
+        if let Some(g) = &self.guard_row {
+            super::super::RecoveryGuard::decode(g)?.require_ready()?;
+        }
+        if self.completed() {
+            let mut expected = n;
+            expected.version.generation = expected
+                .version
+                .generation
+                .checked_add(1)
+                .ok_or(StoreError::Corrupt)?;
+            expected.state_schema = schema_ids()?.1.as_str().into();
+            if self.result_namespace()? != expected {
+                return Err(StoreError::Corrupt);
+            }
+            self.result_history()?
+                .check_namespace(&expected)
+                .map_err(|_| StoreError::Corrupt)?;
+        }
+        Ok(())
+    }
+}

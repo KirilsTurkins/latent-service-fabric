@@ -123,6 +123,14 @@ const RESOURCES: &[&str] = &[
     "wall-time-micros",
     "log-bytes",
 ];
+const CONTROL_PREPARATION_STAGES: &[&str] = &[
+    "prepare-lease",
+    "package-lease",
+    "package-read",
+    "package-lifecycle",
+    "package-tenant",
+    "inherited-bindings",
+];
 
 #[derive(Clone, Copy)]
 enum Value {
@@ -155,6 +163,7 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             "reason",
             Known(latent_core::error::ADMISSION_CURRENTNESS_REASONS),
         )],
+        "admission.control-stage" => &[("stage", Known(CONTROL_PREPARATION_STAGES))],
         "activation.resource-exhausted" => &[
             ("dimension", Known(DIMENSIONS)),
             ("limit", Unsigned),

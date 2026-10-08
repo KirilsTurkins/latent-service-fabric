@@ -2,6 +2,60 @@ use super::*;
 use crate::{control::v1 as c, invocation::v1 as i, transaction::v1 as t};
 mod dispatcher;
 
+#[test]
+fn namespace_inspection_preserves_existing_wire_field_and_separate_captured_policy() {
+    use prost::Message;
+    let namespace_policy = format!("sha256:{}", "a".repeat(64));
+    // Existing development clients encoded their configuration digest at
+    // field 11. The richer captured policy precondition is independently 12.
+    let mut old_wire = vec![0x5a, 71];
+    old_wire.extend_from_slice(namespace_policy.as_bytes());
+    let old = c::NamespaceInspection::decode(old_wire.as_slice()).unwrap();
+    assert_eq!(old.namespace_policy_digest, namespace_policy);
+    assert_eq!(old.policy_digest, None);
+    let captured_policy = format!("sha256:{}", "b".repeat(64));
+    let current = c::NamespaceInspection {
+        namespace_policy_digest: namespace_policy.clone(),
+        policy_digest: Some(captured_policy.clone()),
+        ..Default::default()
+    };
+    let wire = current.encode_to_vec();
+    assert_eq!(&wire[..old_wire.len()], old_wire);
+    assert_eq!(wire[old_wire.len()], 0x62);
+    let decoded = c::NamespaceInspection::decode(wire.as_slice()).unwrap();
+    assert_eq!(decoded.namespace_policy_digest, namespace_policy);
+    assert_eq!(
+        decoded.policy_digest.as_deref(),
+        Some(captured_policy.as_str())
+    );
+    let legacy = c::NamespaceInspection::decode(old.encode_to_vec().as_slice()).unwrap();
+    assert_eq!(legacy.policy_digest, None);
+}
+
+#[test]
+fn development_effect_discriminants_remain_distinct_from_additive_floor_actions() {
+    assert_eq!(
+        c::AuditControlAction::try_from(23).unwrap(),
+        c::AuditControlAction::EffectPlan
+    );
+    assert_eq!(
+        c::AuditControlAction::try_from(29).unwrap(),
+        c::AuditControlAction::PayloadPurge
+    );
+    assert_eq!(
+        c::AuditControlAction::try_from(30).unwrap(),
+        c::AuditControlAction::CommandFloorRelease
+    );
+    assert_eq!(
+        c::StateMutationKind::try_from(5).unwrap(),
+        c::StateMutationKind::ReconcileEffect
+    );
+    assert_eq!(
+        c::StateMutationKind::try_from(6).unwrap(),
+        c::StateMutationKind::ReleaseExpiredCommandFloor
+    );
+}
+
 fn namespace() -> t::NamespaceSelector {
     t::NamespaceSelector {
         tenant: "tenant".into(),
@@ -99,6 +153,7 @@ fn quota() -> c::NamespaceQuota {
         recovery_bytes: 1_048_576,
     }
 }
+
 fn mutation() -> c::MutateNamespaceRequest {
     c::MutateNamespaceRequest {
         namespace: Some(inspect()),
@@ -383,4 +438,104 @@ fn operation_receipt_recovery_requires_one_associated_receipt() {
     })
     .validate_for(&request)
     .is_err());
+}
+
+fn floor_release() -> c::MutateStateRequest {
+    let mut version = b"NV\x02".to_vec();
+    version.extend_from_slice(&[1; 32]);
+    for word in [1_u64, 7, 2, 3] {
+        version.extend_from_slice(&word.to_le_bytes());
+    }
+    c::MutateStateRequest {
+        namespace: Some(inspect()),
+        operation_id: "release-original".into(),
+        mutation: c::StateMutationKind::ReleaseExpiredCommandFloor as i32,
+        record_id: Some("a".repeat(64)),
+        expected_version: version,
+        expected_policy_digest: format!("sha256:{}", "b".repeat(64)),
+        reason: "approved retention cleanup".into(),
+        ..Default::default()
+    }
+}
+
+#[test]
+fn floor_release_requires_original_canonical_identity_and_history_precondition() {
+    let request = floor_release();
+    assert!(Request::from(request.clone()).validate().is_ok());
+    for id in [
+        None,
+        Some("a".repeat(63)),
+        Some("A".repeat(64)),
+        Some("0".repeat(64)),
+    ] {
+        let mut changed = request.clone();
+        changed.record_id = id;
+        assert!(Request::from(changed).validate().is_err());
+    }
+    let mut stale_format = request;
+    stale_format.expected_version = b"NSV\x01\x01".to_vec();
+    assert!(Request::from(stale_format).validate().is_err());
+    let mut wrong_incarnation = floor_release();
+    wrong_incarnation.expected_version[35..43].copy_from_slice(&2_u64.to_le_bytes());
+    assert_eq!(
+        Request::from(wrong_incarnation).validate(),
+        Err(ValidationError::Association)
+    );
+    let mut missing_history = floor_release();
+    missing_history.expected_version[59..67].fill(0);
+    assert_eq!(
+        Request::from(missing_history).validate(),
+        Err(ValidationError::Shape)
+    );
+}
+
+#[test]
+fn floor_release_receipt_cannot_substitute_another_record_policy_or_original_view() {
+    let request = floor_release();
+    let mut after_version = request.expected_version.clone();
+    after_version[43..51].copy_from_slice(&8_u64.to_le_bytes());
+    let public = c::StateOperationReceipt {
+        operation_id: request.operation_id.clone(),
+        receipt_id: "receipt".into(),
+        mutation: request.mutation,
+        namespace: Some(namespace()),
+        authenticated_operator: "operator".into(),
+        before_version: request.expected_version.clone(),
+        after_version,
+        completed_at_unix_millis: 1,
+        record_id: request.record_id.clone(),
+        policy_digest: request.expected_policy_digest.clone(),
+        disposition: c::StateOperationDisposition::Committed as i32,
+        effect: None,
+    };
+    let original = Request::from(request);
+    assert!(Response::from(c::MutateStateResponse {
+        receipt: Some(public.clone()),
+        audit_ack: None,
+        replayed: false
+    })
+    .validate_for(&original)
+    .is_ok());
+    for changed_field in 0..8 {
+        let mut changed = public.clone();
+        match changed_field {
+            0 => changed.record_id = Some("b".repeat(64)),
+            1 => changed.policy_digest = format!("sha256:{}", "c".repeat(64)),
+            2 => changed.before_version[4] ^= 1,
+            3 => changed.operation_id = "another-operation".into(),
+            4 => changed.after_version[4] ^= 1,
+            5 => changed.after_version[51..59].copy_from_slice(&9_u64.to_le_bytes()),
+            6 => changed.after_version[43..51].copy_from_slice(&9_u64.to_le_bytes()),
+            _ => changed.disposition = c::StateOperationDisposition::Rejected as i32,
+        }
+        assert_eq!(
+            Response::from(c::MutateStateResponse {
+                receipt: Some(changed),
+                audit_ack: None,
+                replayed: false
+            })
+            .validate_for(&original),
+            Err(ValidationError::Association)
+        );
+    }
 }

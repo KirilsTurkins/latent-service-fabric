@@ -171,6 +171,12 @@ func validateResponse(response, request any, state *callState) error {
 			return invalid()
 		}
 		for _, node := range value.Nodes {
+			if witness := node.TransactionStaging; witness != nil {
+				grant := node.GrantedBudget
+				if witness.SchemaVersion != 1 || witness.ActivationSerial == 0 || !stagingHex(witness.CommandId) || !stagingHex(witness.AttemptId) || !stagingHex(witness.TransactionId) || !strings.HasPrefix(witness.PublicationId, "publication:sha256:") || !stagingHex(strings.TrimPrefix(witness.PublicationId, "publication:sha256:")) || witness.StagedMutations > 128 || witness.CapturedIntents == 0 || witness.CapturedIntents > 128 || grant == nil || witness.CapturedIntents > grant.EffectCount || witness.StateWriteBytes == 0 || witness.StateWriteBytes > grant.StateWriteBytes || witness.ObservedAtUnixMillis < node.ReceivedAtUnixMillis {
+					return invalid()
+				}
+			}
 			if len(node.TargetService) > 512 || (selector.Service != nil && (node.TargetService != *selector.Service || node.ParentActivationId != nil || node.ActivationId != node.RootActivationId || (selector.FromUnixMillis != nil && node.ReceivedAtUnixMillis < *selector.FromUnixMillis))) {
 				return invalid()
 			}
@@ -219,6 +225,10 @@ func validateResponse(response, request any, state *callState) error {
 	}
 	state.metadata.Outcome = profile.OutcomeKnowledgeObserved
 	return nil
+}
+
+func stagingHex(value string) bool {
+	return len(value) == 64 && strings.Trim(value, "0123456789abcdef") == ""
 }
 
 func recordActivation(identity string, state *callState) bool {

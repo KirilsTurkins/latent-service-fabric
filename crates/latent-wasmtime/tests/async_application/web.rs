@@ -59,32 +59,7 @@ async fn real_web_contract_transfers_maximum_body_and_keeps_host_principal_on_re
         )
         .unwrap();
         let value = vec![255; 4000];
-        let headers = [
-            HeaderView {
-                name: "host",
-                value: b"example.test",
-            },
-            HeaderView {
-                name: "x-data",
-                value: &value,
-            },
-            HeaderView {
-                name: "x-data",
-                value: &value,
-            },
-            HeaderView {
-                name: "x-data",
-                value: &value,
-            },
-            HeaderView {
-                name: "x-data",
-                value: &value,
-            },
-            HeaderView {
-                name: "x-forwarded-user",
-                value: b"administrator",
-            },
-        ];
+        let headers = request_headers(&value);
         let deadline = IncomingDeadline::new(
             Instant::now() + Duration::from_secs(5),
             support::now_millis() + 5000,
@@ -116,36 +91,74 @@ async fn real_web_contract_transfers_maximum_body_and_keeps_host_principal_on_re
         let outcome = support::run(&backend, execution, &cancellation)
             .await
             .unwrap();
-        let GuestOutcome::Returned {
-            output,
-            output_media_type,
-            ..
-        } = outcome
-        else {
-            panic!("web outcome: {outcome:?}");
-        };
-        let mut delivery = invocation
-            .complete(Outcome::Returned {
-                bytes: &output,
-                media_type: &output_media_type,
-            })
-            .unwrap();
-        assert_eq!(delivery.cause(), http::DeliveryCause::Application);
-        assert_eq!(delivery.remaining_body().unwrap().len(), expected);
-        assert!(delivery.remaining_body().unwrap().iter().all(|b| *b == 255));
-        assert_eq!(
-            delivery
-                .headers()
-                .find(|h| h.name == "x-subject")
-                .unwrap()
-                .value,
-            subject.as_bytes()
-        );
-        assert!(!delivery.headers().any(|h| h.name == "x-forwarded-user"));
-        delivery.mark_headers_written().unwrap();
-        delivery.advance(expected).unwrap();
-        delivery.finish().unwrap();
+        assert_delivery(invocation, outcome, expected, subject);
         assert_eq!(pool.snapshot().reserved_bytes, 0);
         support::idle(&backend);
     }
+}
+
+fn assert_delivery(
+    invocation: http::Invocation,
+    outcome: GuestOutcome,
+    expected: usize,
+    subject: &str,
+) {
+    let GuestOutcome::Returned {
+        output,
+        output_media_type,
+        ..
+    } = outcome
+    else {
+        panic!("web outcome: {outcome:?}");
+    };
+    let mut delivery = invocation
+        .complete(Outcome::Returned {
+            bytes: &output,
+            media_type: &output_media_type,
+        })
+        .unwrap();
+    assert_eq!(delivery.cause(), http::DeliveryCause::Application);
+    assert_eq!(delivery.remaining_body().unwrap().len(), expected);
+    assert!(delivery.remaining_body().unwrap().iter().all(|b| *b == 255));
+    assert_eq!(
+        delivery
+            .headers()
+            .find(|h| h.name == "x-subject")
+            .unwrap()
+            .value,
+        subject.as_bytes()
+    );
+    assert!(!delivery.headers().any(|h| h.name == "x-forwarded-user"));
+    delivery.mark_headers_written().unwrap();
+    delivery.advance(expected).unwrap();
+    delivery.finish().unwrap();
+}
+
+fn request_headers(value: &[u8]) -> [HeaderView<'_>; 6] {
+    [
+        HeaderView {
+            name: "host",
+            value: b"example.test",
+        },
+        HeaderView {
+            name: "x-data",
+            value,
+        },
+        HeaderView {
+            name: "x-data",
+            value,
+        },
+        HeaderView {
+            name: "x-data",
+            value,
+        },
+        HeaderView {
+            name: "x-data",
+            value,
+        },
+        HeaderView {
+            name: "x-forwarded-user",
+            value: b"administrator",
+        },
+    ]
 }

@@ -5,7 +5,8 @@ use latent_core::{
 };
 use latent_executor::transaction::{
     CommandInfo, Entry, Intent, IntentFailure, Mode, Page, PageInfo, RetainedTransfer,
-    StateFailure, TransactionHost, VersionedValue, ViewIdentity,
+    StateFailure, TransactionHost, TransactionStagingIdentity, TransactionStagingObserver,
+    TransactionStagingProgress, VersionedValue, ViewIdentity,
 };
 use std::sync::atomic::Ordering;
 
@@ -31,20 +32,55 @@ impl StateTransactionHost {
         }
         Ok(())
     }
-    fn identity(&self) -> ViewIdentity {
-        let version = self.authorization.namespace.record().version;
-        let mut bytes = Vec::with_capacity(16);
-        bytes.extend_from_slice(&version.incarnation.to_le_bytes());
-        bytes.extend_from_slice(&version.generation.to_le_bytes());
-        ViewIdentity {
+    fn identity(&self) -> Result<ViewIdentity, StateFailure> {
+        Ok(ViewIdentity {
             namespace: self.scope.namespace.0.clone(),
             incarnation: self.scope.incarnation.to_string(),
-            version: bytes,
+            version: self
+                .view_identity
+                .token(&self.scope)
+                .map_err(|error| super::io::state_error(error, false))?,
             state_schema: self.scope.state_schema.clone(),
+        })
+    }
+    fn observe_staging(&self, payload: &super::SessionPayload) {
+        if let (Ok(mutations), Ok(intents), Ok(observer)) = (
+            u32::try_from(payload.session.staged_mutation_count()),
+            u32::try_from(payload.intents.len()),
+            self.staging_observer.lock(),
+        ) {
+            if let Some(observer) = observer.as_ref() {
+                observer.observe(TransactionStagingProgress {
+                    staged_mutations: mutations,
+                    captured_intents: intents,
+                    state_write_bytes: self
+                        .budget()
+                        .snapshot_at(std::time::Instant::now())
+                        .state_write_bytes,
+                });
+            }
         }
     }
 }
 impl TransactionHost for StateTransactionHost {
+    fn staging_identity(&self) -> Option<TransactionStagingIdentity> {
+        self.staging_identity.clone()
+    }
+    fn bind_staging_observer(
+        &self,
+        observer: std::sync::Arc<dyn TransactionStagingObserver>,
+    ) -> Result<(), StateFailure> {
+        if self.mode != Mode::Command || self.command.is_none() || self.staging_identity.is_none() {
+            return Err(StateFailure::WrongMode);
+        }
+        super::staging::bind(
+            &self.staging_observer,
+            &self.acquired,
+            &self.guest_closed,
+            &self.released,
+            observer,
+        )
+    }
     fn activation_id(&self) -> &latent_core::ActivationId {
         &self.activation
     }
@@ -88,10 +124,12 @@ impl TransactionHost for StateTransactionHost {
         self.budget()
             .consume(
                 BudgetDimension::StateReadBytes,
-                (self.scope.namespace.0.len() + self.scope.state_schema.len() + 64) as u64,
+                (self.scope.namespace.0.len()
+                    + self.scope.state_schema.len()
+                    + latent_state::session::version::VIEW_TOKEN_BYTES) as u64,
             )
             .map_err(|_| StateFailure::ReadBudgetExhausted)?;
-        Ok(self.identity())
+        self.identity()
     }
     fn command_info(&self) -> Result<CommandInfo, StateFailure> {
         if self.mode != Mode::Command {
@@ -225,7 +263,7 @@ impl TransactionHost for StateTransactionHost {
             let next_cursor = page.continuation.map(|cursor| cursor.bytes().to_vec());
             Ok(Page {
                 info: PageInfo {
-                    view: self.identity(),
+                    view: self.identity()?,
                     entry_count: u32::try_from(entries.len())
                         .map_err(|_| StateFailure::InvalidLimit)?,
                     encoded_bytes: encoded_bytes as u64,
@@ -311,6 +349,9 @@ impl TransactionHost for StateTransactionHost {
                 return Err(IntentFailure::InvalidExpiry);
             }
             self.authorization
+                .check_intent_selection(&intent, sequence)
+                .map_err(|_| IntentFailure::PermissionDenied)?;
+            self.authorization
                 .authorize("stage", bytes, 0, || {
                     captured = Some(context.capture(
                         sequence,
@@ -333,6 +374,7 @@ impl TransactionHost for StateTransactionHost {
                 .commit()
                 .map_err(|error| intent_budget_error(&error))?;
             payload.intents.push(captured);
+            self.observe_staging(payload);
             Ok(sequence)
         })
     }

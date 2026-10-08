@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "JavaTransactionSchemaTests.test_explicit_recovery_recipe_preserves_three_fields_without_changing_shared_default",
+    "JavaTransactionSchemaTests.test_put_once_variants_capture_exact_payload_and_package_requirements_without_changing_companion",
+    "JavaTransactionSchemaTests.test_recovery_recipe_content_or_claim_drift_refuses_before_creating_a_project",
+    "JavaTransactionSchemaTests.test_requirements_reject_payload_authority_type_and_original_companion_drift",
+    "JavaTransactionSchemaTests.test_schema_variants_preserve_resources_business_identity_and_exact_definitions",
+    "JavaTransactionSchemaTests.test_unknown_effect_and_existing_capture_cannot_replace_original_project",
+    "JavaTransactionSchemaTests.test_unknown_profile_existing_capture_and_reader_drift_cannot_create_a_replacement"
+  ],
+  "guards": {
+    "JavaTransactionSchemaTests.test_explicit_recovery_recipe_preserves_three_fields_without_changing_shared_default": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f329b922cb2e2f84c5e586ffecf0cc31450633d27134b0f2f3d7b83a71ba0a98",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaTransactionSchemaTests.test_put_once_variants_capture_exact_payload_and_package_requirements_without_changing_companion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f329b922cb2e2f84c5e586ffecf0cc31450633d27134b0f2f3d7b83a71ba0a98",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaTransactionSchemaTests.test_recovery_recipe_content_or_claim_drift_refuses_before_creating_a_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f329b922cb2e2f84c5e586ffecf0cc31450633d27134b0f2f3d7b83a71ba0a98",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaTransactionSchemaTests.test_requirements_reject_payload_authority_type_and_original_companion_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f329b922cb2e2f84c5e586ffecf0cc31450633d27134b0f2f3d7b83a71ba0a98",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaTransactionSchemaTests.test_schema_variants_preserve_resources_business_identity_and_exact_definitions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f329b922cb2e2f84c5e586ffecf0cc31450633d27134b0f2f3d7b83a71ba0a98",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaTransactionSchemaTests.test_unknown_effect_and_existing_capture_cannot_replace_original_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f329b922cb2e2f84c5e586ffecf0cc31450633d27134b0f2f3d7b83a71ba0a98",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaTransactionSchemaTests.test_unknown_profile_existing_capture_and_reader_drift_cannot_create_a_replacement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f329b922cb2e2f84c5e586ffecf0cc31450633d27134b0f2f3d7b83a71ba0a98",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_schema.py",
+  "reviewReason": "Port five maintained exact schema and deferred HTTP source packaging cases without runtime authority Preserve every original schema/effect/capture test and execution control; add explicit versioned Java recovery source/WIT identity and precreation drift-refusal controls without changing the shared six-language default.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

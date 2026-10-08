@@ -1,0 +1,95 @@
+{
+  "schema": "latent.recovery.http-fixture.v1",
+  "sourceRevision": "2f8292059ce82b2356c25d7a59543784b85ad9e5",
+  "sourceArchiveSha256": "eefcdbae8c55f02f023ce47e3d7769e2a81cbc34e43782ff7daffced076f858b",
+  "toolImage": "sha256:808682d39104dc67ea35b407841aa8ecd4d5662bb8fa8df09e78cecdf4cacde7",
+  "environment": {
+    "architecture": "x86_64",
+    "os": "Linux",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "fixtureFilesystemMagic": "ef53",
+    "rust": "1.97.1 (8bab26f4f 2026-07-14)",
+    "cargo": "1.97.1 (c980f4866 2026-06-30)",
+    "clippy": "0.1.97 (8bab26f4f6 2026-07-14)"
+  },
+  "qualification": "Native common command/protected ext4/TLS test fixture only",
+  "suite": {
+    "id": "latent-http.lib.latent-http",
+    "registeredCases": 55,
+    "discoveredCases": 55,
+    "executedCases": 55,
+    "passed": 55,
+    "failed": 0,
+    "ignored": 0,
+    "expectedCasesMatched": true,
+    "executable": "/target/debug/deps/latent_http-159efb176861f7a1",
+    "executableSha256": "9bdd870867b8f88f38ba090c813883cc5c79bc61718e1b6ed0e66e1985e5c902",
+    "caseInventorySha256": "8d0c95b003208c7ffea058181ff482811a11bd215a18a2596220e3cf9682f480"
+  },
+  "commands": [
+    "cargo test --config .cargo/managed-guest.toml --offline --locked -p latent-http --all-features --lib --no-run --message-format json",
+    "cargo test --config .cargo/managed-guest.toml --offline --locked -p latent-http --all-features --lib -- --list --format terse",
+    "cargo test --config .cargo/managed-guest.toml --offline --locked -p latent-http --all-features --lib -- --test-threads=2",
+    "cargo clippy --config .cargo/managed-guest.toml --offline --locked -p latent-http --all-targets --all-features --no-deps -- -D warnings"
+  ],
+  "logsSha256": {
+    "build.log": "1b702ea3f03eabf6142c8d093a6e8bdbe8482cee6c248be9bb2381fcb301d10a",
+    "http-list.log": "989ac32e8c0d393db0987dc06cd0c9fe3b5f5f2ca406c9a687673eb376914d41",
+    "http-tests.log": "f7fe79c1c3c855f281263ce218a7a2d407f185a9542d276b4302cb470c2b3ed2",
+    "clippy.log": "527fb5cd9349135aed2fab9ec81ac8e2235d901134a5cce50c013a792d813037",
+    "campaign.log": "8baa3f9720fe3dd4b47e6ce9adb3047a2d47ea94a25bcce23f4bbc97def18ec3",
+    "native.sh": "a59d43d93ab0cb074251fa0a84d26a981255b74a9c9d35c1493c084a615c86c5"
+  },
+  "essentialCase": "tests::effects::restore::older_protected_backup_keeps_applied_http_effect_paused_until_explicit_review_and_resume",
+  "assertionsVerified": [
+    "One common atomic envelope commits aggregate, command/result, inbox, pending effect and immutable payload links",
+    "Retired physical storage owners precede private protected snapshot export; missing required contract refuses export",
+    "Actual TLS effect durably applies after backup and a lost response is recovered by one qualified lookup",
+    "Incompatible runtime refuses before destination staging",
+    "Older restore retains business incarnation7 and original command/result/inbox/effect identity while recovery epoch becomes2",
+    "Reconciliation binds captured recovery guard/window, observed remote receipt, original effect and payload hash/expiry",
+    "Global review alone leaves namespace paused; real unpaused dispatcher accepts zero claims and sends nothing",
+    "Current policy revocation and backward local time refuse namespace resume without changing history",
+    "Explicit approved resume uses fresh dispatcher boot epoch2, preserves original effect/body/hash/horizon and returns original receipt",
+    "Remote durable mutation counter remains1 before and after approved equal-ID replay; requests are two PUTs and one lookup",
+    "Historical result-read metadata cannot grant current access; old minimum NV2 token returns RecoveryRequired"
+  ],
+  "limits": {
+    "maximumScannedRows": 65536,
+    "maximumLogicalBytes": 134217728,
+    "pageRows": 128,
+    "pageBytes": 4194304,
+    "codecScratchBytes": 4194304,
+    "codecRetainedBytes": 32768
+  },
+  "priorAttempts": [
+    {
+      "sourceRevision": "fb74ef58b4e0bbe1bbc4b2567c281c4dccbc5dcc",
+      "passed": 54,
+      "failed": 1,
+      "failure": "Fixture expected future format error; actual runtime mismatch refuses synchronously with InvalidConfiguration",
+      "executableSha256": "243db6250fbca983bf02e227238d40c41488a706750d8c52399b4c1be101d9b3"
+    },
+    {
+      "sourceRevision": "fe8fab6b0f24fe565c73965f5e607d4399487c82",
+      "passed": 54,
+      "failed": 1,
+      "failure": "Fixture revocation reused an unchanged policy revision and the authority owner correctly returned Stale",
+      "executableSha256": "0424184a1e5a450fa805f9638e08ccf500c579fcd3a36a7a1f7c72b90d749f64"
+    },
+    {
+      "sourceRevision": "823244606760754f6df6e54365660095a71d2c42",
+      "passed": 55,
+      "failed": 0,
+      "failure": "Strict HTTP Clippy rejected one new helper value parameter; corrected to a borrow without allowance",
+      "executableSha256": "9460991bb2e4c70f4dec78c316eaa6560637e5a18200646e83bcfa0b8dc022e1"
+    }
+  ],
+  "boundaries": [
+    "Installed synthetic operator review and admitted empty component bytes; no Java execution or production publication/grant qualification",
+    "Full success-result decoder only; pending/expired/rejection result formats are explicitly refused by this fixture",
+    "No public snapshot/payload/credential files; only source/artifact/log hashes are published",
+    "No management/CLI/consumer replay qualification, unknown post-backup command recovery, arbitrary HTTP deduplication or universal exactly-once claim",
+    "Broader398399 acceptance criteria remain pending"
+  ]
+}

@@ -7,7 +7,7 @@ use latent_artifacts::{
 use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest, TenantId};
 use latent_manifest::RuntimeCompatibilityProfile;
 
-use super::super::{error, recovery_admission};
+use super::super::{control_admission, error, recovery_admission};
 
 pub(super) enum Execution {
     Unmanaged,
@@ -113,7 +113,15 @@ pub(super) async fn load(
         };
         match read {
             Err(failure) if retry.pause(&failure).await => {}
-            value => break value?,
+            value => {
+                break value.map_err(|failure| {
+                    control_admission::annotate(
+                        control && !recovery,
+                        control_admission::Stage::PackageRead,
+                        failure,
+                    )
+                })?;
+            }
         }
     };
     let (metadata, state) = snapshot.into_parts();
@@ -131,7 +139,13 @@ pub(super) async fn load(
                     "route-lifecycle-release-mismatch",
                 ));
             }
-            token.check_for_lifecycle(owner)?;
+            token.check_for_lifecycle(owner).map_err(|failure| {
+                control_admission::annotate(
+                    control && !recovery,
+                    control_admission::Stage::PackageLifecycle,
+                    failure,
+                )
+            })?;
             None
         }
         HistoricalExecutionState::Denied(denied) => {

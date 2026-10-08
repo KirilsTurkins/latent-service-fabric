@@ -162,21 +162,18 @@ pub fn select(role: &str, original: &Path) -> Executable {
         let original = original
             .canonicalize()
             .map_err(|_| "missing-cargo-executable")?;
-        match std::env::var_os("LSF_AOT_TEST_INPUTS") {
-            Some(path) => {
-                let expected = std::env::var("LSF_AOT_TEST_INPUTS_SHA256")
-                    .map_err(|_| "missing-manifest-identity")?;
-                load(Path::new(&path), parse_digest(&expected)?, role, &original)
+        if let Some(path) = std::env::var_os("LSF_AOT_TEST_INPUTS") {
+            let expected = std::env::var("LSF_AOT_TEST_INPUTS_SHA256")
+                .map_err(|_| "missing-manifest-identity")?;
+            load(Path::new(&path), parse_digest(&expected)?, role, &original)
+        } else {
+            if std::env::var_os("LSF_AOT_TEST_EXECUTION_ONLY").is_some() {
+                return Err("missing-prepared-inputs");
             }
-            None => {
-                if std::env::var_os("LSF_AOT_TEST_EXECUTION_ONLY").is_some() {
-                    return Err("missing-prepared-inputs");
-                }
-                Ok(Executable {
-                    digest: digest(&original)?,
-                    path: original,
-                })
-            }
+            Ok(Executable {
+                digest: digest(&original)?,
+                path: original,
+            })
         }
     })();
     result.unwrap_or_else(|reason| {

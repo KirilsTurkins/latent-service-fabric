@@ -14,6 +14,15 @@ pub(in crate::standalone) struct ProviderRuntime {
 }
 
 impl ProviderRuntime {
+    pub(in crate::standalone) fn qualified_http(
+        _owner: &Self,
+        _contract: latent_http::effects::PutOnceContract,
+        _reference: &str,
+        _time: Arc<dyn latent_effects::runtime::EffectTimeSource>,
+    ) -> Result<(latent_http::effects::QualifiedHttpEffectAdapter, u64), PlatformError> {
+        Err(unsupported())
+    }
+
     pub async fn open(
         _settings: &NodeSettings,
         _artifacts: &Arc<DirectoryArtifactRepository>,

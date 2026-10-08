@@ -37,6 +37,7 @@ pub struct PolicySnapshot {
     tenant: TenantId,
     policies: Vec<Pinned>,
     binding: Pinned,
+    generation: u64,
     lease: PolicyReadLease,
 }
 /// Facts must come from the transport/activation's trusted context. Claims and
@@ -160,6 +161,7 @@ impl PolicyStore {
             tenant: tenant.clone(),
             policies,
             binding,
+            generation: state.image.generation,
             lease,
         })
     }
@@ -256,6 +258,13 @@ impl PolicyStore {
     }
 }
 impl PolicySnapshot {
+    /// Actual bounded owner's captured generation, descriptive only. Permission
+    /// still requires a sealed decision and the current policy/publication fence.
+    #[must_use]
+    pub const fn generation(&self) -> u64 {
+        self.generation
+    }
+
     /// A bounded observation, not a currentness token or execution permission.
     #[must_use]
     pub fn diagnostic_state(&self) -> PolicySnapshotState {

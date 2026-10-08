@@ -157,7 +157,7 @@ pub fn build_package_with_sbom(
     inventory: SbomInventory,
     limits: PackagingLimits,
 ) -> Result<PackageBundle, PlatformError> {
-    crate::assembly::validate_inputs(&input, limits)?;
+    crate::assembly::validate_inputs(&input, &limits)?;
     if input.layers.iter().any(|layer| layer.path == SBOM_PATH) {
         return Err(crate::invalid("reserved-sbom-path"));
     }

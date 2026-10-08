@@ -30,7 +30,7 @@ async fn real_nats_audit_preserves_broker_ack_and_uncertainty_without_event_or_c
     let page = loop {
         match audit.query(query.clone(), deadline) {
             Err(e) if e.message == "audit-busy" && Instant::now() < deadline => {
-                tokio::task::yield_now().await
+                tokio::task::yield_now().await;
             }
             result => break result.unwrap().wait().await.unwrap(),
         }

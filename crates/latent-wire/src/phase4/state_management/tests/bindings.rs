@@ -15,6 +15,8 @@ fn services(fixture: &Fixture) -> StateManagementServices {
         artifacts: Arc::clone(&value.artifacts),
         authorization: Arc::clone(&value.authorization),
         admission: Arc::clone(&value.admission),
+        maintenance: Arc::clone(&value.maintenance),
+        maintenance_clock: Arc::clone(&value.maintenance_clock),
         clock: Arc::clone(&value.clock),
         audit: value.audit.clone(),
     }
@@ -88,15 +90,51 @@ async fn management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_sam
     .await
     .unwrap();
     let foreign = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
-    dispatcher.bind_native_capacity(&foreign).unwrap();
+    assert!(matches!(
+        dispatcher.bind_native_capacity(&foreign),
+        Err(latent_effects::runtime::DispatcherError::InvalidConfiguration)
+    ));
     assert!(dispatcher.management_port().uses_store(&fixture.store));
-    assert!(!dispatcher
+    assert!(dispatcher
+        .management_port()
+        .uses_native_capacity(&fixture.admission.native));
+    // The original same-engine binding was never replaced. A separately
+    // started real foreign engine/dispatcher also cannot satisfy the backend.
+    let mut other = Fixture::new(false).await;
+    let mut foreign_dispatcher = DispatcherOwner::start(
+        DispatcherConfig {
+            start_paused: true,
+            ..DispatcherConfig::default()
+        },
+        Arc::clone(&other.store),
+        EffectAuthorityOwner::new(16, 4, 4).unwrap(),
+        vec![],
+        Arc::new(|| EffectTime {
+            unix_millis: 100,
+            continuity_proven: true,
+        }),
+        None,
+    )
+    .await
+    .unwrap();
+    assert!(!foreign_dispatcher
+        .management_port()
+        .uses_store(&fixture.store));
+    assert!(!foreign_dispatcher
         .management_port()
         .uses_native_capacity(&fixture.admission.native));
     let backend = StateManagementBackend::new(services(&fixture), bindings(&fixture)).unwrap();
     assert!(backend
-        .with_dispatcher(dispatcher.management_port())
+        .with_dispatcher(foreign_dispatcher.management_port())
         .is_err());
+    // The installed node-only constructor has the same exact owner fence.
+    // Empty application bindings cannot turn a foreign pool into permission.
+    assert!(StateManagementBackend::with_installed_dispatcher(
+        services(&fixture),
+        vec![],
+        foreign_dispatcher.management_port(),
+    )
+    .is_err());
     assert_eq!(
         fixture
             .admission
@@ -105,6 +143,8 @@ async fn management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_sam
         0
     );
     assert!(dispatcher.shutdown(deadline()).await.unwrap().clean);
+    assert!(foreign_dispatcher.shutdown(deadline()).await.unwrap().clean);
+    other.finish().await;
     fixture.finish().await;
 }
 
@@ -245,6 +285,294 @@ async fn unknown_or_incompatible_requested_recovery_scope_fails_before_native_ad
         0
     );
     assert_eq!(fixture.store.snapshot().unwrap().accepted, 0);
+    drop(backend);
+    fixture.finish().await;
+}
+
+#[tokio::test]
+async fn installed_dispatcher_only_backend_cannot_resolve_application_namespace_selectors() {
+    let mut fixture = Fixture::new(false).await;
+    let mut dispatcher = DispatcherOwner::start(
+        DispatcherConfig {
+            start_paused: true,
+            ..DispatcherConfig::default()
+        },
+        Arc::clone(&fixture.store),
+        EffectAuthorityOwner::new(16, 4, 4).unwrap(),
+        vec![],
+        Arc::new(|| EffectTime {
+            unix_millis: 100,
+            continuity_proven: true,
+        }),
+        None,
+    )
+    .await
+    .unwrap();
+    dispatcher
+        .bind_native_capacity(&fixture.admission.native)
+        .unwrap();
+    let backend = StateManagementBackend::with_installed_dispatcher(
+        services(&fixture),
+        vec![],
+        dispatcher.management_port(),
+    )
+    .unwrap()
+    .with_recovery_bindings(vec![])
+    .unwrap();
+    tokio::time::timeout_at(deadline().into(), async {
+        loop {
+            let store = fixture.store.snapshot().unwrap();
+            if store.accepted == 1
+                && store.physical_owners == 1
+                && store.active_reads == 0
+                && store.active_writes == 0
+                && store.recovery_accepted == 0
+            {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(fixture.store.snapshot().unwrap().physical_owners, 1);
+
+    assert_eq!(
+        backend
+            .execute_state(context("alice"), fixture.target().into())
+            .await
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::PermissionDenied,
+    );
+    assert_eq!(
+        fixture
+            .admission
+            .calls
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    // One unchanged physical dispatcher registration remains charged; the
+    // refused application selector admitted no extra native or recovery job.
+    assert_eq!(fixture.store.snapshot().unwrap().accepted, 1);
+    drop(backend);
+    assert!(dispatcher.shutdown(deadline()).await.unwrap().clean);
+    assert_eq!(fixture.store.snapshot().unwrap().accepted, 0);
+    assert_eq!(fixture.store.snapshot().unwrap().physical_owners, 0);
+    fixture.finish().await;
+}
+
+#[tokio::test]
+async fn installed_named_recovery_scopes_require_current_subject_delegation_and_scope_policy() {
+    use latent_capabilities::namespace::RecoverySelection;
+    use latent_core::{InvocationPrincipal, Metadata, PrincipalKind, TenantId};
+    let mut fixture = Fixture::new(false).await;
+    let backend = StateManagementBackend::new(services(&fixture), bindings(&fixture))
+        .unwrap()
+        .with_recovery_bindings(vec![
+            StateManagementRecoveryBinding {
+                selector: "readers".into(),
+                selection: RecoverySelection::Shared {
+                    name: "order-readers".into(),
+                },
+            },
+            StateManagementRecoveryBinding {
+                selector: "delegation".into(),
+                selection: RecoverySelection::Delegated {
+                    delegation: "approved-42".into(),
+                    service: "orders-worker".into(),
+                },
+            },
+            StateManagementRecoveryBinding {
+                selector: "service".into(),
+                selection: RecoverySelection::ServiceIntegration,
+            },
+        ])
+        .unwrap();
+    let admin = context("alice");
+    assert!(recovery_bindings::scope(&backend.0, &admin, Some("service")).is_err());
+    let delegated = recovery_bindings::scope(&backend.0, &admin, Some("delegation")).unwrap();
+    assert_eq!(
+        delegated.kind,
+        latent_policy::capability::RecoveryScopeKind::Delegated
+    );
+    let shared = recovery_bindings::scope(&backend.0, &admin, Some("readers")).unwrap();
+    assert_eq!(
+        shared.kind,
+        latent_policy::capability::RecoveryScopeKind::Shared
+    );
+    // The installed table is only descriptive. The actual current policy has
+    // original-caller scopes and cannot authorize this selected shared tuple.
+    let deadline = deadline();
+    let namespace = authorization::authorize(
+        &backend.0.services,
+        &backend.0.bindings[0],
+        &admin,
+        &fixture.target().into(),
+        deadline,
+    )
+    .await
+    .unwrap();
+    let original = authorization::EffectDecision {
+        services: &backend.0.services,
+        binding: &namespace.binding,
+        context: &admin,
+        caller: &shared,
+        entity: None,
+        deadline,
+        input_bytes: 0,
+    };
+    assert_eq!(
+        original.seal("inspect-effect").err().unwrap().code,
+        PlatformErrorCode::PermissionDenied
+    );
+    let bob = context("bob");
+    let bob_shared = recovery_bindings::scope(&backend.0, &bob, Some("readers")).unwrap();
+    assert_eq!(shared.scope, bob_shared.scope);
+    assert_eq!(
+        authorization::EffectDecision {
+            services: &backend.0.services,
+            binding: &namespace.binding,
+            context: &bob,
+            caller: &bob_shared,
+            entity: None,
+            deadline,
+            input_bytes: 0,
+        }
+        .seal("inspect-effect")
+        .err()
+        .unwrap()
+        .code,
+        PlatformErrorCode::PermissionDenied
+    );
+    let foreign = AuthenticatedInvocationContext::new(InvocationPrincipal {
+        subject: "alice".into(),
+        kind: PrincipalKind::Administrator,
+        tenant: Some(TenantId("foreign".into())),
+        service: None,
+        claims: Metadata::new(),
+    });
+    let foreign_shared = recovery_bindings::scope(&backend.0, &foreign, Some("readers")).unwrap();
+    assert_ne!(shared.scope, foreign_shared.scope);
+    assert_eq!(
+        authorization::EffectDecision {
+            services: &backend.0.services,
+            binding: &namespace.binding,
+            context: &foreign,
+            caller: &foreign_shared,
+            entity: None,
+            deadline,
+            input_bytes: 0,
+        }
+        .seal("inspect-effect")
+        .err()
+        .unwrap()
+        .code,
+        PlatformErrorCode::PermissionDenied
+    );
+    let scope_row = |caller: &latent_capabilities::namespace::CallerScope, kind: &str| {
+        serde_json::json!({
+            "namespace":"orders", "incarnation":1, "entity":null,
+            "recoveryKind":kind, "recoveryScope":caller.scope, "resultPolicy":"visibility-v1",
+        })
+    };
+    let mut approved = fixture.document.clone();
+    let scopes = approved["rules"][0]["resources"]["scopes"]
+        .as_array_mut()
+        .unwrap();
+    scopes.push(scope_row(&shared, "shared"));
+    scopes.push(scope_row(&delegated, "delegated"));
+    fixture.update(Some(&approved), "approve-named-recovery-policy");
+    let retained_shared = original.seal("inspect-effect").unwrap();
+    let delegated_decision = authorization::EffectDecision {
+        services: &backend.0.services,
+        binding: &namespace.binding,
+        context: &admin,
+        caller: &delegated,
+        entity: None,
+        deadline,
+        input_bytes: 0,
+    }
+    .seal("inspect-effect")
+    .unwrap();
+    assert!(backend
+        .0
+        .services
+        .policy
+        .with_retained_decision(&retained_shared, &mut |_, _| Ok(()))
+        .is_ok());
+    assert!(backend
+        .0
+        .services
+        .policy
+        .with_retained_decision(&delegated_decision, &mut |_, _| Ok(()))
+        .is_ok());
+    // Sharing the descriptive digest does not share Alice's current permission.
+    assert_eq!(
+        authorization::EffectDecision {
+            services: &backend.0.services,
+            binding: &namespace.binding,
+            context: &bob,
+            caller: &bob_shared,
+            entity: None,
+            deadline,
+            input_bytes: 0,
+        }
+        .seal("inspect-effect")
+        .err()
+        .unwrap()
+        .code,
+        PlatformErrorCode::PermissionDenied
+    );
+    let replaced = latent_capabilities::namespace::CallerScope::derive(
+        admin.principal(),
+        &RecoverySelection::Delegated {
+            delegation: "approved-42".into(),
+            service: "other-worker".into(),
+        },
+    )
+    .unwrap();
+    assert_ne!(replaced.scope, delegated.scope);
+    assert_eq!(
+        authorization::EffectDecision {
+            services: &backend.0.services,
+            binding: &namespace.binding,
+            context: &admin,
+            caller: &replaced,
+            entity: None,
+            deadline,
+            input_bytes: 0,
+        }
+        .seal("inspect-effect")
+        .err()
+        .unwrap()
+        .code,
+        PlatformErrorCode::PermissionDenied
+    );
+    let withdrawn = fixture.document.clone();
+    fixture.update(Some(&withdrawn), "withdraw-named-recovery-policy");
+    assert!(backend
+        .0
+        .services
+        .policy
+        .with_retained_decision(&retained_shared, &mut |_, _| Ok(()))
+        .is_err());
+    assert!(backend
+        .0
+        .services
+        .policy
+        .with_retained_decision(&delegated_decision, &mut |_, _| Ok(()))
+        .is_err());
+    assert_eq!(
+        fixture
+            .admission
+            .calls
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(fixture.store.snapshot().unwrap().accepted, 0);
+    drop(namespace);
     drop(backend);
     fixture.finish().await;
 }

@@ -7,11 +7,15 @@ pub mod entity_lanes;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
 pub mod protected_store;
+/// Bounded offline recovery descriptions and durable paused admission guards.
+pub mod recovery;
 /// Logical disposition capacity charged in the same physical atomic store.
 pub mod reservation;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.
 pub mod session;
 pub mod store_io;
+/// Explicit reviewed tenant aggregates in the same atomic store; no authority.
+pub mod tenant;
 
 use latent_core::{
     ActivationId, BoxFuture, EntityKey, LeaseId, Metadata, PlatformError, StateNamespaceId,

@@ -16,6 +16,183 @@ use crate::payload::PayloadRecord;
 use super::DispatchCatalog;
 
 impl DispatchCatalog {
+    /// Original dispatcher codec/link ownership for the shared tenant census.
+    /// Delivery/history/payload rows remain covered by the command owner's
+    /// original LCU2 reserve. Only closed global control metadata is excluded.
+    pub fn tenant_census_contribution(
+        view: &ReadView,
+        key: &RowKey,
+        bytes: &[u8],
+    ) -> Result<latent_state::tenant::TenantCensusContribution, StoreError> {
+        use latent_state::tenant::TenantCensusContribution;
+        validate_row(key, bytes)?;
+        if key.family == Family::Maintenance
+            && key.key.starts_with(crate::recovery_close::RECEIPT_PREFIX)
+        {
+            let receipt = crate::recovery_close::CloseReceipt::validate_row(key, bytes)?;
+            crate::recovery_close::validate_receipt_links(view, &receipt)?;
+            return Ok(TenantCensusContribution::Usage {
+                tenant: latent_core::TenantId(receipt.plan.scope.tenant),
+                usage: latent_state::tenant::TenantUsage {
+                    metadata_rows: 1,
+                    metadata_bytes: latent_state::tenant::row_charge(key, bytes)?,
+                    ..latent_state::tenant::TenantUsage::default()
+                },
+            });
+        }
+        if *key == OwnerRecord::key()
+            || (key.family == Family::Maintenance
+                && (key.key.as_slice() == crate::dispatch_store::control::CONTROL_STATE_KEY
+                    || key
+                        .key
+                        .starts_with(crate::dispatch_store::control::CONTROL_RECEIPT_PREFIX)))
+        {
+            return Ok(TenantCensusContribution::Global);
+        }
+        let effect = match key.family {
+            Family::Outbox => {
+                let owner = view
+                    .get(&OwnerRecord::key())?
+                    .as_deref()
+                    .map(OwnerRecord::decode)
+                    .transpose()?;
+                validate_effect(view, owner, key, bytes)?;
+                effect_from_key(key, EFFECT_PREFIX)?
+            }
+            Family::PayloadReference => {
+                let payload = PayloadRecord::decode(bytes).map_err(storage_error)?;
+                let record = load(view, payload.effect())?;
+                payload
+                    .verify(&record.authority().map_err(storage_error)?)
+                    .map_err(storage_error)?;
+                payload.effect().to_owned()
+            }
+            Family::Attempt => {
+                validate_history(view, key, bytes)?;
+                effect_identity::render(
+                    &key.key[HISTORY_PREFIX.len()..HISTORY_PREFIX.len() + 32]
+                        .try_into()
+                        .map_err(|_| StoreError::Corrupt)?,
+                )
+            }
+            Family::Maintenance if key.key.starts_with(DUE_PREFIX) => {
+                let due = DueRecord::decode(key, bytes)?;
+                if expected_due(&load(view, &due.effect)?)? != Some(due.clone()) {
+                    return Err(StoreError::Corrupt);
+                }
+                due.effect
+            }
+            Family::Maintenance if key.key.starts_with(RESERVATION_PREFIX) => {
+                let mut prefix = RESERVATION_PREFIX.to_vec();
+                prefix.extend_from_slice(ATTEMPT_RESERVATION_PREFIX);
+                let effect = effect_from_key(key, &prefix)?;
+                let record = load(view, &effect)?;
+                if record.disposition() != Disposition::Dispatching
+                    || LogicalReservation::decode(bytes)?
+                        != (LogicalReservation {
+                            generation: record.claim_generation(),
+                            bytes: DISPOSITION_RESERVED_BYTES,
+                        })
+                {
+                    return Err(StoreError::Corrupt);
+                }
+                effect
+            }
+            _ => return Err(StoreError::UnsupportedFormat),
+        };
+        let record = load(view, &effect)?;
+        let authority = record.authority().map_err(storage_error)?;
+        Ok(TenantCensusContribution::Covered {
+            tenant: latent_core::TenantId(authority.scope().tenant.clone()),
+        })
+    }
+
+    /// Capture one effect's installed inline payload/history/index closure.
+    /// No active physical claim can be reclaimed. Missing or corrupt links
+    /// refuse, including extra history slots; metadata never authorizes GC.
+    pub fn retention_rows(
+        view: &ReadView,
+        effect: &str,
+    ) -> Result<super::RetainedEffectRows, StoreError> {
+        use latent_state::embedded::ExpectedRow;
+        let key = effect_row_key(effect)?;
+        let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
+        let record = EffectRecord::decode(&bytes).map_err(storage_error)?;
+        // The V2 explicit close receipt is a separate retained recovery link.
+        // Automatic reclamation must not drop that operator decision or leave
+        // another selected effect without its shared decoder/receipt closure.
+        if record.recovery_close_digest().is_some() {
+            return Err(StoreError::UnsupportedFormat);
+        }
+        if record.disposition() == Disposition::Dispatching {
+            return Err(StoreError::Capacity);
+        }
+        let owner_key = OwnerRecord::key();
+        let owner_bytes = view.get(&owner_key)?;
+        let owner = owner_bytes
+            .as_deref()
+            .map(OwnerRecord::decode)
+            .transpose()?;
+        validate_effect(view, owner, &key, &bytes)?;
+        let history = Self::history_page(view, effect, None, 128, 1024 * 1024)?;
+        if history.resume.is_some()
+            || history.pending_slots != 0
+            || history.rows.len() as u64 != record.history_sequence()
+        {
+            return Err(StoreError::Corrupt);
+        }
+        let payload_key = effect_payload_key(effect)?;
+        let payload = view.get(&payload_key)?.ok_or(StoreError::Corrupt)?;
+        let reservation_key = attempt_reservation_key(effect)?;
+        if view.get(&reservation_key)?.is_some() {
+            return Err(StoreError::Corrupt);
+        }
+        let mut reclaim = vec![key.clone(), payload_key.clone()];
+        let mut expectations = vec![
+            ExpectedRow {
+                key,
+                value: Some(bytes),
+            },
+            ExpectedRow {
+                key: payload_key,
+                value: Some(payload),
+            },
+            ExpectedRow {
+                key: owner_key,
+                value: owner_bytes,
+            },
+            ExpectedRow {
+                key: reservation_key,
+                value: None,
+            },
+        ];
+        for item in history.rows {
+            let key = item.key()?;
+            reclaim.push(key.clone());
+            let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
+            expectations.push(ExpectedRow {
+                key,
+                value: Some(bytes),
+            });
+        }
+        let due = expected_due(&record)?;
+        let due_key = due.as_ref().map(DueRecord::key).transpose()?;
+        if let Some(key) = &due_key {
+            reclaim.push(key.clone());
+            let bytes = view.get(key)?.ok_or(StoreError::Corrupt)?;
+            expectations.push(ExpectedRow {
+                key: key.clone(),
+                value: Some(bytes),
+            });
+        }
+        Ok(super::RetainedEffectRows {
+            record,
+            expectations,
+            due: due_key,
+            reclaim,
+        })
+    }
+
     /// Validate closed dispatcher rows and their links in one startup snapshot.
     /// Other families/prefixes are left to the complete command registry. No
     /// native view, engine owner or materialized backlog escapes this callback.
@@ -30,6 +207,15 @@ impl DispatchCatalog {
         walk(view, Family::Outbox, EFFECT_PREFIX, |key, bytes| {
             validate_effect(view, owner, key, bytes)
         })?;
+        walk(
+            view,
+            Family::Maintenance,
+            crate::recovery_close::RECEIPT_PREFIX,
+            |key, bytes| {
+                let receipt = crate::recovery_close::CloseReceipt::validate_row(key, bytes)?;
+                crate::recovery_close::validate_receipt_links(view, &receipt)
+            },
+        )?;
         walk(
             view,
             Family::PayloadReference,
@@ -83,6 +269,16 @@ impl DispatchCatalog {
             .transpose()
             .map(|owner| owner.is_some())
     }
+
+    /// Describes the original retained owner epoch and clock floor through its
+    /// closed decoder. These numbers grant no restart, restore or dispatch right.
+    pub fn owner_checkpoint(view: &ReadView) -> Result<Option<(u64, u64)>, StoreError> {
+        view.get(&OwnerRecord::key())?
+            .as_deref()
+            .map(OwnerRecord::decode)
+            .transpose()
+            .map(|owner| owner.map(|owner| (owner.epoch, owner.clock_floor)))
+    }
 }
 
 fn validate_effect(
@@ -97,6 +293,7 @@ fn validate_effect(
     crate::dispatch_store::effect_management::EffectManagementCatalog::validate_effect(
         view, &record,
     )?;
+    crate::recovery_close::validate_record_link(view, &record)?;
     let authority = record.authority().map_err(storage_error)?;
     if record.attempts() != 0
         && owner.is_none_or(|owner| {

@@ -43,6 +43,23 @@ pub(super) fn validate(request: &Request) -> Result<(), ValidationError> {
                         Ok(())
                     }
                 }
+                Ok(c::StateMutationKind::ReleaseExpiredCommandFloor) => {
+                    let record = required(value.record_id.as_ref())?;
+                    if record.len() != 64
+                        || !record
+                            .bytes()
+                            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+                        || record.bytes().all(|byte| byte == b'0')
+                    {
+                        Err(ValidationError::Shape)
+                    } else {
+                        namespace_view_generation(
+                            &value.expected_version,
+                            required(required(value.namespace.as_ref())?.namespace.as_ref())?,
+                        )
+                        .map(|_| ())
+                    }
+                }
                 Ok(c::StateMutationKind::PurgeExpiredPayload) => {
                     if value.record_id.is_none() {
                         Err(ValidationError::Shape)
@@ -102,6 +119,30 @@ pub(super) fn validate(request: &Request) -> Result<(), ValidationError> {
             Ok(())
         }
     }
+}
+
+pub(super) fn namespace_view_generation(
+    token: &[u8],
+    namespace: &t::NamespaceSelector,
+) -> Result<u64, ValidationError> {
+    if token.len() != 67 || !token.starts_with(b"NV\x02") {
+        return Err(ValidationError::Shape);
+    }
+    let numbers: [u64; 4] = std::array::from_fn(|index| {
+        let offset = 35 + index * 8;
+        u64::from_le_bytes(
+            token[offset..offset + 8]
+                .try_into()
+                .expect("fixed NV2 word"),
+        )
+    });
+    if numbers.contains(&0) {
+        return Err(ValidationError::Shape);
+    }
+    if numbers[0].to_string() != namespace.incarnation {
+        return Err(ValidationError::Association);
+    }
+    Ok(numbers[1])
 }
 
 pub(super) fn tenant(request: &Request) -> Option<&str> {

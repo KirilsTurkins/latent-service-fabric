@@ -54,7 +54,7 @@ async fn required_audit_records_real_local_acceptance_and_denies_full_sink_befor
     let page = loop {
         match audit.query(request.clone(), deadline) {
             Err(error) if error.message == "audit-busy" && Instant::now() < deadline => {
-                tokio::task::yield_now().await
+                tokio::task::yield_now().await;
             }
             result => break result.unwrap().wait().await.unwrap(),
         }
@@ -128,6 +128,7 @@ async fn oversized_input_unknown_targets_and_expired_deadline_never_start_childr
 async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_call_grant() {
     let f = Fixture::new(3, false, true).await;
     let receipt = f.manager.start(f.request("concurrent", 3)).unwrap().await;
+    let child_failures = f.observations.child_failures.snapshot();
     let ActivationOutcome::Succeeded(success) = &receipt.outcome else {
         panic!("{:?}", receipt.outcome)
     };
@@ -138,19 +139,14 @@ async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_c
     if actual != ANSWER {
         // The recorder already discarded messages, payloads and private details.
         // Observe the original failure without invoking or accepting another call.
-        eprintln!(
-            "local-service-child-failures {:?}",
-            f.observations.child_failures.snapshot()
-        );
+        eprintln!("local-service-child-failures {child_failures:?}");
     }
     let child_failures = f.observations.child_failures.snapshot();
     assert!(child_failures.records.is_empty(), "{child_failures:?}");
     assert!(!child_failures.incomplete);
     assert_eq!(
-        actual,
-        ANSWER,
-        "original child failures: {:?}",
-        f.observations.child_failures.snapshot()
+        actual, ANSWER,
+        "original child failures: {child_failures:?}"
     );
     assert_eq!(f.observations.starts.lock().unwrap().len(), 3);
     f.idle().await;

@@ -45,7 +45,11 @@ pub use inbound::InboundActivationReservation;
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
-pub use transaction::TransactionActivationAdmission;
+pub use transaction::{
+    TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
+    TransactionAdmissionKind, TransactionCompletion, TransactionCompletionHook,
+    TransactionDisposition, TransactionExecution,
+};
 pub use transport_stop::ActivationTransportInterruption;
 use transport_stop::TransportStop;
 
@@ -106,6 +110,14 @@ pub struct ActivationReceipt {
     pub activation_id: ActivationId,
     pub resolved_revision: Option<ResolvedRevision>,
     pub outcome: ActivationOutcome,
+    /// Original durable disposition/recovery observation, independent of the
+    /// transport outcome. Its private fields cannot be supplied as authority.
+    pub transaction: Option<TransactionDisposition>,
+    pub delivery_failure: Option<PlatformError>,
+    /// Current-purpose authority retained through actual response delivery.
+    /// Ordinary activations have no state result authority.
+    pub result_delivery_fence:
+        Option<Arc<crate::transaction_runtime::command_completion::ResultDeliveryFence>>,
 }
 
 /// No detached task is spawned. Dropping this handle, even before its first
@@ -176,11 +188,15 @@ fn handle(
         };
         let resolved_revision = lifecycle.resolved.clone();
         let activation_id = lifecycle.activation_id().clone();
-        let outcome = lifecycle.complete(outcome);
+        let (outcome, transaction, delivery_failure, result_delivery_fence) =
+            lifecycle.complete(outcome).await.into_parts();
         ActivationReceipt {
             activation_id,
             resolved_revision,
             outcome,
+            transaction,
+            delivery_failure,
+            result_delivery_fence,
         }
     });
     ActivationHandle {

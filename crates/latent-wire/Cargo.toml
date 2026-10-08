@@ -28,6 +28,7 @@ latent-capabilities = { path = "../latent-capabilities" }
 latent-state = { path = "../latent-state" }
 latent-commit = { path = "../latent-commit" }
 latent-effects = { path = "../latent-effects" }
+latent-ingress = { path = "../latent-ingress" }
 latent-admission = { path = "../latent-admission" }
 http-body.workspace = true
 prost.workspace = true

@@ -18,7 +18,7 @@ async fn secret_owner_typed_denial_cancellation_and_cell_recovery() {
         let publication = package::publish(root.path(), &format!("{language}-secrets")).await;
         let f = Fixture::with_publication(
             None,
-            Default::default(),
+            latent_capabilities::broker::pools::ProviderPoolLimits::default(),
             latent_secrets::LOCAL_SECRETS_PROFILE,
             |_, _, secrets, _| async move {
                 let provider =

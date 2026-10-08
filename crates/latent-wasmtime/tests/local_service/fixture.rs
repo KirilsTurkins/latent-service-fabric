@@ -43,8 +43,7 @@ mod admission_fixture;
 mod authority;
 #[path = "diagnostics.rs"]
 mod diagnostics;
-#[path = "../guest_sdk/runtime.rs"]
-mod guest_runtime;
+use crate::support::guest_runtime;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
@@ -259,8 +258,11 @@ impl Fixture {
             (catalog, caller, callee)
         };
         let config = WasmtimeConfig {
+            guest_languages: latent_wasmtime::GuestLanguageProfiles {
+                java_guest: guest_runtime::java(),
+                ..Default::default()
+            },
             activation_runtime: activation_runtime.map(|(limits, _)| limits),
-            java_guest: guest_runtime::java(),
             fuel_async_yield_interval: guest_runtime::java().then_some(10_000),
             maximum_memory_bytes: packages::budget().memory_bytes,
             maximum_fuel: packages::budget().cpu_fuel,

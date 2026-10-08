@@ -156,6 +156,22 @@ impl WriteSet {
         self.batch.expectations.push(ExpectedRow { key, value });
     }
 
+    pub fn expect_ready_namespace(
+        &mut self,
+        view: &ReadView,
+        scope: &crate::authority::EffectScope,
+    ) -> Result<(), StoreError> {
+        self.batch
+            .expectations
+            .extend(latent_state::recovery::namespace_readiness_expectations(
+                view,
+                &latent_core::TenantId(scope.tenant.clone()),
+                &latent_core::StateNamespaceId(scope.namespace.clone()),
+                scope.incarnation,
+            )?);
+        Ok(())
+    }
+
     pub fn expect_due(
         &mut self,
         view: &ReadView,

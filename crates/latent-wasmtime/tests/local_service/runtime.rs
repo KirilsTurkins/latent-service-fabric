@@ -3,7 +3,11 @@
 use super::{fixture::Fixture, packages};
 use latent_activation::ActivationOutcome;
 use latent_artifacts::ArtifactRepository;
-use latent_core::{activation_runtime::RuntimeLimits, ActivationId, PlatformErrorCode, TenantId};
+use latent_core::{
+    activation_runtime::RuntimeLimits,
+    diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage},
+    ActivationId, PlatformErrorCode, TenantId,
+};
 use std::{future::Future, pin::Pin, sync::atomic::Ordering, task::Poll, time::Duration};
 
 #[path = "runtime/component.rs"]

@@ -133,9 +133,29 @@ async fn same_wasm_packages_and_tenants_keep_independent_enforced_runtime_grants
         .await;
     assert!(rejected.outcome.is_err());
     assert_eq!(backend.resource_snapshot().stores_created, 0);
-    for (tenant, publication) in [("tests", &second), ("bob", &other_tenant)] {
+    assert_selected_publications_run(
+        &backend,
+        &factory,
+        &repository,
+        [("tests", &second), ("bob", &other_tenant)],
+    )
+    .await;
+    assert_eq!(backend.resource_snapshot().stores_created, 2);
+    assert_eq!(backend.active_instance_reservations(), 0);
+    assert_eq!(backend.compiler_snapshot().ready_preparations, 0);
+    assert_eq!(backend.compiler_snapshot().reserved_document_bytes, 0);
+    factory.quiesce_compiler().await.unwrap();
+}
+
+async fn assert_selected_publications_run(
+    backend: &WasmtimeBackend,
+    factory: &WasmtimeComponentEngineFactory,
+    repository: &Arc<DirectoryArtifactRepository>,
+    publications: [(&str, &PublicationRef); 2],
+) {
+    for (tenant, publication) in publications {
         let active = backend
-            .materialize_ready(prepare(&backend, &factory, &repository, publication).await)
+            .materialize_ready(prepare(backend, factory, repository, publication).await)
             .unwrap();
         let cancellation = support::Cancellation::new(tenant);
         let mut request = support::request(
@@ -156,9 +176,4 @@ async fn same_wasm_packages_and_tenants_keep_independent_enforced_runtime_grants
         );
         assert_eq!(result.cleanup, latent_executor::ExecutionCleanup::Reusable);
     }
-    assert_eq!(backend.resource_snapshot().stores_created, 2);
-    assert_eq!(backend.active_instance_reservations(), 0);
-    assert_eq!(backend.compiler_snapshot().ready_preparations, 0);
-    assert_eq!(backend.compiler_snapshot().reserved_document_bytes, 0);
-    factory.quiesce_compiler().await.unwrap();
 }
