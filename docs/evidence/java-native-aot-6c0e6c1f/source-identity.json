@@ -1,0 +1,23 @@
+{
+  "pr": 748,
+  "commit": "6c0e6c1fb4645f72b7ecd6545bc4c34888236c89",
+  "tree": "0dde73eefd15e7fe025a17c35f2c4fec2dee7a31",
+  "image": "sha256:ea20dd3d8a7ffc13c5abbea462c1bfa75dd61c0b8bbffe2aac9f30fb9a2483e1",
+  "sourceDirty": false,
+  "sourceVolume": "lsf-fb2-java-current-pr748-3d77-20261006-r1-source",
+  "sourceSeedRole": "fresh complete actual committed Git tree including benchmark fixtures; no old source files, targets or results copied",
+  "gitSnapshotPackSha256": "756a859d8640da6b53c7b9c1b89e4e17f064525d82754ebae02463aa11833cf6",
+  "gitSnapshotPackBytes": 381513896,
+  "gitSnapshotObjects": 8638,
+  "allCurrentTrackedFilesIncludingFrozenHistoricalFixturesPreserved": true,
+  "originalSourceSetup240s": true,
+  "sourceVolumeReadOnly": true,
+  "completeCI": false,
+  "packagedQualification": false,
+  "priorTargetsOrResultsBorrowed": false,
+  "ownerUid": 10001,
+  "ownerGid": 10001,
+  "gitHistoryAttested": false,
+  "targetPrivateCacheFork": "lsf-fb2-java708-native-aot-6c0e6c1f-20261006-r1-target",
+  "oldResultsBorrowed": false
+}
