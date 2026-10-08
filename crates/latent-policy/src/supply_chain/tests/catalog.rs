@@ -3,7 +3,7 @@
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::task::{Context, Poll, Wake, Waker};
+use std::task::{Context, Poll, Waker};
 
 use latent_artifacts::package::{decode_config, PackageLimits};
 use latent_artifacts::{
@@ -14,13 +14,9 @@ use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest, TenantId};
 
 use super::{Fixture, SupplyChainAuthority, NOW};
 
-struct Noop;
-impl Wake for Noop {
-    fn wake(self: Arc<Self>) {}
-}
 pub(super) fn ready<T>(mut future: Pin<Box<dyn Future<Output = T> + Send + '_>>) -> T {
-    let waker = Waker::from(Arc::new(Noop));
-    match future.as_mut().poll(&mut Context::from_waker(&waker)) {
+    let waker = Waker::noop();
+    match future.as_mut().poll(&mut Context::from_waker(waker)) {
         Poll::Ready(value) => value,
         Poll::Pending => panic!("catalog control operation unexpectedly awaited"),
     }
