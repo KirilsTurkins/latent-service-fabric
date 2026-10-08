@@ -267,7 +267,7 @@ fn check_report(report: &Value, fixture: &Fixture) -> Result<()> {
     if fixture
         .requirements_digest
         .as_ref()
-        .is_some_and(|digest| report["requirementsDigest"] != *digest)
+        .is_some_and(|digest| report["deferredHttpRequirementsDigest"] != *digest)
     {
         return Err("current Java requirements association changed".into());
     }
@@ -393,5 +393,10 @@ mod tests {
             .unwrap()
             .push(json!("latent:http/client@0.2.0"));
         assert!(check_report(&foreign, &fixture).is_err());
+        let (mut required, mut reported) = materials();
+        required.requirements_digest = Some(format!("sha256:{}", "6".repeat(64)));
+        assert!(check_report(&reported, &required).is_err());
+        reported["deferredHttpRequirementsDigest"] = json!(required.requirements_digest);
+        check_report(&reported, &required).unwrap();
     }
 }
