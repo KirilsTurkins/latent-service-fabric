@@ -99,6 +99,79 @@ async fn completed(port: &ActivationCleanupHandle, count: u64) {
 }
 
 #[tokio::test(start_paused = true)]
+async fn transient_tracking_retains_real_quota_refusal_without_guest_or_cleanup_ownership() {
+    use latent_core::diagnostic::{DiagnosticReason, DiagnosticStage};
+    use std::sync::atomic::Ordering;
+
+    let harness = Harness::with_transient_tracking();
+    let (adapter, owner) = supervised(&harness, 4);
+    harness.backend.gate.close();
+    let mut first = Box::pin(adapter.invoke(authenticated(request("tracking-first"))));
+    let mut second = Box::pin(adapter.invoke(authenticated(request("tracking-second"))));
+    let mut queued = Box::pin(adapter.invoke(authenticated(request("tracking-queued"))));
+    pending(first.as_mut()).await;
+    pending(second.as_mut()).await;
+    pending(queued.as_mut()).await;
+    assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 2);
+    assert_eq!(
+        harness.scheduler.observations(CellClass::Tiny).queue_depth,
+        1
+    );
+    let before = harness.quotas.snapshot_now(&tenant()).unwrap();
+    assert_eq!(before.active_activations, 3);
+    assert_eq!(owner.snapshot().reserved, 3);
+    let refused = finish(adapter.invoke(authenticated(request("tracking-refused"))))
+        .await
+        .expect("known platform outcome, not a transport error")
+        .into_inner();
+    let Some(latent_wire::invocation::proto::invoke_response::Result::PlatformFailure(failure)) =
+        refused.result
+    else {
+        panic!("the unchanged admission quota must refuse this request");
+    };
+    assert_eq!(failure.code, "resource-exhausted");
+    let retained = harness
+        .manager
+        .journal()
+        .inspect_tree(&tenant(), &ActivationId("tracking-refused".into()), 8, None)
+        .unwrap();
+    assert_eq!(retained.nodes.len(), 1);
+    let root = &retained.nodes[0];
+    assert!(root.parent_activation_id.is_none());
+    assert!(root.diagnostic_is_terminal);
+    let diagnostic = root
+        .diagnostic
+        .as_ref()
+        .expect("closed producer pressure reason");
+    assert_eq!(diagnostic.stage, DiagnosticStage::Admission);
+    assert_eq!(diagnostic.reason, DiagnosticReason::QueuePressure);
+    assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 2);
+    assert_eq!(harness.quotas.snapshot_now(&tenant()).unwrap(), before);
+    assert_eq!(harness.manager.journal().snapshot().active, 3);
+    assert_eq!(
+        harness.manager.cancellation_snapshot().active_registrations,
+        3
+    );
+    assert_eq!(
+        owner.snapshot().reserved,
+        3,
+        "transient cleanup slot was refunded"
+    );
+    assert_eq!(owner.snapshot().queued, 0);
+    assert_eq!(owner.snapshot().running, 0);
+    harness.backend.gate.open();
+    finish(first).await.unwrap();
+    finish(second).await.unwrap();
+    finish(queued).await.unwrap();
+    harness.assert_idle();
+    assert_eq!(owner.snapshot().reserved, 0);
+    owner
+        .shutdown(Instant::now() + Duration::from_secs(1))
+        .await
+        .unwrap();
+}
+
+#[tokio::test(start_paused = true)]
 async fn running_drop_retains_real_lifecycle_until_ack_then_recovers_same_cell() {
     let harness = Harness::new(1, 8);
     let (adapter, owner) = supervised(&harness, 8);
