@@ -364,6 +364,21 @@ fn reserved_status_read_runs_while_ordinary_read_slots_and_queue_are_saturated()
             "recovery read did not physically retire"
         );
     }
+    // Response ownership arrives before finished_job retires its worker.
+    // Observe the original owner's notification within its unchanged watchdog.
+    let state = owner.inner.control.state.lock().unwrap();
+    let (state, timeout) = owner
+        .inner
+        .control
+        .changed
+        .wait_timeout_while(state, WATCHDOG, |state| state.active_reads != 1)
+        .unwrap();
+    assert!(
+        !timeout.timed_out(),
+        "completed recovery read worker did not retire"
+    );
+    assert_eq!(state.active_reads, 1);
+    drop(state);
     assert_eq!(owner.snapshot().unwrap().active_reads, 1);
     rendezvous.release(ticket).unwrap();
     wait(read).unwrap();
