@@ -1,0 +1,90 @@
+"""Re-execute current Java/C models against original actual parser/CABI bytes."""
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+repo = Path('C:/Users/turkins/Desktop/latent-fabric-fb2-java711')
+out = Path(__file__).resolve().parent
+sys.path.insert(0, str(repo))
+from tools.java_guest import c, java
+from tools.java_guest.model import Graph
+from tools.qualify_java_composition_shapes import CASES
+from tools.rust_capsule_project import snapshot, inventory, digest
+
+head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip()
+assert head == '6be9c62e6ef363e4057e12db110ba31c50c86104'
+assert not subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo)
+observed = snapshot(repo / 'sdk/java-guest/tests/wit-composition')
+inputs_digest = digest(inventory(observed))
+original_review = json.loads((out.parent / 'java711-retained-wit-cabi-current-20261006-r1'
+                             / 'verified-retained-wit-cabi-bridge.json').read_bytes())
+assert inputs_digest == original_review['sourceDigest']
+footprints = {row['case']: row.get('actualOutputFootprint') for row in original_review['caseProofs']}
+retained = repo / 'target/java-composition-shapes-bounded'
+receipt = json.loads((retained / 'composition.json').read_bytes())
+assert receipt['status'] == 'passed' and receipt['sourceDigest'] == inputs_digest
+assert set(receipt['cases']) == set(CASES)
+logs = []
+proofs = []
+for case, refusal in CASES.items():
+    current = receipt['cases'][case]
+    folder = retained / case
+    for number, stage in enumerate(current['commands']):
+        for stream in ('stdout', 'stderr'):
+            path = folder / f'{number}-{stage["stage"]}.{stream}.log'
+            raw = path.read_bytes()
+            assert digest(raw) == stage[stream + 'Digest']
+            logs.append({'path': str(path.relative_to(retained)), 'bytes': len(raw), 'digest': digest(raw)})
+    if case == 'malformed':
+        assert current['outcome'] == 'rejected' and current['stage'] == 'parser'
+        assert current['commands'][0]['exitCode'] != 0
+        proofs.append({'case': case, 'actualOriginalParserRefused': True,
+                       'currentInputBytesMatchOriginal': True, 'currentModelRun': 'no-original-graph'})
+        continue
+    graph = json.loads((folder / '0-wit-graph.stdout.log').read_bytes())
+    assert current['commands'][0]['exitCode'] == 0
+    if refusal is not None:
+        try:
+            Graph.preflight(graph, 'service')
+        except ValueError as error:
+            assert refusal in str(error), (case, str(error))
+        else:
+            raise AssertionError('current-unsupported-profile-accepted:' + case)
+        proofs.append({'case': case, 'actualOriginalParserGraphVerified': True,
+                       'currentExactUnsupportedBoundaryRefused': True})
+        continue
+    Graph.preflight(graph, 'service')
+    first = folder / 'bindings'
+    second = folder / 'repeat'
+    model = Graph(graph, 'service', (first / 'probe.h').read_text(encoding='utf-8'))
+    generated = {'Bindings.java': java.generate(model, activation_profile=False).encode(),
+                 'bridge.c': c.generate(model).encode()}
+    for name, raw in generated.items():
+        assert len(raw) <= 4 * 1024 * 1024
+        assert raw == (first / name).read_bytes() == (second / name).read_bytes(), (case, name)
+        fresh = out / 'current-generated' / case
+        fresh.mkdir(parents=True, exist_ok=True)
+        (fresh / name).write_bytes(raw)
+    files = {p.name: p.read_bytes() for p in first.iterdir() if p.is_file()}
+    assert set(files) == {'Bindings.java', 'bridge.c', 'probe.h', 'probe.c', 'probe_component_type.o'}
+    footprint = digest(inventory(files))
+    assert footprint == footprints[case] == current['bindings']['digest']
+    assert json.loads(inventory(files)) == current['bindings']['outputs']
+    proofs.append({'case': case, 'originalActualParserAndCAbiBytesVerified': True,
+                   'currentJavaAndCOutputsEqualBothOriginalExecutions': True,
+                   'actualOutputFootprint': footprint})
+assert snapshot(repo / 'sdk/java-guest/tests/wit-composition') == observed
+assert not subprocess.check_output(['git', 'status', '--porcelain'], cwd=repo)
+result = {'status': 'passed', 'currentSource': head, 'originalHostedRun': original_review['originalHostedRun'],
+          'originalHostedAggregateConclusion': original_review['originalHostedAggregateConclusion'],
+          'sourceDigest': inputs_digest, 'actualNineParserCAbiCasesVerified': len(proofs),
+          'caseProofs': proofs, 'allRetainedCommandLogsVerified': logs,
+          'currentModelAndCodeGeneratorsExecuted': True, 'newParserOrCompilerExecutionClaimed': False,
+          'oldReceiptRelabeled': False, 'wholeCurrentCI': False, 'guestExecutionQualified': False}
+(out / 'verified-current-model-bridge.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
+print(json.dumps({'status': result['status'], 'head': head, 'cases': len(proofs),
+                  'logsVerified': len(logs), 'receiptSha256': hashlib.sha256(
+                      (out / 'verified-current-model-bridge.json').read_bytes()).hexdigest()}))

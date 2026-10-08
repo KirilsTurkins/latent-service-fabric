@@ -181,7 +181,7 @@ def queue(client, targets, host):
                 require(len(entry["tree"]["nodes"]) == 1, "java-resource-queued-root-never-created-child")
                 entry["status"] = client.call("activation", "get", activation)["data"]
                 consumed = entry["status"]["finalConsumption"]
-                require(consumed is not None and int(consumed["cpuFuel"]) == int(consumed["memoryBytes"]) == 0,
+                require(consumed is not None and int(consumed["cpuFuel"]) == int(consumed["peakMemoryBytes"]) == 0,
                         "java-resource-queued-root-never-materialized")
         result["afterCancellation"] = idle(client)
         result["fresh"] = fresh_status(client, targets, host, "java-diagnostics-after-queue")

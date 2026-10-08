@@ -84,43 +84,29 @@ def configure(directory: Path, releases: Path, *, http=True, former_profile=Fals
     return config, host
 
 
+
 def grant(client, node, releases, publications, *, child_trigger=False, domain_grants=()):
-    grants = []
-    for name, (contract, profile, operation, kind) in profiles("java").items():
-        installed = next(row for row in node.startup_record["providers"] if row["id"] == name)
-        policy(client, "provider-binding", name + "-installed", {"formatVersion": 1, "tenant": TENANT,
-            "capability": contract, "providerProfile": profile, "configurationDigest": installed["configurationDigest"],
-            "configurationEpoch": 1, "restriction": {"operations": [operation]}})
-        policy(client, "policy", name + "-allow", {"formatVersion": 1, "tenant": TENANT, "rules": [{
-            "id": "runtime", "effect": "allow", "principals": [
-                {"kind": "administrator", "subject": "workflow-operator"},
-                {"kind": "trigger", "subject": "java-http-ingress"},
-                {"kind": "service", "subject": CHILD_SUBJECT}],
-            "services": [ADAPTER, DOMAIN, CONTEXT_REQUIRED], "publications": sorted(publications.values()), "capability": contract,
-            "operations": [operation], "resources": {"kind": kind},
-            "ceiling": {"operations": 4096, "inputBytes": 0, "outputBytes": 32768, "wallTimeMillis": 5000}}]})
-        grants.append({"capability": contract, "policy": name + "-allow"})
+    from tools.java_http_composition.policy_proposals import runtime
+    for proposal in runtime(node.startup_record, publications):
+        policy(client, proposal["kind"], proposal["id"], proposal["document"])
+    grants = [{"capability": values[0], "policy": name + "-allow"}
+              for name, values in profiles("java").items()]
     return {name: deploy(client, releases / ("java-http-" + name) / "deployment.json", publications[name],
                         grants=grants + list(domain_grants) if name == "domain" else grants)
+
             for name in ("domain", "adapter")}
 
 
 def service_grant(client, node, publications, *, generation=0, trigger_only=False):
+
+    from tools.java_http_composition.policy_proposals import service
+    proposals = service(node.startup_record, publications, trigger_only=trigger_only)
     if generation == 0:
-        installed = next(row for row in node.startup_record["providers"] if row["id"] == "localService")
-        policy(client, "provider-binding", "java-domain-installed", {"formatVersion": 1, "tenant": TENANT,
-            "capability": SERVICE_CAPABILITY, "providerProfile": "lsf-local-service-invocation-v1",
-            "configurationDigest": installed["configurationDigest"], "configurationEpoch": 1,
-            "restriction": {"operations": ["call"]}})
-    principals = [{"kind": "trigger", "subject": "java-http-ingress"}]
-    if not trigger_only:
-        principals.append({"kind": "administrator", "subject": "workflow-operator"})
-    result = policy(client, "policy", "java-domain-allow", {"formatVersion": 1, "tenant": TENANT, "rules": [{
-        "id": "selected-domain", "effect": "allow", "principals": principals,
-        "services": [ADAPTER], "publications": [publications["adapter"], publications["adapter-next"]], "capability": SERVICE_CAPABILITY,
-        "operations": ["call"], "resources": {"kind": "service", "services": [DOMAIN],
-                                                  "publications": [publications["domain"]]},
-        "ceiling": {"operations": 4, "inputBytes": 1048576, "outputBytes": 1048576, "wallTimeMillis": 60000}}]}, generation)
+        binding = proposals[0]
+        policy(client, binding["kind"], binding["id"], binding["document"])
+    document = proposals[1]
+    result = policy(client, document["kind"], document["id"], document["document"], generation)
+
     return result["generation"]
 
 

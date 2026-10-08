@@ -7,6 +7,7 @@ not execute compilers, start another node, retry a send or infer external outcom
 from __future__ import annotations
 
 import copy
+import hashlib
 import http.client
 import json
 import math
@@ -35,8 +36,10 @@ def adapt_domain(project: Path) -> dict:
     source_path, wit_path = project / "src/dev/latent/app/Capsule.java", project / "wit/world.wit"
     source, wit = read_file(source_path, 32768).decode(), read_file(wit_path, 32768).decode()
     original = "public String text(String value) { return value; }"
+    original_export = "text: func(value: string) -> string;"
     require(source.count(original) == 1 and wit.count("world service {") == 1
-            and CAPABILITY not in wit, "java-provider-domain-adaptation-shape")
+            and CAPABILITY not in wit and wit.count(original_export) == 1,
+            "java-provider-domain-adaptation-shape")
     template = read_file(ROOT / "sdk/java-guest/templates/http-status.java", 32768).decode()
     method = re.search(r"    public Result<Integer, Bindings\.LatentHttpClientHttpError> check\(String url\) \{.*?\n    \}",
                        template, re.S)
@@ -57,6 +60,9 @@ def adapt_domain(project: Path) -> dict:
         source = source.replace("import dev.latent.guest.Result;", "import dev.latent.guest.Result;\nimport dev.latent.guest.Option;", 1)
     source = source.rstrip()[:-1] + helper + "\n}\n"
     wit = wit.replace("world service {", "world service {\n    import " + CAPABILITY + ";", 1)
+    # The diagnostic text body calls the async HTTP import. Its component task
+    # must permit that suspension, as the maintained http-status export does.
+    wit = wit.replace(original_export, "text: async func(value: string) -> string;", 1)
     descriptor, lock = read_json(project / "capsule-project.json"), read_json(project / "sdk-lock.json")
     descriptor["limits"]["outboundRequests"] = 1
     lock["template"] = {"name": "java-provider-timeout-v1", "sourceDigest": digest(source.encode()),
@@ -105,30 +111,9 @@ def configure(directory: Path, settings: dict, port: int) -> dict:
 
 def grant(client, node, domain_publication: str, port: int) -> dict:
     """Use actual installed identity and original source-service/caller policy."""
-    require(type(port) is int and 1 <= port <= 65535
-            and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", domain_publication),
-            "java-provider-selected-publication")
-    installed = [row for row in node.startup_record["providers"] if row["id"] == "http"]
-    require(len(installed) == 1, "java-provider-original-installed-owner")
-    actual = installed[0]
-    require(actual["tenant"] == TENANT and actual["service"] == "http-host"
-            and actual["capability"] == CAPABILITY and actual["profile"] == "bounded-http-v1"
-            and actual["configurationEpoch"] == "1"
-            and re.fullmatch(r"sha256:[0-9a-f]{64}", actual["configurationDigest"]),
-            "java-provider-installed-profile")
-    policy(client, "provider-binding", BINDING, {"formatVersion": 1, "tenant": TENANT,
-        "capability": CAPABILITY, "providerProfile": actual["profile"],
-        "configurationDigest": actual["configurationDigest"], "configurationEpoch": 1,
-        "restriction": {"operations": ["send"]}})
-    policy(client, "policy", POLICY, {"formatVersion": 1, "tenant": TENANT, "rules": [{
-        "id": "selected-domain", "effect": "allow", "principals": [
-            {"kind": "administrator", "subject": "workflow-operator"},
-            {"kind": "service", "subject": CHILD_SUBJECT}],
-        "services": [DOMAIN], "publications": [domain_publication], "capability": CAPABILITY,
-        "operations": ["send"], "resources": {"kind": "http",
-            "origins": [{"scheme": "http", "host": "localhost", "port": port}],
-            "methods": ["GET"], "paths": ["/allowed"], "pathPrefixes": []},
-        "ceiling": {"operations": 1, "inputBytes": 4096, "outputBytes": 8192, "wallTimeMillis": 1000}}]})
+    from tools.java_http_composition.policy_proposals import http
+    for proposal in http(node.startup_record, domain_publication, port):
+        policy(client, proposal["kind"], proposal["id"], proposal["document"])
     return {"capability": CAPABILITY, "policy": POLICY}
 
 
@@ -153,7 +138,8 @@ def _marker(client, control: Path, name: str) -> None:
 
 
 def _observe(client, host: str, port: int) -> tuple[dict, object]:
-    before = {row["activationId"] for row in roots(client)}
+    before_rows = roots(client)
+    before = {row["activationId"] for row in before_rows}
     connection = http.client.HTTPConnection("127.0.0.1", int(host.rsplit(":", 1)[1]),
                                             timeout=_remaining(client, 125))
     try:
@@ -163,16 +149,36 @@ def _observe(client, host: str, port: int) -> tuple[dict, object]:
         connection.sock.settimeout(_remaining(client, 125))
         response = connection.getresponse()
         raw = response.read(32769)
-        require(response.status == 200 and len(raw) <= 32768, "java-provider-composed-response")
-        value = json.loads(raw)
     finally:
         connection.close()
+    count = getattr(client, "java_provider_http_observations", 0)
+    require(count < 2, "java-provider-http-observation-count-bound")
+    client.java_provider_http_observations = count + 1
+    retained = {"httpStatus": response.status, "responseBytes": len(raw),
+        "responseDigest": "sha256:" + hashlib.sha256(raw).hexdigest(),
+        "authorizedRootsBefore": before_rows, "authorizedRootsAfter": None, "tree": None,
+        "externalMutationDisposition": "unknown"}
+    path = client.evidence / f"java-provider-http-observation-{count:02d}.json"
+    _retain_observation(client.evidence / f"java-provider-http-response-{count:02d}.json", retained)
     _remaining(client, 125)
-    discovered = [row for row in roots(client) if row["activationId"] not in before]
+    after_rows = roots(client)
+    discovered = [row for row in after_rows if row["activationId"] not in before]
+    retained["authorizedRootsAfter"] = after_rows
+    if len(discovered) == 1:
+        retained["tree"] = tree(client, discovered[0]["activationId"])
+    _retain_observation(path, retained)
+    require(response.status == 200 and len(raw) <= 32768, "java-provider-composed-response")
+    value = json.loads(raw)
     require(len(discovered) == 1, "java-provider-supported-one-root")
-    observation = {"httpStatus": response.status, "tree": tree(client, discovered[0]["activationId"])}
+    observation = {"httpStatus": response.status, "tree": retained["tree"]}
     hops(observation)
     return observation, value
+
+
+def _retain_observation(path, observation):
+    require(len(json.dumps(observation, separators=(",", ":")).encode()) <= 262144,
+            "java-provider-http-observation-byte-bound")
+    write_json(path, observation)
 
 
 def timeout_observation(child: dict) -> str:
@@ -248,6 +254,15 @@ def _pool_shutdown(report: dict) -> dict:
 
 def stop_peer(process) -> dict:
     """Reap the original peer, retaining its one held and one fresh request."""
+    return _stop_peer(process, {"requests": 2, "authorized": 2, "unexpected": 0, "holds": 1, "closedHolds": 1})
+
+
+def stop_unused_peer(process) -> dict:
+    """Positive prepare-only teardown; this establishes no business disposition."""
+    return _stop_peer(process, {"requests": 0, "authorized": 0, "unexpected": 0, "holds": 0, "closedHolds": 0})
+
+
+def _stop_peer(process, expected) -> dict:
     process.stop()
     lines = bytes(process.buffers[0]).splitlines()
     require(len(lines) == 1 and len(lines[0]) <= 4096, "java-provider-peer-shutdown-record")
@@ -255,8 +270,7 @@ def stop_peer(process) -> dict:
     require(set(result) == {"requests", "authorized", "unexpected", "holds", "closedHolds"}
             and all(type(value) is int and 0 <= value <= 32 for value in result.values()),
             "java-provider-peer-shutdown-bound")
-    require(result["requests"] == result["authorized"] == 2 and result["unexpected"] == 0
-            and result["holds"] == result["closedHolds"] == 1,
+    require(result == expected,
             "java-provider-peer-authority-or-physical-close")
     require(process.closed and process.owner.finished and process.owner.process.returncode == 0,
             "java-provider-peer-not-reaped")
