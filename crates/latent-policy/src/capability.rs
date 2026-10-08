@@ -112,7 +112,7 @@ fn supported_contract(value: &str) -> bool {
         )
 }
 
-fn runtime_operations() -> &'static [&str] {
+fn runtime_operations() -> &'static [&'static str] {
     &[
         "register",
         "park",
