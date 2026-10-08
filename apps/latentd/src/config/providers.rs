@@ -19,6 +19,9 @@ pub use local_service::LocalServiceInstallation;
 #[path = "providers/events.rs"]
 mod events;
 pub use events::EventInstallation;
+#[path = "providers/streams.rs"]
+mod streams;
+pub use streams::StreamInstallation;
 #[path = "providers/http.rs"]
 mod http;
 #[path = "providers/http_streaming.rs"]
@@ -34,6 +37,8 @@ pub struct ConfiguredProviders {
     pub format_version: u32,
     #[serde(default, deserialize_with = "present")]
     pub http: Option<HttpInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub outbound_streams: Option<StreamInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub http_streaming: Option<HttpStreamingInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -144,6 +149,9 @@ pub(super) fn derive(
     {
         return Err(invalid("providers"));
     }
+    if let Some(streams) = &providers.outbound_streams {
+        streams.validate_installation(providers)?;
+    }
     if let Some(http) = &providers.http {
         http.validate_installation()?;
     }
@@ -231,6 +239,8 @@ impl ProviderIdentity {
 impl ConfiguredProviders {
     fn no_installations(&self) -> bool {
         self.http.is_none()
+            && self.activation_runtime.is_none()
+            && self.outbound_streams.is_none()
             && self.http_streaming.is_none()
             && self.activation_runtime.is_none()
             && self.blob.is_none()
@@ -259,6 +269,7 @@ impl ConfiguredProviders {
             }
             let installed = match binding.contract.as_str() {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
+                "latent:network/streams@0.1.0" => self.outbound_streams.as_ref().map(|v| &v.identity),
                 "latent:http/streaming@0.3.0" => self.http_streaming.as_ref().map(|http| &http.identity),
                 latent_core::activation_runtime::CAPABILITY => self.activation_runtime.as_ref().map(|runtime| &runtime.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
