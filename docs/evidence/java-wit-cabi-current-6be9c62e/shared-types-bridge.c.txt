@@ -1,0 +1,23 @@
+/* Generated from authoritative WIT. DO NOT EDIT. */
+#include "bridge.h"
+void exports_examples_shared_types_api_echo(exports_examples_shared_types_api_item_t *arg0, exports_examples_shared_types_api_item_t *arg1) {
+lsf_wire output = {0};
+lsf_put(&output, (uint64_t)((((*arg0)).count)), 8);
+lsf_require((((*arg0)).text).len <= LSF_MAX_BYTES); lsf_put(&output, (((*arg0)).text).len, 4);
+for (size_t local_5 = 0; local_5 < (((*arg0)).text).len; local_5++) lsf_put(&output, (((*arg0)).text).ptr[local_5], 1);
+lsf_release((((*arg0)).text).ptr, (((*arg0)).text).len); (((*arg0)).text).ptr = NULL; (((*arg0)).text).len = 0;
+void *owned; lsf_wire input = lsf_invoke(0, &output, &owned);
+uint64_t local_14 = lsf_get(&input, 8);  ((((*arg1)).count)) = (__typeof__(((((*arg1)).count))))local_14;
+(((*arg1)).text).len = (size_t)lsf_get(&input, 4);
+lsf_require((((*arg1)).text).len <= LSF_MAX_BYTES);
+(((*arg1)).text).ptr = lsf_allocate((((*arg1)).text).len, 1);
+for (size_t local_15 = 0; local_15 < (((*arg1)).text).len; local_15++) (((*arg1)).text).ptr[local_15] = (uint8_t)lsf_get(&input, 1);
+lsf_finish(&input); lsf_java_free(owned);
+}
+void *lsf_java_host(int32_t operation, void *bytes, int32_t length) {
+lsf_require(length >= 0 && (uint32_t)length <= LSF_MAX_BYTES);
+lsf_wire input = {bytes, (size_t)length, 0, (size_t)length}; lsf_wire output = {0};
+switch (operation) {
+default: __builtin_trap(); }
+return lsf_result(&output);
+}
