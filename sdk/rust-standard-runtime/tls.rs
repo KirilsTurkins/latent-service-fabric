@@ -84,11 +84,44 @@ struct Entry {
     owner: ManuallyDrop<Lease>,
 }
 
+/// Exact memory32 prefix used by the bounded post-link stack helpers. It is
+/// infrastructure state, never a serialized address or a host capability.
+#[repr(C)]
+struct ShadowStack {
+    pointer: Cell<u32>,
+    low: u32,
+    high: u32,
+    phase: Cell<u32>,
+}
+
+const STACK_LEGACY_TLS_ONLY: u32 = 0;
+const STACK_PREPARED: u32 = 1;
+const STACK_RUNNING: u32 = 2;
+const STACK_FINISHING_TLS: u32 = 3;
+const STACK_TLS_FINISHED: u32 = 4;
+const STACK_WASM_FRAMES_EXITED: u32 = 5;
+
+struct StackAllocation {
+    pointer: *mut u8,
+    layout: Layout,
+}
+
+impl Drop for StackAllocation {
+    fn drop(&mut self) {
+        unsafe { System.dealloc(self.pointer, self.layout); }
+    }
+}
+
+#[repr(C)]
 struct Context {
+    // Keep this prefix first. Native offset checks and the actual encoded-Wasm
+    // reader/writer controls bind all four offsets, not a Rust default layout.
+    stack: ShadowStack,
     head: Cell<*mut Entry>,
     closing: Cell<bool>,
     cleanup_requested: Cell<bool>,
     owner: ManuallyDrop<Lease>,
+    stack_allocation: Option<StackAllocation>,
 }
 
 fn allocate<T>(value: T) -> *mut T {
@@ -110,8 +143,11 @@ unsafe fn deallocate<T>(pointer: *mut T) -> T {
 fn allocate_context(continuation: Option<Token>) -> *mut Context {
     let owner = Lease::acquire(continuation);
     allocate(Context {
+        stack: ShadowStack { pointer: Cell::new(0), low: 0, high: 0,
+                             phase: Cell::new(STACK_LEGACY_TLS_ONLY) },
         head: Cell::new(ptr::null_mut()), closing: Cell::new(false),
         cleanup_requested: Cell::new(false), owner: ManuallyDrop::new(owner),
+        stack_allocation: None,
     })
 }
 
@@ -122,12 +158,63 @@ pub(crate) fn prepare_thread_context(continuation: Token) -> *mut u8 {
     allocate_context(Some(continuation)).cast()
 }
 
+/// Prepare the existing, instance-owned root linear stack. The owned entry
+/// wrapper must install it before calling any translated Rust frame. This
+/// API does not allocate, resize, free or pretend to switch that stack.
+pub(crate) fn prepare_borrowed_root_context(continuation: Token, low: u32, high: u32) -> *mut u8 {
+    assert!(low != 0 && low % 16 == 0 && high % 16 == 0 && high > low,
+            "root stack must be a nonempty aligned memory32 range");
+    assert!(high - low >= 64 * 1024, "root stack below pinned std minimum");
+    let owner = Lease::acquire(Some(continuation));
+    allocate(Context {
+        stack: ShadowStack { pointer: Cell::new(high), low, high,
+                             phase: Cell::new(STACK_PREPARED) },
+        head: Cell::new(ptr::null_mut()), closing: Cell::new(false),
+        cleanup_requested: Cell::new(false), owner: ManuallyDrop::new(owner),
+        stack_allocation: None,
+    }).cast()
+}
+
+/// Allocate an independent linear stack and its TLS/context record after the
+/// real accepted Task's Native continuation has been admitted. The Task itself
+/// must already be owned by the thread PAL before canonical thread creation.
+/// These bytes stay under the original Wasm memory limiter, not a new quota.
+/// This memory32-only path is not selected by the maintained builder yet.
+pub(crate) fn prepare_stacked_thread_context(continuation: Token, bytes: usize) -> *mut u8 {
+    assert!(bytes >= 64 * 1024, "logical stack below pinned std minimum");
+    let size = bytes.checked_add(15).expect("logical stack size overflow") & !15;
+    let layout = Layout::from_size_align(size, 16).expect("invalid logical stack layout");
+    let size32 = u32::try_from(size).expect("logical stack exceeds memory32");
+    let owner = Lease::acquire(Some(continuation));
+    let pointer = unsafe { System.alloc(layout) };
+    if pointer.is_null() { handle_alloc_error(layout); }
+    // On a source-reference host, a failed memory32 check still frees this
+    // actual allocation before unwinding/settling its admitted Native owner.
+    let allocation = StackAllocation { pointer, layout };
+    let low = u32::try_from(pointer.addr()).expect("logical stack is not memory32");
+    let high = low.checked_add(size32).expect("logical stack address overflow");
+    assert!(low != 0 && low % 16 == 0 && high % 16 == 0);
+    allocate(Context {
+        stack: ShadowStack { pointer: Cell::new(high), low, high,
+                             phase: Cell::new(STACK_PREPARED) },
+        head: Cell::new(ptr::null_mut()), closing: Cell::new(false),
+        cleanup_requested: Cell::new(false), owner: ManuallyDrop::new(owner),
+        stack_allocation: Some(allocation),
+    }).cast()
+}
+
 /// # Safety
 /// `pointer` is one fresh context returned by prepare_thread_context, owned by
 /// this thread. It may not be shared, installed twice or resumed after retire.
 pub(crate) unsafe fn install_thread_context(pointer: *mut u8) {
     assert!(!pointer.is_null() && unsafe { context_get() }.is_null(),
             "TLS context installation must be fresh");
+    let context = unsafe { &*pointer.cast::<Context>() };
+    if context.stack.phase.get() != STACK_LEGACY_TLS_ONLY {
+        assert_eq!(context.stack.phase.get(), STACK_PREPARED,
+                   "stacked context installation must be unstarted");
+        context.stack.phase.set(STACK_RUNNING);
+    }
     unsafe { context_set(pointer); }
 }
 
@@ -137,6 +224,8 @@ pub(crate) unsafe fn discard_unstarted_context(pointer: *mut u8) {
     assert!(!pointer.is_null());
     let live = unsafe { &*pointer.cast::<Context>() };
     assert!(live.head.get().is_null() && !live.closing.get());
+    assert!(matches!(live.stack.phase.get(), STACK_LEGACY_TLS_ONLY | STACK_PREPARED));
+    assert_ne!(unsafe { context_get() }, pointer, "discard requires an uninstalled context");
     let context = unsafe { deallocate(pointer.cast::<Context>()) };
     let owner = unsafe { ptr::read(&*context.owner) };
     drop(context);
@@ -198,6 +287,8 @@ pub(crate) fn mark_cleanup() {
 pub(crate) enum RetireError {
     AlreadyClosing,
     DestructorLimit,
+    LiveShadowStack,
+    WrongStackPhase,
 }
 
 // Match the finite four-round destructor convention used by the pinned std
@@ -228,6 +319,36 @@ pub(crate) unsafe fn retire_current() -> Result<(), RetireError> {
     let pointer = unsafe { context_get() }.cast::<Context>();
     if pointer.is_null() { return Ok(()); }
     let context = unsafe { &*pointer };
+    // Clearing/freeing a stack-bearing context from Rust would invalidate the
+    // caller's own remaining shadow-stack epilogue. Only the stackless encoded
+    // entry wrapper may detach it after the last Rust frame has returned.
+    if context.stack.phase.get() != STACK_LEGACY_TLS_ONLY { return Err(RetireError::LiveShadowStack); }
+    unsafe { finish_tls(context)?; }
+    unsafe { context_set(ptr::null_mut()); }
+    let context = unsafe { deallocate(pointer) };
+    let owner = unsafe { ptr::read(&*context.owner) };
+    drop(context);
+    drop(owner);
+    Ok(())
+}
+
+/// Run TLS/std cleanup while the actual stack and context are still installed.
+/// The final Rust epilogue still uses this prefix. No context/stack owner is
+/// settled, cleared or freed by this phase.
+pub(crate) unsafe fn finish_stacked_thread_tls() -> Result<(), RetireError> {
+    let pointer = unsafe { context_get() }.cast::<Context>();
+    if pointer.is_null() { return Err(RetireError::WrongStackPhase); }
+    let context = unsafe { &*pointer };
+    if context.stack.phase.get() != STACK_RUNNING {
+        return Err(RetireError::WrongStackPhase);
+    }
+    context.stack.phase.set(STACK_FINISHING_TLS);
+    unsafe { finish_tls(context)?; }
+    context.stack.phase.set(STACK_TLS_FINISHED);
+    Ok(())
+}
+
+unsafe fn finish_tls(context: &Context) -> Result<(), RetireError> {
     if context.closing.replace(true) { return Err(RetireError::AlreadyClosing); }
     for _ in 0..DESTRUCTOR_ROUNDS {
         let mut called = false;
@@ -257,9 +378,8 @@ pub(crate) unsafe fn retire_current() -> Result<(), RetireError> {
     // That state uses our LocalPointer entries, so the context stays installed.
     crate::rt::thread_cleanup();
     if pending_destructors(context) { return Err(RetireError::DestructorLimit); }
-    // No callbacks remain; detach each allocation, physically free it, then
-    // settle its affine owner. The canonical context remains available until
-    // the last entry has retired, and is cleared before its own deallocation.
+    // No callbacks remain; detach/free each TLS entry before settling its
+    // owner. The context and shadow stack remain installed through return.
     let mut current = context.head.replace(ptr::null_mut());
     while !current.is_null() {
         let item = unsafe { deallocate(current) };
@@ -268,8 +388,27 @@ pub(crate) unsafe fn retire_current() -> Result<(), RetireError> {
         drop(item);
         drop(owner);
     }
-    unsafe { context_set(ptr::null_mut()); }
-    let context = unsafe { deallocate(pointer) };
+    Ok(())
+}
+
+/// # Safety
+/// The parent/reaper owns this distinct context and has established canonical
+/// thread completion and no remaining native continuation. The wrapper's
+/// WASM_FRAMES_EXITED word alone is not proof of host-fiber physical retirement.
+/// This cleanup must run on another live context/stack, never the retired one.
+pub(crate) unsafe fn retire_exited_thread_context(pointer: *mut u8) -> Result<(), RetireError> {
+    let current = unsafe { context_get() };
+    assert!(!pointer.is_null() && !current.is_null() && current != pointer,
+            "thread reaping must use a different live context");
+    let live = unsafe { &*pointer.cast::<Context>() };
+    if live.stack.phase.get() != STACK_WASM_FRAMES_EXITED
+            || !live.closing.get() || !live.head.get().is_null() {
+        return Err(RetireError::WrongStackPhase);
+    }
+    // All Wasm/Rust frames are gone and the caller supplied actual native
+    // completion proof. Context and any owned stack retire before Native settle;
+    // the borrowed instance stack remains owned by its admitted instance.
+    let context = unsafe { deallocate(pointer.cast::<Context>()) };
     let owner = unsafe { ptr::read(&*context.owner) };
     drop(context);
     drop(owner);

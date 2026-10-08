@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "latent.rust.owned-thread-source-abi.v1",
+  "target": "wasm32-unknown-unknown",
+  "compiler": "1.97.1",
+  "componentEncoder": "0.259.0",
+  "engine": "48.0.4",
+  "contextSlot": 1,
+  "preservedWitBindgenContextSlot": 0,
+  "contextPrefix": {
+    "bytes": 16,
+    "alignment": 4,
+    "pointerOffset": 0,
+    "lowOffset": 4,
+    "highOffset": 8,
+    "phaseOffset": 12,
+    "phases": {
+      "tlsOnly": 0,
+      "prepared": 1,
+      "running": 2,
+      "finishingTls": 3,
+      "tlsFinished": 4,
+      "wasmFramesExited": 5
+    }
+  },
+  "canonicalImports": [
+    { "module": "$root", "name": "[context-get-1]", "parameters": [], "results": ["i32"] },
+    { "module": "$root", "name": "[context-set-1]", "parameters": ["i32"], "results": [] },
+    { "module": "$root", "name": "[thread-new-indirect-v0]", "parameters": ["i32", "i32"], "results": ["i32"] }
+  ],
+  "entry": {
+    "export": "__lsf_rust_owned_thread_entry",
+    "parameters": ["i32"],
+    "results": [],
+    "originalTable": "__indirect_function_table",
+    "preservesOriginalFunctionAndTableIndex": true,
+    "installsContextBeforeRustPrologue": true,
+    "requiresTlsFinishedAndRestoredStackBeforeDetach": true,
+    "settlesAnyOwner": false,
+    "wakesAnyParent": false
+  },
+  "ownership": {
+    "taskAdmission": "required before thread creation; not implemented or replaced by this wrapper",
+    "nativeAdmission": "original Native continuation before System stack/context allocation",
+    "linearStackBytes": "original Wasm linear-memory limiter",
+    "retirement": "requires actual canonical/native completion proof before parent/reaper cleanup",
+    "wasmExitedFlagProvesNativeFiberRetirement": false
+  },
+  "rootExportBootstrapQualified": false,
+  "rebuiltSysrootQualified": false,
+  "nativeFiberRetirementQualified": false,
+  "standardThreadApiImplemented": false,
+  "automaticallySelected": false,
+  "supportedRuntimeProfile": false
+}

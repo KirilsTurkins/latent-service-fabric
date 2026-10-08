@@ -79,6 +79,7 @@ pub unsafe extern "C" fn register(kind: u32, continuation: u32, generation: u64,
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn settle(generation: u64, id: u64, result: *mut u8) {
     assert_eq!(generation, 81);
+    if id >= 3 { assert!(SYSTEM_FREES.load(Ordering::SeqCst) >= SETTLE_REQUIRED_FREES.load(Ordering::SeqCst)); }
     if WATCH_CONTEXT.load(Ordering::SeqCst) != 0 {
         if id == 1 { assert_eq!(CONTEXT_FREED.load(Ordering::SeqCst), 1); }
         else { assert!(SYSTEM_FREES.load(Ordering::SeqCst) >= 1); }
@@ -101,6 +102,7 @@ static SYSTEM_ALLOCS: AtomicUsize = AtomicUsize::new(0);
 static SYSTEM_FREES: AtomicUsize = AtomicUsize::new(0);
 static WATCH_CONTEXT: AtomicUsize = AtomicUsize::new(0);
 static CONTEXT_FREED: AtomicUsize = AtomicUsize::new(0);
+static SETTLE_REQUIRED_FREES: AtomicUsize = AtomicUsize::new(0);
 unsafe extern "C" fn destroy(value: *mut u8) {
     assert!(!context_get().is_null());
     drop(unsafe { Box::from_raw(value.cast::<u32>()) });
@@ -292,4 +294,133 @@ fn prepared_but_unstarted_context_retires_without_fake_execution() {
     assert_eq!(LEDGER.with(|l| l.borrow().cleanup), 0);
     unsafe { platform::retire_current().unwrap(); }
     assert_eq!(owners(), 0);
+}
+
+fn borrowed_stack_context() -> (*mut u8, *mut u8) {
+    reset(8);
+    unsafe { platform::get(BORROWED.force()); }
+    let root = context_get();
+    let child = platform::prepare_borrowed_root_context(platform::Token { generation: 81, id: 1 }, 65_536, 131_072);
+    (root, child)
+}
+
+// These native controls simulate only the wrapper's documented memory32
+// record transition. Actual encoded-Wasm controls separately bind its order.
+// No canonical/native thread or physical guest retirement is claimed here.
+unsafe fn phase(pointer: *mut u8) -> u32 { unsafe { pointer.add(12).cast::<u32>().read() } }
+unsafe fn wrapper_exited_record(pointer: *mut u8) {
+    assert_eq!(unsafe { phase(pointer) }, 4);
+    unsafe { pointer.add(12).cast::<u32>().write(5); }
+}
+
+#[test]
+fn borrowed_root_stack_prefix_has_exact_canonical_offsets() {
+    let (root, child) = borrowed_stack_context();
+    let words = unsafe { std::slice::from_raw_parts(child.cast::<u32>(), 4) };
+    assert_eq!(words, [131_072, 65_536, 131_072, 1]);
+    assert_eq!(owners(), 3);
+    unsafe { platform::discard_unstarted_context(child); }
+    assert_eq!(context_get(), root);
+    unsafe { platform::retire_current().unwrap(); }
+    assert_eq!(owners(), 0);
+}
+
+#[test]
+fn live_shadow_stack_and_tls_finish_do_not_clear_or_refund_the_final_rust_frame() {
+    let (root, child) = borrowed_stack_context();
+    context_set(std::ptr::null_mut());
+    unsafe { platform::install_thread_context(child); }
+    let value = Box::into_raw(Box::new(42u32)).cast();
+    unsafe { platform::set(FIRST.force(), value); }
+    assert_eq!(unsafe { phase(child) }, 2);
+    assert_eq!(owners(), 4);
+    assert_eq!(unsafe { platform::retire_current() }, Err(platform::RetireError::LiveShadowStack));
+    assert_eq!(DROPS.load(Ordering::SeqCst), 0);
+    assert_eq!(owners(), 4); assert_eq!(context_get(), child);
+    unsafe { platform::finish_stacked_thread_tls().unwrap(); }
+    assert_eq!(DROPS.load(Ordering::SeqCst), 1);
+    assert_eq!(owners(), 3); assert_eq!(context_get(), child);
+    assert_eq!(unsafe { phase(child) }, 4);
+    assert_eq!(unsafe { platform::retire_current() }, Err(platform::RetireError::LiveShadowStack));
+    context_set(root);
+    assert_eq!(unsafe { platform::retire_exited_thread_context(child) }, Err(platform::RetireError::WrongStackPhase));
+    assert_eq!(owners(), 3);
+    unsafe { wrapper_exited_record(child); platform::retire_exited_thread_context(child).unwrap(); }
+    assert_eq!(owners(), 2);
+    unsafe { platform::retire_current().unwrap(); }
+    assert_eq!(owners(), 0);
+}
+
+#[test]
+fn unstarted_stack_cannot_finish_or_be_reaped_as_completed_work() {
+    let (_, child) = borrowed_stack_context();
+    assert_eq!(unsafe { platform::finish_stacked_thread_tls() }, Err(platform::RetireError::WrongStackPhase));
+    assert_eq!(unsafe { platform::retire_exited_thread_context(child) }, Err(platform::RetireError::WrongStackPhase));
+    assert_eq!(owners(), 3); assert_eq!(unsafe { phase(child) }, 1);
+    unsafe { platform::discard_unstarted_context(child); platform::retire_current().unwrap(); }
+    assert_eq!(owners(), 0);
+}
+
+#[test]
+fn invalid_stack_ranges_and_size_overflow_reject_before_admission_and_allocation() {
+    reset(0);
+    let before = SYSTEM_ALLOCS.load(Ordering::SeqCst);
+    for (low, high) in [(0, 65_536), (16, 16), (65_536, 65_535), (17, 131_072), (16, 32)] {
+        assert!(std::panic::catch_unwind(|| platform::prepare_borrowed_root_context(
+            platform::Token { generation: 81, id: 1 }, low, high)).is_err());
+    }
+    for size in [0, 65_535, usize::MAX] {
+        assert!(std::panic::catch_unwind(|| platform::prepare_stacked_thread_context(
+            platform::Token { generation: 81, id: 1 }, size)).is_err());
+    }
+    assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), before);
+    assert_eq!(LEDGER.with(|l| l.borrow().continued), 0);
+    assert_eq!(owners(), 0);
+}
+
+#[test]
+fn owned_stack_frees_actual_system_bytes_before_native_owner_settlement() {
+    reset(8);
+    unsafe { platform::get(BORROWED.force()); }
+    SYSTEM_ALLOCS.store(0, Ordering::SeqCst); SYSTEM_FREES.store(0, Ordering::SeqCst);
+    SETTLE_REQUIRED_FREES.store(1, Ordering::SeqCst);
+    let prepared = std::panic::catch_unwind(|| platform::prepare_stacked_thread_context(
+        platform::Token { generation: 81, id: 1 }, 65_536));
+    match prepared {
+        // A native address that fits memory32 can exercise unstarted cleanup.
+        // Most64-bit hosts reject their actual high pointer instead. Both paths
+        // must free real System bytes before the admitted Native token settles.
+        Ok(pointer) => {
+            assert_eq!(owners(), 3);
+            unsafe { platform::discard_unstarted_context(pointer); }
+            assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), 2);
+            assert_eq!(SYSTEM_FREES.load(Ordering::SeqCst), 2);
+        }
+        Err(_) => {
+            assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), 1);
+            assert_eq!(SYSTEM_FREES.load(Ordering::SeqCst), 1);
+        }
+    }
+    assert_eq!(owners(), 2);
+    SETTLE_REQUIRED_FREES.store(0, Ordering::SeqCst);
+    unsafe { platform::retire_current().unwrap(); }
+    assert_eq!(owners(), 0);
+}
+
+#[test]
+fn failed_destructor_drain_retains_installed_stack_context_and_all_owners() {
+    let (_, child) = borrowed_stack_context();
+    context_set(std::ptr::null_mut());
+    unsafe { platform::install_thread_context(child); }
+    let value = Box::into_raw(Box::new(1u32)).cast();
+    unsafe {
+        platform::set(CYCLE.force(), value);
+        assert_eq!(platform::finish_stacked_thread_tls(), Err(platform::RetireError::DestructorLimit));
+        assert_eq!(platform::retire_current(), Err(platform::RetireError::LiveShadowStack));
+    }
+    assert_eq!(DROPS.load(Ordering::SeqCst), 4);
+    assert_eq!(owners(), 4); assert_eq!(context_get(), child);
+    assert_eq!(unsafe { phase(child) }, 3);
+    assert_eq!(LEDGER.with(|l| l.borrow().cleanup), 0);
+    // Retain this failed reference process's owner records; no reset/refund.
 }

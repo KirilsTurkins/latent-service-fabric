@@ -28,3 +28,23 @@ The pinned Rust LLVM22.1.6 linker lacks the newer upstream cooperative-thread
 ABI path. A later LLVM option or source design is not attributed to that tool.
 The source transform preserves the original core module as an input/preimage
 rather than silently rewriting dependency checksums.
+
+The additional owned-thread entry transform keeps the original callback's
+function/table index and appends its translated Rust body. Its stackless
+wrapper installs the pre-admitted context before calling that body. It requires
+TLS cleanup to have finished and the final Rust epilogue to have restored the
+owned stack before detaching the context. Checked stack helpers enforce the
+context's memory32 range, alignment and live phase. No allocator, owner refund,
+parent wake or Rust cleanup runs after detach.
+
+The matching TLS source holds the context/stack owner through the final Rust
+frame. It supports separate TLS-finish and parent/reaper retirement phases;
+attempting current-context retirement with a live shadow stack fails closed.
+Owned stack allocations use System and retire before Native settlement,
+including an unstarted or rejected native-reference memory32 allocation.
+
+The exited memory word establishes only that the wrapper's Rust/Wasm frames
+returned. Actual native-fiber retirement, root/export bootstrap, Task admission,
+std Thread/synchronization/timers/reactor integration and signed component
+qualification remain required. The ordinary target still rejects Thread
+creation; this source does not fabricate a thread handle or select a profile.

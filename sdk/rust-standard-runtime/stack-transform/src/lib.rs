@@ -14,6 +14,9 @@ use wasm_encoder::{BlockType, CodeSection, Function, FunctionSection, Instructio
                    Module, TypeSection, ValType};
 use wasmparser::{Encoding, ExternalKind, Operator, Parser, Payload, TypeRef, Validator};
 
+mod thread_entry;
+pub use thread_entry::{ThreadEntryReceipt, transform_owned_thread_entry};
+
 pub const MAX_BYTES: usize = 8 * 1024 * 1024;
 pub const MAX_FUNCTIONS: u32 = 65_534; // two new helpers stay within65,536
 pub const MAX_OPERATORS: u64 = 2_000_000;
@@ -156,6 +159,9 @@ struct Rewrite {
     plan: Plan,
     gets: u64,
     sets: u64,
+    thread_entry: Option<thread_entry::ThreadEntryPlan>,
+    next_body: u32,
+    thread_body: Option<Function>,
 }
 
 impl Rewrite {
@@ -163,6 +169,10 @@ impl Rewrite {
     fn set_index(&self) -> u32 { self.get_index() + 1 }
 
     fn append_helpers(&self, code: &mut CodeSection) {
+        if self.thread_entry.is_some() {
+            thread_entry::append_checked_stack_helpers(code, self.plan.context_get);
+            return;
+        }
         let address = MemArg { offset: CONTEXT_STACK_POINTER_OFFSET, align: 2, memory_index: 0 };
         let mut get = Function::new([(1, ValType::I32)]);
         get.instruction(&Instruction::Call(self.plan.context_get))
@@ -197,6 +207,7 @@ impl Reencode for Rewrite {
                               reader: wasmparser::FunctionSectionReader<'_>) -> Result<(), reencode::Error<Self::Error>> {
         reencode::utils::parse_function_section(self, section, reader)?;
         section.function(self.plan.type_count).function(self.plan.type_count + 1);
+        if let Some(entry) = &self.thread_entry { section.function(entry.function_type); }
         Ok(())
     }
 
@@ -215,6 +226,16 @@ impl Reencode for Rewrite {
                 operator => { function.instruction(&self.instruction(operator)?); }
             }
         }
+        let index = self.plan.imported_functions + self.next_body;
+        self.next_body += 1;
+        if let Some(entry) = &self.thread_entry {
+            if index == entry.function_index {
+                let wrapper = entry.wrapper(self.plan.context_get, self.set_index() + 1);
+                self.thread_body = Some(function);
+                code.function(&wrapper);
+                return Ok(());
+            }
+        }
         code.function(&function);
         Ok(())
     }
@@ -223,6 +244,9 @@ impl Reencode for Rewrite {
                           reader: wasmparser::CodeSectionReader<'_>) -> Result<(), reencode::Error<Self::Error>> {
         reencode::utils::parse_code_section(self, code, reader)?;
         self.append_helpers(code);
+        if self.thread_entry.is_some() {
+            code.function(self.thread_body.as_ref().ok_or(reencode::Error::UserError("rust-thread-entry-body-missing"))?);
+        }
         Ok(())
     }
 }
@@ -235,7 +259,8 @@ pub fn transform(input: &[u8], expected_preimage: [u8; 32]) -> Result<(Vec<u8>, 
     let original_digest: [u8; 32] = Sha256::digest(input).into();
     if original_digest != expected_preimage { return Err("rust-stack-input-preimage-mismatch"); }
     let plan = plan(input)?;
-    let mut rewrite = Rewrite { plan, gets: 0, sets: 0 };
+    let mut rewrite = Rewrite { plan, gets: 0, sets: 0, thread_entry: None,
+                                next_body: 0, thread_body: None };
     let mut output = Module::new();
     rewrite.parse_core_module(&mut output, Parser::new(0), input)
         .map_err(|_| "rust-stack-reencode-failed")?;
