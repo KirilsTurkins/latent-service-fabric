@@ -1,7 +1,7 @@
 use super::Failure;
 use crate::{config::NodeConfig, standalone::StandaloneNode};
 use latent_core::PlatformErrorCode;
-use std::{io::Write, path::Path};
+use std::path::Path;
 
 pub(super) fn run(path: &Path) -> Result<(), Failure> {
     let settings = NodeConfig::load(path)
@@ -35,14 +35,5 @@ pub(super) fn run(path: &Path) -> Result<(), Failure> {
         ));
     }
     let report = result.map_err(|error| Failure::new("transaction-host-inspection", error.code))?;
-    let mut bytes = serde_json::to_vec(&report)
-        .map_err(|_| Failure::new("status", PlatformErrorCode::Internal))?;
-    if bytes.len() >= 256 * 1024 {
-        return Err(Failure::new("status", PlatformErrorCode::ResourceExhausted));
-    }
-    bytes.push(b'\n');
-    std::io::stdout()
-        .lock()
-        .write_all(&bytes)
-        .map_err(|_| Failure::new("status", PlatformErrorCode::Unavailable))
+    super::status::inspection(&report)
 }
