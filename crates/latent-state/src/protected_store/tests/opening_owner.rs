@@ -25,6 +25,7 @@ impl Drop for SendOnlyOwner {
 fn rejected_opening_keeps_send_only_owner_until_actual_worker_retirement() {
     let (_root, mut config) = fixture();
     config.io.queued_jobs = 1;
+    config.io.accepted_jobs = 4;
     let owner = start(config);
     let rendezvous = Rendezvous::new(3);
     let (notice, receiver) = mpsc::channel();
@@ -50,7 +51,9 @@ fn rejected_opening_keeps_send_only_owner_until_actual_worker_retirement() {
         );
         tickets.push(receiver.recv_timeout(WATCHDOG).unwrap());
     }
-    let queued = owner.with_store(StoreIoKind::Write, 0, |_| Ok(())).unwrap();
+    // Three real jobs occupy every ordinary worker. The fourth accepted slot
+    // belongs to the retained native view, so its subsequent submission fails
+    // after keeper binding rather than before any native owner was reserved.
     let dropped = Arc::new(AtomicUsize::new(0));
     let native_worker = Arc::new(AtomicBool::new(false));
     let result = owner.open_view_retaining(SendOnlyOwner {
@@ -60,7 +63,7 @@ fn rejected_opening_keeps_send_only_owner_until_actual_worker_retirement() {
     });
     let refused = matches!(
         result,
-        Err(ProtectedStoreError::Io(StoreIoError::QueueFull))
+        Err(ProtectedStoreError::Io(StoreIoError::AcceptedFull))
     );
     let dropped_before_retirement = dropped.load(Ordering::SeqCst);
     let physically_owned = owner.snapshot().unwrap().physical_owners;
@@ -72,7 +75,6 @@ fn rejected_opening_keeps_send_only_owner_until_actual_worker_retirement() {
     for job in jobs {
         wait(job).unwrap().unwrap();
     }
-    wait(queued).unwrap().unwrap();
     let shutdown = finish(&owner);
     assert!(shutdown.clean);
     assert!(shutdown.snapshot.physically_retired());
