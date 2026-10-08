@@ -18,6 +18,46 @@ use std::{
 use support::{detail_error, error, failed, FakeCompletion, FakeInvoker};
 
 #[test]
+fn signature_resource_limit_preserves_the_actual_constructor_and_refuses_other_shapes() {
+    let original: latent_core::PlatformError =
+        latent_signing::SignatureError::from(latent_signing::SignatureFailure::ResourceLimit).into();
+    assert_eq!(original.code, PlatformErrorCode::ResourceExhausted);
+    assert!(!original.retryable);
+    assert!(original.details.is_empty());
+    support::assert_reason(original.clone(), Reason::SignatureResourceLimit);
+    let message = original.message.as_ptr();
+    let expected = original.clone();
+    let recorder = Arc::new(Recorder::default());
+    let mut invoker = FakeInvoker::rejected(original);
+    let returned = invoker.observed(recorder.clone()).err().unwrap();
+    assert_eq!(returned, expected);
+    assert_eq!(returned.message.as_ptr(), message);
+    assert_eq!(
+        recorder.snapshot().records,
+        [FailureRecord {
+            stage: Stage::Start,
+            code: PlatformErrorCode::ResourceExhausted,
+            reason: Reason::SignatureResourceLimit,
+        }]
+    );
+    assert!(!recorder.snapshot().incomplete);
+    let mut wrong_code = returned.clone();
+    wrong_code.code = PlatformErrorCode::Unavailable;
+    let mut retryable = returned.clone();
+    retryable.retryable = true;
+    let mut extra_detail = returned.clone();
+    extra_detail.details.push(latent_core::ErrorDetail {
+        kind: "unreviewed".into(),
+        fields: Default::default(),
+    });
+    let mut changed_message = returned;
+    changed_message.message.push_str("-extra");
+    for malformed in [wrong_code, retryable, extra_detail, changed_message] {
+        support::assert_reason(malformed, Reason::Unclassified);
+    }
+}
+
+#[test]
 fn preparation_capacity_reasons_require_exact_closed_error_shapes() {
     for (message, expected) in [
         (

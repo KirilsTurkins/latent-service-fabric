@@ -15,6 +15,7 @@ pub enum Reason {
     SignatureClockRegression,
     SignatureTrustConflict,
     SignatureStaleProof,
+    SignatureResourceLimit,
     SchedulerShutdown,
     SchedulerHandoffClosed,
     SchedulerSequenceExhausted,
@@ -118,6 +119,7 @@ fn currentness_shape(error: &PlatformError, reason: &str) -> bool {
 fn empty_detail_reason(error: &PlatformError) -> Reason {
     if error.code == PlatformErrorCode::ResourceExhausted && !error.retryable {
         return match error.message.as_str() {
+            "signature-resource-limit" => Reason::SignatureResourceLimit,
             "prepared-source-association" => Reason::PreparationSourceAssociation,
             "preparation metadata exceeds its configured bound" => Reason::PreparationMetadataBound,
             "prepared metadata accounting overflowed" => Reason::PreparationMetadataOverflow,
