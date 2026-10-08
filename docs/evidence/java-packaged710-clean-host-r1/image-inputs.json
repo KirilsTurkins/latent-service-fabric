@@ -1,0 +1,8 @@
+{
+  "maintainedDockerfileSha256": "5c2274751765b240b8119eb0e98cf549a9d0c1247fa57bb93eb65f2f4135fcc8",
+  "localDockerfileSha256": "0e7f2fefad0c1796a9184f6e9a22620a2328c4dd2b9c13d4f35c0479a9e9b1a1",
+  "sourceCommit": "d39efecac856ad8e833479075318e461f8192008",
+  "extraOsDependency": "Git selected and pinned from the same maintained Ubuntu snapshot; source identity inspection only.",
+  "lsfCodeBuilt": false,
+  "rustCompilerPresent": false
+}

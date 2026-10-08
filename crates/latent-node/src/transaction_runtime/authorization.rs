@@ -4,6 +4,7 @@ use latent_capabilities::namespace::{NamespaceAuthority, INTENT_CONTRACT, STATE_
 use latent_core::{ActivationBudget, InvocationPrincipal, PlatformError, PlatformErrorCode};
 use latent_policy::capability::{
     CallRestrictions, CapabilityCeiling, EvaluationInput, PolicyStore, ResourceTarget,
+    SealedPolicyDecision,
 };
 use latent_state::namespace::catalog::NamespaceRead;
 use std::{sync::Arc, time::Instant};
@@ -17,9 +18,11 @@ pub struct StateAuthorization {
     principal: InvocationPrincipal,
     service: String,
     publication: ReleaseUseEligibility,
-    state: PolicyCallBinding,
-    intents: Option<PolicyCallBinding>,
+    state: Arc<PolicyCallBinding>,
+    intents: Option<Arc<PolicyCallBinding>>,
     pub(super) budget: ActivationBudget,
+    pub(super) role: Option<Arc<super::command_role::CommandRole>>,
+    pub(super) retention: Option<Arc<super::TransactionRetention>>,
 }
 impl StateAuthorization {
     pub(super) fn publication(&self) -> &str {
@@ -36,8 +39,8 @@ impl StateAuthorization {
         principal: InvocationPrincipal,
         service: String,
         publication: ReleaseUseEligibility,
-        state: PolicyCallBinding,
-        intents: Option<PolicyCallBinding>,
+        state: Arc<PolicyCallBinding>,
+        intents: Option<Arc<PolicyCallBinding>>,
         budget: ActivationBudget,
     ) -> Result<Self, PlatformError> {
         let scope = authority.ownership();
@@ -85,7 +88,19 @@ impl StateAuthorization {
             state,
             intents,
             budget,
+            role: None,
+            retention: None,
         })
+    }
+
+    pub(super) fn with_command_role(mut self, role: Arc<super::command_role::CommandRole>) -> Self {
+        self.role = Some(role);
+        self
+    }
+
+    pub(super) fn with_retention(mut self, retention: Arc<super::TransactionRetention>) -> Self {
+        self.retention = Some(retention);
+        self
     }
 
     pub(super) fn authorize(
@@ -95,6 +110,56 @@ impl StateAuthorization {
         output_bytes: usize,
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.with_decision(operation, input_bytes, output_bytes, |decision| {
+            self.authority.with_operation(
+                &self.policy,
+                decision,
+                &self.namespace,
+                operation,
+                action,
+            )
+        })
+    }
+
+    pub(super) fn with_decision<T>(
+        &self,
+        operation: &str,
+        input_bytes: usize,
+        output_bytes: usize,
+        action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
+    ) -> Result<T, PlatformError> {
+        self.evaluate(operation, input_bytes, output_bytes, false, action)
+    }
+
+    pub(super) fn authorize_completion(
+        &self,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        self.with_completion_decision(|decision| {
+            self.authority
+                .with_operation(&self.policy, decision, &self.namespace, "commit", action)
+        })
+    }
+
+    pub(super) fn with_completion_decision<T>(
+        &self,
+        action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
+    ) -> Result<T, PlatformError> {
+        self.evaluate("commit", 0, 0, true, action)
+    }
+
+    pub(super) fn authorize_query_completion(&self) -> Result<(), PlatformError> {
+        self.evaluate("query-info", 0, 0, true, |_| Ok(()))
+    }
+
+    fn evaluate<T>(
+        &self,
+        operation: &str,
+        input_bytes: usize,
+        output_bytes: usize,
+        completion: bool,
+        action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
+    ) -> Result<T, PlatformError> {
         let intent = operation == "stage";
         let binding = if intent {
             self.intents.as_ref().ok_or_else(denied)?
@@ -102,7 +167,17 @@ impl StateAuthorization {
             &self.state
         };
         let now = Instant::now();
-        if self.budget.deadline().is_expired_at(now) || self.budget.descendant_is_cancelled() {
+        if !completion {
+            if let Some(retention) = &self.retention {
+                retention.check_current()?;
+            }
+        }
+        let cancelled = if completion {
+            self.budget.retained_authority_is_cancelled_at(now)
+        } else {
+            self.budget.deadline().is_expired_at(now) || self.budget.descendant_is_cancelled()
+        };
+        if cancelled {
             return Err(denied());
         }
         // Current data permission also fences already-owned terminal buffers
@@ -174,8 +249,11 @@ impl StateAuthorization {
             // The audit-enabled runtime must install an actual reservation owner.
             return Err(denied());
         }
-        self.authority
-            .with_operation(&self.policy, &decision, &self.namespace, operation, action)
+        action(&decision)
+    }
+
+    pub(super) fn policy(&self) -> &PolicyStore {
+        &self.policy
     }
 }
 pub(super) fn denied() -> PlatformError {

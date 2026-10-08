@@ -16,7 +16,7 @@ The required `rust` job uses a fixed eight-variant matrix:
 | tests | Complete discovery, authenticated AOT preparation, ordinary workspace tests, doctests, signing compatibility and bounded resource units |
 | qualification | The unchanged metadata working-set and deterministic Phase 3 security qualifications with fresh local Cargo inventories |
 | provider | Fresh pinned S3 fixture, positive/negative S3 runs, Vault, NATS events/triggers and capability-policy CLI |
-| renderer-public | Browser component, SSR/hydration, browser boundary, generic Angular/node cases and discovery fault control |
+| renderer-public | Browser component, SSR/hydration, browser boundary, exact HTTP response-policy/operator proof, generic Angular/node cases and discovery fault control |
 | renderer-angular | Build contracts, fresh actual Angular package, admission/runtime and hydration |
 | publications | Static/framework publication, offline delivery, operator, security and bounded physical resource workflows |
 | angular-t1 | Fresh actual Angular package, isolated compiler, signed T1 fixtures and protected physical qualification; original manual resource options |

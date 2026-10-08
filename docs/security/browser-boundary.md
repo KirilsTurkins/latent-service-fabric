@@ -72,9 +72,11 @@ The current rules below continue to apply to running nodes.
 This is an origin-based CSRF profile, not a synchronizer-token or login/session
 framework. Legacy clients lacking an Origin on unsafe public calls fail closed.
 The host emits `Referrer-Policy: same-origin`: cross-origin referrers are withheld
-without making same-origin non-CORS POST Origin become `null`, as the
+without requiring a same-origin non-CORS POST Origin to become `null`, as the
 [Fetch Origin-header algorithm](https://fetch.spec.whatwg.org/#origin-header)
-would do for `no-referrer`. Browser tests exercise an actual same-origin POST.
+specifies for `no-referrer`. Browser tests record the actual Origin and response;
+browser implementations can differ from that algorithm. The maintained POST
+helper explicitly selects `same-origin` after removing consumed URL data.
 
 ## Host-owned response policy
 
@@ -145,13 +147,13 @@ guest fields must already be canonical lowercase HTTP tokens.
 <!-- response-ownership-v1:begin -->
 | Class | Names and prefixes | Behavior |
 | --- | --- | --- |
-| Host security | `content-security-policy`, `x-content-type-options`, `x-frame-options`, `referrer-policy`, `cross-origin-opener-policy`, `cross-origin-resource-policy`, `permissions-policy`, `strict-transport-security` | Reserved on HTTP and HTTPS; host emits fixed policy (HSTS on HTTPS only). Guest conflict returns empty no-store 502. |
-| Host transport/framing | `host`, `content-length`, `content-type`, `server`, `date`, `via`, `alt-svc` | Guest fields forbidden. Use typed media-type/representation-length/body; transport owns framing. Invalid output returns empty no-store 502. |
-| Hop-by-hop | `connection`, `keep-alive`, `proxy-connection`, `te`, `trailer`, `transfer-encoding`, `upgrade` | Forbidden in the buffered profile; no chunking, trailers, upgrades or guest connection control. Invalid output returns empty no-store 502. |
-| Identity/credential forwarding | `authorization`, `proxy-authorization`, `forwarded`, `traceparent`, `tracestate`, `baggage`, `x-real-ip`, `remote-user`, `x-remote-user`, `x-original-url`, `x-rewrite-url`, `x-forwarded-*`, `x-auth-request-*`, `x-authenticated-*` | Forbidden guest output; request identity fields are stripped by host mapping. Never an application principal channel; conflict returns empty no-store 502. |
-| Platform namespace | `x-lsf-*` | Reserved platform namespace. Guest output returns empty no-store 502. |
-| Unsupported browser policy | `refresh`, `content-location`, `link`, `clear-site-data`, `report-to`, `nel`, `content-security-policy-report-only`, `cross-origin-embedder-policy`, `access-control-*` | Forbidden; guests cannot add CORS, alternate navigation, reporting or embedding policy. Conflict returns empty no-store 502. |
-| Conditional application fields | `location`, `content-encoding`, `set-cookie`, `vary` | Location: singleton canonical root-relative redirect (or 201). Encoding: singleton identity. Set-Cookie: bounded unique HTTPS __Host- cookies with exact attributes. Vary: application field; private host caching needs approved dimensions. Failed value rules return empty no-store 502. |
+| Host security | `content-security-policy`, `x-content-type-options`, `x-frame-options`, `referrer-policy`, `cross-origin-opener-policy`, `cross-origin-resource-policy`, `permissions-policy`, `strict-transport-security` | Reserved on HTTP and HTTPS; host emits fixed policy (HSTS on HTTPS only). Guest conflict returns fixed no-store 502. |
+| Host transport/framing | `host`, `content-length`, `content-type`, `server`, `date`, `via`, `alt-svc` | Guest fields forbidden. Use typed media-type/representation-length/body; transport owns framing. Invalid output returns fixed no-store 502. |
+| Hop-by-hop | `connection`, `keep-alive`, `proxy-connection`, `te`, `trailer`, `transfer-encoding`, `upgrade` | Forbidden in the buffered profile; no chunking, trailers, upgrades or guest connection control. Invalid output returns fixed no-store 502. |
+| Identity/credential forwarding | `authorization`, `proxy-authorization`, `forwarded`, `traceparent`, `tracestate`, `baggage`, `x-real-ip`, `remote-user`, `x-remote-user`, `x-original-url`, `x-rewrite-url`, `x-forwarded-*`, `x-auth-request-*`, `x-authenticated-*` | Forbidden guest output; request identity fields are stripped by host mapping. Never an application principal channel; conflict returns fixed no-store 502. |
+| Platform namespace | `x-lsf-*` | Reserved platform namespace. Guest output returns fixed no-store 502. |
+| Unsupported browser policy | `refresh`, `content-location`, `link`, `clear-site-data`, `report-to`, `nel`, `content-security-policy-report-only`, `cross-origin-embedder-policy`, `access-control-*` | Forbidden; guests cannot add CORS, alternate navigation, reporting or embedding policy. Conflict returns fixed no-store 502. |
+| Conditional application fields | `location`, `content-encoding`, `set-cookie`, `vary` | Location: singleton canonical root-relative redirect (or 201). Encoding: singleton identity. Set-Cookie: bounded unique HTTPS __Host- cookies with exact attributes. Vary: application field; private host caching needs approved dimensions. Failed value rules return fixed no-store 502. |
 | Application cache input | `cache-control`, `age` | Accepted bounded input. Host strips supplied Cache-Control/Age from dynamic wire output and emits no-store plus its own local-hit Age. Duplicate/unsafe cache directives bypass host caching; they do not authorize shared browser/proxy caching. |
 | Credential-sensitive application data | `cookie`, `www-authenticate`, `proxy-authenticate`, `authentication-info`, `proxy-authentication-info` | Accepted as bounded application response fields; never platform authentication. Authors must classify their data and avoid disclosing credentials. Set-Cookie uses the separate strict conditional profile. |
 | Other application fields | Other valid names | Other canonical lowercase HTTP-token names are accepted (for example etag, last-modified, expires, content-language and x-app-*). Ordinary duplicate fields are retained; applications define their semantics. All fields obey the shared grammar and finite budgets. |
@@ -188,7 +190,9 @@ The runtime records only the bounded typed operator reason
 under the actual admitted tenant/activation scope and current diagnostic-read
 authorization. Execution success is distinct from accepted HTTP output. This
 does not expose a raw internal diagnostic in HTTP: public output remains the
-fixed empty 502 with host security headers and `no-store`. Use the local SDK
+fixed 502 with the 12-byte ASCII body `Bad gateway\n` (empty for HEAD), host
+security headers and `no-store`. Alpha.4 and development share these delivery
+failure bytes; a transport-level rejection instead has an empty body. Use the local SDK
 reason and this ownership table to correct output rather than copying raw
 application values into error messages.
 
@@ -216,8 +220,26 @@ same-origin unsafe-method Origin behavior in the application; the maintained
 POST helper uses an explicit `same-origin` policy after URL cleanup.
 
 The maintained controlled Angular/browser example includes the meta policy
-before its external bootstrap, exercises synthetic token-bearing document/fetch
-URLs, and verifies no token reaches unintended referrers or reused output.
+
+before its external bootstrap and verifies no token reaches unintended referrers
+or reused output. It loads a canonical signed asset URL, then uses browser history
+to give the document a synthetic query token before fetch/navigation probes.
+Immutable asset URLs still reject queries; this is not evidence that direct
+query-bearing asset navigation is supported. The public application helper
+removes the document token before its POST. A separate token-bearing POST using
+`no-referrer` verifies no Referer and records the browser's finite Origin/status
+pair: a same-origin Origin receives the normal 200, while `Origin: null` must
+receive empty no-store 403. The 2026-10-01 Chromium 153.0.8010.12 observation
+preserved its same-origin Origin; it is not evidence of an actual null-Origin
+browser rejection. Native wire tests separately require null-Origin rejection.
+The maintained opaque-document probe also records a bounded outcome without
+changing CSP, CORS or browser private-network policy. On that Chromium version,
+the data document had origin `null`, but the POST encountered a verified browser
+policy failure without exposing an Origin value or node response. The exact
+activation count verifies that it created no guest. This is neither a measured
+node 403 nor evidence about whether a request reached the network before the
+browser reported failure.
+
 Its actual host responses still report `same-origin`, strict CSP and `no-store`
 on application traffic. A meta element inserted after initial resource fetching
 cannot retroactively protect those requests. LSF never inserts it at runtime or
@@ -378,6 +400,10 @@ coverage. Ordinary test output marks missing component/browser prerequisites as
 ignored, not successful execution. CI runs the browser probe from its current
 Cargo artifact inventory and retains the compact observations; a missing test,
 browser, fixture or receipt is a failure, not substituted security evidence.
+The required renderer lane also runs the exact `http-response-policy` selection
+with that prepared public component. It checks the real fixed 502 response,
+successful subsequent requests and the admitted activation's bounded nonterminal
+output-validation diagnostic through tenant-scoped operator journal queries.
 
 See the [bounded local validation observations](../testing/browser-boundary.md)
 for exact tested code, dependency heads, counts and redacted artifact identities.

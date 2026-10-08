@@ -9,7 +9,7 @@ from .common import PROTOCOL, HOST_ABI, members, require
 
 FEATURES = frozenset({"doctor", "install", "install-tools", "up", "status", "logs", "down", "purge", "snapshot",
                       "build", "build-status", "cancel-build", "deploy", "recover", "invoke", "test", "prepare-test",
-                      "asset-begin", "asset-chunk", "asset-finish"})
+                      "asset-begin", "asset-chunk", "asset-finish", "preflight"})
 
 
 def hello() -> dict:

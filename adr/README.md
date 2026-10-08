@@ -131,7 +131,3 @@ old implementation snapshots are not setup instructions.
 
 - [ADR-0063: Select redb for transactional host state](0063-select-redb-for-transactional-host-state.md)
 - [ADR-0062: Host-own serializable transactions and durable outcomes](0062-host-own-serializable-transactions-and-durable-outcomes.md)
-
-### Transactional state
-
-- [ADR-0063: Select redb for transactional host state](0063-select-redb-for-transactional-host-state.md)

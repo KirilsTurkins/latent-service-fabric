@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "latent.dev.retained-packaged-attempt.v1",
+  "passed": false,
+  "attempt": "latent-java710-packaged761-r2",
+  "conductorSource": "a128d5172b9cafa91b394ab2786278796383e783",
+  "producerSource": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "combinedPolicySha256": "ce36420661807326255232c0542f334045af5a637a157ad3c99b7e77328ffcba",
+  "nativeRuntimeRebuilt": false,
+  "guestCompiled": false,
+  "nodeStarted": false,
+  "originalPreparedConductorSource": "d39efecac856ad8e833479075318e461f8192008",
+  "files": [
+    {
+      "source": "original-observation.json",
+      "retained": "observation.json",
+      "bytes": 54555,
+      "sha256": "6e3e6ad0758d2ee901443913f4c0867f4bbac30ee2141f39a8090f34f47f27d6"
+    },
+    {
+      "source": "original-environment-receipt.json",
+      "retained": "environment.json",
+      "bytes": 1164,
+      "sha256": "5241f05c471b54d21e9c34c1a249d76e633cbd09b4a340278d9e440a3cb7a237"
+    },
+    {
+      "source": "qualification-process-receipt.json",
+      "retained": "process.json",
+      "bytes": 49,
+      "sha256": "eead60b96e1f97c997a8c8d16b71aca9809ce45e5029b16cacf74a90d3e565ce"
+    },
+    {
+      "source": "qualification.stderr.log",
+      "retained": "qualification.stderr.txt",
+      "bytes": 2005,
+      "sha256": "023a102769dd92ac708a21a4b8124d2c995b9f3338b0621c355842497f570ea0"
+    },
+    {
+      "source": "qualification.stdout.log",
+      "retained": "qualification.stdout.txt",
+      "bytes": 1061,
+      "sha256": "c8cf40a6d07b306cb2a245fe4b588944c63577cac2df4928d7a2d3a5188e1b33"
+    }
+  ]
+}

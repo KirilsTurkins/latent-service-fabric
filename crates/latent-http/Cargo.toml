@@ -37,7 +37,6 @@ webpki-roots = "=1.0.9"
 zeroize = { version = "=1.9.0", features = ["alloc"] }
 
 [dev-dependencies]
-latent-core = { path = "../latent-core", features = ["test-support"] }
 latent-commit = { path = "../latent-commit" }
 latent-state = { path = "../latent-state" }
 latent-secrets = { path = "../latent-secrets" }

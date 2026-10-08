@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import json
+from importlib import resources
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / 'contracts/http/browser-response-ownership-v1.json'
+CONTRACT_PATH = 'contracts/http/browser-response-ownership-v1.json'
+CONTRACT = ROOT / CONTRACT_PATH
 BEGIN = '<!-- response-ownership-v1:begin -->'
 END = '<!-- response-ownership-v1:end -->'
 FORBIDDEN = {'HostSecurity', 'HostTransport', 'ForbiddenHopByHop', 'ForbiddenIdentity',
@@ -13,7 +15,13 @@ FORBIDDEN = {'HostSecurity', 'HostTransport', 'ForbiddenHopByHop', 'ForbiddenIde
 
 
 def table():
-    raw = CONTRACT.read_bytes()
+    try:
+        packaged = resources.files('tools.dev_workflow').joinpath('data/' + CONTRACT_PATH)
+        selected = packaged if packaged.is_file() else CONTRACT
+        with selected.open('rb') as source:
+            raw = source.read(32769)
+    except OSError as error:
+        raise ValueError('response-ownership-contract-not-packaged') from error
     if len(raw) > 32768:
         raise ValueError('response-ownership-contract-bound')
     value = json.loads(raw)
