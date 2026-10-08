@@ -11,7 +11,7 @@ async fn direct_effect_inspection_requires_original_caller_link_and_current_read
     let response = effect
         .fixture
         .backend
-        .execute_state(operator("alice"), request.clone().into())
+        .execute_state(context("alice"), request.clone().into())
         .await
         .unwrap();
     let contract::Response::GetEffect(value) = &response.response else {
@@ -33,7 +33,7 @@ async fn direct_effect_inspection_requires_original_caller_link_and_current_read
     assert!(effect
         .fixture
         .backend
-        .execute_state(operator("bob"), request.clone().into())
+        .execute_state(context("bob"), request.clone().into())
         .await
         .is_err());
     let mut foreign = request.clone();
@@ -41,7 +41,7 @@ async fn direct_effect_inspection_requires_original_caller_link_and_current_read
     assert!(effect
         .fixture
         .backend
-        .execute_state(operator("alice"), foreign.into())
+        .execute_state(context("alice"), foreign.into())
         .await
         .is_err());
     let history = latent_rpc::transaction::v1::ListEffectHistoryRequest {
@@ -54,7 +54,7 @@ async fn direct_effect_inspection_requires_original_caller_link_and_current_read
     let page = effect
         .fixture
         .backend
-        .execute_state(operator("alice"), history.clone().into())
+        .execute_state(context("alice"), history.clone().into())
         .await
         .unwrap();
     let contract::Response::ListEffectHistory(value) = &page.response else {
@@ -71,7 +71,7 @@ async fn direct_effect_inspection_requires_original_caller_link_and_current_read
     assert!(effect
         .fixture
         .backend
-        .execute_state(operator("alice"), cursor.into())
+        .execute_state(context("alice"), cursor.into())
         .await
         .is_err());
     effect.fixture.update(None, "revoke-original-effect-read");
