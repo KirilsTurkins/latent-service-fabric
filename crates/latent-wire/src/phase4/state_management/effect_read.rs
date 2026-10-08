@@ -86,7 +86,9 @@ impl Keeper {
                         let mut count = 0_u8;
                         let result = self.permit.with_live(&mut || {
                             count = count.saturating_add(1);
-                            publish();
+                            if count == 1 {
+                                publish();
+                            }
                         });
                         if count != 1 || result.is_err() {
                             return Err(latent_state::namespace::NamespaceError::PermissionDenied);
@@ -449,6 +451,9 @@ fn history_in(
             {
                 return Err(super::unsupported());
             }
+        }
+        if row.receipt.observed_at_millis > current.occurred_at_unix_millis {
+            return Err(super::unsupported());
         }
         let mut item = current.clone();
         item.disposition = disposition(row.receipt.disposition) as i32;
