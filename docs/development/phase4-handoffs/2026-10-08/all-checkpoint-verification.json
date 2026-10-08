@@ -1,0 +1,12 @@
+{
+  "verifiedRefCount": 265,
+  "uniqueHeads": 257,
+  "everyExpectedSHAEqual": true,
+  "newHistoricalWIP": {
+    "worktree": "C:\\Users\\turkins\\Desktop\\lf-p4-native-currentness787-20261006-v11",
+    "head": "e0d03b14fd724f2e9218beb00ceea843262cc6bd",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/phase4/lf-p4-native-currentness787-20261006-v11",
+    "sourceNotQualified": true
+  },
+  "verificationMethod": "git ls-remote"
+}

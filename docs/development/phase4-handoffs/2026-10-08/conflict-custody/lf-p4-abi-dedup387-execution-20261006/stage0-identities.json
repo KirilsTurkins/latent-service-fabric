@@ -1,0 +1,57 @@
+[
+  {
+    "path": "adr/README.md",
+    "stage0Bytes": 10514,
+    "stage0Sha256": "d5b5035ce24dbd7b78920f65e001e54bfa76582a045355711e2fbbf05179f1e0"
+  },
+  {
+    "path": "crates/latent-node/src/command_waiters.rs",
+    "stage0Bytes": 4822,
+    "stage0Sha256": "52523b4bbd227b7d4840f95483db909cdcdb26bab109ea457dddd360ddb9cf9a"
+  },
+  {
+    "path": "crates/latent-node/src/command_waiters/state.rs",
+    "stage0Bytes": 7164,
+    "stage0Sha256": "3ce2a539724edc3000c5c24252a9e9cd9557af9969a026017ca224e5f332b0a0"
+  },
+  {
+    "path": "crates/latent-node/src/command_waiters/tests.rs",
+    "stage0Bytes": 7400,
+    "stage0Sha256": "239b6f8cd7f771c8274d9ce8138a66ffc0052763a37cc6d5b2cb4530ec62bc69"
+  },
+  {
+    "path": "crates/latent-node/src/command_waiters/tests/bounds.rs",
+    "stage0Bytes": 10660,
+    "stage0Sha256": "8e4105693d3c0464f463780799ad7465dffae4cf2bed308bfd6cc53a21cbd27c"
+  },
+  {
+    "path": "crates/latent-node/src/command_waiters/tests/fixture.rs",
+    "stage0Bytes": 8336,
+    "stage0Sha256": "7a42e8612f256df663612c0898aca74128864437c77e974ffd7c1fc63f9a79c4"
+  },
+  {
+    "path": "crates/latent-node/src/command_waiters/tests/recovery.rs",
+    "stage0Bytes": 14855,
+    "stage0Sha256": "e23d13dcc9ddc5ed5c68129d0ec0d671b4544373c0ef00c9fae14b6c2e4522c0"
+  },
+  {
+    "path": "crates/latent-node/src/command_waiters/waiter.rs",
+    "stage0Bytes": 4254,
+    "stage0Sha256": "c560f46174d22e676aad1f08a4a1c331ea714cc3e9e96236ab95446a16c19c22"
+  },
+  {
+    "path": "crates/latent-node/src/lib.rs",
+    "stage0Bytes": 3409,
+    "stage0Sha256": "d94b97df5fe8a7731d944d5070c4694e4d9a55903a78a95ce787f858f5bcfa08"
+  },
+  {
+    "path": "docs/development/command-delivery-notifications.md",
+    "stage0Bytes": 5628,
+    "stage0Sha256": "b153b319a072d92d75b73b800ea4d3ae1a93ff5165386572231917e333e5df46"
+  },
+  {
+    "path": "docs/protocol/phase-1-contract-hardening.md",
+    "stage0Bytes": 35749,
+    "stage0Sha256": "06bbf72df997c69b0580a698b6b74f6102b83b280fb5d253af23406061c24d38"
+  }
+]

@@ -1,0 +1,34 @@
+{
+  "allMilestoneIssuesReviewed": 32,
+  "alreadyCompleteAndClosed": [
+    380,
+    381,
+    382,
+    383,
+    384,
+    385,
+    393
+  ],
+  "additionalOpenIssuesNowComplete": [],
+  "mergedPartialPRs": {
+    "825": [
+      391
+    ],
+    "803": [
+      400
+    ],
+    "794": [
+      392
+    ],
+    "792": [
+      388,
+      397,
+      400
+    ],
+    "786": [
+      718
+    ]
+  },
+  "closureDecision": "Keep remaining25 issues open; merged PR descriptions and current acceptance evidence retain material outstanding requirements. CI success alone does not close a ticket.",
+  "implementationStopped": true
+}
