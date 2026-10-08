@@ -145,12 +145,6 @@ impl ActivationBudget {
         Ok(())
     }
 
-    pub(in crate::budget) fn has_budget_parent(&self) -> bool {
-        self.inner
-            .lineage
-            .get()
-            .is_some_and(|lineage| lineage.parent.is_some())
-    }
     /// Wait on at most seventeen original owner signals (root plus depth limit).
     /// The caller owns this future; no task or waiter is retained by the tree.
     pub async fn descendant_cancelled(&self) {
