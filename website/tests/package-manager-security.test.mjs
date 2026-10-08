@@ -10,6 +10,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const npmRequire = createRequire(path.join(root, 'toolchain/node_modules/npm/package.json'));
 const socksRequire = createRequire(npmRequire.resolve('socks'));
 const minimatchRequire = createRequire(npmRequire.resolve('minimatch'));
+const fetchRequire = createRequire(npmRequire.resolve('make-fetch-happen'));
 const {Address4, Address6} = socksRequire('ip-address');
 
 function child(args) {
@@ -23,9 +24,9 @@ function child(args) {
 test('npm consumes the exact prepared ip-address, Undici and brace-expansion bundles', () => {
   const source = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/source.json')));
   const lock = JSON.parse(fs.readFileSync(path.join(root, 'toolchain/package-lock.json')));
-  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v1');
+  assert.equal(source.profile, 'npm-11.19.1-lsf-bundle-v2');
   assert.deepEqual(Object.fromEntries(source.patches.map(pin => [pin.name, pin.version])), {
-    'ip-address': '10.7.2', undici: '6.28.1', 'brace-expansion': '5.0.12',
+    'ip-address': '10.7.2', undici: '6.28.1', 'brace-expansion': '5.0.12', 'http-cache-semantics': '4.3.0',
   });
   for (const pin of source.patches) {
     const location = `node_modules/npm/node_modules/${pin.name}`;
@@ -37,7 +38,20 @@ test('npm consumes the exact prepared ip-address, Undici and brace-expansion bun
   }
   assert.equal(fs.realpathSync(socksRequire.resolve('ip-address')), fs.realpathSync(npmRequire.resolve('ip-address')));
   assert.equal(fs.realpathSync(minimatchRequire.resolve('brace-expansion')), fs.realpathSync(npmRequire.resolve('brace-expansion')));
+  assert.equal(fs.realpathSync(fetchRequire.resolve('http-cache-semantics')), fs.realpathSync(npmRequire.resolve('http-cache-semantics')));
   assert.equal(npmRequire('balanced-match/package.json').version, '4.0.4');
+});
+
+test('npm HTTP cache cannot reuse private or proxy-revalidated responses through max-stale', () => {
+  const CachePolicy = fetchRequire('http-cache-semantics');
+  const request = {url: 'https://cache.invalid/example', method: 'GET', headers: {host: 'cache.invalid'}};
+  const stale = {...request, headers: {...request.headers, 'cache-control': 'max-stale=999999'}};
+  for (const control of ['private, max-age=0', 'no-store', 'max-age=0, proxy-revalidate', 'max-age=0, must-revalidate']) {
+    const policy = new CachePolicy(request, {status: 200, headers: {'cache-control': control, 'set-cookie': 'test-only=one'}}, {shared: true});
+    assert.equal(policy.satisfiesWithoutRevalidation(stale), false, control);
+  }
+  const publicPolicy = new CachePolicy(request, {status: 200, headers: {'cache-control': 'public, max-age=3600'}}, {shared: true});
+  assert.equal(publicPolicy.satisfiesWithoutRevalidation(request), true);
 });
 
 test('local-use NAT64 remains private without guessing its embedded IPv4 prefix', () => {
