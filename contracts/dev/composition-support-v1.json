@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.composition.support.v1",
   "inputVersion": "latent.composition.v1",
-  "sourceRevision": "068988e0d118fd50675d4cece3c76c799eb78830",
+  "sourceRevision": "a546ca797f7d32b846fa9894a80c418fa5775732",
   "selectionRule": "first-matching-row-after-closed-input-and-Java-interface-ambiguity-checks",
   "unlistedCombination": "selected-combination-needs-source-matched-owner-evidence",
   "unlistedState": "untested",
@@ -31,8 +31,8 @@
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",
-      "digest": "sha256:32a8019866d4a856511649f600b2550277911d8eaae0f5897a79e01fd9da21de",
-      "commit": "cbef28330f87de778141017cfedf1faa32bb520a"
+      "digest": "sha256:536262b02952eb2c3216f9f764ca0f054983eeff34f2242834a994bda8d10ede",
+      "commit": "ee3039e2463929672b53d2e23dd91d6fbdc1e408"
     },
     "sealed-web-projection": {
       "path": "crates/latent-artifacts/src/local_repository/web/projection/metadata.rs",
