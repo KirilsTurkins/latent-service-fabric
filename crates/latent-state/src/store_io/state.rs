@@ -16,7 +16,7 @@ pub(super) enum Bootstrap {
 }
 
 pub(super) trait Work<S>: Send {
-    fn run(self: Box<Self>, store: &S);
+    fn run(self: Box<Self>, store: &S, finished: &mut dyn FnMut());
     fn reject(self: Box<Self>);
 }
 
