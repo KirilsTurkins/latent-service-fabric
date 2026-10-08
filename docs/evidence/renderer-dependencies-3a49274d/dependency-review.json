@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "latent.renderer-dependency-validation.v1",
+  "sourceParent": "09d21a96638ad8dfec4a93dace6f9fed258174f1",
+  "localFollowupCommit": "3a49274dcd381c0d79a85ba58db5b611365c9376",
+  "pushed": true,
+  "newPullRequest": false,
+  "versions": {
+    "node": "24.19.0",
+    "jco": "1.35.0",
+    "componentizeJs": "0.23.0",
+    "preview2Shim": "0.26.0",
+    "angular": "22.2.0",
+    "wevalOverride": "0.5.0"
+  },
+  "fix": "Explicit root Preview2 shim makes the componentize-js bare imports independent of jco nested dependency layout. Profile/build report match actual pinned componentize version.",
+  "allExecutionBoundsUnchanged": true,
+  "wevalOverrideUnchanged": true,
+  "validation": {
+    "lockedInstallScriptsDisabled": true,
+    "angularAotBundleAndComponentBuild": true,
+    "wasmToolsValidate": true,
+    "jcoTranspile": true,
+    "jcoActualAngularRender": {
+      "jco": "1.35.0",
+      "actualComponentRenderPassed": true,
+      "calls": [
+        1,
+        2
+      ],
+      "htmlBytes": [
+        447,
+        443
+      ]
+    },
+    "productionPrivateRendererComponentBuild": true,
+    "productionPrivateRendererValidate": true,
+    "maintainedAndSecurityCases": {
+      "cases": 14,
+      "skipped": 1,
+      "originalSkip": "Windows symlink creation privilege",
+      "passed": true
+    },
+    "ciCoverage": {
+      "baseline": 88,
+      "currentRunBlocks": 275,
+      "delegatedOwners": 143,
+      "passed": true
+    }
+  },
+  "component": {
+    "bytes": 24563333,
+    "imports": [],
+    "sha256": "0eab9a48f9909a3e0e84d75617400c9061da22a476b1a2646a9f5b5709c65bf1",
+    "profileSha256": "0108c9cf665452eb91a9dc248a96024528b8312bfcac0278f74f8f40a638cc3c",
+    "lockSha256": "b7e303a3b16befb0e1f97622084a641d511536122b352ef5d5de21faa5279c61"
+  },
+  "failedAttemptPreserved": "original-build-failure.json",
+  "limitations": [
+    "No new native Wasmtime renderer execution or browser hydration was performed; Docker is unavailable.",
+    "Native renderer compatibility identity retains its existing componentize-js-0.22.0 token; this distinct immutable hash boundary was reported to root.",
+    "Existing current runtime guide version table still has stale componentize/jco/Babel/Wasmtime entries; reported to root rather than rewriting historical claims."
+  ],
+  "sourceState": "The fix was built while four source files were uncommitted on 09d21a96, then committed unchanged as3a49274d; source/lock/profile digests in the observation match that commit.",
+  "proofScope": "Local Windows trusted build and Node/jco component execution only; no packaged, signed native, browser, CI, T1/T2 or release qualification claim.",
+  "sourceInputs": {
+    "examples/renderer-profile/package.json": "8add47f04021161b96df91ae25285de501f2e652d3615e3507c82444115c7449",
+    "examples/renderer-profile/package-lock.json": "b7e303a3b16befb0e1f97622084a641d511536122b352ef5d5de21faa5279c61",
+    "examples/renderer-profile/profile.json": "0108c9cf665452eb91a9dc248a96024528b8312bfcac0278f74f8f40a638cc3c",
+    "examples/renderer-profile/componentize.mjs": "49d531292ae308068204ad382ebef11de727c17d3ef62075653fd29e9873a862"
+  }
+}

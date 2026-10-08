@@ -1,0 +1,13 @@
+{
+  "componentizeJs": "0.23.0",
+  "node": "v24.19.0",
+  "bytes": 24563333,
+  "imports": [],
+  "sha256": "0eab9a48f9909a3e0e84d75617400c9061da22a476b1a2646a9f5b5709c65bf1",
+  "profileSha256": "0108c9cf665452eb91a9dc248a96024528b8312bfcac0278f74f8f40a638cc3c",
+  "packageLockSha256": "b7e303a3b16befb0e1f97622084a641d511536122b352ef5d5de21faa5279c61",
+  "embeddingSha256": "6094cd93d966f9bec9b01332db6e0eedbaf22f60b745c9f823f21e33cbd4d365",
+  "serverSha256": "89bd7a57f14592e082db392eca8db92bc7d572bdf47b582f65b50f40ab82b837",
+  "clientSha256": "b1bf1f2aa636d9522a958950d6f21e9d41b661b1cbe3f4a9c55d37b33c5e4ebf",
+  "componentizeMillis": 57817.6005
+}

@@ -1,0 +1,26 @@
+{
+  "stage": "actual-renderer-angular-component-build",
+  "exit": 1,
+  "seconds": 33.014,
+  "versions": {
+    "@bytecodealliance/jco": "1.35.0",
+    "@bytecodealliance/componentize-js": "0.23.0",
+    "@bytecodealliance/weval": "0.5.0",
+    "@angular/core": "22.2.0",
+    "@angular/compiler-cli": "22.2.0"
+  },
+  "stdoutBytes": 176,
+  "stderrBytes": 1961,
+  "trackedInputsUnchanged": true,
+  "sourceCommit": "09d21a96638ad8dfec4a93dace6f9fed258174f1",
+  "failureCode": "ERR_MODULE_NOT_FOUND",
+  "unresolvedPackage": "@bytecodealliance/preview2-shim",
+  "importer": "node_modules/@bytecodealliance/componentize-js/lib/spidermonkey-embedding-splicer.js",
+  "sourceInputSha256": {
+    "package.json": "46e5c8002129622ca4f8274c04eab47eaf602ee53265c2754183e6d5146083fb",
+    "package-lock.json": "99ba1730c1b0fabf7f0c827d4b65e189a544a4bc868cf0293b6d64f2a411204b",
+    "profile.json": "077ac1bbd16112a85623b3708004117667c781f6cd4f9390a04760da334a348b"
+  },
+  "node": "24.19.0",
+  "scope": "Locked install succeeded and Angular AOT/bundling completed; componentization failed. Original failure preserved; not a passing qualification."
+}
