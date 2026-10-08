@@ -68,7 +68,8 @@ def validate_materials(files: dict[str, bytes], selected: CurrentSelection) -> d
                 and len(name.encode()) <= 512 and len(name.split("/")) <= 32
                 and all(part not in {"", ".", ".."} for part in name.split("/")) for name in project),
             "current-java-project-path-bounds")
-    require(project and inventory(project) == files["source-inputs.json"], "current-java-captured-project")
+    require({"transaction-binding.json", "transaction-profile.json"} <= set(project)
+            and inventory(project) == files["source-inputs.json"], "current-java-captured-project")
     for field, path in (("sourceDigest", "source-inputs.json"), ("sourceArchiveDigest", "source.tar.gz"),
                         ("recipeDigest", "recipe-inputs.json"), ("companionDigest", "project/transaction-binding.json")):
         require(path in files and digest(files[path]) == report.get(field), "current-java-compiler-material-identity")
