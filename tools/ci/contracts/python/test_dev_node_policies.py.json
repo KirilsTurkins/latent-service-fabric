@@ -1,122 +1,234 @@
 {
-  "cases":["ControllerProvenance.test_actual_packaging_extends_unsigned_observation_and_preserves_compiler_bytes","InvocationRecovery.test_enforced_restart_requires_confirmed_cleanup_and_observes_clock_lease","InvocationRecovery.test_fault_probe_selects_signed_control_calls_without_matching_argument_data","InvocationRecovery.test_lifecycle_phase_alone_and_partial_or_contradictory_terminals_cannot_settle","InvocationRecovery.test_lost_result_recovers_original_terminal_without_claiming_typed_output","InvocationRecovery.test_socket_backlog_retries_only_connect_before_sending_one_command","InvocationRecovery.test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process","InvocationRecovery.test_unknown_receipt_retains_original_and_forbids_new_invocation","JournalRpcObservations.test_closed_rpc_failure_codes_preserve_uncertain_original_operation_without_replay","JournalRpcObservations.test_rpc_token_requires_transport_failure_and_the_generic_rpc_public_code","JournalRpcObservations.test_unknown_malformed_and_non_string_rpc_codes_are_not_retained_or_coerced","NodePortableComparison.test_clock_comparison_requires_actual_matching_fixture_and_explicit_native_host","NodePortableComparison.test_different_denial_policies_cannot_count_as_the_same_scenario","NodePortableComparison.test_exact_values_match_with_explicit_node_only_exclusions","NodePortableComparison.test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup","NodePortableComparison.test_only_declared_reviewed_resource_code_differences_can_compare","NodePortableComparison.test_policy_changes_keep_the_expected_revision_for_each_case","PolicyRecovery.test_existing_unowned_or_changed_policy_is_never_applied","PolicyRecovery.test_lookup_queries_current_document_only_after_retained_operation","PolicyRecovery.test_lost_apply_looks_up_original_and_records_before_clearing_intent","PolicyRecovery.test_unknown_wrong_scope_and_changed_current_policy_retain_original","RunningCancellation.test_cancel_accepted_is_not_confirmation_of_terminal_cleanup","RunningCancellation.test_cancel_requires_observed_running_and_terminal_original_result","RunningCancellation.test_deadline_before_running_does_not_send_cancel","RunningCancellation.test_lost_cancel_response_keeps_intent_and_never_dispatches_again","RunningCancellation.test_shared_contract_requires_explicit_node_only_cancellation","RunningCancellation.test_terminal_or_wrong_activation_is_never_cancelled","RunningCancellation.test_unknown_status_allows_only_bounded_reads_of_original_identity","ScenarioCurrentnessObservations.test_conflicting_public_reasons_are_not_reported_as_one_cause","ScenarioCurrentnessObservations.test_diagnostic_vocabulary_matches_authoritative_closed_public_reasons","ScenarioCurrentnessObservations.test_examined_detail_count_is_bounded","ScenarioCurrentnessObservations.test_failed_scenario_retains_each_closed_reason_without_replaying_or_passing","ScenarioCurrentnessObservations.test_unknown_private_and_non_string_reasons_never_enter_reports","ScenarioCurrentnessObservations.test_wrong_categories_kinds_and_shapes_do_not_add_currentness_diagnostics","ScenarioTargets.test_cold_node_allowance_is_explicit_and_does_not_change_portable_deadline","ScenarioTargets.test_control_wait_uses_language_allowance_and_original_deadline_without_retry","ScenarioTargets.test_each_policy_switch_requires_the_current_invocation_revision","ScenarioTargets.test_elapsed_run_deadline_prevents_another_operator_process","ScenarioTargets.test_preflight_freezes_the_input_and_expected_bytes_used_for_assertions","ScenarioTargets.test_readiness_uses_requested_time_after_repeated_fast_connection_refusals","ScenarioTargets.test_required_unsupported_case_prevents_all_invocation_and_optional_is_separate","ScenarioTargets.test_unknown_control_observation_preserves_identity_and_excludes_response_text","ScenarioTargets.test_unknown_or_failed_adapter_stops_subsequent_calls_and_redacts_exception","SourceNodeProbe.test_uncertain_staging_keeps_an_explicit_private_cleanup_record","SourceNodeProbe.test_workspace_expiry_stimulus_waits_for_both_overlap_scenarios_and_changes_only_a","TestProfile.test_interrupted_configuration_resumes_only_exact_before_or_after_bytes","TestProfile.test_invalid_or_unsigned_fixture_selection_starts_no_signer_and_keeps_configuration","TestProfile.test_only_matching_initialized_fixture_bytes_can_satisfy_scenarios","TestProfile.test_profile_requires_explicit_test_scope_and_preserves_credentials","TestProfile.test_running_owner_and_existing_provider_configuration_are_preserved","TestProfile.test_selected_fixture_requires_binary_confirmation_before_replacing_configuration"],
-  "guards":{
-    "ControllerProvenance.test_actual_packaging_extends_unsigned_observation_and_preserves_compiler_bytes":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "InvocationRecovery.test_enforced_restart_requires_confirmed_cleanup_and_observes_clock_lease":
-      "86a0e640920493430a43aac46772f05e89a3e33a57021a66617c7f67706d4e46",
-    "InvocationRecovery.test_fault_probe_selects_signed_control_calls_without_matching_argument_data":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "InvocationRecovery.test_lifecycle_phase_alone_and_partial_or_contradictory_terminals_cannot_settle":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "InvocationRecovery.test_lost_result_recovers_original_terminal_without_claiming_typed_output":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "InvocationRecovery.test_socket_backlog_retries_only_connect_before_sending_one_command":
-      "8fdd4275770bdf3a895454cd94302b6f4b0bdb7df58a77644d57d5e09736eda3",
-    "InvocationRecovery.test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "InvocationRecovery.test_unknown_receipt_retains_original_and_forbids_new_invocation":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "JournalRpcObservations.test_closed_rpc_failure_codes_preserve_uncertain_original_operation_without_replay":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "JournalRpcObservations.test_rpc_token_requires_transport_failure_and_the_generic_rpc_public_code":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "JournalRpcObservations.test_unknown_malformed_and_non_string_rpc_codes_are_not_retained_or_coerced":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "NodePortableComparison.test_clock_comparison_requires_actual_matching_fixture_and_explicit_native_host":
-      "07b2fec61216a0cdc62e040ae669559f1da48746ada7b7a203bf9ee5629fc997",
-    "NodePortableComparison.test_different_denial_policies_cannot_count_as_the_same_scenario":
-      "07b2fec61216a0cdc62e040ae669559f1da48746ada7b7a203bf9ee5629fc997",
-    "NodePortableComparison.test_exact_values_match_with_explicit_node_only_exclusions":
-      "07b2fec61216a0cdc62e040ae669559f1da48746ada7b7a203bf9ee5629fc997",
-    "NodePortableComparison.test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup":
-      "07b2fec61216a0cdc62e040ae669559f1da48746ada7b7a203bf9ee5629fc997",
-    "NodePortableComparison.test_only_declared_reviewed_resource_code_differences_can_compare":
-      "07b2fec61216a0cdc62e040ae669559f1da48746ada7b7a203bf9ee5629fc997",
-    "NodePortableComparison.test_policy_changes_keep_the_expected_revision_for_each_case":
-      "07b2fec61216a0cdc62e040ae669559f1da48746ada7b7a203bf9ee5629fc997",
-    "PolicyRecovery.test_existing_unowned_or_changed_policy_is_never_applied":
-      "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006",
-    "PolicyRecovery.test_lookup_queries_current_document_only_after_retained_operation":
-      "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006",
-    "PolicyRecovery.test_lost_apply_looks_up_original_and_records_before_clearing_intent":
-      "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006",
-    "PolicyRecovery.test_unknown_wrong_scope_and_changed_current_policy_retain_original":
-      "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006",
-    "RunningCancellation.test_cancel_accepted_is_not_confirmation_of_terminal_cleanup":
-      "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
-    "RunningCancellation.test_cancel_requires_observed_running_and_terminal_original_result":
-      "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
-    "RunningCancellation.test_deadline_before_running_does_not_send_cancel":
-      "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
-    "RunningCancellation.test_lost_cancel_response_keeps_intent_and_never_dispatches_again":
-      "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
-    "RunningCancellation.test_shared_contract_requires_explicit_node_only_cancellation":
-      "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
-    "RunningCancellation.test_terminal_or_wrong_activation_is_never_cancelled":
-      "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
-    "RunningCancellation.test_unknown_status_allows_only_bounded_reads_of_original_identity":
-      "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
-    "ScenarioCurrentnessObservations.test_conflicting_public_reasons_are_not_reported_as_one_cause":
-      "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
-    "ScenarioCurrentnessObservations.test_diagnostic_vocabulary_matches_authoritative_closed_public_reasons":
-      "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
-    "ScenarioCurrentnessObservations.test_examined_detail_count_is_bounded":
-      "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
-    "ScenarioCurrentnessObservations.test_failed_scenario_retains_each_closed_reason_without_replaying_or_passing":
-      "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
-    "ScenarioCurrentnessObservations.test_unknown_private_and_non_string_reasons_never_enter_reports":
-      "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
-    "ScenarioCurrentnessObservations.test_wrong_categories_kinds_and_shapes_do_not_add_currentness_diagnostics":
-      "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
-    "ScenarioTargets.test_cold_node_allowance_is_explicit_and_does_not_change_portable_deadline":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "ScenarioTargets.test_control_wait_uses_language_allowance_and_original_deadline_without_retry":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "ScenarioTargets.test_each_policy_switch_requires_the_current_invocation_revision":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "ScenarioTargets.test_elapsed_run_deadline_prevents_another_operator_process":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "ScenarioTargets.test_preflight_freezes_the_input_and_expected_bytes_used_for_assertions":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "ScenarioTargets.test_readiness_uses_requested_time_after_repeated_fast_connection_refusals":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "ScenarioTargets.test_required_unsupported_case_prevents_all_invocation_and_optional_is_separate":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "ScenarioTargets.test_unknown_control_observation_preserves_identity_and_excludes_response_text":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "ScenarioTargets.test_unknown_or_failed_adapter_stops_subsequent_calls_and_redacts_exception":
-      "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
-    "SourceNodeProbe.test_uncertain_staging_keeps_an_explicit_private_cleanup_record":
-      "719aa8c4abbb1e71c2ad11ffbdb7c61ce3385cf2dc76cb7c57e15e5502bdc079",
-    "SourceNodeProbe.test_workspace_expiry_stimulus_waits_for_both_overlap_scenarios_and_changes_only_a":
-      "719aa8c4abbb1e71c2ad11ffbdb7c61ce3385cf2dc76cb7c57e15e5502bdc079",
-    "TestProfile.test_interrupted_configuration_resumes_only_exact_before_or_after_bytes":
-      "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
-    "TestProfile.test_invalid_or_unsigned_fixture_selection_starts_no_signer_and_keeps_configuration":
-      "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
-    "TestProfile.test_only_matching_initialized_fixture_bytes_can_satisfy_scenarios":
-      "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
-    "TestProfile.test_profile_requires_explicit_test_scope_and_preserves_credentials":
-      "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
-    "TestProfile.test_running_owner_and_existing_provider_configuration_are_preserved":
-      "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
-    "TestProfile.test_selected_fixture_requires_binary_confirmation_before_replacing_configuration":
-      "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b"
+  "schemaVersion": "latent.ci.contracts.v2",
+  "kind": "python",
+  "reviewReason": "Current development lossless shared Python guard storage. Retain all parent cases and exact execution, skip, decorator, class and owner guards. Preserve the already reviewed synthetic catalogue import/helper module fingerprint for the unchanged PR source; no new guard hash, deadline, command or obligation is approved. October 4 security patch: exact Wasmtime48.0.4 pin substitution; Python ASTs are unchanged after normalizing only48.0.3 to48.0.4. All case identities, skips, decorators, commands, historical obligations and finite guards are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Retain all TypeScript captured-library and controller cases and every skip/execution guard; only the two observed runtime version literals move to the development security pin48.0.4. The module setup digest records those reviewed fixture edits. October 4 security patch: exact Wasmtime48.0.4 pin substitution; Python ASTs are unchanged after normalizing only48.0.3 to48.0.4. All case identities, skips, decorators, commands, historical obligations and finite guards are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Retain all TypeScript captured-library and controller cases and every skip/execution guard; only the two observed runtime version literals move to the development security pin48.0.4. The module setup digest records those reviewed fixture edits. Dependabot consolidation: review only active Wasmtime 48.0.4 to 48.0.5 literals. Source text and Python ASTs are identical after this exact version normalization; all original commands, cases, decorators, skips, authority, deadlines and unsafe-boundary guards remain.",
+  "module": "tools/tests/test_dev_node_policies.py",
+  "cases": [
+    "ControllerProvenance.test_actual_packaging_extends_unsigned_observation_and_preserves_compiler_bytes",
+    "InvocationRecovery.test_enforced_restart_requires_confirmed_cleanup_and_observes_clock_lease",
+    "InvocationRecovery.test_fault_probe_selects_signed_control_calls_without_matching_argument_data",
+    "InvocationRecovery.test_lifecycle_phase_alone_and_partial_or_contradictory_terminals_cannot_settle",
+    "InvocationRecovery.test_lost_result_recovers_original_terminal_without_claiming_typed_output",
+    "InvocationRecovery.test_socket_backlog_retries_only_connect_before_sending_one_command",
+    "InvocationRecovery.test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process",
+    "InvocationRecovery.test_unknown_receipt_retains_original_and_forbids_new_invocation",
+    "JournalRpcObservations.test_closed_rpc_failure_codes_preserve_uncertain_original_operation_without_replay",
+    "JournalRpcObservations.test_rpc_token_requires_transport_failure_and_the_generic_rpc_public_code",
+    "JournalRpcObservations.test_unknown_malformed_and_non_string_rpc_codes_are_not_retained_or_coerced",
+    "NodePortableComparison.test_clock_comparison_requires_actual_matching_fixture_and_explicit_native_host",
+    "NodePortableComparison.test_different_denial_policies_cannot_count_as_the_same_scenario",
+    "NodePortableComparison.test_exact_values_match_with_explicit_node_only_exclusions",
+    "NodePortableComparison.test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup",
+    "NodePortableComparison.test_only_declared_reviewed_resource_code_differences_can_compare",
+    "NodePortableComparison.test_policy_changes_keep_the_expected_revision_for_each_case",
+    "PolicyRecovery.test_existing_unowned_or_changed_policy_is_never_applied",
+    "PolicyRecovery.test_lookup_queries_current_document_only_after_retained_operation",
+    "PolicyRecovery.test_lost_apply_looks_up_original_and_records_before_clearing_intent",
+    "PolicyRecovery.test_unknown_wrong_scope_and_changed_current_policy_retain_original",
+    "RunningCancellation.test_cancel_accepted_is_not_confirmation_of_terminal_cleanup",
+    "RunningCancellation.test_cancel_requires_observed_running_and_terminal_original_result",
+    "RunningCancellation.test_deadline_before_running_does_not_send_cancel",
+    "RunningCancellation.test_lost_cancel_response_keeps_intent_and_never_dispatches_again",
+    "RunningCancellation.test_shared_contract_requires_explicit_node_only_cancellation",
+    "RunningCancellation.test_terminal_or_wrong_activation_is_never_cancelled",
+    "RunningCancellation.test_unknown_status_allows_only_bounded_reads_of_original_identity",
+    "ScenarioCurrentnessObservations.test_conflicting_public_reasons_are_not_reported_as_one_cause",
+    "ScenarioCurrentnessObservations.test_diagnostic_vocabulary_matches_authoritative_closed_public_reasons",
+    "ScenarioCurrentnessObservations.test_examined_detail_count_is_bounded",
+    "ScenarioCurrentnessObservations.test_failed_scenario_retains_each_closed_reason_without_replaying_or_passing",
+    "ScenarioCurrentnessObservations.test_unknown_private_and_non_string_reasons_never_enter_reports",
+    "ScenarioCurrentnessObservations.test_wrong_categories_kinds_and_shapes_do_not_add_currentness_diagnostics",
+    "ScenarioTargets.test_cold_node_allowance_is_explicit_and_does_not_change_portable_deadline",
+    "ScenarioTargets.test_control_wait_uses_language_allowance_and_original_deadline_without_retry",
+    "ScenarioTargets.test_each_policy_switch_requires_the_current_invocation_revision",
+    "ScenarioTargets.test_elapsed_run_deadline_prevents_another_operator_process",
+    "ScenarioTargets.test_preflight_freezes_the_input_and_expected_bytes_used_for_assertions",
+    "ScenarioTargets.test_readiness_uses_requested_time_after_repeated_fast_connection_refusals",
+    "ScenarioTargets.test_required_unsupported_case_prevents_all_invocation_and_optional_is_separate",
+    "ScenarioTargets.test_unknown_control_observation_preserves_identity_and_excludes_response_text",
+    "ScenarioTargets.test_unknown_or_failed_adapter_stops_subsequent_calls_and_redacts_exception",
+    "SourceNodeProbe.test_uncertain_staging_keeps_an_explicit_private_cleanup_record",
+    "SourceNodeProbe.test_workspace_expiry_stimulus_waits_for_both_overlap_scenarios_and_changes_only_a",
+    "TestProfile.test_interrupted_configuration_resumes_only_exact_before_or_after_bytes",
+    "TestProfile.test_invalid_or_unsigned_fixture_selection_starts_no_signer_and_keeps_configuration",
+    "TestProfile.test_only_matching_initialized_fixture_bytes_can_satisfy_scenarios",
+    "TestProfile.test_profile_requires_explicit_test_scope_and_preserves_credentials",
+    "TestProfile.test_running_owner_and_existing_provider_configuration_are_preserved",
+    "TestProfile.test_selected_fixture_requires_binary_confirmation_before_replacing_configuration"
+  ],
+  "guards": {
+    "JournalRpcObservations.test_closed_rpc_failure_codes_preserve_uncertain_original_operation_without_replay": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "JournalRpcObservations.test_unknown_malformed_and_non_string_rpc_codes_are_not_retained_or_coerced": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "JournalRpcObservations.test_rpc_token_requires_transport_failure_and_the_generic_rpc_public_code": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "RunningCancellation.test_cancel_requires_observed_running_and_terminal_original_result": "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
+    "RunningCancellation.test_lost_cancel_response_keeps_intent_and_never_dispatches_again": "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
+    "RunningCancellation.test_terminal_or_wrong_activation_is_never_cancelled": "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
+    "RunningCancellation.test_unknown_status_allows_only_bounded_reads_of_original_identity": "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
+    "RunningCancellation.test_cancel_accepted_is_not_confirmation_of_terminal_cleanup": "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
+    "RunningCancellation.test_deadline_before_running_does_not_send_cancel": "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
+    "RunningCancellation.test_shared_contract_requires_explicit_node_only_cancellation": "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21",
+    "PolicyRecovery.test_lost_apply_looks_up_original_and_records_before_clearing_intent": "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006",
+    "PolicyRecovery.test_unknown_wrong_scope_and_changed_current_policy_retain_original": "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006",
+    "PolicyRecovery.test_existing_unowned_or_changed_policy_is_never_applied": "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006",
+    "PolicyRecovery.test_lookup_queries_current_document_only_after_retained_operation": "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006",
+    "TestProfile.test_profile_requires_explicit_test_scope_and_preserves_credentials": "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
+    "TestProfile.test_running_owner_and_existing_provider_configuration_are_preserved": "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
+    "TestProfile.test_interrupted_configuration_resumes_only_exact_before_or_after_bytes": "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
+    "TestProfile.test_selected_fixture_requires_binary_confirmation_before_replacing_configuration": "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
+    "TestProfile.test_invalid_or_unsigned_fixture_selection_starts_no_signer_and_keeps_configuration": "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
+    "TestProfile.test_only_matching_initialized_fixture_bytes_can_satisfy_scenarios": "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b",
+    "ScenarioTargets.test_preflight_freezes_the_input_and_expected_bytes_used_for_assertions": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "ScenarioTargets.test_required_unsupported_case_prevents_all_invocation_and_optional_is_separate": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "ScenarioTargets.test_unknown_or_failed_adapter_stops_subsequent_calls_and_redacts_exception": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "ScenarioTargets.test_cold_node_allowance_is_explicit_and_does_not_change_portable_deadline": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "ScenarioTargets.test_each_policy_switch_requires_the_current_invocation_revision": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "ScenarioTargets.test_elapsed_run_deadline_prevents_another_operator_process": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "ScenarioTargets.test_control_wait_uses_language_allowance_and_original_deadline_without_retry": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "ScenarioTargets.test_unknown_control_observation_preserves_identity_and_excludes_response_text": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "ScenarioTargets.test_readiness_uses_requested_time_after_repeated_fast_connection_refusals": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "ControllerProvenance.test_actual_packaging_extends_unsigned_observation_and_preserves_compiler_bytes": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "NodePortableComparison.test_exact_values_match_with_explicit_node_only_exclusions": "052079fea1ad0ee5ee92c3a58ace722b3f32a24535b9a1b737539bf08a2260d4",
+    "NodePortableComparison.test_only_declared_reviewed_resource_code_differences_can_compare": "052079fea1ad0ee5ee92c3a58ace722b3f32a24535b9a1b737539bf08a2260d4",
+    "NodePortableComparison.test_clock_comparison_requires_actual_matching_fixture_and_explicit_native_host": "052079fea1ad0ee5ee92c3a58ace722b3f32a24535b9a1b737539bf08a2260d4",
+    "NodePortableComparison.test_native_report_cannot_replace_node_or_change_component_outcome_or_cleanup": "052079fea1ad0ee5ee92c3a58ace722b3f32a24535b9a1b737539bf08a2260d4",
+    "NodePortableComparison.test_policy_changes_keep_the_expected_revision_for_each_case": "052079fea1ad0ee5ee92c3a58ace722b3f32a24535b9a1b737539bf08a2260d4",
+    "NodePortableComparison.test_different_denial_policies_cannot_count_as_the_same_scenario": "052079fea1ad0ee5ee92c3a58ace722b3f32a24535b9a1b737539bf08a2260d4",
+    "SourceNodeProbe.test_workspace_expiry_stimulus_waits_for_both_overlap_scenarios_and_changes_only_a": "719aa8c4abbb1e71c2ad11ffbdb7c61ce3385cf2dc76cb7c57e15e5502bdc079",
+    "SourceNodeProbe.test_uncertain_staging_keeps_an_explicit_private_cleanup_record": "719aa8c4abbb1e71c2ad11ffbdb7c61ce3385cf2dc76cb7c57e15e5502bdc079",
+    "InvocationRecovery.test_fault_probe_selects_signed_control_calls_without_matching_argument_data": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "InvocationRecovery.test_unconfirmed_client_cleanup_retains_intent_and_starts_no_other_process": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "InvocationRecovery.test_lost_result_recovers_original_terminal_without_claiming_typed_output": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "InvocationRecovery.test_lifecycle_phase_alone_and_partial_or_contradictory_terminals_cannot_settle": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "InvocationRecovery.test_unknown_receipt_retains_original_and_forbids_new_invocation": "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320",
+    "InvocationRecovery.test_socket_backlog_retries_only_connect_before_sending_one_command": "8fdd4275770bdf3a895454cd94302b6f4b0bdb7df58a77644d57d5e09736eda3",
+    "InvocationRecovery.test_enforced_restart_requires_confirmed_cleanup_and_observes_clock_lease": "86a0e640920493430a43aac46772f05e89a3e33a57021a66617c7f67706d4e46",
+    "ScenarioCurrentnessObservations.test_failed_scenario_retains_each_closed_reason_without_replaying_or_passing": "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
+    "ScenarioCurrentnessObservations.test_unknown_private_and_non_string_reasons_never_enter_reports": "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
+    "ScenarioCurrentnessObservations.test_wrong_categories_kinds_and_shapes_do_not_add_currentness_diagnostics": "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
+    "ScenarioCurrentnessObservations.test_examined_detail_count_is_bounded": "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
+    "ScenarioCurrentnessObservations.test_conflicting_public_reasons_are_not_reported_as_one_cause": "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60",
+    "ScenarioCurrentnessObservations.test_diagnostic_vocabulary_matches_authoritative_closed_public_reasons": "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60"
   },
-  "kind":"python",
-  "module":"tools/tests/test_dev_node_policies.py",
-  "reviewReason":"Current development lossless shared Python guard storage. Retain all parent cases and exact execution, skip, decorator, class and owner guards. Preserve the already reviewed synthetic catalogue import/helper module fingerprint for the unchanged PR source; no new guard hash, deadline, command or obligation is approved. October 4 security patch: exact Wasmtime48.0.4 pin substitution; Python ASTs are unchanged after normalizing only48.0.3 to48.0.4. All case identities, skips, decorators, commands, historical obligations and finite guards are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Retain all TypeScript captured-library and controller cases and every skip/execution guard; only the two observed runtime version literals move to the development security pin48.0.4. The module setup digest records those reviewed fixture edits. October 4 security patch: exact Wasmtime48.0.4 pin substitution; Python ASTs are unchanged after normalizing only48.0.3 to48.0.4. All case identities, skips, decorators, commands, historical obligations and finite guards are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Retain all TypeScript captured-library and controller cases and every skip/execution guard; only the two observed runtime version literals move to the development security pin48.0.4. The module setup digest records those reviewed fixture edits.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "86a0e640920493430a43aac46772f05e89a3e33a57021a66617c7f67706d4e46":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'posix', 'Linux runtime ownership')"],"fixtureGuards":["module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:7d60667e5e6f96de16b0a91629d0e3d26b250de5ae0ba325b0dcbda421690317","unittest.skipUnless(os.name == 'posix', 'Linux runtime ownership')"]},
-    "8fdd4275770bdf3a895454cd94302b6f4b0bdb7df58a77644d57d5e09736eda3":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'posix', 'Linux control socket')"],"fixtureGuards":["module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:567c9cb3f82704285ed8a59e0c85685d0092688b6abb57a85c9904a25f8b585d","unittest.skipUnless(os.name == 'posix', 'Linux control socket')"]},
-    "07b2fec61216a0cdc62e040ae669559f1da48746ada7b7a203bf9ee5629fc997":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4","class:setup-sha256:cd9da806d6ac33eaa5af72eccc89077c9df950ecf500b5d205117cba9606e465"],"skipSites":[]},
-    "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4","class:setup-sha256:e47a392c777d41371c5f5907a34369beeb19540839daab926785667f0921d0fa"],"skipSites":[]},
-    "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4","class:setup-sha256:c05ca7d9ada38f7c099244809d7742c9e62beeb5dded09c3ca4f3e2fe06273b3"],"skipSites":[]},
-    "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4","class:setup-sha256:71b590d0193e83dfd58d1fba1679b9907c2d594927c79f39350c71136869f25e"],"skipSites":[]},
-    "719aa8c4abbb1e71c2ad11ffbdb7c61ce3385cf2dc76cb7c57e15e5502bdc079":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(os.name == 'posix', 'Actual node probe uses Linux ownership')"],"decorators":[],"fixtureGuards":["module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4","class:setup-sha256:20b22e5c0a3dbb1789cc42b18a9ea979175d2de3b42f3ce5e71918358dfc66ac"],"skipSites":[]}
+  "guardDefinitions": {
+    "b73b566de58d33b4bad61beb5d146150ede2464edd8fb56bf3dde14cc43cc320": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "48c674bda335f5e0dd11fa0132bd3c1b6a8a980ba805c2774f1b8fab26b74a21": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4",
+        "class:setup-sha256:c05ca7d9ada38f7c099244809d7742c9e62beeb5dded09c3ca4f3e2fe06273b3"
+      ]
+    },
+    "c026d9db5a7e10cba46a860846ce885b9808b11f814ed4ffb748e608dc212006": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4",
+        "class:setup-sha256:e47a392c777d41371c5f5907a34369beeb19540839daab926785667f0921d0fa"
+      ]
+    },
+    "73ca1b22fac59575a007a5cf0c16043cbae2ef4f396ac0b0263d7ac0bcdd4c5b": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4",
+        "class:setup-sha256:20b22e5c0a3dbb1789cc42b18a9ea979175d2de3b42f3ce5e71918358dfc66ac"
+      ]
+    },
+    "052079fea1ad0ee5ee92c3a58ace722b3f32a24535b9a1b737539bf08a2260d4": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4",
+        "class:setup-sha256:2c0e3ebce560a1f9e40152f1fa893a0e6556d77f948202edb2a97a69ab60b397"
+      ]
+    },
+    "719aa8c4abbb1e71c2ad11ffbdb7c61ce3385cf2dc76cb7c57e15e5502bdc079": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'posix', 'Actual node probe uses Linux ownership')"
+      ],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "8fdd4275770bdf3a895454cd94302b6f4b0bdb7df58a77644d57d5e09736eda3": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'Linux control socket')"
+      ],
+      "skipSites": [
+        "skip-control-sha256:567c9cb3f82704285ed8a59e0c85685d0092688b6abb57a85c9904a25f8b585d",
+        "unittest.skipUnless(os.name == 'posix', 'Linux control socket')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "86a0e640920493430a43aac46772f05e89a3e33a57021a66617c7f67706d4e46": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'Linux runtime ownership')"
+      ],
+      "skipSites": [
+        "skip-control-sha256:7d60667e5e6f96de16b0a91629d0e3d26b250de5ae0ba325b0dcbda421690317",
+        "unittest.skipUnless(os.name == 'posix', 'Linux runtime ownership')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "ce3ed54cbf1f8955517a8669ab28fdb8d57078d303f70c79e61ed2b3ced7fe60": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:196f0124d272171d5fc788831ae9e503328fcf8aba0e644bf36ada1fb190e0a4",
+        "class:setup-sha256:71b590d0193e83dfd58d1fba1679b9907c2d594927c79f39350c71136869f25e"
+      ]
+    }
   }
 }
