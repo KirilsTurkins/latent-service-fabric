@@ -5,6 +5,131 @@ mod provider;
 use fixture::{mutation, operator, setup};
 
 #[tokio::test]
+async fn direct_effect_inspection_requires_original_caller_link_and_current_read_policy() {
+    let mut effect = setup().await;
+    let request = effect.request("original-effect-read").effect.unwrap();
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), request.clone().into())
+        .await
+        .unwrap();
+    let contract::Response::GetEffect(value) = &response.response else {
+        panic!("effect status required");
+    };
+    let status = value.effect.as_ref().unwrap();
+    assert_eq!(status.effect_id, effect.effect);
+    assert!(!status.command_id.is_empty());
+    assert!(!status.command_attempt_id.is_empty());
+    assert_eq!(status.record_version, effect.version);
+    assert_eq!(
+        status.disposition,
+        latent_rpc::transaction::v1::EffectDisposition::Pending as i32
+    );
+    assert!(status.provider_receipt.is_none());
+    assert!(status.retention.as_ref().unwrap().payload_available);
+    assert!(status.management_operation_receipt_id.is_none());
+    contract::Response::GetEffect(value.clone())
+        .validate_for(&contract::Request::from(request.clone()))
+        .unwrap();
+    assert!(effect
+        .fixture
+        .backend
+        .execute_state(operator("bob"), request.clone().into())
+        .await
+        .is_err());
+    let mut foreign = request.clone();
+    foreign.command.as_mut().unwrap().client_key = "different-original-key".into();
+    assert!(effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), foreign.into())
+        .await
+        .is_err());
+    let history = latent_rpc::transaction::v1::ListEffectHistoryRequest {
+        effect: Some(request.clone()),
+        page: Some(latent_rpc::transaction::v1::PageRequest {
+            limit: 1,
+            cursor: None,
+        }),
+    };
+    let page = effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), history.clone().into())
+        .await
+        .unwrap();
+    let contract::Response::ListEffectHistory(value) = &page.response else {
+        panic!("history page required");
+    };
+    assert!(value.receipts.is_empty());
+    assert_eq!(value.page.as_ref().unwrap().returned_count, 0);
+    contract::Response::ListEffectHistory(value.clone())
+        .validate_for(&contract::Request::from(history.clone()))
+        .unwrap();
+    drop(page);
+    let mut cursor = history;
+    cursor.page.as_mut().unwrap().cursor = Some(vec![7; 110]);
+    assert!(effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), cursor.into())
+        .await
+        .is_err());
+    effect.fixture.update(None, "revoke-original-effect-read");
+    assert!(response.owner.with_current(&mut || {}).is_err());
+    drop(response);
+    effect.finish().await;
+}
+
+#[tokio::test]
+async fn effect_history_projects_actual_original_dispatch_receipts_without_provider_reexecution() {
+    let mut effect =
+        fixture::setup_with_provider(Some(latent_effects::dispatch::Disposition::KnownFailed))
+            .await;
+    effect.settle_original().await;
+    let request = latent_rpc::transaction::v1::ListEffectHistoryRequest {
+        effect: effect.request("actual-history").effect,
+        page: Some(latent_rpc::transaction::v1::PageRequest {
+            limit: 1,
+            cursor: None,
+        }),
+    };
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), request.clone().into())
+        .await
+        .unwrap();
+    let contract::Response::ListEffectHistory(page) = &response.response else {
+        panic!("actual history required");
+    };
+    assert_eq!(page.receipts.len(), 1);
+    assert_eq!(page.receipts[0].effect_id, effect.effect);
+    assert_eq!(
+        page.receipts[0].disposition,
+        latent_rpc::transaction::v1::EffectDisposition::KnownFailure as i32
+    );
+    assert_eq!(page.receipts[0].dispatch_attempt, 1);
+    assert_eq!(page.receipts[0].provider_receipt, None);
+    assert!(page.receipts[0].owner_epoch.is_some());
+    contract::Response::ListEffectHistory(page.clone())
+        .validate_for(&contract::Request::from(request))
+        .unwrap();
+    assert_eq!(
+        effect
+            .provider
+            .as_ref()
+            .unwrap()
+            .sends
+            .load(std::sync::atomic::Ordering::SeqCst),
+        1
+    );
+    drop(response);
+    effect.finish().await;
+}
+
+#[tokio::test]
 async fn controlled_dispatch_requires_the_actual_current_policy_and_source_before_provider_acceptance(
 ) {
     let mut effect =
@@ -139,6 +264,30 @@ async fn authenticated_effect_terminal_plan_and_expired_original_receipt_preserv
         latent_rpc::transaction::v1::EffectDisposition::AdministrativelyTerminated as i32
     );
     assert!(receipt.effect.as_ref().unwrap().provider_receipt.is_none());
+    drop(response);
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(
+            operator("alice"),
+            effect.request("terminal-status").effect.unwrap().into(),
+        )
+        .await
+        .unwrap();
+    let contract::Response::GetEffect(value) = &response.response else {
+        panic!("actual terminal effect status required");
+    };
+    let status = value.effect.as_ref().unwrap();
+    assert_eq!(
+        status.disposition,
+        latent_rpc::transaction::v1::EffectDisposition::AdministrativelyTerminated as i32,
+    );
+    assert_eq!(
+        status.management_operation_receipt_id.as_deref(),
+        Some(receipt.receipt_id.as_str())
+    );
+    assert!(status.provider_receipt.is_none());
+    assert!(status.retention.as_ref().unwrap().payload_available);
     drop(response);
     // Native time expires the plan. The current read grant has a separate
     // original finite request deadline and never reissues old execution.
@@ -328,6 +477,56 @@ async fn fresh_lookup_after_execution_expiry_uses_reserved_capacity_and_preserve
         Some("controlled-positive-provider-receipt")
     );
     assert_eq!(fact.provider_observed_at_unix_millis, Some(70_000));
+    assert_eq!(
+        effect
+            .provider
+            .as_ref()
+            .unwrap()
+            .sends
+            .load(Ordering::SeqCst),
+        1
+    );
+    assert_eq!(
+        effect
+            .provider
+            .as_ref()
+            .unwrap()
+            .lookups
+            .load(Ordering::SeqCst),
+        1
+    );
+    let actual_receipt_id = receipt.receipt_id.clone();
+    drop(response);
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(
+            operator("alice"),
+            effect
+                .request("confirmed-effect-status")
+                .effect
+                .unwrap()
+                .into(),
+        )
+        .await
+        .unwrap();
+    let contract::Response::GetEffect(value) = &response.response else {
+        panic!("actual provider-confirmed status required");
+    };
+    let status = value.effect.as_ref().unwrap();
+    assert_eq!(
+        status.disposition,
+        latent_rpc::transaction::v1::EffectDisposition::ProviderAcknowledged as i32
+    );
+    assert_eq!(
+        status.provider_receipt.as_deref(),
+        Some("controlled-positive-provider-receipt")
+    );
+    assert!(status.failure_code.is_none());
+    assert_eq!(
+        status.management_operation_receipt_id.as_deref(),
+        Some(actual_receipt_id.as_str())
+    );
     assert_eq!(
         effect
             .provider

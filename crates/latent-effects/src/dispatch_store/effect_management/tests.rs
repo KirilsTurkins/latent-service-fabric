@@ -418,6 +418,14 @@ fn provider_confirmation_is_distinct_from_original_uncertain_attempt_and_admin_d
     assert_eq!(receipt.fact(), EffectManagementFact::ProviderConfirmed);
     assert_eq!(receipt.provider_observed_at_millis(), Some(105));
     assert_eq!(receipt.completed_at_millis(), 106);
+    assert_eq!(
+        EffectManagementCatalog::receipt_for_effect(
+            &fixture.store().snapshot().unwrap(),
+            &fixture.record(),
+        )
+        .unwrap(),
+        Some(receipt.clone()),
+    );
     let record = fixture.record();
     assert_eq!(record.disposition(), Disposition::ProviderAcknowledged);
     assert_eq!(record.latest().unwrap().disposition, Disposition::Uncertain);
@@ -437,6 +445,12 @@ fn provider_confirmation_is_distinct_from_original_uncertain_attempt_and_admin_d
 #[test]
 fn administrative_terminal_disposition_keeps_uncertain_facts_and_payload_holds() {
     let fixture = Fixture::new(StoreLimits::default());
+    assert!(EffectManagementCatalog::receipt_for_effect(
+        &fixture.store().snapshot().unwrap(),
+        &fixture.record(),
+    )
+    .unwrap()
+    .is_none());
     let attempt = fixture.complete(true);
     let plan = fixture.plan(
         fixture.request("stop-original", EffectManagementAction::Terminate),
@@ -448,6 +462,14 @@ fn administrative_terminal_disposition_keeps_uncertain_facts_and_payload_holds()
         EffectManagementFact::AdministratorTerminated
     );
     assert_eq!(receipt.provider_receipt(), None);
+    assert_eq!(
+        EffectManagementCatalog::receipt_for_effect(
+            &fixture.store().snapshot().unwrap(),
+            &fixture.record(),
+        )
+        .unwrap(),
+        Some(receipt.clone()),
+    );
     assert_eq!(fixture.record().disposition(), Disposition::DeadLettered);
     assert_eq!(
         fixture.record().latest().unwrap().disposition,

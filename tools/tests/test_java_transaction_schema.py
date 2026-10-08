@@ -23,6 +23,9 @@ class JavaTransactionSchemaTests(unittest.TestCase):
             self.assertEqual(files["wit/world.wit"], (ROOT / RECOVERY_RECIPE / "world.wit.in").read_bytes())
             self.assertIn(b"view-version: list<u8>", files["wit/world.wit"])
             self.assertIn(b"key-version: option<list<u8>>", files["wit/world.wit"])
+            for capability in (b"latent:clock/monotonic@0.1.0", b"latent:clock/wall@0.1.0"):
+                self.assertEqual(files["wit/world.wit"].count(b"import " + capability + b";"), 2)
+            self.assertIn(b"world runtime-support", files["wit/world.wit"])
             self.assertEqual(lock["template"]["witDigest"], digest(files["wit/world.wit"]))
             self.assertEqual(project["limits"]["outboundRequests"], 0)
             self.assertFalse(declaration["componentCompiled"])

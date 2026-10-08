@@ -45,6 +45,7 @@ pub use policies::PolicyShutdownReport;
 pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
+pub(crate) use startup_observation::observe_startup;
 pub use startup_observation::StartupFailureReport;
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.
