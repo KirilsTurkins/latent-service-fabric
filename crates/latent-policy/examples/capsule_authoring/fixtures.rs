@@ -331,7 +331,7 @@ mod tests {
                 "componentDigest":component, "componentSize":123, "materials":[],
                 "parameters":{"compiler":"teavm-c", "entryPoint":"dev.latent.app.Capsule",
                     "target":"wasm32-wasip1", "bindings":"lsf-java-wit-v1",
-                    "optimization":"O2", "javaHeapBytes":4194304},
+                    "optimization":"O2", "javaHeapBytes":4_194_304},
                 "startedAt":0, "finishedAt":0, "reproducibility":"not-checked",
                 "hermetic":false, "dependencyCompleteness":"declared-inputs-incomplete"}
         }))

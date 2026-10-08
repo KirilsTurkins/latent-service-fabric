@@ -135,12 +135,7 @@ fn sign_loaded(
 ) -> Result<()> {
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     if fixture {
-        for build in &mut builds {
-            // These are signing-fixture model times, not compiler execution
-            // times. The separate fixture evidence expressly retains this fact.
-            build.observation.started_at = now;
-            build.observation.finished_at = now;
-        }
+        fixture_model_times(&mut builds, now);
     }
     let validity = SignatureValidity {
         issued_at: now,
@@ -247,6 +242,13 @@ fn demo_publisher() -> Result<(LocalSigner, [u8; 32])> {
     let public = *key.public_key();
     let signer = LocalSigner::from_pkcs8(key.into_pkcs8(), PublisherId(PUBLISHER.into()), public)?;
     Ok((signer, public))
+}
+fn fixture_model_times(builds: &mut [inputs::Build], now: u64) {
+    for build in builds {
+        // Model times belong only to ephemeral test signing, never compilation.
+        build.observation.started_at = now;
+        build.observation.finished_at = now;
+    }
 }
 fn write_observation(destination: &Path, build: &inputs::Build, fixture: bool) -> Result<()> {
     write(
