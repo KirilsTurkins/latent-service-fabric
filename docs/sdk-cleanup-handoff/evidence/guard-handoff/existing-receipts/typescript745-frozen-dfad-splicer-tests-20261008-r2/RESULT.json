@@ -1,0 +1,50 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "actual-rust-version",
+      "argv": [
+        "/usr/local/cargo/bin/rustc",
+        "-Vv"
+      ],
+      "exitCode": 0,
+      "seconds": 0.03745974400044361
+    },
+    {
+      "label": "actual-source-owned-splicer-layout-tests",
+      "argv": [
+        "/usr/local/cargo/bin/cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--jobs",
+        "1",
+        "-p",
+        "spidermonkey-embedding-splicer",
+        "--lib",
+        "lsf_async::tests",
+        "--",
+        "--nocapture"
+      ],
+      "exitCode": 0,
+      "seconds": 184.1417749230004
+    }
+  ],
+  "actualTypedLayoutTests": 6,
+  "skips": 0,
+  "artifacts": [
+    {
+      "name": "spidermonkey_embedding_splicer-b0e0686975c87c0b",
+      "bytes": 104757664,
+      "sha256": "58be86bcf2463f8266be85af7d1267211a834648ee092ee67aa69168a09129a2",
+      "backup": "spidermonkey_embedding_splicer-b0e0686975c87c0b.elf.gz"
+    }
+  ],
+  "sourceInputsUnchanged": true,
+  "originalCargoLockUnchanged": true,
+  "compilerSourceOwnerHead": "dfad46446882ec2c18de5bc0cd5e8ebf2bce88b2",
+  "recipe": "explicit-native-debug-source-test; no historical Wasm compiler identity",
+  "engineOrWizerOrSignedQualification": false,
+  "normalSDKProductTuple": false,
+  "seconds": 315.1961713849996
+}

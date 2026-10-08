@@ -1,0 +1,39 @@
+{
+  "registrySourceHead": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+  "registryDigest": "9afbf3197eb86e1c609a3ea92ca006f5a6b257d08fdd7586d38d2202d6dc0d39",
+  "suite": {
+    "boundary": "runtime",
+    "expectedCases": [
+      "asynchronous_error_and_child_failure_forward_original_results_and_owners",
+      "closed_constructor_shapes_have_distinct_safe_reasons",
+      "dropping_unpolled_or_pending_invocations_preserves_inner_ownership",
+      "failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness",
+      "full_contended_or_poisoned_observation_storage_never_changes_invocation_results",
+      "scheduler_capacity_reasons_require_exact_public_shape_code_and_retryability",
+      "successful_and_declared_outcomes_keep_payloads_and_owners_without_records",
+      "synchronous_start_failure_is_forwarded_once_without_cloning",
+      "unknown_malformed_and_missing_details_are_explicitly_unclassified"
+    ],
+    "expectedIgnored": [],
+    "id": "latent-wasmtime.test.local-service-diagnostics",
+    "ignoredLeaves": [],
+    "kind": "test",
+    "manifest": "crates/latent-wasmtime/Cargo.toml",
+    "minimumCases": 9,
+    "mode": "libtest",
+    "package": "latent-wasmtime",
+    "platforms": [
+      "linux-x86_64"
+    ],
+    "prerequisites": [
+      "pinned Rust toolchain",
+      "successful source-matched Cargo artifact inventory"
+    ],
+    "recipe": "workspace-all-features",
+    "resourceClass": "runtime-bounded",
+    "source": "tests/local_service_diagnostics.rs",
+    "target": "local_service_diagnostics",
+    "timeoutSeconds": 900
+  },
+  "platformQualification": "Windows source-reference only; original Linux/full-workspace suite qualification not claimed"
+}

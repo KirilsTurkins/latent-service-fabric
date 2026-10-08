@@ -1,0 +1,295 @@
+{
+  "schemaVersion": "latent.sdk.compiler-delivery.v1",
+  "issue": 745,
+  "sourceHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "sourceTree": "66d303e482ab508e9973c4551ee583778fe7f213",
+  "sourceControls": {
+    "passed": 265,
+    "skipped": 0,
+    "ciCoverage": [
+      88,
+      269,
+      141
+    ]
+  },
+  "capacityControls": {
+    "passed": 3,
+    "skipped": 0,
+    "actualSourceBoundsMiB": [
+      64,
+      72
+    ]
+  },
+  "nativeEngine": {
+    "path": "typescript745-selected-whole-engine-build-20261008-codec-r4/selected-engine.wasm",
+    "bytes": 9943755,
+    "sha256": "62e532908cc818674bbfefcf6609695c9b547e1e1b1b1c3c8f1f92af4fcfc4a5",
+    "sourceHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+    "actualNineCompilerUnitsAndWholeLinkPassed": true,
+    "sourceUnits": 36,
+    "original27ObjectsAnd303StrongPromiseDefinitionsRetained": true,
+    "SDK30AndOriginalBoundsPreserved": true
+  },
+  "components": [
+    {
+      "role": "service-caller",
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/component.wasm",
+      "bytes": 11455913,
+      "sha256": "238142882eac2aba4d96b657bd276f4aa7e55a57fd78c44539e91c7aad1b23aa",
+      "realMaintainedCompilerWizerAndFullGraphPassed": true,
+      "requiredSignedRuntimeCases": 2,
+      "actualSignedRuntimeCases": 0
+    },
+    {
+      "role": "service-callee",
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/component.wasm",
+      "bytes": 11368672,
+      "sha256": "eb95435586c10d6b677f79cf93c6c13f99ecde1ed6ecab64e9b1fb8e865445ce",
+      "realMaintainedCompilerWizerAndFullGraphPassed": true,
+      "requiredSignedRuntimeCases": 0,
+      "actualSignedRuntimeCases": 0
+    },
+    {
+      "role": "ordinary15",
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/component.wasm",
+      "bytes": 11381611,
+      "sha256": "aa62d689625e6a1bddb63160ec57d7489fb99f33517e3ffda29741cc34a56a57",
+      "realMaintainedCompilerWizerAndFullGraphPassed": true,
+      "requiredSignedRuntimeCases": 15,
+      "actualSignedRuntimeCases": 0
+    },
+    {
+      "role": "clock4",
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/component.wasm",
+      "bytes": 11371653,
+      "sha256": "02be2b971c7fcd5541977cd08cb42c64e6664737bfc61724a7575c25adbdcbcb",
+      "realMaintainedCompilerWizerAndFullGraphPassed": true,
+      "requiredSignedRuntimeCases": 4,
+      "actualSignedRuntimeCases": 0
+    },
+    {
+      "role": "npm",
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/component.wasm",
+      "bytes": 11512603,
+      "sha256": "0e3aaed50614c278e65a5e77c1592605e9d505e3b4affba8ab199fd71700e811",
+      "realMaintainedCompilerWizerAndFullGraphPassed": true,
+      "requiredSignedRuntimeCases": 5,
+      "actualSignedRuntimeCases": 0
+    }
+  ],
+  "receipts": [
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2713,
+      "sha256": "64d59fb9d4be609a7da94250252588e95c95ab5a2fe8ebca0aa7bbc739bdd5fc"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 281,
+      "sha256": "50ebbaa7639965662696672117eaaf9d50bf4ef976cf420a8457034f7395e128"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 585,
+      "sha256": "38d12e74ca110191352fda1e298aba8a41dd58974698318ca0daad0a85fa8225"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15305,
+      "sha256": "ad2f8260aef68aa491d050f5d3616a9fe84483366765ae8a41a53623fab96e99"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2716,
+      "sha256": "02e3e42a2f62a66af78d5f8684add6f626da5767457e857250de86909521e63a"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 282,
+      "sha256": "f6783c65b0c7ed5742cc630142d235a6afd8404d1207b9562a3d5f652e3090ba"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15305,
+      "sha256": "93ddc53e75dcccff1374f64be7adae37e5e4d90cc63ffc5046645bd05e273937"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2692,
+      "sha256": "3306e20a22b0e9388ff5f22651d1a407562b6c68f2e108fdc254d83b124c82b8"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 280,
+      "sha256": "250106d2cb8d048c8d52fcfdd575e971083797a469552b059641c33a66c3bd4c"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15296,
+      "sha256": "0a7f588046c4a71cd5b72f07fccebd182594621e0527252e595382b5641b5bfe"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2690,
+      "sha256": "0af82fe5fc2baafa1dfdede8fd9284422850ae6b58aa6facd90c99708e58be77"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 282,
+      "sha256": "a95941f2472a3391a3d7b45d4100208e74091b5dff01510924cbb66045e56a9d"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15296,
+      "sha256": "0a7f588046c4a71cd5b72f07fccebd182594621e0527252e595382b5641b5bfe"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2771,
+      "sha256": "46faeee5fcc00be45f7afac233c1bc20edbdd8070e04a004cba22dde0c7d896d"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 282,
+      "sha256": "230548f1b285fcfc342e43e2f909840db4b2afa447f150b65d2ca199192fada0"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15300,
+      "sha256": "27f07801a779ca288e687bdb5e6e256dc83a773955c1ef3fd45e376694f558b9"
+    },
+    {
+      "path": "owned-current-sdk-source-controls-745-7b69ba1f-20261008-033315-632486/FINAL.json",
+      "bytes": 21957,
+      "sha256": "09528236665bab4d97f4ed53bafc029c47bc036df1752180373bdeb4f1b3167c"
+    },
+    {
+      "path": "native-source-capacity-745-7b69ba1f-20261008-035431-656029/packet/SOURCE-CAPACITY-CONTROLS.json",
+      "bytes": 932,
+      "sha256": "60232723b76f5a26219899105428efa8f0eb093760e0d2e9ab51a7fc121ba58d"
+    },
+    {
+      "path": "typescript745-selected-whole-engine-build-20261008-codec-r4/RESULT.json",
+      "bytes": 27345,
+      "sha256": "1b2a2fab8f0b21261afe26aed6592e75c29cb9dfd3503d9ebc6e55d11757a4bc"
+    },
+    {
+      "path": "typescript745-current-native-text-codec-engine-input-20261008-r4.json",
+      "bytes": 8976,
+      "sha256": "9ae3ab0e5838c07e41029cd53261fef2e053889878c1c41447d88715215fd0be"
+    },
+    {
+      "path": "typescript745-actual-codec-runtime-bundle-controls-20261008-r2/RESULT.json",
+      "bytes": 822,
+      "sha256": "4e80c2a57f52f7a83018503cd7135db654eeb3792967a4a7d94c3a525f391b4d"
+    },
+    {
+      "path": "typescript745-normal-npm-capture-20261008-r3/RESULT.json",
+      "bytes": 1643,
+      "sha256": "12de629b05b151a45b7e3ac467a656a2ec5325d2e94fcd045aa473609bb369a0"
+    },
+    {
+      "path": "typescript745-exact-unmodified-npm-review-20261008-r3/RESULT.json",
+      "bytes": 2247,
+      "sha256": "22d96b0443f5ae5fec2ebf7b7483ed1f4c5a5b3136de681aaccfa171b3b695fc"
+    },
+    {
+      "path": "typescript745-maintained-service-caller-compiler-qualification-20261008-r1/FAILED.json",
+      "bytes": 1606,
+      "sha256": "9263881a436ac8c6fdc1c836257974ae82d63cfee7e7464b6e73bd048d7765b4"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r2/OBSERVER-IDENTITY-FAILED.json",
+      "bytes": 651,
+      "sha256": "60cb1a5cf59550047d6817f096fced2a575d4a09e40b4c837d636dd601b80bbe"
+    }
+  ],
+  "actualRuntimeBundle": [
+    {
+      "name": "managed.zip",
+      "bytes": 3992042,
+      "sha256": "8b9d0632abbb82a9ad9120fb70af644068691df0ce490e44640d54f04b9e165e"
+    },
+    {
+      "name": "managed-inputs.json",
+      "bytes": 5623,
+      "sha256": "c2de6d52aa572eca6cfbd88c100951fbc4b356625b695e46319a79ddbaf12482"
+    }
+  ],
+  "rawAuthenticSourceLicensesRetained": true,
+  "fullRedistributedNativeLicenseClosureQualified": false,
+  "allOwnedCompilerAndConsumerPIDsZero": true,
+  "failuresRetained": [
+    "old missing native TextDecoder realserviceWizer",
+    "outside observer metadata preimage mismatch",
+    "old observer workspace mismatch",
+    "old direct-function splicer validation mistake",
+    "old native/engine failed attempts"
+  ],
+  "currentOldAndNewArtifactsOrSourcesRelabeled": false,
+  "qualification": "unknown",
+  "apiSupport": "not-evaluated",
+  "wholeIssueClosureEligible": false,
+  "normalCLIContractPackageSignExecuted": false,
+  "signedOrdinaryLSFRuntimeExecuted": false,
+  "nextRequiredInput": {
+    "owner": "root/networking_resume_oct06",
+    "head": "120ceab09a2c4a96d4e13ce8a5b3363983b06999",
+    "preparedProducer": "c684-current120-default-native-20261008-r1/run.py",
+    "actualFiveProductOrdinaryDefaultTupleReceiptStillAbsent": true
+  },
+  "remaining": [
+    "normal CLI contracts/package/sign then26 ordinary real runtime cases",
+    "pending host-service subtask with actual sibling witness",
+    "fuel/deadline/queue/timer/native-memory exhaustion and conservation",
+    "cancel/trap/latewake physical cleanup",
+    "fresh cross-tenant state and guest/native cost",
+    "matching final integrated source/node and actual toolkit qualification"
+  ],
+  "noPushMergeIssueClosureOrForeignProductAdoption": true
+}

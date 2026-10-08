@@ -1,0 +1,914 @@
+{
+  "purpose": "User-requested STOP and cleanup preservation only",
+  "ownedTypeScriptWorktrees": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-async-clock-profile-20261008-r1",
+      "branch": "feat/sdk-typescript-async-clock-profile-20261008-r1",
+      "head": "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+      "tree": "32b0a0109620caafcefed57e241e6b9345954055",
+      "dirtyOrUntracked": [],
+      "unmergedCommitHeads": [
+        "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+        "60a01302d13229c53c908d0bd0a5c931d79865c2",
+        "727c4bd2736d995f00a51b70ae7df5d1cb89f329",
+        "766786216c76b8a23fc468d84f5f1394d6a21cc9",
+        "ab77366903fe21c970cf6fa1f3491166417c3c95",
+        "de90c5d79f7d20a286361a4550c4d1ae9e164e38",
+        "9e468153be71c835518830c66c63b45d529da5c0",
+        "913ca7a420b61a8edadb6565210b0f9d9de307fb",
+        "89ca0a2ac724ee378172f1ef0ba3bee7d24a2c3c",
+        "dbfa7f3c9a409ded3b6f271990ce6fc0a9bdba61",
+        "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+        "f4a67f208e2bb027b121278a0eceae1617590542",
+        "0e1a28ef5092e198d1cfaec97295108e70460fce",
+        "bc95f9e4e675b19920a01c3ef01e909cf3bce927",
+        "ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b",
+        "dd7e0f1a17efed1f3e29e7755bc2144a0bfdc445",
+        "aaf0d4a56d6d433567b7f40d50edbf6fdd25d55e",
+        "e5fcd67ce309ee76991a110693755e6ce15ec9d7",
+        "2782b2fe5eeddcb97e31f68baa6968bfb8cbb7d6",
+        "0d7124fef2a6e240aabeee482ccf109a5ea6ef59",
+        "98ac0140bd94cfd545394043e8abbe404a597013",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+        "33d2bf9cd47dc4c05d07f6226d74b4a6ac56949d",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+        "32f1c993307be9f95e900c9e712e8ea9e89eff9e",
+        "a7d3300c39b7379a1543ca93226098f7737725c5",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+        "f742d3d8dce8754e36c0821af48a81c82305872e",
+        "f4989eb19c306f5445749832e80bd8235291fbdc",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e",
+        "feec183e18febd6323b9267f07a3ee902984abbc",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e",
+        "3adb98c40cb7a420e1788046801d66919c8cf8e1",
+        "33130dd8e4a43758cdb53076524f434e0a138df0"
+      ]
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-async-imports-20261008-r1",
+      "branch": "feat/sdk-typescript-async-imports-20261008-r1",
+      "head": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+      "tree": "0358e7b0c5829e38e1b4620964881ff0c791f5cd",
+      "dirtyOrUntracked": [],
+      "unmergedCommitHeads": [
+        "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+        "7e2eed4fd16fa3a16cf0e3e2cd8ae45ed50c443d",
+        "dfad46446882ec2c18de5bc0cd5e8ebf2bce88b2",
+        "333e10805b13c77035ab0ae4aed3714dd61ad45b",
+        "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+        "60a01302d13229c53c908d0bd0a5c931d79865c2",
+        "727c4bd2736d995f00a51b70ae7df5d1cb89f329",
+        "766786216c76b8a23fc468d84f5f1394d6a21cc9",
+        "ab77366903fe21c970cf6fa1f3491166417c3c95",
+        "de90c5d79f7d20a286361a4550c4d1ae9e164e38",
+        "9e468153be71c835518830c66c63b45d529da5c0",
+        "913ca7a420b61a8edadb6565210b0f9d9de307fb",
+        "89ca0a2ac724ee378172f1ef0ba3bee7d24a2c3c",
+        "dbfa7f3c9a409ded3b6f271990ce6fc0a9bdba61",
+        "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+        "f4a67f208e2bb027b121278a0eceae1617590542",
+        "0e1a28ef5092e198d1cfaec97295108e70460fce",
+        "bc95f9e4e675b19920a01c3ef01e909cf3bce927",
+        "ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b",
+        "dd7e0f1a17efed1f3e29e7755bc2144a0bfdc445",
+        "aaf0d4a56d6d433567b7f40d50edbf6fdd25d55e",
+        "e5fcd67ce309ee76991a110693755e6ce15ec9d7",
+        "2782b2fe5eeddcb97e31f68baa6968bfb8cbb7d6",
+        "0d7124fef2a6e240aabeee482ccf109a5ea6ef59",
+        "98ac0140bd94cfd545394043e8abbe404a597013",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+        "33d2bf9cd47dc4c05d07f6226d74b4a6ac56949d",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+        "32f1c993307be9f95e900c9e712e8ea9e89eff9e",
+        "a7d3300c39b7379a1543ca93226098f7737725c5",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+        "f742d3d8dce8754e36c0821af48a81c82305872e",
+        "f4989eb19c306f5445749832e80bd8235291fbdc",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e",
+        "feec183e18febd6323b9267f07a3ee902984abbc",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e",
+        "3adb98c40cb7a420e1788046801d66919c8cf8e1",
+        "33130dd8e4a43758cdb53076524f434e0a138df0"
+      ]
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-async-owned-events-20261007-r1",
+      "branch": "feat/sdk-typescript-async-owned-events-20261007-r1",
+      "head": "ab77366903fe21c970cf6fa1f3491166417c3c95",
+      "tree": "74bece7bf08f337ee9c49eae3ced734e7e7a007e",
+      "dirtyOrUntracked": [],
+      "unmergedCommitHeads": [
+        "ab77366903fe21c970cf6fa1f3491166417c3c95",
+        "de90c5d79f7d20a286361a4550c4d1ae9e164e38",
+        "9e468153be71c835518830c66c63b45d529da5c0",
+        "913ca7a420b61a8edadb6565210b0f9d9de307fb",
+        "89ca0a2ac724ee378172f1ef0ba3bee7d24a2c3c",
+        "dbfa7f3c9a409ded3b6f271990ce6fc0a9bdba61",
+        "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+        "f4a67f208e2bb027b121278a0eceae1617590542",
+        "0e1a28ef5092e198d1cfaec97295108e70460fce",
+        "bc95f9e4e675b19920a01c3ef01e909cf3bce927",
+        "ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b",
+        "dd7e0f1a17efed1f3e29e7755bc2144a0bfdc445",
+        "aaf0d4a56d6d433567b7f40d50edbf6fdd25d55e",
+        "e5fcd67ce309ee76991a110693755e6ce15ec9d7",
+        "2782b2fe5eeddcb97e31f68baa6968bfb8cbb7d6",
+        "0d7124fef2a6e240aabeee482ccf109a5ea6ef59",
+        "98ac0140bd94cfd545394043e8abbe404a597013",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+        "33d2bf9cd47dc4c05d07f6226d74b4a6ac56949d",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+        "32f1c993307be9f95e900c9e712e8ea9e89eff9e",
+        "a7d3300c39b7379a1543ca93226098f7737725c5",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+        "f742d3d8dce8754e36c0821af48a81c82305872e",
+        "f4989eb19c306f5445749832e80bd8235291fbdc",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e",
+        "feec183e18febd6323b9267f07a3ee902984abbc",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e",
+        "3adb98c40cb7a420e1788046801d66919c8cf8e1",
+        "33130dd8e4a43758cdb53076524f434e0a138df0"
+      ]
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-async-profile-20261007-r1",
+      "branch": "feat/sdk-typescript-async-profile-20261007-r1",
+      "head": "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+      "tree": "a909ad63db23d51b3f930c71d75351559272ad67",
+      "dirtyOrUntracked": [],
+      "unmergedCommitHeads": [
+        "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+        "f4a67f208e2bb027b121278a0eceae1617590542",
+        "0e1a28ef5092e198d1cfaec97295108e70460fce",
+        "bc95f9e4e675b19920a01c3ef01e909cf3bce927",
+        "ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b",
+        "dd7e0f1a17efed1f3e29e7755bc2144a0bfdc445",
+        "aaf0d4a56d6d433567b7f40d50edbf6fdd25d55e",
+        "e5fcd67ce309ee76991a110693755e6ce15ec9d7",
+        "2782b2fe5eeddcb97e31f68baa6968bfb8cbb7d6",
+        "0d7124fef2a6e240aabeee482ccf109a5ea6ef59",
+        "98ac0140bd94cfd545394043e8abbe404a597013",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+        "33d2bf9cd47dc4c05d07f6226d74b4a6ac56949d",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+        "32f1c993307be9f95e900c9e712e8ea9e89eff9e",
+        "a7d3300c39b7379a1543ca93226098f7737725c5",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+        "f742d3d8dce8754e36c0821af48a81c82305872e",
+        "f4989eb19c306f5445749832e80bd8235291fbdc",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e",
+        "feec183e18febd6323b9267f07a3ee902984abbc",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e",
+        "3adb98c40cb7a420e1788046801d66919c8cf8e1",
+        "33130dd8e4a43758cdb53076524f434e0a138df0"
+      ]
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-async-runtime-20261007-r1",
+      "branch": "feat/sdk-typescript-async-runtime-20261007-r1",
+      "head": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
+      "tree": "8e67ba2087aa293066f59db31cd2cbef51614229",
+      "dirtyOrUntracked": [],
+      "unmergedCommitHeads": [
+        "a6c3e1472c622abfd8f5515e31301b08940c88b2",
+        "8c0a41fe49b5c9208b9c66eed459acc62dde388f"
+      ]
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-import-profile-20261008-r1",
+      "branch": "feat/sdk-typescript-import-profile-20261008-r1",
+      "head": "faa08263570b3748d1be7918a3271e321c6adeea",
+      "tree": "15ce302f8cee37dc06fee00f1e75bb5a37d1ba3e",
+      "dirtyOrUntracked": [],
+      "unmergedCommitHeads": [
+        "faa08263570b3748d1be7918a3271e321c6adeea",
+        "239c7a0b4c385e741cb1fdeeea2eb98a8089ac57",
+        "7e2eed4fd16fa3a16cf0e3e2cd8ae45ed50c443d",
+        "dfad46446882ec2c18de5bc0cd5e8ebf2bce88b2",
+        "333e10805b13c77035ab0ae4aed3714dd61ad45b",
+        "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+        "60a01302d13229c53c908d0bd0a5c931d79865c2",
+        "727c4bd2736d995f00a51b70ae7df5d1cb89f329",
+        "766786216c76b8a23fc468d84f5f1394d6a21cc9",
+        "ab77366903fe21c970cf6fa1f3491166417c3c95",
+        "de90c5d79f7d20a286361a4550c4d1ae9e164e38",
+        "9e468153be71c835518830c66c63b45d529da5c0",
+        "913ca7a420b61a8edadb6565210b0f9d9de307fb",
+        "89ca0a2ac724ee378172f1ef0ba3bee7d24a2c3c",
+        "dbfa7f3c9a409ded3b6f271990ce6fc0a9bdba61",
+        "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+        "f4a67f208e2bb027b121278a0eceae1617590542",
+        "0e1a28ef5092e198d1cfaec97295108e70460fce",
+        "bc95f9e4e675b19920a01c3ef01e909cf3bce927",
+        "ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b",
+        "dd7e0f1a17efed1f3e29e7755bc2144a0bfdc445",
+        "aaf0d4a56d6d433567b7f40d50edbf6fdd25d55e",
+        "e5fcd67ce309ee76991a110693755e6ce15ec9d7",
+        "2782b2fe5eeddcb97e31f68baa6968bfb8cbb7d6",
+        "0d7124fef2a6e240aabeee482ccf109a5ea6ef59",
+        "98ac0140bd94cfd545394043e8abbe404a597013",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+        "33d2bf9cd47dc4c05d07f6226d74b4a6ac56949d",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+        "32f1c993307be9f95e900c9e712e8ea9e89eff9e",
+        "a7d3300c39b7379a1543ca93226098f7737725c5",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+        "f742d3d8dce8754e36c0821af48a81c82305872e",
+        "f4989eb19c306f5445749832e80bd8235291fbdc",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e",
+        "feec183e18febd6323b9267f07a3ee902984abbc",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e",
+        "3adb98c40cb7a420e1788046801d66919c8cf8e1",
+        "33130dd8e4a43758cdb53076524f434e0a138df0"
+      ]
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-import-selection-20261008-r1",
+      "branch": "feat/sdk-typescript-import-selection-20261008-r1",
+      "head": "6abd7a1d58f8db15648abe9613967d25690f1796",
+      "tree": "aa5cc209a909f335a1dda68a643d359e01fc24e6",
+      "dirtyOrUntracked": [],
+      "unmergedCommitHeads": [
+        "6abd7a1d58f8db15648abe9613967d25690f1796",
+        "c4ed819c3b9cbae81b493ae8c7ac28af75a874bf",
+        "e65bd9c6e1df8c69b538911b12882e8613c1540a",
+        "faa08263570b3748d1be7918a3271e321c6adeea",
+        "239c7a0b4c385e741cb1fdeeea2eb98a8089ac57",
+        "7e2eed4fd16fa3a16cf0e3e2cd8ae45ed50c443d",
+        "dfad46446882ec2c18de5bc0cd5e8ebf2bce88b2",
+        "333e10805b13c77035ab0ae4aed3714dd61ad45b",
+        "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+        "60a01302d13229c53c908d0bd0a5c931d79865c2",
+        "727c4bd2736d995f00a51b70ae7df5d1cb89f329",
+        "766786216c76b8a23fc468d84f5f1394d6a21cc9",
+        "ab77366903fe21c970cf6fa1f3491166417c3c95",
+        "de90c5d79f7d20a286361a4550c4d1ae9e164e38",
+        "9e468153be71c835518830c66c63b45d529da5c0",
+        "913ca7a420b61a8edadb6565210b0f9d9de307fb",
+        "89ca0a2ac724ee378172f1ef0ba3bee7d24a2c3c",
+        "dbfa7f3c9a409ded3b6f271990ce6fc0a9bdba61",
+        "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+        "f4a67f208e2bb027b121278a0eceae1617590542",
+        "0e1a28ef5092e198d1cfaec97295108e70460fce",
+        "bc95f9e4e675b19920a01c3ef01e909cf3bce927",
+        "ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b",
+        "dd7e0f1a17efed1f3e29e7755bc2144a0bfdc445",
+        "aaf0d4a56d6d433567b7f40d50edbf6fdd25d55e",
+        "e5fcd67ce309ee76991a110693755e6ce15ec9d7",
+        "2782b2fe5eeddcb97e31f68baa6968bfb8cbb7d6",
+        "0d7124fef2a6e240aabeee482ccf109a5ea6ef59",
+        "98ac0140bd94cfd545394043e8abbe404a597013",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+        "33d2bf9cd47dc4c05d07f6226d74b4a6ac56949d",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+        "32f1c993307be9f95e900c9e712e8ea9e89eff9e",
+        "a7d3300c39b7379a1543ca93226098f7737725c5",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+        "f742d3d8dce8754e36c0821af48a81c82305872e",
+        "f4989eb19c306f5445749832e80bd8235291fbdc",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e",
+        "feec183e18febd6323b9267f07a3ee902984abbc",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e",
+        "3adb98c40cb7a420e1788046801d66919c8cf8e1",
+        "33130dd8e4a43758cdb53076524f434e0a138df0"
+      ]
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-import-splicer-contract-20261008-r1",
+      "branch": "feat/sdk-typescript-import-splicer-contract-20261008-r1",
+      "head": "50495c4fb24bf3b05d01e2a03bc13c6b3958138f",
+      "tree": "d699d610ba96b47b7ffa40187f681b74aa8fd2d3",
+      "dirtyOrUntracked": [],
+      "unmergedCommitHeads": [
+        "50495c4fb24bf3b05d01e2a03bc13c6b3958138f",
+        "2cc86a7068c132c695a7a7272cac6ff59bdfb894",
+        "6abd7a1d58f8db15648abe9613967d25690f1796",
+        "c4ed819c3b9cbae81b493ae8c7ac28af75a874bf",
+        "e65bd9c6e1df8c69b538911b12882e8613c1540a",
+        "faa08263570b3748d1be7918a3271e321c6adeea",
+        "239c7a0b4c385e741cb1fdeeea2eb98a8089ac57",
+        "7e2eed4fd16fa3a16cf0e3e2cd8ae45ed50c443d",
+        "dfad46446882ec2c18de5bc0cd5e8ebf2bce88b2",
+        "333e10805b13c77035ab0ae4aed3714dd61ad45b",
+        "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+        "60a01302d13229c53c908d0bd0a5c931d79865c2",
+        "727c4bd2736d995f00a51b70ae7df5d1cb89f329",
+        "766786216c76b8a23fc468d84f5f1394d6a21cc9",
+        "ab77366903fe21c970cf6fa1f3491166417c3c95",
+        "de90c5d79f7d20a286361a4550c4d1ae9e164e38",
+        "9e468153be71c835518830c66c63b45d529da5c0",
+        "913ca7a420b61a8edadb6565210b0f9d9de307fb",
+        "89ca0a2ac724ee378172f1ef0ba3bee7d24a2c3c",
+        "dbfa7f3c9a409ded3b6f271990ce6fc0a9bdba61",
+        "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+        "f4a67f208e2bb027b121278a0eceae1617590542",
+        "0e1a28ef5092e198d1cfaec97295108e70460fce",
+        "bc95f9e4e675b19920a01c3ef01e909cf3bce927",
+        "ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b",
+        "dd7e0f1a17efed1f3e29e7755bc2144a0bfdc445",
+        "aaf0d4a56d6d433567b7f40d50edbf6fdd25d55e",
+        "e5fcd67ce309ee76991a110693755e6ce15ec9d7",
+        "2782b2fe5eeddcb97e31f68baa6968bfb8cbb7d6",
+        "0d7124fef2a6e240aabeee482ccf109a5ea6ef59",
+        "98ac0140bd94cfd545394043e8abbe404a597013",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+        "33d2bf9cd47dc4c05d07f6226d74b4a6ac56949d",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+        "32f1c993307be9f95e900c9e712e8ea9e89eff9e",
+        "a7d3300c39b7379a1543ca93226098f7737725c5",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+        "f742d3d8dce8754e36c0821af48a81c82305872e",
+        "f4989eb19c306f5445749832e80bd8235291fbdc",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e",
+        "feec183e18febd6323b9267f07a3ee902984abbc",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e",
+        "3adb98c40cb7a420e1788046801d66919c8cf8e1",
+        "33130dd8e4a43758cdb53076524f434e0a138df0"
+      ]
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-runtime-materials-20261008-r1",
+      "branch": "feat/sdk-typescript-runtime-materials-20261008-r1",
+      "head": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+      "tree": "66d303e482ab508e9973c4551ee583778fe7f213",
+      "dirtyOrUntracked": [],
+      "unmergedCommitHeads": [
+        "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+        "36ff63bef26890458b8eb51570efc6000bde7530",
+        "24166ee1691f7a0f75e3b392108e2398e9f0fa9e",
+        "50495c4fb24bf3b05d01e2a03bc13c6b3958138f",
+        "2cc86a7068c132c695a7a7272cac6ff59bdfb894",
+        "6abd7a1d58f8db15648abe9613967d25690f1796",
+        "c4ed819c3b9cbae81b493ae8c7ac28af75a874bf",
+        "e65bd9c6e1df8c69b538911b12882e8613c1540a",
+        "faa08263570b3748d1be7918a3271e321c6adeea",
+        "239c7a0b4c385e741cb1fdeeea2eb98a8089ac57",
+        "7e2eed4fd16fa3a16cf0e3e2cd8ae45ed50c443d",
+        "dfad46446882ec2c18de5bc0cd5e8ebf2bce88b2",
+        "333e10805b13c77035ab0ae4aed3714dd61ad45b",
+        "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+        "60a01302d13229c53c908d0bd0a5c931d79865c2",
+        "727c4bd2736d995f00a51b70ae7df5d1cb89f329",
+        "766786216c76b8a23fc468d84f5f1394d6a21cc9",
+        "ab77366903fe21c970cf6fa1f3491166417c3c95",
+        "de90c5d79f7d20a286361a4550c4d1ae9e164e38",
+        "9e468153be71c835518830c66c63b45d529da5c0",
+        "913ca7a420b61a8edadb6565210b0f9d9de307fb",
+        "89ca0a2ac724ee378172f1ef0ba3bee7d24a2c3c",
+        "dbfa7f3c9a409ded3b6f271990ce6fc0a9bdba61",
+        "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+        "f4a67f208e2bb027b121278a0eceae1617590542",
+        "0e1a28ef5092e198d1cfaec97295108e70460fce",
+        "bc95f9e4e675b19920a01c3ef01e909cf3bce927",
+        "ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b",
+        "dd7e0f1a17efed1f3e29e7755bc2144a0bfdc445",
+        "aaf0d4a56d6d433567b7f40d50edbf6fdd25d55e",
+        "e5fcd67ce309ee76991a110693755e6ce15ec9d7",
+        "2782b2fe5eeddcb97e31f68baa6968bfb8cbb7d6",
+        "0d7124fef2a6e240aabeee482ccf109a5ea6ef59",
+        "98ac0140bd94cfd545394043e8abbe404a597013",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+        "33d2bf9cd47dc4c05d07f6226d74b4a6ac56949d",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+        "32f1c993307be9f95e900c9e712e8ea9e89eff9e",
+        "a7d3300c39b7379a1543ca93226098f7737725c5",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+        "f742d3d8dce8754e36c0821af48a81c82305872e",
+        "f4989eb19c306f5445749832e80bd8235291fbdc",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e",
+        "feec183e18febd6323b9267f07a3ee902984abbc",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e",
+        "3adb98c40cb7a420e1788046801d66919c8cf8e1",
+        "33130dd8e4a43758cdb53076524f434e0a138df0"
+      ]
+    }
+  ],
+  "uniqueUnmergedCommits": [
+    {
+      "head": "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+      "subject": "Bind explicit scoped clock candidate without promoting runtime qualification"
+    },
+    {
+      "head": "60a01302d13229c53c908d0bd0a5c931d79865c2",
+      "subject": "Derive explicit clock world with full maintained type comparison"
+    },
+    {
+      "head": "727c4bd2736d995f00a51b70ae7df5d1cb89f329",
+      "subject": "Bind separate clock candidate to exact immutable source and interface requests"
+    },
+    {
+      "head": "766786216c76b8a23fc468d84f5f1394d6a21cc9",
+      "subject": "Prepare source-owned scoped standard clock module without frozen time"
+    },
+    {
+      "head": "ab77366903fe21c970cf6fa1f3491166417c3c95",
+      "subject": "Authenticate actual decoded component root and preserve full selected graph"
+    },
+    {
+      "head": "de90c5d79f7d20a286361a4550c4d1ae9e164e38",
+      "subject": "Generate selected Promise declarations from original async WIT"
+    },
+    {
+      "head": "9e468153be71c835518830c66c63b45d529da5c0",
+      "subject": "Keep native activation readiness outside JS binding projection"
+    },
+    {
+      "head": "913ca7a420b61a8edadb6565210b0f9d9de307fb",
+      "subject": "Handle absent portable baseline selection in derived engine"
+    },
+    {
+      "head": "89ca0a2ac724ee378172f1ef0ba3bee7d24a2c3c",
+      "subject": "Retire native graph tracking storage before host settlement"
+    },
+    {
+      "head": "dbfa7f3c9a409ded3b6f271990ce6fc0a9bdba61",
+      "subject": "Own selected Abort and Event native graphs through physical collection"
+    },
+    {
+      "head": "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+      "subject": "Add source-bound Abort timeout and selected runtime admission controls"
+    },
+    {
+      "head": "f4a67f208e2bb027b121278a0eceae1617590542",
+      "subject": "merge: retain current SDK carrier and reviewed helper closure in private runtime"
+    },
+    {
+      "head": "0e1a28ef5092e198d1cfaec97295108e70460fce",
+      "subject": "feat(sdk): bind private TypeScript Promise runtime candidate and snapshot source"
+    },
+    {
+      "head": "bc95f9e4e675b19920a01c3ef01e909cf3bce927",
+      "subject": "Merge delivered activation runtime into SDK compiler repairs"
+    },
+    {
+      "head": "ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b",
+      "subject": "Keep mocked DotNet compiler fixtures inside their reviewed contract boundary"
+    },
+    {
+      "head": "dd7e0f1a17efed1f3e29e7755bc2144a0bfdc445",
+      "subject": "Merge current development with reviewed SDK recipe and compiler contracts"
+    },
+    {
+      "head": "aaf0d4a56d6d433567b7f40d50edbf6fdd25d55e",
+      "subject": "Merge current development while retaining SDK runtime and compiler controls"
+    },
+    {
+      "head": "e5fcd67ce309ee76991a110693755e6ce15ec9d7",
+      "subject": "feat(sdk): add private TypeScript timer and root readiness engine"
+    },
+    {
+      "head": "2782b2fe5eeddcb97e31f68baa6968bfb8cbb7d6",
+      "subject": "feat(sdk): add private TypeScript intrinsic Promise ownership hooks"
+    },
+    {
+      "head": "0d7124fef2a6e240aabeee482ccf109a5ea6ef59",
+      "subject": "Preserve existing CI fragment layout around new helper guards"
+    },
+    {
+      "head": "98ac0140bd94cfd545394043e8abbe404a597013",
+      "subject": "Repair archive-only helper imports and gate them in maintained controller tests"
+    },
+    {
+      "head": "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+      "subject": "Gate helper runtime archive imports in maintained controller tests"
+    },
+    {
+      "head": "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+      "subject": "Capture outcome runtime imports in the maintained helper archive"
+    },
+    {
+      "head": "33d2bf9cd47dc4c05d07f6226d74b4a6ac56949d",
+      "subject": "Fix captured graph diagnostics and standalone recipe import closure"
+    },
+    {
+      "head": "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+      "subject": "Bind runtime receipt capture domain and complete recipe imports"
+    },
+    {
+      "head": "32f1c993307be9f95e900c9e712e8ea9e89eff9e",
+      "subject": "Merge current development and preserve exact SDK test obligations"
+    },
+    {
+      "head": "a7d3300c39b7379a1543ca93226098f7737725c5",
+      "subject": "Capture actual Rust guest SDK runtime source in diagnostics"
+    },
+    {
+      "head": "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+      "subject": "Join source-bound SDK runtime context and original outcome diagnostics"
+    },
+    {
+      "head": "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+      "subject": "Correct C runtime owner attribution and bound SDK input scope"
+    },
+    {
+      "head": "f742d3d8dce8754e36c0821af48a81c82305872e",
+      "subject": "Capture owned runtime selections in compatibility diagnostics"
+    },
+    {
+      "head": "f4989eb19c306f5445749832e80bd8235291fbdc",
+      "subject": "fix(sdk): retain signable generator provenance and qualify generated C"
+    },
+    {
+      "head": "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+      "subject": "feat(sdk): bind runtime context and original outcome diagnostics"
+    },
+    {
+      "head": "b652b88a1713d531f1cd0b852d3ff674a638464b",
+      "subject": "fix(dev): stop source callbacks after compiler group retirement"
+    },
+    {
+      "head": "964bfcfa720c4b0c440badfcb2c9bc186386942b",
+      "subject": "feat(c): add explicitly approved source and header generators"
+    },
+    {
+      "head": "6c45cd353255a774c05dcc2e90c8e442c179fcc0",
+      "subject": "feat(sdk): add approved Java and TypeScript source generation"
+    },
+    {
+      "head": "9c96d8bc68cbdf6a041e16e54770b98a000b3f32",
+      "subject": "fix(go): authenticate discovered generator sandbox path"
+    },
+    {
+      "head": "cd45147b44cdce8c51d4e0a7a25113a24623e19e",
+      "subject": "Preserve authenticated captured dependencies through frontend compilation"
+    },
+    {
+      "head": "feec183e18febd6323b9267f07a3ee902984abbc",
+      "subject": "Merge current development SDK generator and runtime delivery"
+    },
+    {
+      "head": "aac4558a424f3f7b364034d7be14bca31b0dac5e",
+      "subject": "Merge current development runtime delivery into frontend dependency repairs"
+    },
+    {
+      "head": "3adb98c40cb7a420e1788046801d66919c8cf8e1",
+      "subject": "fix(dev): decode captured dependencies with maintained native bounds"
+    },
+    {
+      "head": "33130dd8e4a43758cdb53076524f434e0a138df0",
+      "subject": "Preserve reviewed dependency owner descriptors in frontend build snapshots"
+    },
+    {
+      "head": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+      "subject": "Declare native job dependency of reaction records explicitly"
+    },
+    {
+      "head": "7e2eed4fd16fa3a16cf0e3e2cd8ae45ed50c443d",
+      "subject": "Add genuine engine imported-promise and sibling-readiness controls"
+    },
+    {
+      "head": "dfad46446882ec2c18de5bc0cd5e8ebf2bce88b2",
+      "subject": "Prepare source-owned P3 import codegen and typed buffer retirement"
+    },
+    {
+      "head": "333e10805b13c77035ab0ae4aed3714dd61ad45b",
+      "subject": "Prepare owned async import lifecycle and shared native readiness dispatch"
+    },
+    {
+      "head": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
+      "subject": "feat(sdk): add private TypeScript timer and root readiness engine"
+    },
+    {
+      "head": "8c0a41fe49b5c9208b9c66eed459acc62dde388f",
+      "subject": "feat(sdk): add private TypeScript intrinsic Promise ownership hooks"
+    },
+    {
+      "head": "faa08263570b3748d1be7918a3271e321c6adeea",
+      "subject": "Use acknowledged asynchronous cancellation and retain subtask through typed lifting"
+    },
+    {
+      "head": "239c7a0b4c385e741cb1fdeeea2eb98a8089ac57",
+      "subject": "Declare native job dependency of reaction records explicitly"
+    },
+    {
+      "head": "6abd7a1d58f8db15648abe9613967d25690f1796",
+      "subject": "Preserve explicit import profile after shared clock graph validation"
+    },
+    {
+      "head": "c4ed819c3b9cbae81b493ae8c7ac28af75a874bf",
+      "subject": "Bind explicit unqualified import profile to exact engine and compiler inputs"
+    },
+    {
+      "head": "e65bd9c6e1df8c69b538911b12882e8613c1540a",
+      "subject": "Prepare source-bound import compiler adapter without API promotion"
+    },
+    {
+      "head": "50495c4fb24bf3b05d01e2a03bc13c6b3958138f",
+      "subject": "Validate the pinned source-splicer interface methods"
+    },
+    {
+      "head": "2cc86a7068c132c695a7a7272cac6ff59bdfb894",
+      "subject": "Require the selected source-built import splicer and physical host tools"
+    },
+    {
+      "head": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+      "subject": "Restore pinned native text codecs for typed async import bindings"
+    },
+    {
+      "head": "36ff63bef26890458b8eb51570efc6000bde7530",
+      "subject": "Capture explicit source-owned TypeScript runtime inputs in developer tools"
+    },
+    {
+      "head": "24166ee1691f7a0f75e3b392108e2398e9f0fa9e",
+      "subject": "Bind selected native compiler inputs in TypeScript build provenance"
+    }
+  ],
+  "allOwnedSourceClean": true,
+  "guardOwnedCompilerOrQualificationJobsActive": false,
+  "rootHandlesPushPRAndMilestoneComments": true,
+  "implementationAndQualificationStopped": true,
+  "existingReceiptsCopiedByteExact": [
+    {
+      "path": "typescript745-codec-matched-compiler-delivery-20261008-r2.json",
+      "bytes": 12698,
+      "sha256": "d8eb7283f1f4063a752152d79b87fa15b9d94219b3d8b677cdc191aecf280d47"
+    },
+    {
+      "path": "typescript745-current-acceptance-20261008-r2.md",
+      "bytes": 6060,
+      "sha256": "81130f2e3e2dcd3e3fb0ff087b37566e0c7f7807a954c88f2eebd95d3be6dab6"
+    },
+    {
+      "path": "typescript745-normal-signed-next-gates-20261008-r1.json",
+      "bytes": 12480,
+      "sha256": "7dca205d7ea03eada7f0d9a4d72f31d6f99a924e7714e976daa7068d259d47b5"
+    },
+    {
+      "path": "typescript745-current-native-text-codec-engine-input-20261008-r4.json",
+      "bytes": 8976,
+      "sha256": "9ae3ab0e5838c07e41029cd53261fef2e053889878c1c41447d88715215fd0be"
+    },
+    {
+      "path": "typescript745-source-splicer-operator-input-20261008-r1.json",
+      "bytes": 5385,
+      "sha256": "6108c1698ff64b1750e2813532e4ae7043042215898c509daee99bde66d07dfd"
+    },
+    {
+      "path": "typescript745-selected-whole-engine-build-20261008-codec-r4/RESULT.json",
+      "bytes": 27345,
+      "sha256": "1b2a2fab8f0b21261afe26aed6592e75c29cb9dfd3503d9ebc6e55d11757a4bc"
+    },
+    {
+      "path": "typescript745-selected-whole-engine-build-20261008-codec-r4/ENGINE-BUILD.json",
+      "bytes": 14842,
+      "sha256": "2158be5ff1aba204b3ccbcb432e5d009fb8360084fcdc36665d21916e13b6235"
+    },
+    {
+      "path": "typescript745-selected-whole-engine-build-20261008-codec-r4/PRIVATE-ENGINE-BUILD-INPUT.json",
+      "bytes": 8737,
+      "sha256": "eae396124114407f1c874eb0b58a4e9aed1110096d98f2997c7d00533952e759"
+    },
+    {
+      "path": "typescript745-selected-whole-engine-build-20261008-codec-r4/OWNED-FINAL-STOP.json",
+      "bytes": 11630,
+      "sha256": "6e1779d234cc5ac298cd871407e459396fc0156e9740be2f77f6ce530c1e3c62"
+    },
+    {
+      "path": "typescript745-complete-native-text-codec-carrier-20261008-r4/SOURCE-SELECTION.json",
+      "bytes": 4666,
+      "sha256": "029b26c3478b3367c3c360aaf8ebb6c94f7dd1e74cf613956472adf6bc1da1d2"
+    },
+    {
+      "path": "owned-current-sdk-source-controls-745-7b69ba1f-20261008-033315-632486/FINAL.json",
+      "bytes": 21957,
+      "sha256": "09528236665bab4d97f4ed53bafc029c47bc036df1752180373bdeb4f1b3167c"
+    },
+    {
+      "path": "native-source-capacity-745-7b69ba1f-20261008-035431-656029/packet/SOURCE-CAPACITY-CONTROLS.json",
+      "bytes": 932,
+      "sha256": "60232723b76f5a26219899105428efa8f0eb093760e0d2e9ab51a7fc121ba58d"
+    },
+    {
+      "path": "typescript745-normal-npm-capture-20261008-r3/RESULT.json",
+      "bytes": 1643,
+      "sha256": "12de629b05b151a45b7e3ac467a656a2ec5325d2e94fcd045aa473609bb369a0"
+    },
+    {
+      "path": "typescript745-exact-unmodified-npm-review-20261008-r3/RESULT.json",
+      "bytes": 2247,
+      "sha256": "22d96b0443f5ae5fec2ebf7b7483ed1f4c5a5b3136de681aaccfa171b3b695fc"
+    },
+    {
+      "path": "typescript745-real-service-import-projects-20261008-r1/PREPARED.json",
+      "bytes": 2017,
+      "sha256": "40df76fdc1e624cf4723d6db2dbe5480c03447ac2b94438ab2abc83a61473159"
+    },
+    {
+      "path": "typescript745-current-ordinary-clock-projects-20261008-r1/PREPARED.json",
+      "bytes": 1644,
+      "sha256": "215b78d7588b26d99feada10b19a9bb3c4e410a6bfaab0f2e13961e94f185df3"
+    },
+    {
+      "path": "typescript745-actual-codec-runtime-tool-bundle-20261008-r2/PREPARED.json",
+      "bytes": 5845,
+      "sha256": "a0344c66b9183f5bee9be9a5a60333c58e5990d9222e5daf27c0bf1edff5b3b0"
+    },
+    {
+      "path": "typescript745-actual-codec-runtime-bundle-controls-20261008-r2/RESULT.json",
+      "bytes": 822,
+      "sha256": "4e80c2a57f52f7a83018503cd7135db654eeb3792967a4a7d94c3a525f391b4d"
+    },
+    {
+      "path": "typescript745-maintained-service-caller-compiler-qualification-20261008-r1/FAILED.json",
+      "bytes": 1606,
+      "sha256": "9263881a436ac8c6fdc1c836257974ae82d63cfee7e7464b6e73bd048d7765b4"
+    },
+    {
+      "path": "typescript745-maintained-service-caller-compiler-qualification-20261008-r1/logs/14-componentize.stderr.txt",
+      "bytes": 659,
+      "sha256": "6bf64477b532dcb6b109eff455ea4810bd3d142cd903166702abff09296f6e7c"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r2/OBSERVER-IDENTITY-FAILED.json",
+      "bytes": 651,
+      "sha256": "60cb1a5cf59550047d6817f096fced2a575d4a09e40b4c837d636dd601b80bbe"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2713,
+      "sha256": "64d59fb9d4be609a7da94250252588e95c95ab5a2fe8ebca0aa7bbc739bdd5fc"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 281,
+      "sha256": "50ebbaa7639965662696672117eaaf9d50bf4ef976cf420a8457034f7395e128"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 585,
+      "sha256": "38d12e74ca110191352fda1e298aba8a41dd58974698318ca0daad0a85fa8225"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15305,
+      "sha256": "ad2f8260aef68aa491d050f5d3616a9fe84483366765ae8a41a53623fab96e99"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2716,
+      "sha256": "02e3e42a2f62a66af78d5f8684add6f626da5767457e857250de86909521e63a"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 282,
+      "sha256": "f6783c65b0c7ed5742cc630142d235a6afd8404d1207b9562a3d5f652e3090ba"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15305,
+      "sha256": "93ddc53e75dcccff1374f64be7adae37e5e4d90cc63ffc5046645bd05e273937"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2692,
+      "sha256": "3306e20a22b0e9388ff5f22651d1a407562b6c68f2e108fdc254d83b124c82b8"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 280,
+      "sha256": "250106d2cb8d048c8d52fcfdd575e971083797a469552b059641c33a66c3bd4c"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15296,
+      "sha256": "0a7f588046c4a71cd5b72f07fccebd182594621e0527252e595382b5641b5bfe"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2690,
+      "sha256": "0af82fe5fc2baafa1dfdede8fd9284422850ae6b58aa6facd90c99708e58be77"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 282,
+      "sha256": "a95941f2472a3391a3d7b45d4100208e74091b5dff01510924cbb66045e56a9d"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15296,
+      "sha256": "0a7f588046c4a71cd5b72f07fccebd182594621e0527252e595382b5641b5bfe"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2771,
+      "sha256": "46faeee5fcc00be45f7afac233c1bc20edbdd8070e04a004cba22dde0c7d896d"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 282,
+      "sha256": "230548f1b285fcfc342e43e2f909840db4b2afa447f150b65d2ca199192fada0"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15300,
+      "sha256": "27f07801a779ca288e687bdb5e6e256dc83a773955c1ef3fd45e376694f558b9"
+    }
+  ],
+  "noSourceTestsOrCleanupRun": true,
+  "latestFeatureSourceHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "latestFeatureSourceTree": "66d303e482ab508e9973c4551ee583778fe7f213",
+  "actualCompleteEngineSHA256": "62e532908cc818674bbfefcf6609695c9b547e1e1b1b1c3c8f1f92af4fcfc4a5",
+  "wholeIssue745Complete": false,
+  "signedNormalRuntimeExecuted": false
+}

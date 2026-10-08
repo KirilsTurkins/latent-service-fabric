@@ -1,0 +1,220 @@
+{
+  "status": "passed",
+  "sourceInputs": [
+    {
+      "path": "native_job_queue.h",
+      "bytes": 7434,
+      "sha256": "71ac76c42a964d1e80904f1ee4e791b0485ab65a0d2c9f134a6f555f3d95ccd5"
+    },
+    {
+      "path": "promise_hooks.h",
+      "bytes": 1691,
+      "sha256": "f7efbdfdb3ad23f6143215bbf69bba3220ff4d6fac1cb2e6469916896eb87d14"
+    },
+    {
+      "path": "promise_records.h",
+      "bytes": 4684,
+      "sha256": "3c0683e44ca8d2cd7cfc4deb83362a499cb47f3e98ceb09a04a2acd15d31a543"
+    },
+    {
+      "path": "reaction_records.h",
+      "bytes": 4947,
+      "sha256": "161a5a08228be265a2d1aa6aadff536be3110064748d04620863ed836855c0bb"
+    },
+    {
+      "path": "tests/native_promises.cpp",
+      "bytes": 12864,
+      "sha256": "af34127ffb4da38821ebe12d5cd7c6e579e433c13bee7719d0bb5cfa57464670"
+    },
+    {
+      "path": "tests/native_jobs.cpp",
+      "bytes": 10669,
+      "sha256": "df747e040699bd9769d722916ebcad28e7522a022d1639d911bcdfdea6669bc4",
+      "originalFrozenRegressionFixture": true
+    }
+  ],
+  "sourceUnit": {
+    "bytes": 5917284,
+    "sha256": "f621ec5d9c987e5c30aa5ca97ba5dffdf47d709c8618628f196ef5421d914928"
+  },
+  "SDK30Image": "sha256:6ca2881c9aae38527b074b6cec6e58c98977f18e3dd5345ab972bbf1e5fa6dc0",
+  "SDK30Volume": "latent-sdk-typescript745-public-wasi30-20261007-r1",
+  "originalArchiveSha256": "298b85501657189dc66139242abf5aeb4e981b8db7c37cc5a69d1151ec40aacc",
+  "diagnosticLinkArgv": [
+    "timeout",
+    "--signal=TERM",
+    "--kill-after=1",
+    "580",
+    "/sdk30/wasi-sdk-30.0-x86_64-linux/bin/clang++",
+    "--target=wasm32-unknown-wasi",
+    "-std=gnu++23",
+    "-fno-exceptions",
+    "-fno-rtti",
+    "-fno-sized-deallocation",
+    "-fno-aligned-new",
+    "-mthread-model",
+    "single",
+    "-Wall",
+    "-Werror",
+    "-isystem",
+    "/headers",
+    "-include",
+    "/headers/js-confdefs.h",
+    "/derived-unit/Unified_cpp_js_src2.o",
+    "/original-library/libspidermonkey.a",
+    "/rust-libraries/librust_staticlib.a",
+    "/rust-libraries/libwrappers.a",
+    "-Wl,-z,stack-size=1048576",
+    "-Wl,--stack-first",
+    "-Wl,--lto-O0",
+    "-Wl,--strip-debug",
+    "-lwasi-emulated-signal",
+    "-lwasi-emulated-process-clocks",
+    "-lwasi-emulated-getpid"
+  ],
+  "fullHistoricalCompileFlagsClaimed": false,
+  "newIntrinsicCases": 8,
+  "originalQueueRegressions": 8,
+  "records": [
+    {
+      "label": "link-native_jobs",
+      "exitCode": 0,
+      "seconds": 222.44563640000706,
+      "maximumSeconds": 600
+    },
+    {
+      "label": "link-native_promises",
+      "exitCode": 0,
+      "seconds": 209.53417280000576,
+      "maximumSeconds": 600
+    },
+    {
+      "label": "node-version",
+      "exitCode": 0,
+      "seconds": 0.07144790000165813,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-ordering",
+      "exitCode": 0,
+      "seconds": 0.27322580000327434,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-thenable",
+      "exitCode": 0,
+      "seconds": 0.1955978000041796,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-async-await",
+      "exitCode": 0,
+      "seconds": 0.22288380000100005,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-exhaustion",
+      "exitCode": 0,
+      "seconds": 0.20936420001089573,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-retirement-ack",
+      "exitCode": 0,
+      "seconds": 0.2283469999965746,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-partial-admission-ack",
+      "exitCode": 0,
+      "seconds": 0.19654109999828506,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-rejection",
+      "exitCode": 0,
+      "seconds": 0.2303375000046799,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-native-frame-error",
+      "exitCode": 0,
+      "seconds": 0.19030869999551214,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-pending-reactions",
+      "exitCode": 0,
+      "seconds": 0.2083112000109395,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-reaction-exhaustion",
+      "exitCode": 0,
+      "seconds": 0.20757890000822954,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-native-preallocation",
+      "exitCode": 0,
+      "seconds": 0.20826470000611152,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-settlement-not-refund",
+      "exitCode": 0,
+      "seconds": 0.19723389999126084,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-gc-ack-retained",
+      "exitCode": 0,
+      "seconds": 0.2322682999947574,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-transfer-same-owners",
+      "exitCode": 0,
+      "seconds": 0.21451320000051055,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-nested-await",
+      "exitCode": 0,
+      "seconds": 0.2513089999993099,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-gc-pending-ack",
+      "exitCode": 0,
+      "seconds": 0.20575619999726769,
+      "maximumSeconds": 30
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "native-jobs.wasm",
+      "bytes": 9130114,
+      "sha256": "5cfe27a376965798887a50464170a2f5e39ff6ab0f05f3f4b8bee08951d07087"
+    },
+    {
+      "path": "native-promises.wasm",
+      "bytes": 9152781,
+      "sha256": "40b5b6c0cdbfeee71fcbf98e4a81466acaa8153cd55600459b8b106c66254477"
+    }
+  ],
+  "spaceAssessment": {
+    "originalDiskFloorBytes": 2147483648,
+    "maximumLinkScratchBytes": 536870912,
+    "twoDiagnosticOutputReservationBytes": 536870912,
+    "actualSourceUnitBytes": 5917284
+  },
+  "seconds": 436.11892370000714,
+  "maximumCommandSeconds": 600,
+  "maximumOverallSeconds": 900,
+  "fixtureBrokerOnly": true,
+  "supportedAsyncProfile": false,
+  "signedLSFComponentQualified": false,
+  "normalSDKProductsUsed": false,
+  "originalArchiveOrOriginalMemberModified": false
+}

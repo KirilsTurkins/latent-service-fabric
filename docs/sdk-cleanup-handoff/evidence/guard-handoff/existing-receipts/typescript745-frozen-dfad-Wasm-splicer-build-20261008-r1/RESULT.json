@@ -1,0 +1,61 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "actual-rust-version",
+      "argv": [
+        "/usr/local/cargo/bin/rustc",
+        "-Vv"
+      ],
+      "exitCode": 0,
+      "seconds": 0.038790409998910036
+    },
+    {
+      "label": "actual-source-owned-Wasm-splicer-build",
+      "argv": [
+        "/usr/local/cargo/bin/cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "--jobs",
+        "1",
+        "--release",
+        "--target",
+        "wasm32-wasip1",
+        "-p",
+        "splicer-component"
+      ],
+      "exitCode": 0,
+      "seconds": 439.0369959790005
+    },
+    {
+      "label": "actual-Wasm-splicer-validate",
+      "argv": [
+        "/opt/latent-sdk-public/wasm-tools/wasm-tools-1.254.0-x86_64-linux/wasm-tools",
+        "validate",
+        "--features",
+        "all",
+        "/out/splicer_component.wasm"
+      ],
+      "exitCode": 0,
+      "seconds": 0.06963514400013082
+    }
+  ],
+  "actualWasmCompilerToolBuilt": true,
+  "skips": 0,
+  "artifacts": [
+    {
+      "name": "splicer_component.wasm",
+      "bytes": 5541518,
+      "sha256": "dc43c750d1cf9aa53a0bc0ed474b106d6940e069740577d35386c628fa667ebc",
+      "backup": "splicer_component.wasm"
+    }
+  ],
+  "sourceInputsUnchanged": true,
+  "originalCargoLockUnchanged": true,
+  "compilerSourceOwnerHead": "dfad46446882ec2c18de5bc0cd5e8ebf2bce88b2",
+  "recipe": "explicit-Rust1.97.1-wasip1-source-build-release; no historical compiler identity",
+  "engineOrWizerOrSignedQualification": false,
+  "normalSDKProductTuple": false,
+  "seconds": 505.10715285100014
+}

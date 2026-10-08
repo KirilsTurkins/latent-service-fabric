@@ -1,0 +1,119 @@
+{
+  "head": "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+  "tree": "5f995eab87c3be0b886a401611194f68f3646c6b",
+  "parent": "a7d3300c39b7379a1543ca93226098f7737725c5",
+  "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-runtime-receipt-ci-repair-20261007-r1",
+  "workingTreeModified": false,
+  "commitChain": [
+    "57e1c22ddca391e5080f3855a2f60bba470f1f7c",
+    "c2dff8203feeb4d065b7a6f401933ce157ead89e",
+    "166dd6e6ad597e5ca47ad1596e2613f63536292c"
+  ],
+  "changes": [
+    {
+      "path": "tools/build_dev_frontend.py",
+      "sha256": "a9d764d679297cfdb47fcb1b4d05c0c0d1caa56e7c930c8244088a33deefab21"
+    },
+    {
+      "path": "tools/ci/contracts/owners/tools/build_dev_frontend.py.json",
+      "sha256": "772ec71eebff1e4a44e83a85066511d59752aeec3e2b68a4aefda5c7daa63a2e"
+    },
+    {
+      "path": "tools/ci/contracts/python/test_dev_tools.py.json",
+      "sha256": "ff8bf75ed5e4a8532d92eba9df5784d1f2a349b6bdafcd76abc3801ab8379b9e"
+    },
+    {
+      "path": "tools/ci/contracts/python/test_guest_runtime_receipts.py.json",
+      "sha256": "a7b27adb2b7db08db65988a71b0e528cffe3cfa3f3c14ebba14f16e8de75e152"
+    },
+    {
+      "path": "tools/guest_compatibility_context_build.py",
+      "sha256": "6cfb65887225da6d940b9a5afe57378c998902432a0c880e23ee99873d3ad14c"
+    },
+    {
+      "path": "tools/guest_runtime_receipts.py",
+      "sha256": "61d8a734e979c5aa0e639f93d42435c23e12c2092d3c60d9b7bdd64b2428eb6b"
+    },
+    {
+      "path": "tools/tests/test_dev_tools.py",
+      "sha256": "9e596a159d5517c4ee46517309b234b555bb11a32e6c07baed166aa5e4fba5b9"
+    },
+    {
+      "path": "tools/tests/test_guest_runtime_receipts.py",
+      "sha256": "d20c2b557d35ed6e335af92e6e3efd17e827f60642c6e80365d7e2f0df77ccb5"
+    }
+  ],
+  "repairScope": [
+    "Captured graph identity/currentness uses existing capture domain, with all limits unchanged",
+    "All six authoring recipes capture required transitive runtime receipt module",
+    "Actual helper.pyz captures four compatibility/outcome/runtime modules required for test dispatch"
+  ],
+  "maintainedCiSelection": {
+    "workflow": ".github/workflows/developer-tools.yml",
+    "line": 145,
+    "module": "tools.tests.test_dev_tools",
+    "existingCommandUnchanged": true,
+    "oldCases": 31,
+    "oldCaseGuardsPreserved": 31,
+    "newHelperCases": 3,
+    "currentCases": 34,
+    "temporaryUngatedModuleRemoved": true,
+    "fullActualModuleExecutedByLinuxControl": true
+  },
+  "runtimeCases": 25,
+  "oldRuntimeGuardsPreserved": 22,
+  "linux": {
+    "tests": 171,
+    "failures": 0,
+    "skips": 0,
+    "seconds": 23.46493999499944,
+    "maximumSeconds": 90,
+    "python": "3.13.5",
+    "uid": 1000,
+    "cpus": 1,
+    "memoryBytes": 1073741824,
+    "allSourceBytesModesUnchangedAfter": true
+  },
+  "coverage": {
+    "before": 88,
+    "after": 262,
+    "owners": 140
+  },
+  "compilerGuestNodeOrReplayStarted": false,
+  "updatedOwnerOnly": "tools/build_dev_frontend.py",
+  "fullCurrentHostedCiRequired": true,
+  "broaderAnalyzer5fStillHeld": true,
+  "remoteMutation": false,
+  "evidence": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\pr843-runtime-helper-maintained-ci-controls-20261007-r3\\VALIDATION.json",
+      "bytes": 453,
+      "sha256": "0faf3a28b73ca69304a705d5636ac9889f6d641fe5c4d7f935a01b54b8489d24"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\pr843-runtime-helper-maintained-ci-controls-20261007-r3\\INPUTS.json",
+      "bytes": 525126,
+      "sha256": "cf1be4c2a0f0bf32e84f6f023ce762c33c28db3cdf9b5f5aae4d7778c06be37c"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\pr843-runtime-helper-maintained-ci-controls-20261007-r3\\tests.stderr",
+      "bytes": 35632,
+      "sha256": "c7971c1d1a27ef36a4c37ecb12010d2ee6bdfd94e069367347f4614babf03542"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\pr843-runtime-helper-maintained-ci-controls-20261007-r3\\after.stdout",
+      "bytes": 8915,
+      "sha256": "679e7d85915eaa91f5fd7124f633a5c3e4346404b3e8ee3247bef566a456fcf7"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\pr843-runtime-helper-maintained-ci-delivery-20261007-r3\\SOURCE.patch",
+      "bytes": 45790,
+      "sha256": "4f76c4078ec705a8da047ce5e9aa18fddc4ca36d1dc4a1188c219f76c45fe3cd"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\pr843-runtime-helper-ci-repair-delivery-20261007-r2\\FINAL-DELIVERY.json",
+      "bytes": 5684,
+      "sha256": "fe37a48eb29d750a6ce4f43055d9d2582ed6adc83f0d9e8b343d1dd96458ce2c"
+    }
+  ]
+}

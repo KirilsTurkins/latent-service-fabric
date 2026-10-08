@@ -1,0 +1,80 @@
+{
+  "sourceHead": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+  "sourceTree": "4efa617ab9c0ae43ad891bd1c320233167b2ffd8",
+  "status": "failed-isolated-packet-missing-authentic-schemas",
+  "cause": "source packet omitted unchanged root schemas required by actual latent-manifest include_str macros",
+  "missingPaths": [
+    "schemas/capsule-manifest.schema.json",
+    "schemas/deployment.schema.json",
+    "schemas/binding.schema.json",
+    "schemas/trigger.schema.json",
+    "schemas/policy.schema.json"
+  ],
+  "candidateSourceDefectEstablished": false,
+  "testsExecuted": 0,
+  "nineActualTestsPassed": false,
+  "seconds": 42.63076930000534,
+  "executionMaximumSeconds": 90,
+  "selectedDependencyClosureExcludesWasmtime": true,
+  "originalR1BytesCacheAndEvidencePreserved": true,
+  "allOwnedJobChildrenRetired": true,
+  "actualSourceTypesReplaced": false,
+  "fixtureOrWasmtimeCompiled": false,
+  "GoOrLinuxQualification": false,
+  "evidence": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\actual-diagnostic-tests.stderr",
+      "bytes": 2992,
+      "sha256": "cffa62e589b9329d0d91800f0a07fe8769cb4b17758c4640d586d358ab33f440"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\actual-diagnostic-tests.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\INPUTS.json",
+      "bytes": 4396,
+      "sha256": "86feb1d1f89fedbd072854604519cdedb528a3e50c76dfcfc7ed75ea5e5b5773"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\PUBLIC-WINDOWS-LINK-INPUTS.json",
+      "bytes": 123300,
+      "sha256": "50508c1b0c51a8af5a5260b390756f19ff6cd306474128fdb92b2d3c94ed0f60"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\RESULT.json",
+      "bytes": 2474,
+      "sha256": "5110d35a96e35e87a0a8634b74746489805f61c48dca0e3e2437b06462e273c4"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\selected-dependency-closure.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\selected-dependency-closure.stdout",
+      "bytes": 11448,
+      "sha256": "7f1248adbb505532923fbee1370244935baa8f70a35136c4793302cc2152bdcb"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\WARM-CACHE-INPUTS.json",
+      "bytes": 20591,
+      "sha256": "5b9faa82d8450e1412f98bde90f6769ce3d1eb1bfcfa49feae93294a7ddfe838"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\run805-diagnostics-windows-reference-20261007-r2.py",
+      "bytes": 13687,
+      "sha256": "b3000e3f848a01b4918d49d36ebc81748f4cf5b33cd4889e205ba5ace075bd30"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\FAILED-OWNED-CACHE.json",
+      "bytes": 62591,
+      "sha256": "6b275ff23ece35036bf4ae8ed3d2c29deeeba30fa0bd2a5c49fd817772fd0696"
+    }
+  ],
+  "partialOwnCache": {
+    "files": 313,
+    "bytes": 92516523
+  }
+}

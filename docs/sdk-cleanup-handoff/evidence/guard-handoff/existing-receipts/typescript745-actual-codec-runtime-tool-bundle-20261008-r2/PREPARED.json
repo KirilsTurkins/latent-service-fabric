@@ -1,0 +1,157 @@
+{
+  "status": "actual-source-bound-runtime-bundle-prepared",
+  "SDKSourceHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "nativeSourceHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+  "files": [
+    {
+      "path": "engine-input.json",
+      "digest": "sha256:9ae3ab0e5838c07e41029cd53261fef2e053889878c1c41447d88715215fd0be",
+      "size": 8976
+    },
+    {
+      "path": "engine.wasm",
+      "digest": "sha256:62e532908cc818674bbfefcf6609695c9b547e1e1b1b1c3c8f1f92af4fcfc4a5",
+      "size": 9943755
+    },
+    {
+      "path": "licenses/componentize-LICENSE",
+      "digest": "sha256:268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
+      "size": 12243
+    },
+    {
+      "path": "licenses/firefox-LICENSE",
+      "digest": "sha256:a799adf18bfb1911f16086dc0e2a6d1cd0e31272f47e7ee6841b465b74d249de",
+      "size": 389
+    },
+    {
+      "path": "licenses/firefox-license.html",
+      "digest": "sha256:ff2575ba406040505470932fd8aa3d7aa3fbb887622499c9c860edd8b24220d8",
+      "size": 339482
+    },
+    {
+      "path": "licenses/starling-LICENSE",
+      "digest": "sha256:545af604b2f688bf0cdfd57ac01bb6ddcd75b3e8ce98df9763e80d3bb677f4e4",
+      "size": 12247
+    },
+    {
+      "path": "splicer-input.json",
+      "digest": "sha256:6108c1698ff64b1750e2813532e4ae7043042215898c509daee99bde66d07dfd",
+      "size": 5385
+    },
+    {
+      "path": "splicer/interfaces/local-spidermonkey-embedding-splicer-splicer.d.ts",
+      "digest": "sha256:f7453a650b135db6e89df8d159eceeb6d3bff717edf01da6765958c7fc7e3804",
+      "size": 1092
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-environment.d.ts",
+      "digest": "sha256:eeca2d0e2c1eb611cc12522c3a981b6d0bdf788138d13f00e163af78dacbaafd",
+      "size": 113
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-exit.d.ts",
+      "digest": "sha256:720d201b983519e4e2578f1427aa6255e6f8d647d17b930578311636c46ff8a4",
+      "size": 178
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-stderr.d.ts",
+      "digest": "sha256:fb61790b0a25975a561bb4c760367180980c7d5b4253f8e9ef5dc4522838d11b",
+      "size": 164
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-stdin.d.ts",
+      "digest": "sha256:115669b118fa5af84a164b485415049c156c75dccc043a53656a5c3117f2d27b",
+      "size": 159
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-stdout.d.ts",
+      "digest": "sha256:75520c5ee4e20a87b105518c6860240d8739c07f577259f3e82263f5beadf3a2",
+      "size": 164
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-terminal-input.d.ts",
+      "digest": "sha256:6843388ee8347417a03137beb708159820ee51f11e50adb74a43b2125dd8b453",
+      "size": 177
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-terminal-output.d.ts",
+      "digest": "sha256:e48304a744343e6f2ef4a690e2c8052b39fe9ecf3b0ba811e24f5da8de0d2876",
+      "size": 179
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-terminal-stderr.d.ts",
+      "digest": "sha256:24c07a3ff663736b07a937bf96dddab5b2ee8be5b3f274d2189ce6c47150b678",
+      "size": 208
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-terminal-stdin.d.ts",
+      "digest": "sha256:5aa06eb362181e2a521eee0c6fb3ccc62d27adec7340216395eadb73827b2082",
+      "size": 202
+    },
+    {
+      "path": "splicer/interfaces/wasi-cli-terminal-stdout.d.ts",
+      "digest": "sha256:d11b2ffbf5937133107a63298221aed819a634d5b679d20393ccf237f3067ddf",
+      "size": 208
+    },
+    {
+      "path": "splicer/interfaces/wasi-clocks-monotonic-clock.d.ts",
+      "digest": "sha256:1c626f447ccbf14160eff06443851b55289b480e7c2c70787011cff3a4649aaf",
+      "size": 123
+    },
+    {
+      "path": "splicer/interfaces/wasi-clocks-wall-clock.d.ts",
+      "digest": "sha256:7725f813d3548dc260f0d21466cff71c10f24df594002a4c1d93b47f7c0b6d10",
+      "size": 161
+    },
+    {
+      "path": "splicer/interfaces/wasi-filesystem-preopens.d.ts",
+      "digest": "sha256:0001080f66118f1a99aa9d3b7b3b29eea61fea089b90e6b69147011bd2e57c66",
+      "size": 195
+    },
+    {
+      "path": "splicer/interfaces/wasi-filesystem-types.d.ts",
+      "digest": "sha256:16c4040cbb7284360b987a08aeaa49ed59042defd05a3c9f0c31b5af84ecb08d",
+      "size": 3945
+    },
+    {
+      "path": "splicer/interfaces/wasi-io-error.d.ts",
+      "digest": "sha256:0bb03d596597ff171fd0d440687ae69ef08eaa04da6d939d443428cd21f5adff",
+      "size": 159
+    },
+    {
+      "path": "splicer/interfaces/wasi-io-streams.d.ts",
+      "digest": "sha256:c0f086a8da948e9341edfd6790da06ea24258543d55ba2747e8a1388f9facdb8",
+      "size": 787
+    },
+    {
+      "path": "splicer/interfaces/wasi-random-random.d.ts",
+      "digest": "sha256:25134a69dff32355bddc74502ca72b5b3dba919a6ae7c2712db31043f28fd9aa",
+      "size": 109
+    },
+    {
+      "path": "splicer/spidermonkey-embedding-splicer.core.wasm",
+      "digest": "sha256:b14fde6bff431519f96c42650c2c7fa56a680cc5258c0e7db560e2129be6803d",
+      "size": 5540308
+    },
+    {
+      "path": "splicer/spidermonkey-embedding-splicer.core2.wasm",
+      "digest": "sha256:30fff64b635b191d59e59b6b2aadf117f3e4c6326db35111f69a19ea1bd42a4e",
+      "size": 22927
+    },
+    {
+      "path": "splicer/spidermonkey-embedding-splicer.d.ts",
+      "digest": "sha256:600436fa77f1b95cea8a279b141d60c1030c0c0336ef0319d4045bd95c704319",
+      "size": 2242
+    },
+    {
+      "path": "splicer/spidermonkey-embedding-splicer.js",
+      "digest": "sha256:da3a7a497c98d6bed279dea807c591c719a598755da42798fd0292cbdd16492f",
+      "size": 436695
+    }
+  ],
+  "rawOriginalNoticesAuthenticated": true,
+  "nativeLicenseClosureFullQualificationClaimed": false,
+  "qualification": "unknown",
+  "supportedProfileOrSignedExecutionClaimed": false
+}

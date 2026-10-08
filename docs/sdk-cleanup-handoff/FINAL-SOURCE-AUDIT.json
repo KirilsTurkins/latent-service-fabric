@@ -1,0 +1,863 @@
+{
+  "observedUtc": "2026-10-08T11:27:31.298319+00:00",
+  "total": 101,
+  "existingClean": 73,
+  "missingButRecovered": 28,
+  "remoteExactHeadsVerified": 101,
+  "implementationStopped": true,
+  "worktrees": [
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/latent-fabric-checkouts/sdk-rust-authoring-20261002",
+      "source": "08a429e2479974bc61494d4dad8221ed63cd4456",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-rust-authoring-20261002",
+      "exists": true,
+      "head": "08a429e2479974bc61494d4dad8221ed63cd4456",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/audit-abandonment-wakeup-20261007-r1",
+      "source": "2f40228aad59ee12c7f530dbaad80698757adac3",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/audit-abandonment-wakeup-20261007-r1",
+      "exists": true,
+      "head": "2f40228aad59ee12c7f530dbaad80698757adac3",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/dotnet-resource-runtime-union-20261002",
+      "source": "ccb449a91f9a82c7373c43b89488279ec9e64b71",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/dotnet-resource-runtime-union-20261002",
+      "exists": true,
+      "head": "ccb449a91f9a82c7373c43b89488279ec9e64b71",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/networking-http-closed-trap-20261002",
+      "source": "b22062583d01b821e050a5aab40f1c4f2c0993c9",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/networking-http-closed-trap-20261002",
+      "exists": true,
+      "head": "b22062583d01b821e050a5aab40f1c4f2c0993c9",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/networking-http-public-wire-20261002",
+      "source": "c187cf0595c494ed0155c630bb25bd403e23d692",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/networking-http-public-wire-20261002",
+      "exists": true,
+      "head": "c187cf0595c494ed0155c630bb25bd403e23d692",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/networking-provider-chunk-framing",
+      "source": "30d361a244c414f76ecb8132e6e915ddda1bc410",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/networking-provider-chunk-framing",
+      "exists": true,
+      "head": "30d361a244c414f76ecb8132e6e915ddda1bc410",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/networking-v5-normal-current-20261004-r1",
+      "source": "af6d0c9cea5bf05bbf2e16267922ef21bab6d21b",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/networking-v5-normal-current-20261004-r1",
+      "exists": true,
+      "head": "af6d0c9cea5bf05bbf2e16267922ef21bab6d21b",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/networking-v5-normal-http-20261003-r1",
+      "source": "1ff2b8313ee18c91acc7996033a70c49f8200470",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/networking-v5-normal-http-20261003-r1",
+      "exists": true,
+      "head": "1ff2b8313ee18c91acc7996033a70c49f8200470",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/pr761-standard-dotnet-resources-20261002",
+      "source": "ea1788e89dff169aebac56d5bfa6be2ec3a9bf8b",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/pr761-standard-dotnet-resources-20261002",
+      "exists": true,
+      "head": "ea1788e89dff169aebac56d5bfa6be2ec3a9bf8b",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-ci-shared-guards-union-20261004-r1",
+      "source": "fdf1e8334feb2d20f85435b70e200de751c5c676",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-ci-shared-guards-union-20261004-r1",
+      "exists": true,
+      "head": "fdf1e8334feb2d20f85435b70e200de751c5c676",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-java-activation-authoring",
+      "source": "38e8a91b50a6b4ee91a288c0a843f8ad8b9b9296",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-java-activation-authoring",
+      "exists": true,
+      "head": "38e8a91b50a6b4ee91a288c0a843f8ad8b9b9296",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-java-completable-advanced-model",
+      "source": "3834d866ba88dd5a68326e4f5c170acfc9aba23c",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-java-completable-advanced-model",
+      "exists": true,
+      "head": "3834d866ba88dd5a68326e4f5c170acfc9aba23c",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-java-completable-candidate",
+      "source": "5c4a32822db9a313a0bd8e60f63d9471c24af6b0",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-java-completable-candidate",
+      "exists": true,
+      "head": "5c4a32822db9a313a0bd8e60f63d9471c24af6b0",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-java-completable-current-20261004-r1",
+      "source": "c4bfe20b10b4033a225284681011ac28c8c2c7b5",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-java-completable-current-20261004-r1",
+      "exists": true,
+      "head": "c4bfe20b10b4033a225284681011ac28c8c2c7b5",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-java-completable-delayed",
+      "source": "0efed9eaa6154664147f8d4f2e69edcd7b87a510",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-java-completable-delayed",
+      "exists": true,
+      "head": "0efed9eaa6154664147f8d4f2e69edcd7b87a510",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-java-completable-timed",
+      "source": "a560bf82b2d37c8ccc66fa54442f7671074eca07",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-java-completable-timed",
+      "exists": true,
+      "head": "a560bf82b2d37c8ccc66fa54442f7671074eca07",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-java-executor-acceptance",
+      "source": "a03316ba5fa7ffda5d9b9a6bb7ca9e1580330f0b",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-java-executor-acceptance",
+      "exists": true,
+      "head": "a03316ba5fa7ffda5d9b9a6bb7ca9e1580330f0b",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-wait-frames",
+      "source": "8344afee83c6e3bb88efe5e9eb0fff11818e1f89",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-wait-frames",
+      "exists": true,
+      "head": "8344afee83c6e3bb88efe5e9eb0fff11818e1f89",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/runtime-website-acquire-retry",
+      "source": "6e5a8baf32039e92746fcf24c5c9a9b2076d4451",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/runtime-website-acquire-retry",
+      "exists": true,
+      "head": "6e5a8baf32039e92746fcf24c5c9a9b2076d4451",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-c-approved-generators-20261007-r1",
+      "source": "b99da32a4c7fc989fe1d028359b926027f044d81",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-c-approved-generators-20261007-r1",
+      "exists": true,
+      "head": "b99da32a4c7fc989fe1d028359b926027f044d81",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-c-authoring-current-20261007-r2",
+      "source": "120ceab09a2c4a96d4e13ce8a5b3363983b06999",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-c-authoring-current-20261007-r2",
+      "exists": true,
+      "head": "120ceab09a2c4a96d4e13ce8a5b3363983b06999",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-c-current-complete-qualification-20261007-r1",
+      "source": "1269a0d82e838de12c7cc970c32687deca46f05f",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-c-current-complete-qualification-20261007-r1",
+      "exists": true,
+      "head": "1269a0d82e838de12c7cc970c32687deca46f05f",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-captured-runtime-receipts-20261007-r1",
+      "source": "f742d3d8dce8754e36c0821af48a81c82305872e",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-captured-runtime-receipts-20261007-r1",
+      "exists": true,
+      "head": "f742d3d8dce8754e36c0821af48a81c82305872e",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-ci-observed-failures",
+      "source": "c3b5cee5951ecbb49748395b88b225325cda2837",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-ci-observed-failures",
+      "exists": true,
+      "head": "c3b5cee5951ecbb49748395b88b225325cda2837",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-compatibility-context-20261007-r1",
+      "source": "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-compatibility-context-20261007-r1",
+      "exists": true,
+      "head": "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-completable-idle-timer-repair-20261006-r1",
+      "source": "18cf123686b7beb0e09fcd767ad5845aa558e4d4",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-completable-idle-timer-repair-20261006-r1",
+      "exists": true,
+      "head": "18cf123686b7beb0e09fcd767ad5845aa558e4d4",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-controlled-stream-peer-20261007-r1",
+      "source": "83880e1e843daa0b0d087be5e10dbf9f552fa989",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-controlled-stream-peer-20261007-r1",
+      "exists": true,
+      "head": "83880e1e843daa0b0d087be5e10dbf9f552fa989",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-dotnet-ci-contract-fixtures-20261007-r1",
+      "source": "53bf7d0e83cf3ef97d7d3a24ce91932c328c8d70",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-dotnet-ci-contract-fixtures-20261007-r1",
+      "exists": true,
+      "head": "53bf7d0e83cf3ef97d7d3a24ce91932c328c8d70",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-emitted-reachability-20261007-r1",
+      "source": "5f016c54535924909e2a7ae3080ea4c5562f3944",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-emitted-reachability-20261007-r1",
+      "exists": true,
+      "head": "5f016c54535924909e2a7ae3080ea4c5562f3944",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-emitted-reachability-graph-domain-followup-20261007-r1",
+      "source": "8a5af03b38df168f9e47a5157f977f1f1d43c869",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-emitted-reachability-graph-domain-followup-20261007-r1",
+      "exists": true,
+      "head": "8a5af03b38df168f9e47a5157f977f1f1d43c869",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-final-runtime-qualification-20261007-r1",
+      "source": "e7a555111676792f87d05359ee2e7b56d9dce6ea",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-final-runtime-qualification-20261007-r1",
+      "exists": true,
+      "head": "e7a555111676792f87d05359ee2e7b56d9dce6ea",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-frontend-dependency-descriptor-20261006-r1",
+      "source": "7ce730c92ecff0eb694d4d0466dfe76e9be9cb8b",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-frontend-dependency-descriptor-20261006-r1",
+      "exists": true,
+      "head": "7ce730c92ecff0eb694d4d0466dfe76e9be9cb8b",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-frontend-followup-af6d-20261006-r1",
+      "source": "66bda98056d3c2e64ca45731eb47e2942e6355ea",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-frontend-followup-af6d-20261006-r1",
+      "exists": true,
+      "head": "66bda98056d3c2e64ca45731eb47e2942e6355ea",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-generator-host-sandbox-discovery-20261007-r1",
+      "source": "6f3ac39e064f6616c3642ba067b57a069fda654b",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-generator-host-sandbox-discovery-20261007-r1",
+      "exists": true,
+      "head": "6f3ac39e064f6616c3642ba067b57a069fda654b",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-go-service-retirement-diagnostics-20261007-r1",
+      "source": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-go-service-retirement-diagnostics-20261007-r1",
+      "exists": true,
+      "head": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-java-approved-source-generators-20261007-r1",
+      "source": "302168448a60ba04652764fc4060173ed6c3009d",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-java-approved-source-generators-20261007-r1",
+      "exists": true,
+      "head": "302168448a60ba04652764fc4060173ed6c3009d",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-java-httpserver-body-decoding-20261007-r1",
+      "source": "21031d9c53b69590a997951f48ee2fd4d5e10c1e",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-java-httpserver-body-decoding-20261007-r1",
+      "exists": true,
+      "head": "21031d9c53b69590a997951f48ee2fd4d5e10c1e",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-java-owned-timer-readiness-20261006-r1",
+      "source": "89b8d9833d1309667a4aa6da31b5daa40ccabb79",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-java-owned-timer-readiness-20261006-r1",
+      "exists": true,
+      "head": "89b8d9833d1309667a4aa6da31b5daa40ccabb79",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-java-pr807-coherent-20261007-r1",
+      "source": "10f1c9e7652d903e0f8cf835862c21c323f31d6e",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-java-pr807-coherent-20261007-r1",
+      "exists": true,
+      "head": "10f1c9e7652d903e0f8cf835862c21c323f31d6e",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-java-pr807-wire-20261007-r1",
+      "source": "406f9e4075f1804051ff831c9395e15a9d1cdee4",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-java-pr807-wire-20261007-r1",
+      "exists": true,
+      "head": "406f9e4075f1804051ff831c9395e15a9d1cdee4",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-java-server-lifecycle-qualification-20261007-r1",
+      "source": "9e66fccb1cf991ebf11dc69f65a34077a5ba377d",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-java-server-lifecycle-qualification-20261007-r1",
+      "exists": true,
+      "head": "9e66fccb1cf991ebf11dc69f65a34077a5ba377d",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-java-server-maximum-body-20261007-r1",
+      "source": "7a7a0e664df442f6e7f13fa332a00c7dc9dce03d",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-java-server-maximum-body-20261007-r1",
+      "exists": true,
+      "head": "7a7a0e664df442f6e7f13fa332a00c7dc9dce03d",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-nats-cold-secret-ci-repair-20261006-r1",
+      "source": "fb82e51144715a873635c42a95455825c0f91658",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-nats-cold-secret-ci-repair-20261006-r1",
+      "exists": true,
+      "head": "fb82e51144715a873635c42a95455825c0f91658",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-runtime-diagnostic-context-20261007-r1",
+      "source": "c38043fa9c81180a79e50ad11c3a7f6c156126d4",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-runtime-diagnostic-context-20261007-r1",
+      "exists": true,
+      "head": "c38043fa9c81180a79e50ad11c3a7f6c156126d4",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-runtime-owner-attribution-20261007-r1",
+      "source": "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-runtime-owner-attribution-20261007-r1",
+      "exists": true,
+      "head": "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-runtime-receipt-ci-repair-20261007-r1",
+      "source": "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-runtime-receipt-ci-repair-20261007-r1",
+      "exists": true,
+      "head": "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-rust-canonical-stack-port-20261007-r1",
+      "source": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-rust-canonical-stack-port-20261007-r1",
+      "exists": true,
+      "head": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-rust-canonical-thread-bootstrap-20261007-r1",
+      "source": "0be99712751a4b67830914cba42d060f091219db",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-rust-canonical-thread-bootstrap-20261007-r1",
+      "exists": true,
+      "head": "0be99712751a4b67830914cba42d060f091219db",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-rust-captured-staged-zig-20261006-r1",
+      "source": "aa5886b81f6438f8d33216484955279a1ab57a35",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-rust-captured-staged-zig-20261006-r1",
+      "exists": true,
+      "head": "aa5886b81f6438f8d33216484955279a1ab57a35",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-rust-frontend-closure-decoder-20261006-r1",
+      "source": "a26f7cba7433d24966bdcfb6c4cedbad2c4dc35d",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-rust-frontend-closure-decoder-20261006-r1",
+      "exists": true,
+      "head": "a26f7cba7433d24966bdcfb6c4cedbad2c4dc35d",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-rust-logical-tls-port-20261007-r1",
+      "source": "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-rust-logical-tls-port-20261007-r1",
+      "exists": true,
+      "head": "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-rust-runtime-receipt-source-20261007-r1",
+      "source": "a7d3300c39b7379a1543ca93226098f7737725c5",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-rust-runtime-receipt-source-20261007-r1",
+      "exists": true,
+      "head": "a7d3300c39b7379a1543ca93226098f7737725c5",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-rust-standard-clock-port-20261007-r1",
+      "source": "0114e05a6a5c0a08f4e0729b00bbd3da414f2767",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-rust-standard-clock-port-20261007-r1",
+      "exists": true,
+      "head": "0114e05a6a5c0a08f4e0729b00bbd3da414f2767",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-security-20261004",
+      "source": "8810e5d99784da6ca5239587e05605915b6b4651",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-security-20261004",
+      "exists": true,
+      "head": "8810e5d99784da6ca5239587e05605915b6b4651",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-stream-operator-controls-20261007-r1",
+      "source": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-stream-operator-controls-20261007-r1",
+      "exists": true,
+      "head": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-stream-operator-current-development-20261007-r1",
+      "source": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-stream-operator-current-development-20261007-r1",
+      "exists": true,
+      "head": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-stream-operator-current-development-20261007-r2",
+      "source": "55906321f5bd7e9cf156674945d808cda91f18b2",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-stream-operator-current-development-20261007-r2",
+      "exists": true,
+      "head": "55906321f5bd7e9cf156674945d808cda91f18b2",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-stream-tls-captured-parser-bounds-20261007-r1",
+      "source": "067491d87f8fd4f233114ac93db260d5fc2514b2",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-stream-tls-captured-parser-bounds-20261007-r1",
+      "exists": true,
+      "head": "067491d87f8fd4f233114ac93db260d5fc2514b2",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-stream-tls-protected-credentials-20261007-r1",
+      "source": "3fa3313911390233f26e7b911a2458cf6f055d94",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-stream-tls-protected-credentials-20261007-r1",
+      "exists": true,
+      "head": "3fa3313911390233f26e7b911a2458cf6f055d94",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-approved-generators-20261007-r1",
+      "source": "f80b48250c89a1294a42d5f5c8e0d52e7aefe2f7",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-approved-generators-20261007-r1",
+      "exists": true,
+      "head": "f80b48250c89a1294a42d5f5c8e0d52e7aefe2f7",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-async-clock-profile-20261008-r1",
+      "source": "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-async-clock-profile-20261008-r1",
+      "exists": true,
+      "head": "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-async-imports-20261008-r1",
+      "source": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-async-imports-20261008-r1",
+      "exists": true,
+      "head": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-async-owned-events-20261007-r1",
+      "source": "ab77366903fe21c970cf6fa1f3491166417c3c95",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-async-owned-events-20261007-r1",
+      "exists": true,
+      "head": "ab77366903fe21c970cf6fa1f3491166417c3c95",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-async-profile-20261007-r1",
+      "source": "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-async-profile-20261007-r1",
+      "exists": true,
+      "head": "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-async-runtime-20261007-r1",
+      "source": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-async-runtime-20261007-r1",
+      "exists": true,
+      "head": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-import-profile-20261008-r1",
+      "source": "faa08263570b3748d1be7918a3271e321c6adeea",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-import-profile-20261008-r1",
+      "exists": true,
+      "head": "faa08263570b3748d1be7918a3271e321c6adeea",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-import-selection-20261008-r1",
+      "source": "6abd7a1d58f8db15648abe9613967d25690f1796",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-import-selection-20261008-r1",
+      "exists": true,
+      "head": "6abd7a1d58f8db15648abe9613967d25690f1796",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-import-splicer-contract-20261008-r1",
+      "source": "50495c4fb24bf3b05d01e2a03bc13c6b3958138f",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-import-splicer-contract-20261008-r1",
+      "exists": true,
+      "head": "50495c4fb24bf3b05d01e2a03bc13c6b3958138f",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-typescript-runtime-materials-20261008-r1",
+      "source": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-typescript-runtime-materials-20261008-r1",
+      "exists": true,
+      "head": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/AppData/Local/LatentSdkDelivery/checkouts/sdk-wasi-stream-reproducers-20261007-r1",
+      "source": "ea485b568d63b126b1721febe1fb673e6c94eb9b",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/sdk-wasi-stream-reproducers-20261007-r1",
+      "exists": true,
+      "head": "ea485b568d63b126b1721febe1fb673e6c94eb9b",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-c-authoring-lifecycle",
+      "source": "7069e537200a11375c326f9f291b371d7cf8ac94",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-c-authoring-lifecycle",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-c-completion",
+      "source": "2f0a6e1a4424b1cdd360fb15ca42e301951a8722",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-c-completion",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-ci",
+      "source": "131b1e3358a567b0527f28c48ea40926e8bc8806",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-ci",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-control-lease",
+      "source": "10d419cd6d81b9977d0aeeb13829afd2a3102ea5",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-control-lease",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-diagnostics",
+      "source": "a90d39b115a6e586ea96af8519ef327dbec7166f",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-diagnostics",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-dotnet-peer",
+      "source": "0ffad44a7409e65a58cdfb4473a7d2147976b6d2",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-dotnet-peer",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-foundations",
+      "source": "68d39106911a5221898ae7d170b4f00bda64a3e0",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-foundations",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-host-profiles",
+      "source": "a4211b1717eed64eed4ad908fb2fdbe19fe46466",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-host-profiles",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-http-client-node",
+      "source": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-http-client-node",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-java-expanded-timeunit-compile",
+      "source": "45dd0c316e901b5666edda527f406a302c00cf98",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-expanded-timeunit-compile",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-java-resources-recovery",
+      "source": "7f6fd0832b6b0af73b15889343ecdfb4142314c7",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-resources-recovery",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-java-review",
+      "source": "6c493ea1ebdaee81023e5c9cc533253aaf0d1980",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-review",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-java-spills",
+      "source": "27af27b8bab9edcfad4e85af1a676c16e969cc03",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-spills",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-java-spills-compile",
+      "source": "bed5c4d6d61a0feb36d0da57df03a994d9347432",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-spills-compile",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-java-timeunit-compile",
+      "source": "8943a364bfa53480d001b4d82353dc0ef576c6a0",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-timeunit-compile",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-java807-warm",
+      "source": "ec0430f56af46c4d5b80e1a8ae35fdc34311d430",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-java807-warm",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-networking",
+      "source": "21e7532446e7453ad7a9e0be3ae57d8c1df906e4",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-networking",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime",
+      "source": "16e89a79a5df3e6b9d476ad2f57e130c6eafb829",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime-ci",
+      "source": "829dfced3201b502781ecf84b4ef594acb01b9f7",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-ci",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime-contracts",
+      "source": "415c36e5a4bc7095e6a16398f8b2b9c1aab47b6d",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-contracts",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime-integration",
+      "source": "99b6d567c6435c6f1d643bf9d4caf2470e212578",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-integration",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime-pump",
+      "source": "1cce4f749486e0e102dc764b2efda2c0ccd4c79c",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime-pump-ci",
+      "source": "9327aeed95f76f80b22cb622c7fa17ded74cc7cc",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump-ci",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime-pump-native",
+      "source": "38d08fd2bdc2c9631377de228bc9719e0193303a",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump-native",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime-timeunit",
+      "source": "ec0430f56af46c4d5b80e1a8ae35fdc34311d430",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-timeunit",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime-trace",
+      "source": "99b6d567c6435c6f1d643bf9d4caf2470e212578",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-trace",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-runtime-v5-ci",
+      "source": "404de7a41a6dac391b9211ebd2cadca595acc21f",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-v5-ci",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-stream-authority-controls",
+      "source": "27cc15565c0219c8a7f1307ae9543b92a368ccea",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-stream-authority-controls",
+      "exists": true,
+      "head": "27cc15565c0219c8a7f1307ae9543b92a368ccea",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-sdk-trust-integration",
+      "source": "88e73b3ba8f2b51289a84f180c3995ea973d9453",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-sdk-trust-integration",
+      "exists": false,
+      "recoveredRegisteredCommit": true
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-fabric-streams-integration",
+      "source": "222ab1ac51336cb6548cf82e10ef58eaa53acb4f",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-fabric-streams-integration",
+      "exists": true,
+      "head": "222ab1ac51336cb6548cf82e10ef58eaa53acb4f",
+      "status": [],
+      "unmerged": []
+    },
+    {
+      "worktree": "C:/Users/turkins/Desktop/latent-sdk-analyzer-current",
+      "source": "63d98926d23d3c61ef9e66c55a53b35f96eaf4ec",
+      "snapshotRef": "refs/heads/handoff/sdk-cleanup-20261008/latent-sdk-analyzer-current",
+      "exists": true,
+      "head": "63d98926d23d3c61ef9e66c55a53b35f96eaf4ec",
+      "status": [],
+      "unmerged": []
+    }
+  ]
+}

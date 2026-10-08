@@ -1,0 +1,175 @@
+{
+  "status": "tested-source-delivery",
+  "head": "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+  "tree": "09757f170704b8d048ca884f896573f81eda26dc",
+  "base": "b652b88a1713d531f1cd0b852d3ff674a638464b",
+  "sourceFiles": [
+    {
+      "path": "docs/component-development/library-compatibility.md",
+      "bytes": 4955,
+      "sha256": "9c79ffb8c1593b08348cb8a94b1539b9896f730ae99b00e285dd9641ebef3c86"
+    },
+    {
+      "path": "tools/c_capsule_build.py",
+      "bytes": 12953,
+      "sha256": "debc9b48e5d2950aa017589dd6d33a3548f94b1d0e005a5d08e875aa136a9b82"
+    },
+    {
+      "path": "tools/ci/contracts/python/test_guest_compatibility_context.py.json",
+      "bytes": 7132,
+      "sha256": "9e45abd31e3479b1c21fd0701f0bdeeee3f4bb5c3828811a8e52acffb7edfaed"
+    },
+    {
+      "path": "tools/ci/contracts/python/test_guest_compatibility_profiles.py.json",
+      "bytes": 5050,
+      "sha256": "d547e614f3c86bb31c96c81f13608d532ec0b77c7077abaac36de44660573d39"
+    },
+    {
+      "path": "tools/ci/contracts/python/test_guest_compatibility_recipes.py.json",
+      "bytes": 3378,
+      "sha256": "1fb11b278f1124d57b124e91b499f1bf8f66f1763142069cc09eaf38b94fbe62"
+    },
+    {
+      "path": "tools/dev_tool_distribution.py",
+      "bytes": 13819,
+      "sha256": "901d5f4b63173e90531281b60a6c56b1f851525047e9745613de267facffef07"
+    },
+    {
+      "path": "tools/dev_workflow/node_scenarios.py",
+      "bytes": 9958,
+      "sha256": "ff569a3d5ba69f51e7ecc840dc55167608be7f8099ad7374e026c402b9d4a7d9"
+    },
+    {
+      "path": "tools/dotnet_guest/build.py",
+      "bytes": 14113,
+      "sha256": "e17f1fc6016d01929bda62f82a9269a0b431bc86f610c02dde72d94ee6f81182"
+    },
+    {
+      "path": "tools/go_capsule_build.py",
+      "bytes": 10427,
+      "sha256": "ed7e7d0b18651f1123158d6721c83aeba17d79f5e807111d2b2e0f144f4a8a4d"
+    },
+    {
+      "path": "tools/guest_compatibility.py",
+      "bytes": 12175,
+      "sha256": "f9bb6683190e4b7969d1e246f72d2014c6561e8e3ae5a9ed577bbfdce586f8a1"
+    },
+    {
+      "path": "tools/guest_compatibility_build.py",
+      "bytes": 10481,
+      "sha256": "9ec9735b56cdce607b970b6db108b3eaa2ad4d971e324e9c860766495f9bc843"
+    },
+    {
+      "path": "tools/guest_compatibility_context.py",
+      "bytes": 6046,
+      "sha256": "0f8cb646fce7e1edc845b461724d9643a5e6d4840d5ba3c3f9d7267643b4b7bd"
+    },
+    {
+      "path": "tools/guest_compatibility_context_build.py",
+      "bytes": 4783,
+      "sha256": "2d5e203905fb2b948974247cb6816c6475b28daba35fffd816e3b4e93f4280f0"
+    },
+    {
+      "path": "tools/guest_compatibility_outcomes.py",
+      "bytes": 8200,
+      "sha256": "f6c404781184fe3891d9f5aedbf2f877e6687f485b0e09efb910db0a292c4df4"
+    },
+    {
+      "path": "tools/java_capsule_build.py",
+      "bytes": 16282,
+      "sha256": "9810af67b6b08e1439c889a0907f597f672a282aabb95d4e72e0e691e98e6b61"
+    },
+    {
+      "path": "tools/rust_capsule_build.py",
+      "bytes": 31680,
+      "sha256": "844d186c095cf3e3f7f17bbdd35e2253a8f2587359510f07531c0bbec27ff113"
+    },
+    {
+      "path": "tools/tests/test_guest_compatibility_context.py",
+      "bytes": 12536,
+      "sha256": "e639fd9f42ab37760e18673d9dcfc4a2ae784c3c9730c4b3a962555cdc14560d"
+    },
+    {
+      "path": "tools/tests/test_guest_compatibility_profiles.py",
+      "bytes": 13151,
+      "sha256": "92680a18eef400cee048520074afa0004fde661733d6d86570f893421beb7904"
+    },
+    {
+      "path": "tools/tests/test_guest_compatibility_recipes.py",
+      "bytes": 6708,
+      "sha256": "14498ea2d48bbc270b267786b318ed455e6689156e520198398c4c341b3db94b"
+    },
+    {
+      "path": "tools/typescript_guest/build.py",
+      "bytes": 12750,
+      "sha256": "4f7c9f1435bff95fed127551324221343914ec4e9dfdbec951ba68ab75f0822b"
+    }
+  ],
+  "diffSha256": "5b7f45ba901bc4009224f7155d03e5c7bcea9ce9caa4b40a4af9ed5c607ba172",
+  "nativeLinuxControls": {
+    "listed": 84,
+    "passed": 84,
+    "failed": 0,
+    "skipped": 0,
+    "maximumSeconds": 90
+  },
+  "priorWindowsControls": {
+    "listed": 84,
+    "existingLinuxPlatformSkips": 5
+  },
+  "ciCoverage": {
+    "status": "passed",
+    "baselineRequiredRunBlocks": 88,
+    "currentRequiredRunBlocks": 262,
+    "delegatedScriptOwners": 140,
+    "newCaseCatalogue": 23
+  },
+  "originalCompatibilityV1AssetsAndBytesPreservedByControls": true,
+  "allSixBuilderPostInputCheckHooks": true,
+  "exactReviewedDeclaredV5SelectorAndUnknownVersionDenialsRetained": true,
+  "standardRuntimeReceipts": {
+    "java": "owner-receipt-selected-unqualified",
+    "dotnet": "owner-receipt-selected-unqualified",
+    "rust": "absent-unobserved",
+    "c": "absent-unobserved",
+    "go": "absent-unobserved",
+    "typescript": "absent-unobserved"
+  },
+  "automaticPatchPreimageDerivedAndRecipeConfigurationIdentitiesBound": true,
+  "nodeOriginalResultObservedOnceWithoutExtraInvokeStatusRetryOrGrants": true,
+  "diagnosticNumericVocabulary": {
+    "fields": 9,
+    "stages": 8,
+    "reasons": 16,
+    "profiles": 2
+  },
+  "coarseQueuePressureDimensionUnknownAndLibraryRetirementUnproven": true,
+  "buildContextMaximumBytes": 65536,
+  "outcomesMaximumBytes": 131072,
+  "newNativeProducerStarted": false,
+  "currentFull679RuntimeQualification": false,
+  "remoteMutations": false,
+  "receipts": {
+    "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\compatibility-context-native-controls-20261007-r1\\INPUTS.json": {
+      "bytes": 478294,
+      "sha256": "7584ddf443f734d80d895574709139313e8192222e3570514f88a214f27f46b9"
+    },
+    "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\compatibility-context-native-controls-20261007-r1\\RUNNER.py": {
+      "bytes": 1425,
+      "sha256": "ce05e75eb3c703b58a401e0eda26504cd8ef440a11cad15bbb09deadbf39180a"
+    },
+    "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\compatibility-context-native-controls-20261007-r1\\VALIDATION.json": {
+      "bytes": 379,
+      "sha256": "af1110ab04c0ef4bbdfafa552cbb2d0350f956d74233846b3cf29ef605dc68e6"
+    },
+    "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\compatibility-context-native-controls-20261007-r1\\tests.stderr": {
+      "bytes": 16503,
+      "sha256": "ef551ec60d1c2dc102cb65cdb2a381c2c29170b57aaee464893fe813c9ccbbbc"
+    },
+    "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-compatibility-context-20261007-r1\\target\\ci\\compatibility-context-exact-head-inventory.json": {
+      "bytes": 746396,
+      "sha256": "e380973b291d3f8064583e58348a3c11ed3c951469048bce1daa38c6bdfa59eb"
+    }
+  },
+  "nextSourceWork": "Capture owner-selection receipts for Rust/Go/C/TypeScript using actual selected source/tool/profile bytes; keep qualified API support unknown."
+}

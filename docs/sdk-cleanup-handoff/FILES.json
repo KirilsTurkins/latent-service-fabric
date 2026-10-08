@@ -1,0 +1,600 @@
+{
+  "observedUtc": "2026-10-08T11:32:03.920973+00:00",
+  "files": [
+    {
+      "path": "acceptance-audit/CLOSURE-AUDIT.json",
+      "bytes": 322979,
+      "sha256": "7a7d9a633c05a21dd14a630ea301c39197c960f4429206d67622469c234976e8"
+    },
+    {
+      "path": "acceptance-audit/CLOSURE-AUDIT.md",
+      "bytes": 14046,
+      "sha256": "bb695137cd891eda755dd33348ee1cd041a9ee9aac1c8167a89592fa80006c9d"
+    },
+    {
+      "path": "acceptance-audit/EVIDENCE-INDEX.json",
+      "bytes": 3172,
+      "sha256": "b983a9b1f3fdff67a9bf56bebfedf37216fa6e7c55c290355f0d1bc375e5691a"
+    },
+    {
+      "path": "DRAFT-PRS.json",
+      "bytes": 29362,
+      "sha256": "10f80518b9a7d805d44bae3c8c1d8676b44927f4c72b76b1be914eb98802e9f5"
+    },
+    {
+      "path": "evidence/dependency-handoff/audit/CLOSURE-AUDIT.json",
+      "bytes": 322979,
+      "sha256": "7a7d9a633c05a21dd14a630ea301c39197c960f4429206d67622469c234976e8"
+    },
+    {
+      "path": "evidence/dependency-handoff/audit/CLOSURE-AUDIT.md",
+      "bytes": 14046,
+      "sha256": "bb695137cd891eda755dd33348ee1cd041a9ee9aac1c8167a89592fa80006c9d"
+    },
+    {
+      "path": "evidence/dependency-handoff/audit/EVIDENCE-INDEX.json",
+      "bytes": 3172,
+      "sha256": "b983a9b1f3fdff67a9bf56bebfedf37216fa6e7c55c290355f0d1bc375e5691a"
+    },
+    {
+      "path": "evidence/dependency-handoff/BOOTSTRAP-PRESERVED.patch",
+      "bytes": 49190,
+      "sha256": "7a86e58848e2d88e4f8ccfe96fa77c4d20f509462301db2ef7f211c1c5f8ff35"
+    },
+    {
+      "path": "evidence/dependency-handoff/HANDOFF.json",
+      "bytes": 39676,
+      "sha256": "ede31873e86130b9d9c0417489d7f13f36e8e6822a4c7e105b3c6a645a73e5fb"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/compatibility-context-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 6914,
+      "sha256": "d5ad907ecc05993bbc83688a54ed5445da5de43bfe2cd817e3a1b12ef66a7482"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/generator-host-discovery-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 1631,
+      "sha256": "15ae875095cb68bb06b523014ac34561e28699046c2c97debf54d03a7c4a5b85"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/BUILD-FREE-SUITE.json",
+      "bytes": 1862,
+      "sha256": "5a690f89f76e65adbe87d21f4acb089887575e553cd1ddb78b313e0366a04e18"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/COMPILED-INPUT.json",
+      "bytes": 2676,
+      "sha256": "d2dd96280580ab20d78e813a07ce4f9f71576b07705c2d8d49f20a23a7e532d2"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 10066,
+      "sha256": "2480c2a3df15b96f64685b507c387df74cf9d7c99c13918e74c11d5f0b02f3f2"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/REGISTERED-SUITE.json",
+      "bytes": 1731,
+      "sha256": "4c3b5fb8a8248ab871630081389a42f89c6410e68d41d2f1ae4eba594d1301c7"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/RESULT.json",
+      "bytes": 6161,
+      "sha256": "f29b8f200d715336f185f7b5d523b3a807f850ba8b8a22794bdbb25a43fd87c7"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-reference-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 4221,
+      "sha256": "c1568194149d677bb0a79ccc3dc8ed46a1caec1944e6c1d482467a37577b4e8a"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-reference-20261007-r1/RESULT.json",
+      "bytes": 3120,
+      "sha256": "205f313b9095a2d57f0cfe491daaa68f9355a9d47a875c2b94f7d0b7b38e4fe0"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-reference-20261007-r2/FINAL-DELIVERY.json",
+      "bytes": 4041,
+      "sha256": "1a39eb779dee9c14d52490cbe1326d339ccb4f88167c71a39477d225f4037aed"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-reference-20261007-r2/RESULT.json",
+      "bytes": 2474,
+      "sha256": "5110d35a96e35e87a0a8634b74746489805f61c48dca0e3e2437b06462e273c4"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-reference-20261007-r3/FINAL-DELIVERY.json",
+      "bytes": 4988,
+      "sha256": "5b95cab9b0fe3a4e2daab7720cefd05f4144929362c6b17f36e4a96b0594c169"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-reference-20261007-r3/RESULT.json",
+      "bytes": 3279,
+      "sha256": "7bf06c06eea0f4456a019d809de9337eb4b68bb0cc3e552f05bc7c4602667ed7"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-reference-20261007-r4/FINAL-DELIVERY.json",
+      "bytes": 4051,
+      "sha256": "6cc5ef2a7d42b17177a79bda82309086c6c3cb55993524080eeb7ffa90eb1612"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/go-service-diagnostics-windows-reference-20261007-r4/RESULT.json",
+      "bytes": 3283,
+      "sha256": "1f02bf6098fd633e912c6a76064a0f4c7d4904fb1fbceae1e77a52b921276faf"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/java-approved-generator-delivery-20261007-r4/FINAL-DELIVERY.json",
+      "bytes": 3816,
+      "sha256": "0692177565697eaf3d14016772b37b3db3241d490fd34f4e63de512ee992a95c"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/pr843-runtime-helper-maintained-ci-delivery-20261007-r3/FINAL-DELIVERY.json",
+      "bytes": 4924,
+      "sha256": "77051a8fd23d7b3f6405e92035d198417072bf838bb9983d6132581bbb1ca0f1"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/runtime-owner-attribution-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 3748,
+      "sha256": "dc153f55681222dabeaffd525ca88e5fe91b775986fd2becbfe13cb15bcd9e22"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/runtime-owner-receipts-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 6304,
+      "sha256": "4f2c1870df55efe636d71f3b7a044d1a8d1c589228a7ad615a519f4ab173173d"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/rust-canonical-stack-sysroot-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 7935,
+      "sha256": "3eaf884f811ac268d191bd2bfbfba3eef42258cea94702367993c4c209cdfe3d"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/rust-canonical-stack-windows-reference-20261007-r3/RESULT.json",
+      "bytes": 810,
+      "sha256": "598eecb5692ce80b0f231b6b56266eb2f58addec4549b693b628f950030c7c1e"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/rust-runtime-source-receipt-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 2889,
+      "sha256": "11793a1f060d5dba0a3369a885da55a8d0161e3c2b1fa37825b23872b06b35c7"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/rust-standard-clock-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 8555,
+      "sha256": "dca134999c2313336b1cdf3cbc577a71c3dd4b83355456d1a74a86e6674b29fa"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/rust-standard-tls-pal-native-reference-20261007-r2/COMMIT-BYTE-BINDING.json",
+      "bytes": 2884,
+      "sha256": "66dacc9abc1535a8319152fbfabb027cdecda38a4ca2d4e3b846b938264c2e47"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/rust-standard-tls-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 9570,
+      "sha256": "938bfc6335f0b83998a118502f86062cbcc17521bc5925581667c041107dd6b9"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/rust-thread-bootstrap-source-checkpoint-20261008-r1/CHECKPOINT.json",
+      "bytes": 1956,
+      "sha256": "ddf904130e6d8554072f1ebc261a7b0025fbcda5be82733790a1bdf63ae965c8"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/rust-thread-bootstrap-windows-source-controls-20261008-r1/RESULT.json",
+      "bytes": 363,
+      "sha256": "12002856c3b23f6888325dbad4fc3c9444221d59a1935389796e7fdbdd1f66b0"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/typescript-approved-generator-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 4142,
+      "sha256": "779e8cb3771e19584d1adf4bfb3713f90a2735a01ca6b4f589c931107940e359"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/watch-c380-default-native-host-backup-20261007-r1/HOST-BACKUP.json",
+      "bytes": 1832,
+      "sha256": "ab15ff84e0e7eb9d6c225f8371e5566730a991b091d7f2a4db1e76a0b73c3d20"
+    },
+    {
+      "path": "evidence/dependency-handoff/receipts/watch-c380-rust-test-node-host-backup-20261007-r1/HOST-BACKUP.json",
+      "bytes": 2199,
+      "sha256": "19eac53f6061504795b0a281013778d957a36354d3cd764b02da7c025b2c77be"
+    },
+    {
+      "path": "evidence/guard-handoff/ADDITIONAL-RECEIPTS.json",
+      "bytes": 2183,
+      "sha256": "5bc31ce7f8ceee48a2cf41b3bf9a28c349ce42c08ed3752788b261c5ae0074d8"
+    },
+    {
+      "path": "evidence/guard-handoff/COMMANDS.md",
+      "bytes": 4812,
+      "sha256": "de6c949b8fa03fca5b5f2feb53831b8245f1f84b681e4fda2ab8cd38e0f4b9b3"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/native-source-capacity-745-7b69ba1f-20261008-035431-656029/packet/SOURCE-CAPACITY-CONTROLS.json",
+      "bytes": 932,
+      "sha256": "60232723b76f5a26219899105428efa8f0eb093760e0d2e9ab51a7fc121ba58d"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/owned-current-sdk-source-controls-745-7b69ba1f-20261008-033315-632486/FINAL.json",
+      "bytes": 21957,
+      "sha256": "09528236665bab4d97f4ed53bafc029c47bc036df1752180373bdeb4f1b3167c"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-actual-codec-runtime-bundle-controls-20261008-r2/RESULT.json",
+      "bytes": 822,
+      "sha256": "4e80c2a57f52f7a83018503cd7135db654eeb3792967a4a7d94c3a525f391b4d"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-actual-codec-runtime-tool-bundle-20261008-r2/PREPARED.json",
+      "bytes": 5845,
+      "sha256": "a0344c66b9183f5bee9be9a5a60333c58e5990d9222e5daf27c0bf1edff5b3b0"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-codec-matched-compiler-delivery-20261008-r2.json",
+      "bytes": 12698,
+      "sha256": "d8eb7283f1f4063a752152d79b87fa15b9d94219b3d8b677cdc191aecf280d47"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-complete-native-text-codec-carrier-20261008-r4/SOURCE-SELECTION.json",
+      "bytes": 4666,
+      "sha256": "029b26c3478b3367c3c360aaf8ebb6c94f7dd1e74cf613956472adf6bc1da1d2"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-current-acceptance-20261008-r2.md",
+      "bytes": 6060,
+      "sha256": "81130f2e3e2dcd3e3fb0ff087b37566e0c7f7807a954c88f2eebd95d3be6dab6"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-current-native-text-codec-engine-input-20261008-r4.json",
+      "bytes": 8976,
+      "sha256": "9ae3ab0e5838c07e41029cd53261fef2e053889878c1c41447d88715215fd0be"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-current-ordinary-clock-projects-20261008-r1/PREPARED.json",
+      "bytes": 1644,
+      "sha256": "215b78d7588b26d99feada10b19a9bb3c4e410a6bfaab0f2e13961e94f185df3"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-exact-unmodified-npm-review-20261008-r3/RESULT.json",
+      "bytes": 2247,
+      "sha256": "22d96b0443f5ae5fec2ebf7b7483ed1f4c5a5b3136de681aaccfa171b3b695fc"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-frozen-dfad-splicer-tests-20261008-r2/RESULT.json",
+      "bytes": 1317,
+      "sha256": "9b4a58564eedac975183a7979395451f4d91b8b02068b53fed2e376d440169ea"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-frozen-dfad-Wasm-splicer-build-20261008-r1/RESULT.json",
+      "bytes": 1573,
+      "sha256": "bfa354cc5a36d82c3f1a5e8d23955575b08558ad77f2180702716c08b6da9a95"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-maintained-service-caller-compiler-qualification-20261008-r1/FAILED.json",
+      "bytes": 1606,
+      "sha256": "9263881a436ac8c6fdc1c836257974ae82d63cfee7e7464b6e73bd048d7765b4"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-maintained-service-caller-compiler-qualification-20261008-r1/logs/14-componentize.stderr.txt",
+      "bytes": 659,
+      "sha256": "6bf64477b532dcb6b109eff455ea4810bd3d142cd903166702abff09296f6e7c"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 282,
+      "sha256": "a95941f2472a3391a3d7b45d4100208e74091b5dff01510924cbb66045e56a9d"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2690,
+      "sha256": "0af82fe5fc2baafa1dfdede8fd9284422850ae6b58aa6facd90c99708e58be77"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15296,
+      "sha256": "0a7f588046c4a71cd5b72f07fccebd182594621e0527252e595382b5641b5bfe"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 282,
+      "sha256": "230548f1b285fcfc342e43e2f909840db4b2afa447f150b65d2ca199192fada0"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2771,
+      "sha256": "46faeee5fcc00be45f7afac233c1bc20edbdd8070e04a004cba22dde0c7d896d"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15300,
+      "sha256": "27f07801a779ca288e687bdb5e6e256dc83a773955c1ef3fd45e376694f558b9"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 280,
+      "sha256": "250106d2cb8d048c8d52fcfdd575e971083797a469552b059641c33a66c3bd4c"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2692,
+      "sha256": "3306e20a22b0e9388ff5f22651d1a407562b6c68f2e108fdc254d83b124c82b8"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15296,
+      "sha256": "0a7f588046c4a71cd5b72f07fccebd182594621e0527252e595382b5641b5bfe"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 520,
+      "sha256": "d1be3777932026e3fdac8a09cbf60e5de921cf7490fae06940c00fda95cef7ea"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 282,
+      "sha256": "f6783c65b0c7ed5742cc630142d235a6afd8404d1207b9562a3d5f652e3090ba"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2716,
+      "sha256": "02e3e42a2f62a66af78d5f8684add6f626da5767457e857250de86909521e63a"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15305,
+      "sha256": "93ddc53e75dcccff1374f64be7adae37e5e4d90cc63ffc5046645bd05e273937"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r2/OBSERVER-IDENTITY-FAILED.json",
+      "bytes": 651,
+      "sha256": "60cb1a5cf59550047d6817f096fced2a575d4a09e40b4c837d636dd601b80bbe"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/compiler.json",
+      "bytes": 585,
+      "sha256": "38d12e74ca110191352fda1e298aba8a41dd58974698318ca0daad0a85fa8225"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/OWNED-FINAL-STOP.json",
+      "bytes": 281,
+      "sha256": "50ebbaa7639965662696672117eaaf9d50bf4ef976cf420a8457034f7395e128"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/RESULT.json",
+      "bytes": 2713,
+      "sha256": "64d59fb9d4be609a7da94250252588e95c95ab5a2fe8ebca0aa7bbc739bdd5fc"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/runtime-materials.json",
+      "bytes": 646,
+      "sha256": "a5171188ad0833dcd74af217dac27265204a92f21236bcadf7cda57d5cc46328"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/typescript-runtime-selection.json",
+      "bytes": 15305,
+      "sha256": "ad2f8260aef68aa491d050f5d3616a9fe84483366765ae8a41a53623fab96e99"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-normal-npm-capture-20261008-r3/RESULT.json",
+      "bytes": 1643,
+      "sha256": "12de629b05b151a45b7e3ac467a656a2ec5325d2e94fcd045aa473609bb369a0"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-normal-signed-next-gates-20261008-r1.json",
+      "bytes": 12480,
+      "sha256": "7dca205d7ea03eada7f0d9a4d72f31d6f99a924e7714e976daa7068d259d47b5"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-real-service-import-projects-20261008-r1/PREPARED.json",
+      "bytes": 2017,
+      "sha256": "40df76fdc1e624cf4723d6db2dbe5480c03447ac2b94438ab2abc83a61473159"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-selected-whole-engine-build-20261008-codec-r4/ENGINE-BUILD.json",
+      "bytes": 14842,
+      "sha256": "2158be5ff1aba204b3ccbcb432e5d009fb8360084fcdc36665d21916e13b6235"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-selected-whole-engine-build-20261008-codec-r4/OWNED-FINAL-STOP.json",
+      "bytes": 11630,
+      "sha256": "6e1779d234cc5ac298cd871407e459396fc0156e9740be2f77f6ce530c1e3c62"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-selected-whole-engine-build-20261008-codec-r4/PRIVATE-ENGINE-BUILD-INPUT.json",
+      "bytes": 8737,
+      "sha256": "eae396124114407f1c874eb0b58a4e9aed1110096d98f2997c7d00533952e759"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-selected-whole-engine-build-20261008-codec-r4/RESULT.json",
+      "bytes": 27345,
+      "sha256": "1b2a2fab8f0b21261afe26aed6592e75c29cb9dfd3503d9ebc6e55d11757a4bc"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-source-built-async-cancel-engine-controls-20261008-r3/RESULT.json",
+      "bytes": 28681,
+      "sha256": "35085a3f30d38329d276b98ff70be7c774b88eaed12cb5e62ff881e5123710d5"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-source-built-engine-sixteen-controls-20261007-r1/RESULT.json",
+      "bytes": 5988,
+      "sha256": "728b77f2122d4dac89901b754fd0cbe88dad43907bc36309ac187c1526fcc27b"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-source-built-import-engine-controls-20261008-r2/RESULT.json",
+      "bytes": 28540,
+      "sha256": "1c85e098fc4adac6aede047d05ecb4083baabd2fb5ce1e5c92b3806cf79b26df"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-source-built-snapshot-engine-controls-20261007-r3/RESULT.json",
+      "bytes": 24298,
+      "sha256": "484e659a126061eb1eacd7ea7c34e8e96881a2e9075dac709a730b8815bb225a"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-source-built-splicer-transpile-20261008-r1/RESULT.json",
+      "bytes": 5104,
+      "sha256": "bc409723a26f3cb65c079f5bbf98c72bcd2b41624f0ddbcde12f73ce6f7733f2"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-source-built-timer-engine-controls-20261007-r2/RESULT.json",
+      "bytes": 22506,
+      "sha256": "6821918558f807c9e6148945e56a998035d1735d1598181a4345622a551cde55"
+    },
+    {
+      "path": "evidence/guard-handoff/existing-receipts/typescript745-source-splicer-operator-input-20261008-r1.json",
+      "bytes": 5385,
+      "sha256": "6108c1698ff64b1750e2813532e4ae7043042215898c509daee99bde66d07dfd"
+    },
+    {
+      "path": "evidence/guard-handoff/HANDOFF.json",
+      "bytes": 5006,
+      "sha256": "fc22135aaf4079b5f631501d76ae92031b478b74c9ed589060331c3167a1abc6"
+    },
+    {
+      "path": "evidence/guard-handoff/INVENTORY.json",
+      "bytes": 42924,
+      "sha256": "4ad782b905581b27155f3eb70d11f24a46dfa58be99ce8f9a21b965db284bb93"
+    },
+    {
+      "path": "evidence/guard-handoff/README.md",
+      "bytes": 1434,
+      "sha256": "2ed68c50359118fefd7a9ce0039324fd01a1e75dab924a405c387e0120f0c6aa"
+    },
+    {
+      "path": "evidence/networking-handoff/C684.json",
+      "bytes": 448,
+      "sha256": "3277648d247ed778d8d88357c01ad3025497d4acd61d5af1504f8315314b9e60"
+    },
+    {
+      "path": "evidence/networking-handoff/C684publicSetup.json",
+      "bytes": 1190,
+      "sha256": "96448d96e5eed3da0fe88993b79bcd74cc3c41f4b54538ed6486bc1ca69e1fc3"
+    },
+    {
+      "path": "evidence/networking-handoff/FILES.json",
+      "bytes": 935,
+      "sha256": "121777e79f6ae361bedbd8b70beb3938bf8ac9327e7d6a1d0052c4c676b6ab9f"
+    },
+    {
+      "path": "evidence/networking-handoff/HANDOFF.json",
+      "bytes": 94015,
+      "sha256": "b84e4635b8375ca5bd55603cf4dd617ad1ac446c2b2df375d5c9029238bf728d"
+    },
+    {
+      "path": "evidence/networking-handoff/JavaLifecycle.json",
+      "bytes": 659,
+      "sha256": "51ab28bf1c1ef4655f780e0b01d0ff3f882b7e9d819f69abc30a5a52fff39886"
+    },
+    {
+      "path": "evidence/networking-handoff/streamsActual.json",
+      "bytes": 514,
+      "sha256": "d3818ba22d6e806214294d5e3687264ded245dadd34911aa8bbb85fbad2d671b"
+    },
+    {
+      "path": "evidence/networking-handoff/TLS739source.json",
+      "bytes": 830,
+      "sha256": "82e3e5c1fe857cf011006908a2502a33c0070ad1c114984fdde753809e61a460"
+    },
+    {
+      "path": "evidence/networking-handoff/TLSparserAttempt.json",
+      "bytes": 651,
+      "sha256": "bc66bfbfb5cc9507be19c8d772d34ca3d577eb05e8e64c700fa36e2d9cdeff1e"
+    },
+    {
+      "path": "evidence/root/emitted-analyzer-real-c-component-reference-20261007-r2/RESULT.json",
+      "bytes": 4156,
+      "sha256": "d2b25f1fced1863782461de8316fb263584e486283e0bf89928b132afe20b031"
+    },
+    {
+      "path": "evidence/root/evidence/RESULT.json",
+      "bytes": 360,
+      "sha256": "40081b686b10ef7f002453bd7f9eb62392b43998534ed28c4b074f0c9c2b4605"
+    },
+    {
+      "path": "evidence/root/go-service-diagnostics-windows-prepared-suite-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 10066,
+      "sha256": "2480c2a3df15b96f64685b507c387df74cf9d7c99c13918e74c11d5f0b02f3f2"
+    },
+    {
+      "path": "evidence/root/java-server-lifecycle-source-delivery-20261007-r3/FINAL-DELIVERY.json",
+      "bytes": 2950,
+      "sha256": "11e26fc6a110e97101aa9aaa33cd69467fbeaa7dfcf0ff04143566a09d556aa6"
+    },
+    {
+      "path": "FINAL-SOURCE-AUDIT.json",
+      "bytes": 40370,
+      "sha256": "bcec17b4972f0f34996a53cda9ac0b85bd78155877203e1686c8bf5bf1e5645b"
+    },
+    {
+      "path": "issue-current-progress.json",
+      "bytes": 11673,
+      "sha256": "73caa0f6b90e43a45416f22b2eab0c3e2e8064edd3bcd11a524f85cacdb33493"
+    },
+    {
+      "path": "PR775-CI.json",
+      "bytes": 22677,
+      "sha256": "383b4e4690db7594b14dfc3002bd330bc4fabd733e1fa5232e5a2bcc2ca3af7a"
+    },
+    {
+      "path": "PR795-CI.json",
+      "bytes": 22404,
+      "sha256": "4d7cee2a3a1dddc32c45fa3f557dcff02399f38deb248c27446f879b00d89b84"
+    },
+    {
+      "path": "PR807-CI.json",
+      "bytes": 22516,
+      "sha256": "97957a35cf182d7d71f296c413fe18913ea2f30687f3950c5cee6185158520c0"
+    },
+    {
+      "path": "PR843-CI.json",
+      "bytes": 22556,
+      "sha256": "218fac55e6229edd775bc6f70e260d56fa86fc2362ea501c56d70654407a50de"
+    },
+    {
+      "path": "README.md",
+      "bytes": 29945,
+      "sha256": "c83ca780cc7af0c3ff22da148aee5dca33e4c64329694ce270e0cc1914f258a6"
+    },
+    {
+      "path": "SNAPSHOT-PLAN.json",
+      "bytes": 51940,
+      "sha256": "fe9ed89fe78cff0382a22dcb430c78df84367200f35569d8fe68a33996451645"
+    },
+    {
+      "path": "SNAPSHOT-VERIFICATION.json",
+      "bytes": 53893,
+      "sha256": "62a569fd7f2c3629687f61c61dc34415364bfed360cbdc367917f0f88e02a370"
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "analyzerSource": "8a5af03b38df168f9e47a5157f977f1f1d43c869",
+  "componentProducerSource": "e7a555111676792f87d05359ee2e7b56d9dce6ea",
+  "platform": "Windows static reference; no guest invocation",
+  "actualRetainedSourceComponentAndHostProfileBindingsVerified": true,
+  "runtimeReceiptAbsentHonestNotObserved": true,
+  "validatorVersion": "1.254.0",
+  "validatorSha256": "3b91b4a168490b9290dd742d1ed4708c588083c81181c651376457db926599dd",
+  "upstreamValidatorPublisherAuthenticationClaimed": false,
+  "originalOverallSeconds": 90,
+  "seconds": 0.7436853999970481,
+  "components": [
+    {
+      "template": "greeting",
+      "componentDigest": "sha256:10b1dd044e7e326e2bfb9ddaabbcbbb35989ba1aea8996a3dd633873cccdd6e8",
+      "sourceDigest": "sha256:ecdaf1a44812e92a80169e8e1d79a61116818e7d0e4b0b7c6bcb4cd661af1eab",
+      "runtimeProfile": "not-observed",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "modulesObserved": 2,
+      "analysisReasons": [
+        "table-or-indirect-dispatch"
+      ],
+      "reportIdentity": "sha256:ec3c61ffe13d9c9bbe1fc156fbd4a809cf4e720da950e99bd4e106f84144a6cf",
+      "runtimeApiAndExecutionQualified": false
+    },
+    {
+      "template": "greeting-static",
+      "componentDigest": "sha256:096335b7f10c2830df4d8e4fbda9dfbcf4e8674f84c44c633d073b5d32db7b9a",
+      "sourceDigest": "sha256:4d8cf1ed7ecbaab753e1c5b0b8c6ed0d976cbdd0a4d896853d4a6bcb7ad96561",
+      "runtimeProfile": "not-observed",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "modulesObserved": 2,
+      "analysisReasons": [
+        "table-or-indirect-dispatch"
+      ],
+      "reportIdentity": "sha256:848b8a58207617fa1e46ae8004a43ea6a3e6ba1e74fa1f3000a8d3ef57318d4d",
+      "runtimeApiAndExecutionQualified": false
+    },
+    {
+      "template": "word-count",
+      "componentDigest": "sha256:d7503c5d951a7dededfb4f84480f19c2c8fbf145113cea6ef5a22694b2c3fc79",
+      "sourceDigest": "sha256:4d822f5c50465d6ec4fffccb27af06839f6d7f7812cafdbb214faceaf3b39c65",
+      "runtimeProfile": "not-observed",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "modulesObserved": 2,
+      "analysisReasons": [
+        "table-or-indirect-dispatch"
+      ],
+      "reportIdentity": "sha256:36b2a781f9dec81bbb6a123f344aea37524984d39c4a4181192085f3c0b8faf7",
+      "runtimeApiAndExecutionQualified": false
+    },
+    {
+      "template": "shipping",
+      "componentDigest": "sha256:813d48c573e0a68d2664af8805b5d1f363c2571cfb158a0c8a4fd61dca60cf31",
+      "sourceDigest": "sha256:44f6548ea972cf26a3946ab7f87a68b723118eca17b79e4ee6021ca6d477e4ca",
+      "runtimeProfile": "not-observed",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "modulesObserved": 2,
+      "analysisReasons": [
+        "table-or-indirect-dispatch"
+      ],
+      "reportIdentity": "sha256:02a8f80aa59a015310c8ea7ec8d6a87c811c71b24bdea68d6bc8e17419f65194",
+      "runtimeApiAndExecutionQualified": false
+    },
+    {
+      "template": "http-status",
+      "componentDigest": "sha256:64425e9605cf1e9329bbfa03dcd34b4eda55a3a02b2f35637f7a97f983bfb257",
+      "sourceDigest": "sha256:2e4947101b28a7aa80048238fd7fffa265c0ac9ea528f61770af4dae139c1ac5",
+      "runtimeProfile": "not-observed",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "modulesObserved": 4,
+      "analysisReasons": [
+        "table-or-indirect-dispatch"
+      ],
+      "reportIdentity": "sha256:14b54996282796139944a61bfca50231b8a08619d60f4b4e6ae76e05f77e40a2",
+      "runtimeApiAndExecutionQualified": false
+    },
+    {
+      "template": "recovery",
+      "componentDigest": "sha256:c1c8d349df27f70645499a6180c0461482aa0e0fe2360d25181e0df3633df9a6",
+      "sourceDigest": "sha256:c3fdb0ec9c36c4c5370537318c62d759e20579ea23c8c6aae1bb0bf0f8356528",
+      "runtimeProfile": "not-observed",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "modulesObserved": 2,
+      "analysisReasons": [
+        "table-or-indirect-dispatch"
+      ],
+      "reportIdentity": "sha256:97950a94a73fe27ad59da557353e5603ecee5df350e072d8b70987c3ae248cea",
+      "runtimeApiAndExecutionQualified": false
+    }
+  ]
+}

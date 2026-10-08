@@ -1,0 +1,381 @@
+{
+  "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+  "originalWorld": "examples:typescript-async-npm/service@1.0.0",
+  "selectedWorld": "lsf:typescript-activation/selected@1.0.0",
+  "declaredClockInterfaces": [
+    "latent:clock/monotonic@0.1.0",
+    "latent:clock/wall@0.1.0"
+  ],
+  "fullPublicTypesAndMaintainedModuleTypesPreserved": true,
+  "clockAuthorityGranted": false,
+  "qualification": "unknown",
+  "apiSupport": "not-evaluated",
+  "supportedAsyncProfile": false,
+  "signedLSFComponentQualified": false,
+  "engineInput": {
+    "schemaVersion": "latent.typescript.native-import-engine-input.v1",
+    "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+    "coreDigest": "sha256:62e532908cc818674bbfefcf6609695c9b547e1e1b1b1c3c8f1f92af4fcfc4a5",
+    "coreBytes": 9943755,
+    "sdkInputs": [
+      {
+        "path": "sdk/typescript-guest/activation/async_import_descriptor.rs",
+        "digest": "sha256:27873dad4fe5e9027f1a743e2c1663351dff8cc97cec33c21037a7f970aac1fd",
+        "size": 10427
+      },
+      {
+        "path": "sdk/typescript-guest/activation/async_import_splice.rs",
+        "digest": "sha256:fbdd30b8b964ceb4cd22d1341effa77150f4751da0ea9b67ca6ddd39e5ee1a32",
+        "size": 6798
+      },
+      {
+        "path": "sdk/typescript-guest/activation/broker_accounting.h",
+        "digest": "sha256:5771507a3bf4905b3707d31426675ad0bcd699a1fa96799541c98b7755eddc33",
+        "size": 9391
+      },
+      {
+        "path": "sdk/typescript-guest/activation/broker_import_accounting.h",
+        "digest": "sha256:8c03d9b1c4cf1155bf07fd82d2de42b8f7506e8c4ea13f2a7ddfce5e61443a0d",
+        "size": 3075
+      },
+      {
+        "path": "sdk/typescript-guest/activation/clock-globals.d.ts",
+        "digest": "sha256:200c8e3d6be9c33a56101b8c5ce9b2d7e252b27c7fb8631884b4654fbb227cc7",
+        "size": 159
+      },
+      {
+        "path": "sdk/typescript-guest/activation/clock_globals.js",
+        "digest": "sha256:883fb57b1266b9643f3f61e817cf2f4c0e51fdbde80d2edbf3acb95f3d9badbd",
+        "size": 984
+      },
+      {
+        "path": "sdk/typescript-guest/activation/clock_values.h",
+        "digest": "sha256:8e85831a0817eda3a1375fda790df22a6b343277ee102e64ef7b2be37df0bb42",
+        "size": 1238
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_cancel.h",
+        "digest": "sha256:59397ab2badf02d292e517157c9686a730cd7ebe582ea1d5a7b4c81be57b7438",
+        "size": 479
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_clock_engine.cpp",
+        "digest": "sha256:897d1611ac4e9d4557756447355d0aad7110b02f863c378df48ca28a755e1885",
+        "size": 1859
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_clocks.h",
+        "digest": "sha256:2a318536a65272343a7c7579c0baecdac42a0a22e307e30ec7146a2df288659a",
+        "size": 1584
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_engine.cpp",
+        "digest": "sha256:4d4a1f6707796a9b2718792835269792dab14f055f21c61be53abc61ea6b29ec",
+        "size": 11712
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_engine.h",
+        "digest": "sha256:6622fb4721086c0f392aecc226914ee07498db1db42df55f09d9bb82b96a2bc4",
+        "size": 1817
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_bridge.cpp",
+        "digest": "sha256:8a372b13338d7b05d04943ac5135048e967bfd80a99da02150f8a2138b0cf5b2",
+        "size": 2848
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_globals.cpp",
+        "digest": "sha256:b3805f336b3989d683c8b9037f0f74154430a4522561570a32715e9f756c03b7",
+        "size": 2418
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_lifecycle.h",
+        "digest": "sha256:c17bbf0f1c3f3de8353741ac4f9cdbde40f232198377a467fec6560ef55d6537",
+        "size": 5845
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_import_values.h",
+        "digest": "sha256:5b98e85df356d7005ab6a3085fc9c12ad4e5f6cc8d00ddf33095f4683fc0ea24",
+        "size": 2390
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_imports.h",
+        "digest": "sha256:4afa255ba22853d4d9a650cde1aaf2d6aae7e8e5d94ace7711a15ad4d0be852d",
+        "size": 9631
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_job_queue.h",
+        "digest": "sha256:f7498c93b6240e5965101eabd62775f229fdff06b08a8629bf2e68a58800845c",
+        "size": 8857
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_objects.h",
+        "digest": "sha256:081afe123537c0555d0d29d20a85181dcb7feb62ce85251d4de7e2932427d039",
+        "size": 1028
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_ownership.h",
+        "digest": "sha256:476b5db1f88bf96637221e199e0dbbd44deb3d924d7f3389ef4b7f3bccf472ed",
+        "size": 615
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_readiness.h",
+        "digest": "sha256:d38d7d66ed3b16d25c3e1705f2858923ed47ef1a374c88ee9049a98ce04801f3",
+        "size": 8450
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_retirement.h",
+        "digest": "sha256:5921cccf4dd2cd6a11ad070383247a4e186cbd15e21f955a56069149297d24b6",
+        "size": 4294
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_timeout.h",
+        "digest": "sha256:f5b1e996dc1e7fa9a535760a13d00829854773eb11b0676727365582cfaad2d9",
+        "size": 1416
+      },
+      {
+        "path": "sdk/typescript-guest/activation/native_timers.h",
+        "digest": "sha256:5413bb498d1c0ca713d87eb171c4e4ca19e330831de3db069cf96d5b5a5b32a3",
+        "size": 11314
+      },
+      {
+        "path": "sdk/typescript-guest/activation/promise_accounting.h",
+        "digest": "sha256:f5a0dc7c6ad9a30d959c85c57d145ffcb428a9fdfa9f0c0af49217143fa3c436",
+        "size": 2285
+      },
+      {
+        "path": "sdk/typescript-guest/activation/promise_hooks.h",
+        "digest": "sha256:37417b24250854e41d6c320d978daf8338bf7393526dab70b725e8f1fb06654e",
+        "size": 2147
+      },
+      {
+        "path": "sdk/typescript-guest/activation/promise_records.h",
+        "digest": "sha256:4ff1c5fc7db884382e783729ecd3474b5069dd8f9db15bf05370c922fbb589b0",
+        "size": 4315
+      },
+      {
+        "path": "sdk/typescript-guest/activation/reaction_records.h",
+        "digest": "sha256:a7b6372c234af5ef87ad3619c991775381e63c7861426fb30995d8e043675a3f",
+        "size": 5052
+      },
+      {
+        "path": "tools/typescript_guest/abort_engine.py",
+        "digest": "sha256:5db89cf89a2b10b62b56e76d999e3c748dcd1a0d56e4fcd91e590003bf3cdf79",
+        "size": 2500
+      },
+      {
+        "path": "tools/typescript_guest/activation_engine.py",
+        "digest": "sha256:895cffcf525127fe2c48844c161e195c7ad5616ff7618e12d8b1448a8861da40",
+        "size": 14233
+      },
+      {
+        "path": "tools/typescript_guest/clock_engine.py",
+        "digest": "sha256:c9d75ae50b8290e380f1b5d9d33729df931767ca2efb59dcd556c05df96af669",
+        "size": 7780
+      },
+      {
+        "path": "tools/typescript_guest/event_engine.py",
+        "digest": "sha256:4a8384c24089600e13595d68a0e8313b3e21fa44ac45efdc316d5b484642cd22",
+        "size": 14171
+      },
+      {
+        "path": "tools/typescript_guest/import_bindgen.py",
+        "digest": "sha256:b68645cc485ff00c0dc32a1f50433572f3ec9c17087126752a31918f7e63caae",
+        "size": 15866
+      },
+      {
+        "path": "tools/typescript_guest/import_engine.py",
+        "digest": "sha256:a7661eb4a73ba55b19c72beb4b6f76c581c3aa77f29aebf050c42a5c062dbd9e",
+        "size": 5330
+      },
+      {
+        "path": "tools/typescript_guest/import_profile.py",
+        "digest": "sha256:049391920f3308f22226e5441458f490ae753785e6785910489901ee8aa5b53a",
+        "size": 4324
+      },
+      {
+        "path": "tools/typescript_guest/promise_engine.py",
+        "digest": "sha256:c90fed6c34c07b9342bb5fb0267f6c8304fd86aed2b0f702486d37ba52f33752",
+        "size": 10149
+      },
+      {
+        "path": "tools/typescript_guest/splicer_input.py",
+        "digest": "sha256:13dad90d3ea9ce55d767c38edab78a693e471868de9e596a88c2e7a01f8c32b2",
+        "size": 3070
+      },
+      {
+        "path": "tools/typescript_guest/text_codec_engine.py",
+        "digest": "sha256:22493a4a4d254e86f296493069094b3d27bf890b0eee84cf190f19b11f431e78",
+        "size": 2178
+      },
+      {
+        "path": "tools/typescript_guest/timer_engine.py",
+        "digest": "sha256:d24094ced9bb6ec3e11b80308bddc569d0daefa8449892d3d22a058bd9702277",
+        "size": 4996
+      },
+      {
+        "path": "wit/platform/clock/package.wit",
+        "digest": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+        "size": 139
+      }
+    ],
+    "runtimeWitDigest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+    "upstream": {
+      "componentizeTree": "4b8d6eb465b5cded6b97c67aaf6fdaa8b62001e2",
+      "starlingCommit": "9dda8ba7fcda2e17c6795d402f0478cf4c1f7f37",
+      "firefoxCommit": "9dab3d6f643e926a340c391ea30968e940390dec",
+      "publicSpiderMonkeyArchiveDigest": "sha256:c57dc83d93dc04198882b44fea49cd3cb01e0b267bf99fae3b058cb158da684b",
+      "publicSDK30ArchiveDigest": "sha256:0507679dff16814b74516cd969a9b16d2ced1347388024bc7966264648c78bfb"
+    },
+    "sourceDerivationDigest": "sha256:b6ace69745568dfb1931f23eadd01703117753eea803b2e96d0987990d9ef209",
+    "buildReceiptDigest": "sha256:2158be5ff1aba204b3ccbcb432e5d009fb8360084fcdc36665d21916e13b6235",
+    "compilerSplicerInputDigest": "sha256:6108c1698ff64b1750e2813532e4ae7043042215898c509daee99bde66d07dfd",
+    "qualification": "unknown",
+    "apiSupport": "not-evaluated",
+    "inputTrust": "operator-asserted"
+  },
+  "compilerSplicerInput": {
+    "schemaVersion": "latent.typescript.source-splicer-input.v1",
+    "componentizeTree": "4b8d6eb465b5cded6b97c67aaf6fdaa8b62001e2",
+    "files": [
+      {
+        "path": "interfaces/local-spidermonkey-embedding-splicer-splicer.d.ts",
+        "digest": "sha256:f7453a650b135db6e89df8d159eceeb6d3bff717edf01da6765958c7fc7e3804",
+        "size": 1092
+      },
+      {
+        "path": "interfaces/wasi-cli-environment.d.ts",
+        "digest": "sha256:eeca2d0e2c1eb611cc12522c3a981b6d0bdf788138d13f00e163af78dacbaafd",
+        "size": 113
+      },
+      {
+        "path": "interfaces/wasi-cli-exit.d.ts",
+        "digest": "sha256:720d201b983519e4e2578f1427aa6255e6f8d647d17b930578311636c46ff8a4",
+        "size": 178
+      },
+      {
+        "path": "interfaces/wasi-cli-stderr.d.ts",
+        "digest": "sha256:fb61790b0a25975a561bb4c760367180980c7d5b4253f8e9ef5dc4522838d11b",
+        "size": 164
+      },
+      {
+        "path": "interfaces/wasi-cli-stdin.d.ts",
+        "digest": "sha256:115669b118fa5af84a164b485415049c156c75dccc043a53656a5c3117f2d27b",
+        "size": 159
+      },
+      {
+        "path": "interfaces/wasi-cli-stdout.d.ts",
+        "digest": "sha256:75520c5ee4e20a87b105518c6860240d8739c07f577259f3e82263f5beadf3a2",
+        "size": 164
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-input.d.ts",
+        "digest": "sha256:6843388ee8347417a03137beb708159820ee51f11e50adb74a43b2125dd8b453",
+        "size": 177
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-output.d.ts",
+        "digest": "sha256:e48304a744343e6f2ef4a690e2c8052b39fe9ecf3b0ba811e24f5da8de0d2876",
+        "size": 179
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-stderr.d.ts",
+        "digest": "sha256:24c07a3ff663736b07a937bf96dddab5b2ee8be5b3f274d2189ce6c47150b678",
+        "size": 208
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-stdin.d.ts",
+        "digest": "sha256:5aa06eb362181e2a521eee0c6fb3ccc62d27adec7340216395eadb73827b2082",
+        "size": 202
+      },
+      {
+        "path": "interfaces/wasi-cli-terminal-stdout.d.ts",
+        "digest": "sha256:d11b2ffbf5937133107a63298221aed819a634d5b679d20393ccf237f3067ddf",
+        "size": 208
+      },
+      {
+        "path": "interfaces/wasi-clocks-monotonic-clock.d.ts",
+        "digest": "sha256:1c626f447ccbf14160eff06443851b55289b480e7c2c70787011cff3a4649aaf",
+        "size": 123
+      },
+      {
+        "path": "interfaces/wasi-clocks-wall-clock.d.ts",
+        "digest": "sha256:7725f813d3548dc260f0d21466cff71c10f24df594002a4c1d93b47f7c0b6d10",
+        "size": 161
+      },
+      {
+        "path": "interfaces/wasi-filesystem-preopens.d.ts",
+        "digest": "sha256:0001080f66118f1a99aa9d3b7b3b29eea61fea089b90e6b69147011bd2e57c66",
+        "size": 195
+      },
+      {
+        "path": "interfaces/wasi-filesystem-types.d.ts",
+        "digest": "sha256:16c4040cbb7284360b987a08aeaa49ed59042defd05a3c9f0c31b5af84ecb08d",
+        "size": 3945
+      },
+      {
+        "path": "interfaces/wasi-io-error.d.ts",
+        "digest": "sha256:0bb03d596597ff171fd0d440687ae69ef08eaa04da6d939d443428cd21f5adff",
+        "size": 159
+      },
+      {
+        "path": "interfaces/wasi-io-streams.d.ts",
+        "digest": "sha256:c0f086a8da948e9341edfd6790da06ea24258543d55ba2747e8a1388f9facdb8",
+        "size": 787
+      },
+      {
+        "path": "interfaces/wasi-random-random.d.ts",
+        "digest": "sha256:25134a69dff32355bddc74502ca72b5b3dba919a6ae7c2712db31043f28fd9aa",
+        "size": 109
+      },
+      {
+        "path": "spidermonkey-embedding-splicer.core.wasm",
+        "digest": "sha256:b14fde6bff431519f96c42650c2c7fa56a680cc5258c0e7db560e2129be6803d",
+        "size": 5540308
+      },
+      {
+        "path": "spidermonkey-embedding-splicer.core2.wasm",
+        "digest": "sha256:30fff64b635b191d59e59b6b2aadf117f3e4c6326db35111f69a19ea1bd42a4e",
+        "size": 22927
+      },
+      {
+        "path": "spidermonkey-embedding-splicer.d.ts",
+        "digest": "sha256:600436fa77f1b95cea8a279b141d60c1030c0c0336ef0319d4045bd95c704319",
+        "size": 2242
+      },
+      {
+        "path": "spidermonkey-embedding-splicer.js",
+        "digest": "sha256:da3a7a497c98d6bed279dea807c591c719a598755da42798fd0292cbdd16492f",
+        "size": 436695
+      }
+    ],
+    "sdkInputs": [
+      {
+        "path": "sdk/typescript-guest/activation/async_import_descriptor.rs",
+        "digest": "sha256:27873dad4fe5e9027f1a743e2c1663351dff8cc97cec33c21037a7f970aac1fd",
+        "size": 10427
+      },
+      {
+        "path": "sdk/typescript-guest/activation/async_import_splice.rs",
+        "digest": "sha256:fbdd30b8b964ceb4cd22d1341effa77150f4751da0ea9b67ca6ddd39e5ee1a32",
+        "size": 6798
+      },
+      {
+        "path": "tools/typescript_guest/import_bindgen.py",
+        "digest": "sha256:b68645cc485ff00c0dc32a1f50433572f3ec9c17087126752a31918f7e63caae",
+        "size": 15866
+      },
+      {
+        "path": "tools/typescript_guest/import_engine.py",
+        "digest": "sha256:a7661eb4a73ba55b19c72beb4b6f76c581c3aa77f29aebf050c42a5c062dbd9e",
+        "size": 5330
+      }
+    ],
+    "sourceDerivationDigest": "sha256:8592669b148fde7427edcaa0d2c682ff69edeb0abaac244ca4d7dd9913c73107",
+    "buildReceiptDigest": "sha256:bfa354cc5a36d82c3f1a5e8d23955575b08558ad77f2180702716c08b6da9a95",
+    "transpileReceiptDigest": "sha256:bc409723a26f3cb65c079f5bbf98c72bcd2b41624f0ddbcde12f73ce6f7733f2",
+    "qualification": "unknown",
+    "apiSupport": "not-evaluated",
+    "inputTrust": "operator-asserted"
+  }
+}

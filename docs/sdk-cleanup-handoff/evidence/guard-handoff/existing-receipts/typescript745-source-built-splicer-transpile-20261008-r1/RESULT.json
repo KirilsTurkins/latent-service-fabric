@@ -1,0 +1,155 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "original-source-recipe-component-new",
+      "argv": [
+        "/public-tools/node-v24.19.0-linux-x64/bin/node",
+        "/public-tools/compiler/node_modules/@bytecodealliance/jco/dist/jco.js",
+        "new",
+        "/out/splicer_component.wasm",
+        "-o",
+        "/out/splicer.component.wasm",
+        "--wasi-reactor"
+      ],
+      "exitCode": 0,
+      "seconds": 0.8578576160016382
+    },
+    {
+      "label": "original-source-recipe-transpile-O1",
+      "argv": [
+        "/public-tools/node-v24.19.0-linux-x64/bin/node",
+        "/public-tools/compiler/node_modules/@bytecodealliance/jco/dist/jco.js",
+        "transpile",
+        "-q",
+        "--name",
+        "spidermonkey-embedding-splicer",
+        "/out/splicer.component.wasm",
+        "-o",
+        "/out/lib",
+        "--",
+        "-O1"
+      ],
+      "exitCode": 0,
+      "seconds": 1.2561139310000726
+    }
+  ],
+  "rows": [
+    {
+      "path": "lib/interfaces/local-spidermonkey-embedding-splicer-splicer.d.ts",
+      "bytes": 1092,
+      "sha256": "f7453a650b135db6e89df8d159eceeb6d3bff717edf01da6765958c7fc7e3804"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-environment.d.ts",
+      "bytes": 113,
+      "sha256": "eeca2d0e2c1eb611cc12522c3a981b6d0bdf788138d13f00e163af78dacbaafd"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-exit.d.ts",
+      "bytes": 178,
+      "sha256": "720d201b983519e4e2578f1427aa6255e6f8d647d17b930578311636c46ff8a4"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-stderr.d.ts",
+      "bytes": 164,
+      "sha256": "fb61790b0a25975a561bb4c760367180980c7d5b4253f8e9ef5dc4522838d11b"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-stdin.d.ts",
+      "bytes": 159,
+      "sha256": "115669b118fa5af84a164b485415049c156c75dccc043a53656a5c3117f2d27b"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-stdout.d.ts",
+      "bytes": 164,
+      "sha256": "75520c5ee4e20a87b105518c6860240d8739c07f577259f3e82263f5beadf3a2"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-terminal-input.d.ts",
+      "bytes": 177,
+      "sha256": "6843388ee8347417a03137beb708159820ee51f11e50adb74a43b2125dd8b453"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-terminal-output.d.ts",
+      "bytes": 179,
+      "sha256": "e48304a744343e6f2ef4a690e2c8052b39fe9ecf3b0ba811e24f5da8de0d2876"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-terminal-stderr.d.ts",
+      "bytes": 208,
+      "sha256": "24c07a3ff663736b07a937bf96dddab5b2ee8be5b3f274d2189ce6c47150b678"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-terminal-stdin.d.ts",
+      "bytes": 202,
+      "sha256": "5aa06eb362181e2a521eee0c6fb3ccc62d27adec7340216395eadb73827b2082"
+    },
+    {
+      "path": "lib/interfaces/wasi-cli-terminal-stdout.d.ts",
+      "bytes": 208,
+      "sha256": "d11b2ffbf5937133107a63298221aed819a634d5b679d20393ccf237f3067ddf"
+    },
+    {
+      "path": "lib/interfaces/wasi-clocks-monotonic-clock.d.ts",
+      "bytes": 123,
+      "sha256": "1c626f447ccbf14160eff06443851b55289b480e7c2c70787011cff3a4649aaf"
+    },
+    {
+      "path": "lib/interfaces/wasi-clocks-wall-clock.d.ts",
+      "bytes": 161,
+      "sha256": "7725f813d3548dc260f0d21466cff71c10f24df594002a4c1d93b47f7c0b6d10"
+    },
+    {
+      "path": "lib/interfaces/wasi-filesystem-preopens.d.ts",
+      "bytes": 195,
+      "sha256": "0001080f66118f1a99aa9d3b7b3b29eea61fea089b90e6b69147011bd2e57c66"
+    },
+    {
+      "path": "lib/interfaces/wasi-filesystem-types.d.ts",
+      "bytes": 3945,
+      "sha256": "16c4040cbb7284360b987a08aeaa49ed59042defd05a3c9f0c31b5af84ecb08d"
+    },
+    {
+      "path": "lib/interfaces/wasi-io-error.d.ts",
+      "bytes": 159,
+      "sha256": "0bb03d596597ff171fd0d440687ae69ef08eaa04da6d939d443428cd21f5adff"
+    },
+    {
+      "path": "lib/interfaces/wasi-io-streams.d.ts",
+      "bytes": 787,
+      "sha256": "c0f086a8da948e9341edfd6790da06ea24258543d55ba2747e8a1388f9facdb8"
+    },
+    {
+      "path": "lib/interfaces/wasi-random-random.d.ts",
+      "bytes": 109,
+      "sha256": "25134a69dff32355bddc74502ca72b5b3dba919a6ae7c2712db31043f28fd9aa"
+    },
+    {
+      "path": "lib/spidermonkey-embedding-splicer.core.wasm",
+      "bytes": 5540308,
+      "sha256": "b14fde6bff431519f96c42650c2c7fa56a680cc5258c0e7db560e2129be6803d"
+    },
+    {
+      "path": "lib/spidermonkey-embedding-splicer.core2.wasm",
+      "bytes": 22927,
+      "sha256": "30fff64b635b191d59e59b6b2aadf117f3e4c6326db35111f69a19ea1bd42a4e"
+    },
+    {
+      "path": "lib/spidermonkey-embedding-splicer.d.ts",
+      "bytes": 2242,
+      "sha256": "600436fa77f1b95cea8a279b141d60c1030c0c0336ef0319d4045bd95c704319"
+    },
+    {
+      "path": "lib/spidermonkey-embedding-splicer.js",
+      "bytes": 436695,
+      "sha256": "da3a7a497c98d6bed279dea807c591c719a598755da42798fd0292cbdd16492f"
+    }
+  ],
+  "seconds": 2.2552715170004376,
+  "coreSha256": "dc43c750d1cf9aa53a0bc0ed474b106d6940e069740577d35386c628fa667ebc",
+  "actualPinnedUpstreamNewAndTranspileO1Recipe": true,
+  "currentPublicJco134": true,
+  "applicationOrEngineQualified": false,
+  "signedLSFQualified": false
+}

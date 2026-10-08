@@ -1,0 +1,541 @@
+{
+  "userInstruction": "STOP implementation and qualification; preservation only",
+  "ownedRunningJobs": [],
+  "jobsStoppedByThisHandoff": [],
+  "remoteMutationsByAgent": false,
+  "sourceTestsOrCompilersStartedAfterStop": false,
+  "deletedPaths": [],
+  "rootOwnsPushDraftPRIssueWrites": true,
+  "bootstrap": {
+    "head": "0be99712751a4b67830914cba42d060f091219db",
+    "tree": "4bf3882e6d4e4e5fa49581232404762ecb0f9b9e",
+    "draftPR": 902,
+    "sourcePaths": 6,
+    "sourceControlsPassed": 27,
+    "sourceControlsSkipped": 0,
+    "native29CasesStatus": "prepared, never executed",
+    "sysrootBuildStatus": "not built",
+    "standardThreadApiImplemented": false,
+    "nativeFiberRetirementQualified": false,
+    "publicRuntimeProfileQualified": false,
+    "patchSha256": "7a86e58848e2d88e4f8ccfe96fa77c4d20f509462301db2ef7f211c1c5f8ff35"
+  },
+  "all17OwnedWorktreesClean": true,
+  "worktrees": [
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-captured-runtime-receipts-20261007-r1",
+      "branch": "feat/sdk-captured-runtime-receipts-20261007-r1",
+      "head": "f742d3d8dce8754e36c0821af48a81c82305872e",
+      "tree": "32caad68721ca0feb585498309e08bc025f79879",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "f742d3d8dce8754e36c0821af48a81c82305872e Capture owned runtime selections in compatibility diagnostics",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7 feat(sdk): bind runtime context and original outcome diagnostics",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b fix(dev): stop source callbacks after compiler group retirement",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b feat(c): add explicitly approved source and header generators",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0 feat(sdk): add approved Java and TypeScript source generation",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32 fix(go): authenticate discovered generator sandbox path",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e Preserve authenticated captured dependencies through frontend compilation",
+        "feec183e18febd6323b9267f07a3ee902984abbc Merge current development SDK generator and runtime delivery"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-compatibility-context-20261007-r1",
+      "branch": "feat/sdk-compatibility-context-20261007-r1",
+      "head": "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+      "tree": "09757f170704b8d048ca884f896573f81eda26dc",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7 feat(sdk): bind runtime context and original outcome diagnostics",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b fix(dev): stop source callbacks after compiler group retirement",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b feat(c): add explicitly approved source and header generators",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0 feat(sdk): add approved Java and TypeScript source generation",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32 fix(go): authenticate discovered generator sandbox path",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e Preserve authenticated captured dependencies through frontend compilation",
+        "feec183e18febd6323b9267f07a3ee902984abbc Merge current development SDK generator and runtime delivery",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e Merge current development runtime delivery into frontend dependency repairs"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-emitted-reachability-20261007-r1",
+      "branch": "feat/sdk-emitted-reachability-20261007-r1",
+      "head": "5f016c54535924909e2a7ae3080ea4c5562f3944",
+      "tree": "0ef261be1c6cf573d6701dae8c7a11546ebb2362",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "5f016c54535924909e2a7ae3080ea4c5562f3944 Inspect bounded emitted core reachability without execution claims",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed Correct C runtime owner attribution and bound SDK input scope",
+        "f742d3d8dce8754e36c0821af48a81c82305872e Capture owned runtime selections in compatibility diagnostics",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7 feat(sdk): bind runtime context and original outcome diagnostics",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b fix(dev): stop source callbacks after compiler group retirement",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b feat(c): add explicitly approved source and header generators",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0 feat(sdk): add approved Java and TypeScript source generation",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32 fix(go): authenticate discovered generator sandbox path"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-emitted-reachability-graph-domain-followup-20261007-r1",
+      "branch": "feat/sdk-emitted-reachability-graph-domain-followup-20261007-r1",
+      "head": "8a5af03b38df168f9e47a5157f977f1f1d43c869",
+      "tree": "dbc0221f7318af4a4dce2462f2c497f491192b87",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "8a5af03b38df168f9e47a5157f977f1f1d43c869 Own large captured graph analyzer regression in CI inventory",
+        "576f3ff3f450222fdb12c87f67d6f77b99569c87 Gate helper runtime archive imports in maintained controller tests",
+        "b747042f13c077fb89c54eb688633a663af946bd Inspect bounded emitted core reachability without execution claims",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e Capture outcome runtime imports in the maintained helper archive",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c Bind runtime receipt capture domain and complete recipe imports",
+        "a7d3300c39b7379a1543ca93226098f7737725c5 Capture actual Rust guest SDK runtime source in diagnostics",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3 Join source-bound SDK runtime context and original outcome diagnostics",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed Correct C runtime owner attribution and bound SDK input scope"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-generator-host-sandbox-discovery-20261007-r1",
+      "branch": "fix/sdk-generator-host-sandbox-discovery-20261007-r1",
+      "head": "6f3ac39e064f6616c3642ba067b57a069fda654b",
+      "tree": "dea7a012c823f455b2ec0a214b59782d7ee2e133",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "6f3ac39e064f6616c3642ba067b57a069fda654b Resolve trusted generator host sandbox before byte verification",
+        "b0283780547a54e777456a163a433986ab1ecfc5 Add generator host discovery and untrusted-link regression controls",
+        "c595a19377e75b3adf596e1e5761949bb177b10e Merge commit 'a686ed45a83d0f9de8158fd5be45f43a756abfb7' into sdk/final-runtime-qualification-20261007-r1",
+        "1e5ef3c1e11d047e30ec6a44e49622b2f1022b70 Merge commit 'aa5886b81f6438f8d33216484955279a1ab57a35' into sdk/final-runtime-qualification-20261007-r1",
+        "89b8d9833d1309667a4aa6da31b5daa40ccabb79 Register reviewed Java timer controls with their CI owner",
+        "568ece73b042fd1d07567cb3ed42079df4b67d8d Reuse charged Java timers in the event pump",
+        "18cf123686b7beb0e09fcd767ad5845aa558e4d4 Preserve application timer slots in default Java async facility",
+        "aa5886b81f6438f8d33216484955279a1ab57a35 Register canonical host controls in the maintained namespace catalogue"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-java-approved-source-generators-20261007-r1",
+      "branch": "feat/sdk-java-approved-source-generators-20261007-r1",
+      "head": "302168448a60ba04652764fc4060173ed6c3009d",
+      "tree": "cc4db98253a07e144d2239e758b595aee6ecabcb",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "302168448a60ba04652764fc4060173ed6c3009d Validate generated Java source against reviewed nested capture",
+        "e0e8cd63c231a50655b9be282416c95be7ea956f Add nested captured Java generator validation regression",
+        "4df66202a7a05915f01c71997b38929d26fb373f Add explicit approval and capture for isolated Java source generators",
+        "6f3ac39e064f6616c3642ba067b57a069fda654b Resolve trusted generator host sandbox before byte verification",
+        "b0283780547a54e777456a163a433986ab1ecfc5 Add generator host discovery and untrusted-link regression controls",
+        "c595a19377e75b3adf596e1e5761949bb177b10e Merge commit 'a686ed45a83d0f9de8158fd5be45f43a756abfb7' into sdk/final-runtime-qualification-20261007-r1",
+        "1e5ef3c1e11d047e30ec6a44e49622b2f1022b70 Merge commit 'aa5886b81f6438f8d33216484955279a1ab57a35' into sdk/final-runtime-qualification-20261007-r1",
+        "89b8d9833d1309667a4aa6da31b5daa40ccabb79 Register reviewed Java timer controls with their CI owner"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-runtime-diagnostic-context-20261007-r1",
+      "branch": "fix/sdk-watch-completed-process-observer-20261007-r1",
+      "head": "c38043fa9c81180a79e50ad11c3a7f6c156126d4",
+      "tree": "c4882399d26a1782dc9bb7a87cfea25f0b297b5f",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "c38043fa9c81180a79e50ad11c3a7f6c156126d4 Stop active source checks after process-group retirement",
+        "49c6f190814a4f61ddcbb64a78fbe32d3fa7fbe7 Add actual child completion observer regressions",
+        "e7a555111676792f87d05359ee2e7b56d9dce6ea Merge commit '2f40228aad59ee12c7f530dbaad80698757adac3' into sdk/final-runtime-qualification-20261007-r1",
+        "2f40228aad59ee12c7f530dbaad80698757adac3 fix(audit): synchronize abandoned attempts with worker wait",
+        "6f3ac39e064f6616c3642ba067b57a069fda654b Resolve trusted generator host sandbox before byte verification",
+        "b0283780547a54e777456a163a433986ab1ecfc5 Add generator host discovery and untrusted-link regression controls",
+        "c595a19377e75b3adf596e1e5761949bb177b10e Merge commit 'a686ed45a83d0f9de8158fd5be45f43a756abfb7' into sdk/final-runtime-qualification-20261007-r1",
+        "1e5ef3c1e11d047e30ec6a44e49622b2f1022b70 Merge commit 'aa5886b81f6438f8d33216484955279a1ab57a35' into sdk/final-runtime-qualification-20261007-r1"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-runtime-owner-attribution-20261007-r1",
+      "branch": "fix/sdk-runtime-owner-attribution-20261007-r1",
+      "head": "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+      "tree": "070856d94a207e21677914cec3a95dc8739db979",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed Correct C runtime owner attribution and bound SDK input scope",
+        "f742d3d8dce8754e36c0821af48a81c82305872e Capture owned runtime selections in compatibility diagnostics",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7 feat(sdk): bind runtime context and original outcome diagnostics",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b fix(dev): stop source callbacks after compiler group retirement",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b feat(c): add explicitly approved source and header generators",
+        "6c45cd353255a774c05dcc2e90c8e442c179fcc0 feat(sdk): add approved Java and TypeScript source generation",
+        "9c96d8bc68cbdf6a041e16e54770b98a000b3f32 fix(go): authenticate discovered generator sandbox path",
+        "cd45147b44cdce8c51d4e0a7a25113a24623e19e Preserve authenticated captured dependencies through frontend compilation"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-runtime-receipt-ci-repair-20261007-r1",
+      "branch": "fix/sdk-runtime-receipt-ci-repair-20261007-r1",
+      "head": "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+      "tree": "5f995eab87c3be0b886a401611194f68f3646c6b",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c Gate helper runtime archive imports in maintained controller tests",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e Capture outcome runtime imports in the maintained helper archive",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c Bind runtime receipt capture domain and complete recipe imports",
+        "a7d3300c39b7379a1543ca93226098f7737725c5 Capture actual Rust guest SDK runtime source in diagnostics",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3 Join source-bound SDK runtime context and original outcome diagnostics",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed Correct C runtime owner attribution and bound SDK input scope",
+        "f742d3d8dce8754e36c0821af48a81c82305872e Capture owned runtime selections in compatibility diagnostics",
+        "f4989eb19c306f5445749832e80bd8235291fbdc fix(sdk): retain signable generator provenance and qualify generated C"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-canonical-stack-port-20261007-r1",
+      "branch": "feat/sdk-rust-canonical-stack-port-20261007-r1",
+      "head": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+      "tree": "ea396a0af5e17adb3d364d61d05be3b31fbeff55",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "a7851c29eb65a48a1e8547c2bbb173a21a57fc68 Add bounded pinned Rust sysroot source and canonical stack transform",
+        "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5 Prepare pinned std logical TLS source backend and ownership controls",
+        "63469e3f119beb5ee9fae317bcd5a2dff91b090a Prepare pinned Rust std platform clock source port",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c Gate helper runtime archive imports in maintained controller tests",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e Capture outcome runtime imports in the maintained helper archive",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c Bind runtime receipt capture domain and complete recipe imports",
+        "a7d3300c39b7379a1543ca93226098f7737725c5 Capture actual Rust guest SDK runtime source in diagnostics",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3 Join source-bound SDK runtime context and original outcome diagnostics"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-canonical-thread-bootstrap-20261007-r1",
+      "branch": "feat/sdk-rust-canonical-thread-bootstrap-20261007-r1",
+      "head": "0be99712751a4b67830914cba42d060f091219db",
+      "tree": "4bf3882e6d4e4e5fa49581232404762ecb0f9b9e",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "0be99712751a4b67830914cba42d060f091219db Preserve unqualified Rust owned-thread bootstrap checkpoint",
+        "a7851c29eb65a48a1e8547c2bbb173a21a57fc68 Add bounded pinned Rust sysroot source and canonical stack transform",
+        "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5 Prepare pinned std logical TLS source backend and ownership controls",
+        "63469e3f119beb5ee9fae317bcd5a2dff91b090a Prepare pinned Rust std platform clock source port",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c Gate helper runtime archive imports in maintained controller tests",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e Capture outcome runtime imports in the maintained helper archive",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c Bind runtime receipt capture domain and complete recipe imports",
+        "a7d3300c39b7379a1543ca93226098f7737725c5 Capture actual Rust guest SDK runtime source in diagnostics"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-captured-staged-zig-20261006-r1",
+      "branch": "fix/sdk-rust-captured-staged-zig-20261006-r1",
+      "head": "aa5886b81f6438f8d33216484955279a1ab57a35",
+      "tree": "867d1464d08b25111674e6b60cf8cbc928b9060f",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "aa5886b81f6438f8d33216484955279a1ab57a35 Register canonical host controls in the maintained namespace catalogue",
+        "b59c013e334797e0beab1ee268254213c53fcfce Bind canonical host tools and run regression controls in maintained suites",
+        "f5f9ddbdf7bfa30ed968129dd4811c5c22ed32eb Add canonical compiler-host tool and captured-link controls",
+        "35b5de66233d1cb4e5c534740a4e96358435cb8f Expose validated staged Zig to captured Rust compiler isolation",
+        "7c6b3ad724e6b40d37a2b124b1b3e1db0b495c04 Add maintained Rust staged-linker discovery regression",
+        "66bda98056d3c2e64ca45731eb47e2942e6355ea Join authenticated captured-domain transfer without widening controller limits",
+        "b020f66ddc2e4b1983feb791352427b18464dbea Retain reviewed complete Java runtime and conformance features in latest development join",
+        "566bbd6d56a236ce0d21c1728a5252db4b7d347c Join current shared storage and maintained source snapshot budgets"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-frontend-closure-decoder-20261006-r1",
+      "branch": "fix/sdk-rust-frontend-closure-decoder-20261006-r1",
+      "head": "a26f7cba7433d24966bdcfb6c4cedbad2c4dc35d",
+      "tree": "64548e21d0b0146bb3a353d078c6de8c4d72e523",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "a26f7cba7433d24966bdcfb6c4cedbad2c4dc35d fix(dev): validate captured cleanup ownership before mutation",
+        "6e67f260d152a5bea7c99c8f15d52575d3135a3e fix(dev): validate capture object accounting before adoption",
+        "2112d9e597451d63a3d5774ec0a7eabdcf4333f3 Merge development for current shared storage and capture diagnostics",
+        "bf65e43e69bae4c5b9afbd5ba28e02f90ad0ecec test(dev): own captured receiver fixtures with private permissions",
+        "0f0087fb2a23f5e26dd445cc86ce5ff7cfcd404d Merge development for current static resource fixture repair",
+        "6b4a4a957ddd3270f9f5a355231f93978dca8570 Join published frontend repairs and reviewed development",
+        "12cb9bd1239c0bf592283a2ebc158873b106c339 feat(dev): checkpoint authenticated captured-object transfer domain",
+        "aac4558a424f3f7b364034d7be14bca31b0dac5e Merge current development runtime delivery into frontend dependency repairs"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-logical-tls-port-20261007-r1",
+      "branch": "feat/sdk-rust-logical-tls-port-20261007-r1",
+      "head": "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5",
+      "tree": "cd8a94a3737725796c0e1ef382c926724a1cca3b",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5 Prepare pinned std logical TLS source backend and ownership controls",
+        "63469e3f119beb5ee9fae317bcd5a2dff91b090a Prepare pinned Rust std platform clock source port",
+        "166dd6e6ad597e5ca47ad1596e2613f63536292c Gate helper runtime archive imports in maintained controller tests",
+        "c2dff8203feeb4d065b7a6f401933ce157ead89e Capture outcome runtime imports in the maintained helper archive",
+        "57e1c22ddca391e5080f3855a2f60bba470f1f7c Bind runtime receipt capture domain and complete recipe imports",
+        "a7d3300c39b7379a1543ca93226098f7737725c5 Capture actual Rust guest SDK runtime source in diagnostics",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3 Join source-bound SDK runtime context and original outcome diagnostics",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed Correct C runtime owner attribution and bound SDK input scope"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-runtime-receipt-source-20261007-r1",
+      "branch": "fix/sdk-rust-runtime-receipt-source-20261007-r1",
+      "head": "a7d3300c39b7379a1543ca93226098f7737725c5",
+      "tree": "0090bb8d0e949413f36f85e4027c3366d7f76bf4",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "a7d3300c39b7379a1543ca93226098f7737725c5 Capture actual Rust guest SDK runtime source in diagnostics",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3 Join source-bound SDK runtime context and original outcome diagnostics",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed Correct C runtime owner attribution and bound SDK input scope",
+        "f742d3d8dce8754e36c0821af48a81c82305872e Capture owned runtime selections in compatibility diagnostics",
+        "f4989eb19c306f5445749832e80bd8235291fbdc fix(sdk): retain signable generator provenance and qualify generated C",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7 feat(sdk): bind runtime context and original outcome diagnostics",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b fix(dev): stop source callbacks after compiler group retirement",
+        "964bfcfa720c4b0c440badfcb2c9bc186386942b feat(c): add explicitly approved source and header generators"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-standard-clock-port-20261007-r1",
+      "branch": "feat/sdk-rust-standard-clock-port-20261007-r1",
+      "head": "0114e05a6a5c0a08f4e0729b00bbd3da414f2767",
+      "tree": "cda723758b368ee28178bd22e2597abd5c890928",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "0114e05a6a5c0a08f4e0729b00bbd3da414f2767 Prepare pinned Rust std platform clock source port",
+        "a7d3300c39b7379a1543ca93226098f7737725c5 Capture actual Rust guest SDK runtime source in diagnostics",
+        "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3 Join source-bound SDK runtime context and original outcome diagnostics",
+        "e3eab7fb844d95fda0f2007423854a8a1e77e4ed Correct C runtime owner attribution and bound SDK input scope",
+        "f742d3d8dce8754e36c0821af48a81c82305872e Capture owned runtime selections in compatibility diagnostics",
+        "f4989eb19c306f5445749832e80bd8235291fbdc fix(sdk): retain signable generator provenance and qualify generated C",
+        "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7 feat(sdk): bind runtime context and original outcome diagnostics",
+        "b652b88a1713d531f1cd0b852d3ff674a638464b fix(dev): stop source callbacks after compiler group retirement"
+      ]
+    },
+    {
+      "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-typescript-approved-generators-20261007-r1",
+      "branch": "feat/sdk-typescript-approved-generators-20261007-r1",
+      "head": "f80b48250c89a1294a42d5f5c8e0d52e7aefe2f7",
+      "tree": "5f7a98b3ebf9012ba197e9586e7f20377e74f0cb",
+      "dirtyOrUntrackedSource": [],
+      "meaningfulUnmergedTop8RelativeToLocalOriginSnapshot": [
+        "f80b48250c89a1294a42d5f5c8e0d52e7aefe2f7 Review the TypeScript generator frontend command owner",
+        "c2668e99f751ace28b0a7a944f2e666ce569b699 Add explicitly approved contained TypeScript source generation",
+        "302168448a60ba04652764fc4060173ed6c3009d Validate generated Java source against reviewed nested capture",
+        "e0e8cd63c231a50655b9be282416c95be7ea956f Add nested captured Java generator validation regression",
+        "4df66202a7a05915f01c71997b38929d26fb373f Add explicit approval and capture for isolated Java source generators",
+        "6f3ac39e064f6616c3642ba067b57a069fda654b Resolve trusted generator host sandbox before byte verification",
+        "b0283780547a54e777456a163a433986ab1ecfc5 Add generator host discovery and untrusted-link regression controls",
+        "c595a19377e75b3adf596e1e5761949bb177b10e Merge commit 'a686ed45a83d0f9de8158fd5be45f43a756abfb7' into sdk/final-runtime-qualification-20261007-r1"
+      ]
+    }
+  ],
+  "localOriginDevelopmentSnapshotOnly": "165a4b0e0b0ebcbfd8f6365d955bce884929a9ae",
+  "additionalOwnedReferenceWithoutLiveWorktree": {
+    "branch": "fix/sdk-go-generator-containment-20261006-r1",
+    "head": "39954c14952b3203bd948eedfa0c105cd1d49b6e",
+    "historicalCarrierPR": 842
+  },
+  "evidenceSummary": {
+    "diagnostic9": "exactdbf source, actual9 passed/0ignored Windows native only;119.44s compiled input command,0.156s suite; four90s failures unchanged; no Go/Linux qualification",
+    "rustClock": "native4 passed plus source controls; unqualified std/source overlay",
+    "rustTls": "native12 passed plus source controls; explicit fake host imports; no guest/sysroot/thread qualification",
+    "rustStack": "native encoded-Wasm7 passed and27 source controls; no guest/std/thread qualification",
+    "emittedAnalyzer": "source controls passed, final8a held for parent review; conservative potential reachability only",
+    "frontendRust683": "all full watch attempts remain failures, c380 source repair/native tuple preserved; r2 environmental original900expiry; no close/qualifiedwatch claim",
+    "milestoneAudit": "33 issue rows/357 criteria; no newly closure-eligible open issue proved at captured audit revision"
+  },
+  "lossIfFullCleanup": {
+    "source": "all listed branches and newbootstrap must remain remotely pushed; root confirms snapshot drafts",
+    "receipts": "small summaries/byte identities copied below; all original failure receipts must remain failures",
+    "largeProducts": "native executables/toolkit archives/public compiler image backups and private watch evidence would be lost unless separately retained by user/root; this small packet excludes them",
+    "privateData": "raw private workspace/evidence TARs, credentials, tool archives and user-kept duplicates not copied or deleted"
+  },
+  "smallEvidenceCopies": [
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-source-delivery-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/rust-standard-clock-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 8555,
+      "sha256": "dca134999c2313336b1cdf3cbc577a71c3dd4b83355456d1a74a86e6674b29fa"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-source-delivery-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/rust-standard-tls-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 9570,
+      "sha256": "938bfc6335f0b83998a118502f86062cbcc17521bc5925581667c041107dd6b9"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-canonical-stack-sysroot-source-delivery-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/rust-canonical-stack-sysroot-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 7935,
+      "sha256": "3eaf884f811ac268d191bd2bfbfba3eef42258cea94702367993c4c209cdfe3d"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-thread-bootstrap-source-checkpoint-20261008-r1\\CHECKPOINT.json",
+      "preserved": "receipts/rust-thread-bootstrap-source-checkpoint-20261008-r1/CHECKPOINT.json",
+      "bytes": 1956,
+      "sha256": "ddf904130e6d8554072f1ebc261a7b0025fbcda5be82733790a1bdf63ae965c8"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-thread-bootstrap-windows-source-controls-20261008-r1\\RESULT.json",
+      "preserved": "receipts/rust-thread-bootstrap-windows-source-controls-20261008-r1/RESULT.json",
+      "bytes": 363,
+      "sha256": "12002856c3b23f6888325dbad4fc3c9444221d59a1935389796e7fdbdd1f66b0"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-canonical-stack-windows-reference-20261007-r3\\RESULT.json",
+      "preserved": "receipts/rust-canonical-stack-windows-reference-20261007-r3/RESULT.json",
+      "bytes": 810,
+      "sha256": "598eecb5692ce80b0f231b6b56266eb2f58addec4549b693b628f950030c7c1e"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-pal-native-reference-20261007-r2\\COMMIT-BYTE-BINDING.json",
+      "preserved": "receipts/rust-standard-tls-pal-native-reference-20261007-r2/COMMIT-BYTE-BINDING.json",
+      "bytes": 2884,
+      "sha256": "66dacc9abc1535a8319152fbfabb027cdecda38a4ca2d4e3b846b938264c2e47"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-prepared-suite-20261007-r1\\BUILD-FREE-SUITE.json",
+      "preserved": "receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/BUILD-FREE-SUITE.json",
+      "bytes": 1862,
+      "sha256": "5a690f89f76e65adbe87d21f4acb089887575e553cd1ddb78b313e0366a04e18"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-prepared-suite-20261007-r1\\COMPILED-INPUT.json",
+      "preserved": "receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/COMPILED-INPUT.json",
+      "bytes": 2676,
+      "sha256": "d2dd96280580ab20d78e813a07ce4f9f71576b07705c2d8d49f20a23a7e532d2"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-prepared-suite-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 10066,
+      "sha256": "2480c2a3df15b96f64685b507c387df74cf9d7c99c13918e74c11d5f0b02f3f2"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-prepared-suite-20261007-r1\\REGISTERED-SUITE.json",
+      "preserved": "receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/REGISTERED-SUITE.json",
+      "bytes": 1731,
+      "sha256": "4c3b5fb8a8248ab871630081389a42f89c6410e68d41d2f1ae4eba594d1301c7"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-prepared-suite-20261007-r1\\RESULT.json",
+      "preserved": "receipts/go-service-diagnostics-windows-prepared-suite-20261007-r1/RESULT.json",
+      "bytes": 6161,
+      "sha256": "f29b8f200d715336f185f7b5d523b3a807f850ba8b8a22794bdbb25a43fd87c7"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\compatibility-context-source-delivery-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/compatibility-context-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 6914,
+      "sha256": "d5ad907ecc05993bbc83688a54ed5445da5de43bfe2cd817e3a1b12ef66a7482"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-attribution-delivery-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/runtime-owner-attribution-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 3748,
+      "sha256": "dc153f55681222dabeaffd525ca88e5fe91b775986fd2becbfe13cb15bcd9e22"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-receipts-source-delivery-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/runtime-owner-receipts-source-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 6304,
+      "sha256": "4f2c1870df55efe636d71f3b7a044d1a8d1c589228a7ad615a519f4ab173173d"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-runtime-source-receipt-delivery-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/rust-runtime-source-receipt-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 2889,
+      "sha256": "11793a1f060d5dba0a3369a885da55a8d0161e3c2b1fa37825b23872b06b35c7"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\pr843-runtime-helper-maintained-ci-delivery-20261007-r3\\FINAL-DELIVERY.json",
+      "preserved": "receipts/pr843-runtime-helper-maintained-ci-delivery-20261007-r3/FINAL-DELIVERY.json",
+      "bytes": 4924,
+      "sha256": "77051a8fd23d7b3f6405e92035d198417072bf838bb9983d6132581bbb1ca0f1"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\generator-host-discovery-delivery-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/generator-host-discovery-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 1631,
+      "sha256": "15ae875095cb68bb06b523014ac34561e28699046c2c97debf54d03a7c4a5b85"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\java-approved-generator-delivery-20261007-r4\\FINAL-DELIVERY.json",
+      "preserved": "receipts/java-approved-generator-delivery-20261007-r4/FINAL-DELIVERY.json",
+      "bytes": 3816,
+      "sha256": "0692177565697eaf3d14016772b37b3db3241d490fd34f4e63de512ee992a95c"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\typescript-approved-generator-delivery-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/typescript-approved-generator-delivery-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 4142,
+      "sha256": "779e8cb3771e19584d1adf4bfb3713f90a2735a01ca6b4f589c931107940e359"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\watch-c380-default-native-host-backup-20261007-r1\\HOST-BACKUP.json",
+      "preserved": "receipts/watch-c380-default-native-host-backup-20261007-r1/HOST-BACKUP.json",
+      "bytes": 1832,
+      "sha256": "ab15ff84e0e7eb9d6c225f8371e5566730a991b091d7f2a4db1e76a0b73c3d20"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\watch-c380-rust-test-node-host-backup-20261007-r1\\HOST-BACKUP.json",
+      "preserved": "receipts/watch-c380-rust-test-node-host-backup-20261007-r1/HOST-BACKUP.json",
+      "bytes": 2199,
+      "sha256": "19eac53f6061504795b0a281013778d957a36354d3cd764b02da7c025b2c77be"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\FINAL-DELIVERY.json",
+      "preserved": "receipts/go-service-diagnostics-windows-reference-20261007-r1/FINAL-DELIVERY.json",
+      "bytes": 4221,
+      "sha256": "c1568194149d677bb0a79ccc3dc8ed46a1caec1944e6c1d482467a37577b4e8a"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\RESULT.json",
+      "preserved": "receipts/go-service-diagnostics-windows-reference-20261007-r1/RESULT.json",
+      "bytes": 3120,
+      "sha256": "205f313b9095a2d57f0cfe491daaa68f9355a9d47a875c2b94f7d0b7b38e4fe0"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\FINAL-DELIVERY.json",
+      "preserved": "receipts/go-service-diagnostics-windows-reference-20261007-r2/FINAL-DELIVERY.json",
+      "bytes": 4041,
+      "sha256": "1a39eb779dee9c14d52490cbe1326d339ccb4f88167c71a39477d225f4037aed"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r2\\RESULT.json",
+      "preserved": "receipts/go-service-diagnostics-windows-reference-20261007-r2/RESULT.json",
+      "bytes": 2474,
+      "sha256": "5110d35a96e35e87a0a8634b74746489805f61c48dca0e3e2437b06462e273c4"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r3\\FINAL-DELIVERY.json",
+      "preserved": "receipts/go-service-diagnostics-windows-reference-20261007-r3/FINAL-DELIVERY.json",
+      "bytes": 4988,
+      "sha256": "5b95cab9b0fe3a4e2daab7720cefd05f4144929362c6b17f36e4a96b0594c169"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r3\\RESULT.json",
+      "preserved": "receipts/go-service-diagnostics-windows-reference-20261007-r3/RESULT.json",
+      "bytes": 3279,
+      "sha256": "7bf06c06eea0f4456a019d809de9337eb4b68bb0cc3e552f05bc7c4602667ed7"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r4\\FINAL-DELIVERY.json",
+      "preserved": "receipts/go-service-diagnostics-windows-reference-20261007-r4/FINAL-DELIVERY.json",
+      "bytes": 4051,
+      "sha256": "6cc5ef2a7d42b17177a79bda82309086c6c3cb55993524080eeb7ffa90eb1612"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r4\\RESULT.json",
+      "preserved": "receipts/go-service-diagnostics-windows-reference-20261007-r4/RESULT.json",
+      "bytes": 3283,
+      "sha256": "1f02bf6098fd633e912c6a76064a0f4c7d4904fb1fbceae1e77a52b921276faf"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\sdk-all-closure-audit-20261007-r1\\CLOSURE-AUDIT.json",
+      "preserved": "audit/CLOSURE-AUDIT.json",
+      "bytes": 322979,
+      "sha256": "7a7d9a633c05a21dd14a630ea301c39197c960f4429206d67622469c234976e8"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\sdk-all-closure-audit-20261007-r1\\CLOSURE-AUDIT.md",
+      "preserved": "audit/CLOSURE-AUDIT.md",
+      "bytes": 14046,
+      "sha256": "bb695137cd891eda755dd33348ee1cd041a9ee9aac1c8167a89592fa80006c9d"
+    },
+    {
+      "original": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\sdk-all-closure-audit-20261007-r1\\EVIDENCE-INDEX.json",
+      "preserved": "audit/EVIDENCE-INDEX.json",
+      "bytes": 3172,
+      "sha256": "b983a9b1f3fdff67a9bf56bebfedf37216fa6e7c55c290355f0d1bc375e5691a"
+    }
+  ],
+  "smallEvidenceBytes": 462622,
+  "existingUserKeptDataUntouched": [
+    "private-owned-helper-state358MiB",
+    "lib538MiB"
+  ]
+}

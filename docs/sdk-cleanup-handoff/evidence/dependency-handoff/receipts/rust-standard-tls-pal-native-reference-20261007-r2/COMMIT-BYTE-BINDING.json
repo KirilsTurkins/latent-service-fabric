@@ -1,0 +1,68 @@
+{
+  "commit": "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5",
+  "nativeEvidenceOriginallyDirtyAndFrozen": true,
+  "allNativeProductionAndReferenceRustBytesMatchCommit": true,
+  "files": [
+    {
+      "path": "sdk/rust-standard-runtime/clock.rs",
+      "sha256": "12f62eb651f6c7cb653a9a7e0aba635e5b47cf3a2646ef4f57df9d513c62a071",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/tests/clock_native.rs",
+      "sha256": "682c8239a125b83c746746c4ee27f64135a48b87c627f3c8d0ba037f50103f49",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/tests/tls_native.rs",
+      "sha256": "c5f3b8f9c4922968d4f3f77a3a6c2faf8be76314d8aae53825c0ba7c564e95f7",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/tls.rs",
+      "sha256": "fb3fe66a798b29b6405f16cfbbbeea63968efdb13a2271f475fc797199b99fb7",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/rt.rs",
+      "sha256": "f435576c645fb30eaca560e819c2a113b556452d79c0303f49ffd4487018c01f",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/sync/mutex/no_threads.rs",
+      "sha256": "c790a191cb1bee4a02ae7d52e6945bdf4e1af15e34ea6b1b12574e0e5f5e51f6",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/thread/unsupported.rs",
+      "sha256": "cbdbe5561b93229d695732485c6a981e6d97f2a063436545bdbdea37848df268",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/thread_local/mod.rs",
+      "sha256": "56a94ba2ad4d2c30fc82c8f0b1c728bc05f8817340e7821019f7b05606a7456e",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/thread_local/no_threads.rs",
+      "sha256": "5fbac3fec13b7c337411b7875c47d07538fdae7a53008310d48cd830a4718904",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/thread_local/os.rs",
+      "sha256": "bd5344458222df838065f33a1a00f6d8c4bdc7cb6db79d722cd1593f47d24355",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/time/mod.rs",
+      "sha256": "449afdd86955252a302d889032a6cb2cbb04dd786f8cb81d9a9059ad933e7e4c",
+      "committedBlobEqualsNativeTestedBytes": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/time/unsupported.rs",
+      "sha256": "e1022bb35359dfaffdb76c4b14d03360ed1ccf8e9b002a89aacec16249c3444a",
+      "committedBlobEqualsNativeTestedBytes": true
+    }
+  ],
+  "rerunOrRelabeling": false
+}

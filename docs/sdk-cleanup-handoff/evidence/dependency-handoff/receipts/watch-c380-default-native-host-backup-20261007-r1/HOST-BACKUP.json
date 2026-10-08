@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "head": "c38043fa9c81180a79e50ad11c3a7f6c156126d4",
+  "tree": "c4882399d26a1782dc9bb7a87cfea25f0b297b5f",
+  "features": [],
+  "tupleRole": "ordinary-defaults",
+  "allFiveCurrentCompiledBinariesVerified": true,
+  "defaultTupleReceiptSha256": "114b31f79014ab4a674920df3f2bd5bd46c3c5de7fadc96b5c49440874ca1e20",
+  "binaries": {
+    "latent": {
+      "path": "/source/target/watch-c380-default-native-r1/latent",
+      "compilerOutput": "/work/native-target/debug/latent",
+      "bytes": 63516736,
+      "sha256": "058f6e23468619dc2623f74b79efd736d2c0c5f5bb8e68fe63eefc4d54f7174e"
+    },
+    "latentd": {
+      "path": "/source/target/watch-c380-default-native-r1/latentd",
+      "compilerOutput": "/work/native-target/debug/latentd",
+      "bytes": 148553632,
+      "sha256": "bae0165594ee2265120bd015ad1fc49fbab4bfb77d41003500548e4fd825651e"
+    },
+    "package": {
+      "path": "/source/target/watch-c380-default-native-r1/package",
+      "compilerOutput": "/work/native-target/debug/examples/package",
+      "bytes": 14163824,
+      "sha256": "d910357b4444483f122107a33655b6c93e3968ee3c136b73e4224b088ab989ef"
+    },
+    "capsule_contracts": {
+      "path": "/source/target/watch-c380-default-native-r1/capsule_contracts",
+      "compilerOutput": "/work/native-target/debug/examples/capsule_contracts",
+      "bytes": 7107352,
+      "sha256": "716cdd498bb3c47259df01eaaf3b4f53cf8fdf4c00c5afe00964c0db0d585ed0"
+    },
+    "capsule_authoring": {
+      "path": "/source/target/watch-c380-default-native-r1/capsule_authoring",
+      "compilerOutput": "/work/native-target/debug/examples/capsule_authoring",
+      "bytes": 19389016,
+      "sha256": "1f3f358f711161b93675aa65179692bc4184f9eda4c532be490fcc3f723b86ce"
+    }
+  },
+  "priorQualificationRelabeled": false
+}

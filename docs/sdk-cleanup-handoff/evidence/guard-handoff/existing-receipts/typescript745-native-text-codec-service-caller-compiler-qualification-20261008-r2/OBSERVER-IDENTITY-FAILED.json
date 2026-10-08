@@ -1,0 +1,11 @@
+{
+  "status": "observer-source-label-mismatch-unqualified",
+  "originalReceiptSHA256": "be73768b00bca6956026f251b380e85f6fe30121a89db6923d51d8a0955863f4",
+  "emittedSDKSourceLabel": "c4ed819c3b9cbae81b493ae8c7ac28af75a874bf",
+  "actualFrozenContainerInputSource": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "cause": "Launcher replaced a preimage token while loading the unchanged historical driver, so the metadata substitution did not match",
+  "originalReceiptAndArtifactEdited": false,
+  "currentSourceQualificationAccepted": false,
+  "signedLSFQualified": false,
+  "nextAttemptHasParsedExactSDKAndNativeSourceLabelPreflight": true
+}

@@ -1,0 +1,517 @@
+{
+  "body": "Add the gated canonical TCP provider and `latent:network/streams@0.1.0` host bridge. Connect, read, write, readiness, shutdown, close and affine chunks use the existing broker, I/O runtime, provider pools and original activation ledger. Endpoint policy stays distinct from typed HTTP authority. Original charges survive cancellation and rotation until actual resource destruction; node shutdown joins the bounded maintenance owner.\n\nInstallation requires the explicit development features. Ordinary nodes reject stream configuration, and this slice rejects host TLS. ADR-0061 and the qualification document retain the architecture/security, TLS, ordinary language, protected operator and measured-resource gates. Related implementation requirements remain open in #738, #739 and #740.\n\nRetained native/component evidence covers provider ownership, canonical calls, bounded DNS, HTTP-only denial, signed admission, cancellation, revocation, rotation and clean shutdown; each receipt keeps its original source identity. Current Linux validation also passes 28 source/inventory controls, three source-capacity controls, 71 Java SDK tests, complete CI command coverage and the actual pinned Java reference/ownership/model controls. Restore the qualifier's matching Java source closure without changing its assertions or limits. Fresh functional CI is required for this source integration; no production or whole-ticket qualification is claimed.\n",
+  "headRefOid": "222ab1ac51336cb6548cf82e10ef58eaa53acb4f",
+  "number": 775,
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:19:17Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390277/job/112991163532",
+      "name": "NativeAOT component qualification",
+      "startedAt": "2026-10-07T20:47:32Z",
+      "status": "COMPLETED",
+      "workflowName": ".NET guest qualification"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:00:34Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390409/job/112991166772",
+      "name": "Admitted C capability ownership",
+      "startedAt": "2026-10-07T20:46:42Z",
+      "status": "COMPLETED",
+      "workflowName": "C guest authoring"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:16:15Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113004295250",
+      "name": "Select CI profile",
+      "startedAt": "2026-10-07T21:16:06Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:08:56Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/112991177959",
+      "name": "Developer controller contracts (ubuntu-24.04)",
+      "startedAt": "2026-10-07T21:08:09Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T20:57:10Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390401/job/112991166440",
+      "name": "Go runtime and complete capsule qualification",
+      "startedAt": "2026-10-07T20:39:32Z",
+      "status": "COMPLETED",
+      "workflowName": "Go guest qualification"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T20:41:18Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390312/job/112991166222",
+      "name": "Bounded invocation concurrency experiment",
+      "startedAt": "2026-10-07T20:36:44Z",
+      "status": "COMPLETED",
+      "workflowName": "Invocation concurrency research"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:04:18Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390271/job/112991166928",
+      "name": "Actual Java sources, SDK ownership and enforced node",
+      "startedAt": "2026-10-07T20:36:07Z",
+      "status": "COMPLETED",
+      "workflowName": "Java guest authoring"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:11:26Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390290/job/112991165656",
+      "name": "Standalone Rust capsule authoring",
+      "startedAt": "2026-10-07T20:55:40Z",
+      "status": "COMPLETED",
+      "workflowName": "Rust capsule authoring"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:17:02Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390846/job/113005862915",
+      "name": "Select security scope",
+      "startedAt": "2026-10-07T21:16:49Z",
+      "status": "COMPLETED",
+      "workflowName": "Security baseline"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:47:50Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390391/job/112991168699",
+      "name": "TypeScript guest value and ownership boundary",
+      "startedAt": "2026-10-07T20:40:18Z",
+      "status": "COMPLETED",
+      "workflowName": "TypeScript guest qualification"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T20:38:50Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/112991177529",
+      "name": "Developer controller contracts (windows-2025)",
+      "startedAt": "2026-10-07T20:35:55Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:59:31Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021323978",
+      "name": "Documentation and SVGs",
+      "startedAt": "2026-10-07T21:57:33Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:31:31Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/112991178107",
+      "name": "Guest tool bundle and maintained application builds (rust)",
+      "startedAt": "2026-10-07T21:09:48Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:54:01Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390846/job/113021647279",
+      "name": "RustSec ff1ffb059b7733b88baf8fb6c30b13197ffbafb2 / RustSec current change",
+      "startedAt": "2026-10-07T21:53:32Z",
+      "status": "COMPLETED",
+      "workflowName": "Security baseline"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T20:57:51Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/112991177825",
+      "name": "Guest tool bundle and maintained application builds (c)",
+      "startedAt": "2026-10-07T20:49:57Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:09:30Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/112991178060",
+      "name": "Guest tool bundle and maintained application builds (java)",
+      "startedAt": "2026-10-07T20:57:13Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:24:22Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/112991179035",
+      "name": "Guest tool bundle and maintained application builds (dotnet)",
+      "startedAt": "2026-10-07T21:10:24Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:01:19Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/112991177896",
+      "name": "Guest tool bundle and maintained application builds (go)",
+      "startedAt": "2026-10-07T20:51:24Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:21:35Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/112991178274",
+      "name": "Guest tool bundle and maintained application builds (typescript)",
+      "startedAt": "2026-10-07T21:00:06Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:37:52Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021323976",
+      "name": "Fast host correctness",
+      "startedAt": "2026-10-07T21:34:57Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T20:54:25Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/112991178225",
+      "name": "Pinned WSL image candidate",
+      "startedAt": "2026-10-07T20:52:06Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:08:56Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390846/job/113021647214",
+      "name": "SDK advisories ff1ffb059b7733b88baf8fb6c30b13197ffbafb2",
+      "startedAt": "2026-10-07T22:08:18Z",
+      "status": "COMPLETED",
+      "workflowName": "Security baseline"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:39:00Z",
+      "conclusion": "FAILURE",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324307",
+      "name": "Rust 1.97.1 (checks)",
+      "startedAt": "2026-10-07T22:31:25Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:32:01Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/113027508292",
+      "name": "Windows frontend and actual portable capsules",
+      "startedAt": "2026-10-07T22:18:59Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:05:10Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390846/job/113021647009",
+      "name": "Redacted secrets ff1ffb059b7733b88baf8fb6c30b13197ffbafb2",
+      "startedAt": "2026-10-07T22:04:46Z",
+      "status": "COMPLETED",
+      "workflowName": "Security baseline"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:36:39Z",
+      "conclusion": "FAILURE",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324259",
+      "name": "Rust 1.97.1 (tests)",
+      "startedAt": "2026-10-07T22:31:38Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:14:00Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324157",
+      "name": "Rust 1.97.1 (qualification)",
+      "startedAt": "2026-10-07T22:08:08Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:16:22Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324188",
+      "name": "Rust 1.97.1 (provider)",
+      "startedAt": "2026-10-07T22:07:54Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:33:26Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324209",
+      "name": "Rust 1.97.1 (renderer-public)",
+      "startedAt": "2026-10-07T22:27:01Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:51:39Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324242",
+      "name": "Rust 1.97.1 (renderer-angular)",
+      "startedAt": "2026-10-07T22:45:05Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T23:11:33Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324302",
+      "name": "Rust 1.97.1 (publications)",
+      "startedAt": "2026-10-07T23:02:56Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:18:00Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324185",
+      "name": "Rust 1.97.1 (angular-t1)",
+      "startedAt": "2026-10-07T22:11:03Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:42:09Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021323892",
+      "name": "Durable catalog acceptance",
+      "startedAt": "2026-10-07T21:39:00Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:34:53Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/113027508395",
+      "name": "Linux frontend and maintained tutorial execution",
+      "startedAt": "2026-10-07T22:29:48Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:04:28Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390846/job/113021646829",
+      "name": "Source and workflow rules ff1ffb059b7733b88baf8fb6c30b13197ffbafb2",
+      "startedAt": "2026-10-07T22:03:51Z",
+      "status": "COMPLETED",
+      "workflowName": "Security baseline"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:17:03Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390846/job/113021649300",
+      "name": "Security fail-closed canaries",
+      "startedAt": "2026-10-07T21:17:03Z",
+      "status": "COMPLETED",
+      "workflowName": "Security baseline"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:48:43Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021323891",
+      "name": "Rust MSRV 1.95.0",
+      "startedAt": "2026-10-07T21:45:21Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T23:08:15Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/113050352479",
+      "name": "Windows candidate inventory and provenance",
+      "startedAt": "2026-10-07T23:07:29Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:23:41Z",
+      "conclusion": "FAILURE",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324100",
+      "name": "Repository contracts (python)",
+      "startedAt": "2026-10-07T22:17:56Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T23:09:51Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390292/job/113051359692",
+      "name": "Native Windows and Linux tutorial equivalence",
+      "startedAt": "2026-10-07T23:09:26Z",
+      "status": "COMPLETED",
+      "workflowName": "Developer tools"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:50:20Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390846/job/113041888133",
+      "name": "Security baseline result",
+      "startedAt": "2026-10-07T22:50:16Z",
+      "status": "COMPLETED",
+      "workflowName": "Security baseline"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:06:45Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324089",
+      "name": "Repository contracts (bindings)",
+      "startedAt": "2026-10-07T22:03:09Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:22:45Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324178",
+      "name": "Repository contracts (runtime)",
+      "startedAt": "2026-10-07T22:16:43Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:03:06Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324016",
+      "name": "Repository contracts (standalone)",
+      "startedAt": "2026-10-07T21:57:37Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:29:45Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324094",
+      "name": "Repository contracts (sdk-provider)",
+      "startedAt": "2026-10-07T22:22:49Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:47:55Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324030",
+      "name": "Repository contracts (measurements)",
+      "startedAt": "2026-10-07T21:43:35Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T23:06:42Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324374",
+      "name": "Repository contracts (optimization)",
+      "startedAt": "2026-10-07T23:03:57Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T22:18:57Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324015",
+      "name": "Cross-language SDK surfaces",
+      "startedAt": "2026-10-07T22:13:48Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T21:46:15Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324231",
+      "name": "Documentation website / Static site, examples and browser journeys",
+      "startedAt": "2026-10-07T21:37:49Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-07T23:06:42Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113062009516",
+      "name": "OCI registry TLS integration",
+      "startedAt": "2026-10-07T23:06:43Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-08T00:29:28Z",
+      "conclusion": "FAILURE",
+      "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113063560189",
+      "name": "CI result",
+      "startedAt": "2026-10-08T00:29:23Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    }
+  ]
+}

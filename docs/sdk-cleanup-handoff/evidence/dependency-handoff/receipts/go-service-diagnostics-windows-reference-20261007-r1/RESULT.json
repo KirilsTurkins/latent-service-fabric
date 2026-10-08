@@ -1,0 +1,72 @@
+{
+  "status": "failed-native-diagnostics",
+  "sourceHead": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+  "sourceTree": "4efa617ab9c0ae43ad891bd1c320233167b2ffd8",
+  "seconds": 91.81281749999471,
+  "maximumSeconds": 90,
+  "failure": {
+    "type": "AssertionError",
+    "message": "{'phase': 'actual-diagnostic-tests', 'exitCode': 1, 'seconds': 78.46071210000082, 'failure': {'type': 'TimeoutExpired', 'message': \"Command '['C:\\\\\\\\Users\\\\\\\\turkins\\\\\\\\.rustup\\\\\\\\toolchains\\\\\\\\1.97.1-x86_64-pc-windows-msvc\\\\\\\\bin\\\\\\\\cargo.exe', 'test', '-p', 'latent-capabilities', '--test', 'local-service-diagnostics-reference', '--locked', '--offline', '--no-default-features', '--', '--test-threads=1']' timed out after 78.13844340000651 seconds\"}, 'jobMemoryBytes': 1073741824, 'cpuHardCapRate': 625, 'suspendedStartAssignedBeforeResume': True, 'activeJobChildrenAfterCleanup': 0, 'outputs': {'stderr': {'observedBytes': 250, 'retainedBytes': 250, 'truncated': False}, 'stdout': {'observedBytes': 0, 'retainedBytes': 0, 'truncated': False}}}"
+  },
+  "actualPassedNames": [],
+  "selectedDependencyClosureExcludesWasmtime": true,
+  "sourceBytesUnchangedExceptReviewedCopiedTestStanza": true,
+  "processStages": [
+    {
+      "phase": "selected-dependency-closure",
+      "exitCode": 0,
+      "seconds": 11.540324400004465,
+      "failure": null,
+      "jobMemoryBytes": 1073741824,
+      "cpuHardCapRate": 625,
+      "suspendedStartAssignedBeforeResume": true,
+      "activeJobChildrenAfterCleanup": 0,
+      "outputs": {
+        "stdout": {
+          "observedBytes": 11448,
+          "retainedBytes": 11448,
+          "truncated": false
+        },
+        "stderr": {
+          "observedBytes": 0,
+          "retainedBytes": 0,
+          "truncated": false
+        }
+      }
+    },
+    {
+      "phase": "actual-diagnostic-tests",
+      "exitCode": 1,
+      "seconds": 78.46071210000082,
+      "failure": {
+        "type": "TimeoutExpired",
+        "message": "Command '['C:\\\\Users\\\\turkins\\\\.rustup\\\\toolchains\\\\1.97.1-x86_64-pc-windows-msvc\\\\bin\\\\cargo.exe', 'test', '-p', 'latent-capabilities', '--test', 'local-service-diagnostics-reference', '--locked', '--offline', '--no-default-features', '--', '--test-threads=1']' timed out after 78.13844340000651 seconds"
+      },
+      "jobMemoryBytes": 1073741824,
+      "cpuHardCapRate": 625,
+      "suspendedStartAssignedBeforeResume": true,
+      "activeJobChildrenAfterCleanup": 0,
+      "outputs": {
+        "stderr": {
+          "observedBytes": 250,
+          "retainedBytes": 250,
+          "truncated": false
+        },
+        "stdout": {
+          "observedBytes": 0,
+          "retainedBytes": 0,
+          "truncated": false
+        }
+      }
+    }
+  ],
+  "retainedOutputBytes": 11698,
+  "maximumOutputBytes": 524288,
+  "cleanupMaximumSeconds": 5,
+  "memoryMaximumBytes": 1073741824,
+  "cpuMaximumCores": 1,
+  "actualFoundationalTypesAndDiagnostics": true,
+  "fixtureCompiled": false,
+  "foreignNativeProductsUsed": false,
+  "GoOrLinuxQualification": false
+}

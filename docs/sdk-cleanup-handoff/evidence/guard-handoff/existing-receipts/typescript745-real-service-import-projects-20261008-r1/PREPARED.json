@@ -1,0 +1,55 @@
+{
+  "status": "source-only-maintained-service-import-projects-prepared",
+  "SDKSourceHead": "36ff63bef26890458b8eb51570efc6000bde7530",
+  "actualWitInterface": "latent:service/invoke@0.1.0",
+  "existingCapturedSDKWrapperUnchanged": true,
+  "newCallerExplicitChildCallBudget": 1,
+  "newChildGenuinePendingPromiseUsesStandardTimer": true,
+  "noCustomHostTransportOrNamespaceImportAdaptation": true,
+  "projects": [
+    {
+      "project": "caller",
+      "world": "examples:typescript-runtime-caller/service@1.0.0",
+      "sourceSha256": "24566d7676e585ecb85d0fa728ad526ee58584bd3058094ba70569fe7de750ca",
+      "limits": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 134217728,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 1,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      },
+      "oldFixtureLimitsOrAssertionsChanged": false,
+      "runtimeProfile": "spidermonkey-activation-promises-clocks-imports-v1"
+    },
+    {
+      "project": "callee",
+      "world": "examples:typescript-runtime-callee/service@1.0.0",
+      "sourceSha256": "a30958fc27a32c8af5aa883abc519ac538d977b1c7031540ca104947b9c24991",
+      "limits": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 134217728,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      },
+      "oldFixtureLimitsOrAssertionsChanged": false,
+      "runtimeProfile": "spidermonkey-activation-promises-clocks-imports-v1"
+    }
+  ],
+  "compilerOrSigningOrRuntimeExecuted": false,
+  "qualification": "unknown",
+  "timingOnlyProgressCannotCertifyPendingHostSibling": true,
+  "hostPendingReadinessWitnessStillRequired": true
+}

@@ -1,0 +1,8 @@
+{
+  "status": "current-source-and-public-prep",
+  "head": "120ceab09a2c4a96d4e13ce8a5b3363983b06999",
+  "tree": "633e352e09e1e2782d8acefbd79734c574bf7e62",
+  "clean": true,
+  "originalPublicReceiptSha256": "2adbfa905e1fe287ab5b4d69bc8a46333f1cdb676d3eae18db4ceb3dc60f8a49",
+  "originalReceiptPath": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\c684-current120-readiness-20261008-r1\\READINESS.json"
+}

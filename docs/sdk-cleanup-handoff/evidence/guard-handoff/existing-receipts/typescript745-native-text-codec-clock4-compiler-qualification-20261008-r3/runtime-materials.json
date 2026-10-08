@@ -1,0 +1,22 @@
+[
+  {
+    "name": "typescript-native-engine",
+    "digest": "sha256:62e532908cc818674bbfefcf6609695c9b547e1e1b1b1c3c8f1f92af4fcfc4a5",
+    "size": 9943755
+  },
+  {
+    "name": "typescript-native-engine-input",
+    "digest": "sha256:9ae3ab0e5838c07e41029cd53261fef2e053889878c1c41447d88715215fd0be",
+    "size": 8976
+  },
+  {
+    "name": "typescript-source-splicer-input",
+    "digest": "sha256:6108c1698ff64b1750e2813532e4ae7043042215898c509daee99bde66d07dfd",
+    "size": 5385
+  },
+  {
+    "name": "typescript-source-splicer-files",
+    "digest": "sha256:acb002b6f3afc866250345d4717faf882595cf1b4c141f4909d54f7c0293b810",
+    "size": 3007
+  }
+]

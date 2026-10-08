@@ -1,0 +1,87 @@
+{
+  "sourceHead": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+  "sourceTree": "4efa617ab9c0ae43ad891bd1c320233167b2ffd8",
+  "status": "original90s-cold-compile-deadline",
+  "nineActualTestsPassed": false,
+  "testsExecuted": 0,
+  "actualSourceErrorReported": false,
+  "selectedDependencyClosureExcludesWasmtime": true,
+  "allOwnedJobChildrenRetired": true,
+  "sourceBytesUnchanged": true,
+  "sourceCopyOnlyExplicitTestTargetStanza": true,
+  "fixtureOrWasmtimeCompiled": false,
+  "actualFoundationalTypesPreserved": true,
+  "WindowsNativeOnly": true,
+  "GoOrLinuxQualification": false,
+  "bounds": {
+    "executionSeconds": 90,
+    "cpuCores": 1,
+    "memoryBytes": 1073741824,
+    "outputBytes": 524288,
+    "cleanupSeconds": 5,
+    "publicPreparationSeconds": 600
+  },
+  "evidence": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\PREPARED.json",
+      "bytes": 667725,
+      "sha256": "43b168ba07d553cf6161eb41de8b3e126db234e375aac423a7517e82785f9fc6"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\INPUTS.json",
+      "bytes": 4116,
+      "sha256": "fe6c99687e4110e05353c42a635f791606f5cdc8b63c49f24d9ce71e40f09e23"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\RESULT.json",
+      "bytes": 3120,
+      "sha256": "205f313b9095a2d57f0cfe491daaa68f9355a9d47a875c2b94f7d0b7b38e4fe0"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\PUBLIC-WINDOWS-LINK-INPUTS.json",
+      "bytes": 123300,
+      "sha256": "50508c1b0c51a8af5a5260b390756f19ff6cd306474128fdb92b2d3c94ed0f60"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\selected-dependency-closure.stdout",
+      "bytes": 11448,
+      "sha256": "7f1248adbb505532923fbee1370244935baa8f70a35136c4793302cc2152bdcb"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\selected-dependency-closure.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\actual-diagnostic-tests.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\actual-diagnostic-tests.stderr",
+      "bytes": 250,
+      "sha256": "8848d084fe74f45855fa9a33f49592282d9f64cfb75d101e455e535cc99b9621"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\prepare805-diagnostics-windows-reference-20261007-r1.py",
+      "bytes": 4537,
+      "sha256": "98083ff1c07873114d0aa84c09e8fb5796ae49b592512fd7a94ff70fd5212d1e"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\run805-diagnostics-windows-reference-20261007-r1.py",
+      "bytes": 11710,
+      "sha256": "96a503b78f93861fa1a27c6c1897079ee2c5470dd473348c8f413ae7a5da1c2c"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r1\\FAILED-OWNED-CACHE.json",
+      "bytes": 20244,
+      "sha256": "ac367b18777746d77544bfe95d8933238b37ebcb2924e13b03454a852775407b"
+    }
+  ],
+  "partialOwnedCache": {
+    "files": 101,
+    "bytes": 24163862,
+    "freshBeforeRun": true,
+    "testsOrProductsQualified": false
+  }
+}

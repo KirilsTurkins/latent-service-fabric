@@ -1,0 +1,713 @@
+{
+  "observedUtc": "2026-10-08T11:27:09.094874+00:00",
+  "count": 101,
+  "prs": [
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-authoring-20261002",
+      "source": "08a429e2479974bc61494d4dad8221ed63cd4456",
+      "number": 854,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/854",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/audit-abandonment-wakeup-20261007-r1",
+      "source": "2f40228aad59ee12c7f530dbaad80698757adac3",
+      "number": 855,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/855",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/dotnet-resource-runtime-union-20261002",
+      "source": "ccb449a91f9a82c7373c43b89488279ec9e64b71",
+      "number": 856,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/856",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/networking-http-closed-trap-20261002",
+      "source": "b22062583d01b821e050a5aab40f1c4f2c0993c9",
+      "number": 857,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/857",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/networking-http-public-wire-20261002",
+      "source": "c187cf0595c494ed0155c630bb25bd403e23d692",
+      "number": 858,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/858",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/networking-provider-chunk-framing",
+      "source": "30d361a244c414f76ecb8132e6e915ddda1bc410",
+      "number": 859,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/859",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/networking-v5-normal-current-20261004-r1",
+      "source": "af6d0c9cea5bf05bbf2e16267922ef21bab6d21b",
+      "number": 860,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/860",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/networking-v5-normal-http-20261003-r1",
+      "source": "1ff2b8313ee18c91acc7996033a70c49f8200470",
+      "number": 861,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/861",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/pr761-standard-dotnet-resources-20261002",
+      "source": "ea1788e89dff169aebac56d5bfa6be2ec3a9bf8b",
+      "number": 862,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/862",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-ci-shared-guards-union-20261004-r1",
+      "source": "fdf1e8334feb2d20f85435b70e200de751c5c676",
+      "number": 863,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/863",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-activation-authoring",
+      "source": "38e8a91b50a6b4ee91a288c0a843f8ad8b9b9296",
+      "number": 864,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/864",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-advanced-model",
+      "source": "3834d866ba88dd5a68326e4f5c170acfc9aba23c",
+      "number": 865,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/865",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-candidate",
+      "source": "5c4a32822db9a313a0bd8e60f63d9471c24af6b0",
+      "number": 866,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/866",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-current-20261004-r1",
+      "source": "c4bfe20b10b4033a225284681011ac28c8c2c7b5",
+      "number": 867,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/867",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-delayed",
+      "source": "0efed9eaa6154664147f8d4f2e69edcd7b87a510",
+      "number": 868,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/868",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-timed",
+      "source": "a560bf82b2d37c8ccc66fa54442f7671074eca07",
+      "number": 869,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/869",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-executor-acceptance",
+      "source": "a03316ba5fa7ffda5d9b9a6bb7ca9e1580330f0b",
+      "number": 870,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/870",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-wait-frames",
+      "source": "8344afee83c6e3bb88efe5e9eb0fff11818e1f89",
+      "number": 871,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/871",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/runtime-website-acquire-retry",
+      "source": "6e5a8baf32039e92746fcf24c5c9a9b2076d4451",
+      "number": 872,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/872",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-c-approved-generators-20261007-r1",
+      "source": "b99da32a4c7fc989fe1d028359b926027f044d81",
+      "number": 873,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/873",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-c-authoring-current-20261007-r2",
+      "source": "120ceab09a2c4a96d4e13ce8a5b3363983b06999",
+      "number": 874,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/874",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-c-current-complete-qualification-20261007-r1",
+      "source": "1269a0d82e838de12c7cc970c32687deca46f05f",
+      "number": 875,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/875",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-captured-runtime-receipts-20261007-r1",
+      "source": "f742d3d8dce8754e36c0821af48a81c82305872e",
+      "number": 876,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/876",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-ci-observed-failures",
+      "source": "c3b5cee5951ecbb49748395b88b225325cda2837",
+      "number": 877,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/877",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-compatibility-context-20261007-r1",
+      "source": "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+      "number": 878,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/878",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-completable-idle-timer-repair-20261006-r1",
+      "source": "18cf123686b7beb0e09fcd767ad5845aa558e4d4",
+      "number": 880,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/880",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-controlled-stream-peer-20261007-r1",
+      "source": "83880e1e843daa0b0d087be5e10dbf9f552fa989",
+      "number": 881,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/881",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-dotnet-ci-contract-fixtures-20261007-r1",
+      "source": "53bf7d0e83cf3ef97d7d3a24ce91932c328c8d70",
+      "number": 882,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/882",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-emitted-reachability-20261007-r1",
+      "source": "5f016c54535924909e2a7ae3080ea4c5562f3944",
+      "number": 883,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/883",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-emitted-reachability-graph-domain-followup-20261007-r1",
+      "source": "8a5af03b38df168f9e47a5157f977f1f1d43c869",
+      "number": 884,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/884",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-final-runtime-qualification-20261007-r1",
+      "source": "e7a555111676792f87d05359ee2e7b56d9dce6ea",
+      "number": 885,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/885",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-frontend-dependency-descriptor-20261006-r1",
+      "source": "7ce730c92ecff0eb694d4d0466dfe76e9be9cb8b",
+      "number": 886,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/886",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-frontend-followup-af6d-20261006-r1",
+      "source": "66bda98056d3c2e64ca45731eb47e2942e6355ea",
+      "number": 887,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/887",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-generator-host-sandbox-discovery-20261007-r1",
+      "source": "6f3ac39e064f6616c3642ba067b57a069fda654b",
+      "number": 888,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/888",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-go-service-retirement-diagnostics-20261007-r1",
+      "source": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+      "number": 889,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/889",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-approved-source-generators-20261007-r1",
+      "source": "302168448a60ba04652764fc4060173ed6c3009d",
+      "number": 890,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/890",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-httpserver-body-decoding-20261007-r1",
+      "source": "21031d9c53b69590a997951f48ee2fd4d5e10c1e",
+      "number": 891,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/891",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-owned-timer-readiness-20261006-r1",
+      "source": "89b8d9833d1309667a4aa6da31b5daa40ccabb79",
+      "number": 892,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/892",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-pr807-coherent-20261007-r1",
+      "source": "10f1c9e7652d903e0f8cf835862c21c323f31d6e",
+      "number": 893,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/893",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-pr807-wire-20261007-r1",
+      "source": "406f9e4075f1804051ff831c9395e15a9d1cdee4",
+      "number": 894,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/894",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-server-lifecycle-qualification-20261007-r1",
+      "source": "9e66fccb1cf991ebf11dc69f65a34077a5ba377d",
+      "number": 895,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/895",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-server-maximum-body-20261007-r1",
+      "source": "7a7a0e664df442f6e7f13fa332a00c7dc9dce03d",
+      "number": 896,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/896",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-nats-cold-secret-ci-repair-20261006-r1",
+      "source": "fb82e51144715a873635c42a95455825c0f91658",
+      "number": 897,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/897",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-runtime-diagnostic-context-20261007-r1",
+      "source": "c38043fa9c81180a79e50ad11c3a7f6c156126d4",
+      "number": 898,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/898",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-runtime-owner-attribution-20261007-r1",
+      "source": "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+      "number": 899,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/899",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-runtime-receipt-ci-repair-20261007-r1",
+      "source": "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+      "number": 900,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/900",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-canonical-stack-port-20261007-r1",
+      "source": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+      "number": 901,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/901",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-canonical-thread-bootstrap-20261007-r1",
+      "source": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+      "number": 902,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/902",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-captured-staged-zig-20261006-r1",
+      "source": "aa5886b81f6438f8d33216484955279a1ab57a35",
+      "number": 903,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/903",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-frontend-closure-decoder-20261006-r1",
+      "source": "a26f7cba7433d24966bdcfb6c4cedbad2c4dc35d",
+      "number": 904,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/904",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-logical-tls-port-20261007-r1",
+      "source": "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5",
+      "number": 905,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/905",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-runtime-receipt-source-20261007-r1",
+      "source": "a7d3300c39b7379a1543ca93226098f7737725c5",
+      "number": 906,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/906",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-standard-clock-port-20261007-r1",
+      "source": "0114e05a6a5c0a08f4e0729b00bbd3da414f2767",
+      "number": 907,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/907",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-security-20261004",
+      "source": "8810e5d99784da6ca5239587e05605915b6b4651",
+      "number": 908,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/908",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-operator-controls-20261007-r1",
+      "source": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "number": 909,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/909",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-operator-current-development-20261007-r1",
+      "source": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "number": 910,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/910",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-operator-current-development-20261007-r2",
+      "source": "55906321f5bd7e9cf156674945d808cda91f18b2",
+      "number": 911,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/911",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-tls-captured-parser-bounds-20261007-r1",
+      "source": "067491d87f8fd4f233114ac93db260d5fc2514b2",
+      "number": 912,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/912",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-tls-protected-credentials-20261007-r1",
+      "source": "3fa3313911390233f26e7b911a2458cf6f055d94",
+      "number": 913,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/913",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-approved-generators-20261007-r1",
+      "source": "f80b48250c89a1294a42d5f5c8e0d52e7aefe2f7",
+      "number": 914,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/914",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-clock-profile-20261008-r1",
+      "source": "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+      "number": 915,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/915",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-imports-20261008-r1",
+      "source": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+      "number": 916,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/916",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-owned-events-20261007-r1",
+      "source": "ab77366903fe21c970cf6fa1f3491166417c3c95",
+      "number": 917,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/917",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-profile-20261007-r1",
+      "source": "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+      "number": 918,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/918",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-runtime-20261007-r1",
+      "source": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
+      "number": 919,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/919",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-import-profile-20261008-r1",
+      "source": "faa08263570b3748d1be7918a3271e321c6adeea",
+      "number": 920,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/920",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-import-selection-20261008-r1",
+      "source": "6abd7a1d58f8db15648abe9613967d25690f1796",
+      "number": 921,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/921",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-import-splicer-contract-20261008-r1",
+      "source": "50495c4fb24bf3b05d01e2a03bc13c6b3958138f",
+      "number": 922,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/922",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-runtime-materials-20261008-r1",
+      "source": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+      "number": 923,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/923",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/sdk-wasi-stream-reproducers-20261007-r1",
+      "source": "ea485b568d63b126b1721febe1fb673e6c94eb9b",
+      "number": 924,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/924",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-c-authoring-lifecycle",
+      "source": "7069e537200a11375c326f9f291b371d7cf8ac94",
+      "number": 925,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/925",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-c-completion",
+      "source": "2f0a6e1a4424b1cdd360fb15ca42e301951a8722",
+      "number": 926,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/926",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-ci",
+      "source": "131b1e3358a567b0527f28c48ea40926e8bc8806",
+      "number": 927,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/927",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-control-lease",
+      "source": "10d419cd6d81b9977d0aeeb13829afd2a3102ea5",
+      "number": 928,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/928",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-diagnostics",
+      "source": "a90d39b115a6e586ea96af8519ef327dbec7166f",
+      "number": 929,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/929",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-dotnet-peer",
+      "source": "0ffad44a7409e65a58cdfb4473a7d2147976b6d2",
+      "number": 930,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/930",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-foundations",
+      "source": "68d39106911a5221898ae7d170b4f00bda64a3e0",
+      "number": 931,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/931",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-host-profiles",
+      "source": "a4211b1717eed64eed4ad908fb2fdbe19fe46466",
+      "number": 932,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/932",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-http-client-node",
+      "source": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+      "number": 933,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/933",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-expanded-timeunit-compile",
+      "source": "45dd0c316e901b5666edda527f406a302c00cf98",
+      "number": 934,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/934",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-resources-recovery",
+      "source": "7f6fd0832b6b0af73b15889343ecdfb4142314c7",
+      "number": 935,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/935",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-review",
+      "source": "6c493ea1ebdaee81023e5c9cc533253aaf0d1980",
+      "number": 936,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/936",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-spills",
+      "source": "27af27b8bab9edcfad4e85af1a676c16e969cc03",
+      "number": 937,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/937",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-spills-compile",
+      "source": "bed5c4d6d61a0feb36d0da57df03a994d9347432",
+      "number": 938,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/938",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-timeunit-compile",
+      "source": "8943a364bfa53480d001b4d82353dc0ef576c6a0",
+      "number": 939,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/939",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java807-warm",
+      "source": "ec0430f56af46c4d5b80e1a8ae35fdc34311d430",
+      "number": 940,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/940",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-networking",
+      "source": "21e7532446e7453ad7a9e0be3ae57d8c1df906e4",
+      "number": 941,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/941",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime",
+      "source": "16e89a79a5df3e6b9d476ad2f57e130c6eafb829",
+      "number": 942,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/942",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-ci",
+      "source": "829dfced3201b502781ecf84b4ef594acb01b9f7",
+      "number": 943,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/943",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-contracts",
+      "source": "415c36e5a4bc7095e6a16398f8b2b9c1aab47b6d",
+      "number": 944,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/944",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-integration",
+      "source": "99b6d567c6435c6f1d643bf9d4caf2470e212578",
+      "number": 945,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/945",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump",
+      "source": "1cce4f749486e0e102dc764b2efda2c0ccd4c79c",
+      "number": 946,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/946",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump-ci",
+      "source": "9327aeed95f76f80b22cb622c7fa17ded74cc7cc",
+      "number": 947,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/947",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump-native",
+      "source": "38d08fd2bdc2c9631377de228bc9719e0193303a",
+      "number": 948,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/948",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-timeunit",
+      "source": "ec0430f56af46c4d5b80e1a8ae35fdc34311d430",
+      "number": 949,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/949",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-trace",
+      "source": "99b6d567c6435c6f1d643bf9d4caf2470e212578",
+      "number": 950,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/950",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-v5-ci",
+      "source": "404de7a41a6dac391b9211ebd2cadca595acc21f",
+      "number": 951,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/951",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-stream-authority-controls",
+      "source": "27cc15565c0219c8a7f1307ae9543b92a368ccea",
+      "number": 952,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/952",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-trust-integration",
+      "source": "88e73b3ba8f2b51289a84f180c3995ea973d9453",
+      "number": 953,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/953",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-streams-integration",
+      "source": "222ab1ac51336cb6548cf82e10ef58eaa53acb4f",
+      "number": 954,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/954",
+      "reused": false
+    },
+    {
+      "branch": "handoff/sdk-cleanup-20261008/latent-sdk-analyzer-current",
+      "source": "63d98926d23d3c61ef9e66c55a53b35f96eaf4ec",
+      "number": 955,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/955",
+      "reused": false
+    }
+  ]
+}

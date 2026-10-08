@@ -1,0 +1,125 @@
+{
+  "status": "actual-maintained-Compiler-candidate-built",
+  "records": [
+    {
+      "stage": "node-version",
+      "exitCode": 0,
+      "seconds": 0.019695
+    },
+    {
+      "stage": "wasm-tools-version",
+      "exitCode": 0,
+      "seconds": 0.02026
+    },
+    {
+      "stage": "prepare-compiler-adapter",
+      "exitCode": 0,
+      "seconds": 0.441298
+    },
+    {
+      "stage": "canonical-wit",
+      "exitCode": 0,
+      "seconds": 0.031216
+    },
+    {
+      "stage": "authoritative-types",
+      "exitCode": 0,
+      "seconds": 0.040843
+    },
+    {
+      "stage": "selected-runtime-types",
+      "exitCode": 0,
+      "seconds": 0.129225
+    },
+    {
+      "stage": "selected-activation-types",
+      "exitCode": 0,
+      "seconds": 0.102857
+    },
+    {
+      "stage": "selected-clock-types",
+      "exitCode": 0,
+      "seconds": 0.084992
+    },
+    {
+      "stage": "selected-runtime-wit",
+      "exitCode": 0,
+      "seconds": 0.049889
+    },
+    {
+      "stage": "projected-types",
+      "exitCode": 0,
+      "seconds": 0.126609
+    },
+    {
+      "stage": "generate-types",
+      "exitCode": 0,
+      "seconds": 1.227833
+    },
+    {
+      "stage": "regenerate-types",
+      "exitCode": 0,
+      "seconds": 0.950062
+    },
+    {
+      "stage": "typecheck",
+      "exitCode": 0,
+      "seconds": 0.193047
+    },
+    {
+      "stage": "bundle",
+      "exitCode": 0,
+      "seconds": 0.203963
+    },
+    {
+      "stage": "componentize",
+      "exitCode": 0,
+      "seconds": 23.201602
+    },
+    {
+      "stage": "strip-projection",
+      "exitCode": 0,
+      "seconds": 0.051999
+    },
+    {
+      "stage": "restore-authoritative-contract",
+      "exitCode": 0,
+      "seconds": 0.111198
+    },
+    {
+      "stage": "compose",
+      "exitCode": 0,
+      "seconds": 0.202426
+    },
+    {
+      "stage": "validate",
+      "exitCode": 0,
+      "seconds": 0.100681
+    },
+    {
+      "stage": "surface",
+      "exitCode": 0,
+      "seconds": 0.122271
+    },
+    {
+      "stage": "final-runtime-types",
+      "exitCode": 0,
+      "seconds": 0.051812
+    }
+  ],
+  "seconds": 40.356880752002326,
+  "component": {
+    "bytes": 11368672,
+    "sha256": "eb95435586c10d6b677f79cf93c6c13f99ecde1ed6ecab64e9b1fb8e865445ce"
+  },
+  "SDKSourceHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "nativeEngineSourceHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "maintainedNamespaceIsolationUsed": true,
+  "sourceInputsResealed": true,
+  "qualification": "unknown",
+  "nativeEngineAndCurrentSDKSourceMatch": true,
+  "actualMaintainedServiceInterfaceCompilerFixture": true,
+  "hostPendingReadinessWitnessStillRequired": true,
+  "normalCLIContractsPackageSignNotYetExecuted": true,
+  "signedLSFQualified": false
+}

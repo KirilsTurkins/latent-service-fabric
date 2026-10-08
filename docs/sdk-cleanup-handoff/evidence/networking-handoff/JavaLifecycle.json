@@ -1,0 +1,17 @@
+{
+  "status": "source-controls-passed-node-gates-pending",
+  "head": "9e66fccb1cf991ebf11dc69f65a34077a5ba377d",
+  "tree": "3efddaecdae0a96063b4bf910dec37d22d0b6ba6",
+  "clean": true,
+  "sourcePaths": 13,
+  "focusedTests": 54,
+  "skips": 0,
+  "coverage": {
+    "before": 88,
+    "after": 272,
+    "owners": 143
+  },
+  "actualNodeQualificationPassed": false,
+  "originalPublicReceiptSha256": "11e26fc6a110e97101aa9aaa33cd69467fbeaa7dfcf0ff04143566a09d556aa6",
+  "originalReceiptPath": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\java-server-lifecycle-source-delivery-20261007-r3\\FINAL-DELIVERY.json"
+}

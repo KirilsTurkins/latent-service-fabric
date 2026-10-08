@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "source": "63d98926d23d3c61ef9e66c55a53b35f96eaf4ec",
+  "tree": "f0bac4bcba0ff8afc8b71039aca183923f10ba78",
+  "cases": 128,
+  "skips": 0,
+  "seconds": 5.072664024999995,
+  "maximumSeconds": 90,
+  "uid": 1000,
+  "python": "3.13.5",
+  "sourceBytesAndModesUnchanged": true,
+  "actualGuestExecution": false,
+  "selectedSourceOnly": true
+}

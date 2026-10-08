@@ -1,0 +1,143 @@
+{
+  "format": "latent.typescript.selected-engine-recipe.v1",
+  "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+  "sourceFiles": [
+    "StarlingMonkey/runtime/js.cpp",
+    "StarlingMonkey/runtime/allocator.cpp",
+    "StarlingMonkey/runtime/encode.cpp",
+    "StarlingMonkey/runtime/decode.cpp",
+    "StarlingMonkey/runtime/engine.cpp",
+    "StarlingMonkey/runtime/event_loop.cpp",
+    "StarlingMonkey/runtime/builtin.cpp",
+    "StarlingMonkey/runtime/script_loader.cpp",
+    "StarlingMonkey/runtime/debugger.cpp",
+    "StarlingMonkey/builtins/install_builtins.cpp",
+    "StarlingMonkey/builtins/web/global_self.cpp",
+    "StarlingMonkey/builtins/web/queue-microtask.cpp",
+    "StarlingMonkey/builtins/web/event/event.cpp",
+    "StarlingMonkey/builtins/web/event/event-target.cpp",
+    "StarlingMonkey/builtins/web/event/custom-event.cpp",
+    "StarlingMonkey/builtins/web/event/global-event-target.cpp",
+    "StarlingMonkey/builtins/web/abort/abort-signal.cpp",
+    "StarlingMonkey/builtins/web/abort/abort-controller.cpp",
+    "StarlingMonkey/builtins/web/dom-exception.cpp",
+    "StarlingMonkey/builtins/web/timers.cpp",
+    "StarlingMonkey/builtins/web/console.cpp",
+    "StarlingMonkey/builtins/web/performance.cpp",
+    "embedding/embedding.cpp",
+    "StarlingMonkey/host-apis/wasi-0.2.0/host_api.cpp",
+    "StarlingMonkey/host-apis/wasi-0.2.0/host_call.cpp",
+    "StarlingMonkey/host-apis/wasi-0.2.3/sockets.cpp",
+    "StarlingMonkey/host-apis/wasi-0.2.10/bindings/bindings.c",
+    "lsf/native_engine.cpp",
+    "lsf/jobs.c",
+    "lsf/native_clock_engine.cpp",
+    "lsf/clocks.c",
+    "lsf/native_import_bridge.cpp",
+    "lsf/native_import_globals.cpp",
+    "StarlingMonkey/builtins/web/text-codec/text-codec.cpp",
+    "StarlingMonkey/builtins/web/text-codec/text-encoder.cpp",
+    "StarlingMonkey/builtins/web/text-codec/text-decoder.cpp"
+  ],
+  "moduleSelection": [
+    {
+      "namespace": "builtins::web::global_self",
+      "originalSource": [
+        "builtins/web/global_self.cpp"
+      ]
+    },
+    {
+      "namespace": "builtins::web::queue_microtask",
+      "originalSource": [
+        "builtins/web/queue-microtask.cpp"
+      ]
+    },
+    {
+      "namespace": "builtins::web::event",
+      "originalSource": [
+        "builtins/web/event/event.cpp",
+        "builtins/web/event/event-target.cpp",
+        "builtins/web/event/custom-event.cpp",
+        "builtins/web/event/global-event-target.cpp"
+      ]
+    },
+    {
+      "namespace": "builtins::web::abort",
+      "originalSource": [
+        "builtins/web/abort/abort-signal.cpp",
+        "builtins/web/abort/abort-controller.cpp"
+      ]
+    },
+    {
+      "namespace": "builtins::web::dom_exception",
+      "originalSource": [
+        "builtins/web/dom-exception.cpp"
+      ]
+    },
+    {
+      "namespace": "builtins::web::timers",
+      "originalSource": [
+        "builtins/web/timers.cpp"
+      ]
+    },
+    {
+      "namespace": "builtins::web::console",
+      "originalSource": [
+        "builtins/web/console.cpp"
+      ]
+    },
+    {
+      "namespace": "builtins::web::performance",
+      "originalSource": [
+        "builtins/web/performance.cpp"
+      ]
+    },
+    {
+      "namespace": "componentize::embedding",
+      "originalSource": []
+    }
+  ],
+  "originalFullBrowserRecipeClaimed": false,
+  "originalApplicationSourcePatched": false,
+  "unselectedModules": [
+    "crypto",
+    "fetch",
+    "HTTP",
+    "socket",
+    "URL",
+    "multipart",
+    "compression",
+    "worker"
+  ],
+  "originalSDK30": true,
+  "compilerFlags": [
+    "-std=gnu++23",
+    "-fno-exceptions",
+    "-fno-rtti",
+    "-fno-sized-deallocation",
+    "-fno-aligned-new",
+    "-mthread-model=single"
+  ],
+  "linkFlags": [
+    "-Wl,-z,stack-size=1048576",
+    "-Wl,--stack-first",
+    "-mexec-model=reactor",
+    "-Wl,--lto-O0",
+    "-Wl,--strip-debug"
+  ],
+  "sourceBuiltWholeSixBodyPromiseUnit": "9edd6d7ef3ff49d80632109f062051a7d1766f07d9d17e9487289127026d7259",
+  "allOriginalStrongDefinitionsRequired": 303,
+  "compilerExecuted": false,
+  "supportedAsyncProfile": false,
+  "signedLSFComponentQualified": false,
+  "previousProfile": "spidermonkey-activation-promises-clocks-v1",
+  "requestedClockInterfaces": [
+    "latent:clock/monotonic@0.1.0",
+    "latent:clock/wall@0.1.0"
+  ],
+  "clockAuthorityGranted": false,
+  "additionalCompilerMetadataObject": "lsf/clocks_component_type.o",
+  "nativeTextCodecSelection": "original-pinned-definitions-before-component-bindings",
+  "nativeTextCodecSourceModified": false,
+  "nativeTextCodecQualified": false
+}
