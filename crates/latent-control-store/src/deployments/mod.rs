@@ -3,6 +3,7 @@
 mod admission_fence;
 pub mod bindings;
 mod compiler;
+mod control_admission;
 pub(crate) mod http;
 mod mutations;
 mod observation;

@@ -22,6 +22,7 @@ use latent_manifest::{
     __serde_json as json, validate_deployment_document, JsonManifestCodec, ManifestCodec,
 };
 
+use super::control_admission::{annotate, Stage};
 use super::observation::{count, Work};
 use super::pagination::DeploymentIndex;
 use super::{
@@ -543,7 +544,9 @@ async fn compile_catalog_inner(
                 // Failure leaves this private catalog unpublished, and commit
                 // still rechecks every grant under its existing currentness fence.
                 if let Some(authority) = control_authority {
-                    authority.renew_control_lease()?;
+                    authority
+                        .renew_control_lease()
+                        .map_err(|failure| annotate(true, Stage::PackageLease, failure))?;
                 }
                 let (artifact, execution) = execution::load(
                     artifacts,
@@ -614,7 +617,9 @@ async fn compile_catalog_inner(
                 grant.release() == &deployment.release
                     && Some(grant.publication()) == publication.as_ref()
             }) {
-                grant.authorize_tenant(tenant)?;
+                grant.authorize_tenant(tenant).map_err(|failure| {
+                    annotate(control_authority.is_some(), Stage::PackageTenant, failure)
+                })?;
             }
             if let Some(denied) = inactive.last().filter(|entry| {
                 entry.release() == &deployment.release
@@ -850,7 +855,15 @@ async fn compile_catalog_inner(
         };
         if inherit_bindings {
             catalog.bindings =
-                super::bindings::inherit(&catalog, previous, artifacts, control_authority).await?;
+                super::bindings::inherit(&catalog, previous, artifacts, control_authority)
+                    .await
+                    .map_err(|failure| {
+                        annotate(
+                            control_authority.is_some(),
+                            Stage::InheritedBindings,
+                            failure,
+                        )
+                    })?;
         }
         charge(&mut metadata_budget, catalog.bindings.retained_bytes())?;
         Ok(catalog)

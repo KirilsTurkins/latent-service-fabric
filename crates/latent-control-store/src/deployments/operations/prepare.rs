@@ -7,8 +7,8 @@ use crate::deployment_operations::{
     DeploymentOperationRequest, Result, MAX_OPERATION_SCRATCH_BYTES, MAX_RECEIPT_BYTES,
 };
 use crate::deployments::{
-    compiler::compile_catalog_with_runtime, mutations, observation::Work, persistence,
-    CompiledCatalog, DirectoryDeploymentRepository,
+    compiler::compile_catalog_with_runtime, control_admission, mutations, observation::Work,
+    persistence, CompiledCatalog, DirectoryDeploymentRepository,
 };
 use crate::VersionedDeployment;
 use latent_core::{DeploymentId, PlatformErrorCode, TenantId};
@@ -147,7 +147,9 @@ impl DirectoryDeploymentRepository {
         // having run between consecutive catalog mutations. This performs no
         // deployment effect and never retries preparation or an uncertain write.
         if let Some(authority) = &self.admission {
-            authority.renew_control_lease()?;
+            authority.renew_control_lease().map_err(|failure| {
+                control_admission::annotate(true, control_admission::Stage::PrepareLease, failure)
+            })?;
         }
         let next_routes = Arc::new(
             compile_catalog_with_runtime(
