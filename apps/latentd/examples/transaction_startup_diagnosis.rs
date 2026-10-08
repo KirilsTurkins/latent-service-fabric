@@ -25,12 +25,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         512,
         latent_protected_files::ProtectedFilePolicy::Secret,
         "startupDiagnosisCredential",
-    )?;
+    )
+    .map_err(|error| error.code.wire_code())?;
     let credential = std::str::from_utf8(&raw)?;
     if credential.is_empty() || credential.chars().any(char::is_control) {
         return Err("bounded credential required".into());
     }
-    let settings = latentd::config::NodeConfig::load(&args.config)?.derive()?;
+    let settings = latentd::config::NodeConfig::load(&args.config)
+        .and_then(|value| value.derive())
+        .map_err(|error| error.code.wire_code())?;
     let grace = settings.shutdown_grace();
     let workers = Arc::new(AtomicUsize::new(0));
     let started = Arc::clone(&workers);
@@ -57,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if workers.load(Ordering::SeqCst) != 0 {
         return Err("owned runtime did not retire".into());
     }
-    let bytes = serde_json::to_vec(&report?)?;
+    let bytes = serde_json::to_vec(&report.map_err(|error| error.code.wire_code())?)?;
     if bytes.len() > 262_144 {
         return Err("bounded report required".into());
     }
