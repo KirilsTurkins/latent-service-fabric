@@ -82,6 +82,7 @@ static void profile_vectors(void) {
         assert((value.nodes[0].target_service.length == 26) && "activation-root-real-ingress-identity.nodes.0.target_service.length");
         assert((memcmp(value.nodes[0].target_service.data, "examples/java-http-adapter", 26) == 0) && "activation-root-real-ingress-identity.nodes.0.target_service");
         assert((value.nodes[0].received_at_unix_millis == UINT64_C(18446744073709551615)) && "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis");
+        assert((!(value.nodes[0].has_transaction_staging)) && "activation-root-real-ingress-identity.nodes.0.transaction_staging.presence");
         assert((value.has_page) && "activation-root-real-ingress-identity.page.presence");
         assert((!(value.page.has_next_page_token)) && "activation-root-real-ingress-identity.page.next_page_token.presence");
         assert((value.history_available == true) && "activation-root-real-ingress-identity.history_available");
@@ -139,6 +140,7 @@ static void profile_vectors(void) {
         assert((value.nodes[0].diagnostic_is_terminal == true) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
         assert((value.nodes[0].target_service.length == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.target_service.length");
         assert((value.nodes[0].received_at_unix_millis == UINT64_C(0)) && "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis");
+        assert((!(value.nodes[0].has_transaction_staging)) && "activation-tree-failed-preparation-before-guest.nodes.0.transaction_staging.presence");
         assert((value.has_page) && "activation-tree-failed-preparation-before-guest.page.presence");
         assert((value.page.has_next_page_token) && "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
         assert((value.page.next_page_token.length == 20) && "activation-tree-failed-preparation-before-guest.page.next_page_token.length");
@@ -1473,6 +1475,61 @@ static void profile_vectors(void) {
         assert((value.candidates[0].http_bindings_count == 0) && "target-inspection-future-states-remain-descriptive.candidates.0.http_bindings.count");
         assert((!(value.has_selected_revision_id)) && "target-inspection-future-states-remain-descriptive.selected_revision_id.presence");
         assert((value.live_grants_checked == false) && "target-inspection-future-states-remain-descriptive.live_grants_checked");
+    }
+    {
+        latent_profile_inspect_activation_tree_response value = (latent_profile_inspect_activation_tree_response){.schema_version = 1U, .nodes = (const latent_profile_activation_tree_node[]){(latent_profile_activation_tree_node){.activation_id = PROFILE_TEXT("original-command"), .root_activation_id = PROFILE_TEXT("original-command"), .phase = PROFILE_TEXT("running"), .last_updated_unix_millis = UINT64_C(0), .principal_kind = PROFILE_TEXT("user"), .has_granted_budget = true, .granted_budget = (latent_profile_resource_budget){.cpu_fuel = UINT64_C(0), .memory_bytes = UINT64_C(0), .child_calls = 0U, .outbound_requests = 0U, .state_read_bytes = UINT64_C(0), .state_write_bytes = UINT64_C(18446744073709551615), .blob_read_bytes = UINT64_C(0), .blob_write_bytes = UINT64_C(0), .log_bytes = UINT64_C(0), .effect_count = 2U}, .diagnostic_is_terminal = false, .target_service = PROFILE_TEXT("examples/aggregate"), .received_at_unix_millis = UINT64_C(1000), .has_transaction_staging = true, .transaction_staging = (latent_profile_transaction_staging_witness){.schema_version = 1U, .activation_serial = UINT64_C(18446744073709551615), .command_id = PROFILE_TEXT("1111111111111111111111111111111111111111111111111111111111111111"), .attempt_id = PROFILE_TEXT("2222222222222222222222222222222222222222222222222222222222222222"), .transaction_id = PROFILE_TEXT("3333333333333333333333333333333333333333333333333333333333333333"), .publication_id = PROFILE_TEXT("publication:sha256:4444444444444444444444444444444444444444444444444444444444444444"), .staged_mutations = 2U, .captured_intents = 2U, .state_write_bytes = UINT64_C(18446744073709551615), .observed_at_unix_millis = UINT64_C(18446744073709551615)}}}, .nodes_count = 1, .has_page = true, .page = (latent_profile_page_response){0}, .history_available = true, .cursor_expired = false, .retained_history_only = true};
+        assert((value.schema_version == 1U) && "activation-tree-original-captured-intent-witness.schema_version");
+        assert((value.nodes_count == 1) && "activation-tree-original-captured-intent-witness.nodes.count");
+        assert((value.nodes[0].activation_id.length == 16) && "activation-tree-original-captured-intent-witness.nodes.0.activation_id.length");
+        assert((memcmp(value.nodes[0].activation_id.data, "original-command", 16) == 0) && "activation-tree-original-captured-intent-witness.nodes.0.activation_id");
+        assert((!(value.nodes[0].has_parent_activation_id)) && "activation-tree-original-captured-intent-witness.nodes.0.parent_activation_id.presence");
+        assert((value.nodes[0].root_activation_id.length == 16) && "activation-tree-original-captured-intent-witness.nodes.0.root_activation_id.length");
+        assert((memcmp(value.nodes[0].root_activation_id.data, "original-command", 16) == 0) && "activation-tree-original-captured-intent-witness.nodes.0.root_activation_id");
+        assert((value.nodes[0].phase.length == 7) && "activation-tree-original-captured-intent-witness.nodes.0.phase.length");
+        assert((memcmp(value.nodes[0].phase.data, "running", 7) == 0) && "activation-tree-original-captured-intent-witness.nodes.0.phase");
+        assert((!(value.nodes[0].has_terminal_state)) && "activation-tree-original-captured-intent-witness.nodes.0.terminal_state.presence");
+        assert((value.nodes[0].last_updated_unix_millis == UINT64_C(0)) && "activation-tree-original-captured-intent-witness.nodes.0.last_updated_unix_millis");
+        assert((!(value.nodes[0].has_diagnostic)) && "activation-tree-original-captured-intent-witness.nodes.0.diagnostic.presence");
+        assert((value.nodes[0].principal_kind.length == 4) && "activation-tree-original-captured-intent-witness.nodes.0.principal_kind.length");
+        assert((memcmp(value.nodes[0].principal_kind.data, "user", 4) == 0) && "activation-tree-original-captured-intent-witness.nodes.0.principal_kind");
+        assert((!(value.nodes[0].has_caller_service)) && "activation-tree-original-captured-intent-witness.nodes.0.caller_service.presence");
+        assert((value.nodes[0].has_granted_budget) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.presence");
+        assert((value.nodes[0].granted_budget.cpu_fuel == UINT64_C(0)) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.cpu_fuel");
+        assert((value.nodes[0].granted_budget.memory_bytes == UINT64_C(0)) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.memory_bytes");
+        assert((value.nodes[0].granted_budget.child_calls == 0U) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.child_calls");
+        assert((value.nodes[0].granted_budget.outbound_requests == 0U) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.outbound_requests");
+        assert((value.nodes[0].granted_budget.state_read_bytes == UINT64_C(0)) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_read_bytes");
+        assert((value.nodes[0].granted_budget.state_write_bytes == UINT64_C(18446744073709551615)) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_write_bytes");
+        assert((value.nodes[0].granted_budget.blob_read_bytes == UINT64_C(0)) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_read_bytes");
+        assert((value.nodes[0].granted_budget.blob_write_bytes == UINT64_C(0)) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_write_bytes");
+        assert((value.nodes[0].granted_budget.log_bytes == UINT64_C(0)) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.log_bytes");
+        assert((value.nodes[0].granted_budget.effect_count == 2U) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.effect_count");
+        assert((!(value.nodes[0].granted_budget.has_wall_time_limit_millis)) && "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.wall_time_limit_millis.presence");
+        assert((!(value.nodes[0].has_effective_deadline_unix_millis)) && "activation-tree-original-captured-intent-witness.nodes.0.effective_deadline_unix_millis.presence");
+        assert((value.nodes[0].diagnostic_is_terminal == false) && "activation-tree-original-captured-intent-witness.nodes.0.diagnostic_is_terminal");
+        assert((value.nodes[0].target_service.length == 18) && "activation-tree-original-captured-intent-witness.nodes.0.target_service.length");
+        assert((memcmp(value.nodes[0].target_service.data, "examples/aggregate", 18) == 0) && "activation-tree-original-captured-intent-witness.nodes.0.target_service");
+        assert((value.nodes[0].received_at_unix_millis == UINT64_C(1000)) && "activation-tree-original-captured-intent-witness.nodes.0.received_at_unix_millis");
+        assert((value.nodes[0].has_transaction_staging) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.presence");
+        assert((value.nodes[0].transaction_staging.schema_version == 1U) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.schema_version");
+        assert((value.nodes[0].transaction_staging.activation_serial == UINT64_C(18446744073709551615)) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.activation_serial");
+        assert((value.nodes[0].transaction_staging.command_id.length == 64) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.command_id.length");
+        assert((memcmp(value.nodes[0].transaction_staging.command_id.data, "1111111111111111111111111111111111111111111111111111111111111111", 64) == 0) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.command_id");
+        assert((value.nodes[0].transaction_staging.attempt_id.length == 64) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.attempt_id.length");
+        assert((memcmp(value.nodes[0].transaction_staging.attempt_id.data, "2222222222222222222222222222222222222222222222222222222222222222", 64) == 0) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.attempt_id");
+        assert((value.nodes[0].transaction_staging.transaction_id.length == 64) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.transaction_id.length");
+        assert((memcmp(value.nodes[0].transaction_staging.transaction_id.data, "3333333333333333333333333333333333333333333333333333333333333333", 64) == 0) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.transaction_id");
+        assert((value.nodes[0].transaction_staging.publication_id.length == 83) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.publication_id.length");
+        assert((memcmp(value.nodes[0].transaction_staging.publication_id.data, "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444", 83) == 0) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.publication_id");
+        assert((value.nodes[0].transaction_staging.staged_mutations == 2U) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.staged_mutations");
+        assert((value.nodes[0].transaction_staging.captured_intents == 2U) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.captured_intents");
+        assert((value.nodes[0].transaction_staging.state_write_bytes == UINT64_C(18446744073709551615)) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.state_write_bytes");
+        assert((value.nodes[0].transaction_staging.observed_at_unix_millis == UINT64_C(18446744073709551615)) && "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.observed_at_unix_millis");
+        assert((value.has_page) && "activation-tree-original-captured-intent-witness.page.presence");
+        assert((!(value.page.has_next_page_token)) && "activation-tree-original-captured-intent-witness.page.next_page_token.presence");
+        assert((value.history_available == true) && "activation-tree-original-captured-intent-witness.history_available");
+        assert((value.cursor_expired == false) && "activation-tree-original-captured-intent-witness.cursor_expired");
+        assert((value.retained_history_only == true) && "activation-tree-original-captured-intent-witness.retained_history_only");
     }
     {
         uint64_t parsed = UINT64_C(42);

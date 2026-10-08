@@ -698,6 +698,35 @@ public final class Wire {
                 value.hasLiftMultiplier() ? Optional.of(value.getLiftMultiplier()) : Optional.empty());
     }
 
+    public static latent.control.v1.Node.TransactionStagingWitness toWire(Management.TransactionStagingWitness value) {
+        var result = latent.control.v1.Node.TransactionStagingWitness.newBuilder();
+        result.setSchemaVersion(value.schemaVersion());
+        result.setActivationSerial(value.activationSerial());
+        result.setCommandId(value.commandId());
+        result.setAttemptId(value.attemptId());
+        result.setTransactionId(value.transactionId());
+        result.setPublicationId(value.publicationId());
+        result.setStagedMutations(value.stagedMutations());
+        result.setCapturedIntents(value.capturedIntents());
+        result.setStateWriteBytes(value.stateWriteBytes());
+        result.setObservedAtUnixMillis(value.observedAtUnixMillis());
+        return result.build();
+    }
+
+    public static Management.TransactionStagingWitness fromWire(latent.control.v1.Node.TransactionStagingWitness value) {
+        return new Management.TransactionStagingWitness(
+                value.getSchemaVersion(),
+                value.getActivationSerial(),
+                value.getCommandId(),
+                value.getAttemptId(),
+                value.getTransactionId(),
+                value.getPublicationId(),
+                value.getStagedMutations(),
+                value.getCapturedIntents(),
+                value.getStateWriteBytes(),
+                value.getObservedAtUnixMillis());
+    }
+
     public static latent.control.v1.Node.ActivationTreeNode toWire(Management.ActivationTreeNode value) {
         var result = latent.control.v1.Node.ActivationTreeNode.newBuilder();
         result.setActivationId(value.activationId());
@@ -714,6 +743,7 @@ public final class Wire {
         result.setDiagnosticIsTerminal(value.diagnosticIsTerminal());
         result.setTargetService(value.targetService());
         result.setReceivedAtUnixMillis(value.receivedAtUnixMillis());
+        if (value.transactionStaging().isPresent()) result.setTransactionStaging(toWire(value.transactionStaging().get()));
         return result.build();
     }
 
@@ -732,7 +762,8 @@ public final class Wire {
                 value.hasEffectiveDeadlineUnixMillis() ? Optional.of(value.getEffectiveDeadlineUnixMillis()) : Optional.empty(),
                 value.getDiagnosticIsTerminal(),
                 value.getTargetService(),
-                value.getReceivedAtUnixMillis());
+                value.getReceivedAtUnixMillis(),
+                value.hasTransactionStaging() ? Optional.of(fromWire(value.getTransactionStaging())) : Optional.empty());
     }
 
     public static latent.control.v1.Node.InspectActivationTreeRequest toWire(Management.InspectActivationTreeRequest value) {
