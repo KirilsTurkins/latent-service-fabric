@@ -190,7 +190,6 @@ impl Default for WasmtimeConfig {
             java_guest: false,
             transactional_state: false,
             activation_runtime: None,
-            transactional_state: false,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
