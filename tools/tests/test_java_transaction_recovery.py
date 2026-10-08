@@ -15,6 +15,101 @@ def observed():
                            "acceptedJobs": 0, "threadsJoined": 4}}
 
 
+class NativeCloseActionOracle(unittest.TestCase):
+    @staticmethod
+    def close_observation():
+        from tools.java_transaction_qualification import configuration as cfg, recovery_close
+        selected = {"effectId": "a" * 64, "originalDigest": [1] * 32, "payloadDigest": [2] * 32,
+                    "historyDigest": [3] * 32, "originalDisposition": "Uncertain", "originalClockMillis": 1000}
+        value = {"schemaVersion": recovery_close.FORMAT, "operatorId": cfg.OPERATOR,
+                 "operationId": "original-close", "scope": {"tenant": cfg.TENANT, "namespace": cfg.NAMESPACE, "incarnation": 1},
+                 "expectedView": list(b"NV\x02" + bytes([19]) * 32
+                     + b"".join(number.to_bytes(8, "little") for number in (1, 2, 3, 4))),
+                 "expectedGuard": [7] * 133, "lossWindowDigest": [4] * 32,
+                 "reason": "remote fact requires explicit operator closure", "effects": [selected]}
+        request = {"action": "inspect-close-effects", "operationId": value["operationId"],
+                   "effectIds": [selected["effectId"]], "reason": value["reason"]}
+        result = {"action": request["action"], "plan": value, "planDigest": "sha256:" + "b" * 64,
+                  "proposedOutcome": recovery_close.OUTCOME, "recoveryRemainsPaused": True}
+        return request, result
+
+    def test_existing_native_close_actions_preserve_original_plan_ack_and_paused_outcome(self):
+        from tools.java_transaction_qualification import recovery_close
+        request, inspected = self.close_observation()
+        self.assertIn("inspect-close-effects", recovery.ACTIONS)
+        self.assertIn("close-effects", recovery.ACTIONS)
+        self.assertIs(recovery_close.result(request, inspected), inspected)
+        original = copy.deepcopy(inspected)
+        close = {"action": "close-effects", "operationId": request["operationId"],
+                 "plan": inspected["plan"], "acknowledgement": inspected["planDigest"]}
+        closed = {"action": "close-effects", "recoveryRemainsPaused": True,
+                  "providerAcknowledgementInferred": False, "receipt": {"schemaVersion": recovery_close.FORMAT,
+                  "outcome": recovery_close.OUTCOME, "plan": close["plan"],
+                  "acknowledgement": list(bytes.fromhex(close["acknowledgement"][7:])), "observedAtMillis": 1001}}
+        self.assertIs(recovery_close.result(close, closed), closed)
+        self.assertEqual(inspected, original)
+
+    def test_native_close_collection_refuses_unknown_actions_grants_and_unbounded_selection(self):
+        from tools.java_transaction_qualification import recovery_close
+        request, inspected = self.close_observation()
+        for changed in ({"action": "retry"}, {"approved": True}, {"grant": True},
+                        {"deadline": 1000}, {"reason": "x" * 129}, {"effectIds": ["a" * 64] * 2},
+                        {"effectIds": [f"{number:064x}" for number in range(17)]}):
+            with self.assertRaises(ValueError):
+                recovery_close.request(dict(request, **changed))
+        for name, changed in (("operatorId", "foreign-operator"), ("schemaVersion", "unknown"),
+                              ("expectedGuard", [7] * 134), ("lossWindowDigest", [0] * 32)):
+            invalid = copy.deepcopy(inspected)
+            invalid["plan"][name] = changed
+            with self.assertRaises(ValueError):
+                recovery_close.result(request, invalid)
+
+    def test_native_inspected_close_refuses_changed_scope_operation_identity_and_outcome(self):
+        from tools.java_transaction_qualification import recovery_close
+        request, inspected = self.close_observation()
+        for changed in ({"recoveryRemainsPaused": False}, {"proposedOutcome": "provider-acknowledged"},
+                        {"planDigest": "sha256:" + "0" * 64}, {"approved": True}):
+            with self.assertRaises(ValueError):
+                recovery_close.result(request, dict(inspected, **changed))
+        for change in ("operation", "tenant", "effect", "disposition", "clock"):
+            invalid = copy.deepcopy(inspected)
+            if change == "operation":
+                invalid["plan"]["operationId"] = "replacement-operation"
+            elif change == "tenant":
+                invalid["plan"]["scope"]["tenant"] = "foreign-tenant"
+            elif change == "effect":
+                invalid["plan"]["effects"][0]["effectId"] = "c" * 64
+            elif change == "disposition":
+                invalid["plan"]["effects"][0]["originalDisposition"] = "ProviderAcknowledged"
+            else:
+                invalid["plan"]["effects"][0]["originalClockMillis"] = True
+            with self.assertRaises(ValueError):
+                recovery_close.result(request, invalid)
+
+    def test_native_close_receipt_cannot_infer_remote_success_refresh_plan_or_advance_original_time(self):
+        from tools.java_transaction_qualification import recovery_close
+        request, inspected = self.close_observation()
+        close = {"action": "close-effects", "operationId": request["operationId"],
+                 "plan": inspected["plan"], "acknowledgement": inspected["planDigest"]}
+        receipt = {"schemaVersion": recovery_close.FORMAT, "outcome": recovery_close.OUTCOME,
+                   "plan": close["plan"], "acknowledgement": [0xbb] * 32, "observedAtMillis": 1001}
+        original = {"action": "close-effects", "receipt": receipt, "recoveryRemainsPaused": True,
+                    "providerAcknowledgementInferred": False}
+        for change in ("ack", "plan", "time", "provider", "resume"):
+            invalid = copy.deepcopy(original)
+            if change == "ack":
+                invalid["receipt"]["acknowledgement"] = [1] * 32
+            elif change == "plan":
+                invalid["receipt"]["plan"]["reason"] = "changed-after-inspection"
+            elif change == "time":
+                invalid["receipt"]["observedAtMillis"] = 999
+            elif change == "provider":
+                invalid["providerAcknowledgementInferred"] = True
+            else:
+                invalid["recoveryRemainsPaused"] = False
+            with self.assertRaises(ValueError):
+                recovery_close.result(close, invalid)
+
 class NativeRecoveryOracle(unittest.TestCase):
     def test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement(self):
         from types import SimpleNamespace
