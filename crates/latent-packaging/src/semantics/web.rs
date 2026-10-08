@@ -101,6 +101,7 @@ pub fn validate_web_renderer_with_backend(
         return Err(super::exhausted("semantic-work-limit"));
     }
     Ok(CheckedSurface {
+        host_profile: latent_core::PHASE3_HOST_ABI_CURRENT,
         component_digest: artifact_blob_digest(component),
         world: backend.world().into(),
         imports: declared
