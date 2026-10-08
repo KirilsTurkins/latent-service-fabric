@@ -105,7 +105,7 @@ async fn empty_and_pruned_original_operation_journals_remain_unknown_without_exe
     ));
     let mut configured = config();
     configured.endpoint = format!("http://{address}");
-    tokio::time::timeout(Duration::from_secs(5), async {
+    Box::pin(tokio::time::timeout(Duration::from_secs(5), async {
         for (floor, high, _, _, accepted) in replies {
             let session = Session::connect(&configured, None).await.unwrap();
             let result = execute::execute(
@@ -130,7 +130,7 @@ async fn empty_and_pruned_original_operation_journals_remain_unknown_without_exe
         assert!(queue.lock().unwrap().is_empty());
         let _ = stop.send(());
         (&mut server.0).await.unwrap().unwrap();
-    })
+    }))
     .await
     .unwrap();
 }
