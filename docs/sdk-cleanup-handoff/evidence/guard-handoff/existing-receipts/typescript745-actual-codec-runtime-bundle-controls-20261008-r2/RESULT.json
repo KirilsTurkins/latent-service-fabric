@@ -1,0 +1,25 @@
+{
+  "status": "actual-candidate-runtime-pack-unpack-selection-passed",
+  "SDKSourceHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "originalInputFiles": 30,
+  "actualManagedFiles": 30,
+  "exactBytesSurviveManagedArchive": true,
+  "actualProjectProfile": "spidermonkey-activation-promises-clocks-imports-v1",
+  "runtimeAuthorityGranted": false,
+  "sourceInputPrePostSealsMatch": true,
+  "qualification": "unknown",
+  "supportedReleaseOrSignedRuntimeClaimed": false,
+  "rows": [
+    {
+      "name": "managed.zip",
+      "bytes": 3992042,
+      "sha256": "8b9d0632abbb82a9ad9120fb70af644068691df0ce490e44640d54f04b9e165e"
+    },
+    {
+      "name": "managed-inputs.json",
+      "bytes": 5623,
+      "sha256": "c2de6d52aa572eca6cfbd88c100951fbc4b356625b695e46319a79ddbaf12482"
+    }
+  ],
+  "seconds": 5.287280897999153
+}

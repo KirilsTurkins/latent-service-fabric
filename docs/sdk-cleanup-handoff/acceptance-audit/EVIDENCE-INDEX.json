@@ -1,0 +1,56 @@
+{
+  "remoteBodyAndMergedPrCaptures": "ISSUES.json / MERGED-PRS.json",
+  "additionalBranchRefresh": "failed: error connecting to api.github.com; development93dd source/tree is parent-reported and local-object verified",
+  "evidence": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\issue684-e7-normal-local-watch-20261007-r3\\FINAL.json",
+      "bytes": 2917,
+      "sha256": "3f88a71ca15444d0c53f0dfdfa3185b42ceae8fbb66e9ab2be2b79131a93cf82",
+      "scope": "e7 exact normal local/private watch; no clean-host release claim"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\issue684-72ac-c-runtime-context-20261007-r1\\FINAL.json",
+      "bytes": 2902,
+      "sha256": "087183cef796f1f89bcfcd21a1ae891495552e423ab1285cb0acd5a432b6b189",
+      "scope": "actual72ac recipe with explicitly e7 ordinary native products"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\issue684-e7-c-source-static-20261007-r1\\FINAL.json",
+      "bytes": 2804,
+      "sha256": "d812e6ab5e09171153fb3d556e51b353b746195645e87e2b2330900c473362e0",
+      "scope": "actual source/static signed C controls at e7"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\issue684-e7-c-negative-controls-20261007-r1\\FINAL.json",
+      "bytes": 2586,
+      "sha256": "4c5ba9ece322ec5b227673e4657f7225eb978e9dd00e9ab9dd608560c120ce21",
+      "scope": "actual21 C negative controls at e7"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\pr843-aaf0-full-controller-controls-20261007-r2\\DELIVERY.json",
+      "bytes": 2358,
+      "sha256": "f0a937e2632a00e7b4cfb0be81dcb23651be1324e098192bede24c6d66d91da3",
+      "scope": "exact aaf source-only253 passed/3 original skips, not compiler/node qualification"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\pr843-runtime-helper-maintained-ci-delivery-20261007-r3\\MANAGED-IMPORT-ATTRIBUTION.json",
+      "bytes": 3310,
+      "sha256": "86cdef9c16552a1a2b81daaebc3ddbc8aa6497b9df6aaf5feb45577e09b9c31c",
+      "scope": "authentic original Java/.NET empty stdout/missing recipe import cause"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\807-ordinary-default-e7a-original4-20261007-r2\\evidence\\NORMAL-CALLER-EXECUTION.json",
+      "bytes": 44422,
+      "sha256": "a801285dd1fe0befd708f4f4165db7acc51e7f51ba5061d168a2eeb8eeaa344b",
+      "scope": "exact e7 original Java0-3 ordinary-default caller scope"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\typescript745-source-built-timer-engine-controls-20261007-r2\\RESULT.json",
+      "bytes": 22506,
+      "sha256": "6821918558f807c9e6148945e56a998035d1735d1598181a4345622a551cde55",
+      "scope": "private native real-engine34, signedLSF false/supportedProfile false"
+    }
+  ],
+  "receiptsRewritten": false,
+  "historicalProductsRelabeled": false
+}

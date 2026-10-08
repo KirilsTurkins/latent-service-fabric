@@ -1,0 +1,184 @@
+{
+  "head": "0114e05a6a5c0a08f4e0729b00bbd3da414f2767",
+  "tree": "cda723758b368ee28178bd22e2597abd5c890928",
+  "parent": "a7d3300c39b7379a1543ca93226098f7737725c5",
+  "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-standard-clock-port-20261007-r1",
+  "workingTreeModified": false,
+  "changes": [
+    {
+      "path": "sdk/rust-standard-runtime/README.md",
+      "sha256": "40dc45288198c0565d84a6a15596349e1543b7f025d9d828bca88210fdab720b"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/clock.rs",
+      "sha256": "12f62eb651f6c7cb653a9a7e0aba635e5b47cf3a2646ef4f57df9d513c62a071"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/tests/clock_native.rs",
+      "sha256": "682c8239a125b83c746746c4ee27f64135a48b87c627f3c8d0ba037f50103f49"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/sync/mutex/no_threads.rs",
+      "sha256": "c790a191cb1bee4a02ae7d52e6945bdf4e1af15e34ea6b1b12574e0e5f5e51f6"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/thread/unsupported.rs",
+      "sha256": "cbdbe5561b93229d695732485c6a981e6d97f2a063436545bdbdea37848df268"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/time/mod.rs",
+      "sha256": "449afdd86955252a302d889032a6cb2cbb04dd786f8cb81d9a9059ad933e7e4c"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/time/unsupported.rs",
+      "sha256": "e1022bb35359dfaffdb76c4b14d03360ed1ccf8e9b002a89aacec16249c3444a"
+    },
+    {
+      "path": "tools/ci/contracts/python/test_rust_standard_clock_profile.py.json",
+      "sha256": "5ff0e2750a0a27f40bbff6a080cc1106f98b7fb9d1f71ea20b38b794be86d0de"
+    },
+    {
+      "path": "tools/rust_standard_clock_profile.py",
+      "sha256": "c6990912703d9057446781654cf775961c60f4618f0baddb903e4bb028c300b2"
+    },
+    {
+      "path": "tools/tests/test_rust_standard_clock_profile.py",
+      "sha256": "a3311dfae0b528ed4456fc4ca371dc5864b749ef9e4a620c083875daaab7bedf"
+    }
+  ],
+  "implementedSourceSlice": "actual Rust std time PAL and exact target-selecting original-preserving source overlay",
+  "profile": "lsf-rust-std-clock-source-v1",
+  "target": "wasm32-unknown-unknown",
+  "rust": "1.97.1",
+  "rustCommit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+  "sourceArchiveDigest": "sha256:e9a1e616d04c6845895c827a178b9227f7c7199f3f4a80af81ab3aff7b80156b",
+  "originalInputsDigest": "sha256:9fd74fd0d2fc4d1b361b220e2dd475f445c346b4cd47b4a347a630bc1297b377",
+  "selectedInputsDigest": "sha256:c6d69d7a890553a58bfbfd3df45347e4c96caa11b716f88fecab4ef34c3cf723",
+  "recipeDigest": "sha256:cc2dba549c6516a6e897fc91d808182c29d57aa38066dc3bb2ef48c36929942f",
+  "qualification": "unqualified-source",
+  "installedSysroot": false,
+  "automaticBuilderSelection": "pending-qualified-sysroot",
+  "applicationRuntimeInjectionRequired": false,
+  "fakeThreadOrInlineSpawnImplemented": false,
+  "sourceControls": {
+    "tests": 142,
+    "failures": 0,
+    "skips": 0,
+    "seconds": 13.548626237999997,
+    "maximumSeconds": 90,
+    "python": "3.13.5",
+    "uid": 1000,
+    "cpus": 1,
+    "memoryBytes": 1073741824,
+    "allSourceBytesModesUnchanged": true
+  },
+  "nativeReference": {
+    "tests": 4,
+    "failures": 0,
+    "ignored": 0,
+    "seconds": 0.15387838700007705,
+    "maximumSeconds": 90,
+    "toolchain": {
+      "rustc": {
+        "path": "/usr/local/rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/rustc",
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+        "version": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n"
+      },
+      "linker": {
+        "path": "/usr/bin/cc",
+        "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26"
+      }
+    },
+    "binarySha256": "c8ea888f83cfe1cea34ce1073b959e9afac6f318634c617cdb1140704adb736a",
+    "sameActualPALSource": true,
+    "fakeHostClockImports": true,
+    "oneTestThread": true,
+    "noCargoGuestOrSysrootBuild": true,
+    "allSourceBytesModesUnchanged": true
+  },
+  "coverage": {
+    "before": 88,
+    "after": 262,
+    "owners": 140
+  },
+  "issue743ClosureEligible": false,
+  "remaining": [
+    "build/pin qualified sysroot and component metadata",
+    "ordinary unchanged source signed component qualification",
+    "thread/TLS/synchronization/timer/loop/reactor/stream ports"
+  ],
+  "preservedUnsupportedOperations": [
+    "std::thread::Builder::spawn",
+    "std::thread::JoinHandle::join",
+    "std::thread::sleep",
+    "std::thread::yield_now",
+    "thread_local concurrent isolation",
+    "std::sync blocking mutex/condvar/channel",
+    "default executor/reactor construction",
+    "compiler checkpoints and bounded spin-loop progress",
+    "std::net/socket/DNS/readiness"
+  ],
+  "remoteMutation": false,
+  "evidence": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-source-native-controls-20261007-r1\\VALIDATION.json",
+      "bytes": 454,
+      "sha256": "9a91f13c8692f457f47ac4323118d542d1de91fc76b0133a7493f21d0db202d9"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-source-native-controls-20261007-r1\\INPUTS.json",
+      "bytes": 527270,
+      "sha256": "80d030985a60021a6c3580ceeadcea2cecb4d1ee28eaa733d21bb46ed12d28c0"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-source-native-controls-20261007-r1\\tests.stderr",
+      "bytes": 27753,
+      "sha256": "704643a8bad8a1888fa2cc4951eb156260bff75bddad5c94eeebcff224a47b23"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-source-native-controls-20261007-r1\\after.stdout",
+      "bytes": 8888,
+      "sha256": "0f465f87c0af32208e026970f6a07db3ccc724e4b48654f6e8769083f2370fed"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-pal-native-reference-20261007-r1\\NATIVE-REFERENCE.json",
+      "bytes": 1093,
+      "sha256": "08b3ce6670e2c3c2c512c2fd9a271a40b06d0468d80b5b482e7741f92add7df0"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-pal-native-reference-20261007-r1\\INPUTS.json",
+      "bytes": 1791,
+      "sha256": "309caee04799a01978391d8c388152c5fe47f18bf8fe1e773502eb0905a2c9b0"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-pal-native-reference-20261007-r1\\tests.stdout",
+      "bytes": 451,
+      "sha256": "ea99967f2169164582d77a5f658f050ece3883dc52577938ac97dad9373e52d6"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-pal-native-reference-20261007-r1\\compile.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-pal-native-reference-20261007-r1\\after.stdout",
+      "bytes": 8884,
+      "sha256": "98cef21d820c09757e23cdd0079b6dcb69144eac16b38968590b971b057266f0"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-overlay-source-20261007-r2\\std-source-overlay.json",
+      "bytes": 2664,
+      "sha256": "3f85a18cbd1d82b1146751d0655d96885dd8783ebe29991c8a87f6122d6cc700"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\public-rust-src-1.97.1-20261007-r1\\AUTHENTICATED-SOURCE.json",
+      "bytes": 21128,
+      "sha256": "a73c92ecfd1d3e589a2ddadb1b4d465006fbb2bed8d0d1b35467a56e06a0141b"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-clock-source-delivery-20261007-r1\\SOURCE.patch",
+      "bytes": 28722,
+      "sha256": "c8a36949569faeef7bb9eb242748faf6c120073ba67fd3150a4647977de867fd"
+    }
+  ]
+}

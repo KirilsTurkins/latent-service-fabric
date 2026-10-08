@@ -1,0 +1,11 @@
+file:///work/temporary/compiler/node_modules/@bytecodealliance/componentize-js/src/componentize.lsf-import-v1.mjs:368
+    throw new Error(err);
+          ^
+
+Error: Failed to initialize component (wizer (/work/temporary/compiler/node_modules/@bytecodealliance/wizer-linux-x64/wizer)):
+Exception while running initialization script
+/tmp/d26c100abcab/sources/initializer.js:1186:29 TypeError: TextDecoder is not a constructor
+    at componentize (file:///work/temporary/compiler/node_modules/@bytecodealliance/componentize-js/src/componentize.lsf-import-v1.mjs:368:11)
+    at async file:///work/temporary/compiler-recipe/componentize.mjs:82:16
+
+Node.js v24.19.0

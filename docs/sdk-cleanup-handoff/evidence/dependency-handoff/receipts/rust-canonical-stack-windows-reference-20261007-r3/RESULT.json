@@ -1,0 +1,30 @@
+{
+  "status": "passed-reference",
+  "exitCode": 0,
+  "seconds": 33.87591960000282,
+  "maximumSeconds": 90,
+  "allOriginalSourceBytesUnchanged": true,
+  "WindowsNativeOnly": true,
+  "LinuxOrGuestSysrootQualification": false,
+  "noSDKOrNodeProducer": true,
+  "processStages": [
+    {
+      "phase": "controlled-offline-lock",
+      "exitCode": 0,
+      "jobMemoryBytes": 1073741824,
+      "cpuHardCapRate": 625,
+      "suspendedStartAssignedBeforeResume": true,
+      "allJobChildrenRetired": true
+    },
+    {
+      "phase": "compiler",
+      "exitCode": 0,
+      "jobMemoryBytes": 1073741824,
+      "cpuHardCapRate": 625,
+      "suspendedStartAssignedBeforeResume": true,
+      "allJobChildrenRetired": true
+    }
+  ],
+  "memoryMaximumBytes": 1073741824,
+  "cpuMaximumCores": 1
+}

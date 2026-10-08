@@ -1,0 +1,16 @@
+{
+  "status": "passed-source-controls",
+  "tests": 27,
+  "skips": 0,
+  "seconds": 28.05201610000222,
+  "maximumSeconds": 90,
+  "coverage": {
+    "before": 88,
+    "after": 262,
+    "owners": 140
+  },
+  "allChangedSourceBytesUnchanged": true,
+  "WindowsSourceOnly": true,
+  "noCompilerOrNodeStarted": true,
+  "LinuxOrSysrootQualification": false
+}

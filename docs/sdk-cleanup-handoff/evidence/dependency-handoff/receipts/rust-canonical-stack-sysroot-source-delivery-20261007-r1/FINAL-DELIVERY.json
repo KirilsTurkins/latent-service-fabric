@@ -1,0 +1,159 @@
+{
+  "sourceCheckout": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-canonical-stack-port-20261007-r1",
+  "head": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+  "tree": "ea396a0af5e17adb3d364d61d05be3b31fbeff55",
+  "base": "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5",
+  "clean": true,
+  "deltaPaths": 7,
+  "commitByteBindings": [
+    {
+      "path": "tools/rust_standard_sysroot_source.py",
+      "testedWorkingBytesDigest": "190a066dce392394e17a435d58ccd1b8659d6791039e9130ab54acd20d318cd6",
+      "committedBytesDigest": "190a066dce392394e17a435d58ccd1b8659d6791039e9130ab54acd20d318cd6",
+      "bytesIdentical": true,
+      "necessaryNewMetadataLfNormalization": false
+    },
+    {
+      "path": "tools/tests/test_rust_standard_sysroot_source.py",
+      "testedWorkingBytesDigest": "d36003d10cb80dee0e1c89572be900015b94488d26ca0d8766c822a8c1a86172",
+      "committedBytesDigest": "d36003d10cb80dee0e1c89572be900015b94488d26ca0d8766c822a8c1a86172",
+      "bytesIdentical": true,
+      "necessaryNewMetadataLfNormalization": false
+    },
+    {
+      "path": "tools/ci/contracts/python/test_rust_standard_sysroot_source.py.json",
+      "testedWorkingBytesDigest": "743eb4f6a4b1cced3ff29bc40553b361538cf75d6b32aa59e7fc50b26e72d741",
+      "committedBytesDigest": "401cc127f9281e655651e73181dde3ba0c2fe4dd9584eb5f34b01687a7624fc3",
+      "bytesIdentical": false,
+      "necessaryNewMetadataLfNormalization": true
+    },
+    {
+      "path": "sdk/rust-standard-runtime/stack-transform/Cargo.lock",
+      "testedWorkingBytesDigest": "14d8c860a235397532d0780d101230a5d3acf34ae4494774c25c89109c3fbf71",
+      "committedBytesDigest": "14d8c860a235397532d0780d101230a5d3acf34ae4494774c25c89109c3fbf71",
+      "bytesIdentical": true,
+      "necessaryNewMetadataLfNormalization": false
+    },
+    {
+      "path": "sdk/rust-standard-runtime/stack-transform/Cargo.toml",
+      "testedWorkingBytesDigest": "70a6853ffa10e83e7506a4bf08bbf8d75c9d2bbc2b917de601c3192dfc08fdbe",
+      "committedBytesDigest": "70a6853ffa10e83e7506a4bf08bbf8d75c9d2bbc2b917de601c3192dfc08fdbe",
+      "bytesIdentical": true,
+      "necessaryNewMetadataLfNormalization": false
+    },
+    {
+      "path": "sdk/rust-standard-runtime/stack-transform/README.md",
+      "testedWorkingBytesDigest": "f8c782ce9d66c3ec8d8fbaf9404e94bcee4ba9926f53ef7740ee556c83629efc",
+      "committedBytesDigest": "f8c782ce9d66c3ec8d8fbaf9404e94bcee4ba9926f53ef7740ee556c83629efc",
+      "bytesIdentical": true,
+      "necessaryNewMetadataLfNormalization": false
+    },
+    {
+      "path": "sdk/rust-standard-runtime/stack-transform/src/lib.rs",
+      "testedWorkingBytesDigest": "e248b717f96f6bfde6b103f4731182bcd03efeba3e24102c3319dc50e06b565a",
+      "committedBytesDigest": "e248b717f96f6bfde6b103f4731182bcd03efeba3e24102c3319dc50e06b565a",
+      "bytesIdentical": true,
+      "necessaryNewMetadataLfNormalization": false
+    }
+  ],
+  "sourcePatchDigest": "cf681f4afda8818292627839e7287d0b6cf8caae041af5cf6073ea4b21cfa0f8",
+  "actualNativeReference": {
+    "platform": "Windows MSVC1.97.1",
+    "testsPassed": 7,
+    "testsIgnored": 0,
+    "maximumSeconds": 90,
+    "originalBudgetPreserved": true,
+    "guestSysrootOrThreadExecution": false
+  },
+  "sourceControls": {
+    "testsPassed": 27,
+    "testsIgnored": 0,
+    "maximumSeconds": 90,
+    "coverage": {
+      "before": 88,
+      "after": 262,
+      "owners": 140
+    },
+    "platform": "Windows native source controls; Linux unavailable"
+  },
+  "fullOriginalSourceCapture": {
+    "originalFiles": 3483,
+    "selectedFiles": 3485,
+    "originalBytes": 70378227,
+    "selectedBytes": 70392668,
+    "originalCoreAndAllocPreserved": true,
+    "originalExecutableFilesCaptured": 25,
+    "posixModesPhysicallyApplied": false,
+    "compilerInvoked": false
+  },
+  "authority": "source experiment only, no installed sysroot or public runtime profile",
+  "supportedRuntimeProfile": false,
+  "remaining": [
+    "Owned canonical root/export/thread context and physical shadow stack admission/retirement",
+    "TLS context layout integration and every entry/suspension/exit hook",
+    "Pinned std Thread/synchronization/timer/default-reactor/checkpoint implementation",
+    "Actual rebuilt sysroot, compiler/component metadata and real signed standard API proof"
+  ],
+  "evidence": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-stack-sysroot-windows-source-controls-20261007-r1\\INPUTS.json",
+      "bytes": 1217,
+      "sha256": "999e4c4fa22d74812547d5008c2ff6111c6bbd7f9d6eb688f4fff3be228ab639"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-stack-sysroot-windows-source-controls-20261007-r1\\RESULT.json",
+      "bytes": 364,
+      "sha256": "7f33548dd6cd4b3d5e582ccf1b7abdad9368ca96997cb89146cfc780db3b171c"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-stack-sysroot-windows-source-controls-20261007-r1\\tests.stderr",
+      "bytes": 5921,
+      "sha256": "42941eb721db6a5f66623cea022c97897f48182b4c8c6361f475e155ae73c83e"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-canonical-stack-windows-reference-20261007-r3\\INPUTS.json",
+      "bytes": 8209,
+      "sha256": "e83846ebb2c78af04f81dba0468ab13dbed08f8258098b44d2770f55e0f0e3dc"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-canonical-stack-windows-reference-20261007-r3\\RESULT.json",
+      "bytes": 810,
+      "sha256": "598eecb5692ce80b0f231b6b56266eb2f58addec4549b693b628f950030c7c1e"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-canonical-stack-windows-reference-20261007-r3\\ACTUAL-LOCK-INPUTS.json",
+      "bytes": 7625,
+      "sha256": "864918958d6f8aecc3188641f4ec10f4aafd96844336761ec712aafdc46c0e57"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-canonical-stack-windows-reference-20261007-r3\\compiler.stdout",
+      "bytes": 678,
+      "sha256": "cc448539dd779503ee07afa9d6b82b55dbdfa1396a7be3349d6894741ef289ce"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-canonical-stack-windows-reference-20261007-r3\\compiler.stderr",
+      "bytes": 1115,
+      "sha256": "c80a7691bcb6360cf437e49f41d740df6b5f65a3962db9fc04e3464567f6ae4e"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-full-source-stage-20261007-r3\\sysroot-source-stage.json",
+      "bytes": 2814,
+      "sha256": "f688e1c7d84861662f7f85ed48cc6886c3d95e4aee40fd42edb64783c9eaa2be"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-full-source-stage-20261007-r3\\original-compiler-source-inventory.json",
+      "bytes": 479997,
+      "sha256": "e92d97ff3ff2da4e4f8ca1260c958966744b4b1362a42682c6778ac01c8b6419"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-full-source-stage-20261007-r3\\selected-compiler-source-inventory.json",
+      "bytes": 480256,
+      "sha256": "e57501e707d9c2cdad85a9993636870a17c1d18d60f0fb40233b5e0d4a446c7b"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-full-source-stage-20261007-r3\\compiler-source-executable-modes.json",
+      "bytes": 874,
+      "sha256": "21b7eb196ef52d0c5f8d51e83cc82b38d5a84c55d34a0edd25ba3513b832e617"
+    }
+  ]
+}

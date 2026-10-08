@@ -1,0 +1,30 @@
+{
+  "observedAt": "2026-10-08T03:54:47.119239+00:00",
+  "sourceRevision": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "sourceTree": "66d303e482ab508e9973c4551ee583778fe7f213",
+  "selectedGitInputs": 4989,
+  "selectedBytes": 36063592,
+  "selectedGitInputsVerifiedBefore": true,
+  "completeOriginalTreeObjectsPresent": true,
+  "workingTreeContainsToolsOnly": true,
+  "originalGitCommandDeadlineSeconds": 30,
+  "limits": {
+    "max_entries": 8192,
+    "max_directories": 4096,
+    "max_file_bytes": 4194304,
+    "max_total_bytes": 67108864,
+    "max_archive_bytes": 75497472
+  },
+  "fullNativeQualificationClaim": false,
+  "executionUid": 1000,
+  "pythonVersion": "3.13.5",
+  "platform": "Linux",
+  "maintainedModule": "tools.tests.test_build_source_capacity",
+  "actualTestsRun": 3,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "status": "pass",
+  "elapsedSeconds": 10.925138460999733,
+  "selectedGitInputsUnchangedAfter": true
+}

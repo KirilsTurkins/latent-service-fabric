@@ -1,0 +1,71 @@
+{
+  "status": "failed-warm-native-diagnostics",
+  "freshAttemptUsingAuthenticatedOwnPartialCache": true,
+  "originalFailedAttemptCachePreserved": true,
+  "sourceHead": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+  "sourceTree": "4efa617ab9c0ae43ad891bd1c320233167b2ffd8",
+  "seconds": 42.63076930000534,
+  "maximumSeconds": 90,
+  "failure": {
+    "type": "AssertionError",
+    "message": "{'phase': 'actual-diagnostic-tests', 'exitCode': 101, 'seconds': 39.941038500001014, 'failure': None, 'jobMemoryBytes': 1073741824, 'cpuHardCapRate': 625, 'suspendedStartAssignedBeforeResume': True, 'activeJobChildrenAfterCleanup': 0, 'outputs': {'stderr': {'observedBytes': 2992, 'retainedBytes': 2992, 'truncated': False}, 'stdout': {'observedBytes': 0, 'retainedBytes': 0, 'truncated': False}}}"
+  },
+  "actualPassedNames": [],
+  "selectedDependencyClosureExcludesWasmtime": true,
+  "sourceBytesUnchangedExceptReviewedCopiedTestStanza": true,
+  "processStages": [
+    {
+      "phase": "selected-dependency-closure",
+      "exitCode": 0,
+      "seconds": 0.8326371000002837,
+      "failure": null,
+      "jobMemoryBytes": 1073741824,
+      "cpuHardCapRate": 625,
+      "suspendedStartAssignedBeforeResume": true,
+      "activeJobChildrenAfterCleanup": 0,
+      "outputs": {
+        "stdout": {
+          "observedBytes": 11448,
+          "retainedBytes": 11448,
+          "truncated": false
+        },
+        "stderr": {
+          "observedBytes": 0,
+          "retainedBytes": 0,
+          "truncated": false
+        }
+      }
+    },
+    {
+      "phase": "actual-diagnostic-tests",
+      "exitCode": 101,
+      "seconds": 39.941038500001014,
+      "failure": null,
+      "jobMemoryBytes": 1073741824,
+      "cpuHardCapRate": 625,
+      "suspendedStartAssignedBeforeResume": true,
+      "activeJobChildrenAfterCleanup": 0,
+      "outputs": {
+        "stderr": {
+          "observedBytes": 2992,
+          "retainedBytes": 2992,
+          "truncated": false
+        },
+        "stdout": {
+          "observedBytes": 0,
+          "retainedBytes": 0,
+          "truncated": false
+        }
+      }
+    }
+  ],
+  "retainedOutputBytes": 14440,
+  "maximumOutputBytes": 524288,
+  "cleanupMaximumSeconds": 5,
+  "memoryMaximumBytes": 1073741824,
+  "cpuMaximumCores": 1,
+  "actualFoundationalTypesAndDiagnostics": true,
+  "fixtureCompiled": false,
+  "foreignNativeProductsUsed": false,
+  "GoOrLinuxQualification": false
+}

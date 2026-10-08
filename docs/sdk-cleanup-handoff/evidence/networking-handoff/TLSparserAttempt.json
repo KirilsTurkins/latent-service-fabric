@@ -1,0 +1,19 @@
+{
+  "exitCode": 1,
+  "seconds": 7.7534795999963535,
+  "state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 1,
+    "Error": "",
+    "StartedAt": "2026-10-07T21:41:57.97207991Z",
+    "FinishedAt": "2026-10-07T21:42:05.048228028Z"
+  },
+  "originalPublicReceiptSha256": "dd6232e4209057ea42580afb0e604e77e75d11aed9a8bd7e20487190e09c739f",
+  "originalReceiptPath": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\stream-tls-parser-allocation-reference-20261007-r1\\FINAL.json"
+}

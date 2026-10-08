@@ -1,0 +1,41 @@
+{
+  "head": "6f3ac39e064f6616c3642ba067b57a069fda654b",
+  "tree": "dea7a012c823f455b2ec0a214b59782d7ee2e133",
+  "parent": "c595a19377e75b3adf596e1e5761949bb177b10e",
+  "sourceFiles": [
+    {
+      "path": "tools/application_dependency_tools.py",
+      "sha256": "4b4b26044e185269feed5344cd333a0dbffec76927b7ca9ad779fefb33aa94f9",
+      "bytes": 5192
+    },
+    {
+      "path": "tools/ci/contracts/python/test_application_dependency_tools.py.json",
+      "sha256": "51532e5804166141881ddc9d989d70c585cabb287251fd8d8561c0b467cfb5e2",
+      "bytes": 3032
+    },
+    {
+      "path": "tools/tests/test_application_dependency_tools.py",
+      "sha256": "9004a674f3ab3b78d77b2d20551f31d11f7476ea767546d2b44c707ae9f65d54",
+      "bytes": 8533
+    }
+  ],
+  "productionChange": "Canonicalize only discovered trusted host sandbox before existing byte checks.",
+  "originalTestStatementsAndGuardsPreserved": true,
+  "untrustedToolInputOutputLinkDenialsPreserved": true,
+  "genericRegularPathAndReadBytesUnchanged": true,
+  "nativeControls": {
+    "passed": 42,
+    "failed": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "status": "passed",
+    "baseline": 88,
+    "current": 264,
+    "owners": 140
+  },
+  "beforeWitness": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\generator-host-before-native-20261007-r1\\VALIDATION.json",
+  "afterWitness": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\generator-host-final-native-20261007-r1\\VALIDATION.json",
+  "normalNativeProducerStarted": false,
+  "remoteWritesPerformed": false
+}

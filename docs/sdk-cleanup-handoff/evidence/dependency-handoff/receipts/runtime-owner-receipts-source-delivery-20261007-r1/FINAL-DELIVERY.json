@@ -1,0 +1,142 @@
+{
+  "head": "f742d3d8dce8754e36c0821af48a81c82305872e",
+  "parent": "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+  "tree": "32caad68721ca0feb585498309e08bc025f79879",
+  "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-captured-runtime-receipts-20261007-r1",
+  "workingTreeModified": false,
+  "sourceChanges": [
+    {
+      "path": "docs/component-development/library-compatibility.md",
+      "sha256": "c1076e3f52ffd4a1deabe9276523226ef5d3687ffe668cfc694fbafe1c655f2c"
+    },
+    {
+      "path": "tools/c_capsule_build.py",
+      "sha256": "41aafe4d383304404dfbe2aa11ba6046f96229bb12d3a996a4407b884a0ad4e4"
+    },
+    {
+      "path": "tools/ci/contracts/python/test_guest_runtime_receipts.py.json",
+      "sha256": "1b38fcf84448976ae4005fbc9d6b2c027818be67e2760738a3ebb3f0ae86fab1"
+    },
+    {
+      "path": "tools/go_capsule_build.py",
+      "sha256": "6079dfded7bbd4e693593886398eecae177aa8315de6f142fe85545519fe53a0"
+    },
+    {
+      "path": "tools/guest_compatibility_context.py",
+      "sha256": "4e0563408f8f9283c8b831b8a74b73b3fe6ce5456a39ca1dc689671aa316c657"
+    },
+    {
+      "path": "tools/guest_compatibility_context_build.py",
+      "sha256": "58dafc1d9dfb50b44b5d7dd462972b628de8967d458b0510e5a961bdb39a8ede"
+    },
+    {
+      "path": "tools/guest_compatibility_outcomes.py",
+      "sha256": "1659886ebee299f998478137a2c0e6f7354e399a090126a281cc83bf0b01a110"
+    },
+    {
+      "path": "tools/guest_runtime_receipts.py",
+      "sha256": "7deccc669e98caa529811d002ca725d5ff31ee6f02634c1404893c492122561a"
+    },
+    {
+      "path": "tools/java_capsule_build.py",
+      "sha256": "b8af950c492494758c416732d21675c782fbfd006975f629a460912bf5ba0659"
+    },
+    {
+      "path": "tools/rust_capsule_build.py",
+      "sha256": "d359787047c9616dd3e16faa4dd6d7a2a75b9ef6f4ea1d61dde36311e9d7ab93"
+    },
+    {
+      "path": "tools/tests/test_guest_runtime_receipts.py",
+      "sha256": "2d246df3b8534e42eb025ad8254bb5eba6330c27e35acc1e2de3c91ea6cc7f7c"
+    },
+    {
+      "path": "tools/typescript_guest/build.py",
+      "sha256": "9b0bd051a545b8fc9df547b64e92675c368836b64ae802403605eb057cb2a23c"
+    }
+  ],
+  "delta": [
+    "Automatically record maintained Rust/Go/C/TypeScript selection after original immutable input rechecks",
+    "Bind captured runtime sources, graph, compiler/recipe, WIT inventory, actual binding result and configuration",
+    "Consume current source/profile/material-bound owner receipts in compatibility context and original-outcome sidecars",
+    "Keep selected-unqualified, absent and invalid-present distinct; package names are not API eligibility",
+    "Reuse root-reviewed four closed signed generator material changes; derive generated sidecar kind from exact names",
+    "Own 20 new source controls with the maintained readable CI guard codec"
+  ],
+  "sourceOnlyQualification": true,
+  "actualComponentQualificationClaimed": false,
+  "issue679ClosureEligible": false,
+  "remaining679": [
+    "Cross-language real reached/eliminated/initialization/transitive-callback evidence",
+    "Catchable native-language unsupported-operation denial/fallback and fresh-invocation qualification",
+    "Real runtime ports, resource/lifecycle/drain and API qualification by their owners"
+  ],
+  "immutablePackagedCompatibilityV1ImplementationUnchanged": true,
+  "linux": {
+    "tests": 132,
+    "failures": 0,
+    "skips": 0,
+    "seconds": 10.274999573999594,
+    "maximumSeconds": 90,
+    "python": "3.13.5",
+    "uid": 1000,
+    "cpus": 1,
+    "memoryBytes": 1073741824,
+    "compilerOrGuestProducerStarted": false,
+    "allPacketBytesModesUnchangedAfter": true
+  },
+  "windowsPriorScope": {
+    "tests": 104,
+    "passed": 99,
+    "platformSkips": 5,
+    "failures": 0
+  },
+  "coverage": {
+    "before": 88,
+    "after": 262,
+    "owners": 140
+  },
+  "failedLinuxR1Preserved": {
+    "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-receipts-native-controls-20261007-r1",
+    "tests": 132,
+    "errors": 1,
+    "cause": "Docker tmpfs noexec prevented unchanged real child fixture",
+    "independentProbe": {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-receipts-tmpfs-probe-20261007-r1\\EXECUTION.json",
+      "bytes": 221,
+      "sha256": "862f46eef7f86ab6bca381965bb453cb462fc416acb13eddf6857805342dd6b4"
+    }
+  },
+  "evidence": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-receipts-native-controls-20261007-r2\\VALIDATION.json",
+      "bytes": 454,
+      "sha256": "313dae12bae69246e3e0be4b2aa5d276c74bc10cb83c275cf00d08160dd8b181"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-receipts-native-controls-20261007-r2\\SETUP.json",
+      "bytes": 785,
+      "sha256": "789a23e81559935dae2b9802ae8278cd14e647e2d3169d40053ee7c4d1f82182"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-receipts-native-controls-20261007-r2\\tests.stderr",
+      "bytes": 25537,
+      "sha256": "cf237c0d9cf2f74f432384f43ecc38220e35e60da011f0139cd65176facba8bf"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-receipts-native-controls-20261007-r2\\after.stdout",
+      "bytes": 8880,
+      "sha256": "d23ce5b88ee49f965eb2d52fd47072a038d413b05988d590aa37b1c33eaf4c68"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-captured-runtime-receipts-20261007-r1\\target\\ci\\runtime-owner-exact-head-inventory.json",
+      "bytes": 748905,
+      "sha256": "c9e2a9e1aeaa286025a0781a2dc35f55ee55fcaf80055db0d6133b2e75393e9c"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-receipts-source-delivery-20261007-r1\\SOURCE.patch",
+      "bytes": 54502,
+      "sha256": "f32daf2c23dfa7a6134a8f6851ac58e7f8978682c1fe713b8bb280a8b0db5a83"
+    }
+  ],
+  "remoteMutation": false
+}

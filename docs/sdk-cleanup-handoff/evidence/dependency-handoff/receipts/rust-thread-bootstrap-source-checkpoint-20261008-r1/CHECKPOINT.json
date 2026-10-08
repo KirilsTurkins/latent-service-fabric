@@ -1,0 +1,50 @@
+{
+  "checkout": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-canonical-thread-bootstrap-20261007-r1",
+  "base": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+  "uncommitted": true,
+  "files": [
+    {
+      "path": "sdk/rust-standard-runtime/tls.rs",
+      "bytes": 17958,
+      "sha256": "1aa7f3254473c85535f250890e89ecaf8b95d442009fbe4f963dcaabd653c0f3"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/tests/tls_native.rs",
+      "bytes": 18091,
+      "sha256": "205ce7a3eddf3b8ec740a6aa92cf68d25b37723e0135082f64e0fd79c318482d"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/stack-transform/src/lib.rs",
+      "bytes": 21506,
+      "sha256": "d70240d14dc4c29b649723f72df3f25c08d810bed634f83ab71b9886ea8dac1a"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/stack-transform/src/thread_entry.rs",
+      "bytes": 22591,
+      "sha256": "e30e3a82f69cae3c63e7ab418fa6a3ff459a143de4328105acdafe1852ad876b"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/stack-transform/README.md",
+      "bytes": 3238,
+      "sha256": "434db20c86e9d03b03fd0900aa174819c85e9cec0fa0a84847a576b321c95d06"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/thread-abi.json",
+      "bytes": 1921,
+      "sha256": "c6e45ac92a32f47c81d55704121432f5434adb9a72e08c34c2ddc01713e52433"
+    }
+  ],
+  "sourceControls": {
+    "actual": 27,
+    "skipped": 0,
+    "maximumSeconds": 90,
+    "receipt": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-thread-bootstrap-windows-source-controls-20261008-r1\\RESULT.json",
+    "receiptSha256": "12002856c3b23f6888325dbad4fc3c9444221d59a1935389796e7fdbdd1f66b0"
+  },
+  "nativeEncodedWasmCasesPlanned": 11,
+  "nativeTlsSourceCasesPlanned": 18,
+  "nativeCompilerStarted": false,
+  "publicRuntimeProfileQualified": false,
+  "standardThreadApiImplemented": false,
+  "nativeFiberRetirementProved": false
+}

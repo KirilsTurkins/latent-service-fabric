@@ -1,0 +1,102 @@
+{
+  "head": "302168448a60ba04652764fc4060173ed6c3009d",
+  "tree": "cc4db98253a07e144d2239e758b595aee6ecabcb",
+  "parent": "6f3ac39e064f6616c3642ba067b57a069fda654b",
+  "sourceFiles": [
+    {
+      "path": "docs/component-development/java-dependencies.md",
+      "sha256": "1e11e3092f7f8c93380081037886b389de87e726a273203abd2490063ba346e7",
+      "bytes": 9970
+    },
+    {
+      "path": "docs/component-development/java-generators.md",
+      "sha256": "b79ffe326efaa9f05b0d0e1da3a53e2e05bcfa15838b6f71f4cd6f94c0e296fb",
+      "bytes": 3186
+    },
+    {
+      "path": "tools/ci/contracts/python/test_java_generator_authoring.py.json",
+      "sha256": "ba8056353eacef71a0a46049d7a446800e9b26950a8fc4ee406881f2601897c0",
+      "bytes": 10663
+    },
+    {
+      "path": "tools/java_capsule.py",
+      "sha256": "22294beddd3d678b743b47c7b26bd1b6d09a99a8e7f079b4b2546f02fcd37b42",
+      "bytes": 12658
+    },
+    {
+      "path": "tools/java_capsule_build.py",
+      "sha256": "23a12a799240655612a39ff53f987f99f8a4cbb433a932cb9b7cd9444c5e2f76",
+      "bytes": 18247
+    },
+    {
+      "path": "tools/java_capsule_project.py",
+      "sha256": "10c2dbdd99dde559c063ea39031e7d267f75b3b1a36d7089234b92fcaa5e360d",
+      "bytes": 9489
+    },
+    {
+      "path": "tools/java_dependency_authoring.py",
+      "sha256": "50f88ff680d6cc22e23efd7a763d2fec35142865ac0b1c3f66ae99c0463f4762",
+      "bytes": 17152
+    },
+    {
+      "path": "tools/java_generator_authoring.py",
+      "sha256": "606df780f777ea41d7b611fb96a8d057066870b91a4da5142e26c63c5fa4f80f",
+      "bytes": 14416
+    },
+    {
+      "path": "tools/tests/test_java_generator_authoring.py",
+      "sha256": "fb42b9f85d91b2a344f1411bc2707d62de166acff22fa492514c7b225aa1e571",
+      "bytes": 21359
+    }
+  ],
+  "status": "tested-local-source-delivery",
+  "behavior": "Explicit finite approval/capture stage for Java source generators and processor launchers; ordinary builds verify outputs offline.",
+  "originalTestsAndCiGuardFragmentsPreserved": true,
+  "genericExecutorAndUntrustedLinkDenialsUnchanged": true,
+  "ordinaryAnnotationProcessingRemainsDisabled": true,
+  "teaVmCompilerProviderDenialUnchanged": true,
+  "normalPinnedCompilerConfigurationUnchanged": true,
+  "processBounds": {
+    "seconds": 60,
+    "diagnosticBytes": 1048576
+  },
+  "applicationSourceBoundsUnchanged": {
+    "entries": 4096,
+    "fileBytes": 4194304,
+    "totalBytes": 33554432
+  },
+  "nativeControls": {
+    "passed": 74,
+    "failed": 0,
+    "skipped": 0,
+    "newRegisteredCases": 13,
+    "realPinnedJdkAnnotationProcessorPassed": true,
+    "receipt": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\java-approved-generator-native-20261007-r2\\VALIDATION.json"
+  },
+  "coverage": {
+    "status": "passed",
+    "baseline": 88,
+    "current": 264,
+    "owners": 140
+  },
+  "capacityControls": {
+    "passed": 3,
+    "failed": 0,
+    "seconds": 18.377288443999532,
+    "receipt": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\java-approved-generator-linux-capacity-20261007-r2\\VALIDATION.json",
+    "sourceHead": "302168448a60ba04652764fc4060173ed6c3009d",
+    "normalProducer": false
+  },
+  "docs": {
+    "linuxFullValidation": "passed-on-identical-document-and-reader-bytes",
+    "sourceHead": "4df66202a7a05915f01c71997b38929d26fb373f",
+    "documents": 1071,
+    "localLinks": 3517,
+    "errors": 0,
+    "windowsLocalLongTargetVisibilityErrors": 3
+  },
+  "normalGuestCompilerOrNativeProducerStarted": false,
+  "remoteWritesPerformed": false,
+  "ticket682Complete": false,
+  "remaining": "Current matching emitted-component/private frontend/watch and full language qualification remain separately required."
+}

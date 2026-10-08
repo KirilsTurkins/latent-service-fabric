@@ -1,0 +1,50 @@
+{
+  "status": "passed",
+  "sourceCommit": "c38043fa9c81180a79e50ad11c3a7f6c156126d4",
+  "sourceTree": "c4882399d26a1782dc9bb7a87cfea25f0b297b5f",
+  "language": "rust",
+  "container": "latent-sdk-watch-c380-rust-test-node-20261007-r1",
+  "features": [
+    "latentd/development-test-node"
+  ],
+  "publisherAuthenticated": false,
+  "assemblyOnly": true,
+  "hostBackupRoot": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\watch-c380-rust-test-node-host-backup-20261007-r1",
+  "sourceNode": {
+    "binaries": {
+      "latent": "sha256:cc6ecb481dc9e500b847e6b7bb59bf7f59ce913884163a2cb662686062368236",
+      "latent-aot-compiler": "sha256:3d4c8b1dd2153f2ac995bd6ec02b8ec3ee1769c196ab01998c48619d994721de",
+      "latentd": "sha256:a8dc8ebc1463c666551437acd9376e3803929cb83f01963f9aa0b1d9cf424b61"
+    },
+    "buildProfile": {
+      "features": [
+        "latentd/development-test-node"
+      ],
+      "name": "dev",
+      "overrides": ".cargo/managed-guest.toml",
+      "sha256": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a"
+    },
+    "engine": {
+      "compilerSha256": "3d4c8b1dd2153f2ac995bd6ec02b8ec3ee1769c196ab01998c48619d994721de",
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "wasmtimeVersion": "48.0.4"
+    },
+    "helperSha256": "sha256:6115ba9f594cef760989d12e16f7f47974d1b82595f78f7163e71b83605c60c7",
+    "publisherAuthenticated": false,
+    "purpose": "source-application-node-tests",
+    "sourceCommit": "c38043fa9c81180a79e50ad11c3a7f6c156126d4",
+    "sourceDirty": false,
+    "version": "0.1.0-alpha.5"
+  },
+  "guestToolsIdentity": "sha256:7725cd488f9cb4fb44976f7f7be26a28cfdef74cd952a2e1daf5755866e36de2",
+  "archive": {
+    "name": "latent-dev-linux-x86_64-rust-tools.zip",
+    "sha256": "sha256:436fa963e3416268ee99a781ba2d8ee9d17d891cdd8336a4180e7aa85716de87",
+    "size": 383306689
+  },
+  "manifestSha256": "sha256:26498cd44cf35e0643b484daeb35c216cb13fbe7a13c3ce1ab319ee828200da3",
+  "allArchiveEntriesBytesHashesVerified": true,
+  "allNodeBinariesHelperAndPayloadIdentitiesVerified": true,
+  "archiveEntryCount": 1671,
+  "seconds": 12.165850199991837
+}

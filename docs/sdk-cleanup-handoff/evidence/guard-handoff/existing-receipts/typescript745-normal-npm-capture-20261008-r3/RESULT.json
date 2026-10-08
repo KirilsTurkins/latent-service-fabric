@@ -1,0 +1,59 @@
+{
+  "status": "native-public-npm-source-captured",
+  "records": [
+    {
+      "label": "node-version",
+      "argv": [
+        "/public-tools/node-v24.19.0-linux-x64/bin/node",
+        "--version"
+      ],
+      "exitCode": 0,
+      "seconds": 0.013105170000926591
+    },
+    {
+      "label": "native-npm-lock",
+      "argv": [
+        "/public-tools/node-v24.19.0-linux-x64/bin/node",
+        "/public-tools/node-v24.19.0-linux-x64/lib/node_modules/npm/bin/npm-cli.js",
+        "install",
+        "--package-lock-only",
+        "--ignore-scripts",
+        "--install-links=true",
+        "--bin-links=false",
+        "--no-audit",
+        "--no-fund",
+        "--strict-peer-deps",
+        "--userconfig=/tmp/npm-empty-userconfig",
+        "--cache=/tmp/npm-lock-cache"
+      ],
+      "exitCode": 0,
+      "seconds": 0.9855513799993787
+    },
+    {
+      "label": "maintained-reviewed-source-capture",
+      "argv": [
+        "/usr/local/bin/python3.13",
+        "-X",
+        "utf8",
+        "-B",
+        "/sdk/tools/typescript_capsule.py",
+        "resolve",
+        "/project",
+        "--candidate",
+        "/out/npm-candidate.json",
+        "--node",
+        "/public-tools/node-v24.19.0-linux-x64/bin/node",
+        "--npm",
+        "/public-tools/node-v24.19.0-linux-x64/lib/node_modules/npm/bin/npm-cli.js"
+      ],
+      "exitCode": 0,
+      "seconds": 27.20871810800236
+    }
+  ],
+  "seconds": 28.20764447900001,
+  "SDKSourceHead": "36ff63bef26890458b8eb51570efc6000bde7530",
+  "packageLifecycleScriptsExecuted": false,
+  "libraryCodePatched": false,
+  "compilerOrSigningExecuted": false,
+  "signedLSFComponentQualified": false
+}

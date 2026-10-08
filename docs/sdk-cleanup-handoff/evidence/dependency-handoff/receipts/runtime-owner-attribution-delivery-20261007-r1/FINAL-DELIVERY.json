@@ -1,0 +1,90 @@
+{
+  "head": "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+  "parent": "f742d3d8dce8754e36c0821af48a81c82305872e",
+  "tree": "070856d94a207e21677914cec3a95dc8739db979",
+  "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-runtime-owner-attribution-20261007-r1",
+  "workingTreeModified": false,
+  "changes": [
+    {
+      "path": "tools/ci/contracts/python/test_guest_runtime_receipts.py.json",
+      "sha256": "bb05c4cfad1b392bd29a7212af97aceba2805f313ed3c932203c20faf7dd3d4b"
+    },
+    {
+      "path": "tools/guest_runtime_receipts.py",
+      "sha256": "88c9c768f626257fe44bae8ba88a31e5137ff50cde05bf0b5204ed5ba6fd3e25"
+    },
+    {
+      "path": "tools/tests/test_guest_runtime_receipts.py",
+      "sha256": "162cd8cdb3b35b02f8c02d541ad63f14b4a41be2d5a2302fd135c14cb21de37b"
+    }
+  ],
+  "ownerContract": {
+    "rust": 743,
+    "go": 742,
+    "c": 744,
+    "typescript": 745
+  },
+  "scope": "originalRuntimeInputsDigest covers captured-sdk-inputs; compiler/sysroot distributions and graph remain separately bound",
+  "independentExplicitRegression": true,
+  "all20PriorCaseGuardsPreserved": true,
+  "registeredOwnerCases": 21,
+  "linux": {
+    "tests": 133,
+    "failures": 0,
+    "skips": 0,
+    "seconds": 9.825514936999753,
+    "maximumSeconds": 90,
+    "python": "3.13.5",
+    "uid": 1000,
+    "cpus": 1,
+    "memoryBytes": 1073741824,
+    "allSourceBytesModesUnchanged": true
+  },
+  "coverage": {
+    "before": 88,
+    "after": 262,
+    "owners": 140
+  },
+  "sourceOnly": true,
+  "nativeOrGuestCompilerStarted": false,
+  "issue679ClosureEligible": false,
+  "frozenHistoricalPacketsRewritten": false,
+  "remoteMutation": false,
+  "evidence": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-attribution-native-controls-20261007-r1\\VALIDATION.json",
+      "bytes": 453,
+      "sha256": "bf16c5a25967c3d7f7e440708fb9119e15ea15af50ca13e544483c112e543232"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-attribution-native-controls-20261007-r1\\tests.stderr",
+      "bytes": 25721,
+      "sha256": "a9cdbfc1842db118a6c8546bf46baa0ceaedd947a0f6798b7f1aca5c40e6377c"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-attribution-native-controls-20261007-r1\\INPUTS.json",
+      "bytes": 524903,
+      "sha256": "d10ba905631e8508640c20f7dd8cd8536d6e6125b9c97a9259927b62ddf2c4c6"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-attribution-native-controls-20261007-r1\\after.stdout",
+      "bytes": 8896,
+      "sha256": "708760073795bef6a2e1ef6ddeb5f068fcc9a877b163aa9b4d94aa002fe4d4c0"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-attribution-before-20261007-r1\\BEFORE.json",
+      "bytes": 440,
+      "sha256": "b09605b682504275b1ca77d290c91fcdfd6367eb50f46aa6b6f968ee045dadd7"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-attribution-before-20261007-r1\\BEFORE.stderr",
+      "bytes": 1279,
+      "sha256": "44e803dd0d7122364002ec6b798c2fe4806b538f7444a01596f86a07936f85e1"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\runtime-owner-attribution-delivery-20261007-r1\\SOURCE.patch",
+      "bytes": 9693,
+      "sha256": "6dbf1eadcbeccd14c7795e6651d903def670704747baa33a2c42a205b96b5ae2"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "status": "passed-current-source-native-slices",
+  "head": "55906321f5bd7e9cf156674945d808cda91f18b2",
+  "tree": "26350e591237d0505d07945ba8636f362839d4c8",
+  "seconds": 528.8203932019987,
+  "originalPublicReceiptSha256": "330ce8b2d75f8c42001169f0375d0e2134bdc851afb80c61d7fae86edeacce7a",
+  "originalReceiptPath": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\outbound-stream-protected-backend-55906321-current-native-controls-20261007-r1\\FINAL-DELIVERY.json"
+}

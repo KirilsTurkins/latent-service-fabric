@@ -1,0 +1,83 @@
+{
+  "status": "source-controls-passed-node-gates-pending",
+  "head": "9e66fccb1cf991ebf11dc69f65a34077a5ba377d",
+  "tree": "3efddaecdae0a96063b4bf910dec37d22d0b6ba6",
+  "base": "757ccd6d5cefaaa793f8b0f3376759f17b7db148",
+  "clean": true,
+  "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-java-server-lifecycle-qualification-20261007-r1",
+  "priorCheckpoints": [
+    "d17ae671c6ac26a3485266de79ebb203a2004595",
+    "4f80bbb04979ef984740190675f859049a6920e0"
+  ],
+  "sourcePaths": 13,
+  "focusedTests": 54,
+  "skips": 0,
+  "coverage": {
+    "before": 88,
+    "after": 272,
+    "owners": 143
+  },
+  "original52HttpChecksAndFullHelperSourceRetained": true,
+  "allSdkRuntimeBytesUnchanged": true,
+  "catalogAndDeploymentGenerationsIndependent": true,
+  "actualNodeQualificationPassed": false,
+  "compilerOrDockerRestoreStarted": false,
+  "files": {
+    "CATALOG-GENERATION-PRESERVATION.json": {
+      "bytes": 294,
+      "sha256": "a65948a0746558efb257a04fd09999e2d67ac66159fb32c53ad876a4a838f67b"
+    },
+    "COMPOSITION.json": {
+      "bytes": 358,
+      "sha256": "fca67166ed23bb3275919d2c09e585c415cd85fb14d478eb6be030ef960a8422"
+    },
+    "COVERAGE.json": {
+      "bytes": 80,
+      "sha256": "0879263fa63a0fef516dcbca8e6b9a79fb46e3c2ccca682c752238a390ff6942"
+    },
+    "DOCS.json": {
+      "bytes": 2295,
+      "sha256": "9b30367431e6c094584e6917f66e36efe5de2c8f10cbab8f59e46e0c7e93ca07"
+    },
+    "FOCUSED-TESTS.json": {
+      "bytes": 203,
+      "sha256": "180bcf1a679b1700bf2d108bafbd673b6306ca39dec3a342733b493b23159ddf"
+    },
+    "FOCUSED-TESTS.log": {
+      "bytes": 10989,
+      "sha256": "e9dd170b01bb9ee61edc6386711fe692914ba99aa09f8aaef3141a09d83741d1"
+    },
+    "java_server_lifecycle.py": {
+      "bytes": 30340,
+      "sha256": "326936353e5f6d6aa439980cde86c63cb0f51dfed23269b6efb8a870497c7bf0"
+    },
+    "java_server_lifecycle_peer.py": {
+      "bytes": 5019,
+      "sha256": "5889ff37f4cefaa10767a4447c92217e9016a83ad176c196ef7c1cac6feb68cc"
+    },
+    "java_server_lifecycle_project.py": {
+      "bytes": 3991,
+      "sha256": "94befb49ce5f0ce03238970d87bf8bc1870e418dae711ea06c88fde5e34b81df"
+    },
+    "LIMITATIONS.json": {
+      "bytes": 721,
+      "sha256": "620fa63780da20984342c25315a15ec357b63914655178d984355829f7f63905"
+    },
+    "PRESERVATION.json": {
+      "bytes": 730,
+      "sha256": "a7074ad441a8ef199a6e432a72e4d7b6fac426a1377e679f47d6b36f8a3b3bf4"
+    },
+    "qualify_java_server_lifecycle.py": {
+      "bytes": 3460,
+      "sha256": "a0f3117f762a3bad81fa4a49e8c07b677db56e3b7278b7d5cd09865c38efb13d"
+    },
+    "SOURCE-DIFF.patch": {
+      "bytes": 87077,
+      "sha256": "8361320d6469d02054e9669c52137ba7fd705097cf31052cedbef66301c323e6"
+    },
+    "SOURCE-FILES.json": {
+      "bytes": 2018,
+      "sha256": "1571d4ad4aeae613e90402acd5b2e423c6b37145aaf41233d01251bbe0f0ebc1"
+    }
+  }
+}

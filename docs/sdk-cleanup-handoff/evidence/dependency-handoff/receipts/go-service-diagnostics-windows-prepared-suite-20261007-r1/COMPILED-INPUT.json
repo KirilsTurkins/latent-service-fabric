@@ -1,0 +1,46 @@
+{
+  "sourceHead": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+  "sourceTree": "4efa617ab9c0ae43ad891bd1c320233167b2ffd8",
+  "actualCargoArtifact": {
+    "reason": "compiler-artifact",
+    "package_id": "path+file:///C:/Users/turkins/AppData/Local/LatentSdkDelivery/recovery-20261001/runtime/go-service-diagnostics-windows-reference-20261007-r3/source/crates/latent-capabilities#0.1.0-alpha.5",
+    "manifest_path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r3\\source\\crates\\latent-capabilities\\Cargo.toml",
+    "target": {
+      "kind": [
+        "test"
+      ],
+      "crate_types": [
+        "bin"
+      ],
+      "name": "local-service-diagnostics-reference",
+      "src_path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-reference-20261007-r3\\source\\crates\\latent-capabilities\\..\\latent-wasmtime\\tests\\local_service_diagnostics.rs",
+      "edition": "2021",
+      "doc": false,
+      "doctest": false,
+      "test": true
+    },
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": 0,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": true
+    },
+    "features": [],
+    "filenames": [
+      "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-prepared-suite-20261007-r1\\target\\debug\\deps\\local_service_diagnostics_reference-b2e1c5e4862e9562.exe",
+      "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-prepared-suite-20261007-r1\\target\\debug\\deps\\local_service_diagnostics_reference-b2e1c5e4862e9562.pdb"
+    ],
+    "executable": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-prepared-suite-20261007-r1\\target\\debug\\deps\\local_service_diagnostics_reference-b2e1c5e4862e9562.exe",
+    "fresh": false
+  },
+  "executable": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\go-service-diagnostics-windows-prepared-suite-20261007-r1\\target\\debug\\deps\\local_service_diagnostics_reference-b2e1c5e4862e9562.exe",
+  "bytes": 1472512,
+  "sha256": "5e32078d2537f8b7e494d269d92da9dfdb198305e147264347c022c3177747c5",
+  "preparationSeconds": 184.43207310000435,
+  "maximumPreparationSeconds": 900,
+  "buildCommandMaximumSeconds": 600,
+  "testExecutableDiscoveredFromActualCargoJson": true,
+  "noTestExecutedDuringPreparation": true,
+  "profileOpt3OriginalDependencyPreserved": true
+}

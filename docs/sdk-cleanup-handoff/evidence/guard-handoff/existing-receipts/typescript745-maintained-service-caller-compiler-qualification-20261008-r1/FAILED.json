@@ -1,0 +1,82 @@
+{
+  "error": "ValueError('componentize failed; inspect the retained bounded compiler diagnostics')",
+  "records": [
+    {
+      "stage": "node-version",
+      "exitCode": 0,
+      "seconds": 0.030449
+    },
+    {
+      "stage": "wasm-tools-version",
+      "exitCode": 0,
+      "seconds": 0.019916
+    },
+    {
+      "stage": "prepare-compiler-adapter",
+      "exitCode": 0,
+      "seconds": 0.394805
+    },
+    {
+      "stage": "canonical-wit",
+      "exitCode": 0,
+      "seconds": 0.026438
+    },
+    {
+      "stage": "authoritative-types",
+      "exitCode": 0,
+      "seconds": 0.017516
+    },
+    {
+      "stage": "selected-runtime-types",
+      "exitCode": 0,
+      "seconds": 0.018427
+    },
+    {
+      "stage": "selected-activation-types",
+      "exitCode": 0,
+      "seconds": 0.01746
+    },
+    {
+      "stage": "selected-clock-types",
+      "exitCode": 0,
+      "seconds": 0.017603
+    },
+    {
+      "stage": "selected-runtime-wit",
+      "exitCode": 0,
+      "seconds": 0.017374
+    },
+    {
+      "stage": "projected-types",
+      "exitCode": 0,
+      "seconds": 0.027975
+    },
+    {
+      "stage": "generate-types",
+      "exitCode": 0,
+      "seconds": 0.458817
+    },
+    {
+      "stage": "regenerate-types",
+      "exitCode": 0,
+      "seconds": 0.442056
+    },
+    {
+      "stage": "typecheck",
+      "exitCode": 0,
+      "seconds": 0.155684
+    },
+    {
+      "stage": "bundle",
+      "exitCode": 0,
+      "seconds": 0.170398
+    },
+    {
+      "stage": "componentize",
+      "exitCode": 1,
+      "seconds": 19.406713
+    }
+  ],
+  "seconds": 27.378039678998903,
+  "qualified": false
+}

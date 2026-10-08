@@ -1,0 +1,53 @@
+{
+  "purpose": "Byte-exact historical intrinsic and source-built compiler receipts preserved for cleanup",
+  "receipts": [
+    {
+      "path": "typescript745-source-built-engine-sixteen-controls-20261007-r1/RESULT.json",
+      "bytes": 5988,
+      "sha256": "728b77f2122d4dac89901b754fd0cbe88dad43907bc36309ac187c1526fcc27b"
+    },
+    {
+      "path": "typescript745-source-built-timer-engine-controls-20261007-r2/RESULT.json",
+      "bytes": 22506,
+      "sha256": "6821918558f807c9e6148945e56a998035d1735d1598181a4345622a551cde55"
+    },
+    {
+      "path": "typescript745-source-built-snapshot-engine-controls-20261007-r3/RESULT.json",
+      "bytes": 24298,
+      "sha256": "484e659a126061eb1eacd7ea7c34e8e96881a2e9075dac709a730b8815bb225a"
+    },
+    {
+      "path": "typescript745-source-built-import-engine-controls-20261008-r2/RESULT.json",
+      "bytes": 28540,
+      "sha256": "1c85e098fc4adac6aede047d05ecb4083baabd2fb5ce1e5c92b3806cf79b26df"
+    },
+    {
+      "path": "typescript745-source-built-async-cancel-engine-controls-20261008-r3/RESULT.json",
+      "bytes": 28681,
+      "sha256": "35085a3f30d38329d276b98ff70be7c774b88eaed12cb5e62ff881e5123710d5"
+    },
+    {
+      "path": "typescript745-frozen-dfad-splicer-tests-20261008-r2/RESULT.json",
+      "bytes": 1317,
+      "sha256": "9b4a58564eedac975183a7979395451f4d91b8b02068b53fed2e376d440169ea"
+    },
+    {
+      "path": "typescript745-frozen-dfad-Wasm-splicer-build-20261008-r1/RESULT.json",
+      "bytes": 1573,
+      "sha256": "bfa354cc5a36d82c3f1a5e8d23955575b08558ad77f2180702716c08b6da9a95"
+    },
+    {
+      "path": "typescript745-source-built-splicer-transpile-20261008-r1/RESULT.json",
+      "bytes": 5104,
+      "sha256": "bc409723a26f3cb65c079f5bbf98c72bcd2b41624f0ddbcde12f73ce6f7733f2"
+    }
+  ],
+  "historicalReceiptsNotCurrentCodecEngineQualification": true,
+  "nativeFixtureBrokerExplicitlySimulated": true,
+  "signedLSFQualified": false,
+  "formerGuardPRWorktrees": {
+    "Desktop/latent-fabric-sdk-dependencies": false,
+    "Desktop/latent-fabric-sdk-wasi-http": false,
+    "Desktop/latent-fabric-sdk-activation-installation": false
+  }
+}

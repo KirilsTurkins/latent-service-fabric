@@ -1,0 +1,50 @@
+[
+  {
+    "name": "ordinary15",
+    "cases": 15,
+    "sourceSHA256": "27676d0b1cd1f350e3b69b7848ee12773d50a802f5a71b7dafa76eb8166f4c1e",
+    "originalSourceReceipt": "typescript745-signed-ordinary-project-source-20261007-r2",
+    "sourceBodyAndLimitsUnchanged": true,
+    "originalLimits": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 134217728,
+      "wallTimeLimitMillis": 120000,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 0,
+      "effectCount": 0
+    },
+    "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+    "SDKSourceHead": "36ff63bef26890458b8eb51570efc6000bde7530",
+    "runtimeExecuted": false,
+    "qualification": "unknown"
+  },
+  {
+    "name": "clock4",
+    "cases": 4,
+    "sourceSHA256": "97ae7c56f1c1b8b84f43021106178c27c1bd197fe020d1f48441a9e3516b71cf",
+    "originalSourceReceipt": "typescript745-current-clock-normal-project-20261008-r1",
+    "sourceBodyAndLimitsUnchanged": true,
+    "originalLimits": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 134217728,
+      "wallTimeLimitMillis": 120000,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 0,
+      "effectCount": 0
+    },
+    "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+    "SDKSourceHead": "36ff63bef26890458b8eb51570efc6000bde7530",
+    "runtimeExecuted": false,
+    "qualification": "unknown"
+  }
+]

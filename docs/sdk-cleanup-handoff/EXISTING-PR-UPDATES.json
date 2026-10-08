@@ -1,0 +1,53 @@
+{
+  "observedUtc": "2026-10-08T11:33:10.767309+00:00",
+  "prs": [
+    {
+      "number": 843,
+      "head": "7ce730c92ecff0eb694d4d0466dfe76e9be9cb8b",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/843",
+      "failedChecks": [
+        "Rust 1.97.1 (qualification)",
+        "Repository contracts (python)",
+        "CI result"
+      ],
+      "draft": true,
+      "body": "Preserve captured application, SDK and compiler identities through trust, transport and watch. Add explicitly reviewed Rust, Go, Java, TypeScript and C generator inputs, closed generated-signing materials, runtime/context diagnostics and the original compatibility outcomes. Shared captured recipes retain their transitive source imports.\n\nThe additive service-retirement fixture repair retains original physical scheduler observations and classifies only the closed immediate scheduler-capacity diagnostics. Nine native reference cases passed; source and historical C/Java signed receipts retain their own identities. Complete current six-language private/offline/update-watch qualification and the relevant acceptance matrices remain open. Refs #678, #679, #682, #683, #684, #685 and #686.\n\n<!-- sdk-cleanup-20261008-current-status -->\n\n**Current cleanup status (2026-10-08): implementation and local qualification are stopped at the user's request.** Source is committed and pushed at `7ce730c92ecff0eb694d4d0466dfe76e9be9cb8b`. This PR remains unfinished and is kept as a draft for review after cleanup.\n\nCurrent functional CI failures:\n\n- [Rust 1.97.1 (qualification)](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37693445404/job/113067930718).\n- [Repository contracts (python)](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37693445404/job/113067930703).\n- [CI result](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37693445404/job/113104034617).\n\nNo new CI pass, native runtime qualification, merge or issue completion is claimed by the handoff. [Source inventory, visible draft checkpoints, existing validation receipts and exact remaining ticket requirements](https://github.com/KirilsTurkins/latent-service-fabric/blob/handoff/sdk-library-cleanup-20261008/docs/sdk-cleanup-handoff/README.md).\n"
+    },
+    {
+      "number": 807,
+      "head": "406f9e4075f1804051ff831c9395e15a9d1cdee4",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/807",
+      "failedChecks": [
+        "Rust 1.97.1 (qualification)",
+        "Repository contracts (python)",
+        "CI result"
+      ],
+      "draft": true,
+      "body": "Implement the opt-in Java activation profile for ordinary threads, waits, finite executors and CompletableFuture continuations. Preserve pinned TeaVM method/native identities, owned timers and original cleanup/accounting. Validate incoming UTF-8 without a second encoder buffer and decode once under unchanged byte/item bounds.\n\nSeparately attributed genuine signed HTTP echo comparisons cover 3-, 32,768- and 65,536-byte bodies at decoder source `21031d9c`, without increasing original heap, fuel, memory or deadline limits. The original four-mode caller also passed on its source-matched development and ordinary nodes. These historical receipts do not qualify the final integrated head. Full unchanged-library/runtime and authenticated Java server lifecycle requirements remain open in #736, #741, #727 and #728.\n\n<!-- sdk-cleanup-20261008-current-status -->\n\n**Current cleanup status (2026-10-08): implementation and local qualification are stopped at the user's request.** Source is committed and pushed at `406f9e4075f1804051ff831c9395e15a9d1cdee4`. This PR remains unfinished and is kept as a draft for review after cleanup.\n\nCurrent functional CI failures:\n\n- [Rust 1.97.1 (qualification)](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37693483053/job/113066492932).\n- [Repository contracts (python)](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37693483053/job/113066492906).\n- [CI result](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37693483053/job/113104700199).\n\nNo new CI pass, native runtime qualification, merge or issue completion is claimed by the handoff. [Source inventory, visible draft checkpoints, existing validation receipts and exact remaining ticket requirements](https://github.com/KirilsTurkins/latent-service-fabric/blob/handoff/sdk-library-cleanup-20261008/docs/sdk-cleanup-handoff/README.md).\n"
+    },
+    {
+      "number": 795,
+      "head": "27cc15565c0219c8a7f1307ae9543b92a368ccea",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/795",
+      "failedChecks": [
+        "Rust 1.97.1 (tests)",
+        "CI result"
+      ],
+      "draft": true,
+      "body": "Add an authentic HTTP-only authority control that rejects opaque stream access before DNS/TCP contact or a spent stream attempt, then successfully uses the original HTTP grant. Retain the shared finite authoring language selection and the qualifier's actual source closure.\n\nThis PR builds on the gated provider in #775. Source/reference checks and historical direct TCP evidence are individually attributed; the final integrated HTTP-only native case, architecture/security approval, TLS, ordinary socket libraries and complete operator/adversarial matrix remain open. Refs #738, #739 and #740.\n\n<!-- sdk-cleanup-20261008-current-status -->\n\n**Current cleanup status (2026-10-08): implementation and local qualification are stopped at the user's request.** Source is committed and pushed at `27cc15565c0219c8a7f1307ae9543b92a368ccea`. This PR remains unfinished and is kept as a draft for review after cleanup.\n\nCurrent functional CI failures:\n\n- [Rust 1.97.1 (tests)](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37677589067/job/113018275865).\n- [CI result](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37677589067/job/113081779852).\n\nNo new CI pass, native runtime qualification, merge or issue completion is claimed by the handoff. [Source inventory, visible draft checkpoints, existing validation receipts and exact remaining ticket requirements](https://github.com/KirilsTurkins/latent-service-fabric/blob/handoff/sdk-library-cleanup-20261008/docs/sdk-cleanup-handoff/README.md).\n"
+    },
+    {
+      "number": 775,
+      "head": "222ab1ac51336cb6548cf82e10ef58eaa53acb4f",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/775",
+      "failedChecks": [
+        "Rust 1.97.1 (checks)",
+        "Rust 1.97.1 (tests)",
+        "Repository contracts (python)",
+        "CI result"
+      ],
+      "draft": true,
+      "body": "Add the explicitly gated canonical TCP provider and `latent:network/streams@0.1.0` bridge. Connect/read/write/readiness/shutdown/close and affine chunks retain the original broker, I/O runtime, provider pools and activation ledger. Retained charges survive cancellation and rotation until actual physical destruction; node shutdown joins the maintenance owner.\n\nOrdinary nodes reject stream configuration, and this slice refuses host TLS. Historical source-bound native/signed TCP subsets and current source/reference controls are preserved. Architecture/security approval, qualified protected TLS/operator lifecycle, unchanged standard language APIs and the full physical-cost/adversarial matrix remain open. Refs #737, #738, #739 and #740.\n\n<!-- sdk-cleanup-20261008-current-status -->\n\n**Current cleanup status (2026-10-08): implementation and local qualification are stopped at the user's request.** Source is committed and pushed at `222ab1ac51336cb6548cf82e10ef58eaa53acb4f`. This PR remains unfinished and is kept as a draft for review after cleanup.\n\nCurrent functional CI failures:\n\n- [Rust 1.97.1 (checks)](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324307).\n- [Rust 1.97.1 (tests)](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324259).\n- [Repository contracts (python)](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113021324100).\n- [CI result](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/37679390913/job/113063560189).\n\nNo new CI pass, native runtime qualification, merge or issue completion is claimed by the handoff. [Source inventory, visible draft checkpoints, existing validation receipts and exact remaining ticket requirements](https://github.com/KirilsTurkins/latent-service-fabric/blob/handoff/sdk-library-cleanup-20261008/docs/sdk-cleanup-handoff/README.md).\n"
+    }
+  ]
+}

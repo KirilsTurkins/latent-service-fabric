@@ -1,0 +1,14 @@
+{
+  "preimage": "e58ef4f3b126f4a3fd07c61b368930bbf02dd0029f0f03e4c6928528e994e559",
+  "adapted": "19ba78b74d97d25aeb9eda4498b94e6be72f8f647b89a32e2666bccb399094c5",
+  "imports": [],
+  "selectedEngine": {
+    "digest": "sha256:62e532908cc818674bbfefcf6609695c9b547e1e1b1b1c3c8f1f92af4fcfc4a5",
+    "size": 9943755,
+    "profile": "spidermonkey-activation-promises-clocks-imports-v1",
+    "qualification": "unknown",
+    "apiSupport": "not-evaluated"
+  },
+  "selectedCompilerSplicer": true,
+  "qualification": "unknown"
+}

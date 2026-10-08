@@ -1,0 +1,199 @@
+{
+  "schemaVersion": "latent.sdk.source-delivery.v1",
+  "issue": 743,
+  "head": "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5",
+  "tree": "cd8a94a3737725796c0e1ef382c926724a1cca3b",
+  "checkout": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-logical-tls-port-20261007-r1",
+  "branch": "feat/sdk-rust-logical-tls-port-20261007-r1",
+  "parent": "63469e3f119beb5ee9fae317bcd5a2dff91b090a",
+  "clockSourcePrerequisite": {
+    "originalCommit": "0114e05a6a5c0a08f4e0729b00bbd3da414f2767",
+    "byteIdenticalCherryPick": "63469e3f119beb5ee9fae317bcd5a2dff91b090a",
+    "originalNativeClockEvidenceRetained": true
+  },
+  "runtimeCiRepairBase": "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+  "changes": [
+    {
+      "path": "sdk/rust-standard-runtime/README.md",
+      "gitBlob": "160024bfcf4e9745a7c9bb1dc6ddc18b383161c2",
+      "bytes": 3811,
+      "sha256": "a7b228cc69bd1984d72056fd313e6fe72f80a3937930bccacc7f0734f10bf259"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/activation-abi.json",
+      "gitBlob": "ebcbe89b347f4c592511287f600e5dfbd29121ed",
+      "bytes": 1216,
+      "sha256": "3cb4c8249ed998c62791377b8f9d5b91215058b20d76db9c5d8ef9b628510674"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/tests/tls_native.rs",
+      "gitBlob": "cc89f3f76f695d817e7b86b62cd8218ae2d911a2",
+      "bytes": 11891,
+      "sha256": "c5f3b8f9c4922968d4f3f77a3a6c2faf8be76314d8aae53825c0ba7c564e95f7"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/tls.rs",
+      "gitBlob": "f9765df5d853bc6144434bd4e7f2d2316e571e38",
+      "bytes": 11297,
+      "sha256": "fb3fe66a798b29b6405f16cfbbbeea63968efdb13a2271f475fc797199b99fb7"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/rt.rs",
+      "gitBlob": "1e7de695ddae7d36ffb2a0a3ac8650fa74384270",
+      "bytes": 7538,
+      "sha256": "f435576c645fb30eaca560e819c2a113b556452d79c0303f49ffd4487018c01f"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/thread_local/mod.rs",
+      "gitBlob": "e88011aa22dadb70a6614a5fa14e9a6bd436aa8e",
+      "bytes": 7936,
+      "sha256": "56a94ba2ad4d2c30fc82c8f0b1c728bc05f8817340e7821019f7b05606a7456e"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/thread_local/no_threads.rs",
+      "gitBlob": "27a589a4a76ac5baa0c6d1cd671252be2365dc88",
+      "bytes": 4785,
+      "sha256": "5fbac3fec13b7c337411b7875c47d07538fdae7a53008310d48cd830a4718904"
+    },
+    {
+      "path": "sdk/rust-standard-runtime/upstream/std/src/sys/thread_local/os.rs",
+      "gitBlob": "e1d9d80c97b62be094cf7b1544c703d633e41f4d",
+      "bytes": 10014,
+      "sha256": "bd5344458222df838065f33a1a00f6d8c4bdc7cb6db79d722cd1593f47d24355"
+    },
+    {
+      "path": "tools/ci/contracts/python/test_rust_standard_tls_profile.py.json",
+      "gitBlob": "3e1f86f308470187492685397eff1ae649f7a7c7",
+      "bytes": 3656,
+      "sha256": "dde99b3f8de11b0dd1daffbb2cce6a809d83ba19b26eac12504554110d8aee62"
+    },
+    {
+      "path": "tools/rust_standard_tls_profile.py",
+      "gitBlob": "20269718d60108c68178111c52c0a5788be7eb89",
+      "bytes": 8470,
+      "sha256": "0adf8aab5bfec7767e726c2de9011b77143a024a174da6cc1337e35ac6c2d5ab"
+    },
+    {
+      "path": "tools/tests/test_rust_standard_tls_profile.py",
+      "gitBlob": "0bbf9b9143196f0d555fcd254dfcd90cf62a2412",
+      "bytes": 6892,
+      "sha256": "f7ab4c2b612f126cbee0acb23829deedb3f3c043db05b17e835c76827d2e1d53"
+    }
+  ],
+  "sourcePatch": {
+    "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-source-delivery-20261007-r1\\SOURCE.patch",
+    "bytes": 80643,
+    "sha256": "3e75c1fd6f9be371e493204b8eb50a128a9894600b06cf4e1cc8e56491fe0536"
+  },
+  "implementedSource": [
+    "Pinned std os TLS backend selection; exact initializer/alignment/destructor original bytes retained",
+    "Canonical per-thread context slot1 with original wit-bindgen slot0 preserved",
+    "Original Native owner admission before System allocation and current accepted continuation bootstrap",
+    "System allocator avoids application-global-allocator TLS recursion",
+    "Bounded destructor cycle/sentinel/nested-retirement failure retains exact owners and context",
+    "Physical entry/context deallocation precedes original owner settlement and std runtime cleanup precedes context teardown"
+  ],
+  "validation": {
+    "cleanCommitLinuxSourceControls": {
+      "cases": 190,
+      "passed": 190,
+      "skips": 0,
+      "seconds": 20.244851503999598,
+      "maximumSeconds": 90,
+      "uid": 1000,
+      "python": "3.13.5",
+      "coverage": [
+        88,
+        262,
+        140
+      ],
+      "receipt": {
+        "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-source-controls-20261007-r3\\VALIDATION.json",
+        "bytes": 454,
+        "sha256": "3cae3aad71039e55b378daf1075c00150a397fa0ac8bf13dc6abb4ccbb95d7e0"
+      },
+      "inputs": {
+        "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-source-controls-20261007-r3\\INPUTS.json",
+        "bytes": 529856,
+        "sha256": "2cee3c1e366ea2c4538dec788e7deafad6e18a9ee82bb74400775adb345f29be"
+      },
+      "casesLog": {
+        "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-source-controls-20261007-r3\\tests.stderr",
+        "bytes": 39758,
+        "sha256": "b51c8b3482dc98a9759c2e8539c7532b6d28f9e85b7dbb6b1f949db3def906a0"
+      }
+    },
+    "nativeReference": {
+      "cases": 12,
+      "passed": 12,
+      "fakeLedgerAndCanonicalContexts": true,
+      "sourceOnlyNotGuest": true,
+      "seconds": 1.214076627000395,
+      "maximumSeconds": 90,
+      "aggregateTestsSeconds": 15,
+      "originalAllocatorSourceRedExit": 101,
+      "allOwnedProcessesEnded": true,
+      "receipt": {
+        "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-pal-native-reference-20261007-r2\\NATIVE-REFERENCE.json",
+        "bytes": 2612,
+        "sha256": "4e0a987e3111b59c44a3b272e631dfd32cb1cd7e21a03c54162dd9acec8cc3e6"
+      },
+      "commitByteBinding": {
+        "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-pal-native-reference-20261007-r2\\COMMIT-BYTE-BINDING.json",
+        "bytes": 2884,
+        "sha256": "66dacc9abc1535a8319152fbfabb027cdecda38a4ca2d4e3b846b938264c2e47"
+      },
+      "oldFailure": {
+        "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-pal-native-reference-20261007-r2\\old-red.stderr",
+        "bytes": 295,
+        "sha256": "b80ba8076759e30ef7a3fec74c7c50c781545e0da0ea342028e857125b5f55ce"
+      },
+      "currentResults": {
+        "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-pal-native-reference-20261007-r2\\tests.stdout",
+        "bytes": 2258,
+        "sha256": "70b0c3f34f9eaed236df32a62453ce588229e9a9ea26db23863ca5e48bf59e2b"
+      }
+    },
+    "canonicalAbi": {
+      "actualPublicWitBindgen": "0.62.0",
+      "receipt": {
+        "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-public-abi-source-20261007-r1\\ABI-SOURCE.json",
+        "bytes": 810,
+        "sha256": "287a5f601367563a93f1158cdc29be578baa2f28974f26935ddc1365e34677e6"
+      },
+      "generatedReference": {
+        "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-public-abi-source-20261007-r1\\generated-reference.rs",
+        "bytes": 33542,
+        "sha256": "db25004036734ab8ac707962a5c5e3467b437b8780f3544c00630806b55a7833"
+      },
+      "sysrootOrGuestQualified": false
+    },
+    "sourceOverlay": {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-standard-tls-overlay-source-20261007-r1\\std-tls-source-overlay.json",
+      "bytes": 3358,
+      "sha256": "40bbc5ab3e1078f9d6a883d7f6233ebffd13d4515c1a2b0dbaeab34ee021e224"
+    }
+  },
+  "priorFailuresRetained": [
+    "External full-disk truncated source and exact empty failed write; owned original tool patch restored",
+    "Initial9 native reference tested incomplete global allocator candidate, not relabeled",
+    "Windows fragment symlink privilege/sparse research controls failed; authoritative complete source packet passed",
+    "First Linux source packet omitted rust-toolchain; failed190 source run retained"
+  ],
+  "qualification": "unqualified-infrastructure-source",
+  "installedSysroot": false,
+  "automaticBuilderSelection": false,
+  "threadCreationOrGuestProgressClaimed": false,
+  "applicationRuntimeInjectionRequired": false,
+  "noCargoOrSysrootOrNodeBuild": true,
+  "remoteWritesPerformed": false,
+  "remaining743": [
+    "Owned shadow-stack creation/save/restore at every suspension plus actual logical thread start/join",
+    "Actual std thread/current/TLS export lifecycle and independent synchronization/channel parking",
+    "Engine resource admission and original stack/frame/TLS/native capacity measurement",
+    "Pinned rebuilt sysroot + owned exact clock/runtime world metadata",
+    "Safe compiled dependency checkpoints; default executor/reactor port",
+    "Real signed ordinary/default/transitive library and cancellation/trap/late-wake/fresh-tenant qualification",
+    "Separately approved standard stream/DNS/TLS/readiness integration"
+  ]
+}

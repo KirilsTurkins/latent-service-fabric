@@ -1,0 +1,97 @@
+{
+  "purpose": "User-requested STOP and cleanup preservation",
+  "implementationStopped": true,
+  "qualificationStopped": true,
+  "ownedActiveJobs": 0,
+  "ownedDirtySourceWorktrees": 0,
+  "sourceInventory": "INVENTORY.json",
+  "inventorySha256": "4ad782b905581b27155f3eb70d11f24a46dfa58be99ce8f9a21b965db284bb93",
+  "latestBranch": "feat/sdk-typescript-runtime-materials-20261008-r1",
+  "latestSourceHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+  "latestSourceTree": "66d303e482ab508e9973c4551ee583778fe7f213",
+  "completed": {
+    "linuxSourceTests": 265,
+    "linuxSourceSkips": 0,
+    "ciCommandCoverage": [88, 269, 141],
+    "nativeCapacityTests": 3,
+    "actualSnapshotBoundsMiB": [64, 72],
+    "sourceEngineCompilerUnits": 9,
+    "wholeEngineSourceUnits": 36,
+    "originalStrongPromiseDefinitionsPreserved": 303,
+    "wholeEngineCpu": 1,
+    "wholeEngineMemoryBytes": 2147483648,
+    "wholeEngineMaximumCommandSeconds": 600,
+    "wholeEngineMaximumOverallSeconds": 900,
+    "wholeEngineActualTotalSeconds": 216.27196969999932,
+    "wholeEngineSha256": "62e532908cc818674bbfefcf6609695c9b547e1e1b1b1c3c8f1f92af4fcfc4a5",
+    "wholeEngineBytes": 9943755,
+    "compilerWizerComponents": [
+      {
+        "role": "real service caller",
+        "receipt": "existing-receipts/typescript745-native-text-codec-service-caller-compiler-qualification-20261008-r3/RESULT.json",
+        "componentSha256": "238142882eac2aba4d96b657bd276f4aa7e55a57fd78c44539e91c7aad1b23aa",
+        "componentBytes": 11455913,
+        "runtimeCasesAwaitingExecution": 2
+      },
+      {
+        "role": "real service callee",
+        "receipt": "existing-receipts/typescript745-native-text-codec-service-callee-compiler-qualification-20261008-r3/RESULT.json",
+        "componentSha256": "eb95435586c10d6b677f79cf93c6c13f99ecde1ed6ecab64e9b1fb8e865445ce",
+        "componentBytes": 11368672
+      },
+      {
+        "role": "ordinary Promise timer Abort",
+        "receipt": "existing-receipts/typescript745-native-text-codec-ordinary15-compiler-qualification-20261008-r3/RESULT.json",
+        "componentSha256": "aa62d689625e6a1bddb63160ec57d7489fb99f33517e3ffda29741cc34a56a57",
+        "componentBytes": 11381611,
+        "runtimeCasesAwaitingExecution": 15
+      },
+      {
+        "role": "clock globals",
+        "receipt": "existing-receipts/typescript745-native-text-codec-clock4-compiler-qualification-20261008-r3/RESULT.json",
+        "componentSha256": "02be2b971c7fcd5541977cd08cb42c64e6664737bfc61724a7575c25adbdcbcb",
+        "componentBytes": 11371653,
+        "runtimeCasesAwaitingExecution": 4
+      },
+      {
+        "role": "unchanged published npm",
+        "receipt": "existing-receipts/typescript745-native-text-codec-npm-compiler-qualification-20261008-r3/RESULT.json",
+        "componentSha256": "0e3aaed50614c278e65a5e77c1592605e9d505e3b4affba8ab199fd71700e811",
+        "componentBytes": 11512603,
+        "runtimeCasesAwaitingExecution": 5
+      }
+    ],
+    "runtimeBundleOriginalFiles": 29,
+    "actualManagedPackUnpackAndProfileSelectionPassed": true,
+    "runtimeBundleArchiveSha256": "8b9d0632abbb82a9ad9120fb70af644068691df0ce490e44640d54f04b9e165e",
+    "runtimeBundleArchiveBytes": 3992042,
+    "runtimeBundleArchiveIncludedInThisHandoff": false
+  },
+  "repairedActualFailure": "The selected engine omitted the pinned native text codec; the real service interface failed Wizer with TextDecoder is not a constructor. Exact original codec sources and installation were restored; matched current-source Wizer passed.",
+  "historicalFailuresPreserved": [
+    "Original real service TextDecoder Wizer failure",
+    "Outside observer source-label mismatch explicitly marked unqualified",
+    "Prior observer workspace mismatch and mistaken direct-function splicer validation",
+    "Earlier source engine and native qualification failures retained in recovery"
+  ],
+  "remaining": [
+    "Normal CLI contracts, package and demo signing with actual ordinary-default five-binary native tuple",
+    "26 ordinary signed runtime cases; compiler success is not runtime execution",
+    "Actual host service pending-subtask and sibling-progress witness",
+    "Fuel, deadline, queue, timer and native-memory exhaustion and conserved limits",
+    "Cancellation, trap and late-wake physical acknowledgements and cleanup",
+    "Fresh cross-tenant state and actual guest/native costs",
+    "Matching final integrated source/node and actual developer toolkit qualification"
+  ],
+  "nextExternalPrerequisite": {
+    "owner": "root/networking_resume_oct06",
+    "sourceHead": "120ceab09a2c4a96d4e13ce8a5b3363983b06999",
+    "preparedProducer": "recovery-20261001/runtime/c684-current120-default-native-20261008-r1/run.py",
+    "completedTupleReceiptAvailableAtStop": false
+  },
+  "qualification": "unknown",
+  "apiSupport": "not-evaluated",
+  "issue745ClosureEligible": false,
+  "noNativeProductsRawArchivesCredentialsOrPrivateKeysIncluded": true,
+  "rootHandlesAllPushesPRDescriptionsAndIssueComments": true
+}

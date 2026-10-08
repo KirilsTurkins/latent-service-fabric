@@ -1,0 +1,65 @@
+{
+  "head": "a7d3300c39b7379a1543ca93226098f7737725c5",
+  "tree": "0090bb8d0e949413f36f85e4027c3366d7f76bf4",
+  "parent": "72ac5f8c6de611be4f6b7213a5f5b041d807a3c3",
+  "worktree": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\checkouts\\sdk-rust-runtime-receipt-source-20261007-r1",
+  "workingTreeModified": false,
+  "actualRustSdkPrefix": "vendor/lsf/sdk/rust-guest/",
+  "previousBindingsOnlyDigestDetected": true,
+  "beforeOriginalSourceSha256": "88c9c768f626257fe44bae8ba88a31e5137ff50cde05bf0b5204ed5ba6fd3e25",
+  "beforeTestFailed": "originalRuntimeInputCount1 instead of2",
+  "registeredOwnerCases": 22,
+  "all21PriorCaseGuardsPreserved": true,
+  "linux": {
+    "tests": 134,
+    "failures": 0,
+    "skips": 0,
+    "seconds": 13.754840237999815,
+    "maximumSeconds": 90,
+    "python": "3.13.5",
+    "uid": 1000,
+    "cpus": 1,
+    "memoryBytes": 1073741824,
+    "allSourceBytesModesUnchanged": true
+  },
+  "coverage": {
+    "before": 88,
+    "after": 262,
+    "owners": 140
+  },
+  "sourceOnly": true,
+  "compilerOrGuestInvocationStarted": false,
+  "remoteMutation": false,
+  "evidence": [
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-runtime-source-receipt-native-controls-20261007-r1\\VALIDATION.json",
+      "bytes": 454,
+      "sha256": "b68f23d8f2e7b5c529e1f489c43efbb2a784e464150d3a891eb6dc395c1a6190"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-runtime-source-receipt-native-controls-20261007-r1\\INPUTS.json",
+      "bytes": 525091,
+      "sha256": "8fc35112f502f9c3bce98d0c28ace0b9af1cfd8f29ef6602f73d1170c51fefa5"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-runtime-source-receipt-native-controls-20261007-r1\\tests.stderr",
+      "bytes": 25955,
+      "sha256": "eff9fefd03f82d9af66b1b4839ba9adc736ad6ff8f73996a5c9fd444194d7d05"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-runtime-source-receipt-native-controls-20261007-r1\\after.stdout",
+      "bytes": 8899,
+      "sha256": "d631f338aa0e5d68dd3e6bd1a8be443dec680606005726b2ce649ef4a0fc3389"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-runtime-source-receipt-delivery-20261007-r1\\BEFORE.stderr",
+      "bytes": 1172,
+      "sha256": "9c90af46c0059421d12d64e6f456654e38f3bce386a54b763e7c34ddb417eab2"
+    },
+    {
+      "path": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\rust-runtime-source-receipt-delivery-20261007-r1\\SOURCE.patch",
+      "bytes": 8525,
+      "sha256": "23a3f3bee404463333c16c0176006578c875eb4cbef9546e22453b4ec0ce18f5"
+    }
+  ]
+}

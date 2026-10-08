@@ -1,0 +1,221 @@
+{
+  "observedUtc": "2026-10-08T11:35:51.046554+00:00",
+  "sourceSnapshotsPushedAndVerified": 101,
+  "snapshotDraftPRsVerified": 101,
+  "existingSDKPRDescriptionsAndDraftStateVerified": [
+    843,
+    807,
+    795,
+    775
+  ],
+  "centralHandoffDraftPR": "https://github.com/KirilsTurkins/latent-service-fabric/pull/960",
+  "milestoneIssueCommentsVerified": 33,
+  "milestoneOpenIssues": 31,
+  "alreadyClosedCompletedIssues": [
+    695,
+    696
+  ],
+  "newClosureEligibleIssues": [],
+  "comments": [
+    {
+      "issue": 677,
+      "comment": 6058944182,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/677#issuecomment-6058944182",
+      "verified": true
+    },
+    {
+      "issue": 678,
+      "comment": 6058944930,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/678#issuecomment-6058944930",
+      "verified": true
+    },
+    {
+      "issue": 679,
+      "comment": 6058945662,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/679#issuecomment-6058945662",
+      "verified": true
+    },
+    {
+      "issue": 680,
+      "comment": 6058946515,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/680#issuecomment-6058946515",
+      "verified": true
+    },
+    {
+      "issue": 681,
+      "comment": 6058947289,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/681#issuecomment-6058947289",
+      "verified": true
+    },
+    {
+      "issue": 682,
+      "comment": 6058947996,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/682#issuecomment-6058947996",
+      "verified": true
+    },
+    {
+      "issue": 683,
+      "comment": 6058948774,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/683#issuecomment-6058948774",
+      "verified": true
+    },
+    {
+      "issue": 684,
+      "comment": 6058949480,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/684#issuecomment-6058949480",
+      "verified": true
+    },
+    {
+      "issue": 685,
+      "comment": 6058950247,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/685#issuecomment-6058950247",
+      "verified": true
+    },
+    {
+      "issue": 686,
+      "comment": 6058950895,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/686#issuecomment-6058950895",
+      "verified": true
+    },
+    {
+      "issue": 687,
+      "comment": 6058951586,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/687#issuecomment-6058951586",
+      "verified": true
+    },
+    {
+      "issue": 688,
+      "comment": 6058952281,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/688#issuecomment-6058952281",
+      "verified": true
+    },
+    {
+      "issue": 689,
+      "comment": 6058952948,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/689#issuecomment-6058952948",
+      "verified": true
+    },
+    {
+      "issue": 690,
+      "comment": 6058953657,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/690#issuecomment-6058953657",
+      "verified": true
+    },
+    {
+      "issue": 691,
+      "comment": 6058954212,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/691#issuecomment-6058954212",
+      "verified": true
+    },
+    {
+      "issue": 692,
+      "comment": 6058954988,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/692#issuecomment-6058954988",
+      "verified": true
+    },
+    {
+      "issue": 693,
+      "comment": 6058955549,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/693#issuecomment-6058955549",
+      "verified": true
+    },
+    {
+      "issue": 694,
+      "comment": 6058956095,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/694#issuecomment-6058956095",
+      "verified": true
+    },
+    {
+      "issue": 695,
+      "comment": 6058956755,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/695#issuecomment-6058956755",
+      "verified": true
+    },
+    {
+      "issue": 696,
+      "comment": 6058957341,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/696#issuecomment-6058957341",
+      "verified": true
+    },
+    {
+      "issue": 727,
+      "comment": 6058957886,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/727#issuecomment-6058957886",
+      "verified": true
+    },
+    {
+      "issue": 728,
+      "comment": 6058958681,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/728#issuecomment-6058958681",
+      "verified": true
+    },
+    {
+      "issue": 736,
+      "comment": 6058959367,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/736#issuecomment-6058959367",
+      "verified": true
+    },
+    {
+      "issue": 737,
+      "comment": 6058959948,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/737#issuecomment-6058959948",
+      "verified": true
+    },
+    {
+      "issue": 738,
+      "comment": 6058960566,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/738#issuecomment-6058960566",
+      "verified": true
+    },
+    {
+      "issue": 739,
+      "comment": 6058961180,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/739#issuecomment-6058961180",
+      "verified": true
+    },
+    {
+      "issue": 740,
+      "comment": 6058961942,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/740#issuecomment-6058961942",
+      "verified": true
+    },
+    {
+      "issue": 741,
+      "comment": 6058962613,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/741#issuecomment-6058962613",
+      "verified": true
+    },
+    {
+      "issue": 742,
+      "comment": 6058963168,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/742#issuecomment-6058963168",
+      "verified": true
+    },
+    {
+      "issue": 743,
+      "comment": 6058963795,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/743#issuecomment-6058963795",
+      "verified": true
+    },
+    {
+      "issue": 744,
+      "comment": 6058964698,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/744#issuecomment-6058964698",
+      "verified": true
+    },
+    {
+      "issue": 745,
+      "comment": 6058965324,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/745#issuecomment-6058965324",
+      "verified": true
+    },
+    {
+      "issue": 746,
+      "comment": 6058965915,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/746#issuecomment-6058965915",
+      "verified": true
+    }
+  ],
+  "sourceAudit": "FINAL-SOURCE-AUDIT.json",
+  "largeCachesBinariesAndSecretsExcluded": true
+}

@@ -1,0 +1,23 @@
+{
+  "status": "source-proposal-safe-installation-refusal",
+  "head": "3fa3313911390233f26e7b911a2458cf6f055d94",
+  "tree": "f9d351abd78d1e6719f2c9896a24a7b1ba21357f",
+  "clean": true,
+  "sourcePaths": 22,
+  "rustNativeCompiled": false,
+  "actualTlsQualificationPassed": false,
+  "productionGateOpen": false,
+  "directTlsAccountingGateOpen": false,
+  "pythonSourceChecks": {
+    "total": 37,
+    "passed": 36,
+    "existingWindowsSkip": 1
+  },
+  "coverage": {
+    "before": 88,
+    "after": 270,
+    "owners": 143
+  },
+  "originalPublicReceiptSha256": "61f9a5c7442c9216f8909eecb5527a3250d44498a21d9f3705e9e52f6591eefe",
+  "originalReceiptPath": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\stream-tls-gated-source-candidate-20261007-r1\\FINAL-SOURCE-CHECKPOINT.json"
+}

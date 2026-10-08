@@ -1,0 +1,30 @@
+{
+  "C684.json": {
+    "bytes": 448,
+    "sha256": "3277648d247ed778d8d88357c01ad3025497d4acd61d5af1504f8315314b9e60"
+  },
+  "C684publicSetup.json": {
+    "bytes": 1190,
+    "sha256": "96448d96e5eed3da0fe88993b79bcd74cc3c41f4b54538ed6486bc1ca69e1fc3"
+  },
+  "HANDOFF.json": {
+    "bytes": 94015,
+    "sha256": "b84e4635b8375ca5bd55603cf4dd617ad1ac446c2b2df375d5c9029238bf728d"
+  },
+  "JavaLifecycle.json": {
+    "bytes": 659,
+    "sha256": "51ab28bf1c1ef4655f780e0b01d0ff3f882b7e9d819f69abc30a5a52fff39886"
+  },
+  "streamsActual.json": {
+    "bytes": 514,
+    "sha256": "d3818ba22d6e806214294d5e3687264ded245dadd34911aa8bbb85fbad2d671b"
+  },
+  "TLS739source.json": {
+    "bytes": 830,
+    "sha256": "82e3e5c1fe857cf011006908a2502a33c0070ad1c114984fdde753809e61a460"
+  },
+  "TLSparserAttempt.json": {
+    "bytes": 651,
+    "sha256": "bc66bfbfb5cc9507be19c8d772d34ca3d577eb05e8e64c700fa36e2d9cdeff1e"
+  }
+}

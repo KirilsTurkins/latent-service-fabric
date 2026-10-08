@@ -1,0 +1,110 @@
+{
+  "status": "tested-local-source-delivery",
+  "head": "f80b48250c89a1294a42d5f5c8e0d52e7aefe2f7",
+  "tree": "5f7a98b3ebf9012ba197e9586e7f20377e74f0cb",
+  "parent": "302168448a60ba04652764fc4060173ed6c3009d",
+  "sourceFiles": [
+    {
+      "path": "docs/component-development/typescript-dependencies.md",
+      "sha256": "f14d3799bd2fd8f6723af02eafbaa8d46b2ed84beaf16f6555d949f69a3b8911",
+      "bytes": 4916
+    },
+    {
+      "path": "docs/component-development/typescript-generators.md",
+      "sha256": "d73e5d2cb2f4a68b7fb26d61546cf060edc34566c38320e781f62601e6958fb4",
+      "bytes": 2847
+    },
+    {
+      "path": "tools/ci/contracts/owners/tools/typescript_capsule.py.json",
+      "sha256": "38843b984cc82d8d6363ae1bf86547cd3c6e38f275cebf863cba1592982bcb8c",
+      "bytes": 363
+    },
+    {
+      "path": "tools/ci/contracts/python/test_typescript_generator_authoring.py.json",
+      "sha256": "a1758ac741d13503a06c82fa700e9d53194b7cad2aa92f58bc92ccd50fd58fc3",
+      "bytes": 10839
+    },
+    {
+      "path": "tools/tests/test_typescript_generator_authoring.py",
+      "sha256": "3d7a321c7354f6f5ce4ffb97346359501cad7dd8d5b98e81551ead7b191d48c6",
+      "bytes": 19427
+    },
+    {
+      "path": "tools/typescript_capsule.py",
+      "sha256": "0576d2d5e3a954ed0e2ec5b14299aedbc7872343a05ead4706cc01879d5707d5",
+      "bytes": 10720
+    },
+    {
+      "path": "tools/typescript_dependency_authoring.py",
+      "sha256": "f525bc60ef43cf5e3705df20f2152dac7f3a06fa01bc6bf205946287c11c6abd",
+      "bytes": 11477
+    },
+    {
+      "path": "tools/typescript_generator_authoring.py",
+      "sha256": "a80543c5d49d9617b8cd4e69e51f41238e1a739f8799027394c48dc0e7c81f56",
+      "bytes": 14785
+    },
+    {
+      "path": "tools/typescript_guest/build.py",
+      "sha256": "646439bb02b7ebc75eb2c4f43a617ffa6e7c5968475e8ee655e4c9ef4ee8a18c",
+      "bytes": 12599
+    },
+    {
+      "path": "tools/typescript_guest/project.py",
+      "sha256": "c35382abe43f2559bdd7d6459b8de7476dbd74fd4047eabce2ba663c8af445b1",
+      "bytes": 7172
+    }
+  ],
+  "behavior": "Explicit finite approved TypeScript source generation with exact source/tool/input/output identity and offline reuse.",
+  "nativeControls": {
+    "passed": 50,
+    "failed": 0,
+    "skipped": 0,
+    "newRegisteredCases": 13,
+    "executedSourceHead": "c2668e99f751ace28b0a7a944f2e666ce569b699",
+    "finalDeltaFromNativeOnlyRequiredOwnerMetadata": true,
+    "receipt": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\typescript-approved-generator-native-20261007-r1\\VALIDATION.json"
+  },
+  "actualFinalSourceGates": {
+    "capacityPassed": 3,
+    "docs": {
+      "documents": 1072,
+      "versioned_documents": 548,
+      "svgs": 26,
+      "local_links": 3518,
+      "anchors": 167,
+      "application_commands": 67,
+      "errors": []
+    },
+    "receipt": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\typescript-approved-generator-final-source-gates-20261007-r1\\VALIDATION.json"
+  },
+  "coverage": {
+    "status": "passed",
+    "baseline": 88,
+    "current": 264,
+    "owners": 140
+  },
+  "defaultLifecycleAndCompilerPluginDenialPreserved": true,
+  "ordinaryValueModeAndRuntimeSelectionUnchanged": true,
+  "sourceMapModuleAndCompilerControlsUnchanged": true,
+  "allExistingTestsAndGuardsRetained": true,
+  "genericExecutorAndUntrustedLinkDenialsUnchanged": true,
+  "ownerReviewChangesOnlyDigestAndReason": true,
+  "processBounds": {
+    "seconds": 60,
+    "diagnosticBytes": 1048576
+  },
+  "repositoryCaptureBoundsUnchanged": {
+    "totalBytes": 67108864,
+    "archiveBytes": 75497472
+  },
+  "applicationSourceBoundsUnchanged": {
+    "entries": 4096,
+    "fileBytes": 4194304,
+    "totalBytes": 33554432
+  },
+  "normalGuestCompilerOrNativeProducerStarted": false,
+  "remoteWritesPerformed": false,
+  "ticket685Complete": false,
+  "remaining": "Current matching emitted-component/private frontend/watch, genuine Node tool selection and full TypeScript/runtime qualification remain separate gates."
+}

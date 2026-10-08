@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "sourceVolume": "latent-sdk-c684-current120-source-20261008-r1",
+  "workVolume": "latent-sdk-c684-current120-work-20261008-r1",
+  "publicImage": "sha256:6ca2881c9aae38527b074b6cec6e58c98977f18e3dd5345ab972bbf1e5fa6dc0",
+  "maximumSetupSeconds": 600,
+  "seconds": 34.96618899999885,
+  "noCompilerOrProducts": true,
+  "nextNativeCacheState": "cold-empty-target",
+  "observed": {
+    "status": "passed-public-and-source-prerequisites-only",
+    "sourceHead": "120ceab09a2c4a96d4e13ce8a5b3363983b06999",
+    "sourceTree": "633e352e09e1e2782d8acefbd79734c574bf7e62",
+    "sourceFiles": 7333,
+    "sourceBytes": 67038338,
+    "authenticatedRegistryFiles": 744,
+    "authenticatedRegistryBytes": 120444411,
+    "nativeTargetInitiallyEmpty": true,
+    "nativeProductsCopied": false,
+    "compilerStarted": false,
+    "seconds": 32.5382324000002
+  },
+  "originalPublicReceiptSha256": "755d17abac43d7d2be5cf1bae320672aa5b7a085984df26f941e8a7c12b05b9b",
+  "originalReceiptPath": "C:\\Users\\turkins\\AppData\\Local\\LatentSdkDelivery\\recovery-20261001\\runtime\\c684-current120-public-source-restoration-20261008-r1\\FINAL.json"
+}

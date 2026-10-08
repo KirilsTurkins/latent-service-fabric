@@ -1,0 +1,1124 @@
+{
+  "status": "passed",
+  "sourceHead": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+  "sourceInputs": [
+    {
+      "path": "native_job_queue.h",
+      "bytes": 8857,
+      "sha256": "f7498c93b6240e5965101eabd62775f229fdff06b08a8629bf2e68a58800845c"
+    },
+    {
+      "path": "broker_accounting.h",
+      "bytes": 9391,
+      "sha256": "5771507a3bf4905b3707d31426675ad0bcd699a1fa96799541c98b7755eddc33"
+    },
+    {
+      "path": "native_engine.h",
+      "bytes": 1817,
+      "sha256": "6622fb4721086c0f392aecc226914ee07498db1db42df55f09d9bb82b96a2bc4"
+    },
+    {
+      "path": "native_engine.cpp",
+      "bytes": 11712,
+      "sha256": "4d4a1f6707796a9b2718792835269792dab14f055f21c61be53abc61ea6b29ec"
+    },
+    {
+      "path": "promise_hooks.h",
+      "bytes": 2147,
+      "sha256": "37417b24250854e41d6c320d978daf8338bf7393526dab70b725e8f1fb06654e"
+    },
+    {
+      "path": "promise_records.h",
+      "bytes": 4315,
+      "sha256": "4ff1c5fc7db884382e783729ecd3474b5069dd8f9db15bf05370c922fbb589b0"
+    },
+    {
+      "path": "promise_accounting.h",
+      "bytes": 2285,
+      "sha256": "f5a0dc7c6ad9a30d959c85c57d145ffcb428a9fdfa9f0c0af49217143fa3c436"
+    },
+    {
+      "path": "reaction_records.h",
+      "bytes": 5052,
+      "sha256": "a7b6372c234af5ef87ad3619c991775381e63c7861426fb30995d8e043675a3f"
+    },
+    {
+      "path": "native_readiness.h",
+      "bytes": 7994,
+      "sha256": "c696daea2053dbd44a5b3e36f6022f97057c74faa6208abc4ad3b776cd77c59d"
+    },
+    {
+      "path": "native_timers.h",
+      "bytes": 11314,
+      "sha256": "5413bb498d1c0ca713d87eb171c4e4ca19e330831de3db069cf96d5b5a5b32a3"
+    },
+    {
+      "path": "tests/native_jobs.cpp",
+      "bytes": 10669,
+      "sha256": "df747e040699bd9769d722916ebcad28e7522a022d1639d911bcdfdea6669bc4"
+    },
+    {
+      "path": "tests/native_promises.cpp",
+      "bytes": 14412,
+      "sha256": "7aef3d83af44720dced7ed81f382e58d4279a6baf14853bc023c5d0f7860ed89"
+    },
+    {
+      "path": "tests/native_timers.cpp",
+      "bytes": 27477,
+      "sha256": "e938438983c0b181962e87cdba701700e1d92d6862eabaf35e6816fb4cdf52aa"
+    },
+    {
+      "path": "native_ownership.h",
+      "bytes": 615,
+      "sha256": "476b5db1f88bf96637221e199e0dbbd44deb3d924d7f3389ef4b7f3bccf472ed"
+    },
+    {
+      "path": "native_import_values.h",
+      "bytes": 2390,
+      "sha256": "5b98e85df356d7005ab6a3085fc9c12ad4e5f6cc8d00ddf33095f4683fc0ea24"
+    },
+    {
+      "path": "broker_import_accounting.h",
+      "bytes": 3075,
+      "sha256": "8c03d9b1c4cf1155bf07fd82d2de42b8f7506e8c4ea13f2a7ddfce5e61443a0d"
+    },
+    {
+      "path": "native_import_lifecycle.h",
+      "bytes": 5625,
+      "sha256": "19f37ceccf7b412efd8207c0c26eb1683be8bce96c67a11b1c4bf4902464a81d"
+    },
+    {
+      "path": "native_imports.h",
+      "bytes": 9631,
+      "sha256": "4afa255ba22853d4d9a650cde1aaf2d6aae7e8e5d94ace7711a15ad4d0be852d"
+    },
+    {
+      "path": "tests/native_imports.cpp",
+      "bytes": 32968,
+      "sha256": "84a81218ef30ea0bfd7a7dc53ee67277436be77bda13d6b39a4dcd31b3269412"
+    }
+  ],
+  "sourceUnit": {
+    "status": "source-unit-built",
+    "seconds": 18.479600295999262,
+    "object": {
+      "bytes": 5919708,
+      "sha256": "9edd6d7ef3ff49d80632109f062051a7d1766f07d9d17e9487289127026d7259"
+    },
+    "compileArgv": [
+      "/sdk30/wasi-sdk-30.0-x86_64-linux/bin/clang++",
+      "--target=wasm32-unknown-wasi",
+      "-std=gnu++20",
+      "-O3",
+      "-flto=thin",
+      "-g",
+      "-fno-exceptions",
+      "-fno-rtti",
+      "-fno-sized-deallocation",
+      "-fno-aligned-new",
+      "-fPIC",
+      "-fno-math-errno",
+      "-fno-omit-frame-pointer",
+      "-funwind-tables",
+      "-m32",
+      "-mthread-model",
+      "single",
+      "-DMOZILLA_INTERNAL_API",
+      "-Werror=format",
+      "-isystem",
+      "/carrier/public-headers",
+      "-include",
+      "/carrier/public-headers/js-confdefs.h",
+      "-I/carrier/source/js/src",
+      "-I/private-extra",
+      "-I/generated",
+      "-I/intgemm-source",
+      "-I/carrier/source/js/public",
+      "-c",
+      "/carrier/Unified_cpp_js_src2.cpp",
+      "-o",
+      "/output/Unified_cpp_js_src2.o"
+    ],
+    "definitions": {
+      "originalGlobals": 543,
+      "derivedGlobals": 544,
+      "originalStrongDefinitions": 303,
+      "missingOriginalStrongDefinitions": [],
+      "originalWeakDefinitionsAbsentAfterNewOptimization": [
+        "_ZN7mozilla6detail10VectorImplIN2js8frontend20StencilModuleRequestELm0ENS2_17SystemAllocPolicyELb0EE6growToERNS_6VectorIS4_Lm0ES5_EEm"
+      ],
+      "originalSixSourceBodiesAndClassABISealedSeparately": true
+    },
+    "fullHistoricalCompileArgvClaimed": false,
+    "declaredMaintainedSourceBoundDerivedRecipe": true,
+    "originalArchiveModified": false,
+    "partialUnitLinkedOrRuntimeQualified": false,
+    "signedLSFComponentQualified": false
+  },
+  "image": "sha256:6ca2881c9aae38527b074b6cec6e58c98977f18e3dd5345ab972bbf1e5fa6dc0",
+  "SDK30Volume": "latent-sdk-typescript745-public-wasi30-20261007-r3",
+  "originalArchiveSha256": "298b85501657189dc66139242abf5aeb4e981b8db7c37cc5a69d1151ec40aacc",
+  "diagnosticLinkArgv": [
+    "timeout",
+    "--signal=TERM",
+    "--kill-after=1",
+    "580",
+    "/sdk30/wasi-sdk-30.0-x86_64-linux/bin/clang++",
+    "--target=wasm32-unknown-wasi",
+    "-std=gnu++23",
+    "-fno-exceptions",
+    "-fno-rtti",
+    "-fno-sized-deallocation",
+    "-fno-aligned-new",
+    "-mthread-model",
+    "single",
+    "-Wall",
+    "-Werror",
+    "-isystem",
+    "/headers",
+    "-I/activation-abi",
+    "-include",
+    "/headers/js-confdefs.h",
+    "/derived-unit/Unified_cpp_js_src2.o",
+    "/original-library/libspidermonkey.a",
+    "/rust-libraries/librust_staticlib.a",
+    "/rust-libraries/libwrappers.a",
+    "-Wl,-z,stack-size=1048576",
+    "-Wl,--stack-first",
+    "-Wl,--lto-O0",
+    "-Wl,--threads=1",
+    "-Wl,--thinlto-jobs=1",
+    "-Wl,--strip-debug",
+    "-lwasi-emulated-signal",
+    "-lwasi-emulated-process-clocks",
+    "-lwasi-emulated-getpid"
+  ],
+  "fullHistoricalCompileFlagsClaimed": false,
+  "originalQueueRegressions": 8,
+  "originalIntrinsicRegressions": 8,
+  "newIntrinsicCases": 2,
+  "newTimerReadinessCases": 16,
+  "newSnapshotSourceCases": 4,
+  "newImportedPromiseAndSiblingCases": 6,
+  "observations": [
+    {
+      "case": "ordering",
+      "status": 0,
+      "nativeAdmissions": 4,
+      "nativeEntries": 4,
+      "nativeExits": 4,
+      "tasks": 0,
+      "queued": 0,
+      "hostAdmissionQualified": false
+    },
+    {
+      "case": "thenable",
+      "status": 0,
+      "nativeAdmissions": 2,
+      "nativeEntries": 2,
+      "nativeExits": 2,
+      "tasks": 0,
+      "queued": 0,
+      "hostAdmissionQualified": false
+    },
+    {
+      "case": "async-await",
+      "status": 0,
+      "nativeAdmissions": 2,
+      "nativeEntries": 2,
+      "nativeExits": 2,
+      "tasks": 0,
+      "queued": 0,
+      "hostAdmissionQualified": false
+    },
+    {
+      "case": "exhaustion",
+      "status": 0,
+      "nativeAdmissions": 1,
+      "nativeEntries": 0,
+      "nativeExits": 0,
+      "tasks": 0,
+      "queued": 0,
+      "hostAdmissionQualified": false
+    },
+    {
+      "case": "retirement-ack",
+      "status": 0,
+      "nativeAdmissions": 1,
+      "nativeEntries": 1,
+      "nativeExits": 1,
+      "tasks": 0,
+      "queued": 0,
+      "hostAdmissionQualified": false
+    },
+    {
+      "case": "partial-admission-ack",
+      "status": 0,
+      "nativeAdmissions": 0,
+      "nativeEntries": 0,
+      "nativeExits": 0,
+      "tasks": 0,
+      "queued": 0,
+      "hostAdmissionQualified": false
+    },
+    {
+      "case": "rejection",
+      "status": 0,
+      "nativeAdmissions": 2,
+      "nativeEntries": 2,
+      "nativeExits": 2,
+      "tasks": 0,
+      "queued": 0,
+      "hostAdmissionQualified": false
+    },
+    {
+      "case": "native-frame-error",
+      "status": 0,
+      "nativeAdmissions": 1,
+      "nativeEntries": 1,
+      "nativeExits": 1,
+      "tasks": 0,
+      "queued": 0,
+      "hostAdmissionQualified": false
+    },
+    {
+      "case": "pending-reactions",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 2,
+      "entries": 0,
+      "exits": 0,
+      "promisesCreated": 3,
+      "promisesSettled": 0,
+      "promisesFinalized": 3,
+      "reactionsCreated": 2,
+      "reactionsFinalized": 2,
+      "nativeJobsCreated": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "reaction-exhaustion",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 1,
+      "entries": 0,
+      "exits": 0,
+      "promisesCreated": 3,
+      "promisesSettled": 0,
+      "promisesFinalized": 3,
+      "reactionsCreated": 1,
+      "reactionsFinalized": 1,
+      "nativeJobsCreated": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "native-preallocation",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 0,
+      "entries": 0,
+      "exits": 0,
+      "promisesCreated": 0,
+      "promisesSettled": 0,
+      "promisesFinalized": 0,
+      "reactionsCreated": 0,
+      "reactionsFinalized": 0,
+      "nativeJobsCreated": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "settlement-not-refund",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 0,
+      "entries": 0,
+      "exits": 0,
+      "promisesCreated": 1,
+      "promisesSettled": 1,
+      "promisesFinalized": 1,
+      "reactionsCreated": 0,
+      "reactionsFinalized": 0,
+      "nativeJobsCreated": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "gc-ack-retained",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 0,
+      "entries": 0,
+      "exits": 0,
+      "promisesCreated": 1,
+      "promisesSettled": 1,
+      "promisesFinalized": 1,
+      "reactionsCreated": 0,
+      "reactionsFinalized": 0,
+      "nativeJobsCreated": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "transfer-same-owners",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 1,
+      "entries": 1,
+      "exits": 1,
+      "promisesCreated": 2,
+      "promisesSettled": 2,
+      "promisesFinalized": 2,
+      "reactionsCreated": 1,
+      "reactionsFinalized": 1,
+      "nativeJobsCreated": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "nested-await",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 2,
+      "entries": 2,
+      "exits": 2,
+      "promisesCreated": 3,
+      "promisesSettled": 3,
+      "promisesFinalized": 3,
+      "reactionsCreated": 2,
+      "reactionsFinalized": 2,
+      "nativeJobsCreated": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "gc-pending-ack",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 1,
+      "entries": 0,
+      "exits": 0,
+      "promisesCreated": 2,
+      "promisesSettled": 0,
+      "promisesFinalized": 2,
+      "reactionsCreated": 1,
+      "reactionsFinalized": 1,
+      "nativeJobsCreated": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "thenable-preallocation",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 0,
+      "entries": 0,
+      "exits": 0,
+      "promisesCreated": 1,
+      "promisesSettled": 0,
+      "promisesFinalized": 1,
+      "reactionsCreated": 0,
+      "reactionsFinalized": 0,
+      "nativeJobsCreated": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "thenable-original-semantics",
+      "status": 0,
+      "tasks": 0,
+      "queued": 0,
+      "native": 0,
+      "jobsAdmitted": 2,
+      "entries": 2,
+      "exits": 2,
+      "promisesCreated": 2,
+      "promisesSettled": 2,
+      "promisesFinalized": 2,
+      "reactionsCreated": 1,
+      "reactionsFinalized": 2,
+      "nativeJobsCreated": 1,
+      "hostcallInGC": false
+    },
+    {
+      "case": "root-promise-suspends",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 5,
+      "nativeAcknowledgements": 5,
+      "hostcallInGC": false
+    },
+    {
+      "case": "macro-microtask-order",
+      "status": 0,
+      "owners": 0,
+      "starts": 2,
+      "stops": 2,
+      "subtaskDrops": 2,
+      "setDrops": 1,
+      "idleWaits": 2,
+      "nativeAdmissions": 5,
+      "nativeAcknowledgements": 5,
+      "hostcallInGC": false
+    },
+    {
+      "case": "accepted-timer-after-root",
+      "status": 0,
+      "owners": 0,
+      "starts": 2,
+      "stops": 2,
+      "subtaskDrops": 2,
+      "setDrops": 1,
+      "idleWaits": 2,
+      "nativeAdmissions": 3,
+      "nativeAcknowledgements": 3,
+      "hostcallInGC": false
+    },
+    {
+      "case": "captured-arguments",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 2,
+      "nativeAcknowledgements": 2,
+      "hostcallInGC": false
+    },
+    {
+      "case": "clear-before-readiness",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 0,
+      "nativeAdmissions": 2,
+      "nativeAcknowledgements": 2,
+      "hostcallInGC": false
+    },
+    {
+      "case": "clear-after-ready-before-callback",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 2,
+      "nativeAcknowledgements": 2,
+      "hostcallInGC": false
+    },
+    {
+      "case": "coalesced-interval-self-clear",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 2,
+      "setDrops": 1,
+      "idleWaits": 2,
+      "nativeAdmissions": 2,
+      "nativeAcknowledgements": 2,
+      "hostcallInGC": false
+    },
+    {
+      "case": "callback-exception-preserved",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 2,
+      "nativeAcknowledgements": 2,
+      "hostcallInGC": false
+    },
+    {
+      "case": "immediate-return-no-subtask-handle",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 0,
+      "setDrops": 0,
+      "idleWaits": 0,
+      "nativeAdmissions": 1,
+      "nativeAcknowledgements": 1,
+      "hostcallInGC": false
+    },
+    {
+      "case": "native-exhaustion-before-timer",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 0,
+      "setDrops": 0,
+      "idleWaits": 0,
+      "nativeAdmissions": 0,
+      "nativeAcknowledgements": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "readiness-set-requires-actual-child-drop",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 0,
+      "nativeAdmissions": 1,
+      "nativeAcknowledgements": 1,
+      "hostcallInGC": false
+    },
+    {
+      "case": "timer-exhaustion-before-capture",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 0,
+      "setDrops": 0,
+      "idleWaits": 0,
+      "nativeAdmissions": 1,
+      "nativeAcknowledgements": 1,
+      "hostcallInGC": false
+    },
+    {
+      "case": "snapshot-no-effects",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 0,
+      "setDrops": 0,
+      "idleWaits": 0,
+      "nativeAdmissions": 0,
+      "nativeAcknowledgements": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "cancel-retains-buffer-until-terminal",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 2,
+      "nativeAcknowledgements": 2,
+      "hostcallInGC": false
+    },
+    {
+      "case": "stop-ack-retains-owners",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 0,
+      "nativeAdmissions": 2,
+      "nativeAcknowledgements": 2,
+      "hostcallInGC": false
+    },
+    {
+      "case": "callback-ack-no-replay",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 2,
+      "nativeAcknowledgements": 2,
+      "hostcallInGC": false
+    },
+    {
+      "case": "snapshot-pure-promises-no-owner-imports",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 0,
+      "setDrops": 0,
+      "idleWaits": 0,
+      "nativeAdmissions": 0,
+      "nativeAcknowledgements": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "snapshot-job-cannot-cross-activation",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 0,
+      "setDrops": 0,
+      "idleWaits": 0,
+      "nativeAdmissions": 0,
+      "nativeAcknowledgements": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "snapshot-runtime-effects-still-denied",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 0,
+      "setDrops": 0,
+      "idleWaits": 0,
+      "nativeAdmissions": 0,
+      "nativeAcknowledgements": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "snapshot-opaque-promise-detected",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 0,
+      "setDrops": 0,
+      "idleWaits": 0,
+      "nativeAdmissions": 0,
+      "nativeAcknowledgements": 0,
+      "hostcallInGC": false
+    },
+    {
+      "case": "real-import-Promise-pending-until-terminal",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 8,
+      "nativeAcknowledgements": 8,
+      "hostcallInGC": false
+    },
+    {
+      "case": "parked-import-runnable-timer-and-microtask-sibling",
+      "status": 0,
+      "owners": 0,
+      "starts": 1,
+      "stops": 1,
+      "subtaskDrops": 2,
+      "setDrops": 1,
+      "idleWaits": 2,
+      "nativeAdmissions": 12,
+      "nativeAcknowledgements": 12,
+      "hostcallInGC": false
+    },
+    {
+      "case": "accepted-import-after-root-settlement",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 8,
+      "nativeAcknowledgements": 8,
+      "hostcallInGC": false
+    },
+    {
+      "case": "opaque-import-not-lifted-on-close",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 2,
+      "nativeAdmissions": 4,
+      "nativeAcknowledgements": 4,
+      "hostcallInGC": false
+    },
+    {
+      "case": "cancel-keeps-import-buffer-until-terminal",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 6,
+      "nativeAcknowledgements": 6,
+      "hostcallInGC": false
+    },
+    {
+      "case": "typed-import-lift-finally-preserves-original-error",
+      "status": 0,
+      "owners": 0,
+      "starts": 0,
+      "stops": 0,
+      "subtaskDrops": 1,
+      "setDrops": 1,
+      "idleWaits": 1,
+      "nativeAdmissions": 8,
+      "nativeAcknowledgements": 8,
+      "hostcallInGC": false
+    }
+  ],
+  "records": [
+    {
+      "label": "link-native_jobs",
+      "exitCode": 0,
+      "seconds": 153.43495570000232,
+      "maximumSeconds": 600
+    },
+    {
+      "label": "link-native_promises",
+      "exitCode": 0,
+      "seconds": 166.95458900000085,
+      "maximumSeconds": 600
+    },
+    {
+      "label": "link-native_timers",
+      "exitCode": 0,
+      "seconds": 136.25437059999967,
+      "maximumSeconds": 600
+    },
+    {
+      "label": "link-native_imports",
+      "exitCode": 0,
+      "seconds": 133.0240346999999,
+      "maximumSeconds": 600
+    },
+    {
+      "label": "actual-public-node-version",
+      "exitCode": 0,
+      "seconds": 0.6509406999975909,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-ordering",
+      "exitCode": 0,
+      "seconds": 1.0141415000034613,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-thenable",
+      "exitCode": 0,
+      "seconds": 0.9451474999950733,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-async-await",
+      "exitCode": 0,
+      "seconds": 0.9665635999990627,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-exhaustion",
+      "exitCode": 0,
+      "seconds": 0.9062665000019479,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-retirement-ack",
+      "exitCode": 0,
+      "seconds": 0.924340999998094,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-partial-admission-ack",
+      "exitCode": 0,
+      "seconds": 0.8605255000002217,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-rejection",
+      "exitCode": 0,
+      "seconds": 0.9048569000005955,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-jobs.wasm-native-frame-error",
+      "exitCode": 0,
+      "seconds": 0.9299629000015557,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-pending-reactions",
+      "exitCode": 0,
+      "seconds": 0.9089564000023529,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-reaction-exhaustion",
+      "exitCode": 0,
+      "seconds": 0.8836565999954473,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-native-preallocation",
+      "exitCode": 0,
+      "seconds": 0.9328748999978416,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-settlement-not-refund",
+      "exitCode": 0,
+      "seconds": 0.8950518999990891,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-gc-ack-retained",
+      "exitCode": 0,
+      "seconds": 0.8672723999989103,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-transfer-same-owners",
+      "exitCode": 0,
+      "seconds": 0.9420011999973212,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-nested-await",
+      "exitCode": 0,
+      "seconds": 0.9483013000062783,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-gc-pending-ack",
+      "exitCode": 0,
+      "seconds": 0.9703261000031489,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-thenable-preallocation",
+      "exitCode": 0,
+      "seconds": 0.8297318999975687,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-promises.wasm-thenable-original-semantics",
+      "exitCode": 0,
+      "seconds": 0.8269870000003721,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-root-promise-suspends",
+      "exitCode": 0,
+      "seconds": 0.9703364000015426,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-macro-microtask-order",
+      "exitCode": 0,
+      "seconds": 0.8669324000002234,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-accepted-timer-after-root",
+      "exitCode": 0,
+      "seconds": 0.8123285999972722,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-captured-arguments",
+      "exitCode": 0,
+      "seconds": 0.8969967999946675,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-clear-before-readiness",
+      "exitCode": 0,
+      "seconds": 0.7492358000017703,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-clear-after-ready-before-callback",
+      "exitCode": 0,
+      "seconds": 0.7685035000031348,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-coalesced-interval-self-clear",
+      "exitCode": 0,
+      "seconds": 0.8191564000007929,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-callback-exception-preserved",
+      "exitCode": 0,
+      "seconds": 0.9055487000005087,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-immediate-return-no-subtask-handle",
+      "exitCode": 0,
+      "seconds": 0.8977887000000919,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-native-exhaustion-before-timer",
+      "exitCode": 0,
+      "seconds": 0.9201371999952244,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-readiness-set-requires-actual-child-drop",
+      "exitCode": 0,
+      "seconds": 0.8586332000049879,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-timer-exhaustion-before-capture",
+      "exitCode": 0,
+      "seconds": 0.9067544999998063,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-snapshot-no-effects",
+      "exitCode": 0,
+      "seconds": 0.9663214999964111,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-cancel-retains-buffer-until-terminal",
+      "exitCode": 0,
+      "seconds": 0.8934358999977121,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-stop-ack-retains-owners",
+      "exitCode": 0,
+      "seconds": 0.9349341999986791,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-callback-ack-no-replay",
+      "exitCode": 0,
+      "seconds": 0.9559144000013475,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-snapshot-pure-promises-no-owner-imports",
+      "exitCode": 0,
+      "seconds": 0.9895589000007021,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-snapshot-job-cannot-cross-activation",
+      "exitCode": 0,
+      "seconds": 0.9682160000011208,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-snapshot-runtime-effects-still-denied",
+      "exitCode": 0,
+      "seconds": 1.0139974999983679,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-timers.wasm-snapshot-opaque-promise-detected",
+      "exitCode": 0,
+      "seconds": 1.058585700004187,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-imports.wasm-real-import-Promise-pending-until-terminal",
+      "exitCode": 0,
+      "seconds": 1.0361768000002485,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-imports.wasm-parked-import-runnable-timer-and-microtask-sibling",
+      "exitCode": 0,
+      "seconds": 1.0565514000045368,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-imports.wasm-accepted-import-after-root-settlement",
+      "exitCode": 0,
+      "seconds": 1.0513240000000224,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-imports.wasm-opaque-import-not-lifted-on-close",
+      "exitCode": 0,
+      "seconds": 0.9315291000020807,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-imports.wasm-cancel-keeps-import-buffer-until-terminal",
+      "exitCode": 0,
+      "seconds": 1.0019083000006503,
+      "maximumSeconds": 30
+    },
+    {
+      "label": "native-imports.wasm-typed-import-lift-finally-preserves-original-error",
+      "exitCode": 0,
+      "seconds": 1.0001757999998517,
+      "maximumSeconds": 30
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "native-jobs.wasm",
+      "bytes": 9131946,
+      "sha256": "22fbcb560e7420f3f35515aebd21c05f6f24084557702cea5cd2543c2998057d"
+    },
+    {
+      "path": "native-promises.wasm",
+      "bytes": 9156264,
+      "sha256": "07a0b29982ffd859d6e625ed1885647fb805cd21dc7e262f05bea466a99fa611"
+    },
+    {
+      "path": "native-timers.wasm",
+      "bytes": 9218837,
+      "sha256": "8128b262257be79d23859995a6ee58bf039162771758e7047fd81f67baab85d6"
+    },
+    {
+      "path": "native-imports.wasm",
+      "bytes": 9252292,
+      "sha256": "b6ad4557d4007c79344d2151aa947b0ab0be5051be3e495cacffa9f6cd9879e1"
+    }
+  ],
+  "spaceAssessment": {
+    "originalDiskFloorBytes": 2147483648,
+    "maximumLinkScratchBytes": 536870912,
+    "threeDiagnosticOutputReservationBytes": 536870912
+  },
+  "seconds": 632.4500487999976,
+  "maximumCommandSeconds": 600,
+  "maximumOverallSeconds": 900,
+  "fixtureBrokerOnly": true,
+  "supportedAsyncProfile": false,
+  "signedLSFComponentQualified": false,
+  "normalSDKProductsUsed": false,
+  "originalArchiveOrOriginalMemberModified": false
+}
