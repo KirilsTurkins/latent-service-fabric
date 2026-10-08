@@ -27,6 +27,8 @@ async fn direct_effect_inspection_requires_original_caller_link_and_current_read
         latent_rpc::transaction::v1::EffectDisposition::Pending as i32
     );
     assert!(status.provider_receipt.is_none());
+    assert!(status.retention.as_ref().unwrap().payload_available);
+    assert!(status.management_operation_receipt_id.is_none());
     contract::Response::GetEffect(value.clone())
         .validate_for(&contract::Request::from(request.clone()))
         .unwrap();
@@ -262,6 +264,30 @@ async fn authenticated_effect_terminal_plan_and_expired_original_receipt_preserv
         latent_rpc::transaction::v1::EffectDisposition::AdministrativelyTerminated as i32
     );
     assert!(receipt.effect.as_ref().unwrap().provider_receipt.is_none());
+    drop(response);
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(
+            operator("alice"),
+            effect.request("terminal-status").effect.unwrap().into(),
+        )
+        .await
+        .unwrap();
+    let contract::Response::GetEffect(value) = &response.response else {
+        panic!("actual terminal effect status required");
+    };
+    let status = value.effect.as_ref().unwrap();
+    assert_eq!(
+        status.disposition,
+        latent_rpc::transaction::v1::EffectDisposition::AdministrativelyTerminated as i32,
+    );
+    assert_eq!(
+        status.management_operation_receipt_id.as_deref(),
+        Some(receipt.receipt_id.as_str())
+    );
+    assert!(status.provider_receipt.is_none());
+    assert!(status.retention.as_ref().unwrap().payload_available);
     drop(response);
     // Native time expires the plan. The current read grant has a separate
     // original finite request deadline and never reissues old execution.

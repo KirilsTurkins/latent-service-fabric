@@ -297,6 +297,8 @@ fn inspect_in(
     if !valid_link(&command, &record, &request.effect_id, binding.incarnation)? {
         return Ok(Err(denied()));
     }
+    let payload_available = payload_available(view, &record)?;
+    let management_operation_receipt_id = management_receipt_id(view, &record)?;
     let management = record.management();
     let latest = record.latest();
     let disposition =
@@ -322,9 +324,9 @@ fn inspect_in(
             identity_expires_at_unix_millis: Some(command.identity_expires()),
             remaining_recovery_millis: None,
             required_record_ids: vec![command.id().hex()],
-            ..Default::default()
+            payload_available,
         }),
-        management_operation_receipt_id: None,
+        management_operation_receipt_id,
         provider_profile: authority.profile().adapter.clone(),
         record_version: effect_record_version(&raw)
             .map_err(|_| StoreError::Corrupt)?
@@ -337,6 +339,42 @@ fn inspect_in(
     }
     Ok(Ok((read, effect)))
 }
+fn payload_available(view: &ReadView, record: &EffectRecord) -> Result<bool, StoreError> {
+    let authority = record.authority().map_err(|_| StoreError::Corrupt)?;
+    match view.get(&latent_effects::dispatch_store::effect_payload_key(
+        &authority.link().effect,
+    )?)? {
+        Some(bytes) => {
+            latent_effects::payload::PayloadRecord::decode(&bytes)
+                .map_err(|_| StoreError::Corrupt)?
+                .verify(&authority)
+                .map_err(|_| StoreError::Corrupt)?;
+            Ok(true)
+        }
+        None if record.disposition().terminal() => Ok(false),
+        None => Err(StoreError::Corrupt),
+    }
+}
+
+fn management_receipt_id(
+    view: &ReadView,
+    record: &EffectRecord,
+) -> Result<Option<String>, StoreError> {
+    let receipt =
+        latent_effects::dispatch_store::effect_management::EffectManagementCatalog::receipt_for_effect(
+            view, record,
+        )?;
+    receipt
+        .as_ref()
+        .map(|receipt| {
+            receipt
+                .digest()
+                .map(|digest| format!("effect-management:sha256:{}", super::response::hex(&digest)))
+        })
+        .transpose()
+        .map_err(|_| StoreError::Corrupt)
+}
+
 fn valid_link(
     command: &CommandRecord,
     record: &EffectRecord,
