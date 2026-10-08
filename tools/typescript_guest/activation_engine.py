@@ -43,6 +43,9 @@ def engine_input_paths(profile: str = PROFILE) -> tuple[str, ...]:
     paths = tuple("sdk/typescript-guest/activation/" + name for name in NATIVE_SOURCES) + tuple(
         "tools/typescript_guest/" + name for name in DERIVATION_SOURCES)
     from tools.typescript_guest.clock_engine import CLOCK_PROFILE, CLOCK_NATIVE_SOURCES
+    if profile == 'spidermonkey-activation-promises-clocks-imports-v1':
+        from tools.typescript_guest.import_profile import source_paths
+        return source_paths()
     if profile == CLOCK_PROFILE:
         return paths + tuple("sdk/typescript-guest/activation/" + name for name in CLOCK_NATIVE_SOURCES) + (
             'tools/typescript_guest/clock_engine.py', 'wit/platform/clock/package.wit',

@@ -45,7 +45,7 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
-    new.add_argument('--runtime-profile', choices=('spidermonkey-public-sync-v1', 'spidermonkey-activation-promises-v1', 'spidermonkey-activation-promises-clocks-v1'),
+    new.add_argument('--runtime-profile', choices=('spidermonkey-public-sync-v1', 'spidermonkey-activation-promises-v1', 'spidermonkey-activation-promises-clocks-v1','spidermonkey-activation-promises-clocks-imports-v1'),
                      help='Explicit compiler runtime selection; the Promise candidate remains unqualified')
     capture = commands.add_parser("resolve", help="Explicitly fetch a native application npm lock without package lifecycle scripts")
     capture.add_argument("project", type=Path)
@@ -96,6 +96,8 @@ def parser() -> argparse.ArgumentParser:
     compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
     compile_.add_argument('--runtime-engine', type=Path, help='Source-bound engine input for the selected Promise candidate')
     compile_.add_argument('--runtime-engine-receipt', type=Path, help='Exact engine provenance envelope; never API qualification')
+    compile_.add_argument('--runtime-splicer',type=Path,help='Source-bound compiler splicer for the unqualified import candidate')
+    compile_.add_argument('--runtime-splicer-receipt',type=Path,help='Exact compiler tool input envelope; never API qualification')
     return parser
 
 
@@ -160,8 +162,9 @@ def main(argv: list[str] | None = None):
             return 0
         else:
             runtime_inputs = ({'runtime_engine': args.runtime_engine,
-                               'runtime_engine_receipt': args.runtime_engine_receipt}
-                              if args.runtime_engine is not None or args.runtime_engine_receipt is not None else {})
+                               'runtime_engine_receipt': args.runtime_engine_receipt,
+                               'runtime_splicer':args.runtime_splicer,'runtime_splicer_receipt':args.runtime_splicer_receipt}
+                              if any(value is not None for value in (args.runtime_engine,args.runtime_engine_receipt,args.runtime_splicer,args.runtime_splicer_receipt)) else {})
             result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository,
                            tools=args.tools, **runtime_inputs)
         print(result)

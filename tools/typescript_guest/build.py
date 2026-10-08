@@ -46,11 +46,16 @@ RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in NATIVE_SOURC
 from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
 RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in CLOCK_NATIVE_SOURCES)
 RECIPE += ('sdk/typescript-guest/activation/clock-globals.d.ts',)
+from tools.typescript_guest.import_engine import NATIVE_IMPORT_SOURCES
+RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in NATIVE_IMPORT_SOURCES if 'sdk/typescript-guest/activation/'+name not in RECIPE)
+RECIPE += ('tools/typescript_guest/import_engine.py','tools/typescript_guest/import_bindgen.py',
+           'tools/typescript_guest/import_profile.py','tools/typescript_guest/splicer_input.py')
 RECIPE += ("tools/typescript_generator_authoring.py",)
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path,
-          runtime_engine: Path | None = None, runtime_engine_receipt: Path | None = None):
+          runtime_engine: Path | None = None, runtime_engine_receipt: Path | None = None,
+          runtime_splicer: Path | None = None, runtime_splicer_receipt: Path | None = None):
     project_path, output, tools = map(checked_path, (project_path, output, tools))
     project_path = guest_dependency_inputs.application_root(project_path, 'typescript')
     if output == project_path or output in project_path.parents or (
@@ -106,7 +111,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if runtime_profile in runtime.NATIVE_PROFILES:
                 options.update(isolated_workspace=temporary, runtime_profile=runtime_profile,
                                engine=runtime_engine, engine_receipt=runtime_engine_receipt)
-            elif runtime_engine is not None or runtime_engine_receipt is not None:
+                if runtime_profile == runtime.IMPORT_PROFILE:
+                    options.update(splicer=runtime_splicer,splicer_receipt=runtime_splicer_receipt)
+                elif runtime_splicer is not None or runtime_splicer_receipt is not None:
+                    raise ValueError('source-built splicer requires the explicit TypeScript import candidate')
+            elif any(value is not None for value in (runtime_engine,runtime_engine_receipt,runtime_splicer,runtime_splicer_receipt)):
                 raise ValueError('native engine input requires the explicit TypeScript Promise candidate')
             compiler = Compiler(tools, commands, {name: files["vendor/lsf/sdk/typescript-guest/tools/" + name]
                                                  for name in ("package.json", "package-lock.json")}, **options)

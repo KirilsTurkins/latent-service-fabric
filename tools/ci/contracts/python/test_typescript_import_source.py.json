@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.ci.contracts.v1",
   "kind": "python",
-  "reviewReason": "Five parser/source selection controls for private P3 import candidate; no engine or signed API qualification; all prior source cases and guards retained",
+  "reviewReason": "Five parser/source selection controls for private P3 import candidate; no engine or signed API qualification; all prior source cases and guards retained; named verified source candidate now requires exact engine/compiler inputs, previous declaration-only rejection strengthened to actual constructor denial plus unknown-name denial; same5cases/guards retained",
   "module": "tools/tests/test_typescript_import_source.py",
   "cases": [
     "AsyncImportSourceTests.test_exact_parameter_result_and_resource_identities_are_retained",

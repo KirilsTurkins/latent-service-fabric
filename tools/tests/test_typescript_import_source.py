@@ -13,8 +13,13 @@ class AsyncImportSourceTests(unittest.TestCase):
         return json.loads((FIXTURES/'original.json').read_bytes())['graph']
 
     def test_private_import_candidate_is_not_yet_a_selectable_profile(self):
+        # The verified source candidate now has a named selector. A declaration
+        # still cannot select a compiler/runtime without its exact tool inputs.
+        from tools.typescript_guest.compiler import Compiler
+        with self.assertRaisesRegex(ValueError,'requires actual source-bound compiler inputs'):
+            Compiler(Path('unused-tools'),None,{},runtime_profile=IMPORT_PROFILE)
         with self.assertRaisesRegex(ValueError,'unsupported-typescript-runtime-profile'):
-            selected_profile({'runtimeProfile':IMPORT_PROFILE})
+            selected_profile({'runtimeProfile':IMPORT_PROFILE+'-unknown'})
 
     def test_selection_uses_actual_function_kind_not_package_or_name(self):
         graph = self.graph()

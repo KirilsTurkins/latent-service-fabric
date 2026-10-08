@@ -14,10 +14,13 @@ import re
 SYNC_PROFILE = 'spidermonkey-public-sync-v1'
 ASYNC_PROFILE = 'spidermonkey-activation-promises-v1'
 CLOCK_PROFILE = 'spidermonkey-activation-promises-clocks-v1'
-NATIVE_PROFILES = (ASYNC_PROFILE, CLOCK_PROFILE)
+IMPORT_PROFILE = 'spidermonkey-activation-promises-clocks-imports-v1'
+NATIVE_PROFILES = (ASYNC_PROFILE, CLOCK_PROFILE, IMPORT_PROFILE)
+CLOCK_PROFILES = (CLOCK_PROFILE, IMPORT_PROFILE)
 ACTIVATION_INTERFACE = 'latent:runtime/activation@0.1.0'
 SELECTED_WORLD = 'lsf:typescript-activation/selected@1.0.0'
 ENGINE_SCHEMA = 'latent.typescript.native-engine-input.v1'
+IMPORT_ENGINE_SCHEMA = 'latent.typescript.native-import-engine-input.v1'
 WORLD = re.compile(r'^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*/[a-z][a-z0-9-]*@[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$')
 DIGEST = re.compile(r'^sha256:[0-9a-f]{64}$')
 SOURCE_PINS = {
@@ -62,7 +65,7 @@ def check_application_bindings(original_graph: dict, world: str, *, profile: str
     """
     imports = public_graph(original_graph, world)['imports']
     owned = {ACTIVATION_INTERFACE}
-    if profile == CLOCK_PROFILE:
+    if profile in CLOCK_PROFILES:
         owned.update(('latent:clock/monotonic@0.1.0','latent:clock/wall@0.1.0'))
     if owned.intersection(imports):
         raise ValueError('typescript-engine-owned-activation-interface-not-an-application-module')
@@ -73,9 +76,12 @@ def validate_engine(value: dict, core: bytes, sdk_inputs: dict[str, bytes], runt
     expected = {'schemaVersion', 'profile', 'coreDigest', 'coreBytes', 'sdkInputs',
                 'runtimeWitDigest', 'upstream', 'sourceDerivationDigest', 'buildReceiptDigest',
                 'qualification', 'apiSupport', 'inputTrust'}
+    if profile == IMPORT_PROFILE:
+        expected |= {'compilerSplicerInputDigest'}
     if not isinstance(value, dict) or set(value) != expected:
         raise ValueError('typescript-native-engine-input-schema')
-    if profile not in NATIVE_PROFILES or value['schemaVersion'] != ENGINE_SCHEMA or value['profile'] != profile:
+    schema = IMPORT_ENGINE_SCHEMA if profile == IMPORT_PROFILE else ENGINE_SCHEMA
+    if profile not in NATIVE_PROFILES or value['schemaVersion'] != schema or value['profile'] != profile:
         raise ValueError('typescript-native-engine-input-version')
     if value['upstream'] != SOURCE_PINS:
         raise ValueError('typescript-native-engine-upstream-mismatch')
@@ -96,6 +102,8 @@ def validate_engine(value: dict, core: bytes, sdk_inputs: dict[str, bytes], runt
     for key in ('sourceDerivationDigest', 'buildReceiptDigest'):
         if not isinstance(value[key], str) or not DIGEST.fullmatch(value[key]):
             raise ValueError('typescript-native-engine-source-material-required')
+    if profile == IMPORT_PROFILE and not DIGEST.fullmatch(value['compilerSplicerInputDigest'] if isinstance(value['compilerSplicerInputDigest'], str) else ''):
+        raise ValueError('typescript-native-import-engine-compiler-source-required')
     if (value['qualification'], value['apiSupport'], value['inputTrust']) != (
             'unknown', 'not-evaluated', 'operator-asserted'):
         raise ValueError('typescript-native-engine-input-cannot-certify-api')
