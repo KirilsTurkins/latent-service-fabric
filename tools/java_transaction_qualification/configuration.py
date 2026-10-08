@@ -114,6 +114,7 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
         for subject, token in TOKENS.items()]
     value["httpIngress"] = {"formatVersion": 1, "bind": f"127.0.0.1:{port}",
         "transport": {"mode": "loopback"}, "authentication": {"mode": "bearer"},
+        "browserOrigins": [{"authority": authority, "tenant": TENANT}],
         "limits": {"maximumConnections": 16, "maximumExchanges": 4,
                    "maximumBufferBytes": 50331648, "maximumRequestsPerConnection": 8}}
     providers = {"formatVersion": 1, "bindings": []}
