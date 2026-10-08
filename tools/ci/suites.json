@@ -9176,6 +9176,78 @@
     },
     {
       "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latentd.example.transaction-recovery",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/transaction_recovery.rs",
+      "target": "transaction_recovery",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latentd.example.transaction-rpc-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/transaction_rpc_probe.rs",
+      "target": "transaction_rpc_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latentd.example.transaction-startup-diagnosis",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/transaction_startup_diagnosis.rs",
+      "target": "transaction_startup_diagnosis",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
       "expectedCases": [
         "command::tests::check_config_requires_an_explicit_file_and_never_selects_serve",
         "command::tests::obsolete_catalog_migration_command_is_rejected",
