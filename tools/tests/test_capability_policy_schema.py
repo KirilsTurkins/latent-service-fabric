@@ -55,6 +55,11 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         rust = (ROOT / "crates/latent-policy/src/capability.rs").read_text(encoding="utf-8")
         actual = {cap: set(re.findall(r'"([a-z0-9-]+)"', operations))
                   for cap, operations in re.findall(r'"(latent:[^\"]+)"\s*=>\s*&\[(.*?)\]', rust, re.S)}
+        runtime = re.search(r"fn runtime_operations\(\) -> &'static \[&(?:'static )?str\]\s*\{\s*&\[(.*?)\]", rust, re.S)
+        if runtime is not None:
+            self.assertRegex(rust, r'"latent:runtime/activation@0\.1\.0"\s*=>\s*runtime_operations\(\)')
+            self.assertNotIn("latent:runtime/activation@0.1.0", actual)
+            actual["latent:runtime/activation@0.1.0"] = set(re.findall(r'"([a-z0-9-]+)"', runtime[1]))
         expected = {}
         for entry in matrix["interfaces"] + transactions["interfaces"]:
             interface = entry["interface"].split("/")[1].split("@")[0]

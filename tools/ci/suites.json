@@ -4261,6 +4261,36 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "exact_companion_selects_transaction_manifest_validation_before_inspection",
+        "missing_or_forged_companion_never_adopts_transaction_budget_hints",
+        "transaction_profile_keeps_wit_component_and_resource_checks_authoritative"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-packaging.test.transaction-profile",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 3,
+      "mode": "libtest",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/transaction_profile.rs",
+      "target": "transaction_profile",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "authoring::fixtures::tests::current_fixture_refuses_missing_failed_stages_and_host_or_execution_claims",
+        "authoring::fixtures::tests::current_fixture_retains_explicit_source_and_report_associations",
         "authoring::inputs::tests::diagnostic_asset_inventory_cannot_cover_replaced_bytes",
         "authoring::inputs::tests::diagnostic_assets_preserve_checked_component_and_wit_inventory",
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
@@ -4274,7 +4304,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 9,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -9445,7 +9475,8 @@
         "standalone::transport::tests::shutdown::already_panicked_server_is_joined_without_repolling_its_handle",
         "standalone::transport::tests::shutdown::timed_out_server_is_aborted_and_joined_before_returning_failure",
         "standalone::transport::tests::web_preparation::only_exact_web_control_paths_get_separate_bounded_transport_waits",
-        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication"
+        "standalone::transport::tests::web_preparation::preparation_keeps_shorter_transport_timeout_and_requires_authentication",
+        "command::tests::transaction_host_inspection_requires_exact_configuration_without_serving"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -9508,7 +9539,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 308,
+      "minimumCases": 309,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
