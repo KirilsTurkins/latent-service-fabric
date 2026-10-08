@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Six private original-source/actual-file/unknown-qualification controls for source-owned import compiler adapter; no engine or signed API qualification; all prior source cases and guards retained",
+  "module": "tools/tests/test_typescript_import_adapter.py",
+  "cases": [
+    "TypeScriptImportAdapterTests.test_actual_files_read_exactly_and_extra_bytes_change_input",
+    "TypeScriptImportAdapterTests.test_declared_compiler_support_cannot_create_runtime_qualification",
+    "TypeScriptImportAdapterTests.test_declared_engine_support_cannot_create_runtime_qualification",
+    "TypeScriptImportAdapterTests.test_missing_source_splicer_directory_rejected",
+    "TypeScriptImportAdapterTests.test_unknown_engine_and_compiler_observations_stay_unknown",
+    "TypeScriptImportAdapterTests.test_unreviewed_public_componentizer_source_rejected_before_derivation"
+  ],
+  "guards": {
+    "TypeScriptImportAdapterTests.test_unknown_engine_and_compiler_observations_stay_unknown": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b211f8cd342078ab5593ff00405bec8b8e3b6064eb4770cb3023482a8f8afec4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptImportAdapterTests.test_declared_engine_support_cannot_create_runtime_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b211f8cd342078ab5593ff00405bec8b8e3b6064eb4770cb3023482a8f8afec4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptImportAdapterTests.test_declared_compiler_support_cannot_create_runtime_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b211f8cd342078ab5593ff00405bec8b8e3b6064eb4770cb3023482a8f8afec4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptImportAdapterTests.test_unreviewed_public_componentizer_source_rejected_before_derivation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b211f8cd342078ab5593ff00405bec8b8e3b6064eb4770cb3023482a8f8afec4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptImportAdapterTests.test_missing_source_splicer_directory_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b211f8cd342078ab5593ff00405bec8b8e3b6064eb4770cb3023482a8f8afec4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "TypeScriptImportAdapterTests.test_actual_files_read_exactly_and_extra_bytes_change_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b211f8cd342078ab5593ff00405bec8b8e3b6064eb4770cb3023482a8f8afec4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    }
+  }
+}
