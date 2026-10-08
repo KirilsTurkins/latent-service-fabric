@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = "transactional-aggregate"
@@ -17,19 +18,32 @@ def put_once_requirements(project: dict, companion: bytes) -> dict:
     """Application requirements only; installed native owners supply authority."""
     from tools.dev_workflow.transaction_binding import validate
     binding = validate(companion, capsule=project["service"], deployment=project["name"], binding=project["name"])
+    body, logical_binding = HTTP_BODY, "qualified-http"
+    if project.get("world") == "examples:order-draft/service@1.0.0":
+        # The maintained app emits a finite per-draft change notification. Its
+        # contents describe no current revision; consumers query current state
+        # under their own authority. This keeps the exact signed payload pin.
+        draft = binding["namespace"].removeprefix("order-drafts-")
+        if (binding["namespace"] != "order-drafts-" + draft
+                or re.fullmatch(r"[a-z0-9][a-z0-9-]{0,31}", draft) is None
+                or binding["operations"] != [
+                    {"operation": name, "mode": mode, "inputFormat": INPUT_FORMAT, "resultFormat": RESULT_FORMAT}
+                    for name, mode in (("edit", "strict-command"), ("query", "fresh-query"))]):
+            raise ValueError("order-draft notification binding is invalid")
+        body, logical_binding = b"draft-change-v1:" + draft.encode("ascii"), "draft-http"
     return {
         "schemaVersion": "latent.application.deferred-http-inputs.v1",
         "scope": {"capsule": project["service"], "deployment": project["name"],
                   "transactionBinding": project["name"], "namespace": binding["namespace"],
                   "companionDigest": "sha256:" + hashlib.sha256(companion).hexdigest()},
-        "intent": {"binding": "qualified-http", "operation": "put-once", "count": 1,
+        "intent": {"binding": logical_binding, "operation": "put-once", "count": 1,
                    "requestedExpiryUnixMillis": None,
-                   "payload": {"bytes": base64.b64encode(HTTP_BODY).decode(),
+                   "payload": {"bytes": base64.b64encode(body).decode(),
                                "mediaType": "application/octet-stream", "metadata": []}},
         "adapter": {"name": "qualified-http-put-once-v1", "intentFormat": 1,
                     "payloadFormat": "http-put-once-bytes-v1", "idempotencyProfile": "retained-put-once-v1"},
-        "contract": {"retentionHorizonMillis": "600000", "maximumBodyBytes": 27, "retryDelayMillis": "10"},
-        "ceiling": {"maximumPayloadBytes": "27", "maximumResponseBytes": "2048", "maximumAttempts": 3,
+        "contract": {"retentionHorizonMillis": "600000", "maximumBodyBytes": len(body), "retryDelayMillis": "10"},
+        "ceiling": {"maximumPayloadBytes": str(len(body)), "maximumResponseBytes": "2048", "maximumAttempts": 3,
                     "maximumAgeMillis": "600000", "attemptTimeoutMillis": "2000"},
         "authority": {"installed": False, "ruleGranted": False, "executionQualified": False},
     }

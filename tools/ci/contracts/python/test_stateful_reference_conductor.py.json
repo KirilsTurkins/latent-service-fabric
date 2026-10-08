@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Reviewed Source-only conductor input and refusal checks: genuine ordinary creator captures feed synthetic byte-identity fixtures, never node/compiler qualification. Require exact language/world/component/source/assembled identities; refuse changed bytes, invalid JSON and byte overrun; uncertain deployment stops without retries or trigger writes; current original lookup retains entity and refuses a foreign publication; six-backend scope requires every guest and both entity plans. No skip/decorator or deadline relaxation.",
+  "module": "tools/tests/test_stateful_reference_conductor.py",
+  "cases": [
+    "StatefulReferenceConductor.test_browser_matrix_requires_six_guest_languages_and_two_distinct_entity_plans",
+    "StatefulReferenceConductor.test_byte_identity_refuses_relabelled_compiler_component_and_unassembled_artifact",
+    "StatefulReferenceConductor.test_closed_json_and_byte_bounds_refuse_before_any_operator_request",
+    "StatefulReferenceConductor.test_original_attestation_refuses_cross_publication_and_requires_explicit_entity",
+    "StatefulReferenceConductor.test_unknown_deployment_result_stops_without_trigger_or_mutation_retry"
+  ],
+  "guards": {
+    "StatefulReferenceConductor.test_browser_matrix_requires_six_guest_languages_and_two_distinct_entity_plans": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9ff62c7ec3d0c89a0f605733538f66ba9fb80df55d408a35eec1202748b2f95",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceConductor.test_byte_identity_refuses_relabelled_compiler_component_and_unassembled_artifact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9ff62c7ec3d0c89a0f605733538f66ba9fb80df55d408a35eec1202748b2f95",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceConductor.test_closed_json_and_byte_bounds_refuse_before_any_operator_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9ff62c7ec3d0c89a0f605733538f66ba9fb80df55d408a35eec1202748b2f95",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceConductor.test_unknown_deployment_result_stops_without_trigger_or_mutation_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9ff62c7ec3d0c89a0f605733538f66ba9fb80df55d408a35eec1202748b2f95",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceConductor.test_original_attestation_refuses_cross_publication_and_requires_explicit_entity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9ff62c7ec3d0c89a0f605733538f66ba9fb80df55d408a35eec1202748b2f95",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    }
+  }
+}

@@ -1,0 +1,33 @@
+package examples:order-draft@1.0.0;
+
+interface api {
+    record edit-request {
+        draft-id: string,
+        expected-revision: u64,
+        units: u32,
+        reject: bool,
+    }
+    record draft {
+        draft-id: string,
+        revision: u64,
+        units: u32,
+        namespace-view: list<u8>,
+        key-version: option<list<u8>>,
+    }
+    enum business-error {
+        invalid-draft,
+        invalid-units,
+        stale-edit,
+        rejected,
+        malformed-state,
+        revision-overflow,
+    }
+    edit: async func(request: edit-request) -> result<draft, business-error>;
+    query: async func(draft-id: string) -> result<draft, business-error>;
+}
+
+world service {
+    import latent:state/key-value@0.2.0;
+    import latent:intents/staging@0.1.0;
+    export api;
+}
