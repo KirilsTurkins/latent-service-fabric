@@ -241,22 +241,30 @@ bool root_work_drained(JSContext* cx) {
 }
 
 bool reserve_import(JSContext* cx, uint32_t result_size, uint32_t parameter_size,
-                    JS::HandleValue captures, uint32_t* id, void** result, void** parameters) {
+                    uint32_t raw_kind, const JS::HandleValueArray& captures, uint32_t* id, void** result, void** parameters) {
   if (!effects_allowed(cx) || !acknowledge_promise_retirement(cx)) {
     JS_ReportErrorASCII(cx, "activation-runtime-import-during-snapshot-denied");
     return false;
   }
-  if (!imports.reserve(cx, result_size, parameter_size, captures, *id)) return false;
+  if (raw_kind > static_cast<uint32_t>(ImportRawResult::U16)) {
+    JS_ReportErrorASCII(cx,"activation-runtime-import-result-kind-invalid"); return false;
+  }
+  if (!imports.reserve(cx, result_size, parameter_size, static_cast<ImportRawResult>(raw_kind), captures, *id)) return false;
   *result = imports.resultBuffer(*id);
   *parameters = imports.parameterBuffer(*id);
   return true;
 }
 bool begin_import_lowering(JSContext* cx, uint32_t id) { return imports.beginLowering(cx, id); }
+void* import_result_buffer(uint32_t id) { return imports.resultBuffer(id); }
+void* import_parameter_buffer(uint32_t id) { return imports.parameterBuffer(id); }
 bool start_import(JSContext* cx, uint32_t id, uint32_t status, JS::MutableHandleObject promise) {
   return imports.started(cx, id, status, promise);
 }
 bool lift_import(JSContext* cx, uint32_t id, void** result) {
   return imports.beginLifting(cx, id, *result);
+}
+bool lift_import_value(JSContext* cx, uint32_t id, JS::MutableHandleValue value) {
+  return imports.liftValue(cx,id,value);
 }
 bool finish_import(JSContext* cx, uint32_t id) { return imports.liftCompleted(cx, id); }
 bool cancel_import(JSContext* cx, uint32_t id) { return imports.cancel(cx, id); }

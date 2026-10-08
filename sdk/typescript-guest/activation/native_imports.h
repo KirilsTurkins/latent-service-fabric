@@ -3,7 +3,9 @@
 #pragma once
 #include "broker_import_accounting.h"
 #include "js/Promise.h"
+#include "js/Array.h"
 #include "js/RootingAPI.h"
+#include "native_import_values.h"
 #include <cstring>
 #include <memory>
 #include <new>
@@ -26,6 +28,7 @@ class Imports final {
     uint32_t id = 0;
     bool promise_settled = false;
     bool result_consumed = false;
+    ImportRawResult raw_kind = ImportRawResult::None;
     std::unique_ptr<Record> following;
     JSContext* cx;
     Record(JSContext* cx, BrokerAccounting& jobs, BrokerPromiseAccounting& native,
@@ -92,7 +95,7 @@ public:
       : jobs_(jobs), native_(native), readiness_(readiness) {}
 
   bool reserve(JSContext* cx, size_t result_size, size_t parameter_size,
-               JS::HandleValue captures, uint32_t& id) {
+               ImportRawResult raw_kind, const JS::HandleValueArray& captures, uint32_t& id) {
     id = 0;
     if (stopped_ || next_id_ == 0) return invalid(cx, "closed");
     // The manager's record itself also requires a Native owner before physical
@@ -116,6 +119,7 @@ public:
     auto& accepted = *records_;
     if (!accepted.lifecycle.reserve(cx)) { stopped_ = true; (void)collect(cx); return false; }
     accepted.result_size = result_size;
+    accepted.raw_kind = raw_kind;
     accepted.parameter_size = parameter_size;
     // Capacities come from exact compiled WIT layout, never from runtime JS.
     // Every indirect input stays private and stable until subtask terminal/drop.
@@ -135,7 +139,9 @@ public:
         return false;
       }
     }
-    accepted.captures = captures;
+    JS::RootedObject roots(cx,JS::NewArrayObject(cx,captures));
+    if (!roots) { (void)accepted.lifecycle.cancel(cx); (void)collect(cx); return false; }
+    accepted.captures = JS::ObjectValue(*roots);
     accepted.promise = JS::NewPromiseObject(cx, nullptr);
     if (!accepted.promise) { (void)accepted.lifecycle.cancel(cx); return false; }
     id = accepted.id;
@@ -186,9 +192,18 @@ public:
     buffer = item->result;
     return true;
   }
+  bool liftValue(JSContext* cx, uint32_t id, JS::MutableHandleValue value) {
+    auto* item = find(id);
+    void* buffer = nullptr;
+    if (!item || !beginLifting(cx,id,buffer)) return false;
+    return lift_raw_import(cx,buffer,item->result_size,item->raw_kind,value);
+  }
   bool liftCompleted(JSContext* cx, uint32_t id) {
     auto* item = find(id);
-    if (!item || !item->lifecycle.liftCompleted(cx)) return false;
+    if (!item) return false;
+    if(item->lifecycle.phase()!=ImportLifecycle::Phase::Lifting)
+      return item->lifecycle.cancel(cx) && collect(cx);
+    if (!item->lifecycle.liftCompleted(cx)) return false;
     item->result_consumed = true;
     return collect(cx);
   }
