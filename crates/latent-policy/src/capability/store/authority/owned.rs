@@ -39,17 +39,6 @@ pub struct OwnedPolicyDecision {
     require_audit: bool,
 }
 impl OwnedPolicyDecision {
-    /// Original sealed row stamps only; these descriptions grant no authority
-    /// and do not recheck or renew the retained policy decision.
-    pub fn policy_revisions(&self) -> impl Iterator<Item = super::CapabilityPolicyRevision<'_>> {
-        self.snapshot.policy_revisions()
-    }
-
-    #[must_use]
-    pub fn binding_revision(&self) -> super::CapabilityPolicyRevision<'_> {
-        self.snapshot.binding_revision()
-    }
-
     #[must_use]
     pub const fn requires_audit(&self) -> bool {
         self.require_audit

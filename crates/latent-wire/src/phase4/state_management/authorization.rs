@@ -159,27 +159,6 @@ pub(super) async fn authorize(
         mutation,
     })
 }
-/// Describe exactly the sealed binding/policy revisions, using the same
-/// canonical digest as current state-management clients. This is a precondition
-/// description and supplies no currentness check, replacement lease or grant.
-pub(super) fn captured_policy_digest(decision: &OwnedPolicyDecision) -> String {
-    use sha2::{Digest, Sha256};
-    let mut hash = Sha256::new();
-    hash.update(b"lsf-state-management-policy-v1\0");
-    let binding = decision.binding_revision();
-    let mut policies: Vec<_> = decision.policy_revisions().collect();
-    policies.sort_by(|left, right| left.id.cmp(right.id));
-    for (kind, row) in
-        std::iter::once((0u8, binding)).chain(policies.into_iter().map(|row| (1u8, row)))
-    {
-        hash.update([kind]);
-        hash.update((row.id.len() as u64).to_le_bytes());
-        hash.update(row.id.as_bytes());
-        hash.update(row.revision.to_le_bytes());
-        hash.update(row.digest.as_bytes());
-    }
-    format!("sha256:{}", super::response::hex(&hash.finalize()))
-}
 struct OriginalAccess<'a> {
     services: &'a StateManagementServices,
     binding: &'a StateManagementBinding,
