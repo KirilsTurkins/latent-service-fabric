@@ -109,6 +109,21 @@ async fn capture<T>(future: impl Future<Output = T>) -> (T, Trace) {
         .await
 }
 
+pub(crate) async fn observe_startup<T>(
+    future: impl Future<Output = Result<T, PlatformError>>,
+) -> (Result<T, PlatformError>, Option<StartupFailureReport>) {
+    let (result, trace) = capture(future).await;
+    let report = result.as_ref().err().map(|error| StartupFailureReport {
+        schema_version: "latent.startup-failure-observation.v1",
+        startup_succeeded: false,
+        terminal_failure: Some(Failure::from(error)),
+        observations: trace.observations.into_iter().flatten().collect(),
+        truncated: trace.truncated,
+        shutdown: None,
+    });
+    (result, report)
+}
+
 impl StandaloneNode {
     /// Private native operator fixture: runs the actual normal startup and,
     /// on success, actual shutdown. Startup may durably advance the node epoch;
