@@ -98,9 +98,20 @@ async fn serve(
         .and_then(|duration| duration.checked_add(settings.telemetry.shutdown_timeout))
         .and_then(|duration| duration.checked_add(Duration::from_secs(1)))
         .ok_or_else(|| Failure::new("configuration", PlatformErrorCode::InvalidArgument))?;
-    let node = StandaloneNode::start(settings, control, threads)
-        .await
-        .map_err(|error| Failure::new("startup", error.code))?;
+    let (startup, observation) =
+        crate::standalone::observe_startup(StandaloneNode::start(settings, control, threads)).await;
+    if let Some(observation) = observation {
+        // Closed producer-owned codes only; retain the original startup error
+        // and cleanup result even if writing the bounded diagnostic fails.
+        if let Ok(encoded) = serde_json::to_vec(&observation) {
+            if encoded.len() <= 16 * 1024 {
+                use std::io::Write;
+                let _ = std::io::stderr().lock().write_all(&encoded);
+                let _ = std::io::stderr().lock().write_all(b"\n");
+            }
+        }
+    }
+    let node = startup.map_err(|error| Failure::new("startup", error.code))?;
     let ready = node
         .inventory()
         .is_ok_and(|inventory| inventory.health.ready);
