@@ -30,6 +30,7 @@
   "fastPackages": [
     "latent-activation",
     "latent-admission",
+    "latent-commit",
     "latent-core",
     "latent-effects",
     "latent-executor",
@@ -38,7 +39,9 @@
     "latent-network",
     "latent-routing",
     "latent-scheduler",
-    "latent-telemetry"
+    "latent-state",
+    "latent-telemetry",
+    "latent-workflows"
   ],
   "fixtureRecipes": {
     "angular-renderer": {
@@ -1267,14 +1270,15 @@
         "phase2::tests::omitted_identity_strings_are_bounded",
         "phase2::tests::retained_events_do_not_keep_caller_spare_capacity",
         "phase2::tests::sensitive_and_cross_tenant_actor_metadata_fail_closed",
-        "phase2::tests::tenant_queries_are_isolated_and_paginated"
+        "phase2::tests::tenant_queries_are_isolated_and_paginated",
+        "durable::tests::persisted_floor_and_effect_action_names_keep_their_original_meanings"
       ],
       "expectedIgnored": [],
       "id": "latent-audit.lib.latent-audit",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-audit/Cargo.toml",
-      "minimumCases": 46,
+      "minimumCases": 47,
       "mode": "libtest",
       "package": "latent-audit",
       "platforms": [
@@ -4694,14 +4698,16 @@
         "phase4::tests::retained_allocation_capacity_is_charged_before_encoded_length",
         "phase4::tests::short_and_filtered_empty_pages_retain_explicit_continuation",
         "phase4::tests::technical_abort_requires_exact_attempt_fence",
-        "phase4::tests::unknown_expired_and_in_progress_never_supply_abort_fence"
+        "phase4::tests::unknown_expired_and_in_progress_never_supply_abort_fence",
+        "phase4::tests::development_effect_discriminants_remain_distinct_from_additive_floor_actions",
+        "phase4::tests::namespace_inspection_preserves_existing_wire_field_and_separate_captured_policy"
       ],
       "expectedIgnored": [],
       "id": "latent-rpc.lib.latent-rpc",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-rpc/Cargo.toml",
-      "minimumCases": 25,
+      "minimumCases": 27,
       "mode": "libtest",
       "package": "latent-rpc",
       "platforms": [

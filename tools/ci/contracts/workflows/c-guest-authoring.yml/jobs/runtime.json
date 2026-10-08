@@ -98,7 +98,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Preserve both original workflow obligations, required jobs, compiler/isolation flags, original time limits and failure artifacts while combining Phase4 transaction authoring with current development dependency/runtime support.",
+  "reviewReason": "Preserve both original workflow obligations, required jobs, compiler/isolation flags, original time limits and failure artifacts while combining Phase4 transaction authoring with current development dependency/runtime support. Incoming reviewed obligation: Preserve the authored transaction aggregate and forbidden immediate HTTP compiler gate unchanged, all incoming C archive and isolated generated-header rejection controls and authoring cases, exact workflow guards, and every original and incoming artifact receipt path. Reconcile current development while retaining both parents C compiler/isolation controls, runtime and Phase4 transaction qualification commands, and complete diagnostic artifact paths. Retain both parent source cases and execution guards with current state/transaction API unions and actual current source owner identities. Preserve both original source case and nonhash guard inventories, existing deadline/resource bounds, compiled-profile freshness, truthful full renderer gates, and exact source owner identities.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

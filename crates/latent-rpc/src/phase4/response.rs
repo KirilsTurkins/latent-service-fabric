@@ -195,9 +195,20 @@ fn state_receipt(
             | c::StateMutationKind::TerminateEffect
             | c::StateMutationKind::PurgeExpiredPayload
             | c::StateMutationKind::CheckpointNamespace
-            | c::StateMutationKind::ReconcileEffect
-            | c::StateMutationKind::ReleaseExpiredCommandFloor,
+            | c::StateMutationKind::ReconcileEffect,
         ) => Ok(()),
+        Ok(c::StateMutationKind::ReleaseExpiredCommandFloor) => {
+            let before = request::namespace_view_generation(&value.before_version, namespace)?;
+            let after = request::namespace_view_generation(&value.after_version, namespace)?;
+            if value.disposition != c::StateOperationDisposition::Committed as i32
+                || value.before_version[..43] != value.after_version[..43]
+                || value.before_version[51..] != value.after_version[51..]
+                || before.checked_add(1) != Some(after)
+            {
+                return Err(ValidationError::Association);
+            }
+            Ok(())
+        }
         _ => Err(ValidationError::Shape),
     }
 }
@@ -545,6 +556,10 @@ fn validate_inspect_namespace(
     b.string(&value.namespace_policy_digest, 71)?;
     if !value.namespace_policy_digest.is_empty() {
         digest(&value.namespace_policy_digest)?;
+    }
+    if let Some(policy) = &value.policy_digest {
+        b.string(policy, 71)?;
+        digest(policy)?;
     }
     b.sequence(&value.retained_formats, 128)?;
     for value in &value.retained_formats {
