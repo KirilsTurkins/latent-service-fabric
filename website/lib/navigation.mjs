@@ -22,7 +22,7 @@ export function buildSidebars(pages) {
     'component-development/devcontainer', ...libraryGuides]);
   const references = new Set(['phase-2-operator-workflows', 'phase-2-rollouts', 'phase-2-rollback',
     'phase-2-canary-promotion', 'phase-2-canary-observation', 'phase-2-audit',
-    'component-development/guest-sdk', 'component-development/transactional-authoring',
+    'component-development/guest-sdk',
     'component-development/packaging', 'component-development/sbom', 'component-development/static-sites',
     ...['rust', 'c', 'typescript', 'go', 'java', 'dotnet'].map(language => `component-development/${language}-authoring`)]);
   const maintenance = new Set(['operations/maintained-security-monitoring', 'operations/native-release-promotion',
