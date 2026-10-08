@@ -6732,7 +6732,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 352,
+      "minimumCases": 353,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
