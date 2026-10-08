@@ -1,0 +1,60 @@
+[
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-abi-dedup387-execution-20261006",
+    "head": "6dbbf49f6bcf61bee863b9c00b2513e29f884bd3",
+    "branch": "refs/heads/feat/phase4-dedup-runtime-387-v10",
+    "statusBytes": 2715,
+    "statusEntries": 51,
+    "nonDeletionEntries": [
+      "M  adr/README.md",
+      "UU api/proto/latent/control/v1/state.proto",
+      "UU crates/latent-commit/src/atomic/mod.rs",
+      "UU crates/latent-commit/src/atomic/tests.rs",
+      "UU crates/latent-effects/src/authority.rs",
+      "UU crates/latent-effects/src/dispatch.rs",
+      "UU crates/latent-effects/src/dispatch_store/catalog.rs",
+      "UU crates/latent-node/Cargo.toml",
+      "A  crates/latent-node/src/command_waiters.rs",
+      "A  crates/latent-node/src/command_waiters/state.rs",
+      "A  crates/latent-node/src/command_waiters/tests.rs",
+      "A  crates/latent-node/src/command_waiters/tests/bounds.rs",
+      "A  crates/latent-node/src/command_waiters/tests/fixture.rs",
+      "A  crates/latent-node/src/command_waiters/tests/recovery.rs",
+      "A  crates/latent-node/src/command_waiters/waiter.rs",
+      "M  crates/latent-node/src/lib.rs",
+      "UU crates/latent-policy/src/capability/store/authority/owned.rs",
+      "UU crates/latent-state/src/protected_store.rs",
+      "UU crates/latent-state/src/protected_store/physical.rs",
+      "UU crates/latent-state/src/protected_store/startup.rs",
+      "UU crates/latent-state/src/protected_store/tests.rs",
+      "UU crates/latent-state/src/protected_store/view.rs",
+      "UU crates/latent-state/src/store_io.rs",
+      "UU crates/latent-state/src/store_io/job.rs",
+      "UU crates/latent-state/src/store_io/retained.rs",
+      "UU crates/latent-state/src/store_io/startup.rs",
+      "UU crates/latent-state/src/store_io/state.rs",
+      "UU crates/latent-state/src/store_io/types.rs",
+      "A  docs/development/command-delivery-notifications.md",
+      "M  docs/protocol/phase-1-contract-hardening.md",
+      "UU docs/protocol/transactions.md",
+      "UU schemas/capability-policy.schema.json",
+      "UU sdk/profile/transaction-requirements-v1.json",
+      "UU tools/ci/contracts/owners/tools/build_dev_guest_tools.py.json",
+      "UU tools/ci/contracts/owners/tools/generate_transaction_contracts.py.json"
+    ],
+    "onlyUnmaterializedDeletions": false
+  },
+  {
+    "path": "C:\\Users\\turkins\\Desktop\\lf-p4-native-currentness787-20261006-v11",
+    "head": "78543da1c3eb6d8b7c4173a167599a0a8ea21b07",
+    "branch": "refs/heads/fix/native-currentness-read-787-v11",
+    "statusBytes": 173,
+    "statusEntries": 3,
+    "nonDeletionEntries": [
+      " M crates/latent-wasmtime/src/backend/preparation/compilation.rs",
+      " M crates/latent-wasmtime/src/backend/readiness.rs",
+      " M crates/latent-wasmtime/src/backend/readiness/input.rs"
+    ],
+    "onlyUnmaterializedDeletions": false
+  }
+]

@@ -1,0 +1,325 @@
+{
+  "schemaVersion": "latent.transaction-contract.requirements.v1",
+  "evidenceKind": "contract-definition",
+  "wireProfile": "lsf-transaction-v1",
+  "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "preparationProfileDigest": "sha256:bdbee56b5dcf47e878cdb0af97239a6c15afa6b4e880512117b7c275aa79309f",
+  "languages": [
+    "rust",
+    "c",
+    "typescript",
+    "go",
+    "java",
+    "dotnet"
+  ],
+  "boundaryVectors": "sdk/profile/transaction-vectors.json",
+  "guest": {
+    "profile": "latent.guest.transaction.v1",
+    "requiredInterfaces": [
+      {
+        "interface": "latent:state/key-value@0.2.0",
+        "source": "wit/platform/state/package.wit",
+        "sourceSha256": "sha256:56b0a1304a9987395e0ea3f07e3dde4cbae5e70e5c9837ffcc6ae3b3cb9b7f25",
+        "operations": [
+          {
+            "name": "acquire-command",
+            "asynchronous": false
+          },
+          {
+            "name": "acquire-query",
+            "asynchronous": false
+          },
+          {
+            "name": "info",
+            "asynchronous": false
+          },
+          {
+            "name": "query-info",
+            "asynchronous": false
+          },
+          {
+            "name": "get",
+            "asynchronous": true
+          },
+          {
+            "name": "get-query",
+            "asynchronous": true
+          },
+          {
+            "name": "scan",
+            "asynchronous": true
+          },
+          {
+            "name": "scan-query",
+            "asynchronous": true
+          },
+          {
+            "name": "describe-page",
+            "asynchronous": false
+          },
+          {
+            "name": "page-next",
+            "asynchronous": true
+          },
+          {
+            "name": "put",
+            "asynchronous": true
+          },
+          {
+            "name": "delete",
+            "asynchronous": true
+          }
+        ],
+        "ownedResources": [
+          "transaction",
+          "query-view",
+          "page"
+        ]
+      },
+      {
+        "interface": "latent:intents/staging@0.1.0",
+        "source": "wit/platform/intents/package.wit",
+        "sourceSha256": "sha256:182a2a982c470a4bd8603fba8d3e2e54e93a167dda2501de02c77b10066ea636",
+        "operations": [
+          {
+            "name": "stage",
+            "asynchronous": true
+          }
+        ],
+        "ownedResources": []
+      }
+    ],
+    "explicitResourceDrop": true,
+    "implicitReplay": false,
+    "executionQualified": false,
+    "executionOwnerIssues": [
+      389,
+      718
+    ]
+  },
+  "externalClient": {
+    "profile": "latent.client.transaction.v1",
+    "requiredServices": [
+      {
+        "service": "latent.transaction.v1.TransactionService",
+        "source": "api/proto/latent/transaction/v1/transaction.proto",
+<<<<<<< HEAD
+        "sourceSha256": "sha256:d6ec8c0bc77c032933a0d2bf01807f3bc91bed360197e371a739ecc90b8b4620",
+=======
+        "sourceSha256": "sha256:bd84dd30f70d9281d3ef067b61eece0a56d65f6494d3e6fcb599b79cf0011db3",
+>>>>>>> 7ccc3291d22a78644f059beaea2bf5067bd364ed
+        "operations": [
+          {
+            "name": "InvokeCommand",
+            "request": "InvokeCommandRequest",
+            "response": "InvokeCommandResponse"
+          },
+          {
+            "name": "Query",
+            "request": "QueryRequest",
+            "response": "QueryResponse"
+          },
+          {
+            "name": "LookupCommand",
+            "request": "LookupCommandRequest",
+            "response": "LookupCommandResponse"
+          },
+          {
+            "name": "LookupCommit",
+            "request": "LookupCommitRequest",
+            "response": "LookupCommitResponse"
+          },
+          {
+            "name": "GetEffect",
+            "request": "GetEffectRequest",
+            "response": "GetEffectResponse"
+          },
+          {
+            "name": "ListEffectHistory",
+            "request": "ListEffectHistoryRequest",
+            "response": "ListEffectHistoryResponse"
+          },
+          {
+            "name": "CancelCommand",
+            "request": "CancelCommandRequest",
+            "response": "CancelCommandResponse"
+          }
+        ],
+        "messages": [
+          "TransactionProfile",
+          "NamespaceSelector",
+          "CommandSelector",
+          "CommandKey",
+          "ExpectedVersion",
+          "InvokeCommandRequest",
+          "RetryAttempt",
+          "AbortFence",
+          "SourceIdentity",
+          "CommitReceipt",
+          "LinkedRetention",
+          "CommandInspection",
+          "InvokeCommandResponse",
+          "LookupCommandRequest",
+          "LookupCommitRequest",
+          "QueryRequest",
+          "ViewIdentity",
+          "QueryResponse",
+          "PageRequest",
+          "PageResponse",
+          "EffectReceipt",
+          "GetEffectRequest",
+          "ListEffectHistoryRequest",
+          "ListEffectHistoryResponse",
+          "CancelCommandRequest",
+          "CancelCommandResponse",
+          "LookupCommandResponse",
+          "LookupCommitResponse",
+          "GetEffectResponse"
+        ],
+        "enums": [
+          "CommandOutcome",
+          "EffectDisposition",
+          "CommandCancelDisposition"
+        ]
+      },
+      {
+        "service": "latent.control.v1.StateService",
+        "source": "api/proto/latent/control/v1/state.proto",
+<<<<<<< HEAD
+        "sourceSha256": "sha256:f2f98d9974ef0afe014b30978eacee03310bb86f25d70cefb7e8591130e19901",
+=======
+        "sourceSha256": "sha256:ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
+>>>>>>> 7ccc3291d22a78644f059beaea2bf5067bd364ed
+        "operations": [
+          {
+            "name": "MutateNamespace",
+            "request": "MutateNamespaceRequest",
+            "response": "MutateNamespaceResponse"
+          },
+          {
+            "name": "InspectNamespace",
+            "request": "InspectNamespaceRequest",
+            "response": "InspectNamespaceResponse"
+          },
+          {
+            "name": "SelectEntity",
+            "request": "SelectEntityRequest",
+            "response": "SelectEntityResponse"
+          },
+          {
+            "name": "MutateState",
+            "request": "MutateStateRequest",
+            "response": "MutateStateResponse"
+          },
+          {
+            "name": "PlanEffectMutation",
+            "request": "PlanEffectMutationRequest",
+            "response": "PlanEffectMutationResponse"
+          },
+          {
+            "name": "GetStateOperationReceipt",
+            "request": "GetStateOperationReceiptRequest",
+            "response": "GetStateOperationReceiptResponse"
+          }
+        ],
+        "messages": [
+          "InspectNamespaceRequest",
+          "NamespaceQuota",
+          "NamespaceConfiguration",
+          "NamespaceInspection",
+          "MutateNamespaceRequest",
+          "NamespaceOperationReceipt",
+          "MutateNamespaceResponse",
+          "SelectEntityRequest",
+          "EntityInspection",
+          "SelectEntityResponse",
+          "PlanEffectMutationRequest",
+          "EffectManagementPlan",
+          "PlanEffectMutationResponse",
+          "EffectManagementReceiptDetails",
+          "MutateStateRequest",
+          "StateOperationReceipt",
+          "GetStateOperationReceiptRequest",
+          "InspectNamespaceResponse",
+          "MutateStateResponse",
+          "GetStateOperationReceiptResponse"
+        ],
+        "enums": [
+          "NamespaceStatus",
+          "NamespaceMutationKind",
+          "StateOperationDisposition",
+<<<<<<< HEAD
+          "StateMutationKind",
+          "EffectPlanSafety",
+          "EffectManagementFact"
+=======
+          "StateMutationKind"
+>>>>>>> 7ccc3291d22a78644f059beaea2bf5067bd364ed
+        ]
+      },
+      {
+        "service": "latent.control.v1.DispatcherService",
+        "source": "api/proto/latent/control/v1/dispatcher.proto",
+        "sourceSha256": "sha256:ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6",
+        "operations": [
+          {
+            "name": "InspectDispatcher",
+            "request": "InspectDispatcherRequest",
+            "response": "InspectDispatcherResponse"
+          },
+          {
+            "name": "ControlDispatcher",
+            "request": "ControlDispatcherRequest",
+            "response": "ControlDispatcherResponse"
+          },
+          {
+            "name": "GetDispatcherOperation",
+            "request": "GetDispatcherOperationRequest",
+            "response": "GetDispatcherOperationResponse"
+          }
+        ],
+        "messages": [
+          "DispatcherGeneration",
+          "InspectDispatcherRequest",
+          "DispatcherSnapshot",
+          "InspectDispatcherResponse",
+          "ControlDispatcherRequest",
+          "DispatcherOperationReceipt",
+          "ControlDispatcherResponse",
+          "GetDispatcherOperationRequest",
+          "GetDispatcherOperationResponse"
+        ],
+        "enums": [
+          "DispatcherScope",
+          "DispatcherAction",
+          "DispatcherFailure"
+        ]
+      }
+    ],
+    "supportingSources": [
+      {
+        "source": "api/proto/latent/control/v1/common.proto",
+        "sourceSha256": "sha256:9433f47d1ae62dd09bbfc55e8a43f411897a0ffc6dc51919adc0ff4df9564085"
+      },
+      {
+        "source": "api/proto/latent/control/v1/audit.proto",
+        "sourceSha256": "sha256:4e22133c96a9a28407334970cd326596131f06384516403aa3cad522f4b94918"
+      }
+    ],
+    "requiredHttpEnvelopes": [
+      "command",
+      "query",
+      "recovery",
+      "response"
+    ],
+    "applicationSchema": "schemas/transaction-api.schema.json",
+    "managementAuthority": "current-authenticated-host-policy",
+    "implicitReplay": false,
+    "transportExecutionQualified": false,
+    "executionOwnerIssues": [
+      401
+    ]
+  },
+  "independentQualification": true,
+  "runtimeInstallation": false
+}
