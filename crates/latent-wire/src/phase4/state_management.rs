@@ -229,7 +229,14 @@ impl StateManagementBackend {
             let binding = binding.ok_or_else(invalid)?;
             let access =
                 authorization::authorize(&self.0.services, &binding, &context, &request, deadline)
-                    .await?;
+                    .await
+                    .map_err(|error| {
+                        #[cfg(test)]
+                        if effect_read::handles(&request) {
+                            eprintln!("effect-read denied at original namespace authorization");
+                        }
+                        error
+                    })?;
             if effect_read::handles(&request) {
                 return effect_read::execute(
                     Arc::clone(&self.0),
