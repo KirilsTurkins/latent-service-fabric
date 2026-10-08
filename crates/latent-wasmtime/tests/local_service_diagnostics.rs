@@ -20,7 +20,8 @@ use support::{detail_error, error, failed, FakeCompletion, FakeInvoker};
 #[test]
 fn signature_resource_limit_preserves_the_actual_constructor_and_refuses_other_shapes() {
     let original: latent_core::PlatformError =
-        latent_signing::SignatureError::from(latent_signing::SignatureFailure::ResourceLimit).into();
+        latent_signing::SignatureError::from(latent_signing::SignatureFailure::ResourceLimit)
+            .into();
     assert_eq!(original.code, PlatformErrorCode::ResourceExhausted);
     assert!(!original.retryable);
     assert!(original.details.is_empty());
