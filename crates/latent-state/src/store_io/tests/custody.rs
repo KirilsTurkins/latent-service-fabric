@@ -235,6 +235,16 @@ fn detached_custody_destructor_keeps_original_global_reservation_and_gate_charge
     );
     gate.release(ticket).unwrap();
     metadata_retired(&owner);
+    // Zero metadata precedes the final positive witness publication. Observe
+    // that pre-issued signal within the unchanged real-clock watchdog.
+    let deadline = Instant::now() + WATCHDOG;
+    while !witness.has_retired() {
+        assert!(
+            Instant::now() < deadline,
+            "actual custody witness did not retire"
+        );
+        std::thread::yield_now();
+    }
     assert!(witness.has_retired());
     assert!(weak.upgrade().is_none());
     assert_eq!(native.snapshot().unwrap().recovery.slots, 0);
