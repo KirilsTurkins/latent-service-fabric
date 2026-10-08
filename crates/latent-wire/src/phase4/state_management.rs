@@ -3,6 +3,7 @@ mod audit;
 mod authorization;
 mod clock;
 mod dispatcher;
+mod effect_read;
 mod effects;
 mod entities;
 mod floor_release;
@@ -229,6 +230,11 @@ impl StateManagementBackend {
             let access =
                 authorization::authorize(&self.0.services, &binding, &context, &request, deadline)
                     .await?;
+            if effect_read::handles(&request) {
+                return self
+                    .read_effect(context, request, access, permit, deadline)
+                    .await;
+            }
             if effects::handles(&request) {
                 return effects::execute(
                     Arc::clone(&self.0),
@@ -301,6 +307,24 @@ impl StateManagementBackend {
                 _ => Err(unsupported()),
             }
         })
+    }
+    async fn read_effect(
+        &self,
+        context: AuthenticatedInvocationContext,
+        request: contract::Request,
+        access: authorization::Access,
+        permit: Arc<dyn StateManagementReservation>,
+        deadline: Instant,
+    ) -> Result<OwnedPhase4Response, PlatformError> {
+        effect_read::execute(
+            Arc::clone(&self.0),
+            context,
+            request,
+            access,
+            permit,
+            deadline,
+        )
+        .await
     }
     /// Closed installed management-receipt codec for the same protected view.
     /// It never supplies mutation, artifact or recovery authority.
@@ -414,10 +438,17 @@ impl StateManagementBackend {
         {
             return Err(denied());
         }
-        self.0
-            .services
-            .authorization
-            .authorize(principal, ManagementOperation::Tenant)?;
+        if effect_read::handles(request) {
+            crate::invocation::PrincipalPolicy::authenticate(
+                &crate::invocation::LocalPrincipalPolicy,
+                principal,
+            )?;
+        } else {
+            self.0
+                .services
+                .authorization
+                .authorize(principal, ManagementOperation::Tenant)?;
+        }
         let publication = target.publication;
         let binding = self
             .0
@@ -452,6 +483,21 @@ struct RequestedTarget<'a> {
     publication: &'a c::PublicationRef,
 }
 fn target(request: &contract::Request) -> Result<RequestedTarget<'_>, PlatformError> {
+    if let Some(effect) = effect_read::original(request) {
+        return Ok(RequestedTarget {
+            namespace: effect
+                .command
+                .as_ref()
+                .ok_or_else(invalid)?
+                .namespace
+                .as_ref()
+                .ok_or_else(invalid)?,
+            publication: effect
+                .authorization_publication
+                .as_ref()
+                .ok_or_else(invalid)?,
+        });
+    }
     if let contract::Request::PlanEffectMutation(value) = request {
         let effect = value.effect.as_ref().ok_or_else(invalid)?;
         return Ok(RequestedTarget {
