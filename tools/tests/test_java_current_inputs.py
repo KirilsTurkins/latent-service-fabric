@@ -129,5 +129,49 @@ class CurrentJavaPackaging(unittest.TestCase):
                     packaging.package_current(choices if len(items) == 2 else choices[:1], Path("output"), Path("contracts"), Path("signer"))
 
 
+class CurrentJavaCampaign(unittest.TestCase):
+    def document(self):
+        rows = [{"sourceCommit": "1" * 40, "variant": name,
+                 "reportDigest": "sha256:" + str(index) * 64,
+                 "componentDigest": "sha256:" + str(index) * 64,
+                 "compilerInputsDigest": "sha256:" + "a" * 64}
+                for index, name in enumerate(current.NAMES, start=1)]
+        return {"schemaVersion": "latent.java.current-campaign-selections.v1", "selections": rows}
+
+    def test_current_campaign_requires_all_six_distinct_explicit_captures_with_original_digest(self):
+        from pathlib import Path
+        import tempfile
+        from tools.java_transaction_qualification import current_campaign
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "selected.json"
+            raw = encoded(self.document())
+            path.write_bytes(raw)
+            result = current_campaign.selections(root, path, digest(raw))
+            self.assertEqual({row.variant for _directory, row in result}, set(current.NAMES))
+            self.assertEqual({row.source_commit for _directory, row in result}, {"1" * 40})
+            self.assertEqual(path.read_bytes(), raw)
+            with self.assertRaises(ValueError):
+                current_campaign.selections(root, path, "sha256:" + "f" * 64)
+
+    def test_current_campaign_refuses_partial_duplicate_mixed_source_or_claimed_authority(self):
+        from pathlib import Path
+        import tempfile
+        from tools.java_transaction_qualification import current_campaign
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "selected.json"
+            for name in ("missing", "duplicate", "mixed", "authority"):
+                value = self.document()
+                if name == "missing": value["selections"].pop()
+                elif name == "duplicate": value["selections"][1] = value["selections"][0]
+                elif name == "mixed": value["selections"][1]["sourceCommit"] = "2" * 40
+                else: value["selections"][0]["signedNodeExecutionQualified"] = True
+                raw = encoded(value)
+                path.write_bytes(raw)
+                with self.subTest(change=name), self.assertRaises(ValueError):
+                    current_campaign.selections(root, path, digest(raw))
+
+
 if __name__ == "__main__":
     unittest.main()
