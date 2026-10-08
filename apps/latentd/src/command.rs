@@ -80,10 +80,19 @@ fn run_inspection(path: &std::path::Path) -> Result<(), Failure> {
         .and_then(|value| value.derive())
         .map_err(|error| Failure::new("configuration", error.code))?;
     let grace = settings.shutdown_grace;
+    let threads = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let started = std::sync::Arc::clone(&threads);
+    let stopped = std::sync::Arc::clone(&threads);
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(settings.control_workers)
         .max_blocking_threads(settings.control_blocking_threads())
         .thread_name("latent-inspection")
+        .on_thread_start(move || {
+            started.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        })
+        .on_thread_stop(move || {
+            stopped.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+        })
         .enable_all()
         .build()
         .map_err(|_| Failure::new("runtime", PlatformErrorCode::Unavailable))?;
@@ -96,6 +105,12 @@ fn run_inspection(path: &std::path::Path) -> Result<(), Failure> {
         )
         .map_err(|error| Failure::new("inspection", error.code));
     runtime.shutdown_timeout(grace);
+    if threads.load(std::sync::atomic::Ordering::SeqCst) != 0 {
+        return Err(Failure::new(
+            "runtime-shutdown",
+            PlatformErrorCode::DeadlineExceeded,
+        ));
+    }
     status::inspection(&result?)
 }
 #[cfg(not(target_os = "linux"))]
