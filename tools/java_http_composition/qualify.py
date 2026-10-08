@@ -283,6 +283,8 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                             ("nested", [{"value": wide, "optional": {"some": wide}, "labels": ["Gr\u00fc\u00dfe \U0001f600"]}]),
                             ("text", ["UTF-8 Gr\u00fc\u00dfe \U0001f600\u0000"]), ("items", [["a", "b", "\U0001f600"]])):
                         status, body, _ = request(host, "/api/" + path, method="POST", value=arguments)
+                        result.setdefault("safeTypedCalls", {})[path] = {
+                            "httpStatus": status, "bodyBase64": base64.b64encode(body).decode()}
                         require(status == 200 and json.loads(body) == arguments, "java-http-safe-typed-" + path)
                     for path in ("private-admin", "publishing", "provider-event", "missing"):
                         require(request(host, "/api/" + path)[0] == 404, "java-http-private-route-generated")
