@@ -242,6 +242,10 @@ class Compiler:
             else:
                 self.runtime_observation = runtime.check_derived_world(graph, actual, abi, world)
             self.runtime_observation['engineInput'] = self.engine_metadata
+            # The full clock type comparison is reused by both profiles. Its
+            # default clock-only label must not erase the explicit source-owned
+            # import compiler selection validated by this constructor.
+            self.runtime_observation['profile'] = self.runtime_profile
             if self.source_splicer_metadata is not None:
                 self.runtime_observation['compilerSplicerInput'] = self.source_splicer_metadata
             write_json(output/'typescript-runtime-selection.json', self.runtime_observation)
