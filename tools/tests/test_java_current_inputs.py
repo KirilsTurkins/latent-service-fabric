@@ -86,5 +86,33 @@ class CurrentJavaInputs(unittest.TestCase):
         with self.assertRaises(ValueError): current.validate_materials(files, replace(selected, report_digest=digest(files["report.json"])))
 
 
+class CurrentJavaPackaging(unittest.TestCase):
+    def test_current_selection_requires_both_original_and_forbidden_before_any_signing(self):
+        from pathlib import Path
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        files, selected = fixture()
+        with patch.object(current, "load_current", side_effect=AssertionError("must not load malformed selection")), \
+                patch.object(packaging, "_package_items", side_effect=AssertionError("must not sign malformed selection")):
+            for value in ([], (), ("guessed",), ((Path("one"), "guessed"),)):
+                with self.subTest(selection=value), self.assertRaises(ValueError):
+                    packaging.package_current(value, Path("output"), Path("contracts"), Path("signer"))
+
+    def test_duplicate_variant_or_mixed_source_refuses_without_invoking_signer(self):
+        from pathlib import Path
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        from tools.java_transaction_qualification.inputs import ComponentInput
+        _, selected = fixture()
+        first = ComponentInput("aggregate", Path("one"), "sha256:" + "1" * 64, "companion", "source", "1" * 40, "abi", None)
+        negative = ComponentInput("forbidden-http", Path("two"), "sha256:" + "2" * 64, "companion", "source", "2" * 40, "abi", None)
+        choices = ((Path("one"), selected), (Path("two"), replace(selected, variant="forbidden-http")))
+        for items in ((first, first), (first, negative), (first,)):
+            with self.subTest(items=items), patch.object(current, "load_current", side_effect=items), \
+                    patch.object(packaging, "_package_items", side_effect=AssertionError("must not sign mismatched originals")):
+                with self.assertRaises(ValueError):
+                    packaging.package_current(choices if len(items) == 2 else choices[:1], Path("output"), Path("contracts"), Path("signer"))
+
+
 if __name__ == "__main__":
     unittest.main()
