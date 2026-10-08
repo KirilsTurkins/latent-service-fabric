@@ -17,11 +17,14 @@ use latent_state::{
     namespace::catalog::NamespaceRead,
     protected_store::ProtectedStoreView,
 };
+use prost::Message;
+use sha2::{Digest, Sha256};
 use std::sync::Mutex;
 
 pub(super) fn original(request: &contract::Request) -> Option<&t::GetEffectRequest> {
     match request {
         contract::Request::GetEffect(value) => Some(value),
+        contract::Request::ListEffectHistory(value) => value.effect.as_ref(),
         _ => None,
     }
 }
@@ -118,6 +121,12 @@ pub(super) async fn execute(
     deadline: Instant,
 ) -> Result<OwnedPhase4Response, PlatformError> {
     let original = original(&request).ok_or_else(invalid)?.clone();
+    let page = match &request {
+        contract::Request::ListEffectHistory(value) => {
+            Some(value.page.as_ref().ok_or_else(invalid)?.clone())
+        }
+        _ => None,
+    };
     let command = original.command.as_ref().ok_or_else(invalid)?;
     let caller =
         recovery_bindings::scope(&inner, &context, command.shared_recovery_scope.as_deref())?;
@@ -159,7 +168,20 @@ pub(super) async fn execute(
         .services
         .store
         .with_view(view, WORK_BYTES as u64, move |view| {
-            let result = inspect_in(view, &worker, &original);
+            let result = inspect_in(view, &worker, &original).and_then(|result| match result {
+                Ok((read, effect)) => {
+                    let response = if let Some(page) = &page {
+                        history_in(view, &worker, &read, &original, effect, page)
+                    } else {
+                        Ok(t::GetEffectResponse {
+                            effect: Some(effect),
+                        }
+                        .into())
+                    };
+                    Ok(response.map(|response| (read, response)))
+                }
+                Err(error) => Ok(Err(error)),
+            });
             let finish = pending.finish(
                 if result.as_ref().is_ok_and(Result::is_ok) {
                     latent_audit::AuditOperationResult::Committed
@@ -176,11 +198,7 @@ pub(super) async fn execute(
     let (view, result) = job.await.map_err(io_error)?;
     let (result, finish) = result.map_err(protected_error)?;
     inspection::read_ack(finish).await?;
-    let (read, effect) = result?;
-    let response: contract::Response = t::GetEffectResponse {
-        effect: Some(effect),
-    }
-    .into();
+    let (read, response) = result?;
     let needed = response
         .encoded_len()
         .checked_mul(4)
@@ -342,4 +360,136 @@ fn disposition(value: Disposition) -> t::EffectDisposition {
         Disposition::Expired => t::EffectDisposition::Expired,
         Disposition::DeadLettered => t::EffectDisposition::DeadLettered,
     }
+}
+
+fn cursor_binding(keeper: &Keeper, request: &t::GetEffectRequest) -> [u8; 32] {
+    let mut hash = Sha256::new();
+    hash.update(b"lsf-effect-history-rpc-cursor-v1\0");
+    hash.update(request.encode_to_vec());
+    for text in [
+        &keeper.caller.owner_kind,
+        &keeper.caller.scope,
+        &keeper.access.binding.result_policy,
+        &keeper.access.binding.state.configuration_digest,
+    ] {
+        hash.update((text.len() as u64).to_le_bytes());
+        hash.update(text.as_bytes());
+    }
+    hash.update(
+        keeper
+            .access
+            .binding
+            .state
+            .configuration_epoch
+            .to_le_bytes(),
+    );
+    hash.finalize().into()
+}
+fn history_in(
+    view: &ReadView,
+    keeper: &Keeper,
+    read: &NamespaceRead,
+    original: &t::GetEffectRequest,
+    current: t::EffectReceipt,
+    page: &t::PageRequest,
+) -> Result<contract::Response, PlatformError> {
+    let version =
+        inspection::namespace_view(view, read.record()).map_err(|_| super::unsupported())?;
+    let binding = cursor_binding(keeper, original);
+    let after = if let Some(raw) = &page.cursor {
+        let length = 3 + 32 + version.len() + 8;
+        if raw.len() != length
+            || &raw[..3] != b"EH\x01"
+            || raw[3..35] != binding
+            || raw[35..35 + version.len()] != version
+        {
+            return Err(invalid());
+        }
+        let sequence = u64::from_be_bytes(
+            raw[35 + version.len()..]
+                .try_into()
+                .map_err(|_| invalid())?,
+        );
+        let key = latent_effects::dispatch_store::HistoryRecord {
+            sequence,
+            effect: original.effect_id.clone(),
+            attempt: None,
+            receipt: latent_effects::dispatch::AttemptReceipt {
+                disposition: Disposition::Pending,
+                reason: "cursor-position".into(),
+                provider_receipt: None,
+                observed_at_millis: 1,
+            },
+        }
+        .key()
+        .map_err(|_| invalid())?;
+        Some(key.key)
+    } else {
+        None
+    };
+    keeper.current(read, &mut || {})?;
+    let history = latent_effects::dispatch_store::DispatchCatalog::history_page(
+        view,
+        &original.effect_id,
+        after.as_deref(),
+        page.limit as usize,
+        contract::MAX_PAGE_BYTES,
+    )
+    .map_err(|_| super::unsupported())?;
+    let mut rows = Vec::with_capacity(history.rows.len());
+    for row in history.rows {
+        if row.effect != original.effect_id {
+            return Err(super::unsupported());
+        }
+        if let Some(attempt) = &row.attempt {
+            if attempt.effect() != original.effect_id
+                || attempt.attempt() > current.dispatch_attempt
+                || attempt.owner_epoch() == 0
+                || attempt.claim_generation() == 0
+            {
+                return Err(super::unsupported());
+            }
+        }
+        let mut item = current.clone();
+        item.disposition = disposition(row.receipt.disposition) as i32;
+        item.provider_receipt = row.receipt.provider_receipt;
+        item.failure_code = Some(row.receipt.reason);
+        item.occurred_at_unix_millis = row.receipt.observed_at_millis;
+        item.record_version.clear();
+        item.management_operation_receipt_id = None;
+        item.dispatch_attempt = row.attempt.as_ref().map_or(0, |a| a.attempt());
+        item.owner_epoch = row.attempt.as_ref().map(|a| a.owner_epoch());
+        item.claim_generation = row.attempt.as_ref().map(|a| a.claim_generation());
+        rows.push(item);
+    }
+    let next = history
+        .resume
+        .map(|after| {
+            let sequence = after
+                .get(after.len().checked_sub(8).ok_or_else(invalid)?..)
+                .ok_or_else(invalid)?;
+            let mut raw = Vec::with_capacity(3 + 32 + version.len() + 8);
+            raw.extend_from_slice(b"EH\x01");
+            raw.extend_from_slice(&binding);
+            raw.extend_from_slice(&version);
+            raw.extend_from_slice(sequence);
+            Ok(raw)
+        })
+        .transpose()?;
+    let encoded = rows.iter().try_fold(0usize, |sum, row| {
+        sum.checked_add(row.encoded_len()).ok_or_else(capacity)
+    })?;
+    if encoded > contract::MAX_PAGE_BYTES {
+        return Err(capacity());
+    }
+    keeper.current(read, &mut || {})?;
+    Ok(t::ListEffectHistoryResponse {
+        page: Some(t::PageResponse {
+            next_cursor: next,
+            returned_count: rows.len() as u32,
+            encoded_bytes: encoded as u64,
+        }),
+        receipts: rows,
+    }
+    .into())
 }

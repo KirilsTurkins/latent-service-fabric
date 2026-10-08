@@ -44,6 +44,36 @@ async fn direct_effect_inspection_requires_original_caller_link_and_current_read
         .execute_state(operator("alice"), foreign.into())
         .await
         .is_err());
+    let history = latent_rpc::transaction::v1::ListEffectHistoryRequest {
+        effect: Some(request.clone()),
+        page: Some(latent_rpc::transaction::v1::PageRequest {
+            limit: 1,
+            cursor: None,
+        }),
+    };
+    let page = effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), history.clone().into())
+        .await
+        .unwrap();
+    let contract::Response::ListEffectHistory(value) = &page.response else {
+        panic!("history page required");
+    };
+    assert!(value.receipts.is_empty());
+    assert_eq!(value.page.as_ref().unwrap().returned_count, 0);
+    contract::Response::ListEffectHistory(value.clone())
+        .validate_for(&contract::Request::from(history.clone()))
+        .unwrap();
+    drop(page);
+    let mut cursor = history;
+    cursor.page.as_mut().unwrap().cursor = Some(vec![7; 110]);
+    assert!(effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), cursor.into())
+        .await
+        .is_err());
     effect.fixture.update(None, "revoke-original-effect-read");
     assert!(response.owner.with_current(&mut || {}).is_err());
     drop(response);
