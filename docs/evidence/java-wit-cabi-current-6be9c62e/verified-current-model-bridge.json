@@ -1,0 +1,255 @@
+{
+  "status": "passed",
+  "currentSource": "6be9c62e6ef363e4057e12db110ba31c50c86104",
+  "originalHostedRun": 36778196735,
+  "originalHostedAggregateConclusion": "failure",
+  "sourceDigest": "sha256:266dd9e794b89475d6391270adee411b52affdc0ec011a299794b64ded890a37",
+  "actualNineParserCAbiCasesVerified": 9,
+  "caseProofs": [
+    {
+      "case": "shared-types",
+      "originalActualParserAndCAbiBytesVerified": true,
+      "currentJavaAndCOutputsEqualBothOriginalExecutions": true,
+      "actualOutputFootprint": "sha256:fff5250cacd62bb97ef89ab3ce8b6c8cab6b4c067bf70c46c2115bd9bca44e93"
+    },
+    {
+      "case": "inclusion",
+      "originalActualParserAndCAbiBytesVerified": true,
+      "currentJavaAndCOutputsEqualBothOriginalExecutions": true,
+      "actualOutputFootprint": "sha256:d657261bf5cf5591806bd00f3fd473e15c559b48f7908ffc6302c896e3e704db"
+    },
+    {
+      "case": "multiple-exports",
+      "actualOriginalParserGraphVerified": true,
+      "currentExactUnsupportedBoundaryRefused": true
+    },
+    {
+      "case": "aliases",
+      "actualOriginalParserGraphVerified": true,
+      "currentExactUnsupportedBoundaryRefused": true
+    },
+    {
+      "case": "versions",
+      "actualOriginalParserGraphVerified": true,
+      "currentExactUnsupportedBoundaryRefused": true
+    },
+    {
+      "case": "names",
+      "actualOriginalParserGraphVerified": true,
+      "currentExactUnsupportedBoundaryRefused": true
+    },
+    {
+      "case": "public-resources",
+      "actualOriginalParserGraphVerified": true,
+      "currentExactUnsupportedBoundaryRefused": true
+    },
+    {
+      "case": "future",
+      "actualOriginalParserGraphVerified": true,
+      "currentExactUnsupportedBoundaryRefused": true
+    },
+    {
+      "case": "malformed",
+      "actualOriginalParserRefused": true,
+      "currentInputBytesMatchOriginal": true,
+      "currentModelRun": "no-original-graph"
+    }
+  ],
+  "allRetainedCommandLogsVerified": [
+    {
+      "path": "shared-types\\0-wit-graph.stdout.log",
+      "bytes": 1648,
+      "digest": "sha256:1d54624d1218bf67b41cb768f13270df99c8a2ce3f18a973c62c1b206765b9c9"
+    },
+    {
+      "path": "shared-types\\0-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "shared-types\\1-wit-bindings.stdout.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "shared-types\\1-wit-bindings.stderr.log",
+      "bytes": 441,
+      "digest": "sha256:4eeefdb3fb2c9cc7ad46ee1c0b2212754c69695570ff69e0c5563568b5c4e6cd"
+    },
+    {
+      "path": "shared-types\\2-bindings-metadata.stdout.log",
+      "bytes": 412,
+      "digest": "sha256:ba116d80a29addc9cc8f74cfeebffe095be5f141611c307a0c98759332a1fe49"
+    },
+    {
+      "path": "shared-types\\2-bindings-metadata.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "shared-types\\3-wit-graph.stdout.log",
+      "bytes": 1648,
+      "digest": "sha256:1d54624d1218bf67b41cb768f13270df99c8a2ce3f18a973c62c1b206765b9c9"
+    },
+    {
+      "path": "shared-types\\3-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "shared-types\\4-wit-bindings.stdout.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "shared-types\\4-wit-bindings.stderr.log",
+      "bytes": 435,
+      "digest": "sha256:a6df6341429611693f0d9c3265ebf8599287915ce60b4eea0acbcdf237b417b7"
+    },
+    {
+      "path": "shared-types\\5-bindings-metadata.stdout.log",
+      "bytes": 412,
+      "digest": "sha256:ba116d80a29addc9cc8f74cfeebffe095be5f141611c307a0c98759332a1fe49"
+    },
+    {
+      "path": "shared-types\\5-bindings-metadata.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inclusion\\0-wit-graph.stdout.log",
+      "bytes": 983,
+      "digest": "sha256:65c54b459b0b6d815d793ed760a60bcfb7cbf049eca35032d1602827ba520a1d"
+    },
+    {
+      "path": "inclusion\\0-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inclusion\\1-wit-bindings.stdout.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inclusion\\1-wit-bindings.stderr.log",
+      "bytes": 432,
+      "digest": "sha256:af55881fe158f4aecaa3a7a7f360264584ef99a810dea6803c1c0741b18bc240"
+    },
+    {
+      "path": "inclusion\\2-bindings-metadata.stdout.log",
+      "bytes": 212,
+      "digest": "sha256:b9eab58baa4240575f56c9df832f1953798d3c4a2850473956a030816a742352"
+    },
+    {
+      "path": "inclusion\\2-bindings-metadata.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inclusion\\3-wit-graph.stdout.log",
+      "bytes": 983,
+      "digest": "sha256:65c54b459b0b6d815d793ed760a60bcfb7cbf049eca35032d1602827ba520a1d"
+    },
+    {
+      "path": "inclusion\\3-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inclusion\\4-wit-bindings.stdout.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "inclusion\\4-wit-bindings.stderr.log",
+      "bytes": 426,
+      "digest": "sha256:e542c2728b5d9022673d358f84ee084669d55c1b9bf2b2f3bcdb0d9a139937f9"
+    },
+    {
+      "path": "inclusion\\5-bindings-metadata.stdout.log",
+      "bytes": 212,
+      "digest": "sha256:b9eab58baa4240575f56c9df832f1953798d3c4a2850473956a030816a742352"
+    },
+    {
+      "path": "inclusion\\5-bindings-metadata.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "multiple-exports\\0-wit-graph.stdout.log",
+      "bytes": 1032,
+      "digest": "sha256:43bf1633111b0649ad3f6ba6615212d6c839d4020220bac3e188abb807416ed6"
+    },
+    {
+      "path": "multiple-exports\\0-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "aliases\\0-wit-graph.stdout.log",
+      "bytes": 1222,
+      "digest": "sha256:03d4bc8eed2eb37ae1d721993cf4c1b770b0c4b0bf30c1597f7a0db001698490"
+    },
+    {
+      "path": "aliases\\0-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "versions\\0-wit-graph.stdout.log",
+      "bytes": 1609,
+      "digest": "sha256:09cc48edee68fcf53e1f355af5ca1c07c8aaf122ff92969014f3fd68b2b825fb"
+    },
+    {
+      "path": "versions\\0-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "names\\0-wit-graph.stdout.log",
+      "bytes": 1608,
+      "digest": "sha256:090269a3439b8be3efe4f473725d002b6277faa22c03818718f86af084cc9a75"
+    },
+    {
+      "path": "names\\0-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public-resources\\0-wit-graph.stdout.log",
+      "bytes": 1033,
+      "digest": "sha256:fd329033e2bc7255e9eb896204136fa8320d12bbcdd703779497cdfcf6a22633"
+    },
+    {
+      "path": "public-resources\\0-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "future\\0-wit-graph.stdout.log",
+      "bytes": 770,
+      "digest": "sha256:17fe299a529415822843f96793c67172faf7a068dc12c91ab2c7edf381be2f0d"
+    },
+    {
+      "path": "future\\0-wit-graph.stderr.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "malformed\\0-wit-graph.stdout.log",
+      "bytes": 0,
+      "digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "malformed\\0-wit-graph.stderr.log",
+      "bytes": 381,
+      "digest": "sha256:12d262385cfaae4e5c6c2a65298aecf65692583cb5d89a1aebc4f4c867b9aab3"
+    }
+  ],
+  "currentModelAndCodeGeneratorsExecuted": true,
+  "newParserOrCompilerExecutionClaimed": false,
+  "oldReceiptRelabeled": false,
+  "wholeCurrentCI": false,
+  "guestExecutionQualified": false
+}
