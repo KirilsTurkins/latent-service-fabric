@@ -148,26 +148,11 @@ fn sign_loaded(
     };
     // Keys are generated only AFTER every build input is read and checked. No
     // compiler runs in this process; private keys are never written or printed.
-    let publisher_key = generate_signing_key()?;
-    let publisher_public = *publisher_key.public_key();
-    let publisher = LocalSigner::from_pkcs8(
-        publisher_key.into_pkcs8(),
-        PublisherId(PUBLISHER.into()),
-        publisher_public,
+    let (publisher, publisher_public) = demo_publisher()?;
+    let builders = demo_builders(
+        if separate_builders { builds.len() } else { 1 },
+        separate_builders,
     )?;
-    let builders = (0..if separate_builders { builds.len() } else { 1 })
-        .map(|ordinal| {
-            let id = if separate_builders {
-                format!("{BUILDER}-{:02}", ordinal + 1)
-            } else {
-                BUILDER.to_owned()
-            };
-            let key = generate_signing_key()?;
-            let public = *key.public_key();
-            let signer = LocalBuilderSigner::from_pkcs8(key.into_pkcs8(), id.clone(), public)?;
-            Ok((id, public, signer))
-        })
-        .collect::<Result<Vec<_>>>()?;
     let assignments = builds
         .iter()
         .enumerate()
@@ -265,4 +250,29 @@ fn sign_loaded(
     )?;
     println!("{}", serde_json::to_string(&record)?);
     Ok(())
+}
+
+fn demo_publisher() -> Result<(LocalSigner, [u8; 32])> {
+    let key = generate_signing_key()?;
+    let public = *key.public_key();
+    let signer = LocalSigner::from_pkcs8(key.into_pkcs8(), PublisherId(PUBLISHER.into()), public)?;
+    Ok((signer, public))
+}
+fn demo_builders(
+    count: usize,
+    separated: bool,
+) -> Result<Vec<(String, [u8; 32], LocalBuilderSigner)>> {
+    (0..count)
+        .map(|ordinal| {
+            let id = if separated {
+                format!("{BUILDER}-{:02}", ordinal + 1)
+            } else {
+                BUILDER.to_owned()
+            };
+            let key = generate_signing_key()?;
+            let public = *key.public_key();
+            let signer = LocalBuilderSigner::from_pkcs8(key.into_pkcs8(), id.clone(), public)?;
+            Ok((id, public, signer))
+        })
+        .collect()
 }

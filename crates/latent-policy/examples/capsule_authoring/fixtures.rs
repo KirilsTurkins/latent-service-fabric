@@ -158,7 +158,7 @@ fn check_model(root: &Path, fixture: &Fixture, compiler_source: &str) -> Result<
         (
             "compiler-report.json",
             &fixture.compiler_report_digest,
-            262144,
+            262_144,
         ),
     ] {
         if artifact_blob_digest(&read(root, name, bound)?).as_str() != digest {
@@ -169,7 +169,7 @@ fn check_model(root: &Path, fixture: &Fixture, compiler_source: &str) -> Result<
 }
 
 fn check_current_report(root: &Path, fixture: &Fixture) -> Result<()> {
-    let report: Value = serde_json::from_slice(&read(root, "compiler-report.json", 262144)?)?;
+    let report: Value = serde_json::from_slice(&read(root, "compiler-report.json", 262_144)?)?;
     check_report(&report, fixture)?;
     if report["recipeDigest"]
         != artifact_blob_digest(&read(root, "recipe-inputs.json", 4 * 1024 * 1024)?).as_str()
