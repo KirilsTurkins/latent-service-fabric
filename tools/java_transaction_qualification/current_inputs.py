@@ -7,6 +7,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import gzip
+import io
+import tarfile
 import re
 
 from tools.rust_capsule_project import checked_path, inventory, read_file, snapshot
@@ -69,6 +72,20 @@ def validate_materials(files: dict[str, bytes], selected: CurrentSelection) -> d
     for field, path in (("sourceDigest", "source-inputs.json"), ("sourceArchiveDigest", "source.tar.gz"),
                         ("recipeDigest", "recipe-inputs.json"), ("companionDigest", "project/transaction-binding.json")):
         require(path in files and digest(files[path]) == report.get(field), "current-java-compiler-material-identity")
+    try:
+        with gzip.GzipFile(fileobj=io.BytesIO(files["source.tar.gz"])) as compressed:
+            unpacked = compressed.read(128 * 1024 * 1024 + 1)
+        require(len(unpacked) <= 128 * 1024 * 1024, "current-java-source-archive-bound")
+        archived = {}
+        with tarfile.open(fileobj=io.BytesIO(unpacked), mode="r:") as source:
+            for member in source:
+                require(member.isfile() and member.type == tarfile.REGTYPE and member.name in project
+                        and member.name not in archived and member.size == len(project[member.name])
+                        and not member.pax_headers, "current-java-source-archive-members")
+                archived[member.name] = source.extractfile(member).read(member.size + 1)
+        require(archived == project, "current-java-source-archive-project-mismatch")
+    except (OSError, EOFError, tarfile.TarError) as error:
+        raise ValueError("current-java-source-archive-format") from error
     require(digest(files["compiler-inputs.json"]) == selected.compiler_inputs_digest,
             "current-java-compiler-closure-identity")
     profile = decode(project["transaction-profile.json"])

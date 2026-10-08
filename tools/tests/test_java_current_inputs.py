@@ -2,6 +2,9 @@
 import copy
 import json
 import unittest
+import io
+import gzip
+import tarfile
 from dataclasses import replace
 
 from tools.java_transaction_qualification import current_inputs as current
@@ -17,7 +20,14 @@ def fixture():
     project = {"transaction-binding.json": b"exact-companion", "transaction-profile.json": encoded({"hostAbiDigest": "sha256:" + "a" * 64})}
     component = b"\0asm\x0d\0\x01\0" + b"synthetic-test-input"
     files = {"project/" + name: raw for name, raw in project.items()}
-    files.update({"component.wasm": component, "source-inputs.json": inventory(project), "source.tar.gz": b"original-archive",
+    archive = io.BytesIO()
+    with gzip.GzipFile(fileobj=archive, mode="wb", mtime=0) as compressed:
+        with tarfile.open(fileobj=compressed, mode="w") as captured:
+            for name, raw in project.items():
+                entry = tarfile.TarInfo(name)
+                entry.size = len(raw)
+                captured.addfile(entry, io.BytesIO(raw))
+    files.update({"component.wasm": component, "source-inputs.json": inventory(project), "source.tar.gz": archive.getvalue(),
                   "recipe-inputs.json": b"original-recipe", "compiler-inputs.json": b"original-tools"})
     report = {"schemaVersion": "latent.transaction-guest.compiler.v1", "language": "java", "variant": "aggregate",
               "evidenceKind": "authored-component-compiler", "world": WORLD, "sourceRevision": "1" * 40,
