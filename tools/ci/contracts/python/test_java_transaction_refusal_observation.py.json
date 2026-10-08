@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "RefusalObservationOracle.test_expired_original_deadline_starts_no_observer_request",
+    "RefusalObservationOracle.test_failed_read_does_not_replace_original_http_refusal_or_repeat_request",
+    "RefusalObservationOracle.test_one_read_records_only_closed_phase_and_reason_without_payload_or_identity"
+  ],
+  "guards": {
+    "RefusalObservationOracle.test_expired_original_deadline_starts_no_observer_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fecf056b9ab024bb2b277a682643bab4edac1132584db7048e5987807c7d625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RefusalObservationOracle.test_failed_read_does_not_replace_original_http_refusal_or_repeat_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fecf056b9ab024bb2b277a682643bab4edac1132584db7048e5987807c7d625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RefusalObservationOracle.test_one_read_records_only_closed_phase_and_reason_without_payload_or_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4fecf056b9ab024bb2b277a682643bab4edac1132584db7048e5987807c7d625",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_refusal_observation.py",
+  "reviewReason": "Observe one bounded read-only activation history page after the original HTTP refusal, preserve the same deadline and failure, exclude payloads and caller identifiers, and refuse observer retries.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

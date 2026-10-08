@@ -80,7 +80,13 @@ class Campaign:
 
     def result(self, observed):
         require("body" in observed, "response-loss-cannot-supply-application-result")
-        return http.response(observed["status"], observed["body"], observed["headers"])
+        try:
+            return http.response(observed["status"], observed["body"], observed["headers"])
+        except ValueError:
+            if observed.get("status") in {400, 401, 403, 404, 405, 502}:
+                from .refusal_observation import observe
+                observe(self.client)
+            raise
 
     def query(self, count, *, minimum=None, original_key=None):
         value = self.result(self.socket("query", minimum=minimum, original_key=original_key))
