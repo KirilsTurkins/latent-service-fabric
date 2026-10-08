@@ -83,6 +83,25 @@ class SourceSnapshots(unittest.TestCase):
         with self.assertRaises(common.DevError):
             snapshot.observe(self.root, ["input"])
 
+    @unittest.skipUnless(os.name == "posix", "POSIX atomic replacement retires the opened inode")
+    def test_atomic_replacement_before_fstat_rejects_retired_reader_as_source_change(self):
+        self.write("input", b"original")
+        self.write("replacement", b"current")
+        original_open = os.open
+        def replace_after_open(name, *args, **kwargs):
+            descriptor = original_open(name, *args, **kwargs)
+            if name == "input" and "dir_fd" in kwargs:
+                os.replace(self.root / "replacement", self.root / "input")
+                self.assertEqual(os.fstat(descriptor).st_nlink, 0)
+            return descriptor
+        with patch.object(paths.os, "open", replace_after_open):
+            with self.assertRaisesRegex(common.DevError, "^source-changed-during-read$"):
+                paths.read(self.root, "input")
+        self.assertEqual(paths.read(self.root, "input"), b"current")
+        os.link(self.root / "input", self.root / "hardlink")
+        with self.assertRaisesRegex(common.DevError, "^single-link-regular-file-required$"):
+            paths.read(self.root, "input")
+
     def test_changed_transfer_is_not_coherent(self):
         self.write("input")
         original = paths.read

@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 final class ManagedExecutor extends AbstractExecutorService implements Activation.ManagedPool {
     private final int parallelism;
     private final ThreadFactory factory;
-    private final boolean cached;
     private final ArrayDeque<Item> queue = new ArrayDeque<>();
     private final ArrayList<Thread> workers = new ArrayList<>();
     private Activation.Lease owner;
@@ -30,13 +29,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     }
 
     ManagedExecutor(int parallelism, ThreadFactory factory) {
-        this(parallelism, factory, false);
-    }
-    ManagedExecutor(int parallelism, ThreadFactory factory, boolean cached) {
         if (parallelism <= 0) throw new IllegalArgumentException();
         this.parallelism = parallelism;
         this.factory = Objects.requireNonNull(factory);
-        this.cached = cached;
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
         try { Activation.manage(this); }
         catch (Throwable error) { owner.close(); owner = null; throw error; }
@@ -44,28 +39,26 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
 
     @Override public synchronized void execute(Runnable command) {
         Objects.requireNonNull(command);
-        Activation.Lease queued = null;
+        if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
+            throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+        Activation.Lease queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
         FutureTask<?> future = command instanceof FutureTask<?> ? (FutureTask<?>)command : null;
         boolean acceptedResult = false;
         Item item = null;
         boolean installed = false;
         try {
-            if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
-                throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
-            queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
             if (future != null) acceptedResult = future.accept();
             item = new Item(command, queued);
             queue.addLast(item);
             pendingWork++;
             installed = true;
-            if (workers.size() < parallelism && (!cached || queue.size() > workers.size() - running)) startWorker();
+            if (workers.size() < parallelism) startWorker();
             notifyAll();
         } catch (Throwable error) {
             if (!installed || queue.remove(item)) {
                 if (installed) pendingWork--;
-                if (queued != null) queued.close();
+                queued.close();
                 if (acceptedResult) future.rejectAcceptance();
-                CompletableFuture.rejectedBeforeAcceptance(command);
             }
             throw error;
         }
@@ -85,15 +78,11 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             while (true) {
                 Item item;
                 synchronized (this) {
-                    long idleStart = System.nanoTime();
                     while (queue.isEmpty() && !shutdown && !retiring) {
-                        try {
-                            if (cached) {
-                                long remaining = 60_000_000_000L - (System.nanoTime() - idleStart);
-                                if (remaining <= 0) return;
-                                wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
-                            } else wait();
-                        } catch (InterruptedException wake) { if (interrupting) return; }
+                        try (var wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait)) {
+                            try { wait(); }
+                            catch (InterruptedException wake) { if (interrupting) return; }
+                        }
                     }
                     if (queue.isEmpty()) return;
                     item = queue.removeFirst();
@@ -155,10 +144,12 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             if (isTerminated()) return true;
             if (Thread.interrupted()) throw new InterruptedException();
             if (nanos <= 0) return false;
-            while (!isTerminated()) {
-                long remaining = nanos - (System.nanoTime() - started);
-                if (remaining <= 0) return false;
-                wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
+            try (var wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait)) {
+                while (!isTerminated()) {
+                    long remaining = nanos - (System.nanoTime() - started);
+                    if (remaining <= 0) return false;
+                    wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
+                }
             }
             return true;
         }

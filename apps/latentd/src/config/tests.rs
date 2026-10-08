@@ -86,7 +86,7 @@ fn defaults_derive_compatible_node_limits_without_creating_storage() {
     assert_eq!(settings.admission.cell_classes["standard"].parallelism, 2);
     assert_eq!(settings.admission.limits.maximum_concurrent_activations, 18);
     assert_eq!(settings.admission.limits.maximum_queued_activations, 18);
-    assert_eq!(settings.manager.journal.maximum_active, 18);
+    assert_eq!(settings.manager.journal.maximum_active, 19);
     assert_eq!(settings.wasmtime.maximum_active_instances, 2);
     assert_eq!(settings.inventory.cell_classes, [CellClass::Standard]);
     assert_eq!(
@@ -114,6 +114,72 @@ fn defaults_derive_compatible_node_limits_without_creating_storage() {
         .expect("derived class and queue policies compose");
     latent_telemetry::StructuredLocalSink::new(settings.local_sink)
         .expect("derived local capture bounds are valid");
+}
+
+#[test]
+fn rejected_request_tracking_charges_one_record_without_growing_execution_limits() {
+    let (_, mut config) = config();
+    config.workers.control = 1;
+    config.cells[0].capacity = 2;
+    config.cells[0].queue_capacity = 1;
+    // The original diagnostic fixture omits bytes but configures these two
+    // retention values. Its existing default covers the full fourth record.
+    config.retention =
+        serde_json::from_str(r#"{"terminalEntries":128,"terminalTtlMillis":120000}"#).unwrap();
+    assert_eq!(config.retention.bytes, 256 * MIB);
+    let fixture = config.derive().unwrap();
+    assert_eq!(fixture.manager.journal.maximum_active, 4);
+    assert_eq!(fixture.manager.journal.maximum_retained_bytes, 256 * MIB);
+    config.retention.bytes = 3 * super::JOURNAL_RECORD_BYTES;
+    let original = config.derive().unwrap();
+    assert_eq!(original.manager.journal.maximum_active, 3);
+    assert_eq!(
+        original.manager.journal.maximum_retained_bytes,
+        config.retention.bytes
+    );
+    config.retention.bytes = 4 * super::JOURNAL_RECORD_BYTES;
+    let settings = config.derive().unwrap();
+    assert_eq!(settings.manager.journal.maximum_active, 4);
+    assert_eq!(
+        settings.manager.journal.maximum_retained_bytes,
+        config.retention.bytes
+    );
+    assert_eq!(settings.admission.limits.maximum_concurrent_activations, 3);
+    assert_eq!(settings.admission.limits.maximum_queued_activations, 3);
+    assert_eq!(settings.admission.cell_classes["standard"].parallelism, 2);
+    assert_eq!(
+        settings.scheduler.queue_capacity_per_class[&CellClass::Standard],
+        1
+    );
+    assert_eq!(settings.wasmtime.maximum_active_instances, 2);
+    assert_eq!(settings.transport.maximum_rpcs, 8);
+    assert_eq!(
+        super::validation::tracked_requests(3, 3 * super::JOURNAL_RECORD_BYTES).unwrap(),
+        3
+    );
+    assert_eq!(
+        super::validation::tracked_requests(3, 4 * super::JOURNAL_RECORD_BYTES - 1).unwrap(),
+        3
+    );
+    assert_eq!(
+        super::validation::tracked_requests(3, 4 * super::JOURNAL_RECORD_BYTES).unwrap(),
+        4
+    );
+    assert_eq!(super::validation::tracked_requests(5, 20 * MIB).unwrap(), 5);
+    assert_eq!(
+        super::validation::tracked_requests(255, 1024 * MIB).unwrap(),
+        256
+    );
+    assert_eq!(
+        super::validation::tracked_requests(256, 1024 * MIB).unwrap(),
+        256
+    );
+    assert!(super::validation::tracked_requests(usize::MAX, usize::MAX).is_err());
+    assert!(super::validation::tracked_requests(
+        usize::MAX / super::JOURNAL_RECORD_BYTES,
+        usize::MAX
+    )
+    .is_err());
 }
 
 #[test]

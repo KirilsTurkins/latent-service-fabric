@@ -7,6 +7,27 @@ use std::{
 };
 use tokio::runtime::Builder;
 
+fn observed_runtime(
+    blocking_threads: usize,
+    threads: &std::sync::Arc<std::sync::atomic::AtomicUsize>,
+) -> tokio::runtime::Runtime {
+    use std::sync::atomic::Ordering;
+    let started = std::sync::Arc::clone(threads);
+    let stopped = std::sync::Arc::clone(threads);
+    Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(blocking_threads)
+        .on_thread_start(move || {
+            started.fetch_add(1, Ordering::SeqCst);
+        })
+        .on_thread_stop(move || {
+            stopped.fetch_sub(1, Ordering::SeqCst);
+        })
+        .enable_all()
+        .build()
+        .unwrap()
+}
+
 #[test]
 #[ignore = "requires an explicit protected synthetic provider configuration"]
 fn configured_provider_startup_and_shutdown_remain_repeatable() {
@@ -220,6 +241,10 @@ fn repeat_startup(source: &Path) {
 
 #[test]
 fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times() {
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
     let source = TempDir::new().unwrap();
     let path = source.path().join("node.json");
     let document = serde_json::json!({
@@ -241,49 +266,14 @@ fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times()
     });
     std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
-    use std::sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    };
     let control_threads = Arc::new(AtomicUsize::new(0));
     let invocation_threads = Arc::new(AtomicUsize::new(0));
-    let started = Arc::clone(&control_threads);
-    let stopped = Arc::clone(&control_threads);
-    let control = Builder::new_multi_thread()
-        .worker_threads(1)
-        .max_blocking_threads(4)
-        .on_thread_start(move || {
-            started.fetch_add(1, Ordering::SeqCst);
-        })
-        .on_thread_stop(move || {
-            stopped.fetch_sub(1, Ordering::SeqCst);
-        })
-        .enable_all()
-        .build()
-        .unwrap();
-    let started = Arc::clone(&invocation_threads);
-    let stopped = Arc::clone(&invocation_threads);
-    let invocation = Builder::new_multi_thread()
-        .worker_threads(1)
-        .max_blocking_threads(1)
-        .on_thread_start(move || {
-            started.fetch_add(1, Ordering::SeqCst);
-        })
-        .on_thread_stop(move || {
-            stopped.fetch_sub(1, Ordering::SeqCst);
-        })
-        .enable_all()
-        .build()
-        .unwrap();
+    let control = observed_runtime(4, &control_threads);
+    let invocation = observed_runtime(1, &invocation_threads);
     for ordinal in 0..32 {
         let mut settings = NodeConfig::load(&path).unwrap().derive().unwrap();
-        let installed = settings
-            .providers
-            .as_ref()
-            .unwrap()
-            .activation_runtime
-            .as_ref()
-            .unwrap();
+        let providers = settings.providers.as_ref().unwrap();
+        let installed = providers.activation_runtime.as_ref().unwrap();
         let expected_digest = installed.configuration_digest().unwrap();
         assert_eq!(
             settings.wasmtime.activation_runtime,

@@ -26,17 +26,11 @@ final class SynchronizedMethods {
         var body = new ArrayList<BasicBlock>();
         for (var block : program.getBasicBlocks()) body.add(block);
         var entry = program.createBasicBlock();
-        var acquisition = program.createBasicBlock();
         var order = new ArrayList<BasicBlock>();
         order.add(entry);
-        order.add(acquisition);
         order.addAll(body);
         program.pack();
         program.rearrangeBasicBlocks(order);
-
-        var start = new JumpInstruction();
-        start.setTarget(acquisition);
-        entry.add(start);
 
         var monitor = program.variableAt(0);
         if (method.getModifiers().contains(ElementModifier.STATIC)) {
@@ -44,14 +38,14 @@ final class SynchronizedMethods {
             var constant = new ClassConstantInstruction();
             constant.setConstant(ValueType.object(className));
             constant.setReceiver(monitor);
-            acquisition.add(constant);
+            entry.add(constant);
         }
         var enter = new MonitorEnterInstruction();
         enter.setObjectRef(monitor);
-        acquisition.add(enter);
+        entry.add(enter);
         var jump = new JumpInstruction();
         jump.setTarget(body.get(0));
-        acquisition.add(jump);
+        entry.add(jump);
 
         // Acquisition is outside the protected body. Every escaping exception,
         // including one from a user's existing catch/finally block, releases

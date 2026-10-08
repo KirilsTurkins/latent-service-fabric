@@ -331,6 +331,16 @@ async fn real_deferred_live_publication_keeps_actual_root_role_and_buffers_after
     proxy.release.notify_one();
     tokio::time::timeout(WATCHDOG, async {
         loop {
+            let requests_retired = match fixture.pools.snapshot() {
+                Ok(snapshot) => snapshot.running_requests == 0,
+                Err(error)
+                    if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                        && error.message == "capability-busy" =>
+                {
+                    false
+                }
+                Err(error) => panic!("pool retirement observation failed: {error:?}"),
+            };
             if fixture.publisher.snapshot().active_publishes == 0
                 && fixture
                     .owner
@@ -340,6 +350,7 @@ async fn real_deferred_live_publication_keeps_actual_root_role_and_buffers_after
                     .unwrap()
                     .physical_owners
                     == 0
+                && requests_retired
             {
                 break;
             }
@@ -348,7 +359,6 @@ async fn real_deferred_live_publication_keeps_actual_root_role_and_buffers_after
     })
     .await
     .unwrap();
-    assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 0);
     let late = fixture
         .owner
         .as_mut()

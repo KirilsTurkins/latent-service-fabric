@@ -63,6 +63,7 @@ impl StreamReloadGuard {
         self.startup_binding
     }
 
+    #[cfg(feature = "development-outbound-streams")]
     pub(crate) fn belongs_to(&self, binding: Option<[u8; 32]>) -> bool {
         binding == Some(self.startup_binding)
     }

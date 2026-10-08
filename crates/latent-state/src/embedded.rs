@@ -434,7 +434,13 @@ impl ReadView {
     }
 
     pub fn get(&self, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
-        if self.opened.elapsed() > self.limits.maximum_view_age {
+        self.get_at_age(key, self.opened.elapsed())
+    }
+
+    // The public entry always samples the original monotonic lifetime. Engine
+    // tests can exercise the same boundary without timing a native disk flush.
+    fn get_at_age(&self, key: &RowKey, age: Duration) -> Result<Option<Vec<u8>>, StoreError> {
+        if age > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);
         }
         let key = key.encoded(self.limits)?;

@@ -121,22 +121,9 @@ fn protected_reload_publishes_actual_new_reference_and_never_repeats_an_epoch() 
             RuntimeThreads::default(),
         ))
         .unwrap();
-    let old = node
-        .providers
-        .as_ref()
-        .unwrap()
-        .stream_binding_reference
-        .as_ref()
-        .unwrap()
-        .clone();
-    let catalog = node
-        .providers
-        .as_ref()
-        .unwrap()
-        .stream_catalog
-        .as_ref()
-        .unwrap()
-        .clone();
+    let providers = node.providers.as_ref().unwrap();
+    let old = providers.stream_binding_reference.as_ref().unwrap().clone();
+    let catalog = providers.stream_catalog.as_ref().unwrap().clone();
     let before = catalog.binding_version().unwrap();
     fixture.rotate_input(2);
     let pools = node.providers.as_ref().unwrap().pools.clone();

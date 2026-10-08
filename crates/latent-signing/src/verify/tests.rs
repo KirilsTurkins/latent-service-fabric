@@ -2,6 +2,8 @@ use super::*;
 use crate::{PublisherPolicy, PublisherPolicyConfig, RevocationSnapshot, RevocationSnapshotConfig};
 use std::{sync::mpsc, thread, time::Duration};
 
+mod concurrent;
+
 fn deny_all(generation: u64) -> PublisherTrust {
     let limits = SignatureLimits::default();
     let policy = PublisherPolicy::new(
@@ -40,7 +42,7 @@ fn contended_owner_rejects_without_queuing_and_preserves_observed_time() {
     let verifier =
         Arc::new(PublisherVerifier::new(deny_all(1), SignatureLimits::default(), 10).unwrap());
     let expected = verifier.state_id().unwrap();
-    let guard = verifier.state.lock().unwrap();
+    let guard = verifier.state.read().unwrap();
     let worker_verifier = verifier.clone();
     let worker_expected = expected.clone();
     let (sender, receiver) = mpsc::sync_channel(1);

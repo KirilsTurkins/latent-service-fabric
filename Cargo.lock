@@ -1618,8 +1618,11 @@ dependencies = [
  "latent-core",
  "latent-effects",
  "latent-state",
+ "latent-test-process",
+ "rustix",
  "sha2 0.11.0",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -1837,6 +1840,8 @@ dependencies = [
  "latent-scheduler",
  "latent-state",
  "latent-telemetry",
+ "serde_json",
+ "tempfile",
  "sha2 0.11.0",
  "tokio",
 ]
