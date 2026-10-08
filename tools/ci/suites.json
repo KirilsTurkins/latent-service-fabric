@@ -4988,6 +4988,9 @@
         "builder_verify::tests::authorization::key_and_builder_revocations_override_valid_signatures",
         "builder_verify::tests::authorization::source_constraints_are_exact_and_multiple_requirements_are_disjunctive",
         "builder_verify::tests::authorization::whitelisted_key_cannot_assert_another_builder_and_empty_authorities_deny",
+        "builder_verify::tests::concurrent::currentness_readers_share_trust_without_spurious_resource_exhaustion",
+        "builder_verify::tests::concurrent::exclusive_writer_refuses_currentness_without_queuing_or_renewing_proof",
+        "builder_verify::tests::concurrent::poisoned_writer_keeps_proof_reads_and_trust_replacement_closed",
         "builder_verify::tests::contended_owner_rejects_without_queuing_and_preserves_observed_time",
         "builder_verify::tests::currentness::changing_source_policy_invalidates_prior_proof_and_compare_exchange_guards_updates",
         "builder_verify::tests::currentness::owner_adoption_and_replacement_enforce_lowered_requirement_limits",
@@ -5027,6 +5030,9 @@
         "policy::tests::policy_discards_caller_spare_capacity_before_retaining_config",
         "policy::tests::revocation_snapshot_discards_caller_spare_capacity",
         "signer::tests::signer_does_not_retain_spare_capacity_from_publisher_input",
+        "verify::tests::concurrent::currentness_readers_share_trust_without_spurious_resource_exhaustion",
+        "verify::tests::concurrent::exclusive_writer_refuses_currentness_without_queuing_or_renewing_proof",
+        "verify::tests::concurrent::poisoned_writer_keeps_proof_reads_and_trust_replacement_closed",
         "verify::tests::contended_owner_rejects_without_queuing_and_preserves_observed_time"
       ],
       "expectedIgnored": [],
@@ -5034,7 +5040,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-signing/Cargo.toml",
-      "minimumCases": 52,
+      "minimumCases": 58,
       "mode": "libtest",
       "package": "latent-signing",
       "platforms": [
