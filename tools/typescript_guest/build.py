@@ -146,10 +146,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     read_file(temporary/'compiled/typescript-runtime-selection.json', 65536))
                 runtime_assets = (('typescript-runtime-selection.json', 'asset',
                                   'application/vnd.latent.typescript.runtime-selection.v1+json'),)
-                runtime_materials.extend({'name': name, 'digest': digest(raw), 'size': len(raw)} for name, raw in (
-                    ('typescript-native-engine', compiler.engine_before[0]),
-                    ('typescript-native-engine-input', compiler.engine_before[1]),
-                    ('typescript-runtime-selection', read_file(output/'typescript-runtime-selection.json', 65536))))
+                raw = read_file(output/'typescript-runtime-selection.json', 65536)
+                runtime_materials.append({'name': 'typescript-runtime-selection', 'digest': digest(raw), 'size': len(raw)})
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             (output / "generated-bindings.js").write_bytes(read_file(temporary / "compiled/generated-bindings.js", 8 * 1024 * 1024))
@@ -182,6 +180,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe:
                 raise ValueError("authoring recipe changed during compilation")
             compiler.check_unchanged()
+            runtime_materials.extend(compiler.runtime_materials())
             if closure is not None:
                 closure.check_unchanged()
             if [file_identity(path, name) for name, path in paths.items()] != materials:

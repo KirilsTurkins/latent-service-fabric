@@ -120,7 +120,7 @@
       },
       {
         "name": "Validate explicit TypeScript runtime selection and preserved public contracts",
-        "run": "python3 -m unittest tools.tests.test_typescript_runtime_profile tools.tests.test_typescript_event_ownership tools.tests.test_typescript_clock_source tools.tests.test_typescript_import_source tools.tests.test_typescript_splicer_input tools.tests.test_typescript_import_adapter tools.tests.test_typescript_import_selection tools.tests.test_typescript_source_splicer tools.tests.test_typescript_host_tools\n"
+        "run": "python3 -m unittest tools.tests.test_typescript_runtime_profile tools.tests.test_typescript_event_ownership tools.tests.test_typescript_clock_source tools.tests.test_typescript_import_source tools.tests.test_typescript_splicer_input tools.tests.test_typescript_import_adapter tools.tests.test_typescript_import_selection tools.tests.test_typescript_source_splicer tools.tests.test_typescript_host_tools tools.tests.test_typescript_runtime_materials\n"
       },
       {
         "name": "Preserve attempted runtime test evidence",
@@ -137,7 +137,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Append eight source-splicer and trusted-host input controls to the existing selected candidate source gate, preserving every prior command and test",
+  "reviewReason": "Append selected runtime material source controls after existing immutable input rechecks; retain all prior commands, cases, scopes and unqualified profile boundaries",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

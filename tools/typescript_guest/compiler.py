@@ -368,3 +368,19 @@ class Compiler:
             raise ValueError("original compiler declarations changed during isolated build")
         if self.isolation is not None:
             self.isolation.check_unchanged()
+
+    def runtime_materials(self) -> list[dict]:
+        """Name the actual selected inputs after their normal immutable recheck."""
+        rows = []
+        if self.engine_before is not None:
+            for name, raw in zip(('typescript-native-engine', 'typescript-native-engine-input'),
+                                 self.engine_before, strict=True):
+                rows.append({'name': name, 'digest': digest(raw), 'size': len(raw)})
+        if self.source_splicer_original is not None:
+            _root, _receipt, captured, raw = self.source_splicer_original
+            identity = inventory(captured)
+            rows.extend((
+                {'name': 'typescript-source-splicer-input', 'digest': digest(raw), 'size': len(raw)},
+                {'name': 'typescript-source-splicer-files', 'digest': digest(identity), 'size': len(identity)},
+            ))
+        return rows
