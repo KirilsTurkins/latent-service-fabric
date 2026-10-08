@@ -27,3 +27,9 @@ The evidence directory contains exact receipts and raw-log identities. Full loca
 ## Preserved interrupted work
 
 The older dedup worktree had an unfinished merge. Its exact stage 1/2/3 blobs, working conflict markers, index and binary diff are preserved under conflict-custody; no conflicts were resolved during the stop request. Three genuine historical native-currentness edits were committed as WIP and remain explicitly unqualified. Current agent inventories and checkpoint refs distinguish active work from obsolete validation copies.
+
+## Final preservation state
+
+Implementation and validation are stopped. All existing source worktrees in the agent inventories are clean and their heads are verified on GitHub checkpoint branches. One older unmerged worktree is preserved as complete index/stage/working custody in this draft; the historical native-currentness edits are committed as explicitly unqualified WIP. No local worktree/cache cleanup was performed by this session.
+
+All 32 issue progress comments, ten current PR descriptions and eleven focused/archival preservation drafts are linked and verified. The seven fully completed milestone tickets remain closed; the other 25 retain material unmet acceptance requirements. The integration, entity and Portable evidence handoffs are respectively drafts #959, #966 and #978. The Portable archive final head is 973e60ae; current documentation/source checkpoints remain recoverable after deletion of the local workspace.
