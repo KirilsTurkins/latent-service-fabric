@@ -3293,7 +3293,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 66,
+      "minimumCases": 67,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
