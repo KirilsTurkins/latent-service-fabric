@@ -23,9 +23,14 @@ on:
       platform:
         description: Fresh platform schedule to execute with the approved candidates
         type: choice
-        options: [all, windows, windows-recovery, linux]
+        options: [all, windows, windows-recovery, linux, java-composition]
         default: all
         required: true
+      java_diagnostics:
+        description: Build fresh provider-capable Java fixtures for the finite diagnostic campaign
+        type: boolean
+        default: false
+        required: false
   push:
     branches: [feat/559-packaged-qualification]
     paths:
@@ -229,5 +234,94 @@ jobs:
             ${{ runner.temp }}/packaged-devcontainer/host-observation.json
             ${{ runner.temp }}/packaged-devcontainer/observation.json
             ${{ runner.temp }}/packaged-support/selection.json
+          if-no-files-found: error
+          retention-days: 7
+
+  java-composition:
+    needs: support
+    name: Actual packaged Java composition and live preflight
+    if: inputs.platform == 'java-composition'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: packaged-qualification-support
+          path: ${{ runner.temp }}/packaged-support
+      - name: Download only selected Linux frontend, Java tools and native runtime
+        id: selected-archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B - <<'PY'
+          from pathlib import Path
+          import json, os, re, subprocess
+          support = Path(os.environ['RUNNER_TEMP']) / 'packaged-support'
+          selected = json.loads((support / 'selection.json').read_bytes())
+          sha = selected['sourceCommit']
+          assert re.fullmatch(r'[a-f0-9]{40}', sha)
+          target = Path(os.environ['RUNNER_TEMP']) / 'packaged-java-candidates'
+          target.mkdir()
+          selected['artifacts'] = {}
+          for name, kind, artifact in (
+              ('linux', 'developer', 'developer-linux-candidate-' + sha),
+              ('java', 'developer', 'developer-java-tools-candidate-' + sha),
+              ('native', 'runtime', 'native-runtime-candidate-development-test-' + sha)):
+              destination = target / name
+              subprocess.run(['gh', 'run', 'download', str(selected['candidateRuns'][kind]['id']),
+                  '--repo', 'KirilsTurkins/latent-service-fabric', '--name', artifact, '--dir', str(destination)],
+                  check=True, timeout=300)
+              selected['artifacts'][name] = str(destination)
+          verifier = support / 'gh-linux'
+          verifier.chmod(0o700)
+          selected['trust'] = {
+              'developerPolicy': str(support / 'developer-policy.json'),
+              'runtimePolicy': str(support / 'runtime-policy.json'),
+              'trustedRoot': str(support / 'trusted_root.jsonl'),
+              'trustedRootSha256': selected['verificationInputs']['trustedRootSha256'],
+              'hostVerifier': str(verifier), 'guestVerifier': str(verifier),
+              'hostVerifierSha256': selected['verificationInputs']['verifierSha256']['linux'],
+              'guestVerifierSha256': selected['verificationInputs']['verifierSha256']['linux']}
+          (support / 'java-inputs.json').write_text(json.dumps(selected), encoding='utf-8')
+          PY
+      - name: Check original package rejection and bounded process contracts
+        id: conductor-contracts
+        run: python3 -B -m unittest tools.tests.test_dev_packaged_probe tools.tests.test_java_provider_timeout tools.tests.test_java_resource_diagnostics
+      - name: Exercise authenticated frontend workspaces and explicit standalone operator
+        id: live-java-composition
+        env:
+          PYTHONUTF8: '1'
+          PYTHONDONTWRITEBYTECODE: '1'
+          LSF_JAVA_DIAGNOSTICS: ${{ inputs.java_diagnostics }}
+        run: |
+          diagnostic_args=()
+          if [ "$LSF_JAVA_DIAGNOSTICS" = 'true' ]; then
+            diagnostic_args+=(--diagnostic-campaign)
+          fi
+          python3 -B tools/qualify_packaged_java_composition.py \
+            --inputs "$RUNNER_TEMP/packaged-support/java-inputs.json" \
+            --output "$RUNNER_TEMP/packaged-java-composition" "${diagnostic_args[@]}"
+      - name: Preserve bounded original success or failure evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: packaged-java-composition-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/packaged-support/selection.json
+            ${{ runner.temp }}/packaged-support/java-inputs.json
+            ${{ runner.temp }}/packaged-java-composition/observation.json
+            ${{ runner.temp }}/packaged-java-composition/authenticated-frontend/authenticated-frontend.json
+            ${{ runner.temp }}/packaged-java-composition/builds/
+            ${{ runner.temp }}/packaged-java-composition/compiler-logs/
+            ${{ runner.temp }}/packaged-java-composition/releases/
+            ${{ runner.temp }}/packaged-java-composition/*-profile/preflight-*/
+            ${{ runner.temp }}/packaged-java-composition/*-profile/client/controls/
+            ${{ runner.temp }}/packaged-java-composition/provider-peer/
           if-no-files-found: error
           retention-days: 7
