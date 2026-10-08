@@ -17,7 +17,8 @@ def encoded(value):
 
 
 def fixture():
-    project = {"transaction-binding.json": b"exact-companion", "transaction-profile.json": encoded({"hostAbiDigest": "sha256:" + "a" * 64})}
+    project = {"transaction-binding.json": b"exact-companion", "transaction-profile.json": encoded({"hostAbiDigest": "sha256:" + "a" * 64}),
+               "vendor/lsf/sdk/java-guest/" + "captured/" * 10 + "LongSource.java": b"original-source"}
     component = b"\0asm\x0d\0\x01\0" + b"synthetic-test-input"
     files = {"project/" + name: raw for name, raw in project.items()}
     archive = io.BytesIO()

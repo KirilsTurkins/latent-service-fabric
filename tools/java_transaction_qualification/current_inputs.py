@@ -81,7 +81,9 @@ def validate_materials(files: dict[str, bytes], selected: CurrentSelection) -> d
             for member in source:
                 require(member.isfile() and member.type == tarfile.REGTYPE and member.name in project
                         and member.name not in archived and member.size == len(project[member.name])
-                        and not member.pax_headers, "current-java-source-archive-members")
+                        and set(member.pax_headers) <= {"path"}
+                        and member.pax_headers.get("path", member.name) == member.name,
+                        "current-java-source-archive-members")
                 archived[member.name] = source.extractfile(member).read(member.size + 1)
         require(archived == project, "current-java-source-archive-project-mismatch")
     except (OSError, EOFError, tarfile.TarError) as error:

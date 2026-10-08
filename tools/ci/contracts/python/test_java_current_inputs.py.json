@@ -13,7 +13,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:0a93ef4f8f90115b41668dfa6fd879ca9607753282483a616639c5666d2439fe",
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -25,7 +25,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:0a93ef4f8f90115b41668dfa6fd879ca9607753282483a616639c5666d2439fe",
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -37,7 +37,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:0a93ef4f8f90115b41668dfa6fd879ca9607753282483a616639c5666d2439fe",
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -49,7 +49,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:0a93ef4f8f90115b41668dfa6fd879ca9607753282483a616639c5666d2439fe",
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -57,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_current_inputs.py",
-  "reviewReason": "Preserve all four original current-selection tamper cases and execution/skip/decorator guards; fixture now uses an actual bounded tar/gzip capture and loader verifies it against original source inventory before packaging.",
+  "reviewReason": "Preserve all four tamper cases and execution guards; add real captured long-path PAX fixture while accepting only exact filename-matching path metadata and unchanged archive byte/member bounds.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
