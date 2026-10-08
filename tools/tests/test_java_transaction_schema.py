@@ -11,6 +11,35 @@ from tools.rust_capsule_project import ROOT, digest, snapshot
 
 
 class JavaTransactionSchemaTests(unittest.TestCase):
+    def test_recovery_recipe_keeps_real_teavm_clocks_and_closed_runtime_support_without_authority(self):
+        from tools.java_capsule_project import runtime_wit
+        from tools.java_transaction_schema import recovery_recipe
+        source, world, recipe_raw = recovery_recipe()
+        declaration = json.loads(recipe_raw)
+        clocks = (b"latent:clock/monotonic@0.1.0", b"latent:clock/wall@0.1.0")
+        service = world.split(b"world service {", 1)[1].split(b"}", 1)[0]
+        support = world.split(b"world runtime-support {", 1)[1].split(b"}", 1)[0]
+        for clock in clocks:
+            self.assertEqual(service.count(b"import " + clock + b";"), 1)
+            self.assertEqual(support.count(b"import " + clock + b";"), 1)
+        base = world.split(b"\nworld runtime-support", 1)[0]
+        declarations = b"\n" + b"".join(b"    import " + clock + b";\n" for clock in clocks)
+        base = base.replace(declarations, b"", 1)
+        # Use the maintained actual compiler template transformation exactly.
+        self.assertEqual(runtime_wit(base, "service"), world)
+        self.assertEqual(declaration["worldDigest"], digest(world))
+        self.assertEqual(declaration["sourceDigest"], digest(source))
+        self.assertIs(declaration["componentCompiled"], False)
+        self.assertIs(declaration["signedExecutionQualified"], False)
+        with tempfile.TemporaryDirectory() as temporary:
+            files = snapshot(create(Path(temporary) / "source", "legacy-v1", effect="put-once"))
+            self.assertEqual(files["wit/world.wit"], world)
+            self.assertEqual(files["wit/deps/clock/package.wit"],
+                             files["vendor/lsf/wit/platform/clock/package.wit"])
+            self.assertEqual(json.loads(files["capsule-project.json"])["limits"]["memoryBytes"], 67108864)
+            self.assertEqual(json.loads(files["deferred-http-requirements.json"])["authority"],
+                             {"installed": False, "ruleGranted": False, "executionQualified": False})
+
     def test_explicit_recovery_recipe_preserves_three_fields_without_changing_shared_default(self):
         original_world = (ROOT / "examples/rust-capsules/transactional-aggregate/world.wit").read_bytes()
         original_source = (ROOT / "sdk/java-guest/templates/transactional-aggregate.java").read_bytes()
