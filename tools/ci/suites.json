@@ -8042,6 +8042,7 @@
         "dropping_unpolled_or_pending_invocations_preserves_inner_ownership",
         "failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness",
         "full_contended_or_poisoned_observation_storage_never_changes_invocation_results",
+        "preparation_capacity_reasons_require_exact_closed_error_shapes",
         "successful_and_declared_outcomes_keep_payloads_and_owners_without_records",
         "synchronous_start_failure_is_forwarded_once_without_cloning",
         "unknown_malformed_and_missing_details_are_explicitly_unclassified"
@@ -8051,7 +8052,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 8,
+      "minimumCases": 9,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
