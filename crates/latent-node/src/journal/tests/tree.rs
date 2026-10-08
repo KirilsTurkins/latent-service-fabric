@@ -352,3 +352,55 @@ fn concurrent_children_keep_one_bounded_index_entry_per_owned_record() {
     assert_eq!(journal.inner.lock().lineage_order.len(), 17);
     parent.finish(outcome());
 }
+
+#[test]
+fn target_service_projection_preserves_identity_and_original_identifier_and_page_limits() {
+    let (journal, _) = journal(2, 128);
+    let target = ServiceId("t".repeat(512));
+    let mut root = envelope("parent");
+    root.target.service = target.clone();
+    let parent = journal.begin(&root).unwrap();
+    for index in 0..64 {
+        let mut value = child(&format!("child-{index:03}"), "parent", "parent");
+        value.target.service = target.clone();
+        journal.begin(&value).unwrap().finish(outcome());
+    }
+    let mut page = journal
+        .inspect_tree(&root.target.tenant, &root.activation_id, 128, None)
+        .unwrap();
+    // The original 64 KiB page also includes every captured target atom. A
+    // target at its 512-byte limit permits only 41 of these small-ID nodes.
+    assert_eq!(page.nodes.len(), 41);
+    let mut identities = Vec::new();
+    loop {
+        for node in page.nodes {
+            assert_eq!(node.target_service, target);
+            identities.push(node.activation_id);
+        }
+        let Some(token) = page.next_page_token else {
+            break;
+        };
+        page = journal
+            .inspect_tree(&root.target.tenant, &root.activation_id, 128, Some(&token))
+            .unwrap();
+    }
+    let mut expected = vec![root.activation_id.clone()];
+    expected.extend((0..64).map(|index| ActivationId(format!("child-{index:03}"))));
+    assert_eq!(identities, expected);
+    parent.finish(outcome());
+
+    let mut oversized = envelope("oversized-target");
+    oversized.target.service = ServiceId("t".repeat(513));
+    let owner = journal.begin(&oversized).unwrap();
+    let failure = journal
+        .inspect_tree(
+            &oversized.target.tenant,
+            &oversized.activation_id,
+            128,
+            None,
+        )
+        .unwrap_err();
+    assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+    assert_eq!(failure.message, "activation-tree-identifier-limit");
+    owner.finish(outcome());
+}
