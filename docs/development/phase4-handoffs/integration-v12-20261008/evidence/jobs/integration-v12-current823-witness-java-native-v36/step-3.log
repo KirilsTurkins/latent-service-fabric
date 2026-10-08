@@ -1,0 +1,49 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :clean
+
+> Task :verifyJavaToolchain
+{"java": "25.0.4.1+1", "javaHome": "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/integration-v12-current-java-tools-v1/jdk", "release": 25}
+
+> Task :prepareTransport
+> Task :compileJava
+> Task :processResources NO-SOURCE
+> Task :classes
+> Task :compileTestJava
+> Task :processTestResources NO-SOURCE
+> Task :testClasses
+
+> Task :semanticTest
+shared profile vectors: 78
+shared profile lifetime/recovery: passed
+Java client profile semantic fixtures passed
+
+> Task :jar
+
+> Task :transportTest
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/sdk/java-client/build/deps/protobuf-java-3.25.9.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+Java shared protobuf cases: 61; contradictory oneof rejected: 1
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by io.grpc.netty.shaded.io.netty.util.internal.NativeLibraryUtil in an unnamed module (file:/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/sdk/java-client/build/deps/grpc-netty-shaded-1.84.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Oct 08, 2026 6:36:17 AM io.grpc.internal.AbstractClientStream$TransportState inboundTrailersReceived
+INFO: Received trailers on closed stream:
+ Metadata()
+ {2}
+Java transport: twelve bounded TCP/protocol suites passed
+
+> Task :test
+
+> Task :verifyJavaBytecode
+{"release": 25, "classMajor": 69, "preview": false, "classes": 1471}
+
+> Task :check
+
+BUILD SUCCESSFUL in 33s
+10 actionable tasks: 10 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.1.0/userguide/configuration_cache_enabling.html

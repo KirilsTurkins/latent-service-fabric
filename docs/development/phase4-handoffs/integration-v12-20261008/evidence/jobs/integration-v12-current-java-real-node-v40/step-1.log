@@ -1,0 +1,10 @@
+   Compiling latent-core v0.1.0-alpha.5 (/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/crates/latent-core)
+   Compiling latent-contracts v0.1.0-alpha.5 (/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/crates/latent-contracts)
+   Compiling latent-audit v0.1.0-alpha.5 (/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/crates/latent-audit)
+   Compiling latent-manifest v0.1.0-alpha.5 (/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/crates/latent-manifest)
+   Compiling latent-artifacts v0.1.0-alpha.5 (/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/crates/latent-artifacts)
+   Compiling latent-packaging v0.1.0-alpha.5 (/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/crates/latent-packaging)
+   Compiling latent-signing v0.1.0-alpha.5 (/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/crates/latent-signing)
+   Compiling latent-oci v0.1.0-alpha.5 (/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/crates/latent-oci)
+   Compiling latent-policy v0.1.0-alpha.5 (/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3/crates/latent-policy)
+    Finished `dev` profile [unoptimized] target(s) in 15.04s
