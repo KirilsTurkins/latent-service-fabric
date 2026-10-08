@@ -1,0 +1,501 @@
+[
+  {
+    "worktree": "C:/Users/turkins/Desktop/latent-fabric-p4-composition388",
+    "HEAD": "4c65cfbae5782fd840d825a6b34673cfc125b322",
+    "detached": "",
+    "prunable": "gitdir file points to non-existent location",
+    "missing": true
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/latent-fabric-p4-runtime",
+    "HEAD": "21a4d4ee531575e1524500b77f08fad8912623ba",
+    "branch": "refs/heads/feat/phase4-node-transactions-388",
+    "prunable": "gitdir file points to non-existent location",
+    "missing": true
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-ci823-staging-model-20261007-v35",
+    "HEAD": "f8980a13668234bd5f89ade444fdfb3cf7dbbc22",
+    "branch": "refs/heads/fix/phase4-sdk-staging-model-v35-20261007",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-ci828-owner-fixtures-20261007-v36",
+    "HEAD": "fae4e339f1cae89d4aa6ac070baecc703e4bcdc3",
+    "branch": "refs/heads/fix/phase4-owner-fixtures-v36-20261007",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-http-deferred-admission-v96",
+    "HEAD": "c7663996caa7722cd2a9ccc298f656e6c27a01e5",
+    "branch": "refs/heads/fix/phase4-deferred-http-bookkeeping-v96",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-recovery808-current-v62",
+    "HEAD": "8d7912f549fb4b986266e1e9d9be92328f4157ae",
+    "branch": "refs/heads/fix/phase4-recovery808-current-v62",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-atomic787-current-20261007-v2",
+    "HEAD": "06e174bb364dadffa0ad13044891873c32bb9845",
+    "branch": "refs/heads/fix/phase4-atomic787-current-20261007-v2",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-canonical388-20261003",
+    "HEAD": "0a2e3c1eaee50a3a74413c6fe1b49eefbc2723a8",
+    "branch": "refs/heads/candidate/phase4-canonical-runtime-388-20261003",
+    "prunable": "gitdir file points to non-existent location",
+    "missing": true
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-client800-preflight-20261007-v1",
+    "HEAD": "de0929d694a7ac0f6737482a704b448037a01f58",
+    "branch": "refs/heads/fix/phase4-client800-packed-preflight-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr784-20261007-v2",
+    "HEAD": "3ad33507528da7a0137bf6376da7be31c6674727",
+    "branch": "refs/heads/fix/phase4-current-pr784-20261007-v2",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr790-20261007-v2",
+    "HEAD": "5d02ba28483562ccd5f1d734602de3ee124b22fb",
+    "branch": "refs/heads/fix/phase4-current-pr790-20261007-v2",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr791-20261007-v2",
+    "HEAD": "64209d6e5b8f4be7aeaecbe01c67c8303c739592",
+    "branch": "refs/heads/fix/phase4-current-pr791-20261007-v2",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr811-20261007-v2",
+    "HEAD": "ae09b5b9e55a1a682fc2d26daf766f77e694daa1",
+    "branch": "refs/heads/fix/phase4-current-pr811-20261007-v2",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr825-20261007-v2",
+    "HEAD": "847a4b0b115f0c02e478a25b8bc90e98787810c7",
+    "branch": "refs/heads/fix/phase4-current-pr825-20261007-v2",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr784-20261007-v1",
+    "HEAD": "fd4b1538475174a5b12c7287a76dead35d19a141",
+    "branch": "refs/heads/fix/phase4-main172-pr784-20261007-v1",
+    "dirtyBytes": 489091,
+    "dirtyPaths": [
+      " D .cargo/ci-correctness.toml",
+      " D .cargo/config.toml",
+      " D .cargo/managed-guest.toml",
+      " D .editorconfig",
+      " D .gitattributes",
+      " D .github/CODEOWNERS",
+      " D .github/ISSUE_TEMPLATE/architecture.yml",
+      " D .github/ISSUE_TEMPLATE/bug_report.yml",
+      " D .github/dependabot.yml",
+      " D .github/pull_request_template.md",
+      " D .github/security/exceptions.json",
+      " D .github/security/gitleaks.toml",
+      " D .github/security/inventory.json",
+      " D .github/security/npm-source-repairs.json"
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr787-20261007-v1",
+    "HEAD": "a6e48f5c83942204eb5a121ccae64e2f22079fa6",
+    "branch": "refs/heads/fix/phase4-main172-pr787-20261007-v1",
+    "dirtyBytes": 487260,
+    "dirtyPaths": [
+      " D .cargo/ci-correctness.toml",
+      " D .cargo/config.toml",
+      " D .cargo/managed-guest.toml",
+      " D .editorconfig",
+      " D .gitattributes",
+      " D .github/CODEOWNERS",
+      " D .github/ISSUE_TEMPLATE/architecture.yml",
+      " D .github/ISSUE_TEMPLATE/bug_report.yml",
+      " D .github/dependabot.yml",
+      " D .github/pull_request_template.md",
+      " D .github/security/exceptions.json",
+      " D .github/security/gitleaks.toml",
+      " D .github/security/inventory.json",
+      " D .github/security/npm-source-repairs.json"
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr790-20261007-v1",
+    "HEAD": "61ee0c4f18070037421ae90f469d78182d0a7af3",
+    "branch": "refs/heads/fix/phase4-main172-pr790-20261007-v1",
+    "dirtyBytes": 508060,
+    "dirtyPaths": [
+      " D .cargo/ci-correctness.toml",
+      " D .cargo/config.toml",
+      " D .cargo/managed-guest.toml",
+      " D .editorconfig",
+      " D .gitattributes",
+      " D .github/CODEOWNERS",
+      " D .github/ISSUE_TEMPLATE/architecture.yml",
+      " D .github/ISSUE_TEMPLATE/bug_report.yml",
+      " D .github/dependabot.yml",
+      " D .github/pull_request_template.md",
+      " D .github/security/exceptions.json",
+      " D .github/security/gitleaks.toml",
+      " D .github/security/inventory.json",
+      " D .github/security/npm-source-repairs.json"
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr791-20261007-v1",
+    "HEAD": "12ad5c1002b60c9463b1999d4968244f1c39c9cc",
+    "branch": "refs/heads/fix/phase4-main172-pr791-20261007-v1",
+    "dirtyBytes": 505378,
+    "dirtyPaths": [
+      " D .cargo/ci-correctness.toml",
+      " D .cargo/config.toml",
+      " D .cargo/managed-guest.toml",
+      " D .editorconfig",
+      " D .gitattributes",
+      " D .github/CODEOWNERS",
+      " D .github/ISSUE_TEMPLATE/architecture.yml",
+      " D .github/ISSUE_TEMPLATE/bug_report.yml",
+      " D .github/dependabot.yml",
+      " D .github/pull_request_template.md",
+      " D .github/security/exceptions.json",
+      " D .github/security/gitleaks.toml",
+      " D .github/security/inventory.json",
+      " D .github/security/npm-source-repairs.json"
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr796-20261007-v1",
+    "HEAD": "971e0932777591e12eefdf1cde29609edde58eca",
+    "branch": "refs/heads/fix/phase4-main172-pr796-20261007-v1",
+    "dirtyBytes": 488180,
+    "dirtyPaths": [
+      " D .cargo/ci-correctness.toml",
+      " D .cargo/config.toml",
+      " D .cargo/managed-guest.toml",
+      " D .editorconfig",
+      " D .gitattributes",
+      " D .github/CODEOWNERS",
+      " D .github/ISSUE_TEMPLATE/architecture.yml",
+      " D .github/ISSUE_TEMPLATE/bug_report.yml",
+      " D .github/dependabot.yml",
+      " D .github/pull_request_template.md",
+      " D .github/security/exceptions.json",
+      " D .github/security/gitleaks.toml",
+      " D .github/security/inventory.json",
+      " D .github/security/npm-source-repairs.json"
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr800-20261007-v1",
+    "HEAD": "4fa932ac7784ab7f90ed428f796434bc9cc0bd47",
+    "branch": "refs/heads/fix/phase4-main172-pr800-20261007-v1",
+    "dirtyBytes": 491640,
+    "dirtyPaths": [
+      " D .cargo/ci-correctness.toml",
+      " D .cargo/config.toml",
+      " D .cargo/managed-guest.toml",
+      " D .editorconfig",
+      " D .gitattributes",
+      " D .github/CODEOWNERS",
+      " D .github/ISSUE_TEMPLATE/architecture.yml",
+      " D .github/ISSUE_TEMPLATE/bug_report.yml",
+      " D .github/dependabot.yml",
+      " D .github/pull_request_template.md",
+      " D .github/security/exceptions.json",
+      " D .github/security/gitleaks.toml",
+      " D .github/security/inventory.json",
+      " D .github/security/npm-source-repairs.json"
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr808-20261007-v1",
+    "HEAD": "b6400b596fea7ab4bff8bf6a145e87143a6145bb",
+    "branch": "refs/heads/fix/phase4-main172-pr808-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr811-20261007-v1",
+    "HEAD": "76c0c9fd7e7256f04a2d8a7686d146463f89fa69",
+    "branch": "refs/heads/fix/phase4-main172-pr811-20261007-v1",
+    "dirtyBytes": 491439,
+    "dirtyPaths": [
+      " D .cargo/ci-correctness.toml",
+      " D .cargo/config.toml",
+      " D .cargo/managed-guest.toml",
+      " D .editorconfig",
+      " D .gitattributes",
+      " D .github/CODEOWNERS",
+      " D .github/ISSUE_TEMPLATE/architecture.yml",
+      " D .github/ISSUE_TEMPLATE/bug_report.yml",
+      " D .github/dependabot.yml",
+      " D .github/pull_request_template.md",
+      " D .github/security/exceptions.json",
+      " D .github/security/gitleaks.toml",
+      " D .github/security/inventory.json",
+      " D .github/security/npm-source-repairs.json"
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr825-20261007-v1",
+    "HEAD": "92008c17e0922c2bccfc8c8a33d09218562a8f32",
+    "branch": "refs/heads/fix/phase4-main172-pr825-20261007-v1",
+    "dirtyBytes": 493885,
+    "dirtyPaths": [
+      " D .cargo/ci-correctness.toml",
+      " D .cargo/config.toml",
+      " D .cargo/managed-guest.toml",
+      " D .editorconfig",
+      " D .gitattributes",
+      " D .github/CODEOWNERS",
+      " D .github/ISSUE_TEMPLATE/architecture.yml",
+      " D .github/ISSUE_TEMPLATE/bug_report.yml",
+      " D .github/dependabot.yml",
+      " D .github/pull_request_template.md",
+      " D .github/security/exceptions.json",
+      " D .github/security/gitleaks.toml",
+      " D .github/security/inventory.json",
+      " D .github/security/npm-source-repairs.json"
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr828-20261007-v1",
+    "HEAD": "396a9857d9b12d72cb667db7f8a6b425a176795f",
+    "branch": "refs/heads/fix/phase4-main172-pr828-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr784-20261007-v1",
+    "HEAD": "ba72b0bfb6765b8a0433a010dd7ea477e8835de5",
+    "branch": "refs/heads/fix/phase4-mainc9-pr784-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr787-20261007-v1",
+    "HEAD": "0e45957f21732622abe96be74bdb21c586b2e39f",
+    "branch": "refs/heads/fix/phase4-mainc9-pr787-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr790-20261007-v1",
+    "HEAD": "17fe34ba445e948cf0e5382656afa080dc5302ad",
+    "branch": "refs/heads/fix/phase4-mainc9-pr790-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr791-20261007-v1",
+    "HEAD": "c40b73b18771d2bd91cf1746f9a680ae9562f431",
+    "branch": "refs/heads/fix/phase4-mainc9-pr791-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr796-20261007-v1",
+    "HEAD": "cd163324a5192c511c7ba4deb26fda84771f9d6b",
+    "branch": "refs/heads/fix/phase4-mainc9-pr796-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr800-20261007-v1",
+    "HEAD": "87c96dd917c9adce7c4f191b110f074cae104227",
+    "branch": "refs/heads/fix/phase4-mainc9-pr800-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr808-20261007-v1",
+    "HEAD": "3290a2e66495eed9432e31f261b809ec0bea9be0",
+    "branch": "refs/heads/fix/phase4-mainc9-pr808-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr811-20261007-v1",
+    "HEAD": "9b60139e627613a51224bd4cef7316e167a6f77f",
+    "branch": "refs/heads/fix/phase4-mainc9-pr811-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr825-20261007-v1",
+    "HEAD": "8785fadf4d630cce34fbcbfebf65d0fbb0851d1c",
+    "branch": "refs/heads/fix/phase4-mainc9-pr825-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr828-20261007-v1",
+    "HEAD": "5a10163dbbd6e67cb8d16459446a7d77d95d0078",
+    "branch": "refs/heads/fix/phase4-mainc9-pr828-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-manifest-conjunction-20261007-v1",
+    "HEAD": "0d922003389e8f0d44423bc46c5047359390c335",
+    "branch": "refs/heads/fix/phase4-manifest-conjunction-20261007-v1",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-reconcile",
+    "HEAD": "c99365fce5309f5dc215ff1b1d2dcba37e94478d",
+    "detached": "",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-retention796-current-20261007-v2",
+    "HEAD": "9afd6990491a33d4dd38d5a69f8fe77fc77aaf0a",
+    "branch": "refs/heads/fix/phase4-retention796-current-20261007-v2",
+    "dirtyBytes": 0,
+    "dirtyPaths": [
+      ""
+    ],
+    "mergeInProgress": false,
+    "unmerged": []
+  }
+]
