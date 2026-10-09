@@ -17,14 +17,15 @@
         "tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp",
         "tests::uncertainty::lost_mutation_reply_preserves_typed_uncertainty_and_never_replays",
         "tests::maintenance::idle_expiry_retires_inactive_socket_on_one_weak_owned_driver",
-        "tests::maintenance::dns_authority_expiry_retires_inactive_socket_without_another_guest_call"
+        "tests::maintenance::dns_authority_expiry_retires_inactive_socket_without_another_guest_call",
+        "tests::authority::genuine_http_only_authority_denies_opaque_bytes_before_dns_and_contact"
       ],
       "expectedIgnored": [],
       "id": "latent-streams.lib.latent-streams",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 14,
+      "minimumCases": 15,
       "mode": "libtest",
       "package": "latent-streams",
       "platforms": [

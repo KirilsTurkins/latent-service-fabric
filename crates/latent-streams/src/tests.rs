@@ -3,6 +3,8 @@ use latent_network::AddressPolicy;
 use latent_policy::capability::{StreamEndpoint, StreamTransport};
 
 #[cfg(unix)]
+mod authority;
+#[cfg(unix)]
 mod currentness;
 #[cfg(target_os = "linux")]
 mod dns;
