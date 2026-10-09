@@ -136,3 +136,46 @@ commands, resource limits, required artifacts and historical obligations. The
 added direct source-assembly owner is fingerprinted; coverage retains 88 baseline
 and 274 current required run blocks with 145 delegated owners. Current-host CI is
 not awaited after the fixes are pushed. #387 still has no automatic closure.
+
+## CI contract and fixture follow-up
+
+The `96bf0411` hosted run exposed four failed jobs. Documentation and the Python
+lane both rejected the historical Go probe's changed compiler path. Its migration
+test now reviews exactly that substitution while keeping every other command
+byte, output and execution guard. The Python lane also found three stale source
+hashes in the developer composition matrix. The transaction-aware native surface,
+explicit node configuration and structural packaging definitions are reviewed
+against their committed bytes and refreshed; every support row and its structural
+qualification boundary stays unchanged.
+
+The S3 build failed at its exact compiler-version check: its image digest still
+selected Go 1.27.1 while the recipe required 1.27.2. The builder now pins the
+official Linux amd64 Go 1.27.2 image
+`sha256:55395706e9703db746cc507abfc4eb2aea75918f8a8024e4848e2cb81004f5ad`.
+The [official image source](https://github.com/docker-library/golang/blob/8380885ec449224702b989d8792d2e1470a46e89/1.27/bookworm/Dockerfile)
+and actual image execution confirm the version. All source/module digests, recipe
+checks and original container resource limits remain required.
+
+The C tool bundle failed before receiving a response from the pinned Zig mirror.
+Only that source may retry up to three opening timeouts under the original
+600-second download deadline and 60-second socket bound. Partial-body failures,
+permanent errors, invalid archives and other compiler sources retain immediate
+failure. Six new regressions cover the retry boundary, exhaustion, shared deadline,
+permanent errors, partial-body cleanup and invalid attempt counts; every previous
+case and guard remains. A fresh actual mirror download verifies the original
+55,478,392-byte archive and SHA-256 without a cache or alternate endpoint.
+
+CI ownership and Python case fingerprints are explicitly refreshed for these
+repairs. Coverage retains 88 baseline and 274 current required run blocks with
+145 delegated owners. All 96 focused repair tests pass. The complete 3,670-case
+Python suite passes on pinned Python 3.13.5 with an unprivileged Linux user:
+3,652 passes and 18 existing platform/environment skips. All ten tracked edits
+match the source bytes copied to Linux storage; the initial slow Windows-mount
+attempt and incomplete container setup attempts remain separate diagnostics.
+The tests are unchanged when supplying their required compiler and archive tools.
+
+The actual S3 fixture builds with Go 1.27.2, passes its source/module and static
+binary checks, and retires its compiler with exit zero and no OOM. The generated
+binary records Go 1.27.2 in its build information. Repository, build foundation,
+docs and reviewed coverage validation pass. The hosted result still needs a fresh
+run after publication; that run is not awaited. The PR closes no issue.

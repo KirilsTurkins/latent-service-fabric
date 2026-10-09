@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_s3_fixture.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed Go 1.27.2 security update and exact async source assembly; original limits, checked upstream identity and authority remain enforced.",
+  "reviewReason": "Pin the official Go 1.27.2 Linux amd64 compiler image to match the existing exact version gate; preserve fixture sources, resource limits and qualification checks.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4ad9dcc68fd161d2cfeaa96f087edf022e4b29d0c063c695607f60c2b3ac1d12"
+  "sha256": "b07a337442f73cfd42e6087257654f2fbb70f0e73b2bb14e6d3b1f0f401c1bfe"
 }
