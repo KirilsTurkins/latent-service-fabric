@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "latent.java.fresh-component-independent-review.v1",
+  "observedAtUtc": "2026-10-08T09:48:39.441411+00:00",
+  "sourceCommit": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "sourceTree": "1a1745ebbddab81ea30279e4f43ff554b83306cc",
+  "status": "passed-actual-compiler-capture",
+  "captureFilesRehashed": 1123,
+  "captureBytesRehashed": 26841218,
+  "captureArchiveBytes": 5387377,
+  "captureArchiveSha256": "45fe3d4a7275051b86aa01df4f89c095808a3a79e91dc5f49ebf31d46510422b",
+  "allFourActualComponentsRehashed": {
+    "domain": {
+      "bytes": 1203043,
+      "sha256": "7284b8b834d60f6a66183d781a8f6fd9dfc950f6848773c02f3183a1ff6538b3"
+    },
+    "context-required": {
+      "bytes": 554763,
+      "sha256": "b210a301b93a3f0ee8bc3edc7ddf8f4fea7d6125d5fe9d81ccd346e6ab83cf6a"
+    },
+    "adapter": {
+      "bytes": 1837759,
+      "sha256": "2186a474eb6fb2d7746a529bf49783c7c0ee168a2a9e056ba1ee92a2f7d4e2ea"
+    },
+    "adapter-next": {
+      "bytes": 1837807,
+      "sha256": "ed1c1296795eede2a7fa0005412041207846507f33b669b93d5cd546ab1d4e09"
+    }
+  },
+  "all104ActualBuildCommandsSucceeded": true,
+  "allFourPackagesActuallyAssembled": true,
+  "allFourWasmBytesEqualEarlier5602Outputs": true,
+  "freshSourceAndBuildObservationsRemainDistinct": true,
+  "currentCollectorRecipeIdentityAccepted": true,
+  "adaptationRecipeSha256": "sha256:65cb324635eeb52e6c5054f33d652266aae365ec4178fac8fd6179dca61cff61",
+  "retainedOriginalThirdPartyCompilerSource": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "retainedOriginalCompilerClosureSha256": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+  "currentAndOriginalBundleAbiGuardsUnchanged": true,
+  "oldBundleInstalledAsCurrentProfile": false,
+  "buildOnlyHelperSource": "20d1c62aa5bcaea9ce4da67e7fb5a86b0580ca57",
+  "originalOwnershipAndResponseValidationJvmCasesPassed": true,
+  "perBuildDeadlineSeconds": 900,
+  "sourceUnchangedDuringActualBuilds": true,
+  "nativeRuntimeQualified": false,
+  "signingOperations": 0,
+  "capabilityPoliciesApplied": 0,
+  "guestInvocations": 0,
+  "diagnosticClockStarted": false,
+  "hermetic": false,
+  "implicitCompilerInputs": "not-attested",
+  "remaining": "Authenticated current-source separated signing helper and native runtime evidence; then exact full candidate preparation/review/explicit approval before execution."
+}

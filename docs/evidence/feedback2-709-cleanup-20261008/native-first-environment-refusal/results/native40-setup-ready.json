@@ -1,0 +1,77 @@
+{
+  "sourceCommit": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "sourceTree": "1a1745ebbddab81ea30279e4f43ff554b83306cc",
+  "allFullTrackedFilesReverified": 8366,
+  "allFullTrackedBytesReverified": 554881098,
+  "sourceClean": true,
+  "realOriginalGitObjectsOnly": true,
+  "rustupMaterialSource": "public immutable image toolchain only; no credentials/config copies",
+  "clippyInstalledByOfficialRustupChecksums": true,
+  "cargoFetchLocked": true,
+  "cargoCredentialFilesPresent": false,
+  "native40ClockStarted": false,
+  "diagnosticClockStarted": false,
+  "signingOperations": 0,
+  "foreignVolumesMounted": false,
+  "steps": [
+    {
+      "step": "init",
+      "argv": [
+        "git",
+        "init",
+        "--initial-branch=frozen",
+        "/source"
+      ],
+      "exitCode": 0,
+      "seconds": 0.012569667000207119
+    },
+    {
+      "step": "checkout",
+      "argv": [
+        "git",
+        "checkout",
+        "--detach",
+        "37b48cd8e485a826cd87e23aea184d99c17e4731"
+      ],
+      "exitCode": 0,
+      "seconds": 2.43635456300035
+    },
+    {
+      "step": "clippy",
+      "argv": [
+        "rustup",
+        "component",
+        "add",
+        "clippy",
+        "--toolchain",
+        "1.97.1"
+      ],
+      "exitCode": 0,
+      "seconds": 1.1614262890016107
+    },
+    {
+      "step": "clippy-version",
+      "argv": [
+        "cargo",
+        "+1.97.1",
+        "clippy",
+        "--version"
+      ],
+      "exitCode": 0,
+      "seconds": 0.03279160099918954
+    },
+    {
+      "step": "locked-public-cargo-fetch",
+      "argv": [
+        "cargo",
+        "+1.97.1",
+        "--config",
+        ".cargo/managed-guest.toml",
+        "fetch",
+        "--locked"
+      ],
+      "exitCode": 0,
+      "seconds": 7.782080687999041
+    }
+  ]
+}

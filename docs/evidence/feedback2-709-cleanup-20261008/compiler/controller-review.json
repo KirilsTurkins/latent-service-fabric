@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "controllerSha256": "dec71aaf4d14780ef282ce8f37c7cfd0b2874fadacc33268af525ce60c4aa81e",
+  "materialExtractorSha256": "d0398ce2e59be403af0b52cfe58caf3be5f10c6ff89234f28d1be75a67a98dfa",
+  "reason": "Use documented retained compiler materials through unchanged original producer-owned extraction in separate process; current source handles fresh actual component builds",
+  "originalAndCurrentAbiGuardsUnchanged": true,
+  "currentInstalledProfileClaimed": false,
+  "freshPerBuildSeconds": 900,
+  "fourOriginalBuildCommandVectorsRetained": true,
+  "candidateClockStarted": false,
+  "signingStarted": false
+}

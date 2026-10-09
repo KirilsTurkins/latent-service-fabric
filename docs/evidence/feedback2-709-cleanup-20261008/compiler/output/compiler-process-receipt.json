@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "latent.java.composition-diagnostic-compiler-process.v1",
+  "sourceCommit": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "originalToolProducer": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "originalToolArchive": "sha256:37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+  "originalToolPolicy": "sha256:ce36420661807326255232c0542f334045af5a637a157ad3c99b7e77328ffcba",
+  "compilerOnly": true,
+  "historicalNodeApprovalReused": false,
+  "signedNodeExecutionQualified": false,
+  "compiled": true,
+  "componentExportAvailable": true,
+  "privateOriginalSource": {
+    "sourceTree": "1a1745ebbddab81ea30279e4f43ff554b83306cc",
+    "shallowBoundary": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+    "syntheticCommits": false,
+    "actualObjectSetMatches": true,
+    "trackedBytes": 40909217,
+    "originalGitMutated": false
+  },
+  "seconds": 197.23631,
+  "compilerClosure": {
+    "bytes": 2902802,
+    "sha256": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+  },
+  "compilerNativeHelpers": {
+    "schemaVersion": "latent.java.actual-native-build-helper-association.v1",
+    "nativeSourceCommit": "20d1c62aa5bcaea9ce4da67e7fb5a86b0580ca57",
+    "nativeSourceTree": "3023232b4de0149cc5c84f3ae8273fbbefa8f5b3",
+    "sixRuntimeReceiptSha256": "062f82d99cf4688704f58b79f8d48db6bb8774ae5bbed0a51baad5a3e350fbb3",
+    "additionalPackageBuildReceiptSha256": "3ab56ae97b9bd4b225db5d9dab555bee5df27d6d583712509b5c8e30d2db5298",
+    "files": {
+      "capsule_contracts": {
+        "bytes": 7018496,
+        "sha256": "sha256:cd445b036a817d1627d7608fc772604f69cebe7bc7c785c4624b41d73b63ffe8"
+      },
+      "package": {
+        "bytes": 14358336,
+        "sha256": "sha256:678a75e5575185aee201d081115f68a9498a0a7b9614e6fbfc77b25dd8bf5163"
+      }
+    },
+    "buildOnly": true,
+    "originalSixRuntimeReceiptChanged": false
+  },
+  "guestToolInventoryDigest": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+  "bundleHostAbi": "lsf-host-abi-phase3-v4",
+  "originalPerBuildDeadlineSeconds": 900,
+  "originalOwnershipAndResponseValidationJvmCasesPassed": true,
+  "originalSourceUnchanged": true,
+  "compiledInputs": {
+    "components": {
+      "domain": {
+        "complete": {
+          "sha256": "sha256:a028190394b108788b1f2c9d7cf0a391c5674a4f29f84b6f2d0fe3b77d29d41c",
+          "bytes": 9252
+        },
+        "component": {
+          "sha256": "sha256:7284b8b834d60f6a66183d781a8f6fd9dfc950f6848773c02f3183a1ff6538b3",
+          "bytes": 1203043
+        },
+        "observation": {
+          "sha256": "sha256:a82d53f519de4c2a1682748f8fdfc679ba438edbf6e2dbd893f4982f24cbd4aa",
+          "bytes": 3133
+        },
+        "source": {
+          "sha256": "sha256:639ccffc3a6bb74c681c58a73f80b82104d4b1af32db6464a4eea0f0493d741a",
+          "bytes": 19914
+        }
+      },
+      "adapter": {
+        "complete": {
+          "sha256": "sha256:513ff19f5f8b9fd25aea63af8fb9c4f99b0d9071fd43952a2ecbd58bc446ef9e",
+          "bytes": 9260
+        },
+        "component": {
+          "sha256": "sha256:2186a474eb6fb2d7746a529bf49783c7c0ee168a2a9e056ba1ee92a2f7d4e2ea",
+          "bytes": 1837759
+        },
+        "observation": {
+          "sha256": "sha256:12d0e0f233f43cfe413af9f93ef3fdaee3fb18e37e3900329376989811c4b9c3",
+          "bytes": 3133
+        },
+        "source": {
+          "sha256": "sha256:dabe14849b1f130887df3fd1ca6da8dc0646ab93f736d21d75a750dd35da4bf6",
+          "bytes": 20500
+        }
+      },
+      "adapter-next": {
+        "complete": {
+          "sha256": "sha256:db0230d946e799dc03c25b1e88fbb7ec3eb56f3dabb1e51dea648f5ad72a8a5f",
+          "bytes": 9257
+        },
+        "component": {
+          "sha256": "sha256:ed1c1296795eede2a7fa0005412041207846507f33b669b93d5cd546ab1d4e09",
+          "bytes": 1837807
+        },
+        "observation": {
+          "sha256": "sha256:a7b9b6be5ec6ffbcaf084a4855f61d726e071e9e0eee889e83f70d72d4971e17",
+          "bytes": 3133
+        },
+        "source": {
+          "sha256": "sha256:7187c97e61303799832b3d2a744c3ad4563f0ed7293b5969ef25758dede96b15",
+          "bytes": 20025
+        }
+      },
+      "context-required": {
+        "complete": {
+          "sha256": "sha256:790d0c77666a237a3d39ef840a491cfc5aedd58d4ced65cb2b3abe9be6bfdf31",
+          "bytes": 9276
+        },
+        "component": {
+          "sha256": "sha256:b210a301b93a3f0ee8bc3edc7ddf8f4fea7d6125d5fe9d81ccd346e6ab83cf6a",
+          "bytes": 554763
+        },
+        "observation": {
+          "sha256": "sha256:6975d6497a7322062e493d3ed5a9e7bf01210a3d93f1b15e9da37cdda2f907d2",
+          "bytes": 3132
+        },
+        "source": {
+          "sha256": "sha256:150ab25b2faf7c88f7d51ce00c8083e16c5758410f61e70c70c1eea160fc5859",
+          "bytes": 19912
+        }
+      }
+    },
+    "adaptations": {
+      "sha256": "sha256:7504413f07c878b249a1820585e9ffa705ec177a8f00cf926d75f8c91eeb11c8",
+      "bytes": 966
+    },
+    "sourceObserved": true,
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested",
+    "retainedFiles": "sha256:4fb2bda5173c94315eaaf00e96a121e9a05e40948cabfec35efc0866f1137f8b"
+  },
+  "completeCaptureFiles": 1123,
+  "completeCaptureBytes": 26841218,
+  "completeCaptureArchive": {
+    "bytes": 5387377,
+    "sha256": "sha256:45fe3d4a7275051b86aa01df4f89c095808a3a79e91dc5f49ebf31d46510422b"
+  }
+}

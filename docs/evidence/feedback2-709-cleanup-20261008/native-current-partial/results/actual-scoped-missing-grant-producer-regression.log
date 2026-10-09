@@ -1,0 +1,55 @@
+   Compiling syn v3.0.6
+   Compiling latent-core v0.1.0-alpha.5 (/source/crates/latent-core)
+   Compiling memchr v2.8.3
+   Compiling serde_json v1.0.151
+   Compiling hashbrown v0.17.1
+   Compiling serde_derive v1.0.229
+   Compiling tokio-macros v2.7.2
+   Compiling tokio v1.53.1
+   Compiling serde v1.0.229
+   Compiling latent-contracts v0.1.0-alpha.5 (/source/crates/latent-contracts)
+   Compiling latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+   Compiling latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+   Compiling latent-routing v0.1.0-alpha.5 (/source/crates/latent-routing)
+   Compiling latent-activation v0.1.0-alpha.5 (/source/crates/latent-activation)
+   Compiling syn v2.0.119
+   Compiling indexmap v2.14.1
+   Compiling latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling curve25519-dalek v5.0.0
+   Compiling wasmparser v0.259.0
+   Compiling latent-protected-files v0.1.0-alpha.5 (/source/crates/latent-protected-files)
+   Compiling smallvec v1.15.2
+   Compiling spdx v0.13.5
+   Compiling latent-state v0.1.0-alpha.5 (/source/crates/latent-state)
+   Compiling wit-parser v0.259.0
+   Compiling ed25519-dalek v3.0.0
+   Compiling latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+   Compiling latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+   Compiling latent-effects v0.1.0-alpha.5 (/source/crates/latent-effects)
+   Compiling latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+   Compiling latent-executor v0.1.0-alpha.5 (/source/crates/latent-executor)
+   Compiling latent-telemetry v0.1.0-alpha.5 (/source/crates/latent-telemetry)
+   Compiling latent-admission v0.1.0-alpha.5 (/source/crates/latent-admission)
+   Compiling latent-scheduler v0.1.0-alpha.5 (/source/crates/latent-scheduler)
+   Compiling latent-capabilities v0.1.0-alpha.5 (/source/crates/latent-capabilities)
+   Compiling latent-commit v0.1.0-alpha.5 (/source/crates/latent-commit)
+   Compiling latent-triggers v0.1.0-alpha.5 (/source/crates/latent-triggers)
+   Compiling latent-identity v0.1.0-alpha.5 (/source/crates/latent-identity)
+   Compiling latent-ingress v0.1.0-alpha.5 (/source/crates/latent-ingress)
+   Compiling latent-node v0.1.0-alpha.5 (/source/crates/latent-node)
+   Compiling latent-control-store v0.1.0-alpha.5 (/source/crates/latent-control-store)
+    Finished `test` profile [unoptimized] target(s) in 57.34s
+     Running unittests src/lib.rs (/build/target/debug/deps/latent_control_store-9c96e44a8e7a179b)
+
+running 7 tests
+test deployments::tests::bindings::rejections::absent_deployment_grant_retains_scoped_producer_reason_and_recovers ... ok
+test deployments::tests::bindings::rejections::auto_cannot_widen_explicit_host_only_modes ... ok
+test deployments::tests::bindings::rejections::removing_a_local_provider_retains_unavailable_binding_history ... ok
+test deployments::tests::bindings::rejections::replacement_needs_only_current_and_tentative_plan_capacity ... ok
+test deployments::tests::bindings::rejections::restart_rejects_invalid_binding_even_with_a_recomputed_envelope_checksum ... ok
+test deployments::tests::bindings::rejections::retained_generations_and_preparation_owners_are_bounded ... ok
+test deployments::tests::bindings::rejections::selection_denies_missing_cross_tenant_ambiguous_and_unsupported_providers ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 245 filtered out; finished in 1.39s
+

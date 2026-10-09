@@ -1,0 +1,8 @@
+{
+  "nativeRunOwnsAllFivePreparedVolumes": true,
+  "sourceMountReadonly": true,
+  "nativeRunRunning": true,
+  "keeperStoppedAndRemoved": true,
+  "keeperMaxLifetimeSeconds": 1800,
+  "foreignResourcesTouched": false
+}

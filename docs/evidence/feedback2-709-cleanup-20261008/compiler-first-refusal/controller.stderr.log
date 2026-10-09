@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/controller/controller.py", line 146, in <module>
+    descriptor = bundle.manifest(decode(Path('/bundle/developer-bundle.json').read_bytes(), bundle.MAX_MANIFEST),
+        target='linux-x86_64', version='0.1.0-alpha.5', commit=PRODUCER)
+  File "/work/java709-four-fresh-37b48cd8-r1/source/tools/dev_workflow/bundle.py", line 43, in manifest
+    guest_host_abi(value["hostAbi"])
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/work/java709-four-fresh-37b48cd8-r1/source/tools/dev_workflow/common.py", line 24, in guest_host_abi
+    require(isinstance(value, str) and value in GUEST_HOST_ABIS, "incompatible-host-abi")
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/java709-four-fresh-37b48cd8-r1/source/tools/dev_workflow/common.py", line 38, in require
+    raise DevError(code)
+tools.dev_workflow.common.DevError: incompatible-host-abi

@@ -1,0 +1,82 @@
+   Compiling tokio v1.53.1
+   Compiling latent-effects v0.1.0-alpha.5 (/source/crates/latent-effects)
+   Compiling latent-telemetry v0.1.0-alpha.5 (/source/crates/latent-telemetry)
+   Compiling latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+   Compiling latent-commit v0.1.0-alpha.5 (/source/crates/latent-commit)
+   Compiling latent-capabilities v0.1.0-alpha.5 (/source/crates/latent-capabilities)
+   Compiling latent-scheduler v0.1.0-alpha.5 (/source/crates/latent-scheduler)
+   Compiling latent-node v0.1.0-alpha.5 (/source/crates/latent-node)
+    Finished `test` profile [unoptimized] target(s) in 10.86s
+     Running tests/activation_lifecycle.rs (/build/target/debug/deps/activation_lifecycle-90b080cd76991700)
+
+running 67 tests
+test admission_wait::authority_wait_preserves_one_catalog_and_admits_exactly_once ... ok
+test admission_wait::busy_authority_wait_has_a_shared_finite_ceiling_and_no_background_owner ... ok
+test admission_wait::expiry_and_cancellation_stop_pre_admission_wait_without_dispatch ... ok
+test admission_wait::unavailable_poisoned_revoked_and_uncovered_authority_are_not_retried ... ok
+test canary::accepted_but_unresolved_abandonment_is_not_healthy_missing_data ... ok
+test canary::canary_only_uses_final_selected_revision_and_preserves_accounting ... ok
+test canary::canary_terminal_counts_success_domain_failure_and_accepted_cancellation_once ... ok
+test cleanup::backend_future_destructor_panics_cannot_escape_completion_or_handle_abandonment ... ok
+test cleanup::cancellation_during_fetch_preparation_and_execution_reaches_terminal_and_drops_owners ... ok
+test cleanup::dependency_panics_become_terminal_failures_and_do_not_corrupt_a_healthy_activation ... ok
+test cleanup::dropping_materialization_and_running_futures_reclaims_all_affine_state ... ok
+test cleanup::dropping_received_and_queued_handles_terminalizes_without_affecting_other_activations ... ok
+test cleanup::queued_cancellation_reclaims_only_waiter_and_keeps_running_owner_intact ... ok
+test deadline_abort::aborting_completed_handle_cannot_change_terminal_status_or_a_reused_identity ... ok
+test deadline_abort::accepted_explicit_cancellation_preserves_its_terminal_winner_on_deadline_abort ... ok
+test deadline_abort::expiry_during_fetch_preparation_and_execution_finalizes_the_original_accounting ... ok
+test deadline_abort::queued_transport_expiry_reclaims_only_its_owned_waiter ... ok
+test deadline_abort::transport_expiry_before_first_poll_has_deadline_status_without_admission ... ok
+test identity::assigns_absent_identity_and_preserves_explicit_correlation_without_local_ancestry ... ok
+test identity::assigns_absent_identity_and_rejects_untrusted_ancestry ... ok
+test identity::caller_id_is_available_before_poll_and_foreign_status_cancel_reveal_nothing ... ok
+test identity::duplicate_ids_and_bounded_terminal_eviction_never_replace_an_active_invocation ... ok
+test identity::effective_ids_drive_deterministic_selection_and_catalog_state_stays_pinned ... ok
+test identity::malformed_identity_and_foreign_principal_fail_without_lifecycle_or_backend_work ... ok
+test identity::spare_input_and_context_capacity_is_rejected_before_accepting_an_owner ... ok
+test identity::untrusted_ancestry_is_rejected_without_lifecycle_or_backend_work ... ok
+test inbound::an_expired_pull_cannot_receive_a_fresh_activation_deadline ... ok
+test inbound::full_admission_refuses_another_pull_and_drop_returns_actual_capacity ... ok
+test inbound::reserve_before_receiving_pins_route_budget_and_input_without_preparing_a_guest ... ok
+test inbound::reserved_input_is_subject_to_policy_and_cannot_grow_at_dispatch ... ok
+test inbound::selected_inbound_keeps_exact_weighted_choice_and_policy_across_cutover ... ok
+test inbound::selected_inbound_rejects_mismatched_target_or_generation_before_execution ... ok
+test observations::abandoned_stages_and_accepted_cancellation_each_observe_one_terminal ... ok
+test observations::observation_incarnations_remain_unique_across_managers_and_id_reuse ... ok
+test observations::observations_match_committed_outcomes_and_exclude_payloads_and_diagnostics ... ok
+test observations::observer_panics_and_closed_export_pipeline_preserve_success_and_cleanup ... ok
+test observations::pre_child_grant_denial_reaches_the_real_root_journal_without_new_owners ... ok
+test observations::resolved_context_grants_and_elapsed_time_follow_actual_lifecycle ... ok
+test outcomes::containment_control_looking_payloads_remain_opaque_product_input ... ok
+test outcomes::declared_and_platform_outcomes_have_distinct_retention_and_finalize_spent_resources ... ok
+test outcomes::preexecution_route_admission_deadline_and_artifact_failures_are_terminal_without_backend_calls ... ok
+test outcomes::success_has_ordered_stateless_events_and_retains_diagnostics_without_output ... ok
+test precise_deadline::exact_ingress_expiry_survives_wall_boundary_and_clock_moves ... ok
+test precise_deadline::incoming_expiry_before_first_poll_never_resolves_or_prepares ... ok
+test precise_deadline::preadmission_drop_and_failed_resolution_keep_the_ingress_deadline ... ok
+test precise_deadline::terminal_decision_enforces_exact_expiry_without_a_timer_wakeup ... ok
+test preparation::budget_bridge_delegates_repository_acquisition_without_materializing_again ... ok
+test preparation::code_wait_uses_original_deadline_and_releases_unassigned_quota ... ok
+test preparation::materialization_wait_obeys_original_cancellation_deadline_and_transport_stops ... ok
+test preparation::materialization_wait_retains_one_ready_owner_and_cell_without_repreparing ... ok
+test preparation::mismatched_preparation_releases_affine_owner_before_invocation ... ok
+test preparation::pending_code_retains_admission_without_occupying_a_cell ... ok
+test preparation::repository_preparation_keeps_optional_imports_and_binds_each_activation ... ok
+test preparation::untrusted_repository_mismatches_never_reach_backend_preparation ... ok
+test races::bounded_start_capacity_rejects_before_retaining_more_work_and_refunds_on_drop ... ok
+test races::cancellation_completion_and_status_race_publish_exactly_one_terminal_event ... ok
+test races::concurrent_starts_cannot_replace_the_same_identity_owner ... ok
+test transaction::namespace_admission_runs_on_the_original_ledger_before_any_preparation_or_cell ... ok
+test transaction::ordinary_admission_cannot_install_state_by_selecting_a_transaction_entry_point ... ok
+test transport_cleanup::acknowledged_disconnects_reuse_the_same_capacity_without_explicit_cancel_events ... ok
+test transport_cleanup::exact_expiry_and_explicit_cancel_keep_priority_over_transport_and_success ... ok
+test transport_cleanup::marking_an_already_completed_handle_cannot_stop_its_reused_id ... ok
+test transport_cleanup::queued_disconnect_reclaims_only_its_exact_reservation ... ok
+test transport_cleanup::unpolled_and_preparation_stops_do_not_start_or_reconstruct_work ... ok
+test transport_cleanup_failures::backend_refusal_or_panic_keeps_quarantine_even_after_a_driven_disconnect ... ok
+test transport_cleanup_failures::unacknowledged_disconnect_quarantines_after_the_original_grace ... ok
+test transport_cleanup_pool::transport_handoff_during_pool_disposition_keeps_its_original_owner_and_timer ... ok
+
+test result: ok. 67 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+

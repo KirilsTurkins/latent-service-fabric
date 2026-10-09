@@ -1,0 +1,31 @@
+   Compiling latent-node v0.1.0-alpha.5 (/source/crates/latent-node)
+    Finished `test` profile [unoptimized] target(s) in 4.36s
+     Running unittests src/lib.rs (/build/target/debug/deps/latent_node-8b92b5e4969b22a5)
+
+running 23 tests
+test journal::tests::broker_lineage::broker_parent_requires_original_live_budget_and_selected_source ... ok
+test journal::tests::broker_lineage::reused_parent_id_cannot_adopt_an_old_broker_budget ... ok
+test journal::tests::concurrent_duplicate_start_registers_exactly_one_owner ... ok
+test journal::tests::dropped_and_panicking_pre_admission_owners_publish_one_terminal_fallback ... ok
+test journal::tests::duplicate_and_active_capacity_reject_before_registration_callback ... ok
+test journal::tests::fifo_eviction_follows_completion_even_when_admission_order_differs ... ok
+test journal::tests::full_record_reservation_enforces_bytes_independently_of_active_count ... ok
+test journal::tests::immediate_success_payload_is_not_retained_but_oversized_declared_payload_is_rejected ... ok
+test journal::tests::invalid_phase_and_oversized_attributes_do_not_mutate_the_record ... ok
+test journal::tests::legal_history_and_terminal_status_publish_complete_declared_outcomes ... ok
+test journal::tests::registration_failure_leaves_no_journal_reservation_or_received_event ... ok
+test journal::tests::tenant_queries_and_cancellation_never_expose_another_tenants_record ... ok
+test journal::tests::terminal_eviction_and_monotonic_ttl_never_remove_active_records ... ok
+test journal::tests::tree::caught_provider_observation_is_bounded_scoped_and_never_certifies_terminal_cause ... ok
+test journal::tests::tree::concurrent_children_keep_one_bounded_index_entry_per_owned_record ... ok
+test journal::tests::tree::cursor_freezes_membership_and_is_bound_to_tenant_anchor_and_journal ... ok
+test journal::tests::tree::failed_preparation_child_is_visible_before_any_guest_or_capability_event ... ok
+test journal::tests::tree::forged_lineage_and_cross_tenant_parent_reject_before_registration ... ok
+test journal::tests::tree::mapped_codec_trap_retains_terminal_observation_and_consumption_in_the_tree ... ok
+test journal::tests::tree::retention_removes_index_entries_and_explains_expired_anchor_without_certifying_absence ... ok
+test journal::tests::tree::root_discovery_is_scoped_bounded_filtered_and_keeps_one_serial_horizon ... ok
+test journal::tests::tree::target_service_projection_preserves_identity_and_original_identifier_and_page_limits ... ok
+test journal::tests::unowned_append_is_rejected_without_changing_a_live_history ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 85 filtered out; finished in 0.05s
+

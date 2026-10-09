@@ -1,0 +1,54 @@
+{
+  "observedAtUtc": "2026-10-08T10:43:02.923866+00:00",
+  "volumes": [
+    {
+      "name": "lsf-fb2-native37b-20261008-r1-source",
+      "role": "source",
+      "exitCode": 0,
+      "createdAt": "2026-10-08T10:39:14Z",
+      "labels": null
+    },
+    {
+      "name": "lsf-fb2-native37b-20261008-r1-target",
+      "role": "target",
+      "exitCode": 0,
+      "createdAt": "2026-10-08T10:39:14Z",
+      "labels": null
+    },
+    {
+      "name": "lsf-fb2-native37b-20261008-r1-cargo",
+      "role": "cargo",
+      "exitCode": 0,
+      "createdAt": "2026-10-08T10:39:14Z",
+      "labels": null
+    },
+    {
+      "name": "lsf-fb2-native37b-20261008-r1-rustup",
+      "role": "rustup",
+      "exitCode": 0,
+      "createdAt": "2026-10-08T10:39:14Z",
+      "labels": null
+    },
+    {
+      "name": "lsf-fb2-native37b-20261008-r1-fixtures",
+      "role": "fixtures",
+      "exitCode": 0,
+      "createdAt": "2026-10-08T10:39:14Z",
+      "labels": null
+    }
+  ],
+  "sourceCapacityDisposition": "failed-before-native-phases; source module absent after runtime volume drift",
+  "sourceSetupHadVerifiedFullSourceFiles": 8366,
+  "sourceSetupHadVerifiedFullSourceBytes": 554881098,
+  "setupOwnerLabelsExpected": {
+    "owner": "feedback2-diagnostics709",
+    "source": "37b48cd8e485a826cd87e23aea184d99c17e4731"
+  },
+  "temporaryDockerApiFailureCaptured": "failed-source-capacity-environment-probe.stderr.txt",
+  "allHostSourceInputPacksAndPriorCompilerEvidenceRetained": true,
+  "nativeCargoPhasesExecuted": 0,
+  "javaDiagnosticClockStarted": false,
+  "signaturesCreated": 0,
+  "applicationCapabilityPoliciesApplied": 0,
+  "genuinelyQualifiedCurrentSixReceipt": false
+}

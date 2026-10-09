@@ -1,0 +1,28 @@
+{
+  "source": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "sourceTree": "1a1745ebbddab81ea30279e4f43ff554b83306cc",
+  "sourceAndOriginal40RecipeBytesUnchanged": true,
+  "phasesSha256": "b0ddd7aa5d6b8720d559c7fb77b5685a8f23c657dc13ef16b5d81fbc7becd429",
+  "sourcePackSha256": "70ee9ee0ec85bde61680646c81c2c7b94d35c487afc01e447992ca7839fed934",
+  "previousAttemptPreserved": "C:\\Users\\turkins\\Documents\\latent-fabric-qualification-evidence-20261001\\native-current-37b48cd8-40phase-20261008-r1",
+  "mitigation": "Temporary1800-second infrastructure keeper holds owned mounts read-only during setup-to-run handoff; removed once native run owns them",
+  "originalNativeEnvelope": {
+    "cpus": 2,
+    "memoryGiB": 8,
+    "pids": 1024,
+    "phaseSeconds": 900,
+    "finalGoPhaseSeconds": 1800,
+    "hostSeconds": 4500
+  },
+  "extraKeeperEnvelope": {
+    "cpus": 0.05,
+    "memoryMiB": 64,
+    "pids": 8,
+    "network": "none",
+    "readonly": true,
+    "lifetimeSeconds": 1800
+  },
+  "noForeignResourcesTouched": true,
+  "noDockerRestartOrReset": true,
+  "noSigningOrDiagnosticClock": true
+}

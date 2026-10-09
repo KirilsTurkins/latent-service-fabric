@@ -1,0 +1,267 @@
+    Checking serde_core v1.0.229
+    Checking cfg-if v1.0.4
+    Checking libc v0.2.189
+    Checking typenum v1.20.1
+    Checking memchr v2.8.3
+    Checking serde v1.0.229
+    Checking foldhash v0.2.0
+    Checking itoa v1.0.18
+    Checking hashbrown v0.17.1
+    Checking pin-project-lite v0.2.17
+    Checking bitflags v2.13.1
+    Checking portable-atomic v1.15.0
+    Checking equivalent v1.0.2
+    Checking critical-section v1.2.0
+    Checking bytes v1.12.1
+    Checking once_cell v1.21.4
+    Checking indexmap v2.14.1
+    Checking smallvec v1.15.2
+    Checking cpufeatures v0.3.1
+    Checking const-oid v0.10.2
+    Checking hybrid-array v0.4.15
+    Checking errno v0.3.14
+    Checking signal-hook-registry v1.4.8
+    Checking socket2 v0.6.5
+    Checking mio v1.2.2
+    Checking block-buffer v0.12.1
+    Checking crypto-common v0.2.2
+    Checking tokio v1.53.1
+    Checking digest v0.11.3
+    Checking zmij v1.0.23
+    Checking latent-core v0.1.0-alpha.5 (/source/crates/latent-core)
+    Checking serde_json v1.0.151
+    Checking zeroize v1.9.0
+    Checking linux-raw-sys v0.12.1
+    Checking rustix v1.1.5
+    Checking sha2 v0.11.0
+    Checking semver v1.0.28
+    Checking log v0.4.34
+    Checking ipnet v2.12.2
+    Checking latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+    Checking futures-core v0.3.34
+    Checking anyhow v1.0.104
+    Checking subtle v2.6.1
+    Checking fnv v1.0.7
+    Checking rand_core v0.10.1
+    Checking latent-routing v0.1.0-alpha.5 (/source/crates/latent-routing)
+    Checking futures-sink v0.3.34
+    Checking getrandom v0.4.3
+    Checking io-lifetimes v3.0.1
+    Checking io-lifetimes v2.0.4
+    Checking latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+    Checking latent-contracts v0.1.0-alpha.5 (/source/crates/latent-contracts)
+    Checking der v0.8.2
+    Checking slab v0.4.12
+    Checking unicode-ident v1.0.24
+    Checking id-arena v2.3.0
+    Checking spki v0.8.0
+    Checking fs-set-times v0.20.3
+    Checking zerofrom v0.1.8
+    Checking latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+    Checking io-extras v0.19.0
+    Checking latent-activation v0.1.0-alpha.5 (/source/crates/latent-activation)
+    Checking futures-channel v0.3.34
+    Checking rustix-linux-procfs v0.1.1
+    Checking maybe-owned v0.3.4
+    Checking stable_deref_trait v1.2.1
+    Checking ambient-authority v0.0.2
+    Checking base64 v0.23.1
+    Checking cap-primitives v4.0.3
+    Checking yoke v0.8.3
+    Checking pkcs8 v0.11.0
+    Checking tracing-core v0.1.36
+    Checking signature v3.0.0
+    Checking futures-io v0.3.34
+    Checking futures-task v0.3.34
+    Checking futures-util v0.3.34
+    Checking ed25519 v3.0.0
+    Checking tracing v0.1.44
+    Checking thiserror v2.0.20
+    Checking curve25519-dalek v5.0.0
+    Checking cap-std v4.0.3
+    Checking redb v4.3.0
+    Checking latent-protected-files v0.1.0-alpha.5 (/source/crates/latent-protected-files)
+    Checking wasmparser v0.259.0
+    Checking http v1.5.0
+    Checking zerovec v0.11.8
+    Checking latent-state v0.1.0-alpha.5 (/source/crates/latent-state)
+    Checking ed25519-dalek v3.0.0
+    Checking cap-fs-ext v4.0.3
+    Checking spdx v0.13.5
+    Checking constant_time_eq v0.4.2
+    Checking percent-encoding v2.3.2
+    Checking arrayvec v0.7.8
+    Checking blake3 v1.8.7
+    Checking latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+    Checking wit-parser v0.259.0
+    Checking latent-effects v0.1.0-alpha.5 (/source/crates/latent-effects)
+    Checking latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+    Checking http-body v1.1.0
+    Checking tokio-util v0.7.19
+    Checking latent-executor v0.1.0-alpha.5 (/source/crates/latent-executor)
+    Checking latent-telemetry v0.1.0-alpha.5 (/source/crates/latent-telemetry)
+    Checking latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+    Checking tower-service v0.3.3
+    Checking tinystr v0.8.4
+    Checking litemap v0.8.3
+    Checking writeable v0.6.4
+    Checking icu_locale_core v2.3.0
+    Checking zerotrie v0.2.5
+    Checking potential_utf v0.1.6
+    Checking atomic-waker v1.1.2
+    Checking latent-capabilities v0.1.0-alpha.5 (/source/crates/latent-capabilities)
+    Checking utf8_iter v1.0.4
+    Checking try-lock v0.2.5
+    Checking want v0.3.1
+    Checking icu_collections v2.3.0
+    Checking h2 v0.4.19
+    Checking icu_provider v2.3.1
+    Checking httparse v1.10.1
+    Checking rustls-pki-types v1.15.1
+    Checking httpdate v1.0.3
+    Checking icu_properties_data v2.3.0
+    Checking icu_normalizer_data v2.3.0
+    Checking latent-admission v0.1.0-alpha.5 (/source/crates/latent-admission)
+    Checking hyper v1.11.1
+    Checking getrandom v0.2.17
+    Checking base64 v0.22.1
+    Checking untrusted v0.9.0
+    Checking ring v0.17.14
+    Checking hyper-util v0.1.20
+    Checking latent-scheduler v0.1.0-alpha.5 (/source/crates/latent-scheduler)
+    Checking icu_normalizer v2.3.0
+    Checking icu_properties v2.3.0
+    Checking http-body-util v0.1.5
+    Checking latent-commit v0.1.0-alpha.5 (/source/crates/latent-commit)
+    Checking sync_wrapper v1.0.2
+    Checking tower-layer v0.3.3
+    Checking latent-node v0.1.0-alpha.5 (/source/crates/latent-node)
+    Checking idna_adapter v1.2.2
+    Checking rustls-webpki v0.103.15
+    Checking libm v0.2.16
+    Checking wasmtime-internal-core v48.0.4
+    Checking rustls v0.23.45
+    Checking idna v1.1.0
+    Checking tower v0.5.3
+    Checking form_urlencoded v1.2.2
+    Checking url v2.5.8
+    Checking generic-array v0.14.7
+    Checking cranelift-bitset v0.135.4
+    Checking chacha20 v0.10.2
+    Checking mime v0.3.17
+    Checking axum-core v0.5.6
+    Checking tokio-rustls v0.26.5
+    Checking rand v0.10.2
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+    Checking tinyvec v1.13.3
+    Checking matchit v0.8.4
+    Checking data-encoding v2.11.1
+    Checking utf8parse v0.2.2
+    Checking anstyle-parse v1.0.0
+    Checking axum v0.8.9
+    Checking hickory-proto v0.26.3
+    Checking pin-project v1.1.13
+    Checking digest v0.10.7
+    Checking crc32fast v1.5.1
+    Checking cranelift-entity v0.135.4
+    Checking hyper-timeout v0.5.2
+    Checking webpki-roots v1.0.9
+    Checking cobs v0.3.0
+    Checking latent-triggers v0.1.0-alpha.5 (/source/crates/latent-triggers)
+    Checking tokio-stream v0.1.19
+    Checking latent-identity v0.1.0-alpha.5 (/source/crates/latent-identity)
+    Checking colorchoice v1.0.5
+    Checking anstyle-query v1.1.5
+    Checking hashbrown v0.16.1
+    Checking cpufeatures v0.2.17
+    Checking anstyle v1.0.14
+    Checking is_terminal_polyfill v1.70.2
+    Checking anstream v1.0.0
+   Compiling time-macros v0.2.32
+    Checking gimli v0.33.0
+    Checking sha2 v0.10.9
+    Checking tonic v0.14.6
+    Checking latent-ingress v0.1.0-alpha.5 (/source/crates/latent-ingress)
+    Checking postcard v1.1.3
+    Checking cranelift-bforest v0.135.4
+   Compiling latent-rpc v0.1.0-alpha.5 (/source/crates/latent-rpc)
+    Checking target-lexicon v0.13.5
+    Checking latent-network v0.1.0-alpha.5 (/source/crates/latent-network)
+    Checking prost v0.14.4
+    Checking time-core v0.1.9
+    Checking deranged v0.5.8
+    Checking strsim v0.11.1
+    Checking allocator-api2 v0.2.21
+    Checking powerfmt v0.2.0
+    Checking num-conv v0.2.2
+    Checking clap_lex v1.1.0
+    Checking clap_builder v4.6.7
+    Checking time v0.3.55
+    Checking bumpalo v3.20.3
+    Checking tonic-prost v0.14.6
+    Checking latent-control-store v0.1.0-alpha.5 (/source/crates/latent-control-store)
+    Checking wasmparser v0.254.2
+    Checking rustc-hash v2.1.3
+    Checking leb128fmt v0.1.0
+    Checking arbitrary v1.4.2
+    Checking cranelift-control v0.135.4
+    Checking regalloc2 v0.15.2
+    Checking latent-rollout v0.1.0-alpha.5 (/source/crates/latent-rollout)
+    Checking clap v4.6.7
+    Checking cranelift-assembler-x64 v0.135.4
+    Checking pulley-interpreter v48.0.4
+    Checking latent-test-process v0.1.0-alpha.5 (/source/crates/latent-test-process)
+    Checking termcolor v1.4.1
+    Checking fastrand v2.5.0
+    Checking cranelift-codegen-shared v0.135.4
+    Checking tempfile v3.27.0
+    Checking wasmprinter v0.254.2
+    Checking cranelift-codegen v0.135.4
+    Checking latent-wire v0.1.0-alpha.5 (/source/crates/latent-wire)
+    Checking object v0.39.1
+    Checking wasm-encoder v0.254.2
+    Checking wasmtime-internal-component-util v48.0.4
+    Checking wasmtime-environ v48.0.4
+    Checking latent-testkit v0.1.0-alpha.5 (/source/crates/latent-testkit)
+    Checking either v1.18.0
+    Checking itertools v0.14.0
+    Checking wasmtime-internal-unwinder v48.0.4
+    Checking cranelift-native v0.135.4
+    Checking cranelift-frontend v0.135.4
+    Checking simd-adler32 v0.3.10
+    Checking adler2 v2.0.1
+    Checking miniz_oxide v0.9.1
+    Checking wasmtime-internal-cranelift v48.0.4
+    Checking wasmtime-internal-fiber v48.0.4
+    Checking wit-parser v0.254.2
+    Checking wasmtime-internal-jit-icache-coherence v48.0.4
+    Checking futures v0.3.34
+    Checking memfd v0.6.5
+    Checking encoding_rs v0.8.35
+   Compiling latent-component-bindings v0.1.0-alpha.5 (/source/crates/latent-component-bindings)
+    Checking enumflags2 v0.7.12
+    Checking flate2 v1.1.10
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/source/crates/latent-wasmtime)
+    Checking latent-http v0.1.0-alpha.5 (/source/crates/latent-http)
+    Checking wasmtime v48.0.4
+    Checking landlock v0.4.7
+    Checking quick-xml v0.42.0
+    Checking close_fds v0.3.2
+    Checking seccompiler v0.5.0
+    Checking latent-blobs v0.1.0-alpha.5 (/source/crates/latent-blobs)
+    Checking latent-nats v0.1.0-alpha.5 (/source/crates/latent-nats)
+    Checking latent-secrets v0.1.0-alpha.5 (/source/crates/latent-secrets)
+    Checking openssl-probe v0.2.1
+    Checking rustls-native-certs v0.8.4
+    Checking wasm-encoder v0.259.0
+    Checking latent-optimization-workloads v0.1.0-alpha.5 (/source/tools/optimization-workloads)
+    Checking rustls-platform-verifier v0.7.0
+    Checking hyper-rustls v0.27.9
+    Checking tower-http v0.6.11
+    Checking reqwest v0.13.5
+    Checking latent-oci v0.1.0-alpha.5 (/source/crates/latent-oci)
+    Checking clap_complete v4.6.11
+    Checking latent v0.1.0-alpha.5 (/source/apps/latent)
+    Checking latentd v0.1.0-alpha.5 (/source/apps/latentd)
+    Finished `dev` profile [unoptimized] target(s) in 1m 51s

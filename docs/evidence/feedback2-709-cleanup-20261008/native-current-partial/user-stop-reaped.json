@@ -1,0 +1,37 @@
+{
+  "observedAtUtc": "2026-10-08T11:08:38.627493+00:00",
+  "requestedByUserCleanup": true,
+  "ownedContainer": "lsf-fb2-native37b-20261008-r2-run",
+  "running": false,
+  "pid": 0,
+  "exitCode": 137,
+  "completedPhases": [
+    [
+      "actual-transient-tracking-config-boundary",
+      0
+    ],
+    [
+      "actual-transient-tracking-wire-suite",
+      0
+    ],
+    [
+      "actual-scoped-missing-grant-producer-regression",
+      0
+    ],
+    [
+      "actual-root-journal-retirement-regression",
+      0
+    ],
+    [
+      "ci-selected-strict-clippy",
+      0
+    ],
+    [
+      "journal-staging-and-broker-owners",
+      0
+    ]
+  ],
+  "currentSixQualified": false,
+  "native40Complete": false,
+  "newSigningOrDiagnosticCandidateStarted": false
+}

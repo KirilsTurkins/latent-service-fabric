@@ -1,0 +1,298 @@
+{
+  "source": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+  "unchangedOriginal40Source": "c855e54f191cfe189a1d78bf00b84b070251ee12",
+  "staticCurrentSuiteFilterMatches": [
+    {
+      "phase": "actual-transient-tracking-config-boundary",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "config::tests::rejected_request_tracking_charges_one_record_without_growing_execution_limits"
+      ],
+      "registeredMatches": 1,
+      "matchingCaseNames": [
+        "config::tests::rejected_request_tracking_charges_one_record_without_growing_execution_limits"
+      ]
+    },
+    {
+      "phase": "actual-scoped-missing-grant-producer-regression",
+      "packages": [
+        "latent-control-store"
+      ],
+      "filter": [
+        "deployments::tests::bindings::rejections"
+      ],
+      "registeredMatches": 7,
+      "matchingCaseNames": [
+        "deployments::tests::bindings::rejections::absent_deployment_grant_retains_scoped_producer_reason_and_recovers",
+        "deployments::tests::bindings::rejections::auto_cannot_widen_explicit_host_only_modes",
+        "deployments::tests::bindings::rejections::removing_a_local_provider_retains_unavailable_binding_history",
+        "deployments::tests::bindings::rejections::replacement_needs_only_current_and_tentative_plan_capacity",
+        "deployments::tests::bindings::rejections::restart_rejects_invalid_binding_even_with_a_recomputed_envelope_checksum",
+        "deployments::tests::bindings::rejections::retained_generations_and_preparation_owners_are_bounded",
+        "deployments::tests::bindings::rejections::selection_denies_missing_cross_tenant_ambiguous_and_unsupported_providers"
+      ]
+    },
+    {
+      "phase": "journal-staging-and-broker-owners",
+      "packages": [
+        "latent-node"
+      ],
+      "filter": [
+        "journal::"
+      ],
+      "registeredMatches": 23,
+      "matchingCaseNames": [
+        "journal::tests::broker_lineage::broker_parent_requires_original_live_budget_and_selected_source",
+        "journal::tests::broker_lineage::reused_parent_id_cannot_adopt_an_old_broker_budget",
+        "journal::tests::concurrent_duplicate_start_registers_exactly_one_owner",
+        "journal::tests::dropped_and_panicking_pre_admission_owners_publish_one_terminal_fallback",
+        "journal::tests::duplicate_and_active_capacity_reject_before_registration_callback",
+        "journal::tests::fifo_eviction_follows_completion_even_when_admission_order_differs",
+        "journal::tests::full_record_reservation_enforces_bytes_independently_of_active_count",
+        "journal::tests::immediate_success_payload_is_not_retained_but_oversized_declared_payload_is_rejected",
+        "journal::tests::invalid_phase_and_oversized_attributes_do_not_mutate_the_record",
+        "journal::tests::legal_history_and_terminal_status_publish_complete_declared_outcomes",
+        "journal::tests::registration_failure_leaves_no_journal_reservation_or_received_event",
+        "journal::tests::tenant_queries_and_cancellation_never_expose_another_tenants_record",
+        "journal::tests::terminal_eviction_and_monotonic_ttl_never_remove_active_records",
+        "journal::tests::tree::caught_provider_observation_is_bounded_scoped_and_never_certifies_terminal_cause",
+        "journal::tests::tree::concurrent_children_keep_one_bounded_index_entry_per_owned_record",
+        "journal::tests::tree::cursor_freezes_membership_and_is_bound_to_tenant_anchor_and_journal",
+        "journal::tests::tree::failed_preparation_child_is_visible_before_any_guest_or_capability_event",
+        "journal::tests::tree::forged_lineage_and_cross_tenant_parent_reject_before_registration",
+        "journal::tests::tree::mapped_codec_trap_retains_terminal_observation_and_consumption_in_the_tree",
+        "journal::tests::tree::retention_removes_index_entries_and_explains_expired_anchor_without_certifying_absence",
+        "journal::tests::tree::root_discovery_is_scoped_bounded_filtered_and_keeps_one_serial_horizon",
+        "journal::tests::tree::target_service_projection_preserves_identity_and_original_identifier_and_page_limits",
+        "journal::tests::unowned_append_is_rejected_without_changing_a_live_history"
+      ]
+    },
+    {
+      "phase": "original-web-currentness-handoff",
+      "packages": [
+        "latent-wire"
+      ],
+      "filter": [
+        "management::release::web::preparation::tests"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "actual-os-exit-after-logical-retirement",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::runtime::tests::os_retirement::shutdown_waits_for_the_actual_os_exit_after_logical_store_retirement"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "startup-epoch-accounting-regressions",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::runtime::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "tenant-installation-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::tenant_setup::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "tenant-startup-validation-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::validation::startup::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "protected-state-root-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "config::state::root::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "native-offline-recovery-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::recovery::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "native-recovery-policy-canary",
+      "packages": [
+        "latent-policy"
+      ],
+      "filter": [
+        "capability::store::tests::authority::publication::recovery::inherited_state_binding_keeps_caller_purposes_and_final_publication_fences"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "startup-observation-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::startup_observation::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "wire-floor-regressions",
+      "packages": [
+        "latent-wire"
+      ],
+      "filter": [
+        "phase4::state_management::tests::floor::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    }
+  ],
+  "zeroRegisteredMatchingFilters": [
+    {
+      "phase": "original-web-currentness-handoff",
+      "packages": [
+        "latent-wire"
+      ],
+      "filter": [
+        "management::release::web::preparation::tests"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "actual-os-exit-after-logical-retirement",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::runtime::tests::os_retirement::shutdown_waits_for_the_actual_os_exit_after_logical_store_retirement"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "startup-epoch-accounting-regressions",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::runtime::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "tenant-installation-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::tenant_setup::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "tenant-startup-validation-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::validation::startup::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "protected-state-root-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "config::state::root::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "native-offline-recovery-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::state::recovery::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "native-recovery-policy-canary",
+      "packages": [
+        "latent-policy"
+      ],
+      "filter": [
+        "capability::store::tests::authority::publication::recovery::inherited_state_binding_keeps_caller_purposes_and_final_publication_fences"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "startup-observation-tests",
+      "packages": [
+        "latentd"
+      ],
+      "filter": [
+        "standalone::startup_observation::tests::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    },
+    {
+      "phase": "wire-floor-regressions",
+      "packages": [
+        "latent-wire"
+      ],
+      "filter": [
+        "phase4::state_management::tests::floor::"
+      ],
+      "registeredMatches": 0,
+      "matchingCaseNames": []
+    }
+  ],
+  "transactionRecoverySourceExists": false,
+  "zeroMatchingNativeTestsCannotQualifyOriginalVector": true,
+  "provenance": "Read current committed CI suite catalogue without executing/importing product code; actual Cargo discovery/execution remains authoritative."
+}
