@@ -29,9 +29,12 @@ requirements are descriptive inputs, never permission.
 
 The initial identity is `latent:network/streams@0.1.0`, profile
 `lsf-outbound-streams-v1`. Authoritative operation/state/error definitions and the
-finite workload matrix live in the linked profile. The comparison WIT under
-`research/standard-outbound/` remains uninstalled until provider work promotes
-the exact reviewed bytes. Import renaming cannot implement socket semantics.
+finite workload matrix live in the linked profile. The canonical WIT and the equal comparison bytes under
+`research/standard-outbound/` are recognized by the current selected V5 ABI.
+TCP installation is restricted to explicit development features; production
+installation still requires this review and the implementation gates. ABI
+recognition alone implements no socket semantics or authority. Import renaming
+cannot implement socket semantics.
 
 ## TLS decision
 

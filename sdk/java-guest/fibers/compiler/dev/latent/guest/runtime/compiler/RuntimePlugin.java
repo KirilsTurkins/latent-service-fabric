@@ -20,14 +20,11 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.ClassRefsRenamer;
-import org.teavm.platform.plugin.PlatformPlugin;
-import org.teavm.vm.spi.Before;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 /** SDK-owned compiler extension. The closure index is emitted from actual class
  * files, not a package allowlist or an application-executed compiler plugin. */
-@Before(PlatformPlugin.class)
 public final class RuntimePlugin implements TeaVMPlugin {
     private static final String RUNTIME = "dev.latent.guest.runtime.Activation";
     private final Set<String> applicationClasses = new HashSet<>();
@@ -57,8 +54,6 @@ public final class RuntimePlugin implements TeaVMPlugin {
         TimeUnitMethods.transform(cls, context);
         ThrowableInitialization.transform(cls);
         MonitorContinuations.transform(cls);
-        SleepContinuations.transform(cls);
-        WaitContinuations.transform(cls);
         boolean thread = cls.getName().equals("java.lang.Thread");
         boolean monotonic = thread || cls.getName().equals("java.lang.Object")
             || cls.getName().equals("org.teavm.runtime.EventQueue");
@@ -92,12 +87,8 @@ public final class RuntimePlugin implements TeaVMPlugin {
     }
 
     private static boolean privateConcurrentHelper(String suffix) {
-        // Generated callback classes belong to the actual TeaVM caller. Only
-        // these declared CompletableFuture helpers retain the SDK identity.
         return suffix.equals("ManagedExecutor") || suffix.startsWith("ManagedExecutor$")
-            || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$")
-            || suffix.startsWith("TimeUnit$") || suffix.equals("CompletableFuture$Action")
-            || suffix.equals("CompletableFuture$Aggregate") || suffix.equals("CompletableFuture$DefaultExecutor");
+            || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$");
     }
 
     private static String concurrentReference(String name) {
@@ -127,7 +118,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
         if (normalized != cls) throw new IllegalStateException("unexpected-owned-runtime-class-alias");
     }
 
-    static void threadMethod(MethodHolder method, Program program) {
+    private static void threadMethod(MethodHolder method, Program program) {
         if (method.getName().equals("start") && method.parameterCount() == 0) {
             var admission = call("starting", ValueType.object("java.lang.Thread"), ValueType.VOID);
             admission.setArguments(program.variableAt(0));
@@ -158,7 +149,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
             var self = replacement.createVariable();
             var millis = replacement.createVariable();
             var nanos = replacement.createVariable();
-            var block = ContinuationProgram.body(replacement);
+            var block = replacement.createBasicBlock();
             var join = call("join", ValueType.object("java.lang.Thread"), ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
             join.setArguments(self, millis, nanos);
             block.add(join);

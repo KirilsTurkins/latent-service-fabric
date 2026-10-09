@@ -73,6 +73,49 @@ fn phase3_requires_endpoint_selection_and_preserves_zero_and_future_phase_denial
     );
 }
 
+#[test]
+fn phase4_state_and_intent_ceilings_require_explicit_endpoint_profile_and_remain_bounded() {
+    let policy = CountingPolicy(AtomicUsize::new(0));
+    let mut call = request();
+    let budget = call.budget.as_mut().unwrap();
+    budget.state_read_bytes = 4096;
+    budget.state_write_bytes = 2048;
+    budget.effect_count = 2;
+    let mut limits = InvocationLimits {
+        max_state_read_bytes: 4096,
+        max_state_write_bytes: 2048,
+        max_effect_count: 2,
+        ..InvocationLimits::default()
+    };
+    for profile in [
+        latent_core::BudgetProfile::Phase1,
+        latent_core::BudgetProfile::Phase3,
+    ] {
+        limits.budget_profile = profile;
+        assert!(limits.validate().is_err());
+        assert_eq!(
+            validate(call.clone(), &limits, &policy).unwrap_err().code(),
+            Code::InvalidArgument
+        );
+    }
+    limits.budget_profile = latent_core::BudgetProfile::Phase4;
+    limits.validate().unwrap();
+    validate(call.clone(), &limits, &policy).unwrap();
+    for dimension in 0..3 {
+        let mut excessive = call.clone();
+        let budget = excessive.budget.as_mut().unwrap();
+        match dimension {
+            0 => budget.state_read_bytes += 1,
+            1 => budget.state_write_bytes += 1,
+            _ => budget.effect_count += 1,
+        }
+        assert_eq!(
+            validate(excessive, &limits, &policy).unwrap_err().code(),
+            Code::ResourceExhausted
+        );
+    }
+}
+
 fn validate(
     request: proto::InvokeRequest,
     limits: &InvocationLimits,

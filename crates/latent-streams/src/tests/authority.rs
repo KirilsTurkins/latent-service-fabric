@@ -170,7 +170,10 @@ async fn genuine_http_only_authority_denies_opaque_bytes_before_dns_and_contact(
     assert_eq!(control.budget.host_memory_bytes(), 0);
     assert_eq!(f.provider.usage().unwrap().owners, 0);
     assert_eq!(f.pools.snapshot().unwrap().connections, 0);
-    assert_eq!(f.io.snapshot(), Default::default());
+    assert_eq!(
+        f.io.snapshot(),
+        latent_capabilities::broker::io::IoSnapshot::default()
+    );
     let mut packet = [0; 512];
     assert!(
         tokio::time::timeout(Duration::from_millis(50), dns.recv_from(&mut packet))

@@ -135,7 +135,10 @@ async fn uncertain(fixture: &Fixture, effect: &DurableEffectAuthority) {
             .unwrap()
             .accepted_effects
             != 0
+            || fixture.native_capacity.snapshot().unwrap().ordinary.slots != 0
         {
+            // Logical effect retirement can precede the final capacity-owner
+            // drop. Require its physical witness within the original watchdog.
             tokio::task::yield_now().await;
         }
     })

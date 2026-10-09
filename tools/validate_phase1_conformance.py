@@ -447,7 +447,7 @@ def full_queue(inventory: Any) -> None:
 def verify_fair_queue(observations: Any, report: dict[str, Any]) -> None:
     fields(observations, "holdersRunning queued full overflow overflowStatus unchangedFull firstHandoff secondHandoff cancelled holderResults queuedResults queuedStatuses idleSample fairnessOracle overflowBoundary")
     require(observations["fairnessOracle"] == "other-tenant-completes-before-uncancelled-same-tenant-spin"
-            and observations["overflowBoundary"] == "standalone-active-owner-ceiling-before-extra-journal-registration",
+            and observations["overflowBoundary"] == "standalone-active-owner-ceiling-with-retained-refusal-before-guest-admission",
             "invalid-fairness-witness")
     holders = ("queue-holder-first", "queue-holder-second")
     queued = ("queued-tests-first", "queued-tests-second", "queued-examples")
@@ -459,16 +459,10 @@ def verify_fair_queue(observations: Any, report: dict[str, Any]) -> None:
     full_queue(observations["full"])
     full_queue(observations["unchangedFull"])
     overflow = observations["overflow"]
-    fields(overflow, "schemaVersion command category data error requestDispatched outcomeKnown")
-    require(overflow["schemaVersion"] == "latent.cli.result.v1" and overflow["command"] == "invoke"
-            and overflow["category"] == "transport-failure" and overflow["requestDispatched"] is True
-            and overflow["outcomeKnown"] is False and isinstance(overflow["error"], dict)
-            and overflow["error"].get("grpcCode") == "resource-exhausted", "missing-queue-overflow-rejection")
-    absent = observations["overflowStatus"]
-    fields(absent, "schemaVersion command category data error requestDispatched outcomeKnown")
-    require(absent["schemaVersion"] == "latent.cli.result.v1" and absent["command"] == "activation get"
-            and absent["category"] == "not-found" and absent["requestDispatched"] is True
-            and absent["outcomeKnown"] is True, "missing-overflow-status-proof")
+    refused = invocation_failure(overflow, "queue-overflow", "resource-exhausted", "resource_exhausted")
+    require(all(value == 0 for value in cli_consumption(refused["consumption"]).values()),
+            "queue-overflow-started-guest-work")
+    terminal_status(observations["overflowStatus"], "queue-overflow", "resource_exhausted", refused["consumption"])
     phase_status(observations["firstHandoff"], queued[0], "running")
     handoff = fields(observations["secondHandoff"], "examplesResult secondHolderRunning secondQueuedRunning")
     phase_status(handoff["secondHolderRunning"], holders[1], "running")

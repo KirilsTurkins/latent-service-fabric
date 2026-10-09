@@ -7,6 +7,27 @@ use std::{
 };
 use tokio::runtime::Builder;
 
+fn observed_runtime(
+    blocking_threads: usize,
+    threads: &std::sync::Arc<std::sync::atomic::AtomicUsize>,
+) -> tokio::runtime::Runtime {
+    use std::sync::atomic::Ordering;
+    let started = std::sync::Arc::clone(threads);
+    let stopped = std::sync::Arc::clone(threads);
+    Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(blocking_threads)
+        .on_thread_start(move || {
+            started.fetch_add(1, Ordering::SeqCst);
+        })
+        .on_thread_stop(move || {
+            stopped.fetch_sub(1, Ordering::SeqCst);
+        })
+        .enable_all()
+        .build()
+        .unwrap()
+}
+
 #[test]
 #[ignore = "requires an explicit protected synthetic provider configuration"]
 fn configured_provider_startup_and_shutdown_remain_repeatable() {
@@ -220,6 +241,10 @@ fn repeat_startup(source: &Path) {
 
 #[test]
 fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times() {
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
     let source = TempDir::new().unwrap();
     let path = source.path().join("node.json");
     let document = serde_json::json!({
@@ -241,27 +266,14 @@ fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times()
     });
     std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
-    let control = Builder::new_multi_thread()
-        .worker_threads(1)
-        .max_blocking_threads(4)
-        .enable_all()
-        .build()
-        .unwrap();
-    let invocation = Builder::new_multi_thread()
-        .worker_threads(1)
-        .max_blocking_threads(1)
-        .enable_all()
-        .build()
-        .unwrap();
+    let control_threads = Arc::new(AtomicUsize::new(0));
+    let invocation_threads = Arc::new(AtomicUsize::new(0));
+    let control = observed_runtime(4, &control_threads);
+    let invocation = observed_runtime(1, &invocation_threads);
     for ordinal in 0..32 {
         let mut settings = NodeConfig::load(&path).unwrap().derive().unwrap();
-        let installed = settings
-            .providers
-            .as_ref()
-            .unwrap()
-            .activation_runtime
-            .as_ref()
-            .unwrap();
+        let providers = settings.providers.as_ref().unwrap();
+        let installed = providers.activation_runtime.as_ref().unwrap();
         let expected_digest = installed.configuration_digest().unwrap();
         assert_eq!(
             settings.wasmtime.activation_runtime,
@@ -272,7 +284,10 @@ fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times()
             .block_on(StandaloneNode::start(
                 settings,
                 control.handle().clone(),
-                RuntimeThreads::default(),
+                RuntimeThreads {
+                    invocation: Arc::clone(&invocation_threads),
+                    control: Arc::clone(&control_threads),
+                },
             ))
             .unwrap();
         let descriptors = serde_json::to_value(node.configured_providers()).unwrap();
@@ -288,28 +303,42 @@ fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times()
         );
         assert_eq!(actual[0]["configurationEpoch"], "7");
         assert_eq!(actual[0]["configurationDigest"], expected_digest.as_str());
+        let io = node.providers.as_ref().unwrap().io_observer();
         let stopped = invocation.block_on(node.shutdown()).unwrap();
         assert!(stopped.clean);
         let providers = stopped.providers.unwrap();
         assert!(providers.clean);
         assert_eq!(providers.secret_generations, 0);
         assert_eq!(providers.secret_references, 0);
+        let actual_io = io.snapshot();
+        assert_eq!(actual_io.queued_calls, 0);
+        assert_eq!(actual_io.occupied_running_slots, 0);
+        assert_eq!(actual_io.calls, 0);
+        assert_eq!(actual_io.staged_bytes, 0);
+        assert_eq!(actual_io.result_bytes, 0);
+        assert_eq!(actual_io.metadata_bytes, 0);
+        assert_eq!(actual_io.buffers, 0);
+        assert_eq!(actual_io.streams, 0);
+        assert_eq!(providers.io_calls, 0);
+        assert_eq!(providers.io_retained_bytes, 0);
+        assert_eq!(providers.workers, 0);
         assert_eq!(providers.control_owners, 0);
         assert_eq!(providers.connections, 0);
         assert_eq!(providers.pending_requests, 0);
         assert_eq!(providers.running_requests, 0);
-        assert_eq!(providers.workers, 0);
         assert_eq!(providers.cleanup_jobs, 0);
         assert_eq!(providers.failed_cleanup, 0);
         assert_eq!(providers.sessions, 0);
         assert_eq!(providers.handles, 0);
         assert_eq!(providers.calls, 0);
         assert_eq!(providers.results, 0);
-        assert_eq!(providers.io_calls, 0);
-        assert_eq!(providers.io_retained_bytes, 0);
     }
     control.shutdown_timeout(Duration::from_secs(5));
     invocation.shutdown_timeout(Duration::from_secs(5));
+    // IoRuntime creates no threads. Observe the actual borrowed Tokio owners,
+    // including blocking threads, only after their maintained stop has returned.
+    assert_eq!(control_threads.load(Ordering::SeqCst), 0);
+    assert_eq!(invocation_threads.load(Ordering::SeqCst), 0);
 }
 
 #[test]

@@ -65,6 +65,13 @@ CHILD_REASONS = {
     "ReleaseLifecycleBusy": "release-lifecycle-busy",
     "ReleaseLifecycleUnavailable": "release-lifecycle-unavailable",
     "AdmissionRepositoryRetired": "admission-repository-retired",
+    "PreparationSourceAssociation": "preparation-source-association",
+    "PreparationMetadataBound": "preparation-metadata-bound",
+    "PreparationMetadataOverflow": "preparation-metadata-overflow",
+    "PreparationComponentBound": "preparation-component-bound",
+    "PreparationCacheBound": "preparation-cache-bound",
+    "PreparationDeclaredBudget": "preparation-declared-budget",
+    "ReleaseLifecycleCapacity": "release-lifecycle-capacity",
     "Unclassified": "unclassified",
 }
 CHILD_STAGES = {"Start": "start", "InvocationError": "invocation-error", "ChildFailure": "child-failure"}

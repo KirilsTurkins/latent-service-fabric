@@ -15,13 +15,14 @@ from tools.dev_distribution import file_digest
 from tools.dev_managed_distribution import extract, pack
 from tools.dev_workflow.common import encode, require
 from tools.rust_capsule_build import Commands
+from tools.go_guest.runtime import prepare_compiler
 
 ROOT = Path(__file__).resolve().parents[1]
 REVISION = "148dba505f8c6c64ad84db777cfde5e34e25098b"
 SOURCES = {
-    "go": {"url": "https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz",
-        "version": "go1.27.1-wasi-on-idle", "maximum": 63536422,
-        "sha256": "sha256:4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c"},
+    "go": {"url": "https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz",
+        "version": "go1.27.2", "maximum": 70590635,
+        "sha256": "sha256:ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5"},
     "componentize-go": {"url": "https://github.com/bytecodealliance/componentize-go/releases/download/v0.4.3/componentize-go-linux-amd64.tar.gz",
         "version": "0.4.3", "maximum": 5068079,
         "sha256": "sha256:1061d845f550df5d9477612a7d458a31b1e2b8bdc95823704e42e5064deb0c52"},
@@ -90,7 +91,7 @@ def prepare(payload: Path, output: Path, download, epoch: int) -> dict:
     # Compiler and standard-library sources are needed; upstream regression test
     # fixtures are not compiler inputs and may intentionally use invalid names.
     go = output / "go-tools"
-    shutil.copytree(original, go, ignore=shutil.ignore_patterns("testdata", "*_test.go", ".git"))
+    prepare_compiler(original, go)
     workspace = output / "go-dependencies"
     workspace.mkdir()
     module = workspace / "project"

@@ -113,6 +113,11 @@ jobs:
           cargo test --locked -p latent-wasmtime --lib values::tests::transactions -- --nocapture
       - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
         run: python3 tools/compile_transaction_guests.py --language rust --output "$RUNNER_TEMP/transaction-guests-rust"
+      - name: Count actual guest command executions, commits and effects under duplicate delivery
+        env:
+          LSF_TRANSACTION_GUEST_ROOT: ${{ runner.temp }}/transaction-guests-rust
+        run: |
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture 2>&1 | tee "$RUNNER_TEMP/transaction-guests-rust/node-dedup-executions.log"
       - name: Execute complete outside-checkout authoring qualification
         run: |
           python3 tools/qualify_rust_capsules.py --output "$RUNNER_TEMP/rust-capsule-authoring"
@@ -135,6 +140,7 @@ jobs:
         with:
           name: rust-capsule-authoring-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/transaction-guests-rust/node-dedup-executions.log
             ${{ runner.temp }}/transaction-guests-rust/**/report.json
             ${{ runner.temp }}/transaction-guests-rust/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-rust/**/recipe-inputs.json

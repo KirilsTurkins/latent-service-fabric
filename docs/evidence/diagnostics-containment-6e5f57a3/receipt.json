@@ -1,0 +1,97 @@
+{
+  "formatVersion": 1,
+  "result": "passed",
+  "sourceRevision": "6e5f57a3c22f6e08332fd18f6d183b6b6290bc2e",
+  "producerSourceSha256": "0b8038b6920fd03c4dc65a7b29edebc700ff058d5ebfda7ff366fbd96e5eec8f",
+  "guestBuild": {
+    "host": "windows-x86_64",
+    "rust": "1.97.1",
+    "target": "wasm32-unknown-unknown",
+    "componentSha256": "aa5d50b9a59a249c648c82919835605da1406698f65c821d689abd28e6179da6"
+  },
+  "nativeRun": {
+    "host": "linux-x86_64",
+    "rust": "1.97.1",
+    "toolsImage": "sha256:808682d39104dc67ea35b407841aa8ecd4d5662bb8fa8df09e78cecdf4cacde7",
+    "container": "lsf-diagnostics709-containment-20261001-r1",
+    "cpuLimit": 4,
+    "memoryLimitBytes": 8589934592,
+    "pidsLimit": 512,
+    "watchdogSeconds": 1800,
+    "exitCode": 0,
+    "passedCases": 4,
+    "failedCases": 0,
+    "filteredHistoricalCases": 3,
+    "command": "cargo --config .cargo/managed-guest.toml test -p latent-wasmtime --test containment_backend --locked -- --ignored --nocapture --test-threads=1"
+  },
+  "copiedOriginalFiles": [
+    {
+      "path": "containment-cases.log",
+      "bytes": 16345,
+      "sha256": "dd9f1c116540895ddb3c748bebe5f93efdbf1701b0adcb89d7bd7814f7db955b"
+    },
+    {
+      "path": "native-inputs.sha256",
+      "bytes": 323,
+      "sha256": "7d4349307c965b37eeb99049ec33e5d3b2c14758f2e8da3a6cfe715126c503ed"
+    },
+    {
+      "path": "native-rustc.txt",
+      "bytes": 36,
+      "sha256": "4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06"
+    },
+    {
+      "path": "native-cargo.txt",
+      "bytes": 36,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    {
+      "path": "guest-rustc.txt",
+      "bytes": 37,
+      "sha256": "27d311b01ef340b0791049c423923dbd7ed2d8a5f4ee4e66e45bac2d1e105e49"
+    },
+    {
+      "path": "guest-wasm-tools.txt",
+      "bytes": 20,
+      "sha256": "7627521ea1a63ef7db582ee4f7efe8a73942f5396a2b9888fefefe15f8f26246"
+    },
+    {
+      "path": "guest-build.log",
+      "bytes": 4128,
+      "sha256": "139100382870e3b71e5f16d1d31d3755b5b16f2947a9bdcd2c62e185ee166071"
+    },
+    {
+      "path": "containment-component.wasm",
+      "bytes": 28958,
+      "sha256": "aa5d50b9a59a249c648c82919835605da1406698f65c821d689abd28e6179da6"
+    },
+    {
+      "path": "native-exit-code.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    }
+  ],
+  "retainedLocalFiles": [
+    {
+      "path": "source-complete.tar",
+      "bytes": 551577600,
+      "sha256": "39bb1d967eb84e7b15e3b19b9a5bef30b17db520cf1c014596030bb9b8da8a59"
+    },
+    {
+      "path": "qualified-containment-backend",
+      "bytes": 78886472,
+      "sha256": "114877cecaaeed8f7ac12adc8c3f211e2dd59dd2c1386712156a80809cf3201e"
+    },
+    {
+      "path": "campaign.log",
+      "bytes": 33592,
+      "sha256": "9fb3ee91a3d00679641623e8839e8c5e1e53cd9468c9e283c1dfd92480cc5f9f"
+    },
+    {
+      "path": "native.sh",
+      "bytes": 727,
+      "sha256": "9cc6d00d285c9920b5c25ae64b0dec455819ef3a13c12c70a9eac0e74845c119"
+    }
+  ],
+  "scope": "Original real-component containment backend and typed terminal diagnostics; not a complete composed Java/operator/provider campaign."
+}

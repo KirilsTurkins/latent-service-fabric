@@ -4,7 +4,7 @@ The opt-in `activation-owned-v1` host support profile supplies
 `latent:runtime/activation@0.1.0` beneath maintained language runtimes. It is
 recognized by the V5 host ABI profile. Recognition does not install the bridge,
 grant its operations, or qualify any language runtime. Existing direct guest
-bindings and frozen V1Ã¢â‚¬â€œV4 sources remain available.
+bindings and frozen V1–V4 sources remain available.
 
 `WasmtimeConfig.activation_runtime` selects explicit finite limits for tasks,
 executors, queued work, waits, timers, results and native owners. `None` preserves
@@ -120,14 +120,6 @@ interruption instead of replacing it with cleanup cancellation.
 Three additional normal-suite regressions exercise 40 completed cycles under
 the original 16-call session ceiling, exact import counts, live pending-call
 reservations, cancellation/drop, and malformed sync/async result destinations.
-The [normal native required-cost controls](../testing/evidence/activation-runtime-required-cost-native-2026-10-02.json)
-passed all ten runtime cases with the fixture enforcing the installed profile's
-100-fuel minimum for every operation. This receipt identifies the integrated
-`acb79889` source, all 7,402 input bodies, normal binaries and unchanged limits.
-The prior signed Java executor failure and its closed `resource-exhausted`
-receipt are retained; these host cases do not qualify the expanded Java profile.
-Native execution on this combined source remains pending.
-
 The complete 27-case `local_service` matrix passed on pinned Linux Rust 1.97.1
 and Wasmtime 48.0.3 at source `b5c376422d23a5fe9b0825ffc5449e3675a21a7c`.
 Completed loops execute 123, 203 and 83 original imports. A pending wait keeps

@@ -386,7 +386,7 @@ class CompilerDownloadBounds(unittest.TestCase):
         with patch.object(self.builder.urllib.request, "urlopen", return_value=incoming) as opened, \
                 patch.object(self.builder.time, "monotonic", side_effect=lambda: self.clock):
             self.builder.download(self.path, self.source)
-        opened.assert_called_once_with(self.source["url"], timeout=min(30, self.source.get("timeoutSeconds", self.builder.DOWNLOAD_TIMEOUT_SECONDS)))
+        opened.assert_called_once_with(self.source["url"], timeout=min(60, self.source.get("timeoutSeconds", self.builder.DOWNLOAD_TIMEOUT_SECONDS)))
         self.assertTrue(all(0 < call.args[0] <= len(self.data) + 1 for call in incoming.read1.call_args_list))
 
     def test_small_default_transfer_accepts_only_pinned_bytes(self):
@@ -468,6 +468,86 @@ class CompilerDownloadBounds(unittest.TestCase):
                 self.builder.download(self.path, self.source)
             self.assertIs(caught.exception, failure)
             self.assertEqual(opened.call_count, 1)
+
+    def test_zig_opening_timeouts_retry_only_the_same_pinned_source(self):
+        import io
+        self.source["connectionAttempts"] = self.builder.SOURCES["zig"]["connectionAttempts"]
+        failures = [TimeoutError("first response"),
+                    self.builder.urllib.error.URLError(TimeoutError("second response"))]
+        with patch.object(self.builder.urllib.request, "urlopen",
+                          side_effect=[*failures, io.BytesIO(self.data)]) as opened, \
+                patch.object(self.builder.time, "monotonic", return_value=0):
+            self.builder.download(self.path, self.source)
+        self.assertEqual(self.path.read_bytes(), self.data)
+        self.assertEqual(opened.call_count, 3)
+        for call in opened.call_args_list:
+            self.assertEqual(call.args, (self.source["url"],))
+            self.assertEqual(call.kwargs, {"timeout": 60})
+
+    def test_zig_connection_exhaustion_keeps_the_failure_and_discards_output(self):
+        self.source["connectionAttempts"] = 3
+        failure = TimeoutError("unavailable peer")
+        with patch.object(self.builder.urllib.request, "urlopen", side_effect=failure) as opened, \
+                patch.object(self.builder.time, "monotonic", return_value=0):
+            with self.assertRaises(TimeoutError) as caught:
+                self.builder.download(self.path, self.source)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(opened.call_count, 3)
+        self.assertFalse(self.path.exists())
+
+    def test_connection_retries_share_the_original_deadline(self):
+        self.source.update(connectionAttempts=3, timeoutSeconds=70)
+        self.clock = 0
+        def unavailable(*args, **kwargs):
+            self.clock += min(40, kwargs["timeout"])
+            raise TimeoutError("busy peer")
+        with patch.object(self.builder.urllib.request, "urlopen", side_effect=unavailable) as opened, \
+                patch.object(self.builder.time, "monotonic", side_effect=lambda: self.clock):
+            with self.assertRaisesRegex(common.DevError, "compiler-download-deadline"):
+                self.builder.download(self.path, self.source)
+        self.assertEqual([call.kwargs["timeout"] for call in opened.call_args_list], [60, 30])
+        self.assertEqual(self.clock, 70)
+        self.assertFalse(self.path.exists())
+
+    def test_enabled_connection_retries_do_not_retry_http_or_other_transport_errors(self):
+        self.source["connectionAttempts"] = 3
+        errors = [self.builder.urllib.error.HTTPError(self.source["url"], 403, "denied", {}, None),
+                  self.builder.urllib.error.URLError(ConnectionResetError("reset"))]
+        for failure in errors:
+            with self.subTest(failure=failure), \
+                    patch.object(self.builder.urllib.request, "urlopen", side_effect=failure) as opened:
+                with self.assertRaises(self.builder.urllib.error.URLError) as caught:
+                    self.builder.download(self.path, self.source)
+                self.assertIs(caught.exception, failure)
+                self.assertEqual(opened.call_count, 1)
+                self.assertFalse(self.path.exists())
+
+    def test_partial_body_timeout_is_not_retried_or_cached(self):
+        from unittest.mock import Mock
+        self.source["connectionAttempts"] = 3
+        failure = TimeoutError("partial archive")
+        incoming = Mock()
+        incoming.__enter__ = Mock(return_value=incoming)
+        incoming.__exit__ = Mock(return_value=False)
+        incoming.read1.side_effect = [self.data[:3], failure]
+        cache = self.path.with_name("cache")
+        with patch.object(self.builder.urllib.request, "urlopen", return_value=incoming) as opened:
+            with self.assertRaises(TimeoutError) as caught:
+                self.builder.download(self.path, self.source, cache=cache)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(opened.call_count, 1)
+        incoming.__exit__.assert_called_once()
+        self.assertFalse(self.path.exists())
+        self.assertEqual(list(cache.iterdir()), [])
+
+    def test_invalid_connection_attempts_fail_before_network_or_output(self):
+        for attempts in (0, -1, 4, True, 3.0, "3"):
+            with self.subTest(attempts=attempts), \
+                    patch.object(self.builder.urllib.request, "urlopen") as opened:
+                with self.assertRaisesRegex(common.DevError, "compiler-download-attempts-invalid"):
+                    self.builder.download(self.path, dict(self.source, connectionAttempts=attempts))
+                opened.assert_not_called()
+                self.assertFalse(self.path.exists())
 
 
 class SelectedRecipeImports(unittest.TestCase):

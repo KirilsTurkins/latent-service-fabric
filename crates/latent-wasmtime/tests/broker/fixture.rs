@@ -242,7 +242,7 @@ impl Fixture {
             broker.clone(),
             Arc::new(Plans {
                 plan,
-                hook: Arc::clone(&plan_lookup_hook),
+                hook: plan_hook.clone(),
             }),
         ));
         let mut config = support::config();

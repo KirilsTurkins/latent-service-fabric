@@ -3,8 +3,10 @@
 The shared implementation remains restricted to explicit development features.
 [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md) and the
 [profile](outbound-stream-profile.md) remain subject to #737 architecture/security
-review. These results qualify a canonical TCP component and physical ownership;
-they do not qualify ordinary language networking or a released node artifact.
+review. The maintained suites define canonical TCP and physical-ownership controls.
+Execution remains pending wherever no authenticated source-bound receipt is
+linked below. Case presence and earlier count-only narratives do not establish
+current success, ordinary language networking or a released node artifact.
 
 The maintained `latent-streams` implementation installs exact immutable endpoint,
 address and resolver configuration into the original capability broker, provider
@@ -14,23 +16,23 @@ credentials, trust roots and client keys require the selected language runtime's
 implementation and independent secret grants. No stream configuration accepts
 application credentials or host key paths.
 
-| Evidence | Executed source boundary | Result |
+| Evidence | Source and authenticated execution | Remaining boundary |
 | --- | --- | --- |
-| Native TCP/DNS owners | `latent-streams` real loopback sockets and UDP DNS peer, original sealed policy/catalog/budget | 14 passing cases: actual partial read/EOF/send half-close, chunk backpressure before copy, retained chunks after socket closure, dropped unpolled operation, alternate endpoint denial, revocation before write, revocation during pending read, provider retirement during pending read, explicit host TLS rejection, rotation/drain retaining actual old-generation owners, autonomous idle/DNS expiry of inactive sockets, pending DNS cancellation with independently observed kernel descriptor retirement, and a lost mutation reply preserving uncertainty without host replay |
-| Existing broker behavior | Existing `latent-capabilities` library suite | 125 passing cases, including HTTP/provider audit, cancellation, fair finite queues, delayed physical retirement and exact authority bookkeeping contention |
-| Bounded DNS | `latent-network` real UDP/TCP resolver peers | 3 passing cases: truncated UDP to same explicit TCP resolver, preallocation TCP length rejection and exact special-address policy |
-| Canonical component | Maintained encoded Component Model guest, package/WIT evidence, ordinary Wasmtime backend and actual TCP peer | 7 passing cases: partial owned chunks/EOF, three fresh activations on the same execution cell, oversized byte-list rejection before send, terminal trap/wrong kind/stale resources, root cancellation and policy revocation while a canonical read waits, 256 dormant deployments with zero Stores and socket owners, and protected preparation rejection of UTF-16/compact UTF-16 before Store creation |
-| Signed node execution | Real signatures, SBOM/provenance, enforced package catalog, compiled deployment binding, normal local node admission/manager and actual TCP peers | 4 passing cases: three fresh activations on one execution cell; missing/stale provider binding denied before Store or contact; cancellation acknowledgement retaining original owners followed by actual physical retirement and fresh work; policy revocation at a pending peer barrier before the deadline |
-| Protected node configuration | Normal Linux node configuration loading and derivation, explicit development feature | 3 passing cases: closed input without credential/key-path reflection, exact installed binding scope, protected input and finite exact-address policy before storage or network work |
-| Normal node lifecycle | Protected configuration, ordinary standalone node startup and shutdown | 32 restarts in one maintained case: installation never dials the controlled peer, one prepaid maintenance owner is joined, and physical stream/maintenance owners are zero on each clean shutdown |
-| Authenticated management | Existing capability RPC transport, original broker and actual maintained control future | 45 passing management cases, including additive operator-only stream counters, tenant/caller/spoofed-role denial, actual maintenance join and explicit unavailable status after its weakly observed owner is destroyed |
-| Declarative configuration | Maintained node-provider schema and local stream-schema reference | 6 passing cases; all five existing provider-schema obligations retained, with additive closed stream configuration coverage |
+| Native TCP/DNS owners | Maintained `latent-streams` and `latent-network` suites; current-source receipts remain pending. | No count-only success claim. |
+| Existing broker behavior | Maintained `latent-capabilities` library suite; current complete execution remains pending. | The focused provider controls below are distinct. |
+| Canonical and signed TCP components | Exact source `55906321f5bd7e9cf156674945d808cda91f18b2`: four actual signed TCP tests passed through normal node admission and physical retirement; [native report](outbound-stream-current-native-2026-10-07.json). | Ordinary language clients and packaged operator workflows remain pending. |
+| Protected configuration and owner lifecycle | Twelve protected reload/physical-owner controls, five activation installation controls, three stream configuration controls and the original 32-repeat stream startup test passed on that exact source; [native report](outbound-stream-current-native-2026-10-07.json). | Future source joins require fresh checks and keep this receipt's original attribution. |
+| Historical local service and ABI negatives | At `55906321`, 33 local-service cases had 31 passes and two Java ignores. All 48 generic cases had nine passes and 39 ignores; four exact host ABI negatives passed, including the official full WASI TCP/network/lookup/stream/poll type graph; [native report](outbound-stream-current-native-2026-10-07.json). | Current PR reconciliation retains development's original Java case/ignore and four signed TCP additions; the extra Java proposal remains in its SDK snapshots. Negative import rejection supplies no ambient adapter or production authorization. |
+| Authenticated management and schema | Twenty-one operator source controls and thirteen schema controls passed on Linux; real native reload/publish/drain controls use actual node owners. | Full external CLI/rotation/grant/standard-API acceptance remains pending. |
 
-The Linux checks use Rust 1.97.1 image
-`rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97`.
-Tests observe actual peer FIN/reset, pool connections/running requests, original
-host-memory charges and IoRuntime owner snapshots at controlled barriers. A
-cancel acknowledgement or elapsed timeout is never counted as cleanup proof.
+The earlier narrative named Rust 1.97.1 image
+`rust@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97`
+without per-row source or execution packets. That image reference does not
+authenticate current results. Fresh receipts must identify the full source,
+compiler/runtime/WIT/engine, actual binary, exact cases and controlled barriers.
+Observe actual peer FIN/reset, pool connections/running requests, original
+host-memory charges and IoRuntime owners; a cancellation acknowledgement or
+elapsed timeout never proves cleanup.
 
 The provider prepays kernel socket allowance before allocation and rejects OS
 send/receive sizes beyond its reservation. Original native-memory guards remain
@@ -82,43 +84,6 @@ configured observer reports unavailable without fabricating zero counters. The
 CLI accepts only the ten defined stream counters and that exact unavailable
 reason; unknown fields and provider error text remain rejected.
 
-The 2026-10-01 downstream C management regression passed on host source
-`9c6913d3e76dd37cf17d9aba9c9de2916d0715d7`: 27 actual invocations, 111 CLI
-calls and six provider-idle inspections on a fresh enforced HTTP-only node.
-The ordinary C components are the preserved CI-emitted bytes; fresh isolated
-demo trust admits them to this new node. This checks the management response
-regression, not fresh compiler output, standard socket ports or a release.
-The maintained workflow accepts `--language c` together with explicit existing
-`--cli`, `--node`, `--releases` and a fresh `--output` directory. Its normal
-closed response validator and file bounds remain unchanged.
-
-The successful receipt records source digest
-`sha256:d7b8e67c278557057a5741f32be976e2f1c28e4f8609e4e282f8a4c600fc015e`,
-2,292 explicit input files and 14,581,350 input bytes. CLI identity is
-`sha256:097b2996e6386f208d53594f70844873814beff265bf3fe984de2a148383d213`
-(66,015,776 bytes); node identity is
-`sha256:cc6657cbe91f3f21c28b3e56f979ec0a34c3aa86d65f1f080166220e03a7724c`
-(177,700,664 bytes). These are `objcopy --strip-debug` copies of the fresh
-default binaries; the unstripped node exceeded the existing file-size ceiling.
-The isolated Python 3.13.5 validation image is
-`sha256:689a279df886d11be10c75d4cd301ec382f33f2e07fd8ae034bfa68c80529de6`;
-the run uses no external network and a 4 GiB memory ceiling. Failed file-bound,
-interrupted and Docker-EOF attempts remain separate preserved evidence. The
-receipt's source scope is explicit and nonhermetic; it does not attest implicit
-compiler inputs.
-
-The native suite now also registers a separate genuine HTTP-only authority
-control. Its original sealed session grants only a GET to `/allowed`; opaque
-stream access to that same host/port must fail before DNS, TCP contact or a spent
-connect attempt. The same session then performs the allowed typed GET through
-the maintained HTTP provider. This raises the registered native inventory to 15;
-execution of that new control remains pending and is not included in the 14
-passing native cases above. Its first run passed all stream-denial assertions,
-but the allowed GET hit the original fixture's 16 KiB I/O buffer ceiling because
-the HTTP provider defaults to 32 KiB buffers. The control now configures 8 KiB
-HTTP body buffers on that same original I/O runtime; a rerun of the corrected
-success leg remains pending.
-
 The current provider PR's 2026-10-01 Go tool-bundle run tested merge source
 `6bfe58c57920b3c0da09fa42b78490b4e2a3c409`. Its three ordinary greeting
 scenarios passed. The missing-grant scenario then received an unresolved
@@ -131,8 +96,8 @@ does not establish a clock-lease or authority-contention cause.
 Future controller observations retain `failureDetail` only for one exact
 `admission.currentness` detail with a recognized public reason and Boolean
 retryability. Arbitrary messages, payloads, extra fields and unknown reasons are
-excluded. All 66 recovery, HTTP-fixture and new observation controls pass on
-Linux, including all 12 currentness reasons and both retryability values. This
+excluded. Fresh source-bound recovery, HTTP-fixture and observation control receipts are
+required, including all 12 currentness reasons and both retryability values. This
 diagnostic neither settles the original operation nor authorizes a mutation
 retry; the original pending identity and receipt-recovery rules are unchanged.
 

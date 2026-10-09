@@ -22,7 +22,6 @@ public final class Activation {
     private static Address result;
     private static Throwable failure;
     private static Work root;
-    private static java.util.concurrent.Executor defaultAsyncExecutor;
 
     private Activation() { }
 
@@ -86,15 +85,6 @@ public final class Activation {
 
     public static boolean closing() { return closing; }
 
-    /** One activation-local default pool; accepted callbacks share no host worker. */
-    public static synchronized java.util.concurrent.Executor defaultAsyncExecutor(
-            java.util.function.Supplier<java.util.concurrent.Executor> factory) {
-        if (!entered || retiringPools || closing && !acceptedContinuation())
-            throw new IllegalStateException("activation-runtime-default-executor-closed");
-        if (defaultAsyncExecutor == null) defaultAsyncExecutor = factory.get();
-        return defaultAsyncExecutor;
-    }
-
     /** Linear logical ownership; payloads remain in the accounted Java heap. */
     public static final class Lease implements AutoCloseable {
         private Bindings.LatentRuntimeActivationToken token;
@@ -131,17 +121,19 @@ public final class Activation {
     /** A loop handles spurious notifications and preserves interrupt behavior. */
     public static void join(Thread thread, long millis, int nanos) throws InterruptedException {
         if (millis < 0 || nanos < 0 || nanos > 999999) throw new IllegalArgumentException();
-        if (nanos > 0 && millis != Long.MAX_VALUE) millis++;
-        long timeout = millis;
-        long started = monotonicMillis();
+        if (Thread.interrupted()) throw new InterruptedException();
+        long timeout = millis > Long.MAX_VALUE / 1_000_000
+            ? Long.MAX_VALUE : millis * 1_000_000;
+        timeout = nanos > Long.MAX_VALUE - timeout ? Long.MAX_VALUE : timeout + nanos;
+        long started = System.nanoTime();
         synchronized (thread) {
             while (alive(thread)) {
                 if (timeout == 0) {
                     thread.wait();
                 } else {
-                    long remaining = timeout - (monotonicMillis() - started);
+                    long remaining = timeout - (System.nanoTime() - started);
                     if (remaining <= 0) return;
-                    thread.wait(remaining);
+                    thread.wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
                 }
             }
         }
@@ -244,7 +236,6 @@ public final class Activation {
             // Store and keeps the original reservations until physical drop.
             threads.clear();
             pools.clear();
-            defaultAsyncExecutor = null;
             root = null;
             failure = null;
             entered = false;

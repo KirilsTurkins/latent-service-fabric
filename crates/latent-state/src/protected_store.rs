@@ -1,18 +1,32 @@
 //! One protected, bounded node database. All native work, initialization and
 //! affine view retirement belongs to the same fixed storage workers.
 
+mod checkpoint;
 mod config;
+mod custody;
 mod dispatcher;
+mod mode;
 mod native_capacity;
 mod operation;
 mod physical;
+mod resource;
+mod snapshot;
 mod startup;
+mod startup_memory;
 mod view;
 
+pub use checkpoint::{
+    CheckpointInspection, ProtectedCheckpoint, ProtectedCheckpointConfig, ProtectedCheckpointJob,
+    StoreInitializationWitness,
+};
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
+pub use mode::{StateModeObservation, STATE_MODE_FILE, STATE_MODE_NATIVE_BYTES};
 pub use operation::ProtectedStoreOperation;
+pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
+pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
+pub use startup_memory::ProtectedStoreStartupMemory;
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
 
 use std::future::Future;

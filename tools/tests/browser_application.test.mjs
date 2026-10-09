@@ -64,3 +64,27 @@ test('local abort closes the fetch wait and never sends an RPC cancel or retries
   await assert.rejects(publicGreeting(controller.signal), /application-aborted/);
   assert.equal(calls, 1);
 });
+
+test('a consumed document query token is removed before the actual application fetch', async context => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'history');
+  let cleaned;
+  browser(context, async () => {
+    assert.equal(globalThis.location.href, 'https://public.example.test/index.html?retained=one#section');
+    return Response.json({greeting: 'Hello Browser'});
+  });
+  globalThis.location.href = 'https://public.example.test/index.html?synthetic-token=one&retained=one&synthetic-token=two#section';
+  Object.defineProperty(globalThis, 'history', {configurable: true, value: {
+    replaceState(_state, _unused, path) {
+      cleaned = path;
+      globalThis.location.href = new URL(path, globalThis.location.origin).href;
+    },
+  }});
+  context.after(() => {
+    if (previous) Object.defineProperty(globalThis, 'history', previous);
+    else delete globalThis.history;
+    delete globalThis.boundaryTokenRemoved;
+  });
+  assert.equal(await publicGreeting(new AbortController().signal), 'Hello Browser');
+  assert.equal(cleaned, '/index.html?retained=one#section');
+  assert.equal(globalThis.boundaryTokenRemoved, true);
+});

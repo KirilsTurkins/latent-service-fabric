@@ -25,6 +25,7 @@ impl StreamInstallation {
             .map_err(|_| invalid("providers.outboundStreams.configuration"))?;
         for identity in [
             all.http.as_ref().map(|v| &v.identity),
+            all.activation_runtime.as_ref().map(|v| &v.identity),
             all.blob.as_ref().map(|v| &v.identity),
             all.secrets.as_ref().map(|v| &v.identity),
             all.metrics.as_ref().map(|v| &v.identity),

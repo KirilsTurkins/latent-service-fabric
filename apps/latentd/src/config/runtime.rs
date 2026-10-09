@@ -20,6 +20,7 @@ pub(super) fn wasmtime(
 ) -> Result<WasmtimeConfig, PlatformError> {
     let mut runtime = WasmtimeConfig {
         execution_isolation_profile: config.security_profile,
+        transactional_state: config.state.is_some(),
         instance_allocator: match config.engine.allocator {
             EngineAllocator::OnDemand => InstanceAllocator::OnDemand,
             EngineAllocator::Pooling => InstanceAllocator::Pooling,
@@ -104,7 +105,7 @@ pub(super) fn manager(config: &NodeConfig, capacity: &Capacity) -> LocalActivati
             maximum_input_bytes: config.limits.maximum_payload_bytes,
         },
         journal: LocalActivationJournalConfig {
-            maximum_active: capacity.reservations as usize,
+            maximum_active: capacity.tracked_requests,
             maximum_terminal: config.retention.terminal_entries,
             maximum_record_bytes: JOURNAL_RECORD_BYTES,
             maximum_retained_bytes: config.retention.bytes,
@@ -124,6 +125,9 @@ pub(super) fn invocation(
         budget_profile: config.budget_profile.profile(),
         max_child_calls: budget.child_calls,
         max_outbound_requests: budget.outbound_requests,
+        max_state_read_bytes: budget.state_read_bytes,
+        max_state_write_bytes: budget.state_write_bytes,
+        max_effect_count: budget.effect_count,
         max_blob_read_bytes: budget.blob_read_bytes,
         max_blob_write_bytes: budget.blob_write_bytes,
         max_payload_bytes: config.limits.maximum_payload_bytes,

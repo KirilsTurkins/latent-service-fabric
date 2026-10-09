@@ -45,9 +45,16 @@ pub fn component(options: Options) -> Vec<u8> {
 }
 
 pub fn with_host(options: Options, name: &str, host: &InstanceType) -> Vec<u8> {
+    with_hosts(options, &[(name, host)])
+}
+
+pub fn with_hosts(options: Options, hosts: &[(&str, &InstanceType)]) -> Vec<u8> {
     let mut component = Component::new();
     let mut types = ComponentTypeSection::new();
-    types.instance(host); // 0: host interface
+    let first = u32::try_from(hosts.len()).unwrap();
+    for (_, host) in hosts {
+        types.instance(host);
+    }
     types.defined_type().record([
         (
             "value",
@@ -67,11 +74,11 @@ pub fn with_host(options: Options, name: &str, host: &InstanceType) -> Vec<u8> {
             } else {
                 "payload"
             },
-            Some(ComponentValType::Type(1)),
+            Some(ComponentValType::Type(first)),
         ),
     ]); // 2: choice
     types.defined_type().result(
-        Some(ComponentValType::Type(2)),
+        Some(ComponentValType::Type(first + 1)),
         Some(
             if options.signed_result_error {
                 PrimitiveValType::S32
@@ -83,15 +90,20 @@ pub fn with_host(options: Options, name: &str, host: &InstanceType) -> Vec<u8> {
     ); // 3: outcome
     types.defined_type().record([
         ("count", ComponentValType::Primitive(PrimitiveValType::U32)),
-        ("outcome", ComponentValType::Type(3)),
+        ("outcome", ComponentValType::Type(first + 2)),
     ]); // 4: input
     types
         .function()
-        .params([("input", ComponentValType::Type(4))])
+        .params([("input", ComponentValType::Type(first + 3))])
         .result(Some(PrimitiveValType::U32.into())); // 5
     component.section(&types);
     let mut imports = ComponentImportSection::new();
-    imports.import(name, ComponentTypeRef::Instance(0));
+    for (index, (name, _)) in hosts.iter().enumerate() {
+        imports.import(
+            *name,
+            ComponentTypeRef::Instance(u32::try_from(index).unwrap()),
+        );
+    }
     component.section(&imports);
     component.section(&ModuleSection(&core(options.invalid_body)));
     if options.invalid_unused_body {
@@ -108,13 +120,13 @@ pub fn with_host(options: Options, name: &str, host: &InstanceType) -> Vec<u8> {
     });
     component.section(&aliases);
     let mut canonical = CanonicalFunctionSection::new();
-    canonical.lift(0, 5, []);
+    canonical.lift(0, first + 4, []);
     component.section(&canonical);
-    export_api(&mut component, options);
+    export_api(&mut component, options, first);
     component.finish()
 }
 
-fn host(options: Options) -> InstanceType {
+pub fn host(options: Options) -> InstanceType {
     let mut host = InstanceType::new();
     let result = if options.wrong_clock_signature {
         PrimitiveValType::U32
@@ -138,23 +150,23 @@ fn host(options: Options) -> InstanceType {
     host
 }
 
-fn export_api(component: &mut Component, options: Options) {
+fn export_api(component: &mut Component, options: Options, first: u32) {
     let mut api = ComponentInstanceSection::new();
     api.export_items([
-        ("payload", ComponentExportKind::Type, 1),
-        ("choice", ComponentExportKind::Type, 2),
-        ("outcome", ComponentExportKind::Type, 3),
-        ("input", ComponentExportKind::Type, 4),
+        ("payload", ComponentExportKind::Type, first),
+        ("choice", ComponentExportKind::Type, first + 1),
+        ("outcome", ComponentExportKind::Type, first + 2),
+        ("input", ComponentExportKind::Type, first + 3),
         ("inspect", ComponentExportKind::Func, 0),
     ]);
     component.section(&api);
     let mut exports = ComponentExportSection::new();
-    exports.export(CONTRACT, ComponentExportKind::Instance, 1, None);
+    exports.export(CONTRACT, ComponentExportKind::Instance, first, None);
     if options.extra_export {
         exports.export(
             "tests:packaging/extra@1.0.0",
             ComponentExportKind::Instance,
-            1,
+            first,
             None,
         );
     }

@@ -4,7 +4,6 @@ use super::{fixture::Fixture, packages};
 use latent_activation::ActivationOutcome;
 use latent_artifacts::ArtifactRepository;
 use latent_core::{activation_runtime::RuntimeLimits, ActivationId, PlatformErrorCode, TenantId};
-use latent_executor::ExecutionBackend;
 use std::{future::Future, pin::Pin, sync::atomic::Ordering, task::Poll, time::Duration};
 
 #[path = "runtime/component.rs"]
@@ -121,42 +120,22 @@ async fn signed_runtime_with_limits(
 #[tokio::test]
 #[ignore = "requires the pinned Java activation fiber component and explicit java profile"]
 async fn signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers() {
-    signed_java_fiber_fixture(
-        "LSF_JAVA_FIBER_FIXTURE",
-        include_bytes!("../../../../sdk/java-guest/fibers/conformance/Capsule.java"),
-        "java-fibers",
-    )
-    .await;
-}
-
-#[tokio::test]
-#[ignore = "requires the pinned ordinary CompletableFuture component and explicit java profile"]
-async fn signed_java_completable_futures_use_default_activation_executor() {
-    signed_java_fiber_fixture(
-        "LSF_JAVA_COMPLETABLE_FIXTURE",
-        include_bytes!("../../../../sdk/java-guest/fibers/conformance/completable/Capsule.java"),
-        "java-completable",
-    )
-    .await;
-}
-
-async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name: &str) {
     assert_eq!(
         std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
         Ok("java")
     );
     let prepared = std::path::PathBuf::from(
-        std::env::var_os(variable).expect("prepare the pinned Java fiber fixture"),
+        std::env::var_os("LSF_JAVA_FIBER_FIXTURE").expect("prepare the pinned Java fiber fixture"),
     );
     let source = std::fs::read(prepared.join("src/Capsule.java")).unwrap();
-    assert_eq!(source.as_slice(), expected_source);
+    assert_eq!(
+        source,
+        include_bytes!("../../../../sdk/java-guest/fibers/conformance/Capsule.java")
+    );
     let record: serde_json::Value =
         serde_json::from_slice(&std::fs::read(prepared.join("FIBERS-COMPILE.json")).unwrap())
             .unwrap();
     assert_eq!(record["profile"], "teavm-activation-fibers-v1");
-    if name == "java-completable" {
-        assert_eq!(record["fixture"], "completable");
-    }
     let bytes = std::fs::read(prepared.join("build/component.wasm")).unwrap();
     assert_eq!(
         record["componentDigest"],
@@ -168,12 +147,11 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     );
     assert_eq!(record["reference"].as_array().unwrap().len(), 3);
     for control in record["reference"].as_array().unwrap() {
-        assert_eq!(control["modes"], serde_json::json!([0, 1, 2, 3]));
-        assert_eq!(control["results"], serde_json::json!([42, 42, 42, 42]));
+        assert_eq!(control["modes"], serde_json::json!([0, 1, 2]));
+        assert_eq!(control["results"], serde_json::json!([42, 42, 42]));
     }
     let wit = std::fs::read_to_string(prepared.join("wit/service.wit")).unwrap();
     let caller = packages::java_activation_runtime(bytes, &wit);
-    let release = packages::release(&caller);
     let root = tempfile::tempdir().unwrap();
     // Declared fixture ceiling: root plus four independent pool workers, three
     // executors, and the pending batches/rendezvous. No product default is added.
@@ -187,42 +165,11 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         native_owners: 2,
     };
     let f = signed_runtime_with_limits(root.path(), 1, 120_000, caller, &source, java_limits).await;
-    // Qualify guest execution separately from cold native compilation. Prepare
-    // this exact signed publication through the ordinary repository boundary;
-    // no activation, guest Store or capability session is started here. Each
-    // subsequent activation still performs its normal currentness/grant checks
-    // and retains the original 120-second, fuel and memory ceilings.
-    let preparation_started = std::time::Instant::now();
-    let publication = f
-        .catalog
-        .execution_eligibility_selected(&release, None)
-        .unwrap()
-        .unwrap()
-        .publication()
-        .clone();
-    let mut key = f.backend.preparation_key(&release).unwrap();
-    key.publication = Some(publication);
-    let ready = tokio::time::timeout(
-        Duration::from_secs(600),
-        f.backend
-            .prepare_ready_from_repository(f.catalog.clone(), key),
-    )
-    .await
-    .expect("bounded signed Java preparation setup")
-    .expect("prepare the exact signed Java publication");
-    let prepared_owner = f.backend.materialize_ready(ready).unwrap();
-    drop(prepared_owner);
-    f.idle().await;
-    assert_eq!(f.backend.resource_snapshot().stores_created, 0);
-    eprintln!(
-        "teavm-activation-fibers-v1 signed-preparation-setup-micros={} stores-created=0 guest-activations=0",
-        preparation_started.elapsed().as_micros()
-    );
     for iteration in 0..3 {
-        for mode in 0..4 {
+        for mode in 0..3 {
             let receipt = success(
                 f.manager
-                    .start(f.request(&format!("{name}-{iteration}-{mode}"), mode))
+                    .start(f.request(&format!("java-fibers-{iteration}-{mode}"), mode))
                     .unwrap()
                     .await,
             );

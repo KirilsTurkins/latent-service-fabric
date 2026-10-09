@@ -239,6 +239,7 @@ impl ProviderIdentity {
 impl ConfiguredProviders {
     fn no_installations(&self) -> bool {
         self.http.is_none()
+            && self.activation_runtime.is_none()
             && self.outbound_streams.is_none()
             && self.http_streaming.is_none()
             && self.activation_runtime.is_none()
