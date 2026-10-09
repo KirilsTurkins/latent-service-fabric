@@ -1,0 +1,18 @@
+[
+  {
+    "artifactDirectory": "developer-linux",
+    "workflow": "developer-tools.yml",
+    "source": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+    "attestationSubject": "SHA256SUMS",
+    "allArchiveAndManifestChecksumsMatch": true,
+    "exactSourceFrozenRefHostedBuilderVerified": true
+  },
+  {
+    "artifactDirectory": "native-runtime",
+    "workflow": "native-runtime.yml",
+    "source": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+    "attestationSubject": "SHA256SUMS",
+    "allArchiveAndManifestChecksumsMatch": true,
+    "exactSourceFrozenRefHostedBuilderVerified": true
+  }
+]

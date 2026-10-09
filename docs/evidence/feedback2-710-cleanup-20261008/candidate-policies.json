@@ -1,0 +1,20 @@
+{
+  "developer": {
+    "schemaVersion": "latent.native-publisher-policy.v1",
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "sourceRef": "refs/heads/qualify/feedback2-packaged710-37b48cd8-20261008",
+    "sourceCommit": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+    "version": "0.1.0-alpha.5",
+    "purpose": "candidate",
+    "workflow": ".github/workflows/developer-tools.yml"
+  },
+  "runtime": {
+    "schemaVersion": "latent.native-publisher-policy.v1",
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "sourceRef": "refs/heads/qualify/feedback2-packaged710-37b48cd8-20261008",
+    "sourceCommit": "37b48cd8e485a826cd87e23aea184d99c17e4731",
+    "version": "0.1.0-alpha.5",
+    "purpose": "candidate",
+    "workflow": ".github/workflows/native-runtime.yml"
+  }
+}
