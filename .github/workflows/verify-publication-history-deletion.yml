@@ -1,0 +1,31 @@
+name: Publication history implementation verification
+on:
+  push:
+    branches:
+      - ci/662-publication-history-deletion
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    name: Export exact source for implementation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Archive only tracked source with its exact identity
+        run: |
+          mkdir -p "$RUNNER_TEMP/publication-history-source"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/publication-history-source/source.tar.gz"
+          git rev-parse HEAD > "$RUNNER_TEMP/publication-history-source/commit.txt"
+          git rev-parse HEAD^{tree} > "$RUNNER_TEMP/publication-history-source/tree.txt"
+          sha256sum "$RUNNER_TEMP/publication-history-source/source.tar.gz" > "$RUNNER_TEMP/publication-history-source/source.sha256"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: publication-history-source-${{ github.sha }}
+          path: ${{ runner.temp }}/publication-history-source/
+          if-no-files-found: error
+          retention-days: 1
