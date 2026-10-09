@@ -1,0 +1,298 @@
+[
+  {
+    "worktree": "C:/Users/turkins/Desktop/latent-fabric-p4-composition388",
+    "sourceBranch": null,
+    "head": "4c65cfbae5782fd840d825a6b34673cfc125b322",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/latent-fabric-p4-composition388",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/latent-fabric-p4-runtime",
+    "sourceBranch": "refs/heads/feat/phase4-node-transactions-388",
+    "head": "21a4d4ee531575e1524500b77f08fad8912623ba",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/latent-fabric-p4-runtime",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-ci823-staging-model-20261007-v35",
+    "sourceBranch": "refs/heads/fix/phase4-sdk-staging-model-v35-20261007",
+    "head": "f8980a13668234bd5f89ade444fdfb3cf7dbbc22",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-ci823-staging-model-20261007-v35",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-ci828-owner-fixtures-20261007-v36",
+    "sourceBranch": "refs/heads/fix/phase4-owner-fixtures-v36-20261007",
+    "head": "fae4e339f1cae89d4aa6ac070baecc703e4bcdc3",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-ci828-owner-fixtures-20261007-v36",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-http-deferred-admission-v96",
+    "sourceBranch": "refs/heads/fix/phase4-deferred-http-bookkeeping-v96",
+    "head": "c7663996caa7722cd2a9ccc298f656e6c27a01e5",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-http-deferred-admission-v96",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-recovery808-current-v62",
+    "sourceBranch": "refs/heads/fix/phase4-recovery808-current-v62",
+    "head": "8d7912f549fb4b986266e1e9d9be92328f4157ae",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-recovery808-current-v62",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-atomic787-current-20261007-v2",
+    "sourceBranch": "refs/heads/fix/phase4-atomic787-current-20261007-v2",
+    "head": "06e174bb364dadffa0ad13044891873c32bb9845",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-atomic787-current-20261007-v2",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-canonical388-20261003",
+    "sourceBranch": "refs/heads/candidate/phase4-canonical-runtime-388-20261003",
+    "head": "0a2e3c1eaee50a3a74413c6fe1b49eefbc2723a8",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-canonical388-20261003",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-client800-preflight-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-client800-packed-preflight-20261007-v1",
+    "head": "de0929d694a7ac0f6737482a704b448037a01f58",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-client800-preflight-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr784-20261007-v2",
+    "sourceBranch": "refs/heads/fix/phase4-current-pr784-20261007-v2",
+    "head": "3ad33507528da7a0137bf6376da7be31c6674727",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-current-pr784-20261007-v2",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr790-20261007-v2",
+    "sourceBranch": "refs/heads/fix/phase4-current-pr790-20261007-v2",
+    "head": "5d02ba28483562ccd5f1d734602de3ee124b22fb",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-current-pr790-20261007-v2",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr791-20261007-v2",
+    "sourceBranch": "refs/heads/fix/phase4-current-pr791-20261007-v2",
+    "head": "64209d6e5b8f4be7aeaecbe01c67c8303c739592",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-current-pr791-20261007-v2",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr811-20261007-v2",
+    "sourceBranch": "refs/heads/fix/phase4-current-pr811-20261007-v2",
+    "head": "ae09b5b9e55a1a682fc2d26daf766f77e694daa1",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-current-pr811-20261007-v2",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-current-pr825-20261007-v2",
+    "sourceBranch": "refs/heads/fix/phase4-current-pr825-20261007-v2",
+    "head": "847a4b0b115f0c02e478a25b8bc90e98787810c7",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-current-pr825-20261007-v2",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr784-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr784-20261007-v1",
+    "head": "fd4b1538475174a5b12c7287a76dead35d19a141",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr784-20261007-v1",
+    "unmaterializedCheckout": true,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr787-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr787-20261007-v1",
+    "head": "a6e48f5c83942204eb5a121ccae64e2f22079fa6",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr787-20261007-v1",
+    "unmaterializedCheckout": true,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr790-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr790-20261007-v1",
+    "head": "61ee0c4f18070037421ae90f469d78182d0a7af3",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr790-20261007-v1",
+    "unmaterializedCheckout": true,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr791-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr791-20261007-v1",
+    "head": "12ad5c1002b60c9463b1999d4968244f1c39c9cc",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr791-20261007-v1",
+    "unmaterializedCheckout": true,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr796-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr796-20261007-v1",
+    "head": "971e0932777591e12eefdf1cde29609edde58eca",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr796-20261007-v1",
+    "unmaterializedCheckout": true,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr800-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr800-20261007-v1",
+    "head": "4fa932ac7784ab7f90ed428f796434bc9cc0bd47",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr800-20261007-v1",
+    "unmaterializedCheckout": true,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr808-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr808-20261007-v1",
+    "head": "b6400b596fea7ab4bff8bf6a145e87143a6145bb",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr808-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr811-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr811-20261007-v1",
+    "head": "76c0c9fd7e7256f04a2d8a7686d146463f89fa69",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr811-20261007-v1",
+    "unmaterializedCheckout": true,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr825-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr825-20261007-v1",
+    "head": "92008c17e0922c2bccfc8c8a33d09218562a8f32",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr825-20261007-v1",
+    "unmaterializedCheckout": true,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-main172-pr828-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-main172-pr828-20261007-v1",
+    "head": "396a9857d9b12d72cb667db7f8a6b425a176795f",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-main172-pr828-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr784-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr784-20261007-v1",
+    "head": "ba72b0bfb6765b8a0433a010dd7ea477e8835de5",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr784-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr787-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr787-20261007-v1",
+    "head": "0e45957f21732622abe96be74bdb21c586b2e39f",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr787-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr790-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr790-20261007-v1",
+    "head": "17fe34ba445e948cf0e5382656afa080dc5302ad",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr790-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr791-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr791-20261007-v1",
+    "head": "c40b73b18771d2bd91cf1746f9a680ae9562f431",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr791-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr796-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr796-20261007-v1",
+    "head": "cd163324a5192c511c7ba4deb26fda84771f9d6b",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr796-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr800-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr800-20261007-v1",
+    "head": "87c96dd917c9adce7c4f191b110f074cae104227",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr800-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr808-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr808-20261007-v1",
+    "head": "3290a2e66495eed9432e31f261b809ec0bea9be0",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr808-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr811-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr811-20261007-v1",
+    "head": "9b60139e627613a51224bd4cef7316e167a6f77f",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr811-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr825-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr825-20261007-v1",
+    "head": "8785fadf4d630cce34fbcbfebf65d0fbb0851d1c",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr825-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-mainc9-pr828-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-mainc9-pr828-20261007-v1",
+    "head": "5a10163dbbd6e67cb8d16459446a7d77d95d0078",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-mainc9-pr828-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-manifest-conjunction-20261007-v1",
+    "sourceBranch": "refs/heads/fix/phase4-manifest-conjunction-20261007-v1",
+    "head": "0d922003389e8f0d44423bc46c5047359390c335",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-manifest-conjunction-20261007-v1",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-reconcile",
+    "sourceBranch": null,
+    "head": "c99365fce5309f5dc215ff1b1d2dcba37e94478d",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-reconcile",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-root-retention796-current-20261007-v2",
+    "sourceBranch": "refs/heads/fix/phase4-retention796-current-20261007-v2",
+    "head": "9afd6990491a33d4dd38d5a69f8fe77fc77aaf0a",
+    "checkpointBranch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-retention796-current-20261007-v2",
+    "unmaterializedCheckout": false,
+    "needsWorktreeCommit": false
+  }
+]

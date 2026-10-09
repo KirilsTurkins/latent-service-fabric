@@ -1,0 +1,10 @@
+{
+  "allCurrentAgentSourceHeadsCoveredByInitial265RemoteArchives": true,
+  "integrationOwnedSourceWorktrees": 44,
+  "entityOwnedSourceWorktrees": 29,
+  "portableOwnedSourceWorktrees": 89,
+  "uncommittedSourceFilesAtStop": 0,
+  "rootHistoricalWIPCommittedSeparately": true,
+  "rootInterruptedMergeBlobsAndIndexCommittedAsCustody": true,
+  "privateValidatorBuildTestProcesses": 0
+}

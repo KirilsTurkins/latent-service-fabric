@@ -1,0 +1,849 @@
+{
+  "sourceWorktree": "C:\\Users\\turkins\\Desktop\\lf-p4-abi-dedup387-execution-20261006",
+  "head": "6dbbf49f6bcf61bee863b9c00b2513e29f884bd3",
+  "mergeHead": "7ccc3291d22a78644f059beaea2bf5067bd364ed",
+  "conflicts": [
+    {
+      "path": "api/proto/latent/control/v1/state.proto",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "2509599e5f88fe7f84f302ed4baba8dfe049e75a4b68af4f6a0618214016461b",
+          "bytes": 6037
+        },
+        {
+          "stage": 2,
+          "sha256": "f2f98d9974ef0afe014b30978eacee03310bb86f25d70cefb7e8591130e19901",
+          "bytes": 8146
+        },
+        {
+          "stage": 3,
+          "sha256": "ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
+          "bytes": 5477
+        }
+      ],
+      "workingSha256": "3db8fd41e8498a0adb30077b8a895d7e4051fae3cc49f9182558affc40800e28"
+    },
+    {
+      "path": "crates/latent-commit/src/atomic/mod.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "2fc49d4121bb435345a31444ecf6a56f150b1b130351e9f35639cb3b441857ab",
+          "bytes": 7650
+        },
+        {
+          "stage": 2,
+          "sha256": "4f0d54e57ffcad5e5d8396ec20dfc11d119cc3f39af6069f094765a330927dc6",
+          "bytes": 8934
+        },
+        {
+          "stage": 3,
+          "sha256": "1bc4e6e4bb902ec64333ac44bfeb59885d84d5538ad78f15e9772162ed64acd5",
+          "bytes": 7490
+        }
+      ],
+      "workingSha256": "654e013c78ab1b863b296a20adc7d678f8c4171880f06e2f6f118eaaf4c9807b"
+    },
+    {
+      "path": "crates/latent-commit/src/atomic/tests.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "3f811578a99ca9152abe7ab05f4c0d11d5205619cce2b05b37cf41f5c1cc8b37",
+          "bytes": 33295
+        },
+        {
+          "stage": 2,
+          "sha256": "fd90c73b86ba0fb0b0407fa4691366443194a5fd2869d126e6074caad2da020e",
+          "bytes": 41537
+        },
+        {
+          "stage": 3,
+          "sha256": "a608c995e9759f59962d24b3d8aed3458ff8df48feed76fb80f952484d58ffef",
+          "bytes": 33215
+        }
+      ],
+      "workingSha256": "aaea902a87005065017a86a1ce49972c5213c0822bb26ce72ed8e0753164ebfc"
+    },
+    {
+      "path": "crates/latent-effects/src/authority.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "ba001eca58812aa27f577dff522b78b314e2cffcbc30aac963b9b8b082e109fa",
+          "bytes": 26627
+        },
+        {
+          "stage": 2,
+          "sha256": "93af5224c641e6774ae300daac089cabbd68497427edfce938dec9c6870bcd16",
+          "bytes": 29601
+        },
+        {
+          "stage": 3,
+          "sha256": "a97f2440739e3172ae3f3a7d379d09ce4f80d42e2b4ac241af061a05285d809d",
+          "bytes": 25103
+        }
+      ],
+      "workingSha256": "21c3159b02f97be27c20e3317e45ef3a54e52f2293903d1f219568c065b892b9"
+    },
+    {
+      "path": "crates/latent-effects/src/dispatch.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "db7ffc165a066acf3b7576404010e904e71467514ea8b7e8f2a0590522c6f79a",
+          "bytes": 19533
+        },
+        {
+          "stage": 2,
+          "sha256": "78f0caacbc2dea35efa32368d98ceb7896585c184a7379529e3c77587a637ee5",
+          "bytes": 19857
+        },
+        {
+          "stage": 3,
+          "sha256": "cdc68c902a3de2315000eba38cfcd0b338cb0ada67091b6ec482094f16d7e9fa",
+          "bytes": 18361
+        }
+      ],
+      "workingSha256": "54ef4603570f96fa75b5ff71b342bc44300eddf2cf34ccc251498d77dc0be19b"
+    },
+    {
+      "path": "crates/latent-effects/src/dispatch_store/catalog.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "32539cd088c92b5541b1db8553a087b6f016d28d2c2d3d3b3f9a16ac0509b6d8",
+          "bytes": 15075
+        },
+        {
+          "stage": 2,
+          "sha256": "17e09fd591741dfa815ef429d7c8f1d271369bba24aaba16fbe1784b69c7e726",
+          "bytes": 16644
+        },
+        {
+          "stage": 3,
+          "sha256": "5f5cf8dc325694cba42c4357c09c61c289998afdd390446260fffd98b593f4b4",
+          "bytes": 14361
+        }
+      ],
+      "workingSha256": "0827425ffc9eb46f38d2399f9df556a2c1b63946b39b5f3fcaeecde698c5a047"
+    },
+    {
+      "path": "crates/latent-node/Cargo.toml",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "51b9cdaff2425fa03da6011a8f51e096645d3cd91b60a85b64af7b4febd2fccd",
+          "bytes": 935
+        },
+        {
+          "stage": 2,
+          "sha256": "5f8cc00ec53a776537bfb6511e01df1bff05e1d59a38a0a8000f63fc1bff820f",
+          "bytes": 1173
+        },
+        {
+          "stage": 3,
+          "sha256": "8a5c5e38a3f265566279b928396736f47a14686f41dbc7da48ece16a009f830b",
+          "bytes": 1099
+        }
+      ],
+      "workingSha256": "c5f0533f8c249e525d973a769676cf5a35995c86fa0437604692ed5ddcbf70b8"
+    },
+    {
+      "path": "crates/latent-policy/src/capability/store/authority/owned.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "27554ba47a8c2cb23bd65e2acd4af3a0fcac19707b1ee43ff3ecc723a280d09f",
+          "bytes": 6265
+        },
+        {
+          "stage": 2,
+          "sha256": "ca9c239da895458c6c15a4e857287a97d224b789f2714bd57281cfd7c119ad01",
+          "bytes": 8361
+        },
+        {
+          "stage": 3,
+          "sha256": "64cdc142f438f8154ee08f34c1293c10cdca0266c263011c5d36ec36c1056cdb",
+          "bytes": 6185
+        }
+      ],
+      "workingSha256": "b393f9a020be6bfbdb0d6d395824249eb2b4c4a71576f509929013e70afe951e"
+    },
+    {
+      "path": "crates/latent-state/src/protected_store.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "677a07684dbf3ef2a4dbe7404069b6db59f4f2f7196d0203372a016d47a67478",
+          "bytes": 8314
+        },
+        {
+          "stage": 2,
+          "sha256": "0a817dda394c8fcb77ca5e712775c25b29482c4d0578c3e0659ead07ac74fc3e",
+          "bytes": 9309
+        },
+        {
+          "stage": 3,
+          "sha256": "82055a3c0ef13ac1a0ca23f534e72e64b5d5f5d4751a1e7d6d1ae65e7a9754d9",
+          "bytes": 7754
+        }
+      ],
+      "workingSha256": "906ac948bb105163e29135d0ea8f38498d331b6d65cd45cf24979aa44b12ed12"
+    },
+    {
+      "path": "crates/latent-state/src/protected_store/physical.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "dd6d407b6d4070058be4c92e170b626af8951da1f966dd8d2460a6b46bd145a7",
+          "bytes": 10317
+        },
+        {
+          "stage": 2,
+          "sha256": "887a99f62fd250d98b399fbb7c5fc74559cfe31b9055cc6a16d0752a95878f72",
+          "bytes": 16722
+        },
+        {
+          "stage": 3,
+          "sha256": "2f6c2f848a0777e16fa4b289feb613b690fb933edb0f5570e2621431e780e933",
+          "bytes": 10003
+        }
+      ],
+      "workingSha256": "2752bb3c899e2de9462a5008b5f216260c55a180eb683b5cc69a0e1378552bf3"
+    },
+    {
+      "path": "crates/latent-state/src/protected_store/startup.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "99b8c454628f2e7db5019e4ffa45fefdb5754174de963eefdbffc47c96735b55",
+          "bytes": 8826
+        },
+        {
+          "stage": 2,
+          "sha256": "e4c361066d932b165461edf957fd60d2d506511ed032eb222162ec7c88f2c95f",
+          "bytes": 13784
+        },
+        {
+          "stage": 3,
+          "sha256": "5b5ae20830333e7f139c43193b9a65b37b18a3f1768a84ba46e97f0ef1d580f4",
+          "bytes": 8746
+        }
+      ],
+      "workingSha256": "b49a605da59b0121ff5c7045551f9740f6e2715d98d952b368a1f69b49461133"
+    },
+    {
+      "path": "crates/latent-state/src/protected_store/tests.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "3e1abac22391c3a2c2120b3cc4f5cfde9d5d6392d3a0584bac87c91d5cbb4023",
+          "bytes": 3310
+        },
+        {
+          "stage": 2,
+          "sha256": "f046fc0ec4e0405db760cc3269941a504d982089655b3128c8d4b7b331ac0d67",
+          "bytes": 3290
+        },
+        {
+          "stage": 3,
+          "sha256": "ad340e00cb9fc1e19259b224c6c36786fa99e5b384d4777bc67efa6d52357557",
+          "bytes": 3216
+        }
+      ],
+      "workingSha256": "7c7c7e1dcfc37598d1fe3fa84d03e09411b2e72a80b1c5ace05ac75f0713e680"
+    },
+    {
+      "path": "crates/latent-state/src/protected_store/view.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "4c4df852f509b42896dbc262d9bad747d87a394e5e6837d207ab78bbc53611f7",
+          "bytes": 5096
+        },
+        {
+          "stage": 2,
+          "sha256": "8d63245d639ad293391e8fbcb95b600f4c7e59a36b29fc5bc19d771005bfab2f",
+          "bytes": 5652
+        },
+        {
+          "stage": 3,
+          "sha256": "cb7f8d8bacad7eea58535fa6a55e262e7eba20d4ad1cd7ebbe186d6c0b1c453a",
+          "bytes": 4606
+        }
+      ],
+      "workingSha256": "be06515397a3139b5b3ab0c9ec279db63376f35f7a8c2719f356581e46c82431"
+    },
+    {
+      "path": "crates/latent-state/src/store_io.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "38475229dbe9e1a1a927dfb6c4cc28e85a0a886ae773634b3a144df7600f5775",
+          "bytes": 12105
+        },
+        {
+          "stage": 2,
+          "sha256": "209e66078dcc268750bb2ea0fe797e8fbd7d66dec7a771cf4f1edf4ca1e072f7",
+          "bytes": 11262
+        },
+        {
+          "stage": 3,
+          "sha256": "57c6451600ffa5c54f2c9ba424fc45c77cc2fb63fab70d4a3ae9ddfff21c6b96",
+          "bytes": 10873
+        }
+      ],
+      "workingSha256": "68fdcee17ec2f9c497d7679a5c7b314b1eda18ad95fc2533f0aec1f03355065a"
+    },
+    {
+      "path": "crates/latent-state/src/store_io/job.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "3df022668e632ab852d99e87a60b887a95b219175863f9787c94735ebecb65e7",
+          "bytes": 5565
+        },
+        {
+          "stage": 2,
+          "sha256": "4100ad83d3081cf8ed44f4f817e02532e8e40183b1b207390b274990371b3c31",
+          "bytes": 5370
+        },
+        {
+          "stage": 3,
+          "sha256": "71d32a83183803abc3b5e59728137877411878e4557ba35555051113af5c5775",
+          "bytes": 5325
+        }
+      ],
+      "workingSha256": "ddb2cbed6aa11bf3b14c724e25b23a57aab6e197ee383323b0df8058f7d852d1"
+    },
+    {
+      "path": "crates/latent-state/src/store_io/retained.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "bb320e75c3a6a7eec1539798e48625b8f976125d8f446e924e65874fdb354a56",
+          "bytes": 8782
+        },
+        {
+          "stage": 2,
+          "sha256": "54ce33f6f9bd5c715d6a176fe453146d871ee2df489e41755e98415b077a87db",
+          "bytes": 9347
+        },
+        {
+          "stage": 3,
+          "sha256": "e34c3dbf46badef2100f6bf02a47ccc55e374ab8749a468a40359f4ca145a090",
+          "bytes": 6944
+        }
+      ],
+      "workingSha256": "fe374b1a30fabfd0f822de4f2c5871d9bfed4425a815067cfe50c5313e5577a1"
+    },
+    {
+      "path": "crates/latent-state/src/store_io/startup.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "754f1df4ac828128614be686b22965b84b1d9aef56379ff8c81441c974f4b7b6",
+          "bytes": 7863
+        },
+        {
+          "stage": 2,
+          "sha256": "ea6c34c19853930b2c12c60cb898705a8f0659787631eadcc6cfe069910fee50",
+          "bytes": 9602
+        },
+        {
+          "stage": 3,
+          "sha256": "2e0139ccc2d1eb80962ffdf7d390b23b46e0222b4e89777229c283c47813c5a1",
+          "bytes": 7703
+        }
+      ],
+      "workingSha256": "7e47e11400e75edf9f5679452192f2755d7789ffd46ec029d10590b1acafe132"
+    },
+    {
+      "path": "crates/latent-state/src/store_io/state.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "c58cbfa016f5c2bcf0ccccf57027797caa61a5f2036f8af5c2ef611b2e0a400c",
+          "bytes": 11221
+        },
+        {
+          "stage": 2,
+          "sha256": "4af5f9683aa5597648430eab9e47ba438229c957a98f493d30edf726d2eace33",
+          "bytes": 11953
+        },
+        {
+          "stage": 3,
+          "sha256": "f64c0de3e228e368f3395d99cb6651a2bf9a1f8f25d3d6702a54a22f0fd3c0c2",
+          "bytes": 9282
+        }
+      ],
+      "workingSha256": "54ff7ef8ed433b38104884d153fec2a9549d222f987751a00ba4c1cf3b231372"
+    },
+    {
+      "path": "crates/latent-state/src/store_io/types.rs",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "ac4f17f61ea49c540938ba2c3d37f7c50f421b42832450b219ba7fbf07cfd7c9",
+          "bytes": 6237
+        },
+        {
+          "stage": 2,
+          "sha256": "8435bb748b951f7b35403fac871c2fcf08c6654ecd317033a1dab6950f32cb79",
+          "bytes": 6254
+        },
+        {
+          "stage": 3,
+          "sha256": "cd055d9f5ea24f08a4011c9b581343172537b3e3335530e3ad9c24d18c947e98",
+          "bytes": 5837
+        }
+      ],
+      "workingSha256": "d53c2278eccbe8391faa5e5be540f4772eccba146cafc65be94a4c5a6d944e46"
+    },
+    {
+      "path": "docs/protocol/transactions.md",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "4af8b5f490abbf37be98fbc49789fa882267b5540b5be341bdcf722fe97b5f93",
+          "bytes": 15622
+        },
+        {
+          "stage": 2,
+          "sha256": "c509baaa8a98e2a7ee38f4a64d3887496c8435ff5fab52d26c68d87e3a25999c",
+          "bytes": 18775
+        },
+        {
+          "stage": 3,
+          "sha256": "d4c60622732b51fd6cc3642ec80ed7c96ec690d4b1dd5eace85e2fedd187549b",
+          "bytes": 15166
+        }
+      ],
+      "workingSha256": "b45cd0121cc37dbf4fc1af7963a28b5f6299d324d0ef245a0865aa8a47f1c39d"
+    },
+    {
+      "path": "schemas/capability-policy.schema.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "eb5d7dc7bd76dbb900b5c254c0bad35de7f14454dddcf7e62308a8c5a0b7eec7",
+          "bytes": 38497
+        },
+        {
+          "stage": 2,
+          "sha256": "90daecc7a92fbb64dc98459bf00d47197746a44b452f1ad6be8dd5edb4f88b2c",
+          "bytes": 12473
+        },
+        {
+          "stage": 3,
+          "sha256": "052382433e1d0f52df32818f8323e9d2507f53c21d96ffb61bab1ef2346f28df",
+          "bytes": 12361
+        }
+      ],
+      "workingSha256": "b1b50d8ce706628cd2f75ca4d7256e54e82b7456b3addf7870867c77a043a5ed"
+    },
+    {
+      "path": "sdk/profile/transaction-requirements-v1.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "19155bd40eb4f8c83baa59be0895466e80aeaa4adcc20e2af2e5902ed50a0f92",
+          "bytes": 8118
+        },
+        {
+          "stage": 2,
+          "sha256": "fcfd2c16c3e767f17caa6b58a5ab0cc314f6dda0a859e2b6f386838c27b8167c",
+          "bytes": 9418
+        },
+        {
+          "stage": 3,
+          "sha256": "fe650f1c8294d12de43d26bbf89434ac864b314353404bd8aa1bf6ad61ed9fef",
+          "bytes": 7346
+        }
+      ],
+      "workingSha256": "859e9a120138c87a433208fd13e22b6f15d217dad47cdc196e5af2cecb4a178f"
+    },
+    {
+      "path": "tools/ci/contracts/owners/tools/build_dev_guest_tools.py.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "e12388cfd050c333fe7ee37d4d66e8b0a04f8a117978eb7cf00b7fb54e7da48f",
+          "bytes": 977
+        },
+        {
+          "stage": 2,
+          "sha256": "b8e6170c62de3ea86c971d3b4c39b7dec787956a3cc9f9be1d18773df14f7ab5",
+          "bytes": 385
+        },
+        {
+          "stage": 3,
+          "sha256": "353f7099b63f2186ddc91baf567f6e7584eb9396b8f6ca76978857419f8fb81b",
+          "bytes": 436
+        }
+      ],
+      "workingSha256": "f9463a52f108bfe2ec1f108f2dd986cda027cee34ad960c79441e0db92741f66"
+    },
+    {
+      "path": "tools/ci/contracts/owners/tools/generate_transaction_contracts.py.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "6e95dbbf5afb815430ed01281dc2f8e6fbabfc55e5ebe50c8b7338a8f00d649b",
+          "bytes": 887
+        },
+        {
+          "stage": 2,
+          "sha256": "eae2f53a766337dce10adea29f7570bcd15f3f1c32f69fe36a8e5e07f56f99b9",
+          "bytes": 647
+        },
+        {
+          "stage": 3,
+          "sha256": "353315db2482f0eba626592249034d86d43cf3b0e99d2499797fd2ca45114d85",
+          "bytes": 627
+        }
+      ],
+      "workingSha256": "1522a216432c4eb2ae7faeb936f93d136fafa1a7534a3f47cef020376eb03d9b"
+    },
+    {
+      "path": "tools/ci/contracts/owners/tools/stage_runtime_wit.py.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "ddbce78d6437e78655062239bdb63f5e23fe5d9439433fd0193266e98e771ed9",
+          "bytes": 838
+        },
+        {
+          "stage": 2,
+          "sha256": "90d24508197a742ff30d6dbf642fe92878afeb505201d19866df55844903b9f2",
+          "bytes": 634
+        },
+        {
+          "stage": 3,
+          "sha256": "505226e6880c31fe51395274c1e5128bf8daa484d12181a3e79673e81560cf0f",
+          "bytes": 422
+        }
+      ],
+      "workingSha256": "6d01489ef215adef0ec0301a736fd24133394e862d9998ef1d312571041093c2"
+    },
+    {
+      "path": "tools/ci/contracts/python/test_owned_runners.py.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "aca4f6c12b6a91ceb2658217b5c95b4ab9a307afcbbc99fc1e578a620152a145",
+          "bytes": 7260
+        },
+        {
+          "stage": 2,
+          "sha256": "e4decca24ab1f95f5af8349d9cd4d55801fd8b84acf2ec58c0343c760287233b",
+          "bytes": 6979
+        },
+        {
+          "stage": 3,
+          "sha256": "a0eb5aa88db31859b8c2c2de33ef63fa9065a3a7629554c00937aa445e5d6e29",
+          "bytes": 7986
+        }
+      ],
+      "workingSha256": "b694a5cfbfa69376d16536eed44abec07db4089e6dd07cf25501b9ba48a85872"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/c-guest-authoring.yml/jobs/runtime.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "d84f68fddbfa0c775f3455591bf0f2098bad853d670af85cdf61070e2602a8eb",
+          "bytes": 10421
+        },
+        {
+          "stage": 2,
+          "sha256": "7c5153e9537064a49c7d1bf520ac757189d97318a3af6b1ea4ae532fcd1d74df",
+          "bytes": 6769
+        },
+        {
+          "stage": 3,
+          "sha256": "d6286679aece3c90a44617b90ca8727e1b783bbb498bae1e5c1e866a4f25622b",
+          "bytes": 5473
+        }
+      ],
+      "workingSha256": "8b859063ec2e21cb5e408bddc798ef34a3b9bf30dfdda02331774402ed9e02f2"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/c-guest-authoring.yml/workflow.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "81d641c39c177233e6216887c3199bffe250acca030d359a262abd8578b64563",
+          "bytes": 2702
+        },
+        {
+          "stage": 2,
+          "sha256": "54f6cee0c78c3ec6bc92894c5eb0e817a9f3d9db6eac0b12049474b828ddc0db",
+          "bytes": 1499
+        },
+        {
+          "stage": 3,
+          "sha256": "77b7da0cb515a4c92f6b25927c1406aee77895b75d45053834b3a1126f7db2b1",
+          "bytes": 1479
+        }
+      ],
+      "workingSha256": "e3b65aae2e767e3d611be8f30d4bf8480ce5cf88c3d98682a4243630a8a7b345"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/dotnet-guest.yml/jobs/toolchain.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "5615886d048bb81530b05224fc0a8331261e9768c4090be57c26b3828a715731",
+          "bytes": 20034
+        },
+        {
+          "stage": 2,
+          "sha256": "3c449259a0d3c9e8063dc1f3c32956cac2c9f8b042e97cb83957d60c5370d7bc",
+          "bytes": 11301
+        },
+        {
+          "stage": 3,
+          "sha256": "570c3ea95ec7b9ad9f8c23b31ff9bbaf27eaa333a4e7d1f91bdc4f3fb0f1a37a",
+          "bytes": 10078
+        }
+      ],
+      "workingSha256": "3ad96cb2fbeae6e58dadc63ce817c427aa17491d76be5dee41a1ef004f0ac818"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/dotnet-guest.yml/workflow.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "4508bfa1725179f30a826bcc43b20db29c0e99ad642321143602824038d7cda7",
+          "bytes": 3422
+        },
+        {
+          "stage": 2,
+          "sha256": "7a593724be335cc5ce28efbd8c23100df982331f8f014fb2e09716489439e2d3",
+          "bytes": 2309
+        },
+        {
+          "stage": 3,
+          "sha256": "29eec9274409ee20a847015fe3f2fb26df4d6191cd7f19aa0b89d9aae1172f29",
+          "bytes": 2021
+        }
+      ],
+      "workingSha256": "c3c43d316dafd224955c34a1e3479c96e9bd58407b5582fcc80f5b48ff51fe90"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/go-guest.yml/jobs/upstream-probe.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "59c8a73cf4d70b036f398d4948a51da091617f97cda60eae6dc49dee96468ffa",
+          "bytes": 12842
+        },
+        {
+          "stage": 2,
+          "sha256": "8e19d227f17dee85834325b66e85450f09242924003cf16c9954b184e07ca64b",
+          "bytes": 7897
+        },
+        {
+          "stage": 3,
+          "sha256": "e70567788fff6e55047157b49d33e8443b66e2e93b00db61bfe3a57266d62d6f",
+          "bytes": 6786
+        }
+      ],
+      "workingSha256": "890d8edeae1daa9efbd96a83bd8e04d70fa9a61a6187b9981c3e8f7cceb2f209"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/go-guest.yml/workflow.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "720fe2c69625e0d46012deaa57ff89e67bbe774cfa4d4a0ed93e43db77bbccf8",
+          "bytes": 6384
+        },
+        {
+          "stage": 2,
+          "sha256": "a897d4dca285fd281ca46c3a90d7ca222da2eedef24a5375647114c2a9411f84",
+          "bytes": 4000
+        },
+        {
+          "stage": 3,
+          "sha256": "43f2b1dbde230ab654751fcc512e7b5fa71b50f8638cb951b92b184e8f3b69a3",
+          "bytes": 3447
+        }
+      ],
+      "workingSha256": "d261ff109e245a5aa6dd31865263d4bfcd5a7bf04d5fc2be01bed636d4b574d7"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/java-guest-feasibility.yml/jobs/compiler-component.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "7fde32bb4a12bc02f1980806c8cf8636d21b07632d66085f3312145388538782",
+          "bytes": 17338
+        },
+        {
+          "stage": 2,
+          "sha256": "11a2fe53272458247ad6a51de5588b4fefbd7039c8c0120626c1010101abf17f",
+          "bytes": 10323
+        },
+        {
+          "stage": 3,
+          "sha256": "cf708e391a288925d0bc9e8a30c71ec89057c4c33d3be05e6fb2d528e46779b5",
+          "bytes": 9160
+        }
+      ],
+      "workingSha256": "355756adc1c7e24548d9d63fb24ba0bc64afb29d994f4a82a3d7df7ae8fabe5f"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/java-guest-feasibility.yml/workflow.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "c6d04c4004d9050c091061a84a2b7c141288a1a8c0d7819a92d070fba84af374",
+          "bytes": 2512
+        },
+        {
+          "stage": 2,
+          "sha256": "ff235683581a5d522897e606f4c16f3b6d17cbcefbef3202805ace7cb5b127aa",
+          "bytes": 1792
+        },
+        {
+          "stage": 3,
+          "sha256": "449ec6fb3c06b7b468c24b136847e446e0da29b74cbd5662b7f4e9dc53e03444",
+          "bytes": 1804
+        }
+      ],
+      "workingSha256": "de70e212b5bd03d84a7992d006d4f0a4aab3ad9c857717f90b1f9ff8545b2e6a"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/rust-capsule-authoring.yml/jobs/authoring.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "83fb2460a2e6e77af1b5fa89255902caedefd9ec7cebc7f7b520badcd10c707e",
+          "bytes": 11339
+        },
+        {
+          "stage": 2,
+          "sha256": "bb5fa3ace5ed7bd8f9d87209730fb6d579e50332f3e38c531401c7c58acfe0bb",
+          "bytes": 7213
+        },
+        {
+          "stage": 3,
+          "sha256": "73ca2bf753e1c76bb47d30f43dcc255758062b0ec8a9c66a4fc6de106c0ab7d3",
+          "bytes": 6070
+        }
+      ],
+      "workingSha256": "e248e1a25cf80ec321db847da81845858dae624b015f1ca409babac0ee101fcb"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/rust-capsule-authoring.yml/workflow.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "bfc0093723ec0ef55a2e27110021bcb7a37cf57a8e0edd9bdcf6bb45fa43636f",
+          "bytes": 2920
+        },
+        {
+          "stage": 2,
+          "sha256": "4e8db7af0f0b0678806e2a0cedcace806958cde75ae41f110810fe68f7e9bc73",
+          "bytes": 1586
+        },
+        {
+          "stage": 3,
+          "sha256": "7972f3de16f6a0aa547a9a067c2c2a7e4d5786a4ee751c3e4b10f5ea40fa5f70",
+          "bytes": 1566
+        }
+      ],
+      "workingSha256": "7ab982b0313e8dd449e89ca955f506240c2c439b802560f9878883c970bb4518"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/typescript-guest.yml/jobs/boundary.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "5f23cc54837cbbf9f16a2260b89479aa7e92ef5496212ea2c2c67907e3966d63",
+          "bytes": 15007
+        },
+        {
+          "stage": 2,
+          "sha256": "78c5be79159435e0e758006c62ada3205d8f04321f8946fad40c07565c8b17d1",
+          "bytes": 8831
+        },
+        {
+          "stage": 3,
+          "sha256": "798d60a2399b2d9139596a9f7b1e5ab06a2df17f78d613e203b3c4e8c63c50f0",
+          "bytes": 9158
+        }
+      ],
+      "workingSha256": "ca3adfe81a10f599746437d7c225b520ee434aa4d7a8950d9c19955cc94d0bc1"
+    },
+    {
+      "path": "tools/ci/contracts/workflows/typescript-guest.yml/workflow.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "c39657a332a86be3cfc680d7277c02013f69ab45f34c85757c27bfabc92ab2b3",
+          "bytes": 5724
+        },
+        {
+          "stage": 2,
+          "sha256": "1d24cebd17acd68e4ef7331480ba953e88934eec155333b5a30134d9db82e03e",
+          "bytes": 3453
+        },
+        {
+          "stage": 3,
+          "sha256": "2bdd9d06178b59dcd7d6c9412b16fc1e481a9d03bf9c0bcbe1c6fdde69bb0cd2",
+          "bytes": 4247
+        }
+      ],
+      "workingSha256": "f99a6ed663dd9ce9cd45ab41632b7ebaf5b56bc5d3ee112530acff174714a619"
+    },
+    {
+      "path": "tools/ci/suites.json",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "ec0b204a16352b64abd39c3e41976503a10cbcdc6d80e4441eac8248e766bf31",
+          "bytes": 989756
+        },
+        {
+          "stage": 2,
+          "sha256": "3da9d329f6d52f7e0b89b5357d93bc6ba6a5c278bd2da3c267bb493ac4d1e311",
+          "bytes": 521196
+        },
+        {
+          "stage": 3,
+          "sha256": "48e70e41d84e2659d5e7be22a8338079592f288061415f84d709d89505976706",
+          "bytes": 470745
+        }
+      ],
+      "workingSha256": "ab54cceb51f75d3d60fe28ffecb02bedcb655938c8dee834dcf5cc267581dbd9"
+    },
+    {
+      "path": "tools/tests/test_transaction_receipts.py",
+      "stages": [
+        {
+          "stage": 1,
+          "sha256": "515cfab28b8bc744ed2dc8e5a737a1e739e56ba6cd1d52ef544e011e6cdaf8b1",
+          "bytes": 11074
+        },
+        {
+          "stage": 2,
+          "sha256": "4906c08bdeddff962cb465ac52dbf8921b48963c0c2aae71966894e1e43adb7f",
+          "bytes": 11316
+        },
+        {
+          "stage": 3,
+          "sha256": "206a8573dd2d7b5f7182128763c2bd8b39f8d317efac0eab979a05abf6160fa7",
+          "bytes": 10879
+        }
+      ],
+      "workingSha256": "a80923550b395b26b2453e8b70ce91aee36804237f199bdf8cb15f3a45e89f3b"
+    }
+  ],
+  "unresolvedPreservedOnly": true,
+  "implementationContinued": false
+}

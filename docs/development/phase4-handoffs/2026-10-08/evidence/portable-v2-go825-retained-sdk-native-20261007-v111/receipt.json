@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-07T21:32:44.515714+00:00",
+  "head": "8785fadf4d630cce34fbcbfebf65d0fbb0851d1c",
+  "tree": "0d26383743aab9a6ddb0c2fcd9f98f06e55614b9",
+  "steps": [
+    {
+      "argv": [
+        "cargo",
+        "+1.97.1",
+        "--config",
+        ".cargo/managed-guest.toml",
+        "test",
+        "--locked",
+        "-p",
+        "latent-wasmtime",
+        "--test",
+        "guest_sdk",
+        "--",
+        "--ignored",
+        "--test-threads=1",
+        "--show-output"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 430.17261263299997,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-1.log",
+      "sha256": "dadf739a6182e1b7c615dc5dfd309724a397458289e4888ce02a702b1a78c8b5",
+      "bytes": 50850
+    }
+  ],
+  "passed": true,
+  "elapsedSeconds": 432.3355696919998,
+  "sourceClean": true,
+  "sourceHeadUnchanged": true,
+  "rustVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "deadlineSeconds": 1800,
+  "maximumTargetGrowthBytes": 17179869184,
+  "targetGrowthBytes": 1153236992,
+  "originalProcessReaped": true,
+  "infrastructureError": null,
+  "completeCI": false,
+  "environment": "Root-owned Debian12 Linux x86_64/ext4, UID10001, pinned Rust1.97.1/Python3.13.5.",
+  "cargoBuildJobs": 2,
+  "checkout": "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/native-active-portable-v3"
+}

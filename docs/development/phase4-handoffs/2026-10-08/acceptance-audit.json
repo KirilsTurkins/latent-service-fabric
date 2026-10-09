@@ -1,0 +1,395 @@
+{
+  "at": "2026-10-07T16:33:28.651075+00:00",
+  "milestone": 7,
+  "title": "Phase4",
+  "development": "3643434e5e27f69655c4137eb7506b6f9e67f52c",
+  "allMilestoneIssuesReviewed": 32,
+  "rootPriorMergeAuditComplete": 21,
+  "deeperEntityAudit": [],
+  "newlyClosedAfterEarlierMerge": [
+    381,
+    383
+  ],
+  "alreadyClosed393ReviewedExactCI": true,
+  "rows": [
+    {
+      "issue": 379,
+      "title": "[Phase 4 Epic] Deliver single-node transactional state and durable effects",
+      "state": "open",
+      "priorMergedReferences": [
+        765
+      ],
+      "acceptanceCriteriaCount": 31,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "The epic requires completion of all component tickets and Phase4 gate407; 26 component/gate/epic issues remain open.",
+      "actualIssueAcceptanceRequirement": "#407 \u2014 Collective Phase 4 completion decision."
+    },
+    {
+      "issue": 380,
+      "title": "[Phase 4] Specify the host-owned transaction, isolation and durable outcome contract",
+      "state": "closed",
+      "priorMergedReferences": [
+        766,
+        765
+      ],
+      "acceptanceCriteriaCount": 16,
+      "conclusion": "complete and closed",
+      "evidence": "confirmed current issue state; original scoped acceptance evidence retained"
+    },
+    {
+      "issue": 381,
+      "title": "[Phase 4] Qualify one embedded transaction engine and its durability profile",
+      "state": "closed",
+      "priorMergedReferences": [
+        767
+      ],
+      "acceptanceCriteriaCount": 7,
+      "conclusion": "complete and closed",
+      "evidence": "confirmed current issue state; original scoped acceptance evidence retained"
+    },
+    {
+      "issue": 382,
+      "title": "[Phase 4] Version transaction, query, intent and recovery contracts for six guests and six clients",
+      "state": "closed",
+      "priorMergedReferences": [
+        766,
+        764
+      ],
+      "acceptanceCriteriaCount": 15,
+      "conclusion": "complete and closed",
+      "evidence": "confirmed current issue state; original scoped acceptance evidence retained"
+    },
+    {
+      "issue": 383,
+      "title": "[Phase 4] Implement the bounded local state-store owner and restart-safe storage format",
+      "state": "closed",
+      "priorMergedReferences": [
+        770,
+        779,
+        767,
+        803
+      ],
+      "acceptanceCriteriaCount": 7,
+      "conclusion": "complete and closed",
+      "evidence": "currentmatchingactualRustCI74storecases/all17namedcriterionwitnesses+sameCore/State/protected/processsourcesandallregistrylockrows"
+    },
+    {
+      "issue": 384,
+      "title": "[Phase 4] Add tenant-scoped state namespaces, sealed grants and lifecycle fencing",
+      "state": "closed",
+      "priorMergedReferences": [
+        782,
+        764
+      ],
+      "acceptanceCriteriaCount": 11,
+      "conclusion": "complete and closed",
+      "evidence": "confirmed current issue state; original scoped acceptance evidence retained"
+    },
+    {
+      "issue": 385,
+      "title": "[Phase 4] Implement bounded optimistic state transactions with phantom-safe prefix scans",
+      "state": "closed",
+      "priorMergedReferences": [
+        774
+      ],
+      "acceptanceCriteriaCount": 7,
+      "conclusion": "complete and closed",
+      "evidence": "confirmed current issue state; original scoped acceptance evidence retained"
+    },
+    {
+      "issue": 386,
+      "title": "[Phase 4] Atomically persist state, outbox, command results and processed-input records",
+      "state": "open",
+      "priorMergedReferences": [],
+      "acceptanceCriteriaCount": 12,
+      "conclusion": "retain open; exact deeper audit found unmet acceptance",
+      "remaining": "Main lacks required actual persistence-boundary/process/kernel-I/O schedules retained in open787 atomic/tests/process.rs and io_faults.rs."
+    },
+    {
+      "issue": 387,
+      "title": "[Phase 4] Implement durable command deduplication and bounded result recovery",
+      "state": "open",
+      "priorMergedReferences": [
+        764
+      ],
+      "acceptanceCriteriaCount": 12,
+      "conclusion": "retain open; exact deeper audit found unmet acceptance",
+      "remaining": "Open790 retains installed restart/restore/cancellation acceptance after scopedactual23guestcampaign; no earlier merged completion."
+    },
+    {
+      "issue": 388,
+      "title": "[Phase 4] Integrate host-owned transactions with guest execution, commit and cancellation",
+      "state": "open",
+      "priorMergedReferences": [
+        792,
+        774,
+        766,
+        764
+      ],
+      "acceptanceCriteriaCount": 13,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Current #811/#791/#823/#828 integration and actual standalone/six-language runtime/cancel/commit qualification remain pending; previous contract/session/lane PRs do not supply these.",
+      "actualIssueAcceptanceRequirement": "Integrate standalone startup/readiness/drain and authenticated invocation, not only library embeddings. Reject unsupported state/workflow profiles. Bound transactions before execution-cell saturation and preserve the delivered six-language stateless baseline."
+    },
+    {
+      "issue": 389,
+      "title": "[Phase 4] Extend all six guest SDKs with typed transactions, queries and deferred intents",
+      "state": "open",
+      "priorMergedReferences": [
+        774,
+        766
+      ],
+      "acceptanceCriteriaCount": 17,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Six typed SDK producers exist on #784; all six actual signed guest/node transaction, query, recovery and error matrices are not delivered by prior stateless/compiler merges.",
+      "actualIssueAcceptanceRequirement": "For every language, build the authored source into a real component, package/sign/admit it and run it on the real standalone Linux node. Prove atomic state/intent/result behavior, rejection discarding business writes/effects, conflict, denied authority, loss of a committed response and recovery without a second execution. Host-native unit tests and external SDK calls alone are insufficient."
+    },
+    {
+      "issue": 390,
+      "title": "[Phase 4] Seal durable effect authority and separate dispatch lifetime from activation lifetime",
+      "state": "open",
+      "priorMergedReferences": [
+        757
+      ],
+      "acceptanceCriteriaCount": 11,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Merged #757 explicitly delivers authority slice; current accepted original source/credential/revocation/standalone dispatch closure remains on #791/#823 and broader current runtime proof.",
+      "actualIssueAcceptanceRequirement": "Use current-authority revalidation before each physical attempt, intersected with the committed allowed scope; never widen an intent because a newer grant is broader. Specify the linearization/fence for revocation and dispatch acceptance. Already-dispatched uncertainty remains visible; revocation cannot retroactively prove remote nonexecution."
+    },
+    {
+      "issue": 391,
+      "title": "[Phase 4] Implement the bounded durable effect dispatcher, claims and retry state machine",
+      "state": "open",
+      "priorMergedReferences": [
+        780,
+        763
+      ],
+      "acceptanceCriteriaCount": 12,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Merged #763/#780 deliver transitions and bounded dispatcher; ordinary installed startup/drain, pending-format compatibility, ordering, retention and operational lifecycle criteria remain.",
+      "actualIssueAcceptanceRequirement": "Claim only committed eligible intents in bounded batches using durable owner/attempt/incarnation generations and compare-and-set completion. Reject stale worker updates and duplicate terminal transitions. Startup distinguishes never-dispatched, in-flight-at-crash and terminal records; it never infers remote nonexecution from an expired local lease."
+    },
+    {
+      "issue": 392,
+      "title": "[Phase 4] Deliver committed JetStream events with bounded deduplication and acknowledgement recovery",
+      "state": "open",
+      "priorMergedReferences": [
+        794
+      ],
+      "acceptanceCriteriaCount": 9,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Merged #794 has actual broker core schedules but explicitly requires verified guest commits through ordinary installed dispatcher and authenticated management reconciliation.",
+      "actualIssueAcceptanceRequirement": "Wire the adapter into the ordinary standalone node's #391 dispatcher and #400 inspection/pause/reconciliation surfaces. Reuse the installed provider identity and protected credential references but derive authority from #390's sealed durable envelope, never a fabricated activation handle. Immediate stateless publishing retains its own no-hidden-retry contract; durable retry policy must not leak into that path."
+    },
+    {
+      "issue": 393,
+      "title": "[Phase 4] Add an explicitly qualified idempotent HTTP effect adapter with uncertain-outcome reconciliation",
+      "state": "closed",
+      "priorMergedReferences": [
+        821
+      ],
+      "acceptanceCriteriaCount": 7,
+      "conclusion": "complete and closed",
+      "evidence": "confirmed current issue state; original scoped acceptance evidence retained"
+    },
+    {
+      "issue": 394,
+      "title": "[Phase 4] Route entity commands through bounded ephemeral ownership lanes",
+      "state": "open",
+      "priorMergedReferences": [
+        764
+      ],
+      "acceptanceCriteriaCount": 7,
+      "conclusion": "retain open; exact deeper audit found unmet acceptance",
+      "remaining": "Merged764 is substrate; currentmain lacks EntityCommandLanes/EntityPhysicalOwner calls in Node/daemon; currentqualifiedintegration is unmerged."
+    },
+    {
+      "issue": 395,
+      "title": "[Phase 4] Couple event-trigger processing to a transactional inbox and post-commit acknowledgement",
+      "state": "open",
+      "priorMergedReferences": [],
+      "acceptanceCriteriaCount": 13,
+      "conclusion": "retain open; exact deeper audit found unmet acceptance",
+      "remaining": "Currentmain lacks ordinary transactionalInboxDelivery/InboxAdmissionFactory/triggers integration; actualsignedTLSJetStreamACK/crash/redelivery/sixguestevidence remains."
+    },
+    {
+      "issue": 396,
+      "title": "[Phase 4] Retain immutable payloads referenced by committed state, results and effects",
+      "state": "open",
+      "priorMergedReferences": [],
+      "acceptanceCriteriaCount": 10,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Immutable referenced payload retention/recovery/floor/restore and unresolved linked records require integrated current proof; no earlier PR establishes all ten criteria.",
+      "actualIssueAcceptanceRequirement": "Define exact tenant/provider/blob/version/digest/size identity and durable reference ownership for state, command results and effect payloads. A digest identifies bytes but does not grant cross-tenant read authority. Initially require a qualified local immutable-blob retention path; explicitly reject provider/reference classes whose required retention cannot be guaranteed."
+    },
+    {
+      "issue": 397,
+      "title": "[Phase 4] Enforce durable quotas and bounded retention, garbage collection and compaction",
+      "state": "open",
+      "priorMergedReferences": [
+        792
+      ],
+      "acceptanceCriteriaCount": 12,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Protected maintenance/quota primitives are implemented; current #796 and installed bounded progress under saturation, authenticated reconciliation and physical-owner retention remain.",
+      "actualIssueAcceptanceRequirement": "Make reserved recovery/maintenance capacity physically usable: bound separate admission for required status/pause/reconciliation operations, engine jobs, response buffers and durable terminal records while ordinary transaction queues/storage are saturated. #400 consumes these reservation ports. Define finite failure when the underlying store is unreadable or a physical I/O owner cannot retire; never steal a live permit or claim unlimited availability during device failure."
+    },
+    {
+      "issue": 398,
+      "title": "[Phase 4] Enforce state-schema compatibility across deployment, canary, rollback and explicit migration",
+      "state": "open",
+      "priorMergedReferences": [],
+      "acceptanceCriteriaCount": 12,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Current #808/#823 cover schema/restore producer work; actual signed compatible/rollback/canary and explicit quiesced migration workflows are still pending.",
+      "actualIssueAcceptanceRequirement": "Define immutable application state-schema identity and declared reader/writer compatibility separate from the storage engine's on-disk format, WIT version, package digest and publication. Bind declarations/migration artifacts to exact package evidence and namespace metadata; a declared range alone is not proof that arbitrary opaque data is compatible."
+    },
+    {
+      "issue": 399,
+      "title": "[Phase 4] Implement consistent backup and restore with external-effect reconciliation safeguards",
+      "state": "open",
+      "priorMergedReferences": [],
+      "acceptanceCriteriaCount": 11,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Current #808/#823 contain recovery primitives; actual ordinary backup/restore/newidentity/external-effect reconciliation and authenticated workflows remain.",
+      "actualIssueAcceptanceRequirement": "Validate input structure, digests, paths/types, quota and supported format/upgrade compatibility before staged restore to a fresh owned root. Reject traversal/symlinks/corruption/unsupported downgrade and preserve the current store on failure. Activation of a restored root is deliberate and attributable, not a silent overwrite."
+    },
+    {
+      "issue": 400,
+      "title": "[Phase 4] Expose scoped state, command and effect management with CLI recovery workflows",
+      "state": "open",
+      "priorMergedReferences": [
+        792
+      ],
+      "acceptanceCriteriaCount": 17,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Merged #792 explicitly partial gateway/CLI; #803/#823 current source plus actual node saturation/recovery/pause/reconcile/migration workflows required.",
+      "actualIssueAcceptanceRequirement": "Provide human and lossless JSON output for committed/aborted/conflict/unknown/recovery-required outcomes, rejection replay, expired retention, pending/uncertain/blocked/dead-letter effects and unclean shutdown. Accepted cancel/pause is not proof of physical retirement. Long management operations use bounded shared jobs/status, not a guest workflow engine."
+    },
+    {
+      "issue": 401,
+      "title": "[Phase 4] Extend all six external clients with transactional commands, queries and recovery",
+      "state": "open",
+      "priorMergedReferences": [
+        766
+      ],
+      "acceptanceCriteriaCount": 20,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Generated external transports are on #800; each of six external clients needs actual separate-node command/query/replay/cancel/fullwidth/policy proof; guest CI does not satisfy it.",
+      "actualIssueAcceptanceRequirement": "Add controlled malformed/oversized response and full-width vector tests from #382. Retain Go race/C lifetime checks and language-specific asynchronous shutdown/cancellation tests. Share vectors and fixture owners, not six protocol engines."
+    },
+    {
+      "issue": 402,
+      "title": "[Phase 4] Deliver a stateful application proving commands, outbox, redelivery and browser recovery",
+      "state": "open",
+      "priorMergedReferences": [],
+      "acceptanceCriteriaCount": 16,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "A complete stateful application with signed command/outbox/redelivery/recovery and real browser journey evidence is not established by earlier substrate/compiler merges.",
+      "actualIssueAcceptanceRequirement": "A real browser observes SSR, hydrates the existing DOM, submits a command, displays pending/committed/effect state and recovers a deliberately lost response with the original identity, without repeating the mutation. Browser requests traverse the real node; no manufactured Playwright responses."
+    },
+    {
+      "issue": 403,
+      "title": "[Phase 4] Prove integrated atomicity, isolation, crash recovery and authority under adversarial failures",
+      "state": "open",
+      "priorMergedReferences": [],
+      "acceptanceCriteriaCount": 20,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Actual integrated atomicity/isolation/crash/authority/retention/adversarial matrix is still incomplete; partial library receipts and current passing subsets cannot close the aggregate.",
+      "actualIssueAcceptanceRequirement": "Linked retention/reserves (#396/#397/#399/#400): expired response with unresolved effect/payload; inbox replay after result expiry; required schema/publication references; clock jumps/reboot/restore; saturated ordinary queues/storage while finite authorized recovery remains usable. Unreadable/stuck physical storage can fail explicitly, never refund live owners or fabricate recovery."
+    },
+    {
+      "issue": 404,
+      "title": "[Phase 4] Measure stateful density, commit latency, backlog plateaus and recovery cost",
+      "state": "open",
+      "priorMergedReferences": [],
+      "acceptanceCriteriaCount": 15,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Finite current stateful density/commit/backlog/resource/recovery measurements with exact inputs and prescribed actual workload remain; older engine32commit selection observation is narrower.",
+      "actualIssueAcceptanceRequirement": "Review a finite measurement profile before execution: exact binaries/engine/sync settings, filesystem/hardware, source/components/compiler/ABI, data/key/value sizes, namespace/entity counts, transactions, effect mix, backlogs, durations, faults and configured bounds. Freeze ownership/plateau checks and any approved regression criteria; do not invent a universal SLO."
+    },
+    {
+      "issue": 405,
+      "title": "[Phase 4] Extend native and developer distributions for stateful capsules, upgrades and recovery",
+      "state": "open",
+      "priorMergedReferences": [],
+      "acceptanceCriteriaCount": 18,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Engine-bearing authenticated native/container/developer clean-host transaction/upgrade/recovery distributions are not qualified by prior Phase3/native stateless packaging.",
+      "actualIssueAcceptanceRequirement": "Keep publication/catalog and business-store preservation coordinated without claiming a cross-database transaction. Existing publication-history cleanup and backup tools must respect required Phase 4 references, readers and recovery state before anything is reclaimed."
+    },
+    {
+      "issue": 406,
+      "title": "[Phase 4] Publish tested six-language guest, client, recovery and operations guides",
+      "state": "open",
+      "priorMergedReferences": [
+        765
+      ],
+      "acceptanceCriteriaCount": 17,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Tested six-guest/six-client/recovery/operations runnable guides depend on actual qualified current workflows; current prose/templates cannot establish execution.",
+      "actualIssueAcceptanceRequirement": "Distinguish internal dispatcher retry scheduling from application timers. Link #719's supported external-maintenance guidance/Phase 6 handoff when available; do not document unimplemented timers, background guest workers or automatic effect callbacks as Phase 4 features."
+    },
+    {
+      "issue": 407,
+      "title": "[Phase 4 Gate] Validate atomic business state, durable effects, recovery and bounded resource ownership",
+      "state": "open",
+      "priorMergedReferences": [
+        765
+      ],
+      "acceptanceCriteriaCount": 51,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Required32-ticket/six-guest/six-client/statefulapp/fulloperations/evidence gate remains unsatisfied; source receipts or earlier Phase3 gate cannot substitute.",
+      "actualIssueAcceptanceRequirement": "#403 maps each boundary to actual focused/integrated evidence; #404 quantifies costs; #389/#718/#401/#402/#405/#406 supply six-guest, six-client, application, distribution and guide evidence. Shared lower-level storage/provider tests may be reused only under their exact source/scope; reuse cannot replace a language's own execution proof."
+    },
+    {
+      "issue": 408,
+      "title": "[Phase 4] Implement bounded read-only state queries without durable command writes",
+      "state": "open",
+      "priorMergedReferences": [
+        774,
+        766,
+        765
+      ],
+      "acceptanceCriteriaCount": 10,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Merged #774 supplies coherent OCC/state sessions; current #828 and real-component/six-profile direct/HTTP readonly query/freshness/noRows/restore/currentauth tests remain.",
+      "actualIssueAcceptanceRequirement": "Engine-backed real-component tests cover concurrent multi-key updates without mixed snapshots, acknowledged-commit-then-query freshness, no durable command/outbox growth from repeated reads, attempted query writes/effects, wrong tenant and same-tenant denied principal, stale cursor, namespace recreation, schema change, expiry/cancellation with paused physical I/O and a successful fresh query after failure. Assert actual rows, versions and owner retirement, not only method names or mocked values."
+    },
+    {
+      "issue": 409,
+      "title": "[Phase 4] Integrate transactional commands, queries and result recovery with shared HTTP ingress",
+      "state": "open",
+      "priorMergedReferences": [
+        774,
+        766,
+        765
+      ],
+      "acceptanceCriteriaCount": 15,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Current #828 implements sharedHTTP routes; real sockets/browser/signedJava response-loss/replay/cookie/CSRF/query/currentauth and finalprofile tests remain.",
+      "actualIssueAcceptanceRequirement": "Real node/socket/browser tests cover submission and authorized lookup, lost response after commit, same-key changed input/entity/operation, token rotation/login change, same-tenant denial and revoked replay access, rejection after business data changes, explicit retry only after proven abort, stale edits, query freshness, mutation-via-GET denial, invalid/oversized response before commit, cookie/token protection, cache isolation and disconnect during physical cleanup. Count actual guest executions/commits/effects; browser fulfilment mocks are not proof."
+    },
+    {
+      "issue": 718,
+      "title": "[Phase 4][Java] Implement and qualify guest transactions, queries and durable intents",
+      "state": "open",
+      "priorMergedReferences": [
+        766,
+        765
+      ],
+      "acceptanceCriteriaCount": 11,
+      "conclusion": "retain open; earlier merges do not establish all requirements",
+      "remaining": "Current #823 Java source/producer/supplychain prep exists; actual signed Java aggregate/query/HTTP/cancel/restore/schema/recipient execution remains pending.",
+      "actualIssueAcceptanceRequirement": "Execute a real signed Java component that reads/writes a bounded aggregate and stages an intent atomically through #385/#386/#388. Demonstrate a fresh #408 query and explicit stale-edit preconditions. No guest-local heap or immutable blob may masquerade as transactional state."
+    }
+  ],
+  "fullMilestoneComplete": false,
+  "merged767WorktreesRemoved": true,
+  "confirmedMilestoneState": {
+    "open": 25,
+    "closed": 7
+  },
+  "deeperEntityAuditComplete": true,
+  "all32IssueAuditComplete": true
+}

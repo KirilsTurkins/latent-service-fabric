@@ -1,0 +1,79 @@
+[
+  {
+    "number": 850,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/850",
+    "head": "185ea585cb2748d16643e883c1d9d2f8df9d4d2f",
+    "branch": "docs/phase4-cleanup-handoff-20261008",
+    "draft": true
+  },
+  {
+    "number": 851,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/851",
+    "head": "0d922003389e8f0d44423bc46c5047359390c335",
+    "branch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-manifest-conjunction-20261007-v1",
+    "draft": true
+  },
+  {
+    "number": 852,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/852",
+    "head": "e0d03b14fd724f2e9218beb00ceea843262cc6bd",
+    "branch": "checkpoint/phase4-cleanup-20261008/phase4/lf-p4-native-currentness787-20261006-v11",
+    "draft": true
+  },
+  {
+    "number": 853,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/853",
+    "head": "6dbbf49f6bcf61bee863b9c00b2513e29f884bd3",
+    "branch": "checkpoint/phase4-cleanup-20261008/phase4/lf-p4-abi-dedup387-execution-20261006",
+    "draft": true
+  },
+  {
+    "number": 879,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/879",
+    "head": "1fcc6d0fa6ec8e19c3ffc11ca02dd9242d0a10e6",
+    "branch": "test/phase4-current-query-witness-union-v39",
+    "draft": true
+  },
+  {
+    "number": 956,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/956",
+    "head": "7bc1ca796e5b1a2125a0fb6be905484fec6e8b63",
+    "branch": "feat/phase4-reference402-current-foundation-v292",
+    "draft": true
+  },
+  {
+    "number": 957,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/957",
+    "head": "6a7bfa58acf4e396fbc4dde372b471bb4ea8cd53",
+    "branch": "test/phase4-restore-reader-retirement-v67",
+    "draft": true
+  },
+  {
+    "number": 958,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/958",
+    "head": "dee4232bbfd8e12cc119a0e095fa198cfd20a009",
+    "branch": "checkpoint/phase4-cleanup-20261008/integration/lf-p4-effect-status-rpc-v12",
+    "draft": true
+  },
+  {
+    "number": 959,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/959",
+    "head": "f50062d5eb0256987179d27b79f5f61c095dd783",
+    "branch": "docs/phase4-integration-preservation-20261008",
+    "draft": true
+  },
+  {
+    "number": 966,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/966",
+    "head": "0b0d19e331715138eb327af0ffa02bdec7e12168",
+    "branch": "docs/phase4-entity-preservation-20261008",
+    "draft": true
+  },
+  {
+    "number": 978,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/978",
+    "head": "b98d60136f17b8a9321957c2a370d8716137e3de",
+    "branch": "docs/phase4-portable-cleanup-handoff-20261008",
+    "draft": true
+  }
+]

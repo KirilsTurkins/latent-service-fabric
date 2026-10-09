@@ -1,0 +1,47 @@
+[
+  {
+    "path": "docs/development/phase4-handoffs/2026-10-08/evidence/entity-restore-receipt-source-linux-20261007-v2/receipt.json",
+    "bytes": 5249,
+    "sha256": "2833b43d018e374660d19b45e327b16d5e209582f259d8638019149021a3d14d"
+  },
+  {
+    "path": "docs/development/phase4-handoffs/2026-10-08/evidence/portable-v2-go825-retained-sdk-native-20261007-v111/receipt.json",
+    "bytes": 1356,
+    "sha256": "776baacdf98ad0ec6c7ce5bc2a92be3710aef2b36cc86920ad030a632ec627da"
+  },
+  {
+    "path": "docs/development/phase4-handoffs/2026-10-08/evidence/portable-v2-http-corrected-native-20261007-v107/receipt.json",
+    "bytes": 4539,
+    "sha256": "519a11e5cecafe53544c97ad53cea6d1d1653474af2aaee79c61a2e16fda0359"
+  },
+  {
+    "path": "docs/development/phase4-handoffs/2026-10-08/evidence/root-client800-current-native-build-20261007-v1/receipt.json",
+    "bytes": 2456,
+    "sha256": "00b5bff9874e994465dd3144e7505962f2f54b42cce8c54d8b069001d9e120bb"
+  },
+  {
+    "path": "docs/development/phase4-handoffs/2026-10-08/evidence/root-installed-recovery-config-native-20261007-v2/receipt.json",
+    "bytes": 4982,
+    "sha256": "30d6b0592f6f525620c712a2834d607cf242be5970521df454d8569eb5a4d72c"
+  },
+  {
+    "path": "docs/development/phase4-handoffs/2026-10-08/evidence/root-installed-recovery-rpc-native-20261007-v1/receipt.json",
+    "bytes": 4408,
+    "sha256": "c8902a2000aeb4eb7c7a48fd37d87191a25b6279d7c65e3363b18304e850c4c2"
+  },
+  {
+    "path": "docs/development/phase4-handoffs/2026-10-08/evidence/root-installed-transaction-gateway-source-linux-20261007-v1/receipt.json",
+    "bytes": 5682,
+    "sha256": "2e6e671c1736c8aa8876cd6e98dceb3c9642b7d44798abc7a6e65e1cdb3bb271"
+  },
+  {
+    "path": "docs/development/phase4-handoffs/2026-10-08/evidence/root-management-correct-worker-source-linux-20261007-v4/receipt.json",
+    "bytes": 5682,
+    "sha256": "1404651e748d50508a96247dac5d0d40591b7956ad33e81a1812939d34f790a2"
+  },
+  {
+    "path": "docs/development/phase4-handoffs/2026-10-08/evidence/root-recovery808-current-final-source-linux-20261007-v3/receipt.json",
+    "bytes": 5251,
+    "sha256": "61a2962e37f8743146e4b9f360f5e616e4e81fff0133c4ea22a32c91d356f1b9"
+  }
+]

@@ -1,0 +1,176 @@
+{
+  "comments": [
+    {
+      "issue": 718,
+      "commentId": "6058708679",
+      "verified": true
+    },
+    {
+      "issue": 409,
+      "commentId": "6058709150",
+      "verified": true
+    },
+    {
+      "issue": 408,
+      "commentId": "6058709579",
+      "verified": true
+    },
+    {
+      "issue": 407,
+      "commentId": "6058709941",
+      "verified": true
+    },
+    {
+      "issue": 406,
+      "commentId": "6058710377",
+      "verified": true
+    },
+    {
+      "issue": 405,
+      "commentId": "6058710762",
+      "verified": true
+    },
+    {
+      "issue": 404,
+      "commentId": "6058711137",
+      "verified": true
+    },
+    {
+      "issue": 403,
+      "commentId": "6058711657",
+      "verified": true
+    },
+    {
+      "issue": 402,
+      "commentId": "6058712193",
+      "verified": true
+    },
+    {
+      "issue": 401,
+      "commentId": "6058712657",
+      "verified": true
+    },
+    {
+      "issue": 400,
+      "commentId": "6058713278",
+      "verified": true
+    },
+    {
+      "issue": 399,
+      "commentId": "6058713789",
+      "verified": true
+    },
+    {
+      "issue": 398,
+      "commentId": "6058714111",
+      "verified": true
+    },
+    {
+      "issue": 397,
+      "commentId": "6058714655",
+      "verified": true
+    },
+    {
+      "issue": 396,
+      "commentId": "6058715177",
+      "verified": true
+    },
+    {
+      "issue": 395,
+      "commentId": "6058715640",
+      "verified": true
+    },
+    {
+      "issue": 394,
+      "commentId": "6058716038",
+      "verified": true
+    },
+    {
+      "issue": 393,
+      "commentId": "6058716522",
+      "verified": true
+    },
+    {
+      "issue": 392,
+      "commentId": "6058716919",
+      "verified": true
+    },
+    {
+      "issue": 391,
+      "commentId": "6058717330",
+      "verified": true
+    },
+    {
+      "issue": 390,
+      "commentId": "6058717727",
+      "verified": true
+    },
+    {
+      "issue": 389,
+      "commentId": "6058718105",
+      "verified": true
+    },
+    {
+      "issue": 388,
+      "commentId": "6058718667",
+      "verified": true
+    },
+    {
+      "issue": 387,
+      "commentId": "6058719170",
+      "verified": true
+    },
+    {
+      "issue": 386,
+      "commentId": "6058719574",
+      "verified": true
+    },
+    {
+      "issue": 385,
+      "commentId": "6058720057",
+      "verified": true
+    },
+    {
+      "issue": 384,
+      "commentId": "6058720423",
+      "verified": true
+    },
+    {
+      "issue": 383,
+      "commentId": "6058720771",
+      "verified": true
+    },
+    {
+      "issue": 382,
+      "commentId": "6058721279",
+      "verified": true
+    },
+    {
+      "issue": 381,
+      "commentId": "6058721779",
+      "verified": true
+    },
+    {
+      "issue": 380,
+      "commentId": "6058722161",
+      "verified": true
+    },
+    {
+      "issue": 379,
+      "commentId": "6058722579",
+      "verified": true
+    }
+  ],
+  "closed": [
+    380,
+    381,
+    382,
+    383,
+    384,
+    385,
+    393
+  ],
+  "open": 25,
+  "newClosures": [],
+  "allCompleteTicketsAlreadyClosed": true
+}

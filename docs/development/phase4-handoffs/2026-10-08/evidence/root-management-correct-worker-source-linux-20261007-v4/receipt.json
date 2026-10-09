@@ -1,0 +1,165 @@
+{
+  "at": "2026-10-07T21:30:53.800166+00:00",
+  "head": "68856c46b63d54376312d59ba4e67b5ae9d22b83",
+  "tree": "ce47b962a5ce76f775245aa46cda63d68185148a",
+  "steps": [
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "-m",
+        "unittest",
+        "tools.tests.test_ci_contracts",
+        "tools.tests.test_ci_suite_inventory",
+        "tools.tests.test_build_snapshot",
+        "tools.tests.test_native_loader_boundary",
+        "tools.tests.test_node_security_profile_schema",
+        "tools.tests.test_security_npm_sources",
+        "tools.tests.test_phase1_conformance",
+        "tools.tests.test_transaction_guest_authoring",
+        "tools.tests.test_transaction_guest_compilers",
+        "tools.tests.test_java_resource_runtime",
+        "tools.tests.test_capability_policy_schema",
+        "tools.tests.test_node_audit_schema",
+        "tools.tests.test_rust_ownership_profile",
+        "tools.tests.test_java_transaction_campaign",
+        "tools.tests.test_java_transaction_diagnostics",
+        "tools.tests.test_java_transaction_fault_campaign",
+        "tools.tests.test_java_transaction_provision",
+        "tools.tests.test_java_transaction_qualification",
+        "tools.tests.test_java_transaction_recipient",
+        "tools.tests.test_java_transaction_recovery",
+        "tools.tests.test_java_transaction_schema",
+        "tools.tests.test_java_transaction_staging",
+        "tools.tests.test_ci_suite_discovery",
+        "tools.tests.test_ci_suite_fragments",
+        "tools.tests.test_manifest_codec_contract",
+        "tools.tests.test_manifest_integer_dialect"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 50.00323988300033,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-1.log",
+      "sha256": "7cff45e523b0ae7c7059ffdd1e6bf6110ab9f895d5c8b0994f7487d06f9ba3a7",
+      "bytes": 406
+    },
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "tools/generate_transaction_contracts.py",
+        "--check"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 5.001284192999719,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-2.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "tools/validate_foundation.py"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 5.0014084589997765,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-3.log",
+      "sha256": "c75300186c60115d2c53601b67f9bb89f8800405c23c05939e3f4d1c4cb52484",
+      "bytes": 82
+    },
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "tools/ci_coverage.py",
+        "--receipt",
+        "target/ci/observed-pr823-peer-current-v32-linux.json"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 30.00230697300003,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-4.log",
+      "sha256": "6c53fc11d97904ecfcb51bf028208261a666934cda892af149dda9ef64665a9e",
+      "bytes": 85
+    },
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "tools/validate_repository.py"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 10.001422270999683,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-5.log",
+      "sha256": "6bc9dd6c01c9c2bd6e38a931da381e37ea8febc5ed0749e4f891a69df8368d7c",
+      "bytes": 40
+    },
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "-c",
+        "import subprocess; subprocess.run(['cargo', '+1.97.1', 'fmt', '--all', '--', '--check'], check=True); subprocess.run(['cargo', '+1.97.1', 'metadata', '--locked', '--no-deps', '--format-version', '1'], check=True, stdout=subprocess.DEVNULL)"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 15.001693584999884,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-6.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "argv": [
+        "python3",
+        "-X",
+        "utf8",
+        "-B",
+        "-c",
+        "import subprocess; subprocess.run(['cargo','+1.97.1','metadata','--locked','--offline','--all-features','--format-version','1'],check=True,stdout=subprocess.DEVNULL); import os; from pathlib import Path; fmt=Path('/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/jobs/root-private-go127-formatter-20261007-v1/go/bin'); env=dict(os.environ,PATH=str(fmt)+os.pathsep+os.environ['PATH']); subprocess.run(['python3','-X','utf8','-B','sdk/profile/generate.py','--check'],env=env,check=True)"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 5.001345838999896,
+      "stopReason": null,
+      "originalProcessReaped": true,
+      "log": "step-7.log",
+      "sha256": "bd36fbf69bedc2df71512e4f39f1b10ba3aa723f66e0fef2ea845e11a82346ca",
+      "bytes": 44
+    }
+  ],
+  "passed": true,
+  "elapsedSeconds": 128.09761529499974,
+  "sourceClean": true,
+  "sourceHeadUnchanged": true,
+  "rustVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "deadlineSeconds": 1800,
+  "maximumTargetGrowthBytes": 17179869184,
+  "targetGrowthBytes": 0,
+  "originalProcessReaped": true,
+  "infrastructureError": null,
+  "completeCI": false,
+  "environment": "Root-owned Debian12 Linux x86_64/ext4, UID10001, pinned Rust1.97.1/Python3.13.5.",
+  "cargoBuildJobs": 2,
+  "checkout": "/var/lib/docker/volumes/latent-p4-root-native-20261007-v6/_data/source-68856c46b63d5437"
+}

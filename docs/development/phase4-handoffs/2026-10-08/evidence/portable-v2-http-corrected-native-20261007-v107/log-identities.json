@@ -1,0 +1,37 @@
+[
+  {
+    "name": "step-1.log",
+    "bytes": 3072,
+    "sha256": "a7e8c46617551bc93472ce9ea47894c05787efa2316bcd33f6c45d1d90d6cd52"
+  },
+  {
+    "name": "step-2.log",
+    "bytes": 20379,
+    "sha256": "85d4b9ff8f27f455ae840ae0fbd61def55ee66ea486f9448c53b8cbc64093c99"
+  },
+  {
+    "name": "step-3.log",
+    "bytes": 1893,
+    "sha256": "fcc98e9fe17526f0664d68776c4d4eea90c618cf2ba527975dafd229e74c5b66"
+  },
+  {
+    "name": "step-4.log",
+    "bytes": 20887,
+    "sha256": "d69517229caedc293a5e80d5d81c0e1cbb1ce1442f5ad3f90d8096e00e438d8c"
+  },
+  {
+    "name": "step-5.log",
+    "bytes": 8606,
+    "sha256": "edf4e68266b71521ae18fed0d294f4870951d9a544d8b100b4be3326a684f9c7"
+  },
+  {
+    "name": "step-6.log",
+    "bytes": 34375,
+    "sha256": "a6a124d4b095fc5dabbafec7b02bc6e4ddeea00b1d0ed32eefba2491f06306fd"
+  },
+  {
+    "name": "step-7.log",
+    "bytes": 87475,
+    "sha256": "9b88573d4b014caf2adbe45d62183fe52bbcdbe2c5e1e7c6284d161c94fba4a3"
+  }
+]

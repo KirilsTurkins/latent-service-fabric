@@ -1,0 +1,69 @@
+[
+  {
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/850",
+    "error": ""
+  },
+  {
+    "branch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-manifest-conjunction-20261007-v1",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/851",
+    "error": ""
+  },
+  {
+    "branch": "checkpoint/phase4-cleanup-20261008/phase4/lf-p4-native-currentness787-20261006-v11",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/852",
+    "error": ""
+  },
+  {
+    "branch": "checkpoint/phase4-cleanup-20261008/phase4/lf-p4-abi-dedup387-execution-20261006",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/853",
+    "error": ""
+  },
+  {
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/879",
+    "branch": "test/phase4-current-query-witness-union-v39"
+  },
+  {
+    "branch": "feat/phase4-reference402-current-foundation-v292",
+    "head": "7bc1ca796e5b1a2125a0fb6be905484fec6e8b63",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/956",
+    "error": ""
+  },
+  {
+    "branch": "test/phase4-restore-reader-retirement-v67",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/957",
+    "error": ""
+  },
+  {
+    "branch": "checkpoint/phase4-cleanup-20261008/integration/lf-p4-effect-status-rpc-v12",
+    "head": "dee4232bbfd8e12cc119a0e095fa198cfd20a009",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/958",
+    "error": ""
+  },
+  {
+    "branch": "docs/phase4-integration-preservation-20261008",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/959",
+    "error": ""
+  },
+  {
+    "branch": "docs/phase4-entity-preservation-20261008",
+    "head": "0b0d19e331715138eb327af0ffa02bdec7e12168",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/966",
+    "error": ""
+  },
+  {
+    "branch": "docs/phase4-portable-cleanup-handoff-20261008",
+    "exit": 0,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/978",
+    "error": ""
+  }
+]

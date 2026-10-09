@@ -1,0 +1,354 @@
+[
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-aggregate-version-templates-v12",
+    "HEAD": "8850ec03abf893f608428a9d50720369bb4ff53c",
+    "branch": "refs/heads/fix/phase4-aggregate-version-templates-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-c-aggregate-version-v12",
+    "HEAD": "0a4db24d1250765617d647c2fe96685f56a69966",
+    "branch": "refs/heads/fix/phase4-c-aggregate-version-ownership-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-ci823-staging-model-20261007-v35",
+    "HEAD": "f8980a13668234bd5f89ade444fdfb3cf7dbbc22",
+    "branch": "refs/heads/fix/phase4-sdk-staging-model-v35-20261007",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-ci828-owner-fixtures-20261007-v36",
+    "HEAD": "fae4e339f1cae89d4aa6ac070baecc703e4bcdc3",
+    "branch": "refs/heads/fix/phase4-owner-fixtures-v36-20261007",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-command-recovery-lookup-v12",
+    "HEAD": "5db66d80330c6e457cb946dbbc201edfbdfc88d4",
+    "branch": "refs/heads/docs/phase4-installed-command-recovery-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-controlled-policy-cas-v12",
+    "HEAD": "b06e4556d2320e1a924c2dc95c72012c13544548",
+    "branch": "refs/heads/fix/phase4-controlled-policy-cas-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-current-java-bd4-union-v12",
+    "HEAD": "3b7af5096198ae9453b5616bc124def18798911c",
+    "branch": "refs/heads/fix/phase4-current823-actual-dotnet-lock-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-current-java-inputs-v12",
+    "HEAD": "5aed886446bad1c6254efe3758d766ca4e2eaf15",
+    "branch": "refs/heads/feat/phase4-current-java-package-selection-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-current-java-package-profile-v12",
+    "HEAD": "aa650acc41b193575a142d8a42eef8e12a804a11",
+    "branch": "refs/heads/fix/phase4-package-invocation-limit-borrow-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-current-java-scoped-actor-v15",
+    "HEAD": "0feb8019a283475f516d63b69e595294f215e095",
+    "branch": "refs/heads/fix/phase4-current-java-scoped-actor-v15",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-current-java-signer-v12",
+    "HEAD": "b133685145a66940358ec38eb6c90e61e6fa39b3",
+    "branch": "refs/heads/fix/phase4-current-java-fixture-json-expression-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-current-public-effect-union-v12",
+    "HEAD": "27d32ea9780784cab5cb1a14aee8b2fb4a46cb03",
+    "branch": "refs/heads/feat/phase4-effect-actual-retention-receipt-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-current-query-witness-union-v39",
+    "HEAD": "1fcc6d0fa6ec8e19c3ffc11ca02dd9242d0a10e6",
+    "branch": "refs/heads/test/phase4-current-query-witness-union-v39",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-current-rpc-final-v12",
+    "HEAD": "2c6e990cd519dc0b4b4afbb9ad50610d7fa3238d",
+    "branch": "refs/heads/fix/phase4-current-rpc-final-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-current823-qualified-collector-v19",
+    "HEAD": "528b2f59246855e3f3e23682d49b1fcd30940ad7",
+    "branch": "refs/heads/integration/phase4-current823-qualified-collector-v19",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-dispatcher-role-retirement-v12",
+    "HEAD": "fd21b82adb6dc5eede226f3f0c91be1be8fb9283",
+    "branch": "refs/heads/fix/phase4-dispatcher-role-retirement-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-effect-fixture-policy-v12",
+    "HEAD": "54cecc1a07a4af50a914f0e6d285783f3527f96a",
+    "branch": "refs/heads/fix/phase4-effect-fixture-policy-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-effect-status-rpc-v12",
+    "HEAD": "dee4232bbfd8e12cc119a0e095fa198cfd20a009",
+    "branch": "refs/heads/fix/phase4-effect-inspection-test-visibility-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-installed-management-v12",
+    "HEAD": "3f78a0b06f802746edc719c2f60cff7d81e42953",
+    "branch": "refs/heads/fix/phase4-installed-management-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-installed-recovery-selections-v12",
+    "HEAD": "f2648dd6faa28c5793f438b7d63b1ee9ea4510ee",
+    "branch": "refs/heads/fix/phase4-installed-recovery-selections-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-installed-rpc-lint-v12",
+    "HEAD": "9561175506d595aae96e92f804e1c0466f526005",
+    "branch": "refs/heads/fix/phase4-installed-rpc-lint-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-installed-rpc-union-v12",
+    "HEAD": "1740e79b83b2a33d4a66d5319be9849442c9b9ab",
+    "branch": "refs/heads/fix/phase4-installed-rpc-management-union-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-installed-transaction-rpc-v12",
+    "HEAD": "b31fcdcbf7732d65e375c0f4bcf921d15022fcb0",
+    "branch": "refs/heads/fix/phase4-installed-transaction-rpc-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-management-native-fixtures-v12",
+    "HEAD": "68856c46b63d54376312d59ba4e67b5ae9d22b83",
+    "branch": "refs/heads/fix/phase4-management-native-fixtures-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr791-duplicate-field-v12",
+    "HEAD": "3043e50ce76d4eebd17cfe60d0331b655bad32e3",
+    "branch": "refs/heads/fix/phase4-pr791-duplicate-dispatch-field-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr808-retirement-observation-v12",
+    "HEAD": "ff9dc40aec70b53dc1a8c63e6600dd9acfb98acb",
+    "branch": "refs/heads/fix/phase4-pr808-positive-retirement-observation-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr823-java-current-bridge-v21",
+    "HEAD": "76307dbbe24b51fb8b1316c4fbf7047914759a51",
+    "branch": "refs/heads/fix/phase4-pr823-java-current-bridge-v21",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr823-witness-vector-v35",
+    "HEAD": "1417e360a96954ce8abcc845024e7b7ff0eccb99",
+    "branch": "refs/heads/fix/phase4-current823-witness-vector-v35",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-current-java-union-v12",
+    "HEAD": "912701092b03c97d6ce92e5bbac8a9f9a2f5fc68",
+    "branch": "refs/heads/integration/phase4-http-development-fd-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-current-renderer-contracts-v23",
+    "HEAD": "756a492b1678dec5e4f69dac11c571acc3836dd1",
+    "branch": "refs/heads/fix/phase4-pr828-current-renderer-contracts-v23",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-fixture-calls-v12",
+    "HEAD": "108afcab06ca8e8cf7821754a5b474baeb4ab908",
+    "branch": "refs/heads/fix/phase4-pr828-local-fixture-calls-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-guest-module-v12",
+    "HEAD": "e4da7bef4c304cf4f8784d3fa02485074ba69789",
+    "branch": "refs/heads/fix/phase4-pr828-guest-module-union-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-lookup-go-union-v12",
+    "HEAD": "799498f12af7aae253145bdd79686e13eef7a98d",
+    "branch": "refs/heads/fix/phase4-pr828-qualified-lookup-go-union-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-runtime-union-v12",
+    "HEAD": "66b6ffe7d57825e22ce44f20ce2f89c4af1548e4",
+    "branch": "refs/heads/fix/phase4-pr828-current-runtime-union-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-pr828-sdk-service-call-v12",
+    "HEAD": "56d860a8eac3adcb8fb90b651674ff8f1e307419",
+    "branch": "refs/heads/fix/phase4-pr828-sdk-service-call-format-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-public-effect-inspection-v12",
+    "HEAD": "24df5ebc0bfaa74626a2f5f44488caab73c66365",
+    "branch": "refs/heads/fix/phase4-effect-inspection-native-lint-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-qualified-http-origin-v19",
+    "HEAD": "528b2f59246855e3f3e23682d49b1fcd30940ad7",
+    "branch": "refs/heads/fix/phase4-qualified-http-origin-v19",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-query-refusal-observation-v17",
+    "HEAD": "30300f5f776c8ce70a8e81e01436d050101c4931",
+    "branch": "refs/heads/test/phase4-query-refusal-observation-v17",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-query-unavailable-observation-v20",
+    "HEAD": "98281c17e28f9dd1dd6e9f0058069d71422df11e",
+    "branch": "refs/heads/test/phase4-query-unavailable-observation-v20",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-recovery-rpc-headroom-v12",
+    "HEAD": "790cd7d56532df642c45cfc30e18cdd3cd0ddba4",
+    "branch": "refs/heads/fix/phase4-recovery-rpc-headroom-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-rpc-probe-lint-v12",
+    "HEAD": "a6d93ac514a6345c280b50af59a357fa497d7d3e",
+    "branch": "refs/heads/fix/phase4-rpc-probe-strict-lint-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-transaction-rpc-probe-v12",
+    "HEAD": "9d9f722f6519335a5c5e7c39fd4da4a0d3035914",
+    "branch": "refs/heads/fix/phase4-transaction-rpc-probe-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-trigger-evaluator-tls-v12",
+    "HEAD": "a00353c9684ce1e92c94d043a9acac62de770e24",
+    "branch": "refs/heads/fix/phase4-trigger-evaluator-tls-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  },
+  {
+    "worktree": "C:/Users/turkins/Desktop/lf-p4-web-preparation-case-union-v12",
+    "HEAD": "d4a8fb5a8109dab3c13076d4c5c537bb0bec63ff",
+    "branch": "refs/heads/fix/phase4-web-preparation-case-union-v12",
+    "exists": true,
+    "status": "",
+    "unmerged": ""
+  }
+]
