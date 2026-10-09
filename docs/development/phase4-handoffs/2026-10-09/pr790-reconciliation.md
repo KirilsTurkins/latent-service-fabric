@@ -87,3 +87,14 @@ repository/docs validation and read-only CI coverage pass. Coverage preserves
 The PR closes no issue. Full signed admission and installed standalone new-boot,
 restore and distribution workflows still require their own current-source
 qualification. Current hosted CI is required and is not awaited for publication.
+
+## CI profile follow-up
+
+The `06855284` CI run exposed four merged suite counts that counted runnable
+tests instead of every discovered case, including ignores. The exact catalogue
+requires the latter. ControlStore, Policy, Wasmtime and latentd now register
+265, 147, 354 and 329 cases respectively. Every case and ignore list is unchanged.
+The original pull-request event selects full validation, and all 44 profile,
+inventory, discovery and result tests pass on Python 3.13.5 Linux without skips.
+The separate SDK security failure reports newly published Go 1.27.1 advisories;
+its compiler/runtime remediation is tracked independently of this count repair.
