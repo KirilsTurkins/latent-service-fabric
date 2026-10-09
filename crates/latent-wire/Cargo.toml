@@ -42,6 +42,7 @@ latent-wasmtime = { path = "../latent-wasmtime" }
 latent-packaging = { path = "../latent-packaging" }
 latent-test-process = { path = "../latent-test-process" }
 latent-core = { path = "../latent-core", features = ["test-support"] }
+latent-streams = { path = "../latent-streams", features = ["development-outbound"] }
 serde_json.workspace = true
 tempfile.workspace = true
 latent-scheduler = { path = "../latent-scheduler" }

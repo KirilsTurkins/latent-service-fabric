@@ -8,6 +8,19 @@ use super::{invalid, NodeConfig};
 const MAXIMUM_CONFIG_BYTES: u64 = 64 * 1024;
 
 pub(super) fn load(path: &Path) -> Result<NodeConfig, PlatformError> {
+    load_inner(path, false).map(|(config, _)| config)
+}
+
+pub(super) fn load_with_stream_reload(
+    path: &Path,
+) -> Result<(NodeConfig, Option<super::StreamReloadGuard>), PlatformError> {
+    load_inner(path, true)
+}
+
+fn load_inner(
+    path: &Path,
+    capture_reload: bool,
+) -> Result<(NodeConfig, Option<super::StreamReloadGuard>), PlatformError> {
     let absolute = if path.is_absolute() {
         path.to_path_buf()
     } else {
@@ -74,7 +87,13 @@ pub(super) fn load(path: &Path) -> Result<NodeConfig, PlatformError> {
             .map_err(|_| invalid("configurationPath"))?;
         config.data_directory = parent.join(&config.data_directory);
     }
-    Ok(config)
+    let reload = if capture_reload {
+        super::stream_reload::capture(&absolute, &bytes, &config)?
+    } else {
+        None
+    };
+    config.stream_reload_binding = reload.as_ref().map(super::StreamReloadGuard::binding);
+    Ok((config, reload))
 }
 
 pub(super) fn decode(bytes: &[u8]) -> Result<NodeConfig, PlatformError> {

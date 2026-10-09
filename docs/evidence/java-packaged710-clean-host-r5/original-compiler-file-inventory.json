@@ -1,0 +1,482 @@
+[
+  {
+    "bytes": 0,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/build-cache/compiler-stderr.log",
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "bytes": 121,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/build-cache/compiler-stdout.log",
+    "sha256": "sha256:12ba58077dce86ca3fc9b81c2e05628aa34b190d16437a369f769ed8c351e6b9"
+  },
+  {
+    "bytes": 0,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/build-cache/compiler-stderr.log",
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "bytes": 121,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/build-cache/compiler-stdout.log",
+    "sha256": "sha256:12ba58077dce86ca3fc9b81c2e05628aa34b190d16437a369f769ed8c351e6b9"
+  },
+  {
+    "bytes": 0,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/build-cache/compiler-stderr.log",
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "bytes": 121,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/build-cache/compiler-stdout.log",
+    "sha256": "sha256:12ba58077dce86ca3fc9b81c2e05628aa34b190d16437a369f769ed8c351e6b9"
+  },
+  {
+    "bytes": 0,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/build-cache/compiler-stderr.log",
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "bytes": 121,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/build-cache/compiler-stdout.log",
+    "sha256": "sha256:12ba58077dce86ca3fc9b81c2e05628aa34b190d16437a369f769ed8c351e6b9"
+  },
+  {
+    "bytes": 201,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/0-java-version.log",
+    "sha256": "sha256:dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+  },
+  {
+    "bytes": 873,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/1-gradle-version.log",
+    "sha256": "sha256:fe92e2aeedea2dc7fe4a7f441419d7c9f58848db6d79ceda3f69fda61c4282a8"
+  },
+  {
+    "bytes": 1729,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/10-bindings-metadata.log",
+    "sha256": "sha256:74cc1eaad3576b680dae1d8eee45bbf9471875c284a1c6ce5b4d33132216003c"
+  },
+  {
+    "bytes": 6813,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/11-wit-graph.log",
+    "sha256": "sha256:dd22ca66aa6f54ec51eb03fcbc1f0314384929126ede0fc4b577a3d693b07e48"
+  },
+  {
+    "bytes": 559,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/12-wit-bindings.log",
+    "sha256": "sha256:cef57b0e0df9176692306343bef422a5aa511c0c3dcc96a66c8ce2a337ba04ae"
+  },
+  {
+    "bytes": 1729,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/13-bindings-metadata.log",
+    "sha256": "sha256:74cc1eaad3576b680dae1d8eee45bbf9471875c284a1c6ce5b4d33132216003c"
+  },
+  {
+    "bytes": 1102,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/14-java-to-c.log",
+    "sha256": "sha256:2af394fcb560527f0b663b6860f274042991b1f1dba956a3ae4b59eb22e401b4"
+  },
+  {
+    "bytes": 106993,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/15-c-to-wasm.log",
+    "sha256": "sha256:3faf9cbeba244eb16df0ca86a8c51b48368f59aefd8e83f3a35b362dbfc6a0ed"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/16-closed-runtime.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/17-component-new.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/18-component-validate.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1577,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/19-component-surface.log",
+    "sha256": "sha256:36321b57d0ed8f49818e1c0e945fc93bf98b1714a2e6e27f200cacc882d23f0d"
+  },
+  {
+    "bytes": 457,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/2-clang-version.log",
+    "sha256": "sha256:99a693dac6c502260401be97ad146d651369758e5f7041d9251434264bd5a20a"
+  },
+  {
+    "bytes": 6813,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/20-expected-wit.log",
+    "sha256": "sha256:dd22ca66aa6f54ec51eb03fcbc1f0314384929126ede0fc4b577a3d693b07e48"
+  },
+  {
+    "bytes": 6197,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/21-compiled-wit.log",
+    "sha256": "sha256:b7d9f75c6c71499ea3a28796659c13a92311d0237c844f3efce4b02d68f0ab4b"
+  },
+  {
+    "bytes": 24,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/3-wit-bindgen-version.log",
+    "sha256": "sha256:54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+  },
+  {
+    "bytes": 43,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/4-wasm-tools-version.log",
+    "sha256": "sha256:a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+  },
+  {
+    "bytes": 41883,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/5-wit-graph.log",
+    "sha256": "sha256:5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+  },
+  {
+    "bytes": 583,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/6-wit-bindings.log",
+    "sha256": "sha256:d427a53728a18abae4980f89ccee9c0a612443b1ef05a4a31722c77c6d12fb72"
+  },
+  {
+    "bytes": 8431,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/7-bindings-metadata.log",
+    "sha256": "sha256:16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+  },
+  {
+    "bytes": 6813,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/8-wit-graph.log",
+    "sha256": "sha256:dd22ca66aa6f54ec51eb03fcbc1f0314384929126ede0fc4b577a3d693b07e48"
+  },
+  {
+    "bytes": 541,
+    "path": "test-java-composition-710/2382f40830b5dc8af77a376a050fd77f/source/output/compiler-logs/9-wit-bindings.log",
+    "sha256": "sha256:fec9dfeebdcb0a883e677ad5c80ef93b8cbc53b1d2c15803f5864f9586515931"
+  },
+  {
+    "bytes": 201,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/0-java-version.log",
+    "sha256": "sha256:dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+  },
+  {
+    "bytes": 873,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/1-gradle-version.log",
+    "sha256": "sha256:a5edec39d44a28adb08762ea973bed4f7de9fc74152abf766c9a3e5c69c61ea3"
+  },
+  {
+    "bytes": 3063,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/10-bindings-metadata.log",
+    "sha256": "sha256:9d24e688d7c9102cdd1a738dd2cdefca1d0e454095cf697a3d99d444fc598dbd"
+  },
+  {
+    "bytes": 19268,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/11-wit-graph.log",
+    "sha256": "sha256:f9a9b5ebf22d2fb951d33dfa12a8d008a2d2d8d876bc72113fcd290efa4fc7f9"
+  },
+  {
+    "bytes": 559,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/12-wit-bindings.log",
+    "sha256": "sha256:e688033c95b03790c0e48431d53aa7cc6bf65aa5e1c6221ad843667597ddcada"
+  },
+  {
+    "bytes": 3063,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/13-bindings-metadata.log",
+    "sha256": "sha256:9d24e688d7c9102cdd1a738dd2cdefca1d0e454095cf697a3d99d444fc598dbd"
+  },
+  {
+    "bytes": 1105,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/14-java-to-c.log",
+    "sha256": "sha256:ddd0a3afebc85b9d6c68ec9b402efbf1096b1fe70b8aefb631360bc9db748cdf"
+  },
+  {
+    "bytes": 417661,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/15-c-to-wasm.log",
+    "sha256": "sha256:7ed5c7ce361c0326b41d6cb1451321be03a6bcc886ad2e6b54ea2c926175500b"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/16-closed-runtime.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/17-component-new.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/18-component-validate.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 2840,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/19-component-surface.log",
+    "sha256": "sha256:8510b5f42f918984cc8215cdbfaa248038b9125c63a799a10a2dde262502b513"
+  },
+  {
+    "bytes": 457,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/2-clang-version.log",
+    "sha256": "sha256:282ce381b6e263d176ceadc37c215201504b18d962b0c4fcd5c8c2c0add93660"
+  },
+  {
+    "bytes": 19268,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/20-expected-wit.log",
+    "sha256": "sha256:f9a9b5ebf22d2fb951d33dfa12a8d008a2d2d8d876bc72113fcd290efa4fc7f9"
+  },
+  {
+    "bytes": 12116,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/21-compiled-wit.log",
+    "sha256": "sha256:1a372fc390aca4e87c209262b6073808ec62e2895c89184365c97aaef113d784"
+  },
+  {
+    "bytes": 24,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/3-wit-bindgen-version.log",
+    "sha256": "sha256:54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+  },
+  {
+    "bytes": 43,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/4-wasm-tools-version.log",
+    "sha256": "sha256:a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+  },
+  {
+    "bytes": 41883,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/5-wit-graph.log",
+    "sha256": "sha256:5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+  },
+  {
+    "bytes": 583,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/6-wit-bindings.log",
+    "sha256": "sha256:fc061ef47fe79d87148fb5b0321bf8c14d558f942403f645f48952099dcb7790"
+  },
+  {
+    "bytes": 8431,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/7-bindings-metadata.log",
+    "sha256": "sha256:16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+  },
+  {
+    "bytes": 19268,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/8-wit-graph.log",
+    "sha256": "sha256:f9a9b5ebf22d2fb951d33dfa12a8d008a2d2d8d876bc72113fcd290efa4fc7f9"
+  },
+  {
+    "bytes": 541,
+    "path": "test-java-composition-710/5a453227261ec2986c10cd0d5f2ed3ff/source/output/compiler-logs/9-wit-bindings.log",
+    "sha256": "sha256:bfd952e847d86ad481c4c70c975192a1c870df978099879905a706ca2bd2b1b9"
+  },
+  {
+    "bytes": 201,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/0-java-version.log",
+    "sha256": "sha256:dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+  },
+  {
+    "bytes": 873,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/1-gradle-version.log",
+    "sha256": "sha256:2213b43f8087d72296024df1078d8d4ba266f66e0f83a2dcb1de2340b9474e6f"
+  },
+  {
+    "bytes": 1444,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/10-bindings-metadata.log",
+    "sha256": "sha256:22da723dbe7fbf0008c92c5e7617cbc65ab1b37fe69c6cb2c689aed0ae7aaa6a"
+  },
+  {
+    "bytes": 6952,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/11-wit-graph.log",
+    "sha256": "sha256:9f439a6af5963fc8c25ee384321e8a5a8152a19da27a9b6d679dd02ef1ebc2de"
+  },
+  {
+    "bytes": 559,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/12-wit-bindings.log",
+    "sha256": "sha256:a77c4bc178d85aaadf7be23a2e67d2017037d87e6a5773a1788dfd834b85e809"
+  },
+  {
+    "bytes": 1444,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/13-bindings-metadata.log",
+    "sha256": "sha256:22da723dbe7fbf0008c92c5e7617cbc65ab1b37fe69c6cb2c689aed0ae7aaa6a"
+  },
+  {
+    "bytes": 1102,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/14-java-to-c.log",
+    "sha256": "sha256:ab82f8bb7a4154375f01146428d7e653b031089600bb4d59071c4379c9243008"
+  },
+  {
+    "bytes": 140704,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/15-c-to-wasm.log",
+    "sha256": "sha256:9fef78849ff7044f184885f435536af7f06c12ef4f12d8cd72521716c3aa343f"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/16-closed-runtime.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/17-component-new.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/18-component-validate.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1315,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/19-component-surface.log",
+    "sha256": "sha256:710ef6a5c489997e5606bcc922bcc7b023234f638761705f4a9954ac1e7a6155"
+  },
+  {
+    "bytes": 457,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/2-clang-version.log",
+    "sha256": "sha256:c41a7029cc76f943fb63a2c84a5ac238ad3da6330bd24dc99ab3b620f7e0a850"
+  },
+  {
+    "bytes": 6952,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/20-expected-wit.log",
+    "sha256": "sha256:9f439a6af5963fc8c25ee384321e8a5a8152a19da27a9b6d679dd02ef1ebc2de"
+  },
+  {
+    "bytes": 6479,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/21-compiled-wit.log",
+    "sha256": "sha256:ea2d4c381bdd7ab051edbb2c81eeb713a002ed46b65529c59314f25b2f919707"
+  },
+  {
+    "bytes": 24,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/3-wit-bindgen-version.log",
+    "sha256": "sha256:54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+  },
+  {
+    "bytes": 43,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/4-wasm-tools-version.log",
+    "sha256": "sha256:a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+  },
+  {
+    "bytes": 41883,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/5-wit-graph.log",
+    "sha256": "sha256:5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+  },
+  {
+    "bytes": 583,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/6-wit-bindings.log",
+    "sha256": "sha256:ce39691fe9de6ad616a647ba2c43096e02c4842555ef2b8ca49ec7d18b801ef8"
+  },
+  {
+    "bytes": 8431,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/7-bindings-metadata.log",
+    "sha256": "sha256:16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+  },
+  {
+    "bytes": 6952,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/8-wit-graph.log",
+    "sha256": "sha256:9f439a6af5963fc8c25ee384321e8a5a8152a19da27a9b6d679dd02ef1ebc2de"
+  },
+  {
+    "bytes": 541,
+    "path": "test-java-composition-710/5dff501f238a861b3b9286c33420c737/source/output/compiler-logs/9-wit-bindings.log",
+    "sha256": "sha256:0c6eb0cd5c76b4d9496ebbbec4b49d2e6145212d1e8d257f8c3855c2c286298b"
+  },
+  {
+    "bytes": 201,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/0-java-version.log",
+    "sha256": "sha256:dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+  },
+  {
+    "bytes": 873,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/1-gradle-version.log",
+    "sha256": "sha256:22a9811e762b02bb23437626a8755e2266e2e9fd89e277ca4f3146f3effbe23e"
+  },
+  {
+    "bytes": 3063,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/10-bindings-metadata.log",
+    "sha256": "sha256:9d24e688d7c9102cdd1a738dd2cdefca1d0e454095cf697a3d99d444fc598dbd"
+  },
+  {
+    "bytes": 19268,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/11-wit-graph.log",
+    "sha256": "sha256:f9a9b5ebf22d2fb951d33dfa12a8d008a2d2d8d876bc72113fcd290efa4fc7f9"
+  },
+  {
+    "bytes": 559,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/12-wit-bindings.log",
+    "sha256": "sha256:c6523003adfecfe88c22ffc53949cf0a70578d71a8d3118373ddf9f19ed35265"
+  },
+  {
+    "bytes": 3063,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/13-bindings-metadata.log",
+    "sha256": "sha256:9d24e688d7c9102cdd1a738dd2cdefca1d0e454095cf697a3d99d444fc598dbd"
+  },
+  {
+    "bytes": 1102,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/14-java-to-c.log",
+    "sha256": "sha256:5226d85a286153fb7a744a4d4c62eb9a148fc4670436d799ac9254f451141d66"
+  },
+  {
+    "bytes": 417661,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/15-c-to-wasm.log",
+    "sha256": "sha256:d90d5af442f4877ab0c808c5270a74a353e12d5bd39456b69527d3b1a6e13e3c"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/16-closed-runtime.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/17-component-new.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 1,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/18-component-validate.log",
+    "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  {
+    "bytes": 2840,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/19-component-surface.log",
+    "sha256": "sha256:8510b5f42f918984cc8215cdbfaa248038b9125c63a799a10a2dde262502b513"
+  },
+  {
+    "bytes": 457,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/2-clang-version.log",
+    "sha256": "sha256:012cfb8025fe069a8c730156ea32b6c9a9376382c7fd76cfc5cd331c3f9cbc66"
+  },
+  {
+    "bytes": 19268,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/20-expected-wit.log",
+    "sha256": "sha256:f9a9b5ebf22d2fb951d33dfa12a8d008a2d2d8d876bc72113fcd290efa4fc7f9"
+  },
+  {
+    "bytes": 12116,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/21-compiled-wit.log",
+    "sha256": "sha256:1a372fc390aca4e87c209262b6073808ec62e2895c89184365c97aaef113d784"
+  },
+  {
+    "bytes": 24,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/3-wit-bindgen-version.log",
+    "sha256": "sha256:54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+  },
+  {
+    "bytes": 43,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/4-wasm-tools-version.log",
+    "sha256": "sha256:a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+  },
+  {
+    "bytes": 41883,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/5-wit-graph.log",
+    "sha256": "sha256:5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+  },
+  {
+    "bytes": 583,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/6-wit-bindings.log",
+    "sha256": "sha256:929756f04bb0ec11b9a0da14ce9741191f37e6767faecf40969e37b6e1099db8"
+  },
+  {
+    "bytes": 8431,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/7-bindings-metadata.log",
+    "sha256": "sha256:16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+  },
+  {
+    "bytes": 19268,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/8-wit-graph.log",
+    "sha256": "sha256:f9a9b5ebf22d2fb951d33dfa12a8d008a2d2d8d876bc72113fcd290efa4fc7f9"
+  },
+  {
+    "bytes": 541,
+    "path": "test-java-composition-710/82b9e6be14eb767b09d9ae2d7d744afc/source/output/compiler-logs/9-wit-bindings.log",
+    "sha256": "sha256:3f9acd833ff3f1aa8550e51ea4078127f25d293b086fbef3208db13d0cfc0922"
+  }
+]

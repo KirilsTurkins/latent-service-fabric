@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve explicit captured guest profiles and incoming pinned compiler cache/mirror support with original download bounds, authentication and deadlines.",
+  "reviewReason": "Keep pinned compiler URLs/digests, byte ceilings, one 600 second acceptance deadline, no retries/fallback and owned partial cleanup; allow a finite 60 second transport wait capped by remaining original time",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "bd0b0a562b8d323fda5a0c0a262e1c3da64a38e28f64649eba2045b103ea05dd"
+  "sha256": "7b6ec5428d5edf7ddc0e75bb64c56f8f43edd930b64041cadf160443a2188e32"
 }

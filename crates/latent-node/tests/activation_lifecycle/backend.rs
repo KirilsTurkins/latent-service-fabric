@@ -26,6 +26,7 @@ pub const PANIC: u8 = 4;
 pub const QUARANTINE: u8 = 5;
 pub const FUEL: u8 = 6;
 pub const DROP_PANIC: u8 = 7;
+pub const GRANT_DENIED: u8 = 8;
 
 pub struct Backend {
     pub gate: Gate,
@@ -223,6 +224,14 @@ fn outcome(
     consumption: BudgetConsumption,
 ) -> Result<GuestOutcome, PlatformError> {
     match mode {
+        GRANT_DENIED => Err(latent_core::diagnostic::ActivationDiagnostic::new(
+            latent_core::diagnostic::DiagnosticStage::Binding,
+            latent_core::diagnostic::DiagnosticReason::GrantDenied,
+        )
+        .attach(error(
+            PlatformErrorCode::PermissionDenied,
+            "controlled binding denied",
+        ))),
         DECLARED => Ok(GuestOutcome::DeclaredError {
             error: DeclaredError {
                 code: "guest.invalid-input".to_owned(),
@@ -235,6 +244,7 @@ fn outcome(
         }),
         TRAP => Ok(GuestOutcome::Trapped {
             trap: GuestTrap {
+                diagnostic: None,
                 code: "fixture-trap".to_owned(),
                 message: "controlled trap".to_owned(),
                 guest_backtrace: Vec::new(),

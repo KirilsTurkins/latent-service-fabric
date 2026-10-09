@@ -44,6 +44,7 @@ SOURCES = {
 # Large pinned archives (notably Zig) can legitimately take over 90 seconds.
 # Keep one finite acceptance deadline, with no retries or source substitution.
 DOWNLOAD_TIMEOUT_SECONDS = 600
+DOWNLOAD_SOCKET_TIMEOUT_SECONDS = 60
 DOWNLOAD_CHUNK_BYTES = 64 * 1024
 
 
@@ -80,7 +81,13 @@ def download(destination: Path, source: dict, *, cache: Path | None = None) -> N
             hit = cached is not None and cached.exists()
             print(json.dumps({"compilerArchive": source["sha256"], "phase": "cache" if hit else "download"}),
                   file=sys.stderr, flush=True)
-            incoming = cached.open("rb") if hit else urllib.request.urlopen(source["url"], timeout=min(30, timeout))
+            remaining = deadline - time.monotonic()
+            require(remaining > 0, "compiler-download-deadline")
+            # A pinned archive may wait for its first response on a busy peer.
+            # Keep that transport wait finite and inside the original budget;
+            # failures still close/delete this attempt without retry or fallback.
+            incoming = cached.open("rb") if hit else urllib.request.urlopen(
+                source["url"], timeout=min(DOWNLOAD_SOCKET_TIMEOUT_SECONDS, remaining))
             with incoming:
                 while True:
                     require(time.monotonic() < deadline, "compiler-download-deadline")

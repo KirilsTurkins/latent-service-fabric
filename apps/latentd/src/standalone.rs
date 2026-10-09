@@ -41,6 +41,12 @@ pub use effects::{
     PreparedDispatcherControl,
 };
 pub use policies::PolicyShutdownReport;
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "development-outbound-streams"
+))]
+pub use providers::StreamControlStatus;
 pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;

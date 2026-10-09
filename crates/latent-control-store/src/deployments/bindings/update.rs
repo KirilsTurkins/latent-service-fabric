@@ -5,11 +5,19 @@ use crate::deployments::{
     PublishedCatalog,
 };
 use latent_capabilities::broker::ActivationCapabilityBroker;
+use latent_capabilities::broker::{pools::ProviderMetadata, ProviderReference};
 use latent_core::{PlatformError, PlatformErrorCode, RouteGeneration};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc, RwLock, Weak,
 };
+
+/// Keep the temporary configuration copy charged until the actual catalog
+/// commit finishes. The provider owner supplies a reservation from its pool.
+pub struct PreparedProviderReferenceUpdate {
+    prepared: PreparedBindingUpdate,
+    _metadata: ProviderMetadata,
+}
 
 pub(super) struct WorkPermit(pub(super) Arc<AtomicBool>);
 impl Drop for WorkPermit {
@@ -26,6 +34,105 @@ pub struct PreparedBindingUpdate {
     _work: WorkPermit,
 }
 impl DirectoryDeploymentRepository {
+    /// Trusted node control only. Replace the exact installed reference in a
+    /// new immutable compiler owner; no binding DTO supplies installation facts.
+    pub async fn prepare_provider_reference_update(
+        &self,
+        expected: &ProviderReference,
+        replacement: ProviderReference,
+        reserve_metadata: impl FnOnce(usize) -> Result<ProviderMetadata, PlatformError>,
+    ) -> Result<PreparedProviderReferenceUpdate, PlatformError> {
+        if expected.capability() != replacement.capability()
+            || expected.profile() != replacement.profile()
+            || replacement.configuration_epoch() < expected.configuration_epoch()
+            || (replacement.configuration_epoch() == expected.configuration_epoch()
+                && !expected.same_installation(&replacement))
+        {
+            return Err(denied());
+        }
+        let previous = self.read_publication();
+        if !previous.confirmed {
+            return Err(denied());
+        }
+        let owner = previous.routes.bindings.owner.as_ref().ok_or_else(denied)?;
+        if !owner.broker.provider_owner_matches(expected)
+            || !owner.broker.provider_owner_matches(&replacement)
+        {
+            return Err(denied());
+        }
+        let matches = owner
+            .providers
+            .iter()
+            .filter(|provider| provider.reference.same_installation(expected))
+            .count();
+        if matches != 1 {
+            return Err(denied());
+        }
+        // Decode/copy only after reserving conservative scratch for this same
+        // finite catalog. Existing metadata and retained-generation limits apply.
+        let bytes = previous
+            .routes
+            .bindings
+            .data
+            .iter()
+            .try_fold(4096usize, |total, data| {
+                total
+                    .checked_add(data.retained_bytes().checked_mul(8).ok_or_else(capacity)?)
+                    .ok_or_else(capacity)
+            })?
+            .checked_add(owner.retained_bytes().checked_mul(2).ok_or_else(capacity)?)
+            .ok_or_else(capacity)?;
+        let metadata = reserve_metadata(bytes)?;
+        let definitions = previous
+            .routes
+            .bindings
+            .data
+            .iter()
+            .map(|data| data.decode(owner.limits))
+            .collect::<Result<Vec<_>, _>>()?;
+        let providers = owner
+            .providers
+            .iter()
+            .map(|provider| ConfiguredBindingProvider {
+                tenant: provider.tenant.clone(),
+                service: provider.service.clone(),
+                reference: if provider.reference.same_installation(expected) {
+                    replacement.clone()
+                } else {
+                    provider.reference.clone()
+                },
+                local_deployment: provider.local_deployment.clone(),
+            })
+            .collect();
+        let prepared = self
+            .prepare_binding_update(
+                previous.routes.generation,
+                previous.transaction,
+                definitions,
+                Arc::clone(&owner.broker),
+                providers,
+                owner.limits,
+            )
+            .await?;
+        Ok(PreparedProviderReferenceUpdate {
+            prepared,
+            _metadata: metadata,
+        })
+    }
+
+    pub fn commit_provider_reference_update(
+        &self,
+        prepared: PreparedProviderReferenceUpdate,
+    ) -> Result<RouteGeneration, PlatformError> {
+        let PreparedProviderReferenceUpdate {
+            prepared,
+            _metadata,
+        } = prepared;
+        let result = self.commit_binding_update(prepared);
+        drop(_metadata);
+        result
+    }
+
     /// Trusted node/operator control entry point. Authenticated management must
     /// separately authorize tenant changes; installation facts never come from
     /// a guest, binding DTO, or explain response.

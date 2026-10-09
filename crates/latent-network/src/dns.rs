@@ -57,6 +57,14 @@ struct Cached {
     expires: Instant,
 }
 
+/// Literal answers and their actual bounded DNS validity. Callers must retain
+/// this fence instead of restarting the configured maximum TTL after resolution.
+#[derive(Clone, Copy, Debug)]
+pub struct ResolvedAnswers {
+    pub answers: Answers,
+    pub valid_until: Instant,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ResolverUsage {
     pub active: usize,
@@ -117,9 +125,33 @@ impl Resolver {
     }
 
     pub async fn resolve(&self, deadline: Instant) -> Result<Answers, NetworkError> {
+        self.resolve_with_expiry(deadline)
+            .await
+            .map(|value| value.answers)
+    }
+
+    pub async fn resolve_with_expiry(
+        &self,
+        deadline: Instant,
+    ) -> Result<ResolvedAnswers, NetworkError> {
+        self.resolve_with_expiry_observed(deadline, &mut || {})
+            .await
+    }
+
+    /// Confirm a caller's original prepaid native reservation after actual DNS
+    /// scratch/socket allocation. The caller retains that reservation until
+    /// this owned future is destroyed. A cache hit performs no such allocation.
+    pub async fn resolve_with_expiry_observed(
+        &self,
+        deadline: Instant,
+        allocated: &mut (dyn FnMut() + Send),
+    ) -> Result<ResolvedAnswers, NetworkError> {
         self.check(deadline)?;
         if let Some(answers) = self.cached()? {
-            return Ok(answers);
+            return Ok(ResolvedAnswers {
+                answers: answers.answers,
+                valid_until: answers.expires,
+            });
         }
         let _permit = self
             .admission
@@ -132,10 +164,13 @@ impl Resolver {
         drop(waiting);
         self.check(deadline)?;
         if let Some(answers) = self.cached()? {
-            return Ok(answers);
+            return Ok(ResolvedAnswers {
+                answers: answers.answers,
+                valid_until: answers.expires,
+            });
         }
         let _active = Count::new(&self.active);
-        let (answers, expires) = timeout_at(deadline, self.query())
+        let (answers, expires) = timeout_at(deadline, self.query(allocated))
             .await
             .map_err(|_| NetworkError::DeadlineExceeded)??;
         self.check(deadline)?;
@@ -144,7 +179,10 @@ impl Resolver {
             self.check(deadline)?;
             *cache = Some(Cached { answers, expires });
         }
-        Ok(answers)
+        Ok(ResolvedAnswers {
+            answers,
+            valid_until: expires,
+        })
     }
 
     pub fn close(&self) -> Result<(), NetworkError> {
@@ -179,17 +217,21 @@ impl Resolver {
         Ok(())
     }
 
-    fn cached(&self) -> Result<Option<Answers>, NetworkError> {
+    fn cached(&self) -> Result<Option<Cached>, NetworkError> {
         let mut cache = self.cache.lock().map_err(|_| NetworkError::Closed)?;
         if cache.is_some_and(|cached| cached.expires <= Instant::now()) {
             *cache = None;
         }
-        Ok(cache.map(|cached| cached.answers))
+        Ok(*cache)
     }
 
-    async fn query(&self) -> Result<(Answers, Instant), NetworkError> {
+    async fn query(
+        &self,
+        allocated: &mut (dyn FnMut() + Send),
+    ) -> Result<(Answers, Instant), NetworkError> {
         let name = Name::from_ascii(format!("{}.", self.host.trim_end_matches('.')))
             .map_err(|_| NetworkError::DnsFailed)?;
+        allocated();
         let mut result = Answers::default();
         let mut expires = Instant::now() + Duration::from_secs(u64::from(self.maximum_ttl));
         for kind in [RecordType::A, RecordType::AAAA] {
@@ -207,7 +249,7 @@ impl Resolver {
                 query.metadata.recursion_desired = true;
                 query.add_query(Query::query(current.clone(), kind));
                 let packet = query.to_vec().map_err(|_| NetworkError::DnsFailed)?;
-                let received = exchange::run(self.server, &packet).await?;
+                let received = exchange::run(self.server, &packet, allocated).await?;
                 let decoded =
                     decode::response(&received, identifier, &current, kind, &self.policy)?;
                 expires = expires.min(Instant::now() + Duration::from_secs(u64::from(decoded.ttl)));

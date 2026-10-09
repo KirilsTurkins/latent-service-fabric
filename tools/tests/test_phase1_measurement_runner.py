@@ -115,6 +115,38 @@ class MeasurementRunnerTests(unittest.TestCase):
             path.write_bytes(b"a" * 16)
             self.assertIsNone(environment.optional_text(path, limit=15))
 
+    def test_source_git_status_retains_tracked_and_untracked_dirt_with_finite_metadata_budget(self):
+        result = subprocess.CompletedProcess([], 0, stdout=" M tracked\n?? untracked\n")
+        with patch.object(environment.subprocess, "run", return_value=result) as run:
+            self.assertEqual(
+                environment.git("status", "--porcelain", "--untracked-files=normal"),
+                "M tracked\n?? untracked",
+            )
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(
+            run.call_args.args[0],
+            ["git", "--no-optional-locks", "status", "--porcelain", "--untracked-files=normal"],
+        )
+        self.assertEqual(run.call_args.kwargs["timeout"], 60)
+        self.assertTrue(run.call_args.kwargs["check"])
+
+    def test_source_git_revision_keeps_the_original_short_probe_budget(self):
+        with patch.object(environment.subprocess, "run", return_value=
+                          subprocess.CompletedProcess([], 0, stdout="original-head\n")) as run:
+            self.assertEqual(environment.git("rev-parse", "HEAD"), "original-head")
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.kwargs["timeout"], 10)
+
+    def test_source_git_timeout_and_failure_never_become_a_clean_observation(self):
+        arguments = ["git", "status", "--porcelain", "--untracked-files=normal"]
+        for failure in (subprocess.TimeoutExpired(arguments, 60),
+                        subprocess.CalledProcessError(1, arguments)):
+            with self.subTest(failure=type(failure).__name__):
+                with patch.object(environment.subprocess, "run", side_effect=failure) as run:
+                    with self.assertRaises(type(failure)):
+                        environment.git(*arguments[1:])
+                self.assertEqual(run.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

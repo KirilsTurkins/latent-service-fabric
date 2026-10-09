@@ -66,13 +66,22 @@ impl ProtectedStoreOwner {
     /// Descriptive original identity only. A getter cannot refresh an existing
     /// permit, approve an unbound store or prove a pending write has retired.
     pub fn native_capacity(&self) -> Result<NativeCapacityOwner, ProtectedStoreError> {
-        self.native_capacity
+        self.native_capacity_if_bound()?
+            .ok_or(ProtectedStoreError::InvalidConfiguration)
+    }
+
+    /// Preserve the exact trusted startup binding before another physical owner
+    /// starts. Absence is explicit; a poisoned binding cannot become absence.
+    pub fn native_capacity_if_bound(
+        &self,
+    ) -> Result<Option<NativeCapacityOwner>, ProtectedStoreError> {
+        Ok(self
+            .native_capacity
             .0
             .lock()
             .map_err(|_| ProtectedStoreError::InvalidConfiguration)?
             .owner
-            .clone()
-            .ok_or(ProtectedStoreError::InvalidConfiguration)
+            .clone())
     }
 
     #[must_use]

@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "latent.java.packaged-clean-host-failure.v1",
+  "conductorSource": {
+    "checkout": "676fa4072e669b655f526b06879dd0955c7a41c5",
+    "originalSourceObservationDigest": "sha256:f274d00656fb48c7452739d10dfc431c1954aa43ab254e6367327c7875b95967"
+  },
+  "approvedProducerSource": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "approvedPolicySha256": "ce36420661807326255232c0542f334045af5a637a157ad3c99b7e77328ffcba",
+  "cleanOsImageDigest": "sha256:c6af8999649a4251d701d5c6554abda9cdbd99735531f29fb770304f33348b55",
+  "cleanOsDockerfileDigest": "sha256:0e7f2fefad0c1796a9184f6e9a22620a2328c4dd2b9c13d4f35c0479a9e9b1a1",
+  "aggregatePassed": false,
+  "failure": "composition-probe-command-exit",
+  "process": {
+    "exitCode": 1,
+    "seconds": 1285.461416
+  },
+  "originalObservation": {
+    "bytes": 214808,
+    "sha256": "sha256:98bfe49be4b42fe34d7fafbd256069a3cde3115eddb4fb7d3323c2a0e7141a8e"
+  },
+  "originalFiles": {
+    "environment.json": {
+      "bytes": 1165,
+      "sha256": "sha256:c5240d3153fbd4b9b5059e1c1d0dd044d9c6ccadedd8c7730cab929dbf417ecc"
+    },
+    "process.json": {
+      "bytes": 50,
+      "sha256": "sha256:2204659651621b9e9e3b0802e1e82840ba7bc7cf803bcd1154f330bb4ff18a5c"
+    },
+    "original-compiler-file-inventory.json": {
+      "bytes": 32011,
+      "sha256": "sha256:78860c4f49d315d46ef6e922f8292dab47d4737941fe07662cff0b3dc0480052"
+    },
+    "current-standalone-failed.stdout.txt": {
+      "bytes": 8382,
+      "sha256": "sha256:34b9d343802067bc319e0bd605e3d11d3d58135dc08879544cc324aff58e03c6"
+    },
+    "current-standalone-failed.stderr.txt": {
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "domain/original-callable-surface.json": {
+      "bytes": 204,
+      "sha256": "sha256:c01d89c17ae2ae571041d6ae22ba2cbf7cfefcf31db07a652ae909250191a638"
+    },
+    "domain/original-signed-contracts.json": {
+      "bytes": 2820,
+      "sha256": "sha256:98d26e9203c10ccf3b0cac1cdad02e2e0a53e4ea0c1b4a5dd2b1dd277ebb463a"
+    },
+    "domain/original-identities.json": {
+      "bytes": 473,
+      "sha256": "sha256:b4e5d44f6735cf030e995608bc1061e22c14dbb51131a73ca7ab10eea346e7b0"
+    },
+    "adapter/original-identities.json": {
+      "bytes": 473,
+      "sha256": "sha256:44109864b9992c34f7231cb9828cc9b1bfa774a9d2858277905a48d42ab81c86"
+    },
+    "former-standalone-original.receipt.json": {
+      "bytes": 3999,
+      "sha256": "sha256:37cf66866ef1ecf83377fb6da8b6ee10382f467c80b70d605b077228d80e00fd"
+    },
+    "former-workspace-original.receipt.json": {
+      "bytes": 3929,
+      "sha256": "sha256:97878f286a59a541b2b56ef8431e1eda60d952f9616d31db76323bcb633c5352"
+    }
+  },
+  "compilerLogRetentionFailure": "DevError",
+  "compilerLogRetentionReason": "packaged-java-original-compiler-log-bound",
+  "originalCompilerFiles": 184,
+  "originalCompilerBytes": 1572644,
+  "components": {
+    "adapter": {
+      "component": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+      "componentBytes": 1809129,
+      "attempt": "12f9e42c298d5dc9112a0450899f2923",
+      "logCount": 46,
+      "logBytes": 563702
+    },
+    "adapter-next": {
+      "component": "sha256:4344aa85da161e33b8906ee4a5c2db272358ca52116f191e5d9ce61eb041d562",
+      "componentBytes": 1809177,
+      "attempt": "8cddcef3ba177d28e149e355d019d6a0",
+      "logCount": 46,
+      "logBytes": 563706
+    },
+    "context-required": {
+      "component": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+      "componentBytes": 548700,
+      "attempt": "0859ad8ae3a8f050789d8762fb34a7ec",
+      "logCount": 46,
+      "logBytes": 205841
+    },
+    "domain": {
+      "component": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+      "componentBytes": 1090170,
+      "attempt": "adff96c6a5d8bf8bfb9d4b7da7df2cdd",
+      "logCount": 46,
+      "logBytes": 239395
+    }
+  },
+  "formerPreflightSchedulesCompleted": [
+    "standalone",
+    "workspace"
+  ],
+  "currentPositivePreflightPassed": false,
+  "currentHttpExecutionQualified": false,
+  "allOwnedShutdownsStoppedAndReaped": true,
+  "providerCountersPerNode": 18,
+  "allProviderShutdownCountersZero": true,
+  "nativeRuntimeRebuilt": false,
+  "retainedC4ArtifactsReused": false,
+  "sourceControllerTests": {
+    "cases": 33,
+    "passed": true,
+    "unchangedPlatformSkips": 3
+  },
+  "failedCurrentCheck": {
+    "code": "actual-component-contract-surface",
+    "component": "domain"
+  },
+  "currentPreparedComponents": [
+    "adapter",
+    "domain"
+  ]
+}

@@ -45,9 +45,26 @@ pub(crate) fn install(
                     })?;
                     let mut completion = match invocation {
                         Ok((dispatch, request)) => {
-                            match dispatch.dispatch(|call| invoker.start(call, request)).await {
-                                Ok(Ok(invocation)) => invocation.await,
-                                Ok(Err(failure)) | Err(failure) => Err(failure),
+                            let admitted = dispatch
+                                .dispatch(|call| {
+                                    access.with(|mut access| {
+                                        let mut store = access.as_context_mut();
+                                        checkpoint(&mut store)?;
+                                        let admitted = invoker.start(call, request);
+                                        // Child admission reserves the original ledger before
+                                        // the async guest can resume. Reflect that reservation
+                                        // in native fuel without charging it as guest work.
+                                        synchronize(&mut store)?;
+                                        Ok::<_, wasmtime::Error>(admitted)
+                                    })
+                                })
+                                .await;
+                            match admitted {
+                                Ok(admitted) => match admitted? {
+                                    Ok(invocation) => invocation.await,
+                                    Err(failure) => Err(failure),
+                                },
+                                Err(failure) => Err(failure),
                             }
                         }
                         Err(failure) => Err(failure),

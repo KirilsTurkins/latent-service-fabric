@@ -1,6 +1,7 @@
 use super::model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider};
 use super::{
-    capacity, denied, error, invalid, model::StoredBinding, BindingCatalog, CompilerOwner,
+    capacity, denied, error, grant_denied, invalid, model::StoredBinding, BindingCatalog,
+    CompilerOwner,
 };
 use crate::deployments::compiler::{CompiledCatalog, RevisionRecord};
 use latent_artifacts::{AdmissionAuthority, ArtifactRepository, ReleaseUseEligibility};
@@ -40,6 +41,7 @@ pub(super) async fn compile(
             owner: None,
             plans: Box::new([]),
             unavailable: catalog.records.len(),
+            grant_denials: Box::new([]),
         });
     };
     if catalog.records.len() > limits.maximum_deployments {
@@ -49,7 +51,7 @@ pub(super) async fn compile(
     let order_bytes = catalog
         .records
         .len()
-        .checked_mul(std::mem::size_of::<&RevisionRecord>())
+        .checked_mul(std::mem::size_of::<(usize, &RevisionRecord)>() + std::mem::size_of::<usize>())
         .ok_or_else(capacity)?;
     if owner.retained_bytes()
         + order_bytes
@@ -66,6 +68,10 @@ pub(super) async fn compile(
         .ok_or_else(capacity)?;
     let mut plans = Vec::with_capacity(catalog.records.len());
     let mut unavailable = 0;
+    let mut grant_denials = Vec::new();
+    grant_denials
+        .try_reserve_exact(catalog.records.len())
+        .map_err(|_| capacity())?;
     // One transient consumer package, not one retained package per deployment.
     // Each plan still checks live eligibility and its own scoped grants. Sorting
     // the bounded pointer list groups only identical tenant/publication/source
@@ -74,10 +80,16 @@ pub(super) async fn compile(
     order
         .try_reserve_exact(catalog.records.len())
         .map_err(|_| capacity())?;
-    order.extend(catalog.records.iter().map(Arc::as_ref));
-    order.sort_unstable_by(|left, right| package_key(left).cmp(&package_key(right)));
+    order.extend(
+        catalog
+            .records
+            .iter()
+            .enumerate()
+            .map(|(index, record)| (index, record.as_ref())),
+    );
+    order.sort_unstable_by(|left, right| package_key(left.1).cmp(&package_key(right.1)));
     let mut consumer = None;
-    for record in order {
+    for (index, record) in order {
         if matches!(
             catalog.selected_eligibility(&record.deployment.release, record.publication.as_ref()),
             Some(crate::deployments::admission_fence::SelectedEligibility::Inactive(_))
@@ -110,6 +122,16 @@ pub(super) async fn compile(
                     ) =>
             {
                 unavailable += 1;
+                // Retain only the exact closed producer witness. A missing plan
+                // for any other cause remains unknown, including generic denial.
+                if latent_core::diagnostic::ActivationDiagnostic::from_error(&failure)
+                    == Some(latent_core::diagnostic::ActivationDiagnostic::new(
+                        latent_core::diagnostic::DiagnosticStage::Binding,
+                        latent_core::diagnostic::DiagnosticReason::GrantDenied,
+                    ))
+                {
+                    grant_denials.push(index);
+                }
             }
             Err(failure) => return Err(failure),
         }
@@ -119,6 +141,7 @@ pub(super) async fn compile(
         owner: Some(owner),
         plans: plans.into_boxed_slice(),
         unavailable,
+        grant_denials: grant_denials.into_boxed_slice(),
     })
 }
 
@@ -556,7 +579,7 @@ fn grant(
         .grants
         .iter()
         .filter(|g| g.capability.0 == interface);
-    let grant = grants.next().ok_or_else(denied)?;
+    let grant = grants.next().ok_or_else(grant_denied)?;
     if grants.next().is_some() || !grant.constraints.is_empty() {
         return Err(invalid());
     }
@@ -572,7 +595,7 @@ fn grant(
                 .retain(|op| grant.operations.contains(op));
         }
         if restriction.operations.is_empty() {
-            return Err(denied());
+            return Err(grant_denied());
         }
     }
     restriction.validate(interface)?;
