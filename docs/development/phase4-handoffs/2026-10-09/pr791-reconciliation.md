@@ -77,3 +77,17 @@ installed direct/RPC/HTTP command/query/recovery, physical commit/cancellation
 barriers, crash/restart and the actual six-language matrix remain requirements
 for #388 and its coordinated children. Hosted CI is required after publication
 and is not awaited for this commit/push delivery.
+
+## CI parser vocabulary follow-up
+
+The `60aebeea` hosted run failed both the Python contract lane and the Phase 3
+qualification lane at their shared closed-vocabulary parity test. The adopted
+Rust recorder contained seven additional reasons while the Python receipt
+extractor still listed the old vocabulary. Its explicit allowlist now includes
+exactly those seven enum/token pairs, in producer order. The strict parity test,
+unknown/malformed-input refusal and original 1 MiB capture, 32 native record and
+eight receipt-entry bounds are unchanged. All 51 security parser tests pass on
+pinned Python 3.13.5 Linux without skips; reviewed CI coverage also passes.
+The complete 3,670-case Python rerun passes with an unprivileged Linux user:
+3,652 passes and 18 existing platform/environment skips. No test body, execution
+guard, capture grammar or record limit changes. New hosted CI is not awaited.
