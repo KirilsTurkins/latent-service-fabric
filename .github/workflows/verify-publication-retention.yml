@@ -1,0 +1,31 @@
+name: Publication retention development validation
+on:
+  push:
+    branches: [ci/662-publication-retention-deletion]
+    paths: [.github/workflows/verify-publication-retention.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Package the exact tracked development inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/retention-workspace"
+          git archive --format=tar HEAD | gzip -1 > "$RUNNER_TEMP/retention-workspace/source.tar.gz"
+          git rev-parse HEAD > "$RUNNER_TEMP/retention-workspace/revision.txt"
+          git rev-parse HEAD^{tree} > "$RUNNER_TEMP/retention-workspace/tree.txt"
+          sha256sum "$RUNNER_TEMP/retention-workspace/source.tar.gz"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: retention-source-${{ github.sha }}
+          path: ${{ runner.temp }}/retention-workspace/
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
