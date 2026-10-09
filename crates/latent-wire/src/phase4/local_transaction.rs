@@ -1,6 +1,8 @@
 //! The ordinary authenticated RPC uses the existing native activation lifecycle.
 mod projection;
 mod selection;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod tests;
 
 use super::{OwnedPhase4Response, Phase4Call, Phase4Runtime};
 use crate::invocation::{
@@ -115,9 +117,22 @@ impl LocalTransactionRuntime {
         let installation = selected.installation;
         Ok(Box::pin(async move {
             let (receipt, admission) = retained.await;
-            let owned = admission
-                .take_owned_completion()?
-                .ok_or_else(|| error(PlatformErrorCode::Unavailable))?;
+            #[cfg(test)]
+            if let latent_activation::ActivationOutcome::Failed { error, .. } = &receipt.outcome {
+                eprintln!(
+                    "actual-command phase=ManagerCompleted platform-code={:?}",
+                    error.code
+                );
+            }
+            let Some(owned) = admission.take_owned_completion()? else {
+                // A pre-admission rejection owns no command result. Preserve
+                // the manager's exact conflict/authorization disposition;
+                // manufacturing Unavailable would invite the wrong retry.
+                return match receipt.outcome {
+                    latent_activation::ActivationOutcome::Failed { error, .. } => Err(error),
+                    _ => Err(error(PlatformErrorCode::Unavailable)),
+                };
+            };
             projection::response(
                 receipt,
                 owned,
@@ -125,6 +140,15 @@ impl LocalTransactionRuntime {
                 &self.limits,
                 self.services.clock.as_ref(),
             )
+            .inspect_err(|error| {
+                #[cfg(test)]
+                eprintln!(
+                    "actual-command phase=Projection platform-code={:?}",
+                    error.code
+                );
+                #[cfg(not(test))]
+                let _ = error;
+            })
         }))
     }
 }

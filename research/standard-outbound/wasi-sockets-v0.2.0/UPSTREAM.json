@@ -1,0 +1,112 @@
+{
+  "repository": "https://github.com/WebAssembly/wasi-sockets",
+  "tag": "v0.2.0",
+  "tree": "f2ffc745086ec7ab168f1244f2b3ef0342bf9ddc",
+  "originalBytesPreserved": true,
+  "sourceScope": "exact committed WIT and dependency declarations",
+  "adaptationOrRuntimeSupportClaimed": false,
+  "files": [
+    {
+      "path": "wit/deps.lock",
+      "gitBlob": "64c71e7dfaa6d5067e1eff9f0eea4a58957b135a",
+      "bytes": 585,
+      "sha256": "3914df3f04d9e6f7c6561041891aa662425bb0dcc60feb41ab21f2b8e869f310"
+    },
+    {
+      "path": "wit/deps.toml",
+      "gitBlob": "c07efafd6ad8d36df755c8406ee44380448adea8",
+      "bytes": 140,
+      "sha256": "6e10ef6b489c04068adc40275e17e0b54a85bed06aaacc42557491e973f389b3"
+    },
+    {
+      "path": "wit/deps/clocks/monotonic-clock.wit",
+      "gitBlob": "4e4dc3a1996776f6f4c432162174429f60f5dd19",
+      "bytes": 1525,
+      "sha256": "2e974279ccee050c5ea32117f83cff50d1b3146763db2a60c3e8afeb774dad47"
+    },
+    {
+      "path": "wit/deps/clocks/wall-clock.wit",
+      "gitBlob": "440ca0f3364f13c4b30160af4614544cca06d2b1",
+      "bytes": 1674,
+      "sha256": "55b7978bad3fcf9b0886be4644834e8bf9e3553bba018d8fd9201482369cb6b8"
+    },
+    {
+      "path": "wit/deps/clocks/world.wit",
+      "gitBlob": "c0224572a55bf4280ae305b97badb983a3ae3217",
+      "bytes": 97,
+      "sha256": "015589355de95f274258599abf01290405b316d806bf2d97df0609077d970edf"
+    },
+    {
+      "path": "wit/deps/io/error.wit",
+      "gitBlob": "22e5b64894b821b798ab63d462ea7afae9be42e5",
+      "bytes": 1444,
+      "sha256": "5c0cb7d20bca9d98233f13076132081e5aa12bc825a823066ff27d4cea834a0c"
+    },
+    {
+      "path": "wit/deps/io/poll.wit",
+      "gitBlob": "ddc67f8b7ace45e737d2f4ed2a8f22b70b63d39c",
+      "bytes": 1590,
+      "sha256": "88e2b5c3f04e6f59a93136823403389f1df37f92df7fc32ebcc36af8b1b78bfe"
+    },
+    {
+      "path": "wit/deps/io/streams.wit",
+      "gitBlob": "6d2f871e3b6f511d0753453dcbcb06ddc300ba0e",
+      "bytes": 12096,
+      "sha256": "41204f72fd3568897f9f217fc4840cd8ccf117bd53cc4f53ea6eacc7712bf76f"
+    },
+    {
+      "path": "wit/deps/io/world.wit",
+      "gitBlob": "5f0b43fe50d14d3fea88cc962ff0be316c57f032",
+      "bytes": 79,
+      "sha256": "358617cc366d0c4528571fc983acb9431a4516b7c8582d93930b54c80125bc1a"
+    },
+    {
+      "path": "wit/instance-network.wit",
+      "gitBlob": "e455d0ff7b63c0bf588e66ca72974fda0f7d10b7",
+      "bytes": 222,
+      "sha256": "ad100127c74b967064cf5d8e1770f6f0d787ef55f07ba9f6b334bc4c98c82282"
+    },
+    {
+      "path": "wit/ip-name-lookup.wit",
+      "gitBlob": "8e639ec59691e18c10190faa10d14f4f40c29889",
+      "bytes": 2603,
+      "sha256": "fdfd3f54f7b82457c3b08b7c941c0a50a1fc15cdf23d692ccc5680eeb29313cd"
+    },
+    {
+      "path": "wit/network.wit",
+      "gitBlob": "9cadf0650a49352feaf622c3de9896b4f6b5080b",
+      "bytes": 4175,
+      "sha256": "db6583f0e2425abbb7621a26716371983e9753ec1c44c580a888a603e74a8840"
+    },
+    {
+      "path": "wit/tcp-create-socket.wit",
+      "gitBlob": "c7ddf1f228ef3c9586bc1027a2e2a50793ba74b1",
+      "bytes": 1487,
+      "sha256": "6a9175598eb628ee8a14989efa0ef4e3244aae1d339f1c882467c5c8226e02ef"
+    },
+    {
+      "path": "wit/tcp.wit",
+      "gitBlob": "5902b9ee051924c0a6b2b616bde38b81cd0783dd",
+      "bytes": 20199,
+      "sha256": "aa7a316ce0cfb8b42c0f592b5096d218da8ad75e7878f06329954e22040c3ee5"
+    },
+    {
+      "path": "wit/udp-create-socket.wit",
+      "gitBlob": "0482d1fe7350a7b2fd891d246d4962b4aa96982d",
+      "bytes": 1477,
+      "sha256": "058da3ade225a22ae9f7329453a51cf55174f3253b7a4163d10bc46bc7c53b85"
+    },
+    {
+      "path": "wit/udp.wit",
+      "gitBlob": "d987a0a908011a88dd0436d3491b4b6a8b972c1a",
+      "bytes": 15189,
+      "sha256": "411998b320d08fce10400c840f0ca0ebef49c5a4fb13f94011bbce2bbd5972fc"
+    },
+    {
+      "path": "wit/world.wit",
+      "gitBlob": "f8bb92ae04574fd8db9b43985b16d5154d4c7a9f",
+      "bytes": 215,
+      "sha256": "9281c12b9611117e98674eb3f00bd9c4eb2e49f1386f0d6173b9c88181180d12"
+    }
+  ]
+}

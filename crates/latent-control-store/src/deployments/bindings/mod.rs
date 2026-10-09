@@ -7,7 +7,7 @@ pub(in crate::deployments) use source::Generations;
 mod startup;
 mod update;
 pub use model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider};
-pub use update::PreparedBindingUpdate;
+pub use update::{PreparedBindingUpdate, PreparedProviderReferenceUpdate};
 
 use super::{compiler::CompiledCatalog, PublishedCatalog};
 use latent_capabilities::broker::{ActivationCapabilityBroker, CompiledCapabilityPlan};
@@ -45,6 +45,7 @@ pub(super) struct BindingCatalog {
     owner: Option<Arc<CompilerOwner>>,
     plans: Box<[Arc<CompiledCapabilityPlan>]>,
     unavailable: usize,
+    grant_denials: Box<[usize]>,
 }
 impl Default for BindingCatalog {
     fn default() -> Self {
@@ -53,6 +54,7 @@ impl Default for BindingCatalog {
             owner: None,
             plans: Box::new([]),
             unavailable: 0,
+            grant_denials: Box::new([]),
         }
     }
 }
@@ -91,6 +93,7 @@ impl BindingCatalog {
                 .map(StoredBinding::retained_bytes)
                 .sum::<usize>()
             + self.plans.len() * std::mem::size_of::<Arc<CompiledCapabilityPlan>>()
+            + self.grant_denials.len() * std::mem::size_of::<usize>()
     }
 }
 pub(super) async fn inherit(
@@ -130,6 +133,13 @@ fn invalid() -> PlatformError {
 }
 fn denied() -> PlatformError {
     error(PlatformErrorCode::PermissionDenied, "binding-denied")
+}
+fn grant_denied() -> PlatformError {
+    latent_core::diagnostic::ActivationDiagnostic::new(
+        latent_core::diagnostic::DiagnosticStage::Binding,
+        latent_core::diagnostic::DiagnosticReason::GrantDenied,
+    )
+    .attach(denied())
 }
 fn capacity() -> PlatformError {
     error(PlatformErrorCode::ResourceExhausted, "binding-capacity")

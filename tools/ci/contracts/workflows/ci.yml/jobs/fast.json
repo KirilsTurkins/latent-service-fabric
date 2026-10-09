@@ -57,7 +57,7 @@
   },
   "jobId": "fast",
   "kind": "job",
-  "reviewReason": "Preserve stronger state full renderer assertion plus actual narrow workflow graph, all parent commands, limits, selected subsets and artifact evidence.",
+  "reviewReason": "Preserve current full state renderer and actual narrow workflow selection, every historical command and all limits/artifacts.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

@@ -12,8 +12,7 @@ mod state_management;
 pub use local_transaction::{LocalTransactionRuntime, LocalTransactionServices};
 pub use state_management::{
     StateManagementAdmission, StateManagementBackend, StateManagementBinding,
-    StateManagementRecoveryAdmission, StateManagementRecoveryBinding, StateManagementReservation,
-    StateManagementServices,
+    StateManagementRecoveryAdmission, StateManagementReservation, StateManagementServices,
 };
 #[cfg(test)]
 mod tests;

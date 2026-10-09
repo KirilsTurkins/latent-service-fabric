@@ -1,8 +1,17 @@
 export const APPLICATION_RESPONSE_BYTES = 256;
 export const APPLICATION_TIMEOUT_MILLIS = 3000;
 
+export function consumeBootstrapToken(): boolean {
+  const visible = new URL(globalThis.location.href ?? globalThis.location.origin);
+  if (!visible.searchParams.has('synthetic-token')) return false;
+  visible.searchParams.delete('synthetic-token');
+  globalThis.history.replaceState(null, '', visible.pathname + visible.search + visible.hash);
+  return true;
+}
+
 export async function publicGreeting(signal: AbortSignal): Promise<string> {
   if (signal.aborted) throw new Error('application-aborted');
+  if (consumeBootstrapToken()) (globalThis as any).boundaryTokenRemoved = true;
   const origin = globalThis.location.origin;
   const endpoint = new URL('/api/greeting', origin);
   if (!['http:', 'https:'].includes(endpoint.protocol)) throw new Error('application-origin');

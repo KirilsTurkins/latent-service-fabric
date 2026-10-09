@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "latent.qualification.storage-observation.v1",
+  "observedAtUtc": "2026-10-01T20:41:20.132600+00:00",
+  "campaign": "java-packaged710-clean-host-r5",
+  "originalPrivateObservation": {
+    "path": "qualification710-local-clean-r5/original-observation.json",
+    "bytes": 547924,
+    "sha256": "sha256:3bc5f9d85d5b0445f41a976c1a2ede895c17b9b5d0baaf8f901ad59d2b2ec73b",
+    "state": "not-found-in-remaining-owned-paths",
+    "originalOutputDirectoryPresent": false,
+    "recovered": false
+  },
+  "lossCause": "not-established",
+  "committedObservationsRetained": [
+    {
+      "path": "receipt.json",
+      "bytes": 37078,
+      "sha256": "sha256:5c82956e4823446ea0f952df20a2d3518d94a9991a436b0b564a9a213955d7cb"
+    },
+    {
+      "path": "preflight-observations.json",
+      "bytes": 232229,
+      "sha256": "sha256:a68c3b8450959a553a203117213c10b7a051e67d4533b0ee15bd971fbe2b6b30"
+    },
+    {
+      "path": "runtime-observations.json",
+      "bytes": 78605,
+      "sha256": "sha256:ee468b42a685df0c393cff88f0d9d063f8645a42021dab1b0d93bc1259f015cf"
+    },
+    {
+      "path": "build-identities.json",
+      "bytes": 19064,
+      "sha256": "sha256:681bd647072d016ccb4b5b5f395b55610c28c6bd336659d6b0188098166455d7"
+    },
+    {
+      "path": "original-runtime-manifest.json",
+      "bytes": 73167,
+      "sha256": "sha256:6f44cabf387eeec285019b94cba40fe3f6a525193d79d00be7b6524b7127cc4c"
+    },
+    {
+      "path": "original-compiler-file-inventory.json",
+      "bytes": 22787,
+      "sha256": "sha256:781745f0ffea94256fc8b82babbaf569b59d6835acf6f1a3219dea02c4f4d11e"
+    },
+    {
+      "path": "public-file-inventory.json",
+      "bytes": 1553,
+      "sha256": "sha256:e00cce95840bfce4e3254b418b4f1a1765823124840c44a4b29af18955fd3343"
+    }
+  ],
+  "historicalReceiptChanged": false,
+  "campaignRerun": false,
+  "newRuntimeQualificationClaimed": false
+}

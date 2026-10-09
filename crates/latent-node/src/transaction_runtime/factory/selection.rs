@@ -185,6 +185,13 @@ impl TransactionInstallation {
 }
 
 /// Descriptive request selectors, with no source/publication/policy grant.
+pub struct TransactionRetrySelection {
+    pub request: RetryRequest,
+    pub command: latent_commit::atomic::Identity,
+    pub attempt: u64,
+    pub transaction: latent_commit::atomic::Identity,
+}
+
 pub struct TransactionSelection {
     pub namespace: String,
     pub incarnation: u64,
@@ -195,7 +202,7 @@ pub struct TransactionSelection {
     pub expected_versions: Vec<Precondition>,
     pub minimum_view_version: Option<Vec<u8>>,
     pub input_format: String,
-    pub retry: Option<RetryRequest>,
+    pub retry: Option<TransactionRetrySelection>,
 }
 impl TransactionSelection {
     pub(super) fn validate(

@@ -21,6 +21,7 @@ mod rollouts;
 mod runtime;
 mod security;
 pub(crate) mod state;
+mod stream_reload;
 mod supply_chain;
 #[cfg(test)]
 mod tests;
@@ -51,7 +52,7 @@ pub use model::{
 pub use providers::{
     ActivationRuntimeInstallation, ActivationRuntimeLimits, BlobInstallation, ConfiguredProviders,
     HostBinding, HttpInstallation, HttpStreamingInstallation, LocalServiceInstallation,
-    ProviderIdentity, ProviderSecretFile, SecretInstallation,
+    ProviderIdentity, ProviderSecretFile, SecretInstallation, StreamInstallation,
 };
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
@@ -61,6 +62,7 @@ pub use state::{
     StateConfig, StateOperationConfig, StorageLimitsConfig, StorageRecoveryConfig,
     StorageWorkerConfig, TenantLimitsConfig, TenantQuotaConfig,
 };
+pub use stream_reload::StreamReloadGuard;
 pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
@@ -68,6 +70,14 @@ pub(crate) use supply_chain::SupplyChainSettings;
 /// plan passed to startup. This type intentionally has no `Debug` implementation
 /// because its transport configuration contains credentials.
 pub struct NodeSettings {
+    #[cfg_attr(
+        not(feature = "development-outbound-streams"),
+        allow(
+            dead_code,
+            reason = "opaque protected startup marker is consumed only by the explicitly gated stream owner"
+        )
+    )]
+    pub(crate) stream_reload_binding: Option<[u8; 32]>,
     pub(crate) credentials_from_protected_file: bool,
     pub(crate) data_directory: PathBuf,
     pub(crate) node: latent_node::NodeDescriptor,
@@ -134,6 +144,14 @@ impl NodeSettings {
 }
 
 impl NodeConfig {
+    /// Capture the exact protected startup input for an explicitly configured
+    /// development stream owner. Ordinary installations create no reload owner.
+    pub fn load_with_stream_reload(
+        path: &Path,
+    ) -> Result<(Self, Option<StreamReloadGuard>), PlatformError> {
+        input::load_with_stream_reload(path)
+    }
+
     /// Reads at most 64 KiB plus an overflow sentinel. On supported Linux `x86_64`
     /// hosts the credential-bearing file is descriptor-anchored and must satisfy
     /// the protected secret-file policy before bytes are decoded. Relative data

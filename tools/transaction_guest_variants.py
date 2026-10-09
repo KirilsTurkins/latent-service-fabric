@@ -2,8 +2,12 @@
 
 These are ordinary editable projects produced by the maintained six creators.
 They neither change the captured SDK nor install a profile or capability grant.
-The forbidden-HTTP component must be rejected by transaction preparation/admission;
-successfully compiling its actual import is a prerequisite, not execution evidence.
+The supported HTTP import remains preparable. Only an exact typed send denial
+returns the existing declared rejection; any other result traps. Compiler capture
+is a prerequisite for the real native-owner test, not execution evidence.
+The Rust result-boundary variant stages real state and an intent before returning
+a finite tuple of strings. Its different result type is an isolated qualification
+contract, not a compatible replacement for the aggregate publication.
 """
 from __future__ import annotations
 
@@ -14,11 +18,11 @@ import sys
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools.rust_capsule_project import read_file, snapshot
+from tools.rust_capsule_project import ROOT, read_file, snapshot
 from tools.transaction_guest_project import TEMPLATE
 
 LANGUAGES = ("rust", "c", "typescript", "go", "java", "dotnet")
-VARIANTS = ("forbidden-http",)
+VARIANTS = ("forbidden-http", "result-boundary")
 URL = "http://127.0.0.1:1/forbidden-transaction-effect"
 HTTP = "latent:http/client@0.2.0"
 SOURCES = {
@@ -39,41 +43,57 @@ def forbidden_http(source: str, language: str) -> str:
         source = replace_once(source, '"latent:intents/staging@0.1.0": latent_guest::bindings::intents,',
             '"latent:intents/staging@0.1.0": latent_guest::bindings::intents,\n'
             '        "latent:http/client@0.2.0": latent_guest::bindings::http,')
-        return replace_once(source, '        let mut command = Command::acquire()',
-            '        latent_guest::http::send(latent_guest::http::Request {\n'
+        return replace_once(source, '        if request.reject { return Err(BusinessError::Rejected); }',
+            '        let forbidden = latent_guest::http::send(latent_guest::http::Request {\n'
             '            method: latent_guest::http::Method::Get,\n'
             f'            url: "{URL}".into(), headers: vec![], body: None,\n'
             '            body_media_type: None, idempotency_key: None, timeout_millis: Some(1000),\n'
-            '        }).await.expect("forbidden immediate HTTP must be denied");\n'
-            '        let mut command = Command::acquire()')
+            '        }).await;\n'
+            '        let denied = matches!(&forbidden, Err(latent_guest::http::HttpError::PermissionDenied));\n'
+            '        assert!(denied, "strict transaction must return typed HTTP permission-denied");\n'
+            '        if denied { return Err(BusinessError::Rejected); }\n'
+            '        if request.reject { return Err(BusinessError::Rejected); }')
     if language == "typescript":
         source = replace_once(source, "import type * as Contract",
             "import { send } from '../vendor/lsf/sdk/typescript-guest/capabilities/http.js';\nimport type * as Contract")
-        return replace_once(source, '  update(request) {\n',
-            '  update(request) {\n'
-            f"    host(send({{ method: 'get', url: '{URL}', headers: [], timeoutMillis: 1000n }}));\n")
+        return replace_once(source, "      if (request.reject) throw 'rejected' satisfies Contract.BusinessError;",
+            f"      const forbidden = send({{ method: 'get', url: '{URL}', headers: [], timeoutMillis: 1000n }});\n"
+            "      const denied = forbidden.tag === 'err' && forbidden.val.tag === 'permission-denied';\n"
+            "      if (!denied) throw new Error('strict transaction must return typed HTTP permission-denied');\n"
+            "      if (denied) throw 'rejected' satisfies Contract.BusinessError;\n"
+            "      if (request.reject) throw 'rejected' satisfies Contract.BusinessError;")
     if language == "go":
         source = replace_once(source, '    "encoding/binary"',
             '    "encoding/binary"\n    http "wit_component/lsf/http"')
-        return replace_once(source, 'func Update(request api.UpdateRequest) wit.Result[api.Aggregate, api.BusinessError] {\n',
-            'func Update(request api.UpdateRequest) wit.Result[api.Aggregate, api.BusinessError] {\n'
-            f'    http.Send(http.Request{{Method: http.MethodGet, Url: "{URL}", Headers: []http.Header{{}},\n'
+        return replace_once(source, '    if request.Reject { return wit.Err[api.Aggregate, api.BusinessError](api.BusinessErrorRejected) }',
+            f'    forbidden := http.Send(http.Request{{Method: http.MethodGet, Url: "{URL}", Headers: []http.Header{{}},\n'
             '        Body: wit.None[[]uint8](), BodyMediaType: wit.None[string](),\n'
-            '        IdempotencyKey: wit.None[string](), TimeoutMillis: wit.Some[uint64](1000)}).Ok()\n')
+            '        IdempotencyKey: wit.None[string](), TimeoutMillis: wit.Some[uint64](1000)})\n'
+            '    denied := !forbidden.IsOk() && forbidden.Err().Tag() == http.HttpErrorPermissionDenied\n'
+            '    if !denied { panic("strict transaction must return typed HTTP permission-denied") }\n'
+            '    if denied { return wit.Err[api.Aggregate, api.BusinessError](api.BusinessErrorRejected) }\n'
+            '    if request.Reject { return wit.Err[api.Aggregate, api.BusinessError](api.BusinessErrorRejected) }')
     if language == "java":
-        return replace_once(source, '    update(Bindings.ExamplesTransactionalAggregateApiUpdateRequest request) {\n',
-            '    update(Bindings.ExamplesTransactionalAggregateApiUpdateRequest request) {\n'
-            '        Bindings.LatentHttpClient.send(new Bindings.LatentHttpClientRequest(\n'
-            f'            Bindings.LatentHttpClientMethod.Get, "{URL}", List.of(),\n'
-            '            Option.none(), Option.none(), Option.none(), Option.none())).value();\n')
+        return replace_once(source, '            if (request.reject()) return Result.err(Bindings.ExamplesTransactionalAggregateApiBusinessError.Rejected);',
+            '            var forbidden = Bindings.LatentHttpClient.send(new Bindings.LatentHttpClientRequest(\n'
+            f'                Bindings.LatentHttpClientMethod.Get, "{URL}", List.of(),\n'
+            '                Option.none(), Option.none(), Option.none(), Option.none()));\n'
+            '            boolean denied = forbidden.isError() && forbidden.error().tag() ==\n'
+            '                Bindings.LatentHttpClientHttpError.permissionDenied().tag();\n'
+            '            if (!denied) throw new IllegalStateException("strict transaction must return typed HTTP permission-denied");\n'
+            '            if (denied) return Result.err(Bindings.ExamplesTransactionalAggregateApiBusinessError.Rejected);\n'
+            '            if (request.reject()) return Result.err(Bindings.ExamplesTransactionalAggregateApiBusinessError.Rejected);')
     if language == "dotnet":
         source = replace_once(source, 'using Raw = ',
             'using HttpRaw = ServiceWorld.wit.Imports.latent.http.IClientImports;\nusing Raw = ')
-        return replace_once(source, '    public static Result<IApiExports.Aggregate, IApiExports.BusinessError> Update(IApiExports.UpdateRequest request) {\n',
-            '    public static Result<IApiExports.Aggregate, IApiExports.BusinessError> Update(IApiExports.UpdateRequest request) {\n'
-            '        _ = Http.Send(new HttpRaw.Request(HttpRaw.Method.GET,\n'
+        return replace_once(source, '        if (request.reject) return Result<IApiExports.Aggregate, IApiExports.BusinessError>.Err(IApiExports.BusinessError.REJECTED);',
+            '        var forbidden = Http.Send(new HttpRaw.Request(HttpRaw.Method.GET,\n'
             f'            "{URL}", new System.Collections.Generic.List<HttpRaw.Header>(),\n'
-            '            null, null, null, 1000)).AsOk;\n')
+            '            null, null, null, 1000));\n'
+            '        bool denied = !forbidden.IsOk && forbidden.AsErr.Tag == HttpRaw.HttpError.Tags.PermissionDenied;\n'
+            '        if (!denied) throw new InvalidOperationException("strict transaction must return typed HTTP permission-denied");\n'
+            '        if (denied) return Result<IApiExports.Aggregate, IApiExports.BusinessError>.Err(IApiExports.BusinessError.REJECTED);\n'
+            '        if (request.reject) return Result<IApiExports.Aggregate, IApiExports.BusinessError>.Err(IApiExports.BusinessError.REJECTED);')
     if language != "c":
         raise ValueError("unknown transaction guest language")
     source = replace_once(source, '#include "lsf/intents.h"',
@@ -95,29 +115,27 @@ def forbidden_http(source: str, language: str) -> str:
     source = replace_once(source, '        switch (frame->phase) {\n',
         '        switch (frame->phase) {\n'
         '        case FORBIDDEN_HTTP:\n'
-        '            lsf_require(!frame->http_result.is_err); /* Never turn a host denial into business success. */\n'
-        '            lsf_http_response_close(&frame->http_result.val.ok);\n'
-        '            frame->http_returned = false;\n'
-        '            frame->phase = READ_OLD;\n'
-        '            status = lsf_state_get(&frame->call, &frame->command, key(), &frame->read);\n'
-        '            break;\n')
+        '            lsf_require(frame->http_result.is_err &&\n'
+        '                frame->http_result.val.err.tag == LATENT_HTTP_CLIENT_HTTP_ERROR_PERMISSION_DENIED);\n'
+        '            return aggregate_return(frame, true,\n'
+        '                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_REJECTED);\n')
     return replace_once(source,
-        '    struct frame *frame = start(UPDATE); frame->delta = request->delta; frame->reject = request->reject;\n'
-        '    frame->phase = READ_OLD;\n'
-        '    return pump(frame, lsf_async_submit(&frame->async, lsf_state_get(&frame->call, &frame->command, key(), &frame->read)));',
-        '    struct frame *frame = start(UPDATE); frame->delta = request->delta; frame->reject = request->reject;\n'
-        '    frame->phase = FORBIDDEN_HTTP;\n'
-        '    frame->http_request = (latent_http_client_request_t){\n'
-        f'        .method = LATENT_HTTP_CLIENT_METHOD_GET, .url = LSF_LITERAL("{URL}"),\n'
-        '        .timeout_millis = {true, 1000},\n'
-        '    }; /* Literal URL is borrowed; all call arguments stay in the frame until retirement. */\n'
-        '    return pump(frame, lsf_async_submit(&frame->async,\n'
-        '        latent_http_client_send(&frame->http_request, &frame->http_result)));')
+        '            if (frame->reject) return aggregate_return(frame, true,\n'
+        '                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_REJECTED);\n'
+        '            return aggregate_return(frame, false, 0);',
+        '            frame->phase = FORBIDDEN_HTTP;\n'
+        '            frame->http_request = (latent_http_client_request_t){\n'
+        f'                .method = LATENT_HTTP_CLIENT_METHOD_GET, .url = LSF_LITERAL("{URL}"),\n'
+        '                .timeout_millis = {true, 1000},\n'
+        '            }; /* Arguments remain in the affine frame until retirement. */\n'
+        '            status = latent_http_client_send(&frame->http_request, &frame->http_result);')
 
 
 def create(directory: Path, language: str, variant: str, name: str | None = None) -> Path:
     if language not in LANGUAGES or variant not in VARIANTS:
         raise ValueError("unknown controlled transaction guest variant")
+    if variant == "result-boundary" and language != "rust":
+        raise ValueError("result-boundary qualification guest requires Rust")
     if language == "rust":
         from tools.rust_capsule_project import create as author
     elif language == "c":
@@ -131,6 +149,13 @@ def create(directory: Path, language: str, variant: str, name: str | None = None
     else:
         from tools.dotnet_guest.project import create as author
     project = author(directory, TEMPLATE, name or "transaction-" + language + "-" + variant)
+    if variant == "result-boundary":
+        source = ROOT / "examples/rust-capsules" / TEMPLATE
+        # An ordinary editable authored project, with unchanged captured SDK,
+        # grants, companion, host imports and request resource ceilings.
+        (project / SOURCES[language]).write_bytes(read_file(source / "result-boundary.rs"))
+        (project / "wit/world.wit").write_bytes(read_file(source / "result-boundary-world.wit"))
+        return project
     files = snapshot(project)
     world = files["wit/world.wit"].decode()
     if HTTP in world:

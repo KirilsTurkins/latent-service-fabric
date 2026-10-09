@@ -287,6 +287,22 @@ dispatcher startup without introducing another engine or process registry.
 The actual Linux registration lifecycle test and all 74 state cases passed,
 along with strict all-target/all-feature Clippy on the pinned image above.
 
+Dispatcher startup inherits the protected store's original bound
+`NativeCapacityOwner` before reserving that physical role or starting workers.
+The first dispatcher wakeup and command capture therefore use the same global
+capacity owner as storage. Reinstalling that owner is idempotent; binding a
+foreign owner fails before admission. The physical store independently checks
+the original identity even if the dispatcher projection is corrupted.
+
+An unbound store remains explicitly unbound. Starting native work seals its
+missing binding, so a late capacity counter cannot be substituted. Recovery
+reopens the same retained records and installs the trusted owner before any new
+native epoch or job. A poisoned binding fails startup rather than becoming an
+unbound observation. The existing
+[dispatcher capacity schedules](../../crates/latent-effects/src/runtime/tests/capacity.rs)
+cover both foreign-owner refusal and unbound restart without another provider
+attempt, enlarged quota or refunded live owner.
+
 Before a host moves a view through a cancellable read call, it may capture
 `view.retirement_witness()`. One non-clone status witness is issued for the
 entire affine view lifetime. `has_retired()` becomes true only after the native

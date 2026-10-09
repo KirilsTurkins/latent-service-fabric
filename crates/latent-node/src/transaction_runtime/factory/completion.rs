@@ -4,9 +4,12 @@ use crate::transaction_runtime::{CommandCompletion, CommandCompletionDisposition
 use crate::TransactionCommitControl;
 use latent_activation::{ActivationOutcome, ActivationSuccess};
 use latent_commit::atomic::{AtomicError, Outcome};
-use latent_core::{BudgetConsumption, DeclaredError, Metadata, PlatformErrorCode};
+use latent_core::{BudgetConsumption, DeclaredError, Metadata, PlatformError, PlatformErrorCode};
 use latent_executor::transaction::TransactionHost;
 use std::sync::Arc;
+
+#[cfg(test)]
+mod tests;
 
 impl NativeTransactionAdmission {
     pub(super) async fn complete_native(
@@ -41,6 +44,7 @@ impl NativeTransactionAdmission {
                         cleanup_failure: host.retire().await.err(),
                     },
                 };
+                let disposition = self.persist_conflict_abort(disposition, &host).await;
                 let observation = command_observation(&disposition, consumption);
                 (
                     TransactionCompletionResult::Command(disposition),
@@ -109,21 +113,36 @@ impl NativeTransactionAdmission {
         result: TransactionCompletionResult,
         observation: ActivationOutcome,
     ) -> ActivationOutcome {
-        if self.bind_completion_retention(&result).is_err() {
-            return unavailable(outcome_consumption(&observation));
-        }
-        match self.completion.lock() {
-            Ok(mut slot) if slot.is_none() => {
-                *slot = Some(result);
-                // The actual view/work and result now retain this same guard.
-                // The admission shell adds no lifetime after physical completion.
-                if let Ok(mut retention) = self.retention.lock() {
-                    retention.take();
+        with_completion_binding(
+            self.bind_completion_retention(&result),
+            observation,
+            |observation| match self.completion.lock() {
+                Ok(mut slot) if slot.is_none() => {
+                    *slot = Some(result);
+                    // The actual view/work and result now retain this same guard.
+                    // The admission shell adds no lifetime after physical completion.
+                    if let Ok(mut retention) = self.retention.lock() {
+                        retention.take();
+                    }
+                    observation
                 }
-                observation
-            }
-            _ => unavailable(outcome_consumption(&observation)),
-        }
+                _ => unavailable(outcome_consumption(&observation)),
+            },
+        )
+    }
+}
+
+fn with_completion_binding(
+    binding: Result<(), PlatformError>,
+    observation: ActivationOutcome,
+    publish: impl FnOnce(ActivationOutcome) -> ActivationOutcome,
+) -> ActivationOutcome {
+    match binding {
+        Ok(()) => publish(observation),
+        // An explicit data refusal cannot become recovery uncertainty. No owned
+        // completion is published, so the ordinary wire path forwards this same
+        // platform failure before disclosing command metadata or a result body.
+        Err(error) => failure_for_platform_error(error, outcome_consumption(&observation)),
     }
 }
 
@@ -144,6 +163,15 @@ fn command_observation(
                 },
                 consumption,
             },
+            Outcome::Aborted if result.code() == Some("state-conflict") => {
+                failure_for_platform_error(
+                    super::error(
+                        PlatformErrorCode::StateConflict,
+                        "transaction-state-conflict",
+                    ),
+                    consumption,
+                )
+            }
             _ => unavailable(consumption),
         },
         CommandCompletionDisposition::Retired {

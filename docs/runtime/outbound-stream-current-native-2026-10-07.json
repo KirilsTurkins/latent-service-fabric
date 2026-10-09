@@ -1,0 +1,100 @@
+{
+  "formatVersion": 1,
+  "sourceRevision": "55906321f5bd7e9cf156674945d808cda91f18b2",
+  "sourceTree": "26350e591237d0505d07945ba8636f362839d4c8",
+  "observedReceiptSha256": "330ce8b2d75f8c42001169f0375d0e2134bdc851afb80c61d7fae86edeacce7a",
+  "receiptScope": "source-authenticated native controls; no packaged standard-library or production enablement claim",
+  "passed": {
+    "protectedOperator": 12,
+    "activationInstallation": 5,
+    "streamConfigurationAndLifecycle": 4,
+    "signedTcp": 4,
+    "localServiceNonIgnored": 31,
+    "genericBackendNonIgnored": 9,
+    "hostAbiNegative": 4,
+    "pythonSourceControls": 34
+  },
+  "preservedIgnored": {
+    "localServiceJava": 2,
+    "genericBackend": 39
+  },
+  "bounds": {
+    "overallSeconds": 900,
+    "cargoSeconds": 600,
+    "memoryBytes": 4294967296,
+    "cpus": 2,
+    "javaHeapOrGuestGrantsChanged": false
+  },
+  "observedSeconds": 528.8203932019987,
+  "observedPeakMemoryBytes": 3974930432,
+  "sourceAndBaselineBytesModesUnchanged": true,
+  "artifacts": [
+    {
+      "stage": "default-compile",
+      "features": [],
+      "executableSha256": "15a0aa5aa898b20075a267e07905f8a58e680a6d0fc57e76ca70e7f93b5a899a",
+      "hostBackup": {
+        "file": "default-libtest.elf.gz",
+        "compressedBytes": 42601360,
+        "gzipSha256": "cd5e0b405009e48086b605f34ab075bf29c2f20cc9bf651509aa86c45e76c1df",
+        "decompressedSha256": "15a0aa5aa898b20075a267e07905f8a58e680a6d0fc57e76ca70e7f93b5a899a"
+      },
+      "gzipBytesFreshlyRehashed": true
+    },
+    {
+      "stage": "all-features-compile",
+      "features": [
+        "development-outbound-streams",
+        "development-test-node"
+      ],
+      "executableSha256": "d5af2e5a0d38f27d92a9943b0b57bac1ccd2953997524aca54db19268e1b4c0e",
+      "hostBackup": {
+        "file": "all-features-libtest.elf.gz",
+        "compressedBytes": 43255873,
+        "gzipSha256": "2feb1f59543a4bc34aa70a93b524caeeea10040efbac7963bbefc0c7e4f579d2",
+        "decompressedSha256": "d5af2e5a0d38f27d92a9943b0b57bac1ccd2953997524aca54db19268e1b4c0e"
+      },
+      "gzipBytesFreshlyRehashed": true
+    },
+    {
+      "stage": "signed-local-service-compile",
+      "features": [
+        "aot-test-timings",
+        "development-clock-fixture",
+        "development-test-host",
+        "java-guest-diagnostic"
+      ],
+      "executableSha256": "34492718497656eb85b7256cfe25bf951ac4b5b9182625a5922c2fe7a329c2dc",
+      "hostBackup": {
+        "file": "signed-local-service.elf.gz",
+        "compressedBytes": 26656699,
+        "gzipSha256": "26567ff0aa478c75507d5701fdfd5ed5cab60727c5bc0e276c36609e2004fff3",
+        "decompressedSha256": "34492718497656eb85b7256cfe25bf951ac4b5b9182625a5922c2fe7a329c2dc"
+      },
+      "gzipBytesFreshlyRehashed": true
+    },
+    {
+      "stage": "generic-backend-compile",
+      "features": [
+        "aot-test-timings",
+        "development-clock-fixture",
+        "development-test-host",
+        "java-guest-diagnostic"
+      ],
+      "executableSha256": "2188ef649e6ef2ce6def8a975226b2c722126e586834b7a353bd18ef33584804",
+      "hostBackup": {
+        "file": "generic-backend.elf.gz",
+        "compressedBytes": 20775250,
+        "gzipSha256": "8d4dfcee271bc332a476bb5f39bb3973610b6dcdf9d699b00ed200ea8d9fad18",
+        "decompressedSha256": "2188ef649e6ef2ce6def8a975226b2c722126e586834b7a353bd18ef33584804"
+      },
+      "gzipBytesFreshlyRehashed": true
+    }
+  ],
+  "priorFailuresPreserved": true,
+  "productionEnabled": false,
+  "architectureSecurityApproval": false,
+  "standardLibraryLanguageQualification": false,
+  "packagedOperatorQualification": false,
+  "nativeRssOrAllocatorPeakQualification": false
+}

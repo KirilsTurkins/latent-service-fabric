@@ -19,11 +19,14 @@ use writer::{inspect, RetryRequest, StagedIntent};
 mod accounted;
 mod captured;
 mod census;
+mod historical_reservations;
+#[cfg(target_os = "linux")]
+mod io_faults;
 mod managed_accounting;
+mod process;
+mod retention_cases;
 mod supported_formats;
 mod view_tokens;
-
-mod retention_cases;
 
 fn time(now: u64) -> CommandTime {
     CommandTime {
@@ -136,6 +139,10 @@ fn open_limited(path: &std::path::Path, limits: StoreLimits) -> EmbeddedStore {
 fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
     let dir = tempfile::tempdir().unwrap();
     let store = open(&dir.path().join("state.redb"));
+    let effects = seed(&store);
+    (dir, store, effects)
+}
+fn seed(store: &EmbeddedStore) -> EffectAuthorityOwner {
     let namespace = NamespaceRecord {
         tenant: TenantId("tenant".into()),
         id: StateNamespaceId("aggregate".into()),
@@ -157,7 +164,7 @@ fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
             }],
         })
         .unwrap();
-    (dir, store, effect_owner())
+    effect_owner()
 }
 fn effect_owner() -> EffectAuthorityOwner {
     let effects = EffectAuthorityOwner::new(4, 4, 0).unwrap();

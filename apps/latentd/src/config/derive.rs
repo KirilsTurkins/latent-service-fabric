@@ -64,6 +64,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         .map(ToString::to_string)
         .collect();
     Ok(NodeSettings {
+        stream_reload_binding: config.stream_reload_binding,
         credentials_from_protected_file: config.credentials_from_protected_file,
         data_directory: config.data_directory.as_path().to_path_buf(),
         supply_chain: super::supply_chain::derive(&config.supply_chain)?,

@@ -1,4 +1,5 @@
 //! Fresh policy intersection with the original captured namespace decision.
+mod recovery;
 use latent_artifacts::ReleaseUseEligibility;
 use latent_capabilities::namespace::{NamespaceAuthority, INTENT_CONTRACT, STATE_CONTRACT};
 use latent_core::{ActivationBudget, InvocationPrincipal, PlatformError, PlatformErrorCode};

@@ -187,7 +187,7 @@ fn actual_last_stamp_destructor_releases_the_original_metadata_keeper_only_after
     });
     let release = Release(Arc::clone(&gate));
     let (entered, observed) = mpsc::sync_channel(1);
-    let mut entries = registry.entries.lock().unwrap();
+    let mut entries = registry.entries.write().unwrap();
     let stamp = Arc::get_mut(&mut entries[0]);
     assert!(
         stamp.is_none(),
@@ -197,7 +197,7 @@ fn actual_last_stamp_destructor_releases_the_original_metadata_keeper_only_after
     // The observer itself is attached before pinning the independent stamp;
     // no fake retired boolean or timeout refunds native ownership.
     drop(handle);
-    let mut entries = registry.entries.lock().unwrap();
+    let mut entries = registry.entries.write().unwrap();
     let stamp = Arc::get_mut(&mut entries[0]).unwrap();
     let blocked = Arc::clone(&gate);
     stamp.retirement_observer = Some(Arc::new(move || {
@@ -242,9 +242,9 @@ fn retained_metadata_footprint_covers_maximum_record_and_pin_shapes() {
     )
     .unwrap();
     let completion = catalog.lifecycle().begin_create(&record).unwrap();
-    let entries = catalog.lifecycle().entries.lock().unwrap();
+    let entries = catalog.lifecycle().entries.read().unwrap();
     assert_eq!(entries.capacity(), maximum.namespaces);
-    let state = entries[0].state.lock().unwrap();
+    let state = entries[0].state.read().unwrap();
     assert_eq!(state.record, record);
     assert_eq!(state.pending.as_ref(), Some(&record));
     drop(state);

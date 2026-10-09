@@ -68,11 +68,7 @@ fn command(
         .ok_or_else(|| error(PlatformErrorCode::InvalidArgument))?;
     let installation = installation(rows, &invocation, &namespace.namespace, Mode::StrictCommand)?;
     installation.check_recovery_scope(principal, command.shared_recovery_scope.as_deref())?;
-    // The current installation supplies the mode. The actual affine server
-    // retry proof will be decoded by the durable-abort recovery composition.
-    if request.retry_attempt.is_some() {
-        return Err(error(PlatformErrorCode::IncompatibleContract));
-    }
+    let retry = request.retry_attempt.map(retry_selection).transpose()?;
     let expected_versions = request
         .expected_versions
         .into_iter()
@@ -106,9 +102,41 @@ fn command(
             expected_versions,
             minimum_view_version: None,
             input_format: request.input_format,
-            retry: None,
+            retry,
         },
     })
+}
+
+fn retry_selection(
+    retry: t::RetryAttempt,
+) -> Result<latent_node::transaction_runtime::TransactionRetrySelection, PlatformError> {
+    use latent_commit::atomic::{Identity, RetryRequest};
+    use std::fmt::Write;
+    let invalid = || error(PlatformErrorCode::InvalidArgument);
+    let fence = retry.expected_abort.ok_or_else(invalid)?;
+    let attempt = fence.attempt_id.parse::<u64>().map_err(|_| invalid())?;
+    if attempt == 0
+        || attempt > 16
+        || attempt.to_string() != fence.attempt_id
+        || fence.owner_fence.len() != 32
+    {
+        return Err(invalid());
+    }
+    let mut proof = String::with_capacity(64);
+    for byte in &fence.owner_fence {
+        write!(&mut proof, "{byte:02x}").map_err(|_| invalid())?;
+    }
+    Ok(
+        latent_node::transaction_runtime::TransactionRetrySelection {
+            request: RetryRequest {
+                request_id: retry.request_id,
+                expected_abort: Identity::parse_hex(&proof).map_err(|_| invalid())?,
+            },
+            command: Identity::parse_hex(&fence.command_id).map_err(|_| invalid())?,
+            attempt,
+            transaction: Identity::parse_hex(&fence.transaction_id).map_err(|_| invalid())?,
+        },
+    )
 }
 fn query(
     rows: &[Arc<TransactionInstallation>],
