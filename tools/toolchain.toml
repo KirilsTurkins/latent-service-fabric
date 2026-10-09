@@ -36,7 +36,7 @@ jsonschema = "4.26.0"
 runner = "ubuntu-24.04"
 
 [sdk]
-go = "1.27.1"
+go = "1.27.2"
 node = "24.19.0"
 typescript = "7.0.2"
 java = "25.0.4.1+1"

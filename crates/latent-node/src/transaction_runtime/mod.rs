@@ -7,6 +7,8 @@ mod factory;
 mod host;
 mod initialization;
 mod io;
+mod observation;
+mod response;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
 pub use authorization::{PolicyCallBinding, StateAuthorization};
@@ -15,8 +17,10 @@ pub use command_role::PendingCommandAdmission;
 pub use completion::{CommandCompletion, CommandCompletionDisposition};
 pub use factory::{
     NativeTransactionAdmission, TransactionAdmissionOwners, TransactionAdmissionResult,
-    TransactionCompletionResult, TransactionInstallation, TransactionSelection,
+    TransactionCompletionResult, TransactionInstallation, TransactionInstallationSelection,
+    TransactionRetrySelection, TransactionSelection,
 };
+pub use response::{OwnedTransactionCompletion, TransactionResponseAuthority};
 
 use latent_commit::atomic::{
     AdmittedCommand, CapturedIntent, CommandTime, IntentCaptureContext, PhysicalAttemptWork,

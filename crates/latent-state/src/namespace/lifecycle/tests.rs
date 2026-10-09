@@ -12,6 +12,44 @@ use crate::{
 use latent_core::{StateNamespaceId, TenantId};
 use std::fs::OpenOptions;
 
+mod resident;
+
+#[test]
+fn concurrent_existing_namespace_checks_share_metadata_without_denial_and_writers_stay_exclusive() {
+    let fixture = Fixture::new();
+    let read = fixture.create("orders");
+    let registry = fixture.catalog.lifecycle();
+    let handle = registry.pin(&read).unwrap();
+    let held = handle.stamp.state.read().unwrap();
+    std::thread::scope(|scope| {
+        let second = scope.spawn(|| {
+            let fresh = registry.pin(&read).unwrap();
+            fresh.with_current(&read, false, || Ok(())).unwrap();
+            registry.with_current_record(&read, || Ok(())).unwrap();
+            let after = read
+                .record()
+                .transition(read.record().version, &NamespaceTransition::Quiesce, 0)
+                .unwrap();
+            assert!(matches!(
+                registry.begin_transition(&read, &after, false),
+                Err(NamespaceError::Unavailable)
+            ));
+        });
+        second.join().unwrap();
+    });
+    drop(held);
+    // The original lifecycle acceptance still invalidates both read and write
+    // authority before native I/O, and an unresolved completion stays closed.
+    let after = read
+        .record()
+        .transition(read.record().version, &NamespaceTransition::Quiesce, 0)
+        .unwrap();
+    let completion = registry.begin_transition(&read, &after, false).unwrap();
+    assert!(handle.with_current(&read, false, || Ok(())).is_err());
+    assert!(handle.with_current(&read, true, || Ok(())).is_err());
+    drop(completion);
+}
+
 struct Fixture {
     store: EmbeddedStore,
     catalog: NamespaceCatalog,

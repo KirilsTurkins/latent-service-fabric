@@ -17,8 +17,56 @@ pub struct TransactionInstallation {
     pub(super) recovery: RecoverySelection,
     pub(super) result_read_policy: String,
     pub(super) result_policy: ResultPolicy,
+    pub(super) selection: Option<Arc<dyn super::TransactionInstallationSelection>>,
 }
 impl TransactionInstallation {
+    /// Validate the descriptive caller choice against this trusted binding.
+    /// Namespace/policy admission still seals the actual permission separately.
+    pub fn check_recovery_scope(
+        &self,
+        principal: &latent_core::InvocationPrincipal,
+        selected: Option<&str>,
+    ) -> Result<(), PlatformError> {
+        let caller =
+            latent_capabilities::namespace::CallerScope::derive(principal, &self.recovery)?;
+        let matches = match &self.recovery {
+            RecoverySelection::OriginalCaller => selected.is_none(),
+            _ => selected == Some(caller.scope.as_str()),
+        };
+        if matches {
+            Ok(())
+        } else {
+            Err(super::authorization::denied())
+        }
+    }
+
+    /// Descriptive selection from the trusted installed manifest and companion.
+    /// Actual admission still resolves and seals this publication and policy.
+    #[must_use]
+    pub fn operation_for(
+        &self,
+        target: &latent_routing::InvocationTarget,
+        namespace: &str,
+        mode: TransactionOperationMode,
+    ) -> Option<&latent_manifest::TransactionOperation> {
+        if namespace != self.declaration.namespace
+            || target.service.0 != self.metadata.manifest().metadata.name
+            || Some(&target.tenant) != self.publication.tenant()
+            || !self
+                .metadata
+                .manifest()
+                .exports
+                .iter()
+                .any(|export| export.contract == target.contract)
+        {
+            return None;
+        }
+        self.declaration
+            .operations
+            .iter()
+            .find(|operation| operation.operation == target.function.0 && operation.mode == mode)
+    }
+
     #[allow(
         clippy::too_many_arguments,
         reason = "Independent trusted installation owners are explicit"
@@ -68,6 +116,7 @@ impl TransactionInstallation {
             recovery,
             result_read_policy,
             result_policy,
+            selection: None,
         })
     }
 
@@ -79,29 +128,43 @@ impl TransactionInstallation {
             .resolved_revision
             .as_ref()
             .ok_or_else(super::authorization::denied)?;
+        if resolved.target != envelope.target {
+            return Err(super::authorization::denied());
+        }
+        self.source_for_resolved(resolved)
+    }
+
+    /// Project the already resolved exact source without creating authority.
+    /// A response must separately retain its actual original data-read owner.
+    pub fn source_for_resolved(
+        &self,
+        resolved: &latent_routing::ResolvedRevision,
+    ) -> Result<SourceIdentity, PlatformError> {
+        if let Some(selection) = &self.selection {
+            selection.check_resolved(resolved, &self.publication)?;
+        }
         let operation = self
             .declaration
             .operations
             .iter()
-            .find(|operation| operation.operation == envelope.target.function.0)
+            .find(|operation| operation.operation == resolved.target.function.0)
             .ok_or_else(super::authorization::denied)?;
         let contract = self
             .metadata
             .contracts()
             .iter()
-            .find(|contract| contract.id == envelope.target.contract)
+            .find(|contract| contract.id == resolved.target.contract)
             .ok_or_else(super::authorization::denied)?;
-        if resolved.target != envelope.target
-            || resolved.release != *self.publication.release()
+        if resolved.release != *self.publication.release()
             || resolved.publication.as_ref() != Some(self.publication.publication())
-            || envelope.target.service.0 != self.metadata.manifest().metadata.name
-            || Some(&envelope.target.tenant) != self.publication.tenant()
+            || resolved.target.service.0 != self.metadata.manifest().metadata.name
+            || Some(&resolved.target.tenant) != self.publication.tenant()
             || !self
                 .metadata
                 .manifest()
                 .exports
                 .iter()
-                .any(|export| export.contract == envelope.target.contract)
+                .any(|export| export.contract == resolved.target.contract)
         {
             return Err(super::authorization::denied());
         }
@@ -122,6 +185,13 @@ impl TransactionInstallation {
 }
 
 /// Descriptive request selectors, with no source/publication/policy grant.
+pub struct TransactionRetrySelection {
+    pub request: RetryRequest,
+    pub command: latent_commit::atomic::Identity,
+    pub attempt: u64,
+    pub transaction: latent_commit::atomic::Identity,
+}
+
 pub struct TransactionSelection {
     pub namespace: String,
     pub incarnation: u64,
@@ -132,13 +202,21 @@ pub struct TransactionSelection {
     pub expected_versions: Vec<Precondition>,
     pub minimum_view_version: Option<Vec<u8>>,
     pub input_format: String,
-    pub retry: Option<RetryRequest>,
+    pub retry: Option<TransactionRetrySelection>,
 }
 impl TransactionSelection {
     pub(super) fn validate(
         &self,
         installation: &TransactionInstallation,
     ) -> Result<(), PlatformError> {
+        if let Some(selected) = &installation.selection {
+            selected.check_selectors(
+                &self.namespace,
+                self.incarnation,
+                self.entity.as_deref(),
+                &self.operation,
+            )?;
+        }
         let mode = self.mode == TransactionOperationMode::StrictCommand;
         let operation = installation
             .declaration

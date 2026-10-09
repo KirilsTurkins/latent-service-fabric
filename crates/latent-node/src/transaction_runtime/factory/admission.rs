@@ -4,6 +4,7 @@ use super::{
     TransactionAdmissionResult, TransactionSelection,
 };
 use crate::transaction_runtime::command_role::CommandRole;
+use crate::transaction_runtime::observation::{self, Phase};
 use crate::transaction_runtime::{CommandHostSelection, StateAuthorization};
 use latent_activation::ActivationEnvelope;
 use latent_capabilities::namespace::{NamespaceAdmission, NamespaceAuthority};
@@ -23,6 +24,9 @@ use latent_state::{
 enum PendingPublication {
     New(latent_commit::atomic::AdmittedCommand),
     Existing(CommandRecord),
+    // A positively completed read/preparation refused before any writer.
+    // This is distinct from unknown physical Pending publication.
+    Refused(AtomicError),
 }
 
 impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
@@ -59,28 +63,37 @@ impl NativeTransactionAdmission {
         };
         // Verify pinned source, mode, finite input and original policy BEFORE
         // any native lookup or durable reservation. DTOs supply no source grant.
-        let source = self.installation.source(envelope)?;
-        let initial = policy::initial(
-            &self.owners,
-            &self.installation,
-            &selection,
-            envelope,
-            budget,
+        let source = observation::platform(Phase::Source, self.installation.source(envelope))?;
+        let initial = observation::platform(
+            Phase::InitialPolicy,
+            policy::initial(
+                &self.owners,
+                &self.installation,
+                &selection,
+                envelope,
+                budget,
+            ),
         )?;
         let retention =
-            super::TransactionRetention::reserve(&self.owners.native, envelope, budget)?;
+            observation::platform(Phase::Retention, self.reserve_retention(envelope, budget))?;
         let bytes = retention.request_bytes();
         *self.retention.lock().map_err(|_| authorization::denied())? = Some(Arc::clone(&retention));
-        let namespace = self
-            .read_namespace(&selection, &envelope.target.tenant)
-            .await?;
+        let namespace = observation::platform(
+            Phase::NamespaceRead,
+            self.read_namespace(&selection, &envelope.target.tenant)
+                .await,
+        )?;
         check_view(
             &selection,
             &namespace,
             &self.installation.declaration.state_schema,
         )?;
-        let before = self.seal(initial.before, namespace, envelope, budget, None)?;
+        let before = observation::platform(
+            Phase::InitialSeal,
+            self.seal(initial.before, namespace, envelope, budget, None),
+        )?;
         let mode = selection.mode == TransactionOperationMode::StrictCommand;
+        self.retain_response_authority(Arc::clone(&before), !mode)?;
         let scope = selected_scope(&selection, envelope, &source.state_schema);
         let authorization = if mode {
             let role = CommandRole::capture(&self.owners.command).map_err(atomic)?;
@@ -121,24 +134,34 @@ impl NativeTransactionAdmission {
                 inbox: None,
                 owner_epoch: epoch,
             };
-            self.publish_pending(
-                input,
-                selection.retry.take(),
-                Arc::clone(&before),
-                Arc::clone(&role),
-                bytes,
-            )
-            .await?;
+            observation::platform(
+                Phase::PendingPublication,
+                self.publish_pending(
+                    input,
+                    selection.retry.take(),
+                    Arc::clone(&before),
+                    Arc::clone(&role),
+                    bytes,
+                )
+                .await,
+            )?;
             let after = self
                 .read_namespace(&selection, &envelope.target.tenant)
                 .await?;
-            self.seal(initial.after, after, envelope, budget, Some(role))?
+            observation::platform(
+                Phase::FinalSeal,
+                self.seal(initial.after, after, envelope, budget, Some(role)),
+            )?
         } else {
             drop(initial.after);
             before
         };
-        self.open_host(envelope, selection, scope, authorization)
-            .await
+        self.retain_response_authority(Arc::clone(&authorization), !mode)?;
+        observation::platform(
+            Phase::HostOpen,
+            self.open_host(envelope, selection, scope, authorization)
+                .await,
+        )
     }
 
     async fn open_host(
@@ -304,7 +327,7 @@ impl NativeTransactionAdmission {
     async fn publish_pending(
         &self,
         input: AdmissionInput,
-        retry: Option<latent_commit::atomic::RetryRequest>,
+        retry: Option<super::TransactionRetrySelection>,
         authorization: Arc<StateAuthorization>,
         role: Arc<CommandRole>,
         bytes: u64,
@@ -331,15 +354,21 @@ impl NativeTransactionAdmission {
                     }) {
                         return Err(AtomicError::PermissionDenied);
                     }
-                    authorization
-                        .authorize(operation, 0, 0, || Ok(()))
-                        .map_err(|_| AtomicError::PermissionDenied)
+                    observation::platform(
+                        Phase::PendingAuthorization,
+                        authorization.authorize(operation, 0, 0, || Ok(())),
+                    )
+                    .map_err(|_| AtomicError::PermissionDenied)
                 };
                 let prepared = if let Some(retry) = retry {
-                    PreparedAdmission::retry(&view, &input, &retry, time, authorize)
+                    authorize(CommandAccess::Admit, None).and_then(|()| {
+                        super::retry::check_association(&view, &input, &retry)?;
+                        PreparedAdmission::retry(&view, &input, &retry.request, time, authorize)
+                    })
                 } else {
                     PreparedAdmission::prepare(&view, input, time, authorize)
                 };
+                let prepared = observation::atomic(Phase::PendingPreparation, prepared);
                 Ok(match prepared {
                     Ok(AdmissionDecision::New(prepared)) => {
                         let expected = authorization.namespace.expectation();
@@ -349,7 +378,7 @@ impl NativeTransactionAdmission {
                             .iter()
                             .any(|row| row.key == expected.key && row.value == expected.value)
                         {
-                            return Ok(Err(AtomicError::Conflict));
+                            return Ok(Ok(PendingPublication::Refused(AtomicError::Conflict)));
                         }
                         prepared
                             .publish(store, || {
@@ -364,7 +393,7 @@ impl NativeTransactionAdmission {
                     Ok(AdmissionDecision::Existing(record)) => {
                         Ok(PendingPublication::Existing(record))
                     }
-                    Err(error) => Err(error),
+                    Err(error) => Ok(PendingPublication::Refused(error)),
                 })
             },
         );
@@ -405,6 +434,14 @@ impl NativeTransactionAdmission {
                     latent_core::PlatformErrorCode::AlreadyExists,
                     "transaction-already-admitted",
                 ))
+            }
+            Ok(PendingPublication::Refused(reason)) => {
+                // The actual worker completed without accepting any writer or
+                // guest. Retire only this contender's new role, preserving the
+                // legitimate owner and all existing durable command history.
+                role.retire().map_err(atomic)?;
+                *state = State::Failed;
+                Err(atomic(reason))
             }
             Err(reason) => {
                 if !matches!(

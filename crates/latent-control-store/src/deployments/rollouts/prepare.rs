@@ -48,7 +48,7 @@ impl DirectoryDeploymentRepository {
         proof: Option<latent_telemetry::phase2_canary::SealedCanaryWindow>,
         promotion: bool,
     ) -> Result<PreparedRolloutMutation> {
-        request.validate(self.rollout_limits)?;
+        request.validate_with_profile(self.rollout_limits, self.config.manifest_profile)?;
         let work_owner = WorkReservation::acquire(&self.rollout_work)?;
         let request = normalize(request)?;
         let digest = request_digest(&request)?;
@@ -500,7 +500,17 @@ fn normalize(mut request: RolloutRequest) -> Result<RolloutRequest> {
 impl RolloutRequest {
     /// Canonical bounded client command identity, independent of server evidence.
     pub fn request_digest(&self, limits: RolloutLimits) -> Result<ArtifactBlobDigest> {
-        self.validate(limits)?;
+        self.request_digest_with_profile(
+            limits,
+            latent_manifest::ManifestValidationProfile::default(),
+        )
+    }
+    pub fn request_digest_with_profile(
+        &self,
+        limits: RolloutLimits,
+        profile: latent_manifest::ManifestValidationProfile,
+    ) -> Result<ArtifactBlobDigest> {
+        self.validate_with_profile(limits, profile)?;
         request_digest(&normalize(self.clone())?)
     }
 }

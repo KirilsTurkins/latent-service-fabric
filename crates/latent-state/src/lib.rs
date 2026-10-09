@@ -13,7 +13,11 @@ pub mod recovery;
 pub mod reservation;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.
 pub mod session;
+/// Closed persisted node store identity; this metadata grants no state access.
+pub mod store_identity;
 pub mod store_io;
+/// Explicit finite tenant quotas and coherent startup census; DTOs grant no access.
+pub mod tenant;
 
 use latent_core::{
     ActivationId, BoxFuture, EntityKey, LeaseId, Metadata, PlatformError, StateNamespaceId,

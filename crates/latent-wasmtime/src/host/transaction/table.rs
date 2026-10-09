@@ -29,6 +29,9 @@ impl Access {
             ..Self::default()
         }
     }
+    pub(crate) fn is_attached(&self) -> bool {
+        self.host.is_some()
+    }
     pub(super) fn host(&self) -> Result<Arc<dyn port::TransactionHost>, wit::StateError> {
         self.host
             .as_ref()

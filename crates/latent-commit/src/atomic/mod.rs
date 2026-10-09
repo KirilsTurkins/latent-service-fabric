@@ -2,18 +2,31 @@
 //! ports contain no executor, native view owner, guest heap, network dispatch or
 //! application retry. The host supplies current sealed authority at acceptance.
 
+mod accounting;
 mod captured;
+mod census;
 mod codec;
 mod ownership;
 mod record;
+pub mod retention;
+mod retry_receipt;
 mod validation;
 mod writer;
 pub use captured::{CapturedIntent, IntentCaptureContext};
+pub use census::tenant_census_contribution;
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
 pub use record::{
-    command_row_key, result_row_key, CommandRecord, DurableResult, InboxIdentity, SourceIdentity,
+    attempt_row_key, command_row_key, result_row_key, CommandRecord, DurableResult, InboxIdentity,
+    SourceIdentity,
 };
-pub use validation::{validate_linked_row, validate_row, validate_view};
+pub use retention::{
+    FloorReleaseRequest, MaintenanceClock, MaintenanceCompactionScope, MaintenanceProgress,
+    PreparedFloorRelease, ResultMaintenanceOwner, RetentionAction, RetentionProgress,
+    RetentionRequest, RetiredCommand,
+};
+pub use validation::{
+    durable_row_format, validate_linked_row, validate_row, validate_view, validate_view_observed,
+};
 pub use writer::{
     inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
     PreparedAdmission, PreparedDisposition, RetryRequest, StagedIntent,
@@ -90,6 +103,22 @@ impl Identity {
     pub const fn bytes(self) -> [u8; 32] {
         self.0
     }
+    /// Parse a bounded descriptive identity; this supplies no execution grant.
+    pub fn parse_hex(value: &str) -> Result<Self, AtomicError> {
+        if value.len() != 64 {
+            return Err(AtomicError::Invalid);
+        }
+        let digit = |byte| match byte {
+            b'0'..=b'9' => Ok(byte - b'0'),
+            b'a'..=b'f' => Ok(byte - b'a' + 10),
+            _ => Err(AtomicError::Invalid),
+        };
+        let mut bytes = [0u8; 32];
+        for (slot, pair) in bytes.iter_mut().zip(value.as_bytes().chunks_exact(2)) {
+            *slot = digit(pair[0])? * 16 + digit(pair[1])?;
+        }
+        Ok(Self(bytes))
+    }
     #[must_use]
     pub fn hex(self) -> String {
         const HEX: &[u8; 16] = b"0123456789abcdef";
@@ -136,13 +165,20 @@ impl ResultPolicy {
         }
         Ok(())
     }
-    pub(super) fn reservation(self) -> Result<u64, AtomicError> {
+    pub(super) fn reservation_for(self, accounted: bool) -> Result<u64, AtomicError> {
         self.validate()?;
         let body = match self.replay {
             ReplayPolicy::Full => self.maximum_result_bytes + contract::METADATA_BYTES,
             ReplayPolicy::ReceiptOnly => 0,
         };
-        u64::try_from(body + codec::METADATA_BYTES).map_err(|_| AtomicError::Limit)
+        // Two bounded command copies, result/inbox/index envelopes and their
+        // encoded keys remain covered before any business mutation is accepted.
+        let metadata = if accounted {
+            2 * codec::METADATA_BYTES + 4096
+        } else {
+            codec::METADATA_BYTES
+        };
+        u64::try_from(body + metadata).map_err(|_| AtomicError::Limit)
     }
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

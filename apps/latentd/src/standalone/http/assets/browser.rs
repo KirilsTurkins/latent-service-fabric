@@ -110,13 +110,17 @@ fn publish(harness: &Harness, name: &str, files: &[(&str, &str, &[u8])], path: &
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires the controlled Angular browser build, Node and Chromium"]
 async fn actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress() {
-    run_browser(None).await;
+    Box::pin(run_browser(None)).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires the public web component, controlled Angular build, Node and Chromium"]
 async fn actual_browser_application_uses_only_the_public_shared_http_contract() {
-    run_browser(Some(read(environment("LSF_WEB_COMPONENT"), 1024 * 1024))).await;
+    Box::pin(run_browser(Some(read(
+        environment("LSF_WEB_COMPONENT"),
+        1024 * 1024,
+    ))))
+    .await;
 }
 
 async fn run_browser(component: Option<Vec<u8>>) {

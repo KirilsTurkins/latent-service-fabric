@@ -1,6 +1,6 @@
 module latent.dev/sdk/go
 
-go 1.27.1
+go 1.27.2
 
 require google.golang.org/protobuf v1.36.12
 

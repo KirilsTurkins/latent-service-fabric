@@ -10,6 +10,7 @@ use latent_core::ActivationClock;
 
 use super::*;
 
+mod custody;
 mod initialization;
 mod ownership;
 mod recovery;

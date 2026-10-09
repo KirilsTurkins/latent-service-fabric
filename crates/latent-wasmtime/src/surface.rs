@@ -317,7 +317,7 @@ fn validate_imports(
                 "host capabilities and structural types must be imported interfaces",
             ));
         };
-        let Some(specification) = profile.interface(name) else {
+        let Some(specification) = preparation_interface(profile, name, transactional) else {
             validate_type_interface(&interface, engine, config, remaining)?;
             retain(256 + name.len(), retained_bytes, config)?;
             type_imports.insert(name.to_owned());
@@ -426,6 +426,23 @@ fn validate_type_interface(
         check_types(&[ty], config, remaining)?;
     }
     Ok(())
+}
+
+fn preparation_interface(
+    profile: latent_core::HostAbiProfile,
+    name: &str,
+    transactional: bool,
+) -> Option<&'static latent_core::HostInterfaceSpec> {
+    // Generic preparation captures both frozen ordinary and transaction ABI
+    // identities. Provider installation and the original strict runtime gate
+    // remain mandatory when composing this exact HTTP client surface.
+    profile.interface(name).or_else(|| {
+        if transactional && name == latent_capabilities::broker::http::HTTP_CAPABILITY {
+            latent_core::PHASE3_HOST_ABI_CURRENT.interface(name)
+        } else {
+            None
+        }
+    })
 }
 
 fn register_functions(

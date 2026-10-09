@@ -15,6 +15,7 @@ mod metrics;
 mod providers;
 mod renderer;
 mod security;
+mod state;
 #[cfg(all(
     target_os = "linux",
     target_arch = "x86_64",

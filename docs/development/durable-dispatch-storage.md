@@ -309,7 +309,6 @@ Linux checks passed all 122 effects and 128 state cases. Ordinary attempt
 capacity and the reserved management provider-worker partition coexist in the
 same dispatcher; this union preserves both sets of required schedules.
 
-
 This port composes the actual dispatcher worker and protected engine. Ordinary
 Standalone/verified-guest installation and authenticated management qualification
 remain recorded by their owning integration tickets; this focused capacity

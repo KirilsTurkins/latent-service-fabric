@@ -9,6 +9,21 @@ use latent_manifest::TransactionOperationMode;
 use latent_routing::{InvocationTarget, ResolvedRevision};
 use std::sync::atomic::{AtomicU64, Ordering};
 static ACTIVATIONS: AtomicU64 = AtomicU64::new(1);
+fn resources(query: bool) -> ResourceBudget {
+    ResourceBudget {
+        cpu_fuel: 1_000_000,
+        memory_bytes: 64 * 1024 * 1024,
+        wall_time_limit_millis: Some(10_000),
+        child_calls: 0,
+        outbound_requests: 0,
+        state_read_bytes: 4 * 1024 * 1024,
+        state_write_bytes: if query { 0 } else { 2 * 1024 * 1024 },
+        blob_read_bytes: 0,
+        blob_write_bytes: 0,
+        log_bytes: 16 * 1024,
+        effect_count: if query { 0 } else { 32 },
+    }
+}
 struct Cancellation {
     token: crate::CancellationToken,
     terminal: tokio::sync::watch::Sender<bool>,
@@ -69,19 +84,34 @@ impl Fixture {
         ActivationEnvelope,
         ActivationBudget,
     ) {
-        let resources = ResourceBudget {
-            cpu_fuel: 1_000_000,
-            memory_bytes: 64 * 1024 * 1024,
-            wall_time_limit_millis: Some(10_000),
-            child_calls: 0,
-            outbound_requests: 0,
-            state_read_bytes: 4 * 1024 * 1024,
-            state_write_bytes: if query { 0 } else { 2 * 1024 * 1024 },
-            blob_read_bytes: 0,
-            blob_write_bytes: 0,
-            log_bytes: 16 * 1024,
-            effect_count: if query { 0 } else { 32 },
-        };
+        self.invocation_config(query, key, minimum, None)
+    }
+
+    pub fn prepaid_invocation(
+        &self,
+        query: bool,
+        key: &str,
+        native: latent_core::native_capacity::NativeReservation,
+    ) -> (
+        Arc<NativeTransactionAdmission>,
+        ActivationEnvelope,
+        ActivationBudget,
+    ) {
+        self.invocation_config(query, key, None, Some(native))
+    }
+
+    fn invocation_config(
+        &self,
+        query: bool,
+        key: &str,
+        minimum: Option<Vec<u8>>,
+        native: Option<latent_core::native_capacity::NativeReservation>,
+    ) -> (
+        Arc<NativeTransactionAdmission>,
+        ActivationEnvelope,
+        ActivationBudget,
+    ) {
+        let resources = resources(query);
         let grant = EffectiveActivationBudget::admit_profile_at(
             BudgetProfile::Phase4,
             &resources,
@@ -145,26 +175,35 @@ impl Fixture {
             input: b"same".to_vec(),
             input_media_type: "application/octet-stream".into(),
         };
-        let admission = NativeTransactionAdmission::new(
-            Arc::clone(&self.owners),
-            Arc::clone(&self.installation),
-            TransactionSelection {
-                namespace: "orders".into(),
-                incarnation: 1,
-                entity: None,
-                operation: function.into(),
-                mode: if query {
-                    TransactionOperationMode::FreshQuery
-                } else {
-                    TransactionOperationMode::StrictCommand
-                },
-                client_key: (!query).then(|| key.into()),
-                expected_versions: Vec::new(),
-                minimum_view_version: minimum,
-                input_format: "raw-v1".into(),
-                retry: None,
+        let selection = TransactionSelection {
+            namespace: "orders".into(),
+            incarnation: 1,
+            entity: None,
+            operation: function.into(),
+            mode: if query {
+                TransactionOperationMode::FreshQuery
+            } else {
+                TransactionOperationMode::StrictCommand
             },
-        )
+            client_key: (!query).then(|| key.into()),
+            expected_versions: Vec::new(),
+            minimum_view_version: minimum,
+            input_format: "raw-v1".into(),
+            retry: None,
+        };
+        let admission = match native {
+            Some(native) => NativeTransactionAdmission::with_ingress_reservation(
+                Arc::clone(&self.owners),
+                Arc::clone(&self.installation),
+                selection,
+                native,
+            ),
+            None => NativeTransactionAdmission::new(
+                Arc::clone(&self.owners),
+                Arc::clone(&self.installation),
+                selection,
+            ),
+        }
         .unwrap();
         (Arc::new(admission), envelope, budget)
     }

@@ -17,4 +17,7 @@ pub use config::{SecretLimits, SecretPurpose, SecretSource, SecretSpec};
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub use provider::{LocalSecretProvider, LOCAL_SECRETS_PROFILE};
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub use store::{LocalSecretStore, SecretClock, SecretSnapshot, SystemSecretClock};
+pub use store::{
+    LocalSecretStore, ProviderCredentialGeneration, SecretClock, SecretSnapshot, SystemSecretClock,
+    TlsProviderCredentialGeneration,
+};

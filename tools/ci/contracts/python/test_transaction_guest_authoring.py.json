@@ -4,6 +4,7 @@
     "TransactionGuestAuthoringTests.test_java_transaction_capture_closes_its_declared_runtime_clock_dependencies",
     "TransactionGuestAuthoringTests.test_packaging_rejects_mismatched_duplicate_and_unbounded_companions",
     "TransactionGuestAuthoringTests.test_rust_authored_projects_select_and_pin_their_guest_binding_profile",
+    "TransactionGuestAuthoringTests.test_rust_result_boundary_is_a_real_captured_authored_guest_with_unchanged_sdk_and_grants",
     "TransactionGuestAuthoringTests.test_six_creators_capture_one_exact_profile_and_linked_companion",
     "TransactionGuestAuthoringTests.test_six_forbidden_http_variants_keep_profile_companion_and_sdk_capture"
   ],
@@ -79,10 +80,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "TransactionGuestAuthoringTests.test_rust_result_boundary_is_a_real_captured_authored_guest_with_unchanged_sdk_and_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1c8a464e3f30158fffef5facf29da52468d51ffab92c21bd88065390b00174ef",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_transaction_guest_authoring.py",
-  "reviewReason": "Regress the actual Java authored project missing its explicitly declared runtime clock dependency; verify positive and refused Cargo guest profile selections without changing any original case or execution guard.",
+  "reviewReason": "Regress the actual Java authored project missing its explicitly declared runtime clock dependency; verify positive and refused Cargo guest profile selections without changing any original case or execution guard. Scoped parked387 boundary variant addition: preserves every current profile-selection and creator case/body/guard. Only actual captured Rust result-boundary case is added with its exact unchanged fixture guards; no execution or compiler qualification predicate changes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Keep pinned compiler URLs/digests, byte ceilings, one 600 second acceptance deadline, no retries/fallback and owned partial cleanup; allow a finite 60 second transport wait capped by remaining original time",
+  "reviewReason": "Only the pinned Zig mirror may retry up to three opening timeouts before receiving a response; retain one 600-second deadline, 60-second socket waits, immutable archive hash and byte limits, with no body retry or fallback.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7b6ec5428d5edf7ddc0e75bb64c56f8f43edd930b64041cadf160443a2188e32"
+  "sha256": "67577e7a692d48944e3411dfd73a8fef57a91a048849a5ab0580c7e5e4786af3"
 }

@@ -20,6 +20,7 @@ mod renderer;
 mod rollouts;
 mod runtime;
 mod security;
+pub(crate) mod state;
 mod stream_reload;
 mod supply_chain;
 #[cfg(test)]
@@ -56,6 +57,11 @@ pub use providers::{
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
 pub use security::ExecutionProfileReport;
+pub use state::{
+    DeferredHttpConfig, DispatcherLimitsConfig, NativeLimitsConfig, NativePartitionConfig,
+    StateConfig, StateOperationConfig, StorageLimitsConfig, StorageRecoveryConfig,
+    StorageWorkerConfig, TenantLimitsConfig, TenantQuotaConfig,
+};
 pub use stream_reload::StreamReloadGuard;
 pub(crate) use supply_chain::SupplyChainSettings;
 
@@ -85,6 +91,8 @@ pub struct NodeSettings {
     pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
     pub(crate) providers: Option<Box<ConfiguredProviders>>,
+    pub(crate) state: Option<state::StateSettings>,
+    pub(crate) manifest_profile: latent_manifest::ManifestValidationProfile,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) budget_profile: latent_core::BudgetProfile,
     pub(crate) delegation_limits: latent_core::DelegationLimits,
