@@ -98,3 +98,41 @@ The original pull-request event selects full validation, and all 44 profile,
 inventory, discovery and result tests pass on Python 3.13.5 Linux without skips.
 The separate SDK security failure reports newly published Go 1.27.1 advisories;
 its compiler/runtime remediation is tracked independently of this count repair.
+
+## Go security follow-up
+
+The SDK scan reported 13 newly published Go advisories in each of the client and
+guest dependency locks. Both now use Go 1.27.2, including the actual patched
+compiler/standard library, regenerated module inventories and manifest hashes.
+The [upstream patch release](https://go.dev/doc/devel/release#go1.27.2) and its
+official Linux archive SHA-256
+`ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5`
+remain the source of the compiler bytes. Modules and their checksums are unchanged.
+The live unchanged security scanner now reports zero findings over 3,339 packages;
+no security exception or advisory suppression is added.
+
+The async guest fork has no matching 1.27.2 release. Its reviewed five-file
+`wasiOnIdle` scheduler change is assembled into a fresh private copy of the exact
+upstream Go source tree, with all preimage/postimage hashes checked. The upstream
+input and compiler binary stay unchanged. Invocation builds retain their original
+read-only GOROOT and clock/entropy source-overlay controls. Both developer bundle
+assembly and the maintained CI/local guide stage this same profile explicitly.
+Compiler selection validates the derived runtime sources before invoking the
+generator, whose unsupported-compiler fallback would otherwise download 1.27.1.
+The failed fallback attempt is preserved separately.
+
+All nine current Go SDK fixtures build and all ten signed component/runtime
+cases pass, including suspension, cancellation, owned resources, denial, fresh
+state and cleanup. Both authored transaction variants and the upstream/constrained
+probe build; the real diagnostic preserves full-width/UTF-8 results, declared
+rejection, the original controlled trap and a successful fresh call. External
+client RPC generation/check, dependency reproduction, all Go tests and vet pass.
+The five new source-assembly/overlay controls pass on Windows and Linux. All 144
+focused Linux version/capture/dependency/packaging tests pass without skips;
+Windows's local symlink-privilege limitation does not alter the hosted guard.
+
+Reviewed CI contract updates preserve all original case names, skip predicates,
+commands, resource limits, required artifacts and historical obligations. The
+added direct source-assembly owner is fingerprinted; coverage retains 88 baseline
+and 274 current required run blocks with 145 delegated owners. Current-host CI is
+not awaited after the fixes are pushed. #387 still has no automatic closure.

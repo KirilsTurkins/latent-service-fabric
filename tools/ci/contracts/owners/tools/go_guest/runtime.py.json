@@ -1,8 +1,8 @@
 {
   "kind": "owner",
-  "path": "tools/build_s3_fixture.py",
+  "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Reviewed Go 1.27.2 security update and exact async source assembly; original limits, checked upstream identity and authority remain enforced.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4ad9dcc68fd161d2cfeaa96f087edf022e4b29d0c063c695607f60c2b3ac1d12"
+  "sha256": "8e1cbb1ce034c1c036fa8e4450dbfe043a11c06e71cb51ea94bffe3b20b7f518"
 }
