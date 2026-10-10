@@ -77,7 +77,7 @@ pub(super) fn create(
     }
     (policy, call_binding())
 }
-pub(super) fn call_binding() -> PolicyCallBinding {
+fn call_binding() -> PolicyCallBinding {
     PolicyCallBinding {
         policies: vec!["state".into()],
         binding: "binding".into(),
@@ -100,101 +100,86 @@ pub(super) fn inspection(
     envelope: &latent_activation::ActivationEnvelope,
     budget: &latent_core::ActivationBudget,
 ) -> Arc<StateAuthorization> {
-    seal(
-        &fixture.policy,
-        &fixture.namespaces,
-        &fixture.publication,
-        namespace,
-        envelope,
-        budget,
-        "read-result",
-    )
-    .unwrap()
-}
-
-pub(super) fn seal(
-    policy: &Arc<PolicyStore>,
-    namespaces: &Arc<NamespaceCatalog>,
-    publication: &ReleaseUseEligibility,
-    namespace: latent_state::namespace::catalog::NamespaceRead,
-    envelope: &latent_activation::ActivationEnvelope,
-    budget: &latent_core::ActivationBudget,
-    operation: &str,
-) -> Result<Arc<StateAuthorization>, latent_core::PlatformError> {
     use latent_capabilities::namespace::{NamespaceAdmission, NamespaceAuthority};
     use latent_policy::capability::{
         CallRestrictions, CapabilityCeiling, EvaluationInput, ResourceTarget,
     };
-    let denied = super::super::super::authorization::denied;
-    let principal = envelope.principal.clone();
-    let caller = CallerScope::derive(&principal, &RecoverySelection::OriginalCaller)?;
-    let binding = call_binding();
-    let deadline = budget.deadline().monotonic().ok_or_else(denied)?;
-    let snapshot = policy.snapshot(
-        &latent_core::TenantId("a".into()),
-        &binding.policies,
-        &binding.binding,
-        deadline,
-    )?;
-    let decision = snapshot.authorize(
-        EvaluationInput {
-            principal: &principal,
-            service: "a/echo",
-            publication: publication.publication().as_str(),
-            capability: STATE_CONTRACT,
-            operation,
-            resource: ResourceTarget::State {
-                namespace: "orders",
-                incarnation: 1,
-                entity: None,
-                recovery_kind: caller.kind,
-                recovery_scope: &caller.scope,
-                result_policy: "visibility-v1",
+    let principal = principal();
+    let caller = CallerScope::derive(&principal, &RecoverySelection::OriginalCaller).unwrap();
+    let binding = Arc::new(call_binding());
+    let deadline = budget.deadline().monotonic().unwrap();
+    let snapshot = fixture
+        .policy
+        .snapshot(
+            &latent_core::TenantId("a".into()),
+            &binding.policies,
+            &binding.binding,
+            deadline,
+        )
+        .unwrap();
+    let decision = snapshot
+        .authorize(
+            EvaluationInput {
+                principal: &principal,
+                service: "a/echo",
+                publication: fixture.publication.publication().as_str(),
+                capability: STATE_CONTRACT,
+                operation: "read-result",
+                resource: ResourceTarget::State {
+                    namespace: "orders",
+                    incarnation: 1,
+                    entity: None,
+                    recovery_kind: caller.kind,
+                    recovery_scope: &caller.scope,
+                    result_policy: "visibility-v1",
+                },
             },
-        },
-        &CallRestrictions {
-            imported_operations: &binding.operations,
-            deployment: &binding.deployment,
-            provider_configuration: &binding.provider_configuration,
-            provider_profile: &binding.profile,
-            configuration_digest: &binding.configuration_digest,
-            configuration_epoch: binding.configuration_epoch,
-            remaining: CapabilityCeiling {
-                operations: 256,
-                input_bytes: 2_097_152,
-                output_bytes: 2_097_152,
-                wall_time_millis: 10_000,
+            &CallRestrictions {
+                imported_operations: &binding.operations,
+                deployment: &binding.deployment,
+                provider_configuration: &binding.provider_configuration,
+                provider_profile: &binding.profile,
+                configuration_digest: &binding.configuration_digest,
+                configuration_epoch: binding.configuration_epoch,
+                remaining: CapabilityCeiling {
+                    operations: 16,
+                    input_bytes: 2_097_152,
+                    output_bytes: 2_097_152,
+                    wall_time_millis: 1000,
+                },
+                input_bytes: 0,
+                output_bytes: 0,
             },
-            input_bytes: 0,
-            output_bytes: 0,
-        },
-        publication,
-    )?;
-    let lifecycle = namespaces
-        .lifecycle()
-        .pin(&namespace)
-        .map_err(|_| denied())?;
+            &fixture.publication,
+        )
+        .unwrap();
+    let lifecycle = fixture.namespaces.lifecycle().pin(&namespace).unwrap();
+    let schema = schema();
     let authority = NamespaceAuthority::seal(
-        policy,
+        &fixture.policy,
         &decision,
         &namespace,
         NamespaceAdmission {
             activation: envelope.activation_id.clone(),
             deadline,
             recovery: &RecoverySelection::OriginalCaller,
-            state_schema: &schema(),
+            state_schema: &schema,
         },
         lifecycle,
-    )?;
-    Ok(Arc::new(StateAuthorization::new(
-        Arc::clone(policy),
-        Arc::new(authority),
-        namespace,
-        principal,
-        "a/echo".into(),
-        publication.clone(),
-        binding,
-        None,
-        budget.clone(),
-    )?))
+    )
+    .unwrap();
+    Arc::new(
+        StateAuthorization::new(
+            Arc::clone(&fixture.policy),
+            Arc::new(authority),
+            namespace,
+            principal,
+            "a/echo".into(),
+            fixture.publication.clone(),
+            binding,
+            None,
+            budget.clone(),
+        )
+        .unwrap(),
+    )
 }

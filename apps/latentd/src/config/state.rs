@@ -3,38 +3,77 @@ use latent_core::{
     transaction_contract::identity, PlatformError, PublicationId, ReleaseDigest, TenantId,
 };
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+
+// The coherent logical registry owns bounded 2 MiB pages, point decoders and
+// the fixed 32-tenant census. This same declared native Work is prepaid before
+// any initializer allocation; it is not a guest-memory allowance.
+pub(crate) const STARTUP_VALIDATOR_BYTES: u64 = 8 * 1024 * 1024;
+// Exact quota/identity/path captures and the early empty authority shell are
+// prepaid before the initializer can reserve its separate native buffers.
+pub(crate) const STARTUP_APPLICATION_BYTES: u64 = 64 * 1024;
+// Existing fixed authority rule ceiling; its actual resident map is charged
+// separately from the application shell, before either owner allocates.
+pub(crate) const EFFECT_AUTHORITY_MAXIMUM_RULES: usize = 128;
+
+// Operator objects retain streaming duplicate/unknown-field rejection and
+// refuse Serde's positional struct-array representation at every owner layer.
+macro_rules! configuration_object {
+    ($(#[$meta:meta])* $visibility:vis struct $name:ident { $( $(#[$field_meta:meta])* $field_visibility:vis $field:ident: $kind:ty, )* }) => {
+        $(#[$meta])* $visibility struct $name { $( $field_visibility $field: $kind, )* }
+        impl<'de> serde::Deserialize<'de> for $name {
+            fn deserialize<D: serde::Deserializer<'de>>(decoder: D) -> Result<Self, D::Error> {
+                struct ObjectVisitor;
+                impl<'de> serde::de::Visitor<'de> for ObjectVisitor {
+                    type Value = $name;
+                    fn expecting(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                        output.write_str("a state configuration object")
+                    }
+                    fn visit_map<M: serde::de::MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
+                        #[derive(serde::Deserialize)]
+                        #[serde(rename_all = "camelCase", deny_unknown_fields)]
+                        struct Fields { $( $(#[$field_meta])* $field: $kind, )* }
+                        let fields: Fields = serde::Deserialize::deserialize(serde::de::value::MapAccessDeserializer::new(map))?;
+                        Ok($name { $( $field: fields.$field, )* })
+                    }
+                }
+                decoder.deserialize_map(ObjectVisitor)
+            }
+        }
+    };
+}
 mod effects;
 pub use effects::DeferredHttpConfig;
+mod owners;
+pub use owners::{
+    DispatcherLimitsConfig, NativeLimitsConfig, NativePartitionConfig, StorageLimitsConfig,
+    StorageRecoveryConfig, StorageWorkerConfig,
+};
 mod tenant;
 pub use tenant::{TenantLimitsConfig, TenantQuotaConfig};
-mod recovery;
-mod root;
-pub use recovery::{RecoverySelectionConfig, RecoverySelectorConfig};
 
-#[derive(Clone, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+configuration_object! {
+#[derive(Clone)]
 pub struct StateConfig {
     pub format_version: u32,
     #[serde(default)]
     pub create_if_missing: bool,
     pub configuration_epoch: u64,
-    pub clock_checkpoint: PathBuf,
-    /// Explicit protected operator destination after staged restore. This does
-    /// not authorize its contents or relax any normal startup checks.
-    #[serde(default, deserialize_with = "root::present")]
-    pub state_root: Option<PathBuf>,
+    pub store_identity: String,
+    pub checkpoint_root: PathBuf,
+    pub startup_timeout_millis: u64,
+    pub store: StorageLimitsConfig,
+    pub native: NativeLimitsConfig,
+    pub dispatcher: DispatcherLimitsConfig,
     pub operations: Vec<StateOperationConfig>,
     #[serde(default)]
     pub tenant_quotas: Vec<TenantQuotaConfig>,
-    /// Named management effect-recovery constraints. These labels are data;
-    /// actual current inspect/action policy still supplies every permission.
-    #[serde(default)]
-    pub recovery_selections: Vec<RecoverySelectorConfig>,
+}
 }
 
-#[derive(Clone, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+configuration_object! {
+#[derive(Clone)]
 pub struct StateOperationConfig {
     pub tenant: String,
     pub component_digest: String,
@@ -54,6 +93,7 @@ pub struct StateOperationConfig {
     #[serde(default, deserialize_with = "effects::present")]
     pub deferred_http: Option<DeferredHttpConfig>,
 }
+}
 
 fn present_entity<'de, D: serde::Deserializer<'de>>(source: D) -> Result<Option<String>, D::Error> {
     String::deserialize(source).map(Some)
@@ -68,20 +108,15 @@ pub(super) fn present<'de, D: serde::Deserializer<'de>>(
 pub(crate) struct StateSettings {
     pub create_if_missing: bool,
     pub configuration_epoch: u64,
-    pub clock_checkpoint: PathBuf,
-    state_root: Option<PathBuf>,
+    pub store_identity: latent_state::store_identity::StoreIdentity,
+    pub store: latent_state::protected_store::ProtectedStoreConfig,
+    pub native: latent_core::native_capacity::NativeCapacityLimits,
+    pub dispatcher: latent_effects::runtime::DispatcherConfig,
+    pub checkpoint_root: PathBuf,
+    pub startup_timeout: Duration,
+    pub startup_work_bytes: u64,
     pub operations: Vec<OperationSettings>,
-    pub tenant_quotas: Vec<latent_state::tenant::TenantQuota>,
-    pub recovery_selections: Vec<RecoverySelectorConfig>,
-}
-
-impl StateSettings {
-    #[must_use]
-    pub(crate) fn protected_root(&self, data_directory: &std::path::Path) -> PathBuf {
-        self.state_root
-            .clone()
-            .unwrap_or_else(|| data_directory.join("state"))
-    }
+    pub tenant_quotas: Vec<TenantQuotaConfig>,
 }
 
 #[derive(Clone)]
@@ -102,20 +137,87 @@ pub(crate) struct OperationSettings {
     pub deferred_http: Option<DeferredHttpConfig>,
 }
 
-pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError> {
-    if value.format_version != 1
+pub(super) fn derive_optional(
+    config: &super::NodeConfig,
+) -> Result<Option<StateSettings>, PlatformError> {
+    if (config.budget_profile.profile() == latent_core::BudgetProfile::Phase4)
+        != config.state.is_some()
+    {
+        return Err(super::invalid("state.accountingProfile"));
+    }
+    if config.state.is_some()
+        && (!matches!(
+            config.supply_chain,
+            super::SupplyChainConfig::Enforced { .. }
+        ) || config.audit.is_none()
+            || config.capability_policies.is_none())
+    {
+        return Err(super::invalid("state.authorityOwners"));
+    }
+    if config.state.as_ref().is_some_and(|state| {
+        state.native.maximum_lifetime_millis < config.execution.maximum_wall_time_millis
+    }) {
+        return Err(super::invalid("state.native.maximumLifetimeMillis"));
+    }
+    config
+        .state
+        .as_ref()
+        .map(|value| derive(value, &config.data_directory))
+        .transpose()
+}
+
+pub(crate) fn derive(value: &StateConfig, data: &Path) -> Result<StateSettings, PlatformError> {
+    let business_root = data.join("state");
+    if value.format_version != 2
         || value.configuration_epoch == 0
         || value.operations.len() > 128
-        || !value.clock_checkpoint.is_absolute()
-        || value.clock_checkpoint.as_os_str().len() > 4096
+        || !(1_000..=60_000).contains(&value.startup_timeout_millis)
+        || !data.is_absolute()
+        || !value.checkpoint_root.is_absolute()
+        || value.checkpoint_root.as_os_str().len() > 4096
+        || value.checkpoint_root.capacity() > 4096
+        || value.checkpoint_root.components().any(|part| {
+            matches!(
+                part,
+                std::path::Component::ParentDir | std::path::Component::CurDir
+            )
+        })
+        || value.checkpoint_root.starts_with(&business_root)
+        || business_root.starts_with(&value.checkpoint_root)
     {
         return Err(super::invalid("state"));
     }
+    let store_identity =
+        latent_state::store_identity::StoreIdentity::new(value.store_identity.clone())
+            .map_err(|_| super::invalid("state.storeIdentity"))?;
+    let store = value.store.derive(business_root, value.create_if_missing)?;
+    let native = value
+        .native
+        .derive(Duration::from_millis(value.startup_timeout_millis))?;
+    let startup_work_bytes = owners::startup_footprint(&store, native)?;
+    let dispatcher = value.dispatcher.derive()?;
     let tenant_quotas = tenant::derive(&value.tenant_quotas, &value.operations)?;
-    recovery::validate(&value.recovery_selections)?;
-    let state_root = root::derive(value.state_root.as_deref())?;
-    let mut operations = Vec::with_capacity(value.operations.len());
-    for input in &value.operations {
+    let operations = derive_operations(&value.operations)?;
+    Ok(StateSettings {
+        create_if_missing: value.create_if_missing,
+        configuration_epoch: value.configuration_epoch,
+        store_identity,
+        store,
+        native,
+        dispatcher,
+        checkpoint_root: value.checkpoint_root.clone(),
+        startup_timeout: Duration::from_millis(value.startup_timeout_millis),
+        startup_work_bytes,
+        operations,
+        tenant_quotas,
+    })
+}
+
+fn derive_operations(
+    inputs: &[StateOperationConfig],
+) -> Result<Vec<OperationSettings>, PlatformError> {
+    let mut operations = Vec::with_capacity(inputs.len());
+    for input in inputs {
         for text in [
             &input.tenant,
             &input.contract,
@@ -176,15 +278,7 @@ pub(crate) fn derive(value: &StateConfig) -> Result<StateSettings, PlatformError
             deferred_http: input.deferred_http.clone(),
         });
     }
-    Ok(StateSettings {
-        create_if_missing: value.create_if_missing,
-        configuration_epoch: value.configuration_epoch,
-        clock_checkpoint: value.clock_checkpoint.clone(),
-        state_root,
-        operations,
-        tenant_quotas,
-        recovery_selections: value.recovery_selections.clone(),
-    })
+    Ok(operations)
 }
 
 fn checked_identity(text: &str) -> Result<(), PlatformError> {
@@ -207,66 +301,4 @@ fn checked_digest(text: &str) -> Result<(), PlatformError> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    pub(crate) fn input() -> serde_json::Value {
-        serde_json::json!({"formatVersion":1,"configurationEpoch":1,"clockCheckpoint":std::env::temp_dir().join("state-clock.json"),
-            "tenantQuotas":[tenant::tests::quota("a")],"operations":[{
-            "tenant":"a","componentDigest":format!("sha256:{}","a".repeat(64)),
-            "publication":format!("publication:sha256:{}","b".repeat(64)),"contract":"test:state/api@1.0.0",
-            "function":"save","deployment":"state","binding":"state","companionDigest":format!("sha256:{}","c".repeat(64)),
-            "incarnation":1,"resultPolicy":"owner","statePolicies":["state"]}]})
-    }
-    #[test]
-    fn installed_constraints_preserve_exact_unsigned_incarnation_and_do_not_contain_grants() {
-        let mut value = input();
-        value["operations"][0]["incarnation"] = u64::MAX.into();
-        let config: StateConfig = serde_json::from_value(value).unwrap();
-        let settings = derive(&config).unwrap();
-        assert_eq!(settings.operations[0].incarnation, u64::MAX);
-        assert!(!settings.create_if_missing);
-        assert_eq!(settings.operations[0].policies, ["state"]);
-    }
-    #[test]
-    fn unsafe_present_values_duplicate_targets_and_permission_fields_refuse() {
-        for (name, value) in [
-            ("entity", serde_json::Value::Null),
-            ("grant", true.into()),
-            ("continuityProven", true.into()),
-        ] {
-            let mut wire = input();
-            wire["operations"][0][name] = value;
-            assert!(serde_json::from_value::<StateConfig>(wire).is_err());
-        }
-        let mut wire = input();
-        wire["operations"][0]["incarnation"] = 0.into();
-        assert!(derive(&serde_json::from_value(wire).unwrap()).is_err());
-        let mut config: StateConfig = serde_json::from_value(input()).unwrap();
-        config.operations.push(config.operations[0].clone());
-        assert!(derive(&config).is_err());
-        config.operations.pop();
-        config.operations[0].state_policies.push("state".into());
-        assert!(derive(&config).is_err());
-    }
-
-    #[test]
-    fn native_effect_installation_pins_reject_implicit_grants_null_and_ambiguous_policy_ids() {
-        let effect = serde_json::json!({"requirementsDigest":format!("sha256:{}", "d".repeat(64)),
-            "providerId":"http","providerIncarnation":"e".repeat(64),"credentialReference":"effect-secret",
-            "stagingBinding":"intent-stage","stagingPolicies":["stage"],"dispatchBinding":"intent-dispatch","dispatchPolicies":["dispatch"]});
-        let mut wire = input();
-        wire["operations"][0]["deferredHttp"] = effect.clone();
-        assert!(derive(&serde_json::from_value(wire.clone()).unwrap()).is_ok());
-        for name in ["enabled", "grant", "credential", "continuityProven"] {
-            let mut hostile = wire.clone();
-            hostile["operations"][0]["deferredHttp"][name] = true.into();
-            assert!(serde_json::from_value::<StateConfig>(hostile).is_err());
-        }
-        let mut absent = input();
-        absent["operations"][0]["deferredHttp"] = serde_json::Value::Null;
-        assert!(serde_json::from_value::<StateConfig>(absent).is_err());
-        wire["operations"][0]["deferredHttp"]["dispatchPolicies"] =
-            serde_json::json!(["dispatch", "dispatch"]);
-        assert!(derive(&serde_json::from_value(wire).unwrap()).is_err());
-    }
-}
+pub(crate) mod tests;

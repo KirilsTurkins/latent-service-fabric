@@ -93,22 +93,6 @@ fn corrected_embedded_inventory_and_two_tenants_share_wasm_without_sharing_autho
     let correction = publish("tests", corrected, "create-correction");
     assert_ne!(first.publication, other.publication);
     assert_ne!(first.publication, correction.publication);
-    let publications = [&first, &other, &correction];
-    let tokens = assert_independent_authority(&repo, publications);
-    assert_retirement_and_reopen(
-        repo,
-        (&path, &authority, &fixture),
-        publications,
-        tokens,
-        original,
-        &original_package,
-    );
-}
-
-fn assert_independent_authority(
-    repo: &DirectoryArtifactRepository,
-    [first, other, correction]: [&latent_artifacts::ManagedPublicationReceipt; 3],
-) -> [latent_artifacts::ReleaseUseEligibility; 3] {
     let first_token = repo
         .publication_execution_eligibility(&first.publication)
         .unwrap();
@@ -165,24 +149,12 @@ fn assert_independent_authority(
         repo.reverify_publication(&foreign).unwrap_err().code,
         latent_core::PlatformErrorCode::NotFound
     );
-    [first_token, other_token, correction_token]
-}
-
-fn assert_retirement_and_reopen(
-    repo: DirectoryArtifactRepository,
-    reopen: (&std::path::Path, &Arc<SupplyChainAuthority>, &Fixture),
-    publications: [&latent_artifacts::ManagedPublicationReceipt; 3],
-    [first_token, other_token, correction_token]: [latent_artifacts::ReleaseUseEligibility; 3],
-    original: latent_artifacts::PackageAdmissionUpload,
-    original_package: &latent_core::PackageDigest,
-) {
-    let [first, other, correction] = publications;
     let original_selector = first.publication.clone();
     let renewed = repo
         .renew_publication_evidence(
             context("tests", "renew-original", 1),
             &original_selector,
-            original_package,
+            &original_package,
             ReleaseEvidenceUpload {
                 signatures: original.signatures,
                 provenance: original.provenance,
@@ -223,14 +195,6 @@ fn assert_retirement_and_reopen(
             .retained_publications,
         3
     );
-    assert_reopened_publications(repo, reopen, publications);
-}
-
-fn assert_reopened_publications(
-    repo: DirectoryArtifactRepository,
-    (path, authority, fixture): (&std::path::Path, &Arc<SupplyChainAuthority>, &Fixture),
-    [first, other, correction]: [&latent_artifacts::ManagedPublicationReceipt; 3],
-) {
     let wasm = repo
         .fetch_publication(&correction.publication)
         .unwrap()
@@ -242,7 +206,7 @@ fn assert_reopened_publications(
         wasm
     );
     drop(repo);
-    let repo = open(path, authority);
+    let repo = open(&path, &authority);
     assert_eq!(
         repo.publication_lifecycle_status(&first.publication)
             .unwrap()
@@ -281,6 +245,6 @@ fn assert_reopened_publications(
             &mut |_| Ok(())
         ))
         .unwrap(),
-        first.clone()
+        first
     );
 }

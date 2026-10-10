@@ -98,7 +98,7 @@ impl FixtureEffect {
     pub async fn settle_original(&mut self) {
         let expected = self.provider.as_ref().unwrap().original;
         self.dispatcher.resume().unwrap();
-        let settled = tokio::time::timeout(Duration::from_secs(5), async {
+        tokio::time::timeout(Duration::from_secs(5), async {
             loop {
                 let effect = self.effect.clone();
                 let (disposition, version) = self
@@ -133,15 +133,8 @@ impl FixtureEffect {
                 tokio::task::yield_now().await;
             }
         })
-        .await;
-        if settled.is_err() {
-            let disposition = self.disposition().await;
-            let physical = self.dispatcher.snapshot().unwrap();
-            eprintln!("original effect did not settle: disposition={disposition:?}, expected={expected:?}, active_jobs={}, physical_owners={}, paused={}, failure={:?}, sends={}",
-                physical.active_jobs, physical.physical_owners, physical.paused, physical.failure,
-                self.provider.as_ref().unwrap().sends.load(Ordering::SeqCst));
-        }
-        settled.unwrap();
+        .await
+        .unwrap();
         self.dispatcher.pause();
         assert_eq!(
             self.provider.as_ref().unwrap().sends.load(Ordering::SeqCst),
@@ -166,7 +159,6 @@ pub(super) async fn setup_with_provider(
             rule.profile.clone(),
             Arc::clone(&time),
             original,
-            super::dispatch_policy::DispatchPolicy::install(&fixture, &rule),
         ))
     });
     authority.publish(rule).unwrap();

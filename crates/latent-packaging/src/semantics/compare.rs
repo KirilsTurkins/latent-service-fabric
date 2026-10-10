@@ -1,6 +1,6 @@
 mod types;
 use super::{exhausted, incompatible, limits, SemanticLimits};
-use latent_core::{HostAbiProfile, PlatformError, PHASE3_HOST_ABI_CURRENT};
+use latent_core::PlatformError;
 use std::collections::BTreeMap;
 use wit_parser::{FunctionKind, InterfaceId, Resolve, WorldId, WorldItem, WorldKey};
 
@@ -59,29 +59,10 @@ pub(super) fn worlds(
     compiled: &WorldSurface,
     limits: SemanticLimits,
 ) -> Result<usize, PlatformError> {
-    worlds_for_profile(
-        source,
-        declared,
-        actual,
-        compiled,
-        limits,
-        PHASE3_HOST_ABI_CURRENT,
-    )
-}
-
-pub(super) fn worlds_for_profile(
-    source: &Resolve,
-    declared: &WorldSurface,
-    actual: &Resolve,
-    compiled: &WorldSurface,
-    limits: SemanticLimits,
-    host_profile: HostAbiProfile,
-) -> Result<usize, PlatformError> {
     if !declared.exports.keys().eq(compiled.exports.keys()) {
         return Err(incompatible("component-world-identity-mismatch"));
     }
     let mut compare = Comparison::new(source, actual, limits);
-    compare.host_profile = host_profile;
     // Compilers may prune unused host interfaces or members. Every retained
     // import must still match the complete, independently pinned source world.
     for (name, actual_id) in &compiled.imports {
@@ -89,7 +70,7 @@ pub(super) fn worlds_for_profile(
             .imports
             .get(name)
             .ok_or_else(|| incompatible("component-world-identity-mismatch"))?;
-        if let Some(profile) = host_profile.interface(name) {
+        if let Some(profile) = super::host::specification(name) {
             compare.asynchronous = profile.asynchronous;
             compare.resources = profile.resource_types();
         } else if !source.interfaces[*expected].functions.is_empty()
@@ -115,7 +96,6 @@ pub(super) struct Comparison<'a> {
     examined: usize,
     asynchronous: bool,
     resources: &'static [&'static str],
-    host_profile: HostAbiProfile,
 }
 
 impl<'a> Comparison<'a> {
@@ -127,7 +107,6 @@ impl<'a> Comparison<'a> {
             examined: 0,
             asynchronous: false,
             resources: &[],
-            host_profile: PHASE3_HOST_ABI_CURRENT,
         }
     }
 
@@ -137,11 +116,9 @@ impl<'a> Comparison<'a> {
         right: InterfaceId,
         asynchronous: bool,
         resources: &'static [&'static str],
-        host_profile: HostAbiProfile,
     ) -> Result<(), PlatformError> {
         self.asynchronous = asynchronous;
         self.resources = resources;
-        self.host_profile = host_profile;
         self.interface(left, right)
     }
 

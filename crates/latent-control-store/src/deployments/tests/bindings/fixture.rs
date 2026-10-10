@@ -39,9 +39,6 @@ impl Fixture {
     pub fn with_structural_values() -> Self {
         Self::create(false, Default::default(), true)
     }
-    pub fn with_transaction_hosts() -> Self {
-        Self::create_with_bundle(false, Default::default(), consumer_with_transaction_hosts())
-    }
     pub fn with_plan_limit(maximum_plans: usize) -> Self {
         Self::create(
             false,
@@ -57,18 +54,52 @@ impl Fixture {
         limits: latent_capabilities::broker::CapabilityBrokerLimits,
         structural_values: bool,
     ) -> Self {
-        Self::create_with_bundle(
-            local,
-            limits,
-            consumer_package_with_values(structural_values),
+        Self::create_selected(local, limits, false, structural_values)
+    }
+    pub fn transactional() -> Self {
+        Self::create_selected(
+            false,
+            latent_capabilities::broker::CapabilityBrokerLimits::default(),
+            true,
+            false,
         )
     }
-    fn create_with_bundle(
+    #[expect(
+        clippy::too_many_lines,
+        reason = "One explicit package, catalog, policy and provider owner composition for boundary tests"
+    )]
+    fn create_selected(
         local: bool,
         limits: latent_capabilities::broker::CapabilityBrokerLimits,
-        bundle: latent_packaging::PackageBundle,
+        transactional: bool,
+        structural_values: bool,
     ) -> Self {
         let roots = [TempRoot::new(), TempRoot::new(), TempRoot::new()];
+        let manifest_profile = if transactional {
+            package_fixture::transaction_profile()
+        } else {
+            latent_manifest::ManifestValidationProfile::default()
+        };
+        let bundle = if transactional {
+            let mut input = package_fixture::transactional_capsule();
+            package_fixture::mutate_json(&mut input, "capsule.json", |manifest| {
+                manifest["metadata"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("tenant");
+                manifest["metadata"]["name"] = json!("packaging");
+            });
+            latent_packaging::build_package(
+                input,
+                latent_packaging::PackagingLimits {
+                    manifest_profile,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+        } else {
+            consumer_package_with_values(structural_values)
+        };
         let mut bundles = vec![bundle];
         if local {
             bundles.push(super::local::package());
@@ -82,7 +113,10 @@ impl Fixture {
         let releases = Arc::new(
             DirectoryArtifactRepository::open_enforced(
                 &roots[0].0,
-                Default::default(),
+                latent_artifacts::DirectoryArtifactRepositoryConfig {
+                    manifest_profile,
+                    ..Default::default()
+                },
                 Default::default(),
                 authority.clone(),
             )
@@ -104,7 +138,7 @@ impl Fixture {
             ))
             .unwrap();
         }
-        let store = open(&roots[1], &releases);
+        let store = open_selected(&roots[1], &releases, manifest_profile);
         if let Some(local_release) = local_release {
             let mut provider = fixtures::deployment("clock-provider", "tests", &local_release);
             provider.service = latent_core::ServiceId("clock-host".into());
@@ -241,91 +275,6 @@ impl Fixture {
             .unwrap();
     }
 }
-
-fn consumer_with_transaction_hosts() -> latent_packaging::PackageBundle {
-    let mut input = transaction_input();
-    package_fixture::mutate_json(&mut input, "capsule.json", |manifest| {
-        manifest["metadata"]
-            .as_object_mut()
-            .unwrap()
-            .remove("tenant");
-    });
-    latent_packaging::build_package(input, Default::default()).unwrap()
-}
-
-pub(super) fn transaction_input() -> latent_packaging::PackageInput {
-    let mut input = package_fixture::capsule(Default::default());
-    let source = std::str::from_utf8(package_fixture::component::SERVICE_WIT).unwrap()
-        .replace("world service {", "world service { import latent:state/key-value@0.2.0; import latent:intents/staging@0.1.0;");
-    let state = latent_core::PHASE4_HOST_ABI_V1
-        .interface("latent:state/key-value@0.2.0")
-        .unwrap()
-        .wit;
-    let intents = latent_core::PHASE4_HOST_ABI_V1
-        .interface("latent:intents/staging@0.1.0")
-        .unwrap()
-        .wit;
-    let files = std::collections::BTreeMap::from([
-        (
-            "wit/clock.wit".into(),
-            package_fixture::component::CLOCK_WIT,
-        ),
-        ("wit/service.wit".into(), source.as_bytes()),
-        ("wit/state.wit".into(), state.as_bytes()),
-        ("wit/intents.wit".into(), intents.as_bytes()),
-    ]);
-    let derived = latent_packaging::derive_capsule_contracts(
-        "tests:packaging/service@1.0.0",
-        &files,
-        Default::default(),
-    )
-    .unwrap();
-    for layer in &mut input.layers {
-        match layer.path.as_str() {
-            "wit/service.wit" => layer.bytes = source.as_bytes().to_vec(),
-            "contracts.json" => layer.bytes = derived.contracts().to_vec(),
-            "wit-lock.json" => {
-                layer.bytes = latent_artifacts::package::encode_wit_lock(
-                    derived.wit_lock(),
-                    Default::default(),
-                )
-                .unwrap()
-            }
-            _ => (),
-        }
-    }
-    for (path, bytes) in [
-        ("wit/state.wit", state.as_bytes()),
-        ("wit/intents.wit", intents.as_bytes()),
-    ] {
-        input.layers.push(package_fixture::layer(
-            path,
-            latent_artifacts::package::LayerRole::Asset,
-            "text/plain",
-            bytes.to_vec(),
-        ));
-    }
-    package_fixture::mutate_json(&mut input, "capsule.json", |manifest| {
-        manifest["metadata"]["name"] = json!("packaging");
-        for name in [
-            "latent:state/key-value@0.2.0",
-            "latent:intents/staging@0.1.0",
-        ] {
-            manifest["imports"]
-                .as_array_mut()
-                .unwrap()
-                .push(json!({"contract":name,"optional":false}));
-        }
-    });
-    let companion = json!({"apiVersion":"latent.dev/v1","kind":"TransactionBinding","capsule":"packaging", "deployment":"consumer","binding":"transaction-owner","profile":"lsf-transaction-v1","hostAbiDigest":latent_manifest::phase4_host_abi_digest(),"namespace":"aggregate","stateSchema":format!("sha256:{}","a".repeat(64)),"operations":[{"operation":"inspect","mode":"strict-command","inputFormat":"lsf-wit-values-v1","resultFormat":"lsf-wit-values-v1"}]});
-    input.layers.push(package_fixture::layer(
-        "transaction-binding.json",
-        latent_artifacts::package::LayerRole::Asset,
-        "application/vnd.latent.transaction-binding.v1+json",
-        serde_json::to_vec(&companion).unwrap(),
-    ));
-    input
-}
 fn deadline() -> Instant {
     Instant::now() + Duration::from_secs(10)
 }
@@ -333,10 +282,24 @@ fn policy(publication: &str) -> serde_json::Value {
     json!({"formatVersion":1,"tenant":"tests","rules":[{"id":"allow","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["packaging"],"publications":[publication],"capability":CAP,"operations":["now-nanos"],"resources":{"kind":"clock"},"ceiling":{"operations":4,"inputBytes":128,"outputBytes":256,"wallTimeMillis":5000}}]})
 }
 pub(super) fn open(root: &TempRoot, releases: &Arc<DirectoryArtifactRepository>) -> Store {
+    open_selected(
+        root,
+        releases,
+        latent_manifest::ManifestValidationProfile::default(),
+    )
+}
+pub(super) fn open_selected(
+    root: &TempRoot,
+    releases: &Arc<DirectoryArtifactRepository>,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
+) -> Store {
     run(Store::open_with_catalog(
         &root.0,
         releases.clone(),
-        Default::default(),
+        crate::DirectoryDeploymentRepositoryConfig {
+            manifest_profile,
+            ..Default::default()
+        },
         releases.lifecycle_authority(),
         Arc::new(
             latent_manifest::RuntimeCompatibilityProfile::new(

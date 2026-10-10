@@ -97,8 +97,7 @@ enumeration!(AuditControlAction {
     EffectTerminate,
     StateOperationRead,
     StateCheckpoint,
-    PayloadPurge,
-    CommandFloorRelease
+    PayloadPurge
 });
 enumeration!(AuditOperationResult {
     Committed,

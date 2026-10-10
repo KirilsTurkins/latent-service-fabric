@@ -6,7 +6,6 @@
 mod accounting;
 mod codec;
 pub mod entities;
-pub(crate) mod offline;
 mod validation;
 pub mod version;
 use crate::{
@@ -331,12 +330,6 @@ impl StateSession {
     #[must_use]
     pub fn charged_bytes(&self) -> (usize, usize) {
         (self.read_charge, self.stage_charge)
-    }
-    /// Actual pending distinct mutations in this original session. This is a
-    /// descriptive count, not a validated plan or evidence of persistence.
-    #[must_use]
-    pub fn staged_mutation_count(&self) -> usize {
-        self.staged.len()
     }
     fn access(
         &mut self,

@@ -41,17 +41,12 @@ def dependencies(source: Path, platform_wit: Path) -> list[Path]:
         identity = PACKAGE.search(text)
         if identity is not None:
             available[identity[1]] = (package, text)
-    captured = source_text(source)
-    # Applications can already carry an exact version under an arbitrary
-    # dependency directory. Keep those captured definitions; adding the same
-    # platform package again makes the authoritative WIT parser reject the graph.
-    provided = set(PACKAGE.findall(captured))
-    pending = [captured]
+    pending = [source_text(source)]
     selected = {}
     while pending:
         for package, version in REFERENCE.findall(pending.pop()):
             identity = f"{package}@{version}"
-            if identity in available and identity not in selected and identity not in provided:
+            if identity in available and identity not in selected:
                 path, text = available[identity]
                 selected[identity] = path
                 pending.append(text)

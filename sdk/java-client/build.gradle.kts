@@ -78,11 +78,19 @@ val transportTest by tasks.registering(JavaExec::class) {
     enableAssertions = true
 }
 
+val transactionTransportTest by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses)
+    workingDir(rootDir.parentFile.parentFile)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("dev.latent.sdk.transport.TransactionTransportTest")
+    enableAssertions = true
+}
+
 // These maintained suites are executable main classes, not JUnit tests.
 // Keep `test` useful and fail on either suite's exit status; only empty JUnit
 // discovery is expected, and must not replace or skip the real SDK suites.
 tasks.test {
-    dependsOn(semanticTest, transportTest)
+    dependsOn(semanticTest, transportTest, transactionTransportTest)
     failOnNoDiscoveredTests.set(false)
 }
 
@@ -97,4 +105,4 @@ val verifyJavaBytecode by tasks.registering(Exec::class) {
     }
 }
 
-tasks.check { dependsOn(semanticTest, transportTest, verifyJavaBytecode) }
+tasks.check { dependsOn(semanticTest, transportTest, transactionTransportTest, verifyJavaBytecode) }

@@ -6,7 +6,7 @@ use latent_core::TenantId;
 use std::time::{Duration, Instant};
 
 /// Reviewed node metadata capacity, separate from every explicit tenant quota.
-/// Only five closed singleton controls and producer-validated immutable
+/// Only six closed singleton controls and producer-validated immutable
 /// dispatcher control receipts can consume this allowance.
 #[derive(Clone, Copy, Debug)]
 pub struct GlobalMetadataAllowance {
@@ -130,7 +130,7 @@ impl TenantCensus {
         contribution: TenantCensusContribution,
     ) -> Result<(), StoreError> {
         self.checkpoint()?;
-        if key.key.is_empty() || key.key.len() > 1024 || bytes.len() > 2 * 1024 * 1024 {
+        if key.key.is_empty() || key.key.len() > 4096 || bytes.len() > 2 * 1024 * 1024 {
             return Err(StoreError::Capacity);
         }
         if self.previous.as_ref().is_some_and(|prior| {
@@ -195,6 +195,7 @@ impl TenantCensus {
                 b"result-retention-v1\0",
                 b"dispatch-owner-v1\0",
                 b"dispatch-control-v1\0",
+                crate::store_identity::KEY,
             ]
             .contains(&key.key.as_slice())
                 && !key.key.starts_with(super::global::CONTROL_RECEIPT_PREFIX))

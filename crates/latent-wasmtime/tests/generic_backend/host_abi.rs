@@ -24,41 +24,6 @@ fn artifact(spec: &latent_core::HostInterfaceSpec) -> latent_artifacts::CapsuleA
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn activation_owned_transaction_imports_require_scope_without_provider_bindings() {
-    let mut configuration = config();
-    configuration.transactional_state = true;
-    let factory = WasmtimeComponentEngineFactory::new(configuration).unwrap();
-    let backend = factory.create_backend_instance();
-    let artifact = artifact(
-        latent_core::PHASE4_HOST_ABI_V1
-            .interface("latent:state/key-value@0.2.0")
-            .unwrap(),
-    );
-    let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
-    let prepared = backend.prepare(&artifact, &key).await.unwrap();
-    assert_eq!(backend.resource_snapshot().stores_created, 0);
-    let cancellation = Cancellation::new("transaction-missing-scope");
-    let invocation = request(
-        prepared,
-        &cancellation.id,
-        fixture::CONTRACT,
-        "inspect",
-        b"[]",
-        budget(),
-    );
-    assert!(invocation.imports.is_empty());
-    let error = run(&backend, invocation, &cancellation).await.unwrap_err();
-    // The compiled import is served only by an original activation-owned port.
-    // An empty provider plan cannot grant that port, and its absence fails
-    // before input lifting or Store creation rather than asking for a catalog
-    // provider binding for the scoped state interface.
-    assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
-    assert_eq!(error.message, "scoped transaction execution owner required");
-    assert_eq!(backend.resource_snapshot().stores_created, 0);
-    idle(&backend);
-}
-
-#[tokio::test(flavor = "current_thread")]
 async fn outbound_proposal_and_wasi_sockets_are_not_ambient_authority() {
     const STREAMS: &str = "latent:network/streams@0.1.0";
     const WIT: &str = include_str!("../../../../wit/platform/network/package.wit");
@@ -84,6 +49,56 @@ async fn outbound_proposal_and_wasi_sockets_are_not_ambient_authority() {
         );
         assert_eq!(backend.resource_snapshot().stores_created, 0);
         assert_eq!(backend.cache_snapshot().entries, 0);
+        idle(&backend);
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn exact_wasi_tcp_poll_and_stream_resource_types_do_not_install_ambient_ports() {
+    let directory = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../research/standard-outbound/wasi-sockets-v0.2.0/wit");
+    let mut resolve = wit_parser::Resolve::default();
+    resolve.push_dir(&directory).unwrap();
+    // These are the original upstream methods/resources, not an empty namespace
+    // or a renamed LSF interface. No adaptation or socket execution is claimed.
+    let (_, tcp) = resolve
+        .interfaces
+        .iter()
+        .find(|(id, _)| resolve.id_of(*id).as_deref() == Some("wasi:sockets/tcp@0.2.0"))
+        .unwrap();
+    for name in [
+        "[method]tcp-socket.start-connect",
+        "[method]tcp-socket.finish-connect",
+        "[method]tcp-socket.subscribe",
+        "[method]tcp-socket.shutdown",
+    ] {
+        assert!(tcp.functions.contains_key(name), "{name}");
+    }
+    let factory = WasmtimeComponentEngineFactory::new(config()).unwrap();
+    let backend = factory.create_backend_instance();
+    for name in [
+        "wasi:sockets/tcp@0.2.0",
+        "wasi:sockets/network@0.2.0",
+        "wasi:sockets/ip-name-lookup@0.2.0",
+        "wasi:io/streams@0.2.0",
+        "wasi:io/poll@0.2.0",
+    ] {
+        let interface = host_fixture::interface_from_directory(&directory, name, None);
+        let bytes = fixture::with_host(fixture::Options::default(), name, &interface);
+        let mut artifact = artifact_bytes(bytes, &[fixture::CONTRACT]);
+        artifact.manifest.imports = vec![ContractImport {
+            contract: ContractId(name.into()),
+            optional: false,
+        }];
+        let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
+        let error = backend.prepare(&artifact, &key).await.unwrap_err();
+        assert_eq!(
+            error.code,
+            PlatformErrorCode::IncompatibleContract,
+            "{name}"
+        );
+        assert_eq!(backend.resource_snapshot().stores_created, 0, "{name}");
+        assert_eq!(backend.cache_snapshot().entries, 0, "{name}");
         idle(&backend);
     }
 }

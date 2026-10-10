@@ -32,6 +32,7 @@ impl<S> Drop for Reservation<S> {
                 state.recovery_accepted -= 1;
                 state.recovery_retained_bytes -= self.bytes;
             }
+            state.release_retired_custody();
             if state.snapshot().physically_retired() {
                 state.retired_at = Some(self.control.clock.monotonic_now());
             }
@@ -97,7 +98,7 @@ pub(super) struct TypedWork<S, T, F> {
 impl<S: Send + Sync + 'static, T: Send + 'static, F: FnOnce(&S) -> T + Send> Work<S>
     for TypedWork<S, T, F>
 {
-    fn run(self: Box<Self>, store: &S, finished: &mut dyn FnMut()) {
+    fn run(self: Box<Self>, store: &S) {
         let Self {
             operation,
             completion,
@@ -108,10 +109,6 @@ impl<S: Send + Sync + 'static, T: Send + 'static, F: FnOnce(&S) -> T + Send> Wor
         if result.is_err() {
             reservation.control.fail(StoreIoError::RecoveryRequired);
         }
-        // The callback has returned and destroyed its captured operation. Clear
-        // only its active-kind counter before a response waiter can wake. The
-        // original response reservation remains owned by Completed below.
-        finished();
         completion.finish(result, Box::new(reservation));
     }
 

@@ -4,7 +4,7 @@ use std::sync::{
 };
 
 use latent_core::{ActivationId, PlatformError};
-use latent_policy::capability::{OwnedPolicyDecision, PolicyStore, SealedPolicyDecision};
+use latent_policy::capability::{PolicyStore, SealedPolicyDecision};
 use latent_state::namespace::{catalog::NamespaceRead, NamespaceError};
 
 use super::{denied, NamespaceAuthority};
@@ -25,6 +25,12 @@ impl Gate {
             Err(denied())
         }
     }
+    pub(super) fn check_retained_response(&self) -> Result<(), PlatformError> {
+        match self.0.load(Ordering::Acquire) {
+            OPEN | ACCEPTED => Ok(()),
+            _ => Err(denied()),
+        }
+    }
     fn accept(&self) -> Result<(), PlatformError> {
         self.0
             .compare_exchange(OPEN, ACCEPTED, Ordering::AcqRel, Ordering::Acquire)
@@ -39,39 +45,16 @@ impl Gate {
 pub struct CommitCancellation {
     pub(super) gate: Arc<Gate>,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CommitCancellationDisposition {
-    Installed,
-    AlreadyInstalled,
-    CommitIoAccepted,
-}
 impl CommitCancellation {
-    #[must_use]
-    pub fn is_same_instance(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.gate, &other.gate)
-    }
-
     /// True means cancellation won before commit I/O acceptance. False means
     /// cancellation was already requested or the commit fence already accepted;
     /// neither branch is a durable outcome or permission to refund charges.
     #[must_use]
     pub fn request(&self) -> bool {
-        self.request_disposition() == CommitCancellationDisposition::Installed
-    }
-
-    /// This observes logical acceptance only. None of these states proves
-    /// durable commitment, abort or physical retirement.
-    #[must_use]
-    pub fn request_disposition(&self) -> CommitCancellationDisposition {
-        match self
-            .gate
+        self.gate
             .0
             .compare_exchange(OPEN, CANCELLED, Ordering::AcqRel, Ordering::Acquire)
-        {
-            Ok(_) => CommitCancellationDisposition::Installed,
-            Err(CANCELLED) => CommitCancellationDisposition::AlreadyInstalled,
-            Err(_) => CommitCancellationDisposition::CommitIoAccepted,
-        }
+            .is_ok()
     }
 }
 
@@ -84,7 +67,6 @@ pub struct CommitIoAcceptance<'owner> {
     pub(super) store: &'owner PolicyStore,
     pub(super) operation: &'owner SealedPolicyDecision<'owner>,
     pub(super) namespace: &'owner NamespaceRead,
-    pub(super) retained: Vec<&'owner OwnedPolicyDecision>,
 }
 
 /// Logical acceptance observation, distinct from the durable command receipt.
@@ -100,20 +82,7 @@ impl AcceptedCommit {
     }
 }
 
-impl<'owner> CommitIoAcceptance<'owner> {
-    /// Retain an additional original sealed purpose for final cancellation and
-    /// commit acceptance. This metadata adds no grant, budget or namespace.
-    pub fn retain_policy(
-        mut self,
-        original: &'owner OwnedPolicyDecision,
-    ) -> Result<Self, PlatformError> {
-        if self.retained.len() >= 7 {
-            return Err(denied());
-        }
-        self.retained.push(original);
-        Ok(self)
-    }
-
+impl CommitIoAcceptance<'_> {
     pub fn accept(self) -> Result<AcceptedCommit, NamespaceError> {
         let activation = self.authority.activation.clone();
         self.accept_with(|| Ok(()))?;
@@ -141,12 +110,11 @@ impl<'owner> CommitIoAcceptance<'owner> {
         let mut revalidate = Some(revalidate);
         let mut accept_original = Some(accept_original);
         let mut detailed = None;
-        let result = self.authority.with_operation_retained(
+        let result = self.authority.with_operation(
             self.store,
             self.operation,
             self.namespace,
             "commit",
-            &self.retained,
             || {
                 let guard = match revalidate.take().ok_or_else(denied)?() {
                     Ok(guard) => guard,

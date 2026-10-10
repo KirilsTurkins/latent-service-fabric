@@ -104,7 +104,7 @@ bindings alongside its other imports. An HTTP application Capsule follows the
 same rule. Its shared listener and WIT export do not create provider grants. The
 separately sealed browser-renderer context projection keeps its existing rules.
 
-Installation requires Linux x86_64, a protected configuration file, `phase3` or `phase4`
+Installation requires Linux x86_64, a protected configuration file, `phase3`
 budgets, `capabilityPolicies`, and durable audit. Omission disables installation;
 explicit null and unsupported fields fail closed. `check-config` validates the
 configuration without installing providers or opening credential/blob storage.
@@ -295,3 +295,7 @@ configuration, startup and authenticated management.
 
 The maintained test fixture, exported package format and startup regression
 history belong to [the contributor validation reference](../development/standalone-provider-validation.md).
+
+The separately gated [development outbound TCP installation](standalone-streams.md)
+requires an explicit build feature and retains its architecture/security and
+qualification gates.

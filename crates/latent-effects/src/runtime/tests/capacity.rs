@@ -92,11 +92,25 @@ async fn foreign_global_owner_cannot_claim_against_another_protected_store_capac
     let source = owner.command_admission_source();
     assert!(source.uses_native_capacity(&fixture.capacity));
     assert!(!source.uses_native_capacity(&foreign));
+    // A deliberately corrupted internal binding must still hit the original
+    // independent physical-store identity check before any provider admission.
+    owner.services.native_capacity.lock().unwrap().owner = Some(foreign.clone());
+    owner.resume().unwrap();
+    owner.wake();
+    with_watchdog(WATCHDOG, async {
+        loop {
+            if owner.snapshot().unwrap().failure == Some("configuration") {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await;
     assert_eq!(adapter.sent.load(Ordering::SeqCst), 0);
     assert_eq!(fixture.record(&authority).await.attempts(), 0);
     assert!(foreign.snapshot().unwrap().physically_retired());
     let report = owner.shutdown(Instant::now() + WATCHDOG).await.unwrap();
-    assert!(report.clean && report.physically_retired);
+    assert!(!report.clean && report.physically_retired);
     assert!(fixture.capacity.snapshot().unwrap().physically_retired());
     fixture.finish().await;
 }

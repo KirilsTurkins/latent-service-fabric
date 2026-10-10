@@ -12,7 +12,6 @@ from tools.build_process_signals import owned_cancellation
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.dev_workflow import state
-from tools.dev_workflow.common import DevError
 from tools.dev_workflow.client import Client as RouteClient
 from tools.guest_runtime_profiles import profiles
 from tools.phase2_operator_process import read_json, write_json, require, stopped_record
@@ -31,12 +30,34 @@ IDLE_OWNERS = {
 }
 
 
-class ObservedRouteClient(RouteClient):
-    """Retain only a bounded, non-sensitive summary of a rejected route delete."""
+class RecordedRouteClient(RouteClient):
+    """Retain bounded decoded route outcomes outside the temporary workspace."""
+
+    def __init__(self, binary: Path, config: Path, directory: Path, *, evidence: Path, deadline: float):
+        super().__init__(binary, config, directory, deadline=deadline)
+        self.evidence = fresh(evidence)
+        self.record_count = 0
+        self.record_bytes = 0
+
+    def call(self, *arguments: str, timeout: float = 30, check=None) -> dict:
+        require(self.record_count < 512 and self.record_bytes + 1048576 <= 16 * 1024 * 1024,
+                "java-server-route-evidence-capacity")
+        result = super().call(*arguments, timeout=timeout, check=check)
+        raw = (json.dumps(result, ensure_ascii=False, separators=(",", ":"), allow_nan=False) + "\n").encode()
+        require(len(raw) <= 1048576, "java-server-route-evidence-response-bound")
+        with (self.evidence / f"{self.record_count + 1:03}.json").open("xb") as output:
+            output.write(raw)
+        self.record_count += 1
+        self.record_bytes += len(raw)
+        return result
+
+
+class ObservedRouteClient(RecordedRouteClient):
+    """Retain private route replies and a bounded rejection summary."""
 
     def __init__(self, *args, evidence: Path, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.evidence = evidence
+        super().__init__(*args, evidence=evidence / "route-control", **kwargs)
+        self.rejection_evidence = evidence
 
     def call(self, *arguments, **kwargs):
         result = super().call(*arguments, **kwargs)  # One request; never retry a mutation.
@@ -68,7 +89,7 @@ class ObservedRouteClient(RouteClient):
                 "expectedStateVersion": fence("--expected-state-version")}
             require(len(json.dumps(summary, separators=(",", ":")).encode()) <= 8192,
                     "java-server-route-rejection-summary-limit")
-            write_json(self.evidence / "route-delete-rejection.json", summary)
+            write_json(self.rejection_evidence / "route-delete-rejection.json", summary)
         return result
 
 
@@ -261,20 +282,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             declaration = read_file(build / "server-source.json")
             profile = read_file(build / "server-profile.json")
             source = read_file(build / "source-inputs.json", 4 * 1024 * 1024)
-            route_observation_bytes = 0
-
-            def observe_route_call(value):
-                nonlocal route_observation_bytes
-                # Closed status/code projections and byte counts only: no raw
-                # arguments, credentials, payloads, messages or response data.
-                raw = json.dumps(value, separators=(",", ":")).encode()
-                route_observation_bytes += len(raw)
-                require(value["call"] <= 256 and len(raw) <= 1024
-                        and route_observation_bytes <= 262144, "java-server-route-observation-limit")
-                write_json(evidence / ("route-control-" + str(value["call"]) + ".json"), value)
-
-            route_cli = ObservedRouteClient(binary, client.config, root / "routes", deadline=client.deadline,
-                                            evidence=evidence, observer=observe_route_call)
+            route_cli = ObservedRouteClient(binary, client.config, root / "routes",
+                evidence=evidence, deadline=client.deadline)
             selected = server_routes.observed_pin(route_cli, "examples", deployed["name"], record["componentDigest"])
             mounts = {"schemaVersion": server_source.CONFIGURATION, "profileDigest": digest(profile), "mounts": [{
                 "endpoint": "server", "name": "java-server", "scheme": scheme, "host": "java.server.test", "path": "/",
@@ -362,10 +371,7 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             result["status"] = "passed"
         except BaseException as error:
             result.update(status="failed", reason=str(error) if isinstance(error, RuntimeError) else type(error).__name__,
-                          failedCall=client.failed_call,
-                          routeFailedCall=route_cli.failed_call if "route_cli" in locals() else None,
-                          routeObservationFailed=route_cli.observation_failed if "route_cli" in locals() else False,
-                          validationCode=error.code if isinstance(error, DevError) else None)
+                          failedCall=client.failed_call)
             if client.node is not None:
                 try: write_json(evidence / "failure-inventory.json", client.call("node", "get", "operator-workflow-test")["data"])
                 except Exception as failure: result["observationFailure"] = type(failure).__name__

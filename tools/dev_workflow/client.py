@@ -9,11 +9,9 @@ from .common import DevError, decode, require
 
 
 class Client:
-    def __init__(self, binary: Path, config: Path, directory: Path, *, deadline: float | None = None, observer=None):
+    def __init__(self, binary: Path, config: Path, directory: Path, *, deadline: float | None = None):
         self.binary, self.config, self.directory = binary, config, directory
         self.deadline = deadline
-        self.observer, self.calls, self.failed_call = observer, 0, None
-        self.observation_failed = False
 
     def call(self, *arguments: str, timeout: float = 30, check=None) -> dict:
         if self.deadline is not None:
@@ -21,32 +19,13 @@ class Client:
             require(timeout > 0, "node-test-run-deadline")
         result = process.run([str(self.binary), "--config", str(self.config), "--output", "json",
                                *map(str, arguments)], self.directory, timeout=timeout, maximum=1048576, check=check)
-        self.calls += 1
-        value, failure = None, None
-        try:
-            value = decode(result.stdout, 1048576)
-            require(value.get("schemaVersion") == "latent.cli.result.v1"
-                    and type(value.get("outcomeKnown")) is bool and isinstance(value.get("data"), dict),
-                    "operator-response-format")
-            require(result.returncode in {0, 2, 3, 4, 5, 6, 130} and (result.returncode != 0 or value.get("category") == "success"),
-                    "operator-response-exit-mismatch")
-            return value
-        except DevError as error:
-            failure = error.code
-            raise
-        finally:
-            if self.observer is not None:
-                from tools.phase2_operator_process import failed_call_record
-                observation = {**failed_call_record(value, self.calls, result.returncode),
-                    "stdoutBytes": len(result.stdout), "stderrBytes": len(result.stderr),
-                    "validationCode": failure}
-                if failure is not None or (value is not None and value.get("category") != "success"):
-                    self.failed_call = observation
-                try:
-                    self.observer(observation)
-                except (OSError, DevError):
-                    # Diagnostics cannot replace the original response decision.
-                    self.observation_failed = True
+        value = decode(result.stdout, 1048576)
+        require(value.get("schemaVersion") == "latent.cli.result.v1"
+                and type(value.get("outcomeKnown")) is bool and isinstance(value.get("data"), dict),
+                "operator-response-format")
+        require(result.returncode in {0, 2, 3, 4, 5, 6, 130} and (result.returncode != 0 or value.get("category") == "success"),
+                "operator-response-exit-mismatch")
+        return value
 
     def control(self, language: str, *arguments: str) -> dict:
         # SpiderMonkey package preparation uses the language owner's existing

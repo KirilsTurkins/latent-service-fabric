@@ -26,8 +26,8 @@ governs lifetime; the guest supplies no URL, credential or retry loop.
 The captured `deferred-http-requirements.json` is included as an ordinary signed
 package Asset beside the byte-identical transaction companion. It records the
 required native contract and limits, with installation, rule and execution
-claims explicitly false. The [installation inputs](../../docs/testing/java-transaction-qualification.md)
-describe the common native owners and their current authority checks.
+claims explicitly false. The [current reconciliation](../../docs/development/phase4-handoffs/2026-10-10/pr802-reconciliation.md)
+records the maintained compiler path and remaining installed qualification.
 
 The original writer stores an eight-byte unsigned little-endian count with v1
 media. The compatible v2 reader accepts that format and the exact tagged twelve

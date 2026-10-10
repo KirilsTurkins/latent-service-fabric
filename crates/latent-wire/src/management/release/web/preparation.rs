@@ -7,9 +7,6 @@ use latent_core::ReleaseDigest;
 use latent_executor::ExecutionBackend;
 use std::time::{Duration, Instant};
 
-#[cfg(test)]
-mod tests;
-
 impl ManagementServiceAdapter {
     pub fn with_web_preparation(
         mut self,
@@ -81,14 +78,13 @@ impl ManagementServiceAdapter {
             .preparation_key(&ReleaseDigest(renderer.digest.clone()))
             .map_err(|failure| platform_status(failure, &self.limits))?;
         key.publication = Some(reference.id.clone());
-        let ready = prepare_ready(
-            backend.as_ref(),
-            Arc::clone(&self.services.artifacts),
-            key.clone(),
-            expires,
-            &self.limits,
+        let ready = tokio::time::timeout_at(
+            expires.into(),
+            backend.prepare_ready_from_repository(self.services.artifacts.clone(), key.clone()),
         )
-        .await?;
+        .await
+        .map_err(|_| Status::deadline_exceeded("web preparation wait expired"))?
+        .map_err(|failure| platform_status(failure, &self.limits))?;
         if ready.descriptor().key != key || ready.descriptor().backend != backend.backend_id() {
             return Err(Status::internal("web preparation identity mismatch"));
         }
@@ -101,30 +97,6 @@ impl ManagementServiceAdapter {
         }
         Ok(response)
     }
-}
-
-async fn prepare_ready(
-    backend: &dyn ExecutionBackend,
-    repository: Arc<dyn latent_artifacts::ArtifactRepository>,
-    key: latent_executor::PreparationKey,
-    expires: Instant,
-    limits: &super::super::super::ManagementLimits,
-) -> Result<latent_executor::PreparedReadiness, Status> {
-    if Instant::now() >= expires {
-        return Err(Status::deadline_exceeded("web preparation wait expired"));
-    }
-    // This timer opts the same owned preparation into the backend's bounded
-    // currentness-read window. It neither replays an accepted job nor renews
-    // its original publication/grant. The outer ORIGINAL transport/request
-    // deadline also covers every read wait and retires this future on expiry.
-    let timer = latent_node::CurrentnessReadTimer;
-    tokio::time::timeout_at(
-        expires.into(),
-        backend.prepare_ready_from_repository_with_wait(repository, key, &timer),
-    )
-    .await
-    .map_err(|_| Status::deadline_exceeded("web preparation wait expired"))?
-    .map_err(|failure| platform_status(failure, limits))
 }
 
 fn deadline(request: &Request<proto::PrepareWebPublicationRequest>) -> Result<Instant, Status> {

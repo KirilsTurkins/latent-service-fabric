@@ -177,11 +177,16 @@ class BuildWiringTests(unittest.TestCase):
     def test_gradle_test_requires_both_main_suites_without_ignoring_failures(self):
         gradle = (ROOT / "sdk/java-client/build.gradle.kts").read_text()
         task = re.search(r"tasks\.test\s*\{([^}]+)\}", gradle).group(1)
-        self.assertIn("dependsOn(semanticTest, transportTest)", task)
+        required = {"semanticTest", "transportTest", "transactionTransportTest"}
+        dependencies = re.search(r"dependsOn\(([^)]+)\)", task).group(1)
+        self.assertEqual({name.strip() for name in dependencies.split(",")}, required)
         self.assertIn("failOnNoDiscoveredTests.set(false)", task)
         self.assertNotIn("ignoreFailures", gradle)
         self.assertNotIn("isIgnoreExitValue", gradle)
-        self.assertIn("tasks.check { dependsOn(semanticTest, transportTest, verifyJavaBytecode) }", gradle)
+        check = re.search(r"tasks\.check\s*\{([^}]+)\}", gradle).group(1)
+        dependencies = re.search(r"dependsOn\(([^)]+)\)", check).group(1)
+        self.assertEqual({name.strip() for name in dependencies.split(",")},
+                         required | {"verifyJavaBytecode"})
 
     def test_gradle_and_shell_targets_cannot_drift_to_java21(self):
         gradle = (ROOT / "sdk/java-client/build.gradle.kts").read_text()

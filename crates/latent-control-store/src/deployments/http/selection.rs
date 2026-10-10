@@ -56,7 +56,6 @@ pub struct AcceptedHttpRoute {
     trigger_generation: u64,
     state_version: u64,
     target: AcceptedHttpTarget,
-    transaction: Option<latent_ingress::http::transaction::TransactionRoute>,
     lease: TriggerReadLease,
 }
 impl AcceptedHttpRoute {
@@ -75,12 +74,6 @@ impl AcceptedHttpRoute {
     #[must_use]
     pub const fn target(&self) -> &AcceptedHttpTarget {
         &self.target
-    }
-    #[must_use]
-    pub const fn transaction(
-        &self,
-    ) -> Option<&latent_ingress::http::transaction::TransactionRoute> {
-        self.transaction.as_ref()
     }
     #[must_use]
     pub fn revision(&self) -> Option<&ResolvedRevision> {
@@ -169,22 +162,6 @@ impl DirectoryDeploymentRepository {
             trigger_generation: previous.http.data.records[index].generation,
             state_version: previous.transaction,
             target,
-            transaction: if row
-                .manifest
-                .configuration
-                .get("profile")
-                .and_then(latent_manifest::__serde_json::Value::as_str)
-                == Some(latent_ingress::http::transaction::PROFILE)
-            {
-                Some(
-                    latent_ingress::http::transaction::TransactionRoute::from_configuration(
-                        &row.manifest.configuration,
-                    )
-                    .map_err(|_| corrupt())?,
-                )
-            } else {
-                None
-            },
             lease,
         })
     }

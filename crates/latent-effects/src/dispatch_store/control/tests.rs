@@ -118,13 +118,16 @@ fn installed_global_control_limit_keeps_recovery_slots_replays_read_only_and_reo
         .unwrap();
     let first = request("control-0", 1);
     let original_receipt = publish(&store, &first);
-    for i in 1..59 {
+    // Six closed singleton slots include the original StoreIdentity, alongside
+    // the installation/recovery/retention/dispatcher owners. They stay reserved
+    // even when this small fixture has only three physically occupied slots.
+    for i in 1..58 {
         publish(&store, &request(&format!("control-{i}"), i + 1));
     }
     assert!(matches!(
         ControlCatalog::plan(
             &store,
-            &request("overflow", 60),
+            &request("overflow", 59),
             false,
             EffectTime {
                 unix_millis: 100,
@@ -134,9 +137,9 @@ fn installed_global_control_limit_keeps_recovery_slots_replays_read_only_and_reo
         Err(DispatcherControlError::Store(StoreError::Capacity))
     ));
     let report = census(&store);
-    // Two reserved singleton slots are not occupied yet; all 59 receipts and
+    // Three reserved singleton slots are not occupied yet; all 58 receipts and
     // three actual singleton controls fit the same fixed allowance.
-    assert_eq!(report.global_rows, 62);
+    assert_eq!(report.global_rows, 61);
     assert!(report.global_bytes <= INSTALLED_GLOBAL_ALLOWANCE.bytes);
     assert_eq!(
         tenant::inspect(&store.snapshot().unwrap(), &quota().tenant).unwrap(),

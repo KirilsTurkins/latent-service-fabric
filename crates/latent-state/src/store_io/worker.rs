@@ -102,9 +102,8 @@ pub(super) fn run<S: Send + Sync + 'static>(
     loop {
         match next(&control, recovery) {
             Action::Run(queued) => {
-                queued
-                    .work
-                    .run(&store, &mut || finished_job(&control, queued.kind));
+                queued.work.run(&store);
+                finished_job(&control, queued.kind);
             }
             Action::Reject(queued) => {
                 queued.work.reject();

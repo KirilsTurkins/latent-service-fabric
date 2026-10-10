@@ -274,39 +274,214 @@ fn command_name_and_offline_preflight_do_not_contact_a_node() {
 }
 
 #[test]
-fn floor_release_preparation_and_recovery_preserve_original_command_and_canonical_view() {
-    use base64::{engine::general_purpose::STANDARD, Engine};
-    let mut version = b"NV\x02".to_vec();
-    version.extend_from_slice(&[1; 32]);
-    for word in [target().incarnation.parse::<u64>().unwrap(), 7, 2, 3] {
-        version.extend_from_slice(&word.to_le_bytes());
-    }
-    let command = StateCommand::ReleaseExpiredCommandFloor(ReleaseCommandFloorArgs {
-        target: target(),
-        operation_id: "cleanup-original".into(),
-        command_id: "a".repeat(64),
-        expected_version: STANDARD.encode(&version),
-        expected_policy_digest: format!("sha256:{}", "b".repeat(64)),
-        reason: "approved identity cleanup".into(),
+fn typed_dispatcher_recovery_and_effect_plan_projection_keep_original_association_losslessly() {
+    let audit = Some(c::AuditAck {
+        status: c::AuditAckStatus::Durable as i32,
+        attempt_sequence: Some(u64::MAX),
     });
-    let Operation::Phase4(request) = prepare_state(&command, &config()).unwrap() else {
-        panic!("phase4");
+    let (original, request) = dispatcher_recovery_request();
+    assert_dispatcher_operation_projection(&original, &request, audit);
+    assert_effect_plan_projection(audit);
+
+    let Operation::Phase4(request) = prepare_state(
+        &StateCommand::Operation(NamespaceOperationArgs {
+            target: target(),
+            operation_id: "original-namespace".into(),
+        }),
+        &config(),
+    )
+    .unwrap() else {
+        panic!("namespace lookup")
     };
-    let Request::MutateState(value) = request.as_ref() else {
-        panic!("state operation");
+    let Request::GetStateOperationReceipt(value) = *request else {
+        panic!("typed lookup")
     };
-    assert_eq!(value.record_id.as_deref(), Some("a".repeat(64).as_str()));
-    assert_eq!(value.expected_version, version);
+    assert_eq!(value.operation_id, "original-namespace");
+    assert!(value.original_effect_plan.is_none());
+}
+
+fn dispatcher_recovery_request() -> (c::ControlDispatcherRequest, Request) {
+    use latent_rpc::phase4::current_profile;
+
+    let original = c::ControlDispatcherRequest {
+        profile: Some(current_profile()),
+        scope: c::DispatcherScope::Node as i32,
+        operation_id: "original-resume".into(),
+        action: c::DispatcherAction::Resume as i32,
+        expected_generation: Some(c::DispatcherGeneration {
+            owner_epoch: 9_007_199_254_740_993,
+            revision: u64::MAX - 1,
+        }),
+    };
+    let request = Request::from(original.clone());
+    request.validate().unwrap();
+    let context = recovery(&request).unwrap();
+    assert_eq!(context["operationId"], "original-resume");
+    assert_eq!(context["action"], "DISPATCHER_ACTION_RESUME");
+    assert_eq!(context["automaticRetry"], false);
     assert_eq!(
-        value.mutation,
-        c::StateMutationKind::ReleaseExpiredCommandFloor as i32
+        context["expectedGeneration"]["ownerEpoch"],
+        "9007199254740993"
     );
-    let recovery = recovery(&request).unwrap();
-    assert_eq!(recovery["operationId"], "cleanup-original");
-    assert_eq!(recovery["recordId"], "a".repeat(64));
     assert_eq!(
-        recovery["expectedVersion"]["data"],
-        STANDARD.encode(version)
+        context["expectedGeneration"]["revision"],
+        (u64::MAX - 1).to_string()
     );
-    assert_eq!(recovery["authorizationPublication"]["id"], publication());
+    let mut failure = Failure::protocol("response-lost", "original transport lost");
+    super::super::phase2::RecoveryContext::from_operation(
+        &Operation::Phase4(Box::new(request.clone())),
+        "tenant",
+    )
+    .failure(&mut failure);
+    let mut expected_context = context.clone();
+    expected_context["tenant"] = json!("tenant");
+    assert_eq!(failure.data["recovery"], expected_context);
+    assert!(!failure.outcome_known);
+    (original, request)
+}
+
+fn assert_dispatcher_operation_projection(
+    original: &c::ControlDispatcherRequest,
+    request: &Request,
+    audit: Option<c::AuditAck>,
+) {
+    use latent_rpc::phase4::{current_profile, Response};
+
+    let receipt = c::DispatcherOperationReceipt {
+        operation_id: original.operation_id.clone(),
+        receipt_id: "exact-receipt".into(),
+        action: original.action,
+        authenticated_operator: "host-derived-stable-actor".into(),
+        actor_tenant: "tenant".into(),
+        before_generation: original.expected_generation,
+        after_generation: Some(c::DispatcherGeneration {
+            owner_epoch: 9_007_199_254_740_993,
+            revision: u64::MAX,
+        }),
+        observed_at_unix_millis: u64::MAX,
+        clock_continuity_proven: true,
+        restore_review_required: false,
+        disposition: c::StateOperationDisposition::Committed as i32,
+    };
+    let response = Response::from(c::ControlDispatcherResponse {
+        receipt: Some(receipt.clone()),
+        replayed: true,
+        published: false,
+        paused: true,
+        audit_ack: audit,
+    });
+    response.validate_for(request).unwrap();
+    let outcome = execute::project_outcome(&response);
+    assert_eq!(outcome.category, Category::Success);
+    assert!(outcome.outcome_known);
+    assert_eq!(outcome.data["receipt"]["operationId"], "original-resume");
+    assert_eq!(
+        outcome.data["receipt"]["afterGeneration"]["revision"],
+        u64::MAX.to_string()
+    );
+    assert_eq!(outcome.data["published"], false);
+    let lookup = Request::from(c::GetDispatcherOperationRequest {
+        original: Some(original.clone()),
+    });
+    let response = Response::from(c::GetDispatcherOperationResponse {
+        receipt: Some(receipt.clone()),
+        audit_ack: audit,
+    });
+    response.validate_for(&lookup).unwrap();
+    assert_eq!(
+        projection::response(&response)["receipt"]["observedAtUnixMillis"],
+        u64::MAX.to_string()
+    );
+    let mut changed = original.clone();
+    changed.operation_id = "replacement-resume".into();
+    assert!(response
+        .validate_for(&Request::from(c::GetDispatcherOperationRequest {
+            original: Some(changed)
+        }))
+        .is_err());
+    let inspect = Request::from(c::InspectDispatcherRequest {
+        profile: Some(current_profile()),
+        scope: c::DispatcherScope::Node as i32,
+    });
+    let response = Response::from(c::InspectDispatcherResponse {
+        dispatcher: Some(c::DispatcherSnapshot {
+            generation: original.expected_generation,
+            paused: true,
+            pending_control: true,
+            retained_attempt_bytes: u64::MAX,
+            counts_observed_at_unix_millis: u64::MAX,
+            failure: c::DispatcherFailure::None as i32,
+            ..Default::default()
+        }),
+        audit_ack: audit,
+    });
+    response.validate_for(&inspect).unwrap();
+    assert_eq!(
+        projection::response(&response)["dispatcher"]["retainedAttemptBytes"],
+        u64::MAX.to_string()
+    );
+}
+
+fn assert_effect_plan_projection(audit: Option<c::AuditAck>) {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    use latent_rpc::phase4::Response;
+    use prost::Message;
+
+    let Operation::Phase4(effect) = prepare_transaction(
+        &TransactionCommand::Effect(EffectArgs {
+            command: command(),
+            effect_id: "b".repeat(64),
+        }),
+        &config(),
+    )
+    .unwrap() else {
+        panic!("effect request")
+    };
+    let Request::GetEffect(effect) = *effect else {
+        panic!("typed effect")
+    };
+    let original_plan = c::PlanEffectMutationRequest {
+        effect: Some(*effect),
+        operation_id: "original-effect-stop".into(),
+        mutation: c::StateMutationKind::TerminateEffect as i32,
+        expected_version: vec![1; 32],
+        expected_policy_digest: format!("sha256:{}", "c".repeat(64)),
+        reason: "operator reviewed original unknown attempt".into(),
+        retry_delay_millis: 0,
+    };
+    let plan = c::EffectManagementPlan {
+        original: Some(original_plan.clone()),
+        plan_digest: vec![2; 32],
+        management_sequence: 128,
+        owner_epoch: u64::MAX,
+        claim_generation: 9_007_199_254_740_993,
+        dispatch_attempt: 2,
+        prepared_at_unix_millis: 10,
+        expires_at_unix_millis: 20,
+        before: t::EffectDisposition::UncertainAfterDispatch as i32,
+        safety: c::EffectPlanSafety::AdministratorDeclared as i32,
+        dedup_valid_until_unix_millis: None,
+    };
+    let request = Request::from(original_plan.clone());
+    request.validate().unwrap();
+    let response = Response::from(c::PlanEffectMutationResponse {
+        plan: Some(plan.clone()),
+        replayed: true,
+        audit_ack: audit,
+    });
+    response.validate_for(&request).unwrap();
+    let data = projection::response(&response);
+    assert_eq!(
+        data["plan"]["original"]["operationId"],
+        "original-effect-stop"
+    );
+    assert_eq!(data["plan"]["ownerEpoch"], u64::MAX.to_string());
+    assert_eq!(data["plan"]["claimGeneration"], "9007199254740993");
+    assert_eq!(
+        data["plan"]["encodedPlan"]["data"],
+        STANDARD.encode(plan.encode_to_vec())
+    );
+    let mut changed = original_plan;
+    changed.operation_id = "replacement-stop".into();
+    assert!(response.validate_for(&Request::from(changed)).is_err());
 }

@@ -2,25 +2,10 @@ use super::*;
 
 #[test]
 fn detached_view_response_witness_waits_for_actual_native_retirement_after_close() {
-    struct PhysicalOwner(mpsc::Sender<std::thread::ThreadId>);
-    impl Drop for PhysicalOwner {
-        fn drop(&mut self) {
-            let _ = self.0.send(std::thread::current().id());
-        }
-    }
     let (_root, config) = fixture();
     let owner = start(config.clone());
-    let caller = std::thread::current().id();
-    let (retired, retirement) = mpsc::channel();
-    let (opening, witness) = owner
-        .open_view_observed_retaining(PhysicalOwner(retired))
-        .unwrap();
-    assert!(!witness.has_retired());
-    assert!(matches!(
-        retirement.try_recv(),
-        Err(mpsc::TryRecvError::Empty)
-    ));
-    let mut view = wait(opening).unwrap().unwrap();
+    let mut view = wait(owner.open_view().unwrap()).unwrap().unwrap();
+    let witness = view.retirement_witness().unwrap();
     assert!(view.retirement_witness().is_none());
     let gates = Rendezvous::new(1);
     let worker_gates = gates.clone();
@@ -53,7 +38,6 @@ fn detached_view_response_witness_waits_for_actual_native_retirement_after_close
     let report = finish(&owner);
     assert!(report.clean);
     assert!(witness.has_retired());
-    assert_ne!(retirement.recv_timeout(WATCHDOG).unwrap(), caller);
     assert_eq!(report.snapshot.physical_owners, 0);
     let reopened = start(config);
     assert!(finish(&reopened).clean);

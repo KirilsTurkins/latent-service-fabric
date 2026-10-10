@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/build_s3_fixture.py","reviewBoundary":"committed-fingerprint","reviewReason":"PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.","schemaVersion":"latent.ci.contracts.v1","sha256":"ad9b77ac21213fd2ac6cae28128ec756bc0818b2f3da23ff047c354ecc2a0a22"}
+{
+  "kind": "owner",
+  "path": "tools/build_s3_fixture.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Pin the official Go 1.27.2 Linux amd64 compiler image to match the existing exact version gate; preserve fixture sources, resource limits and qualification checks.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b07a337442f73cfd42e6087257654f2fbb70f0e73b2bb14e6d3b1f0f401c1bfe"
+}

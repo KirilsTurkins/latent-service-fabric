@@ -1,227 +1,294 @@
+//! The production caller owns the actual startup, factory and physical drain.
 use super::*;
-use crate::config::{NodeConfig, StateConfig};
-use latent_artifacts::DirectoryArtifactRepositoryConfig;
-use latent_core::{test_support::coordination::WATCHDOG, SystemActivationClock, TenantId};
-use latent_effects::dispatch_store::DispatchCatalog;
+use crate::standalone::state::kernel::tests::Fixture;
+use latent_artifacts::{
+    AdmissionStorageLimits, DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig,
+};
+use latent_core::{native_capacity::NativeCapacityOwner, ActivationClock};
+use latent_effects::authority::EffectAuthorityOwner;
 use latent_policy::capability::PolicyStoreLimits;
-use latent_state::{store_io::StoreIoKind, tenant::TenantRecord};
-use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf, time::Instant};
+use latent_state::{protected_store::ProtectedStoreOwner, store_io::StoreIoKind};
+use std::{
+    sync::{Condvar, Mutex},
+    time::Duration,
+};
 
-mod management;
-mod os_retirement;
-mod recovery_capacity;
-
-struct Fixture {
-    root: tempfile::TempDir,
-    settings: NodeSettings,
-    artifacts: Arc<DirectoryArtifactRepository>,
-    policy: Arc<PolicyStore>,
-    clock: Arc<SystemActivationClock>,
+struct Policies {
+    store: Arc<PolicyStore>,
+    _catalog: DirectoryArtifactRepository,
 }
 
-impl Fixture {
-    fn root(&self) -> &std::path::Path {
-        self.root.path()
-    }
-    fn new() -> Self {
-        let directory = std::env::var_os("LATENT_STATE_TEST_ROOT")
-            .map_or_else(std::env::temp_dir, PathBuf::from);
-        let root = tempfile::tempdir_in(directory).unwrap();
-        fs::set_permissions(root.path(), fs::Permissions::from_mode(0o700)).unwrap();
-        let data = root.path().join("node");
-        for path in [&data, &data.join("state")] {
-            fs::create_dir(path).unwrap();
-            fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
-        }
-        let clock = Arc::new(SystemActivationClock);
-        let checkpoint = root.path().join("clock.json");
-        fs::write(
-            &checkpoint,
-            serde_json::to_vec(&serde_json::json!({
-                "formatVersion": 1, "nodeId": "state-startup-fixture", "ownerEpoch": 1,
-                "clockFloorUnixMillis": clock.sample().unix_millis()
-            }))
-            .unwrap(),
-        )
-        .unwrap();
-        fs::set_permissions(&checkpoint, fs::Permissions::from_mode(0o600)).unwrap();
-        let config: NodeConfig = serde_json::from_value(serde_json::json!({
-            "formatVersion": 1, "dataDirectory": data, "nodeId": "state-startup-fixture",
-            "bind": "127.0.0.1:0", "budgetProfile": {"mode": "phase4"},
-            "credentials": [{"token": "LSF-PUBLIC-STATE-STARTUP-TEST-ONLY",
-                "subject": "operator", "tenant": "alpha", "role": "operator"}]
-        }))
-        .unwrap();
-        let mut settings = config.derive().unwrap();
-        let state: StateConfig = serde_json::from_value(serde_json::json!({
-            "formatVersion": 1, "createIfMissing": true, "configurationEpoch": 1,
-            "clockCheckpoint": checkpoint, "operations": []
-        }))
-        .unwrap();
-        // This internal composition fixture installs no signed operations or
-        // granted policies. Full configuration/admission gates and actual
-        // signed Java startup remain independently exercised by their owners.
-        let mut state = crate::config::state::derive(&state).unwrap();
-        state.tenant_quotas = vec![super::super::validation::test_quota("alpha")];
-        settings.state = Some(state);
-        let artifacts = Arc::new(
-            DirectoryArtifactRepository::open(
-                root.path().join("releases"),
-                DirectoryArtifactRepositoryConfig::default(),
+fn policies(fixture: &Fixture, effects: &EffectAuthorityOwner) -> Policies {
+    let catalog = DirectoryArtifactRepository::open_enforced(
+        fixture.root().join("actual-catalog"),
+        DirectoryArtifactRepositoryConfig {
+            manifest_profile: latent_manifest::ManifestValidationProfile::phase4(
+                latent_core::BudgetProfile::Phase4,
+                latent_core::PHASE4_HOST_ABI_V1,
+                &latent_manifest::phase4_host_abi_digest(),
             )
             .unwrap(),
-        );
-        let policy = Arc::new(
-            PolicyStore::open(
-                &root.path().join("policies"),
-                PolicyStoreLimits::default(),
-                artifacts.lifecycle_authority(),
-            )
-            .unwrap(),
-        );
-        Self {
-            root,
-            settings,
-            artifacts,
-            policy,
-            clock,
-        }
-    }
-
-    async fn open(&self) -> (Arc<StateRuntime>, super::super::super::EffectRuntime) {
-        StateRuntime::open(
-            &self.settings,
-            Arc::clone(&self.artifacts),
-            Arc::clone(&self.policy),
-            self.clock.clone(),
-            None,
-            tokio::runtime::Handle::current(),
-            None,
+            ..DirectoryArtifactRepositoryConfig::default()
+        },
+        AdmissionStorageLimits::default(),
+        fixture.authority.clone(),
+    )
+    .unwrap();
+    let observer = effects.rejection_observer();
+    catalog
+        .lifecycle_authority()
+        .install_rejection_observer(Arc::clone(&observer))
+        .unwrap();
+    let store = Arc::new(
+        PolicyStore::open(
+            &fixture.root().join("actual-policies"),
+            PolicyStoreLimits::default(),
+            catalog.lifecycle_authority(),
         )
-        .await
-        .unwrap()
-    }
-}
-
-async fn observation(store: &ProtectedStoreOwner) -> ((u64, u64), TenantRecord) {
-    store
-        .with_store(StoreIoKind::Read, 16 * 1024, |engine| {
-            let view = engine.snapshot()?;
-            Ok((
-                DispatchCatalog::owner_checkpoint(&view)?.unwrap(),
-                latent_state::tenant::inspect(&view, &TenantId("alpha".into()))?.unwrap(),
-            ))
-        })
-        .unwrap()
-        .await
-        .unwrap()
-        .unwrap()
-}
-
-async fn finish(state: &StateRuntime, effects: &mut super::super::super::EffectRuntime) {
-    state.close_ordinary();
-    effects.close();
-    let deadline = Instant::now() + WATCHDOG;
-    let effect = effects.shutdown(deadline).await.unwrap();
-    assert!(effect.clean && effect.physically_retired && effect.scheduling_owner_retired);
-    // Two original ordinary workers plus the separately reserved recovery
-    // worker are all physically joined by the same dispatcher owner.
-    assert_eq!(effect.worker_threads_joined.checked_sub(1), Some(2));
-    assert_eq!(effect.worker_threads_joined, 3);
-    assert_eq!(effect.worker_threads_remaining, 0);
-    assert_eq!(state.0.store.snapshot().unwrap().accepted, 0);
-    assert_eq!(state.0.store.snapshot().unwrap().physical_owners, 0);
-    let store = state.shutdown(deadline).await.unwrap();
-    assert!(store.clean && !store.store_quarantined && !store.native_quarantined);
-    assert!(matches!(
-        store.store_engine,
-        super::super::lifecycle::StoreEngineState::Closed
-    ));
-    assert_eq!(store.store_threads_joined, 4);
-    assert_eq!(store.store_live_workers, 0);
-    assert_eq!(store.store_physical_owners, 0);
-}
-
-#[tokio::test]
-async fn actual_state_open_initializes_epoch_before_tenant_rows_and_reopens_original_accounting() {
-    let mut fixture = Fixture::new();
-    let checkpoint = fs::read(&fixture.settings.state.as_ref().unwrap().clock_checkpoint).unwrap();
-    let (state, mut effects) = fixture.open().await;
-    let original = observation(&state.0.store).await;
-    assert_eq!(original.0 .0, 1);
-    assert_eq!(original.1.generation, 1);
-    assert_eq!(original.1.usage.metadata_rows, 1);
-    assert!(state.0.installed.is_empty() && state.0.intents.is_empty());
-    assert!(state.0.native.snapshot().unwrap().physically_retired());
-    let admission = effects.command_admission_source();
-    assert!(state.0.store.uses_native_capacity(&state.0.native));
-    assert!(admission.uses_native_capacity(&state.0.native));
-    assert!(admission
-        .native_capacity()
-        .unwrap()
-        .is_same_owner(&state.0.native));
-    finish(&state, &mut effects).await;
-    assert!(admission.capture().is_err());
-    drop((state, effects));
-    fixture.settings.state.as_mut().unwrap().create_if_missing = false;
-    let (state, mut effects) = fixture.open().await;
-    assert!(state.0.store.uses_native_capacity(&state.0.native));
-    assert!(effects
-        .command_admission_source()
-        .uses_native_capacity(&state.0.native));
-    let reopened = observation(&state.0.store).await;
-    assert_eq!(reopened.0 .0, 2);
-    assert!(reopened.0 .1 >= original.0 .1);
-    assert_eq!(reopened.1, original.1);
-    assert_eq!(
-        fs::read(&fixture.settings.state.as_ref().unwrap().clock_checkpoint).unwrap(),
-        checkpoint
+        .unwrap(),
     );
-    finish(&state, &mut effects).await;
+    store.install_rejection_observer(observer).unwrap();
+    Policies {
+        store,
+        _catalog: catalog,
+    }
 }
 
-#[tokio::test]
-async fn expired_post_epoch_tenant_installation_retires_original_dispatcher_and_store() {
-    let fixture = Fixture::new();
-    let (native, _) =
-        startup_capacity(&(fixture.clock.clone() as Arc<dyn ActivationClock>)).unwrap();
-    let time = ProtectedCommandClock::load(&fixture.settings, fixture.clock.clone()).unwrap();
-    let (store, _) = open_validated_store(&fixture.settings, fixture.clock.clone())
-        .await
-        .unwrap();
-    let authority = EffectAuthorityOwner::new(128, 2, time.minimum_checkpoint().1).unwrap();
-    let mut effects = super::super::super::EffectRuntime::start(
-        DispatcherConfig::default(),
-        Arc::clone(&store),
-        authority,
-        vec![],
-        time.clone(),
-        Some(time.minimum_checkpoint()),
+async fn started(fixture: &Fixture) -> (StandaloneStateRuntime, EffectRuntime, Policies) {
+    let bootstrap = fixture.bootstrap();
+    let policies = policies(fixture, &bootstrap.authority);
+    let (state, effects) = StandaloneStateRuntime::start(
+        bootstrap,
+        &fixture.settings,
+        fixture.authority.clone(),
+        Arc::clone(&policies.store),
         tokio::runtime::Handle::current(),
     )
     .await
     .unwrap();
-    let original = effects.command_admission_source();
-    assert!(finish_tenant_setup(
+    (state, effects, policies)
+}
+
+async fn observe_actual_retirement(store: &ProtectedStoreOwner, native: &NativeCapacityOwner) {
+    // This bounded observation never extends the accepted work or drain cutoff.
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if store.snapshot().unwrap().physically_retired()
+                && native.snapshot().unwrap().physically_retired()
+            {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    store.reap_retired_threads().unwrap();
+}
+
+#[tokio::test]
+async fn actual_standalone_caller_reaches_ready_once_with_same_factory_capacity_and_paused_dispatcher(
+) {
+    let fixture = Fixture::new();
+    let (mut state, mut effects, _policies) = started(&fixture).await;
+    let native = state.kernel.native.clone();
+    let store = Arc::clone(&state.kernel.store);
+    assert!(!state.is_running(&effects));
+    assert!(fixture.checkpoint().is_file());
+    state.publish_ready(&effects).unwrap();
+    assert!(state.is_running(&effects));
+    assert!(state.publish_ready(&effects).is_err());
+    let snapshot = effects.snapshot().unwrap();
+    assert!(snapshot.paused && !snapshot.admission_closed && !snapshot.quarantined);
+    assert_eq!(snapshot.claims, 0);
+    let deadline = fixture.clock.monotonic_now() + Duration::from_secs(20);
+    let ingress = state
+        .admission
+        .as_ref()
+        .unwrap()
+        .reserve_ingress(32, deadline)
+        .unwrap();
+    assert!(ingress.is_from_owner(&native));
+    assert_eq!(native.snapshot().unwrap().ordinary.slots, 1);
+    drop(ingress);
+    assert!(effects.shutdown(deadline).await.unwrap().clean);
+    drop(effects);
+    let report = state.shutdown(deadline).await.unwrap();
+    assert!(report.clean && report.store_physically_retired && report.native_physically_retired);
+    let public = serde_json::to_value(report).unwrap();
+    assert_eq!(public["storePhysicallyRetired"], true);
+    assert_eq!(public["nativePhysicallyRetired"], true);
+    assert!(public.get("physical").is_none());
+    assert_eq!(report.namespace_owners, 0);
+    assert_eq!(report.storage_retained_bytes, 0);
+    assert_eq!(
+        report.ordinary_native_bytes + report.recovery_native_bytes,
+        0
+    );
+    observe_actual_retirement(&store, &native).await;
+}
+
+#[tokio::test]
+async fn configured_installations_refuse_before_business_io_instead_of_exposing_stateless_readiness(
+) {
+    for installed_targets in [false, true] {
+        let mut fixture = Fixture::new();
+        let input = crate::config::state::tests::input();
+        let config = serde_json::from_value(input).unwrap();
+        let mut declarations = crate::config::state::derive(&config, fixture.root()).unwrap();
+        if installed_targets {
+            fixture.settings.operations = std::mem::take(&mut declarations.operations);
+        } else {
+            fixture.settings.tenant_quotas = std::mem::take(&mut declarations.tenant_quotas);
+        }
+        let bootstrap = fixture.bootstrap();
+        let native = bootstrap.native.clone();
+        let policies = policies(&fixture, &bootstrap.authority);
+        assert!(StandaloneStateRuntime::start(
+            bootstrap,
+            &fixture.settings,
+            fixture.authority.clone(),
+            policies.store.clone(),
+            tokio::runtime::Handle::current(),
+        )
+        .await
+        .is_err());
+        assert!(!fixture
+            .settings
+            .store
+            .root
+            .join(&fixture.settings.store.file_name)
+            .exists());
+        assert!(!fixture.checkpoint().exists());
+        let retired = native.snapshot().unwrap();
+        assert!(retired.admission_closed && retired.physically_retired());
+        assert!(!retired.quarantined);
+    }
+}
+
+#[tokio::test]
+async fn a_foreign_policy_observer_refuses_before_checkpoint_or_dispatch_epoch_allocation() {
+    let fixture = Fixture::new();
+    let bootstrap = fixture.bootstrap();
+    let native = bootstrap.native.clone();
+    let foreign = EffectAuthorityOwner::new(1, 1, 0).unwrap();
+    let policies = policies(&fixture, &foreign);
+    assert!(StandaloneStateRuntime::start(
+        bootstrap,
         &fixture.settings,
-        &store,
-        &native,
-        &[],
-        &mut effects,
-        Instant::now()
-            .checked_sub(std::time::Duration::from_millis(1))
-            .unwrap(),
+        fixture.authority.clone(),
+        policies.store.clone(),
+        tokio::runtime::Handle::current(),
     )
     .await
     .is_err());
-    assert!(original.capture().is_err());
-    let effect = effects.snapshot().unwrap();
-    assert!(effect.admission_closed && !effect.quarantined);
-    assert_eq!(effect.active_jobs, 0);
-    assert_eq!(effect.live_workers, 0);
-    assert_eq!(effect.physical_owners, 0);
-    let snapshot = store.snapshot().unwrap();
-    assert!(snapshot.physically_retired() && !snapshot.quarantined);
-    assert!(store.failure().is_none());
+    assert!(!fixture
+        .settings
+        .store
+        .root
+        .join(&fixture.settings.store.file_name)
+        .exists());
+    assert!(!fixture.checkpoint().exists());
     assert!(native.snapshot().unwrap().physically_retired());
+}
+
+#[tokio::test]
+async fn closing_the_actual_dispatch_role_removes_readiness_without_releasing_store_residency() {
+    let fixture = Fixture::new();
+    let (mut state, mut effects, _policies) = started(&fixture).await;
+    state.publish_ready(&effects).unwrap();
+    let native = state.kernel.native.clone();
+    let store = Arc::clone(&state.kernel.store);
+    effects.close();
+    assert!(!state.is_running(&effects));
+    assert!(!store.snapshot().unwrap().physically_retired());
+    assert!(native.snapshot().unwrap().recovery.bytes > 0);
+    let deadline = state.original_deadline;
+    assert!(effects.shutdown(deadline).await.unwrap().clean);
+    drop(effects);
+    let report = state.shutdown(deadline).await.unwrap();
+    assert!(report.clean && report.store_physically_retired && report.native_physically_retired);
+}
+
+#[tokio::test]
+async fn the_original_boot_deadline_refuses_late_readiness_and_never_renews_native_cleanup() {
+    let fixture = Fixture::new();
+    let (mut state, mut effects, _policies) = started(&fixture).await;
+    let deadline = state.original_deadline;
+    let native = state.kernel.native.clone();
+    let store = Arc::clone(&state.kernel.store);
+    let ingress = state
+        .admission
+        .as_ref()
+        .unwrap()
+        .reserve_ingress(32, deadline)
+        .unwrap();
+    fixture.clock.advance_to(deadline);
+    assert!(state.publish_ready(&effects).is_err());
+    assert!(!state.is_running(&effects));
+    let _report = effects.shutdown(deadline).await;
+    drop(effects);
+    let report = tokio::time::timeout(
+        Duration::from_secs(5),
+        state.shutdown(deadline + Duration::from_secs(20)),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert!(!report.clean);
+    assert_eq!(report.ordinary_native_reservations, 1);
+    assert!(report.ordinary_native_bytes > 0);
+    drop(ingress);
+    observe_actual_retirement(&store, &native).await;
+    assert!(native.snapshot().unwrap().quarantined);
+}
+
+struct Gate {
+    released: Mutex<bool>,
+    wake: Condvar,
+}
+
+#[tokio::test]
+async fn a_live_native_worker_keeps_original_capacity_after_failed_standalone_drain() {
+    let fixture = Fixture::new();
+    let (mut state, mut effects, _policies) = started(&fixture).await;
+    state.publish_ready(&effects).unwrap();
+    let store = Arc::clone(&state.kernel.store);
+    let native = state.kernel.native.clone();
+    let gate = Arc::new(Gate {
+        released: Mutex::new(false),
+        wake: Condvar::new(),
+    });
+    let blocked = Arc::clone(&gate);
+    let (entered, entry) = tokio::sync::oneshot::channel();
+    let work = store
+        .with_store(StoreIoKind::Read, 64, move |_engine| {
+            entered.send(()).unwrap();
+            let release = blocked.released.lock().unwrap();
+            let (release, limit) = blocked
+                .wake
+                .wait_timeout_while(release, Duration::from_secs(20), |released| !*released)
+                .unwrap();
+            assert!(*release && !limit.timed_out());
+            Ok(())
+        })
+        .unwrap();
+    tokio::time::timeout(Duration::from_secs(5), entry)
+        .await
+        .unwrap()
+        .unwrap();
+    let original = state.original_deadline;
+    assert!(effects.shutdown(original).await.unwrap().clean);
+    drop(effects);
+    let report = state.shutdown(fixture.clock.monotonic_now()).await.unwrap();
+    assert!(!report.clean && !report.store_physically_retired && !report.native_physically_retired);
+    assert!(report.quarantined);
+    assert!(report.accepted_storage_jobs > 0);
+    assert!(report.recovery_native_bytes > 0);
+    assert!(native.snapshot().unwrap().recovery.slots > 0);
+    *gate.released.lock().unwrap() = true;
+    gate.wake.notify_one();
+    work.await.unwrap().unwrap();
+    observe_actual_retirement(&store, &native).await;
+    assert!(native.snapshot().unwrap().quarantined);
 }

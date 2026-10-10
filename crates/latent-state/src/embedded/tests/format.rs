@@ -45,19 +45,19 @@ fn v1_upgrade_preserves_original_rows_and_existing_read_views() {
     let path = directory.path().join("store.redb");
     let store = EmbeddedStore {
         db: RwLock::new(legacy(&path)),
-        file_status: None,
         limits: StoreLimits::default(),
         views: Arc::new(AtomicUsize::new(0)),
         quarantined: AtomicBool::new(false),
         reclamation: AtomicBool::new(false),
+        file_status: None,
     };
     assert_eq!(
-        disk_format::inspect(&store.db.read().unwrap()),
+        disk_format::inspect(&store.database().unwrap()),
         Ok(State::Legacy)
     );
     let original = store.snapshot().unwrap();
     let mut checkpoints = Vec::with_capacity(2);
-    disk_format::upgrade(&store.db.read().unwrap(), &mut |stage| {
+    disk_format::upgrade(&store.database().unwrap(), &mut |stage| {
         checkpoints.push(stage)
     })
     .unwrap();
@@ -69,15 +69,15 @@ fn v1_upgrade_preserves_original_rows_and_existing_read_views() {
         ]
     );
     assert_eq!(
-        disk_format::inspect(&store.db.read().unwrap()),
+        disk_format::inspect(&store.database().unwrap()),
         Ok(State::Current)
     );
-    let published = description(&store.db.read().unwrap());
-    disk_format::upgrade(&store.db.read().unwrap(), &mut |_| {
+    let published = description(&store.database().unwrap());
+    disk_format::upgrade(&store.database().unwrap(), &mut |_| {
         panic!("current format attempted another upgrade")
     })
     .unwrap();
-    assert_eq!(description(&store.db.read().unwrap()), published);
+    assert_eq!(description(&store.database().unwrap()), published);
     let current = store.snapshot().unwrap();
     for family in [Family::State, Family::Command, Family::Outbox] {
         assert_eq!(
@@ -95,10 +95,10 @@ fn v1_upgrade_preserves_original_rows_and_existing_read_views() {
     drop(store);
     let reopened = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
     assert_eq!(
-        disk_format::inspect(&reopened.db.read().unwrap()),
+        disk_format::inspect(&reopened.database().unwrap()),
         Ok(State::Current)
     );
-    assert!(description(&reopened.db.read().unwrap())
+    assert!(description(&reopened.database().unwrap())
         .iter()
         .all(|(key, _)| key != "upgrade"));
 }
@@ -274,10 +274,10 @@ async fn interrupted_first_creation_refuses_unseeded_engine_and_recovers_durable
         } else {
             let store = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
             assert_eq!(
-                disk_format::inspect(&store.db.read().unwrap()),
+                disk_format::inspect(&store.database().unwrap()),
                 Ok(State::Current)
             );
-            assert!(description(&store.db.read().unwrap())
+            assert!(description(&store.database().unwrap())
                 .iter()
                 .all(|(key, _)| key != "upgrade"));
             let page = store
@@ -310,7 +310,7 @@ async fn interrupted_v1_upgrade_reopens_same_business_rows_and_never_downgrades(
         drop(db);
         let store = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
         assert_eq!(
-            disk_format::inspect(&store.db.read().unwrap()),
+            disk_format::inspect(&store.database().unwrap()),
             Ok(State::Current)
         );
         let view = store.snapshot().unwrap();
@@ -320,7 +320,7 @@ async fn interrupted_v1_upgrade_reopens_same_business_rows_and_never_downgrades(
                 Ok(Some(b"original".to_vec()))
             );
         }
-        assert!(description(&store.db.read().unwrap())
+        assert!(description(&store.database().unwrap())
             .iter()
             .all(|(key, _)| key != "upgrade"));
     }
@@ -344,7 +344,7 @@ fn backend_sync_failure_during_upgrade_refuses_readiness_and_requires_exact_reop
     assert!(status.close_observed());
     let reopened = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
     assert_eq!(
-        disk_format::inspect(&reopened.db.read().unwrap()),
+        disk_format::inspect(&reopened.database().unwrap()),
         Ok(State::Current)
     );
     let view = reopened.snapshot().unwrap();

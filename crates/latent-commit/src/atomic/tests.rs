@@ -19,9 +19,14 @@ use writer::{inspect, RetryRequest, StagedIntent};
 mod accounted;
 mod captured;
 mod census;
-mod view_tokens;
-
+mod historical_reservations;
+#[cfg(target_os = "linux")]
+mod io_faults;
+mod managed_accounting;
+mod process;
 mod retention_cases;
+mod supported_formats;
+mod view_tokens;
 
 fn time(now: u64) -> CommandTime {
     CommandTime {
@@ -134,6 +139,10 @@ fn open_limited(path: &std::path::Path, limits: StoreLimits) -> EmbeddedStore {
 fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
     let dir = tempfile::tempdir().unwrap();
     let store = open(&dir.path().join("state.redb"));
+    let effects = seed(&store);
+    (dir, store, effects)
+}
+fn seed(store: &EmbeddedStore) -> EffectAuthorityOwner {
     let namespace = NamespaceRecord {
         tenant: TenantId("tenant".into()),
         id: StateNamespaceId("aggregate".into()),
@@ -155,7 +164,7 @@ fn setup() -> (tempfile::TempDir, EmbeddedStore, EffectAuthorityOwner) {
             }],
         })
         .unwrap();
-    (dir, store, effect_owner())
+    effect_owner()
 }
 fn effect_owner() -> EffectAuthorityOwner {
     let effects = EffectAuthorityOwner::new(4, 4, 0).unwrap();
@@ -704,6 +713,24 @@ fn oversized_results_intents_and_capacity_fail_before_business_mutation() {
 #[test]
 fn maximum_result_and_128_intents_commit_as_one_complete_envelope() {
     let (dir, store, effects) = setup();
+    // The exact supported maximum includes the original future record/history
+    // reservation for every effect, rather than only today's small payloads.
+    // This fixture explicitly declares that capacity before command admission;
+    // the default namespace ceiling remains unchanged.
+    let view = store.snapshot().unwrap();
+    let mut namespace =
+        NamespaceRecord::decode(&view.get(&namespace_key()).unwrap().unwrap()).unwrap();
+    namespace.quota.effect_bytes = 16 * 1024 * 1024;
+    drop(view);
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: namespace_key(),
+                value: Some(namespace.encode().unwrap()),
+            }],
+        })
+        .unwrap();
     let mut request = input("maximum");
     request.result_policy.maximum_result_bytes = 1024 * 1024;
     let key = request.key.clone();
@@ -728,6 +755,7 @@ fn maximum_result_and_128_intents_commit_as_one_complete_envelope() {
     let view = store.snapshot().unwrap();
     let (_, result) = inspect(&view, &key, time(102), permission).unwrap();
     assert_eq!(result.unwrap().value(), Some(&body));
+    let mut retained_effect_bytes = 0u64;
     for (sequence, effect) in record.effect_ids().iter().enumerate() {
         let bytes = view
             .get(&latent_effects::dispatch_store::effect_row_key(&effect.hex()).unwrap())
@@ -738,7 +766,65 @@ fn maximum_result_and_128_intents_commit_as_one_complete_envelope() {
         assert_eq!(authority.link().sequence as usize, sequence);
         assert_eq!(authority.link().effect, effect.hex());
         assert_eq!(authority.link().command, record.id.hex());
+        retained_effect_bytes = retained_effect_bytes
+            .checked_add(
+                latent_effects::dispatch_store::DispatchCatalog::retention_charge(&authority)
+                    .unwrap(),
+            )
+            .unwrap();
     }
+    let (usage, _, _) = writer::Usage::read(&view, &key).unwrap();
+    assert_eq!(usage.effect_bytes, retained_effect_bytes);
+    assert!(retained_effect_bytes > NamespaceQuota::default().effect_bytes);
+    assert!(retained_effect_bytes <= namespace.quota.effect_bytes);
+}
+
+#[test]
+fn maximum_intent_count_respects_original_namespace_effect_reserve_without_partial_rows() {
+    let (_dir, store, effects) = setup();
+    let mut request = input("maximum-under-default-quota");
+    request.result_policy.maximum_result_bytes = 1024 * 1024;
+    let key = request.key.clone();
+    let owner = claim(&store, request);
+    let view = store.snapshot().unwrap();
+    let namespace_before = view.get(&namespace_key()).unwrap();
+    let usage_key = writer::usage_row_key(&key.tenant, &key.namespace, 1).unwrap();
+    let usage_before = view.get(&usage_key).unwrap();
+    let command_key = command_row_key(owner.record().id());
+    let command_before = view.get(&command_key).unwrap();
+    assert!(matches!(
+        CompleteEnvelope::success(
+            &view,
+            owner,
+            Some(stage(&view)),
+            (0..128).map(|_| intent()).collect(),
+            value(&vec![42; 1024 * 1024]),
+            &effects,
+            time(101),
+        ),
+        Err(AtomicError::Limit)
+    ));
+    drop(view);
+    let view = store.snapshot().unwrap();
+    assert_eq!(view.get(&namespace_key()).unwrap(), namespace_before);
+    assert_eq!(view.get(&usage_key).unwrap(), usage_before);
+    assert_eq!(view.get(&command_key).unwrap(), command_before);
+    for family in [
+        Family::State,
+        Family::Outbox,
+        Family::PayloadReference,
+        Family::Inbox,
+    ] {
+        assert!(view
+            .scan_after(family, b"", None, 128, 1024)
+            .unwrap()
+            .rows
+            .is_empty());
+    }
+    let (record, result) = inspect(&view, &key, time(102), permission).unwrap();
+    assert_eq!(record.outcome(), Outcome::Pending);
+    assert!(result.is_none());
+    validate_view(&view, foreign_codec).unwrap();
 }
 
 #[test]

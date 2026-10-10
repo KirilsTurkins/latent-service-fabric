@@ -46,14 +46,13 @@ pub(super) fn create(output: &Path) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn pem(kind: &str, der: &[u8]) -> String {
-    use std::fmt::Write;
     let encoded = STANDARD.encode(der);
     let mut text = format!("-----BEGIN {kind}-----\n");
     for line in encoded.as_bytes().chunks(64) {
         text.push_str(std::str::from_utf8(line).expect("base64 ASCII"));
         text.push('\n');
     }
-    writeln!(text, "-----END {kind}-----").expect("in-memory PEM string");
+    text.push_str(&format!("-----END {kind}-----\n"));
     text
 }
 

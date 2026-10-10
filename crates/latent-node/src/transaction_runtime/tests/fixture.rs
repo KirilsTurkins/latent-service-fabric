@@ -1,4 +1,3 @@
-mod admission;
 mod history;
 mod invocation;
 mod policy;
@@ -25,15 +24,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub(super) fn execute(value: crate::TransactionAdmission) -> crate::TransactionExecution {
-    admission::execute(value)
-}
-pub(super) fn command_key(value: &str) -> CommandKey {
-    admission::key(value)
-}
-pub(super) fn state_scope(query: bool) -> latent_state::session::StateScope {
-    admission::scope(query)
-}
 pub(super) fn value(bytes: &[u8]) -> Value {
     Value {
         bytes: bytes.to_vec(),
@@ -44,24 +34,17 @@ pub(super) fn value(bytes: &[u8]) -> Value {
 fn schema() -> String {
     format!("sha256:{}", "1".repeat(64))
 }
-struct Clock;
-struct CommandClock(latent_effects::runtime::CommandAdmissionSource);
-impl CommandTimeSource for CommandClock {
-    fn sample(&self) -> latent_commit::atomic::CommandTime {
-        let time = self.0.command_time().unwrap();
-        latent_commit::atomic::CommandTime {
-            unix_millis: time.unix_millis,
-            continuity_proven: time.continuity_proven,
-        }
-    }
+struct Clock {
+    millis: std::sync::atomic::AtomicU64,
+    continuity: std::sync::atomic::AtomicBool,
 }
 impl EffectTimeSource for Clock {
     fn observe(&self) -> EffectTime {
         // This fixture positively owns one uninterrupted process. Production
         // startup uses the admitted continuity/checkpoint owner.
         EffectTime {
-            unix_millis: 1000,
-            continuity_proven: true,
+            unix_millis: self.millis.load(std::sync::atomic::Ordering::SeqCst),
+            continuity_proven: self.continuity.load(std::sync::atomic::Ordering::SeqCst),
         }
     }
 }
@@ -72,11 +55,8 @@ pub(super) struct Fixture {
     pub effects: EffectAuthorityOwner,
     pub time: Arc<dyn CommandTimeSource>,
     store: Arc<ProtectedStoreOwner>,
-    metadata: Arc<latent_artifacts::VerifiedArtifactMetadata>,
-    declaration: Arc<latent_manifest::TransactionBinding>,
-    deployment: Arc<latent_manifest::DeploymentManifest>,
-    command: latent_effects::runtime::CommandAdmissionSource,
-    waiters: crate::command_waiters::CommandWaiterRegistry,
+    pub(super) owners: Arc<TransactionAdmissionOwners>,
+    pub(super) installation: Arc<TransactionInstallation>,
     publication: ReleaseUseEligibility,
     dispatcher: DispatcherOwner,
     policy: Arc<PolicyStore>,
@@ -84,6 +64,7 @@ pub(super) struct Fixture {
     cancellations: crate::ActivationCancellationRegistry,
     registrations: std::sync::Mutex<Vec<crate::CancellationRegistration>>,
     pub native: latent_core::native_capacity::NativeCapacityOwner,
+    clock: Arc<Clock>,
 }
 impl Fixture {
     pub async fn new() -> Self {
@@ -113,32 +94,61 @@ impl Fixture {
         let namespaces = Arc::new(NamespaceCatalog::new());
         Self::create_namespace(&store, &namespaces).await;
         let effects = EffectAuthorityOwner::new(128, 16, 100).unwrap();
+        let clock = Arc::new(Clock {
+            millis: std::sync::atomic::AtomicU64::new(1000),
+            continuity: std::sync::atomic::AtomicBool::new(true),
+        });
         let dispatcher = DispatcherOwner::start(
             DispatcherConfig::default(),
             Arc::clone(&store),
             effects.clone(),
             Vec::new(),
-            Arc::new(Clock),
+            clock.clone(),
             None,
         )
         .await
         .unwrap();
         dispatcher.bind_native_capacity(&native).unwrap();
         let command = dispatcher.command_admission_source();
-        let time: Arc<dyn CommandTimeSource> = Arc::new(CommandClock(command.clone()));
-        let waiters =
-            crate::command_waiters::CommandWaiterRegistry::new(Default::default()).unwrap();
+        let time: Arc<dyn CommandTimeSource> =
+            Arc::new(command_role::CommandClock(command.clone()));
+        let owners = Arc::new(
+            TransactionAdmissionOwners::new(
+                Arc::clone(&store),
+                Arc::clone(&namespaces),
+                Arc::clone(&policy),
+                command,
+            )
+            .unwrap(),
+        );
+        let installation = Arc::new(
+            TransactionInstallation::new(
+                metadata,
+                declaration,
+                &deployment,
+                publication.clone(),
+                Arc::new(binding),
+                None,
+                latent_capabilities::namespace::RecoverySelection::OriginalCaller,
+                "visibility-v1".into(),
+                latent_commit::atomic::ResultPolicy {
+                    replay: latent_commit::atomic::ReplayPolicy::Full,
+                    maximum_result_bytes: 4096,
+                    result_millis: 10_000,
+                    identity_millis: 20_000,
+                    maximum_attempts: 3,
+                },
+            )
+            .unwrap(),
+        );
         Self {
             _root: root,
             _catalog: catalog,
             effects,
             time,
             store,
-            metadata: Arc::new(metadata),
-            declaration: Arc::new(declaration),
-            deployment: Arc::new(deployment),
-            command,
-            waiters,
+            owners,
+            installation,
             publication,
             dispatcher,
             policy,
@@ -146,7 +156,17 @@ impl Fixture {
             cancellations: crate::ActivationCancellationRegistry::default(),
             registrations: std::sync::Mutex::new(Vec::new()),
             native,
+            clock,
         }
+    }
+
+    pub fn set_result_time(&self, millis: u64, continuity: bool) {
+        self.clock
+            .millis
+            .store(millis, std::sync::atomic::Ordering::SeqCst);
+        self.clock
+            .continuity
+            .store(continuity, std::sync::atomic::Ordering::SeqCst);
     }
     async fn create_namespace(store: &ProtectedStoreOwner, namespaces: &Arc<NamespaceCatalog>) {
         let namespaces = Arc::clone(namespaces);

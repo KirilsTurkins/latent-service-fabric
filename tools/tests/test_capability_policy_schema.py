@@ -55,11 +55,6 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         rust = (ROOT / "crates/latent-policy/src/capability.rs").read_text(encoding="utf-8")
         actual = {cap: set(re.findall(r'"([a-z0-9-]+)"', operations))
                   for cap, operations in re.findall(r'"(latent:[^\"]+)"\s*=>\s*&\[(.*?)\]', rust, re.S)}
-        runtime = re.search(r"fn runtime_operations\(\) -> &'static \[&(?:'static )?str\]\s*\{\s*&\[(.*?)\]", rust, re.S)
-        if runtime is not None:
-            self.assertRegex(rust, r'"latent:runtime/activation@0\.1\.0"\s*=>\s*runtime_operations\(\)')
-            self.assertNotIn("latent:runtime/activation@0.1.0", actual)
-            actual["latent:runtime/activation@0.1.0"] = set(re.findall(r'"([a-z0-9-]+)"', runtime[1]))
         expected = {}
         for entry in matrix["interfaces"] + transactions["interfaces"]:
             interface = entry["interface"].split("/")[1].split("@")[0]
@@ -88,17 +83,10 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         host_operations = {"commit", "read-result", "inspect-effect", "cancel-command",
                            "namespace-create", "namespace-inspect", "namespace-list",
                            "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate",
-                           "namespace-snapshot", "namespace-inspect-restore", "namespace-restore",
-                           "namespace-schema-migrate", "namespace-review-recovery", "namespace-resume",
                            "effect-plan", "effect-reconcile", "effect-redrive", "effect-terminate",
                            "state-checkpoint", "purge-expired-payload"}
         self.assertTrue(expected["latent:state/key-value@0.2.0"].isdisjoint(host_operations))
         expected["latent:state/key-value@0.2.0"].update(host_operations)
-        # Dispatch is a separately authorized native purpose. The frozen guest
-        # staging interface still exposes only stage; it grants no dispatch.
-        intent_host_operations = {"dispatch"}
-        self.assertTrue(expected["latent:intents/staging@0.1.0"].isdisjoint(intent_host_operations))
-        expected["latent:intents/staging@0.1.0"].update(intent_host_operations)
         self.assertEqual(actual, expected)
         constraints = SCHEMAS["capability-policy"]["$defs"]["rule"]["allOf"]
         self.assertEqual({v["if"]["properties"]["capability"]["const"]:

@@ -156,7 +156,14 @@ pub(crate) async fn connect_for(
         stream,
         wrote: Arc::clone(&wrote),
     };
-    let builder = connection_builder(maximum_headers);
+    let mut builder = hyper::client::conn::http1::Builder::new();
+    builder
+        .max_headers(maximum_headers)
+        .max_buf_size(32768)
+        .http09_responses(false)
+        .allow_spaces_after_header_name_in_responses(false)
+        .allow_obsolete_multiline_headers_in_responses(false)
+        .ignore_invalid_headers_in_responses(false);
     let (sender, driver) = scope
         .wait(builder.handshake(hyper_util::rt::TokioIo::new(tracked)))
         .await?
@@ -172,18 +179,6 @@ pub(crate) async fn connect_for(
         })))
         .map_err(Into::into)
 }
-fn connection_builder(maximum_headers: usize) -> hyper::client::conn::http1::Builder {
-    let mut builder = hyper::client::conn::http1::Builder::new();
-    builder
-        .max_headers(maximum_headers)
-        .max_buf_size(32768)
-        .http09_responses(false)
-        .allow_spaces_after_header_name_in_responses(false)
-        .allow_obsolete_multiline_headers_in_responses(false)
-        .ignore_invalid_headers_in_responses(false);
-    builder
-}
-
 async fn checkout_for(
     client: &Arc<ProviderClient<Network>>,
     scope: crate::protocol::ProtocolScope<'_>,

@@ -2,6 +2,8 @@
 //! Historical identities and snapshot bytes are descriptions, never renewed
 //! publication/provider/result authority. Restored work stays paused for review.
 
+pub mod snapshot;
+
 use crate::{
     embedded::{AtomicBatch, ExpectedRow, Family, ReadView, RowKey, RowMutation, StoreError},
     namespace::{
@@ -12,12 +14,6 @@ use crate::{
 use latent_core::{StateNamespaceId, TenantId};
 
 pub mod maintenance;
-pub mod migration;
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub mod offline;
-pub mod restore;
-pub mod resume;
-pub mod snapshot;
 
 pub const GUARD_KEY: &[u8] = b"recovery-control-v1\0";
 pub const GUARD_BYTES: usize = 133;
@@ -277,9 +273,9 @@ pub fn require_namespace_ready(
     Ok(())
 }
 
-/// Exact non-authorizing read observations for a subsequent physical CAS.
-/// A ready namespace, its history and the global recovery guard must all remain
-/// unchanged; an absent legacy history/guard is an explicit absent-row fence.
+/// Exact recovery, namespace and history observations from the same ready view.
+/// The original writer must retain these CAS checks through its current host
+/// acceptance; the bytes confer no dispatch or destructive-maintenance grant.
 pub fn namespace_readiness_expectations(
     view: &ReadView,
     tenant: &TenantId,
@@ -291,14 +287,73 @@ pub fn namespace_readiness_expectations(
         family: Family::Namespace,
         key: namespace_record_key(tenant, namespace).map_err(|_| StoreError::Invalid)?,
     };
-    let history = crate::namespace::history::history_key(tenant, namespace, incarnation)
+    let history_key = crate::namespace::history::history_key(tenant, namespace, incarnation)
         .map_err(|_| StoreError::Invalid)?;
-    let observe = |key: RowKey| view.get(&key).map(|value| ExpectedRow { key, value });
     Ok([
-        observe(guard_key())?,
-        observe(namespace_key)?,
-        observe(history)?,
+        ExpectedRow {
+            key: guard_key(),
+            value: view.get(&guard_key())?,
+        },
+        ExpectedRow {
+            value: Some(view.get(&namespace_key)?.ok_or(StoreError::Corrupt)?),
+            key: namespace_key,
+        },
+        ExpectedRow {
+            value: view.get(&history_key)?,
+            key: history_key,
+        },
     ])
+}
+
+/// Preserve the explicitly uninstalled lower dispatcher profile. A missing
+/// namespace can be observed there only while the tenant installation guard
+/// is absent; the exact absence checks fence publication across later setup.
+/// Installed transactional targets always use the original namespace/history
+/// readiness checks. This function supplies no provider or runtime grant.
+pub fn dispatch_readiness_expectations(
+    view: &ReadView,
+    tenant: &TenantId,
+    namespace: &StateNamespaceId,
+    incarnation: u64,
+) -> Result<Vec<ExpectedRow>, StoreError> {
+    let namespace_key = RowKey {
+        family: Family::Namespace,
+        key: namespace_record_key(tenant, namespace).map_err(|_| StoreError::Invalid)?,
+    };
+    let accounting =
+        crate::tenant::prepare_update(view, tenant, crate::tenant::TenantDelta::default())?;
+    let mut batch = AtomicBatch::default();
+    accounting.append_read_expectations(&mut batch)?;
+    if accounting.is_legacy() && view.get(&namespace_key)?.is_none() {
+        require_ready(view)?;
+        let history_key = crate::namespace::history::history_key(tenant, namespace, incarnation)
+            .map_err(|_| StoreError::Invalid)?;
+        if view.get(&history_key)?.is_some() {
+            return Err(StoreError::Corrupt);
+        }
+        batch.expectations.extend([
+            ExpectedRow {
+                key: guard_key(),
+                value: view.get(&guard_key())?,
+            },
+            ExpectedRow {
+                key: namespace_key,
+                value: None,
+            },
+            ExpectedRow {
+                key: history_key,
+                value: None,
+            },
+        ]);
+    } else {
+        batch.expectations.extend(namespace_readiness_expectations(
+            view,
+            tenant,
+            namespace,
+            incarnation,
+        )?);
+    }
+    Ok(batch.expectations)
 }
 
 #[cfg(test)]

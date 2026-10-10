@@ -156,18 +156,6 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
             return Err(invalid());
         }
     }
-    if let Some(state) = &v.state {
-        token(&state.namespace, 256)?;
-        if state.incarnation == 0
-            || v.publication.is_none()
-            || v.component.is_none()
-            || v.capability.is_some()
-            || v.static_web.is_some()
-            || v.trigger.is_some()
-        {
-            return Err(invalid());
-        }
-    }
     if let Some(web) = &v.static_web {
         if web.web_generation == 0
             || v.trigger.is_none()
@@ -385,7 +373,6 @@ fn namespace_attempt(v: &AuditOperationAttempt) -> Result<()> {
             | AuditControlAction::NamespaceDestroy
             | AuditControlAction::NamespaceRecreate
             | AuditControlAction::NamespaceInspect
-            | AuditControlAction::CommandFloorRelease
     );
     if (namespace || effect) != v.identities.state.is_some()
         || (namespace || effect)

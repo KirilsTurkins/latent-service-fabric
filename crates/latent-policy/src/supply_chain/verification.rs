@@ -201,7 +201,6 @@ impl BuilderEvidence for VerifiedWebBuildProvenance {
 /// Borrowed package and evidence for one explicit local diagnostic check.
 /// The caller owns input bytes and supplies its sampled wall time. No durable
 /// clock/policy floor or target-node runtime suitability is established.
-#[derive(Clone, Copy)]
 pub struct PackageVerificationRequest<'a> {
     pub tenant: &'a TenantId,
     pub package: &'a PackageBundle,

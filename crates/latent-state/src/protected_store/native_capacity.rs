@@ -15,6 +15,13 @@ struct State {
 pub(super) struct NativeBinding(Mutex<State>);
 
 impl NativeBinding {
+    pub(super) fn bound(owner: NativeCapacityOwner) -> Self {
+        Self(Mutex::new(State {
+            owner: Some(owner),
+            sealed: true,
+        }))
+    }
+
     pub(super) fn seal(&self) -> Result<(), ProtectedStoreError> {
         self.0
             .lock()

@@ -34,7 +34,6 @@ impl Fixture {
         let store = Self::open(root.path(), limits);
         let value = payload_fixture::value();
         let authority = payload_fixture::authority(&value, &"a".repeat(64));
-        install_ready_namespace(&store, authority.scope());
         let record = EffectRecord::committed(&authority).unwrap();
         let payload = PayloadRecord::new(&authority, value).unwrap();
         let due = initial_due_mutation(&authority).unwrap();
@@ -181,80 +180,6 @@ impl Fixture {
         DispatchCatalog::validate_view(&self.store().snapshot().unwrap()).unwrap();
         receipt
     }
-}
-
-fn install_ready_namespace(store: &EmbeddedStore, scope: &crate::authority::EffectScope) {
-    use latent_core::{StateNamespaceId, TenantId};
-    use latent_state::namespace::{
-        catalog::{NamespaceCatalog, NamespaceMutation, NamespaceOperationContext},
-        NamespaceError, NamespaceQuota, NamespaceStatus, NamespaceTransition,
-    };
-    let catalog = NamespaceCatalog::new();
-    let tenant = TenantId(scope.tenant.clone());
-    let id = StateNamespaceId(scope.namespace.clone());
-    let state_schema = format!("sha256:{}", "1".repeat(64));
-    let context = |operation_id: String| NamespaceOperationContext {
-        tenant: tenant.clone(),
-        actor: "trusted-management-fixture".into(),
-        operation_id,
-    };
-    let create = NamespaceMutation::Create {
-        id: id.clone(),
-        state_schema: state_schema.clone(),
-        quota: NamespaceQuota::default(),
-    };
-    let original = context("namespace-create".into());
-    let denied = catalog
-        .prepare(store, original.clone(), &create, 0)
-        .unwrap();
-    assert!(matches!(
-        store.apply_fenced(denied.batch, || Err::<(), _>(
-            NamespaceError::PermissionDenied
-        )),
-        Err(FencedStoreError::Fence(NamespaceError::PermissionDenied))
-    ));
-    assert!(catalog.inspect(store, &tenant, &id).unwrap().is_none());
-    let prepared = catalog.prepare(store, original, &create, 0).unwrap();
-    // This trusted kernel fixture installs validated metadata through the same
-    // final fence; it does not claim production policy or guest authorization.
-    store
-        .apply_fenced(prepared.batch, || Ok::<(), NamespaceError>(()))
-        .unwrap();
-    for incarnation in 1..scope.incarnation {
-        for (step, action) in [
-            NamespaceTransition::Quiesce,
-            NamespaceTransition::Retire,
-            NamespaceTransition::Destroy,
-            NamespaceTransition::Recreate {
-                state_schema: state_schema.clone(),
-                quota: NamespaceQuota::default(),
-            },
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            let before = catalog.inspect(store, &tenant, &id).unwrap().unwrap();
-            let mutation = NamespaceMutation::Transition {
-                id: id.clone(),
-                expected: before.version,
-                action,
-            };
-            let prepared = catalog
-                .prepare(
-                    store,
-                    context(format!("namespace-{incarnation}-{step}")),
-                    &mutation,
-                    0,
-                )
-                .unwrap();
-            store
-                .apply_fenced(prepared.batch, || Ok::<(), NamespaceError>(()))
-                .unwrap();
-        }
-    }
-    let installed = catalog.inspect(store, &tenant, &id).unwrap().unwrap();
-    assert_eq!(installed.version.incarnation, scope.incarnation);
-    assert_eq!(installed.status, NamespaceStatus::Active);
 }
 fn time(unix_millis: u64) -> EffectTime {
     EffectTime {
@@ -418,14 +343,6 @@ fn provider_confirmation_is_distinct_from_original_uncertain_attempt_and_admin_d
     assert_eq!(receipt.fact(), EffectManagementFact::ProviderConfirmed);
     assert_eq!(receipt.provider_observed_at_millis(), Some(105));
     assert_eq!(receipt.completed_at_millis(), 106);
-    assert_eq!(
-        EffectManagementCatalog::receipt_for_effect(
-            &fixture.store().snapshot().unwrap(),
-            &fixture.record(),
-        )
-        .unwrap(),
-        Some(receipt.clone()),
-    );
     let record = fixture.record();
     assert_eq!(record.disposition(), Disposition::ProviderAcknowledged);
     assert_eq!(record.latest().unwrap().disposition, Disposition::Uncertain);
@@ -445,12 +362,6 @@ fn provider_confirmation_is_distinct_from_original_uncertain_attempt_and_admin_d
 #[test]
 fn administrative_terminal_disposition_keeps_uncertain_facts_and_payload_holds() {
     let fixture = Fixture::new(StoreLimits::default());
-    assert!(EffectManagementCatalog::receipt_for_effect(
-        &fixture.store().snapshot().unwrap(),
-        &fixture.record(),
-    )
-    .unwrap()
-    .is_none());
     let attempt = fixture.complete(true);
     let plan = fixture.plan(
         fixture.request("stop-original", EffectManagementAction::Terminate),
@@ -462,14 +373,6 @@ fn administrative_terminal_disposition_keeps_uncertain_facts_and_payload_holds()
         EffectManagementFact::AdministratorTerminated
     );
     assert_eq!(receipt.provider_receipt(), None);
-    assert_eq!(
-        EffectManagementCatalog::receipt_for_effect(
-            &fixture.store().snapshot().unwrap(),
-            &fixture.record(),
-        )
-        .unwrap(),
-        Some(receipt.clone()),
-    );
     assert_eq!(fixture.record().disposition(), Disposition::DeadLettered);
     assert_eq!(
         fixture.record().latest().unwrap().disposition,

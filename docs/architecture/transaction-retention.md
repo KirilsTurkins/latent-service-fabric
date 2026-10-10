@@ -60,11 +60,10 @@ from engine corruption or uncertain commitment in the physical-owner wrapper.
 
 ## Physical recovery reserve
 
-The startup configuration selects a finite reserve within the storage owner's
-original fixed workers, queue slots, accepted jobs, response bytes and read
-slots. `install_recovery_capacity` only validates that exact installed profile;
-it refuses missing, changed or live configuration and cannot create capacity
-after startup. Ordinary work cannot consume that reserve. Authorized status,
+Before ordinary admission opens, the host configures a finite reserve in
+`StoreIoLimits.recovery`. `install_recovery_capacity` validates those immutable
+limits; it cannot add workers or repartition live work. Ordinary work cannot
+consume the reserved workers, queue slots, accepted jobs or retained bytes. Authorized status,
 pause/reconciliation and maintenance callbacks use `with_recovery_store`; the
 resource class supplies no read or mutation permission.
 
@@ -82,4 +81,15 @@ overlap refusal, native snapshot pinning and saturation of the protected store.
 These tests qualify this finite profile. Public node/Java/HTTP execution evidence
 is supplied by the consuming runtime and application integration tickets.
 
-The [source-matched Linux evidence](../evidence/transaction-retention-foundation-397.json) records all 109 state and 45 commit cases and strict owner Clippy. The same native schedule first reproduced the old cumulative-clock failure, then passed the fixed source after a real database reopen. Original qualified source and failed attempts remain preserved. This evidence covers the linked retention and physical reserve foundations, while the consuming Java/HTTP qualification and the remaining #397 operations stay separate.
+The [historical Linux evidence](../evidence/transaction-retention-foundation-397.json)
+records 109 state and 45 commit cases and strict owner Clippy at its recorded
+source revision. The same native schedule first reproduced the old cumulative
+clock failure, then passed the fixed source after a real database reopen.
+Original qualified source and failed attempts remain preserved.
+
+The [PR #796 reconciliation](../development/phase4-handoffs/2026-10-10/pr796-reconciliation.md)
+records validation after integration with current development. Its linked
+dispatcher tests expire response bodies with pending, in-flight and uncertain
+effects, reopen the database, and check original identity, payload authority,
+redelivery eligibility and stale receipt refusal. Consuming Java/HTTP
+qualification and the remaining #397 acceptance criteria remain separate.

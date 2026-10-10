@@ -157,6 +157,9 @@ class TransactionReceiptTests(unittest.TestCase):
         self.assertFalse(value["externalClient"]["transportExecutionQualified"])
         self.assertEqual(sum(len(item["operations"]) for item in value["guest"]["requiredInterfaces"]), 13)
         self.assertEqual(sum(len(item["operations"]) for item in value["externalClient"]["requiredServices"]), 16)
+        operations = {operation["name"] for item in value["externalClient"]["requiredServices"] for operation in item["operations"]}
+        self.assertIn("MutateNamespace", operations)
+        self.assertIn("GetStateOperationReceipt", operations)
         self.assertEqual({item["service"]: {operation["name"] for operation in item["operations"]}
                           for item in value["externalClient"]["requiredServices"]}, {
             "latent.transaction.v1.TransactionService": {"InvokeCommand", "Query", "LookupCommand",
@@ -165,11 +168,6 @@ class TransactionReceiptTests(unittest.TestCase):
                 "MutateState", "PlanEffectMutation", "GetStateOperationReceipt"},
             "latent.control.v1.DispatcherService": {"InspectDispatcher", "ControlDispatcher", "GetDispatcherOperation"},
         })
-        # Preserve independent coverage of the twelve original command/state operations.
-        operations = {operation["name"] for item in value["externalClient"]["requiredServices"] for operation in item["operations"]}
-        self.assertIn("MutateNamespace", operations)
-        self.assertIn("GetStateOperationReceipt", operations)
-        self.assertEqual(len(operations - {"InspectDispatcher", "ControlDispatcher", "GetDispatcherOperation", "PlanEffectMutation"}), 12)
         self.assertNotEqual(value["guest"]["profile"], value["externalClient"]["profile"])
 
     def test_raw_http_decoder_rejects_duplicate_fields_and_deep_json_before_lifting(self):

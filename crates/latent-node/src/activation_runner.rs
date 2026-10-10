@@ -192,7 +192,7 @@ impl Phase0ActivationRunner {
                 biased;
                 () = cancellation.cancelled() => LeaseResolution::Cancelled,
                 () = &mut deadline_wait => LeaseResolution::DeadlineExceeded,
-                result = &mut acquire => LeaseResolution::Acquired(Box::new(result)),
+                result = &mut acquire => LeaseResolution::Acquired(result),
             }
         };
 
@@ -205,12 +205,10 @@ impl Phase0ActivationRunner {
                 let _ = self.pool.cancel_waiting(&activation_id).await;
                 return deadline_failure();
             }
-            LeaseResolution::Acquired(result) => match *result {
-                Ok(lease) => lease,
-                Err(error) => {
-                    return failure_for_platform_error(error, BudgetConsumption::default());
-                }
-            },
+            LeaseResolution::Acquired(Ok(lease)) => lease,
+            LeaseResolution::Acquired(Err(error)) => {
+                return failure_for_platform_error(error, BudgetConsumption::default());
+            }
         };
 
         if cancellation.is_cancelled() {
@@ -360,7 +358,7 @@ impl Phase0ActivationRunner {
 }
 
 impl ActivationManager for Phase0ActivationRunner {
-    fn invoke(&self, envelope: ActivationEnvelope) -> BoxFuture<'_, ActivationOutcome> {
+    fn invoke<'a>(&'a self, envelope: ActivationEnvelope) -> BoxFuture<'a, ActivationOutcome> {
         Box::pin(async move {
             self.counters
                 .total_invocations
@@ -406,7 +404,7 @@ impl ActivationManager for Phase0ActivationRunner {
 }
 
 enum LeaseResolution {
-    Acquired(Box<Result<CellLease, PlatformError>>),
+    Acquired(Result<CellLease, PlatformError>),
     Cancelled,
     DeadlineExceeded,
 }
@@ -602,12 +600,10 @@ fn execution_result_consumption(
     outcome: &Result<GuestOutcome, PlatformError>,
 ) -> BudgetConsumption {
     match outcome {
-        Ok(
-            GuestOutcome::Returned { consumption, .. }
-            | GuestOutcome::DeclaredError { consumption, .. }
-            | GuestOutcome::Trapped { consumption, .. }
-            | GuestOutcome::Interrupted { consumption, .. },
-        ) => consumption.clone(),
+        Ok(GuestOutcome::Returned { consumption, .. })
+        | Ok(GuestOutcome::DeclaredError { consumption, .. })
+        | Ok(GuestOutcome::Trapped { consumption, .. })
+        | Ok(GuestOutcome::Interrupted { consumption, .. }) => consumption.clone(),
         Err(_) => BudgetConsumption::default(),
     }
 }
@@ -881,6 +877,7 @@ fn terminal_state_for_error(code: PlatformErrorCode) -> ActivationTerminalState 
         | PlatformErrorCode::IncompatibleContract
         | PlatformErrorCode::CorruptArtifact
         | PlatformErrorCode::AdmissionRejected => ActivationTerminalState::Rejected,
+        PlatformErrorCode::Internal => ActivationTerminalState::PlatformFailed,
         _ => ActivationTerminalState::PlatformFailed,
     }
 }
@@ -888,8 +885,8 @@ fn terminal_state_for_error(code: PlatformErrorCode) -> ActivationTerminalState 
 pub(crate) fn outcome_consumption(outcome: &ActivationOutcome) -> BudgetConsumption {
     match outcome {
         ActivationOutcome::Succeeded(success) => success.consumption.clone(),
-        ActivationOutcome::DeclaredError { consumption, .. }
-        | ActivationOutcome::Failed { consumption, .. } => consumption.clone(),
+        ActivationOutcome::DeclaredError { consumption, .. } => consumption.clone(),
+        ActivationOutcome::Failed { consumption, .. } => consumption.clone(),
     }
 }
 

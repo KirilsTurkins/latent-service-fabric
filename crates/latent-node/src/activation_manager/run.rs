@@ -122,48 +122,96 @@ impl Inner {
     ) -> Result<ActivationOutcome, PlatformError> {
         let token = lifecycle.registration().token();
         let transport = Arc::clone(&lifecycle.transport_stop);
-        self.check_run_start(lifecycle, &token)?;
+        if token.is_cancelled() {
+            return Err(cancelled(&token));
+        }
+        if lifecycle
+            .incoming_deadline
+            .is_some_and(|deadline| self.clock.monotonic_now() >= deadline.monotonic())
+        {
+            return Err(deadline_error());
+        }
+        if let Some(failure) = transport.failure() {
+            return Err(failure);
+        }
         let child_control = lifecycle.child_control.take();
-        let permit = self
-            .initial_permit(
-                &mut envelope,
-                lifecycle,
+        let permit = if child_control.is_some() {
+            None
+        } else if let Some(permit) = lifecycle.inbound_permit.take() {
+            Some(permit)
+        } else {
+            let wait = super::admission_wait::Window::new(
                 &token,
-                child_control.is_some(),
+                lifecycle
+                    .incoming_deadline
+                    .map(|deadline| deadline.monotonic()),
+                &self.clock,
                 &transport,
+            );
+            let catalog = self.dependencies.catalog.pin()?;
+            let resolved = wait
+                .check(|| catalog.resolve(&envelope.target, Some(&envelope.activation_id.0)))
+                .await?;
+            Some(
+                wait.check(|| {
+                    self.resolve_and_admit_input(
+                        &mut envelope,
+                        lifecycle,
+                        &token,
+                        None,
+                        None,
+                        Some((resolved.clone(), catalog.clone())),
+                    )
+                    .map(|admitted| admitted.0)
+                })
+                .await?,
             )
-            .await?;
+        };
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
-        let control = child_control.unwrap_or_else(|| root_control(lifecycle, &transport, &budget));
+        let control = child_control.unwrap_or_else(|| {
+            Arc::new(ActivationControl::new(
+                lifecycle.registration(),
+                transport.clone(),
+                budget.profile().supports_descendants(),
+            ))
+        });
         if let Some(permit) = &permit {
             if budget.profile().supports_descendants() {
-                // Bind the original cancellation owner before transactional
-                // admission or code preparation can inspect retained authority.
+                // Transaction admission and code preparation already consume
+                // original authority. Bind the real cancellation owner before
+                // either can inspect the lineage, without occupying a cell.
                 budget.enable_descendants(permit.delegation_limits(), control.clone())?;
             }
         }
-        bind_transaction_control(&envelope, lifecycle, &budget)?;
-        if lifecycle
-            .transaction_admission
-            .as_ref()
-            .is_some_and(|admission| {
-                admission.kind() == super::TransactionAdmissionKind::ResultLookup
-            })
-        {
-            return admit_transaction(&envelope, lifecycle, &budget)
-                .await?
-                .ok_or_else(|| {
-                    error(
-                        PlatformErrorCode::PermissionDenied,
-                        "result lookup cannot execute",
-                    )
-                });
-        }
-        let transaction_ready = self
-            .prepare_transaction_input(&mut envelope, lifecycle, &token, &budget, &transport)
-            .await?;
-        if let Some(outcome) = admit_transaction(&envelope, lifecycle, &budget).await? {
-            return Ok(outcome);
+        if let Some(admission) = &lifecycle.transaction_admission {
+            if budget.profile() != latent_core::BudgetProfile::Phase4
+                || envelope.parent_activation_id.is_some()
+                || budget.granted().child_calls != 0
+                || budget.granted().outbound_requests != 0
+            {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "strict transaction admission required",
+                ));
+            }
+            let host = admission.admit(&envelope, &budget).await?;
+            if host.activation_id() != &envelope.activation_id
+                || !host.budget().is_same_instance(&budget)
+            {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "transaction admission owner mismatch",
+                ));
+            }
+            if host.mode() == latent_executor::transaction::Mode::Query
+                && (budget.granted().state_write_bytes != 0 || budget.granted().effect_count != 0)
+            {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "query write budget denied",
+                ));
+            }
+            lifecycle.transaction_host = Some(host);
         }
         if permit.is_some() {
             lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;
@@ -171,12 +219,9 @@ impl Inner {
         let expiry = budget.deadline().monotonic();
         // Keep the original admission reservation and deadline while code is
         // prepared. A cold request does not occupy an execution cell.
-        let (key, ready) = if let Some(ready) = transaction_ready {
-            ready
-        } else {
-            self.prepare_ready(&envelope, &token, &budget, &transport)
-                .await?
-        };
+        let (key, ready) = self
+            .prepare_ready(&envelope, &token, &budget, &transport)
+            .await?;
         let scheduled = if let Some(permit) = permit {
             stage(
                 self.dependencies
@@ -218,68 +263,6 @@ impl Inner {
             .await?;
         self.execute(envelope, lifecycle, control, budget, prepared, imports)
             .await
-    }
-
-    async fn initial_permit(
-        &self,
-        envelope: &mut ActivationEnvelope,
-        lifecycle: &mut Lifecycle,
-        token: &CancellationToken,
-        child: bool,
-        transport: &super::TransportStop,
-    ) -> Result<Option<AdmissionPermit>, PlatformError> {
-        Ok(if child {
-            None
-        } else if let Some(permit) = lifecycle.inbound_permit.take() {
-            Some(permit)
-        } else {
-            let wait = super::admission_wait::Window::new(
-                token,
-                lifecycle
-                    .incoming_deadline
-                    .map(|deadline| deadline.monotonic()),
-                &self.clock,
-                transport,
-            );
-            let catalog = self.dependencies.catalog.pin()?;
-            let resolved = wait
-                .check(|| catalog.resolve(&envelope.target, Some(&envelope.activation_id.0)))
-                .await?;
-            Some(
-                wait.check(|| {
-                    self.resolve_and_admit_input(
-                        envelope,
-                        lifecycle,
-                        token,
-                        None,
-                        None,
-                        Some((resolved.clone(), catalog.clone())),
-                    )
-                    .map(|admitted| admitted.0)
-                })
-                .await?,
-            )
-        })
-    }
-
-    pub(super) fn check_run_start(
-        &self,
-        lifecycle: &Lifecycle,
-        token: &CancellationToken,
-    ) -> Result<(), PlatformError> {
-        if token.is_cancelled() {
-            return Err(cancelled(token));
-        }
-        if lifecycle
-            .incoming_deadline
-            .is_some_and(|deadline| self.clock.monotonic_now() >= deadline.monotonic())
-        {
-            return Err(deadline_error());
-        }
-        if let Some(failure) = lifecycle.transport_stop.failure() {
-            return Err(failure);
-        }
-        Ok(())
     }
 
     async fn execute(
@@ -388,13 +371,37 @@ impl Inner {
             let resolved = catalog.resolve(&envelope.target, Some(&envelope.activation_id.0))?;
             (resolved, catalog)
         };
-        retain_selection(
-            envelope,
-            lifecycle,
-            &resolved,
-            catalog.generation(),
-            child.as_ref(),
-        )?;
+        if resolved.target != envelope.target || resolved.route_generation != catalog.generation() {
+            return Err(error(
+                PlatformErrorCode::IncompatibleContract,
+                "resolved activation does not match its pinned target",
+            ));
+        }
+        if let Some(child) = &child {
+            child.check_target(&resolved)?;
+        }
+        if let Some(previous) = &lifecycle.resolved {
+            if previous != &resolved || lifecycle.budget.is_some() {
+                return Err(error(
+                    PlatformErrorCode::IncompatibleContract,
+                    "admission cannot replace or repeat an accepted revision",
+                ));
+            }
+        } else {
+            lifecycle.resolved = Some(resolved.clone());
+            envelope.resolved_revision = Some(resolved.clone());
+            lifecycle.advance(
+                ActivationPhase::Resolved,
+                Metadata::from([
+                    ("revision".to_owned(), resolved.revision.0.clone()),
+                    ("release".to_owned(), resolved.release.0.clone()),
+                    (
+                        "route-generation".to_owned(),
+                        resolved.route_generation.0.to_string(),
+                    ),
+                ]),
+            )?;
+        }
         if token.is_cancelled() {
             return Err(cancelled(token));
         }
@@ -466,142 +473,4 @@ impl Inner {
         lifecycle.advance(ActivationPhase::Admitted, Metadata::new())?;
         Ok((permit, child_owner))
     }
-}
-
-fn root_control(
-    lifecycle: &Lifecycle,
-    transport: &Arc<super::transport_stop::TransportStop>,
-    budget: &ActivationBudget,
-) -> Arc<ActivationControl> {
-    Arc::new(ActivationControl::new(
-        lifecycle.registration(),
-        Arc::clone(transport),
-        budget.profile().supports_descendants(),
-    ))
-}
-
-async fn admit_transaction(
-    envelope: &ActivationEnvelope,
-    lifecycle: &mut Lifecycle,
-    budget: &ActivationBudget,
-) -> Result<Option<ActivationOutcome>, PlatformError> {
-    let Some(admission) = &lifecycle.transaction_admission else {
-        return Ok(None);
-    };
-    let lookup = admission.kind() == super::TransactionAdmissionKind::ResultLookup;
-    let execution = match admission.admit(envelope, budget).await? {
-        super::TransactionAdmission::Execute(execution) => execution,
-        super::TransactionAdmission::Existing(completion) => {
-            let outcome = completion.outcome().clone();
-            lifecycle.transaction_completion = Some(*completion);
-            return Ok(Some(outcome));
-        }
-    };
-    let host = execution.host;
-    // Retain the issued owners even when a malformed trusted factory is refused;
-    // the positively never-created guest path still awaits native retirement.
-    lifecycle.transaction_hook = Some(execution.completion);
-    lifecycle.transaction_host = Some(host.clone());
-    if lookup
-        || host.activation_id() != &envelope.activation_id
-        || !host.budget().is_same_instance(budget)
-    {
-        return Err(error(
-            PlatformErrorCode::PermissionDenied,
-            "transaction admission owner mismatch",
-        ));
-    }
-    if host.mode() == latent_executor::transaction::Mode::Query
-        && (budget.granted().state_write_bytes != 0 || budget.granted().effect_count != 0)
-    {
-        return Err(error(
-            PlatformErrorCode::PermissionDenied,
-            "query write budget denied",
-        ));
-    }
-    if let Some(gate) = execution.cancellation {
-        lifecycle.registration().handle().bind_commit_gate(gate)?;
-    }
-    if host.mode() == latent_executor::transaction::Mode::Command {
-        let identity = host.staging_identity().ok_or_else(|| {
-            error(
-                PlatformErrorCode::PermissionDenied,
-                "transaction staging identity unavailable",
-            )
-        })?;
-        let observer = lifecycle.staging_observer(identity)?;
-        host.bind_staging_observer(observer).map_err(|_| {
-            error(
-                PlatformErrorCode::PermissionDenied,
-                "transaction staging observer refused",
-            )
-        })?;
-    }
-    Ok(None)
-}
-
-fn bind_transaction_control(
-    envelope: &ActivationEnvelope,
-    lifecycle: &Lifecycle,
-    budget: &ActivationBudget,
-) -> Result<(), PlatformError> {
-    let Some(admission) = &lifecycle.transaction_admission else {
-        return Ok(());
-    };
-    if budget.profile() != latent_core::BudgetProfile::Phase4
-        || envelope.parent_activation_id.is_some()
-        || budget.granted().child_calls != 0
-        || budget.granted().outbound_requests != 0
-    {
-        return Err(error(
-            PlatformErrorCode::PermissionDenied,
-            "strict transaction admission required",
-        ));
-    }
-    admission.bind_control(super::TransactionAdmissionControl::new(
-        lifecycle.registration().handle(),
-        budget.clone(),
-    ))?;
-    Ok(())
-}
-
-fn retain_selection(
-    envelope: &mut ActivationEnvelope,
-    lifecycle: &mut Lifecycle,
-    resolved: &latent_routing::ResolvedRevision,
-    generation: latent_core::RouteGeneration,
-    child: Option<&super::local_service::ChildAdmission>,
-) -> Result<(), PlatformError> {
-    if resolved.target != envelope.target || resolved.route_generation != generation {
-        return Err(error(
-            PlatformErrorCode::IncompatibleContract,
-            "resolved activation does not match its pinned target",
-        ));
-    }
-    if let Some(child) = child {
-        child.check_target(resolved)?;
-    }
-    if let Some(previous) = &lifecycle.resolved {
-        if previous != resolved || lifecycle.budget.is_some() {
-            return Err(error(
-                PlatformErrorCode::IncompatibleContract,
-                "admission cannot replace or repeat an accepted revision",
-            ));
-        }
-    } else {
-        lifecycle.resolved = Some(resolved.clone());
-        envelope.resolved_revision = Some(resolved.clone());
-        lifecycle.advance(
-            ActivationPhase::Resolved,
-            Metadata::from([
-                ("revision".to_owned(), resolved.revision.0.clone()),
-                ("release".to_owned(), resolved.release.0.clone()),
-                (
-                    "route-generation".to_owned(),
-                    resolved.route_generation.0.to_string(),
-                ),
-            ]),
-        )?;
-    }
-    Ok(())
 }

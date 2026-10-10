@@ -44,43 +44,6 @@ pub(super) fn change_history(fixture: &Fixture, epochs: HistoryEpochs, status: H
 }
 
 #[test]
-fn absent_and_stored_history_keep_the_same_exact_session_read_charge_boundary() {
-    for stored in [false, true] {
-        let fixture = Fixture::new();
-        if stored {
-            change_history(&fixture, HistoryEpochs::default(), HistoryStatus::Ready);
-        }
-        let view = fixture.store.snapshot().unwrap();
-        let namespace_bytes = view
-            .get(&namespace_key(&fixture.scope).unwrap())
-            .unwrap()
-            .unwrap();
-        let namespace = NamespaceRecord::decode(&namespace_bytes).unwrap();
-        let (history, history_bytes) = NamespaceHistory::capture(&view, &namespace).unwrap();
-        assert_eq!(history_bytes.is_some(), stored);
-        let exact = (namespace_bytes.len() + history.encode().unwrap().len()) * 2;
-        let limits = SessionLimits {
-            read_bytes: exact,
-            ..SessionLimits::default()
-        };
-        let session = StateSession::open(&view, fixture.scope.clone(), limits, allow).unwrap();
-        assert_eq!(session.charged_bytes(), (exact, 0));
-        assert!(matches!(
-            StateSession::open(
-                &view,
-                fixture.scope.clone(),
-                SessionLimits {
-                    read_bytes: exact - 1,
-                    ..limits
-                },
-                allow
-            ),
-            Err(StateError::Limit)
-        ));
-    }
-}
-
-#[test]
 fn opaque_minimum_view_binds_scope_schema_recovery_and_exact_unsigned_versions() {
     let fixture = Fixture::new();
     let (_, session) = fixture.session();

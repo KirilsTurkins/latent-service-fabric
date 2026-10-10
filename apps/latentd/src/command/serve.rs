@@ -14,8 +14,10 @@ use super::{status, Failure};
 
 pub(super) fn run(path: &Path) -> Result<(), Failure> {
     // No runtime, directory ownership or listener exists before derivation.
-    let settings = NodeConfig::load(path)
-        .and_then(|config| config.derive())
+    let (config, reload) = NodeConfig::load_with_stream_reload(path)
+        .map_err(|error| Failure::new("configuration", error.code))?;
+    let settings = config
+        .derive()
         .map_err(|error| Failure::new("configuration", error.code))?;
     let runtime_timeout = settings.shutdown_grace;
     let threads = RuntimeThreads::default();
@@ -39,7 +41,7 @@ pub(super) fn run(path: &Path) -> Result<(), Failure> {
             return Err(error);
         }
     };
-    let result = invocation.block_on(serve(settings, control.handle().clone(), threads));
+    let result = invocation.block_on(serve(settings, control.handle().clone(), threads, reload));
     // Runtime owners stay outside async. A timeout bounds waiting; it does not
     // prove that an uncooperative OS or blocking operation was forcibly stopped.
     control.shutdown_timeout(runtime_timeout);
@@ -81,8 +83,9 @@ async fn serve(
     settings: NodeSettings,
     control: tokio::runtime::Handle,
     threads: RuntimeThreads,
+    reload: Option<crate::config::StreamReloadGuard>,
 ) -> Result<ShutdownReport, Failure> {
-    let mut signals = StopSignals::new()?;
+    let mut signals = StopSignals::new(reload.is_some())?;
     let node_id = settings.node.id.0.clone();
     let shutdown_timeout = settings
         .shutdown_grace
@@ -98,27 +101,14 @@ async fn serve(
         .and_then(|duration| duration.checked_add(settings.telemetry.shutdown_timeout))
         .and_then(|duration| duration.checked_add(Duration::from_secs(1)))
         .ok_or_else(|| Failure::new("configuration", PlatformErrorCode::InvalidArgument))?;
-    let (startup, observation) = Box::pin(crate::standalone::observe_startup(
-        StandaloneNode::start(settings, control, threads),
-    ))
-    .await;
-    if let Some(observation) = observation {
-        // Closed producer-owned codes only; retain the original startup error
-        // and cleanup result even if writing the bounded diagnostic fails.
-        if let Ok(encoded) = serde_json::to_vec(&observation) {
-            if encoded.len() <= 16 * 1024 {
-                use std::io::Write;
-                let _ = std::io::stderr().lock().write_all(&encoded);
-                let _ = std::io::stderr().lock().write_all(b"\n");
-            }
-        }
-    }
-    let node = startup.map_err(|error| Failure::new("startup", error.code))?;
+    let mut node = StandaloneNode::start(settings, control, threads)
+        .await
+        .map_err(|error| Failure::new("startup", error.code))?;
     let ready = node
         .inventory()
         .is_ok_and(|inventory| inventory.health.ready);
     let monitoring = match status::started(&node_id, &node, ready) {
-        Ok(()) => signals.wait(&node).await,
+        Ok(()) => signals.wait(&node_id, &mut node, reload.as_ref()).await,
         Err(error) => Err(error),
     };
     let report = tokio::time::timeout(shutdown_timeout, node.shutdown())
@@ -133,19 +123,40 @@ async fn serve(
 struct StopSignals {
     interrupt: Signal,
     terminate: Signal,
+    reload: Option<Signal>,
+    publish_bindings: Option<Signal>,
+    drain_streams: Option<Signal>,
 }
 
 impl StopSignals {
-    fn new() -> Result<Self, Failure> {
+    fn new(streams_enabled: bool) -> Result<Self, Failure> {
         Ok(Self {
             interrupt: signal(SignalKind::interrupt())
                 .map_err(|_| Failure::new("signal", PlatformErrorCode::Unavailable))?,
             terminate: signal(SignalKind::terminate())
                 .map_err(|_| Failure::new("signal", PlatformErrorCode::Unavailable))?,
+            reload: streams_enabled
+                .then(|| signal(SignalKind::hangup()))
+                .transpose()
+                .map_err(|_| Failure::new("signal", PlatformErrorCode::Unavailable))?,
+            publish_bindings: streams_enabled
+                .then(|| signal(SignalKind::user_defined1()))
+                .transpose()
+                .map_err(|_| Failure::new("signal", PlatformErrorCode::Unavailable))?,
+            drain_streams: streams_enabled
+                .then(|| signal(SignalKind::user_defined2()))
+                .transpose()
+                .map_err(|_| Failure::new("signal", PlatformErrorCode::Unavailable))?,
         })
     }
 
-    async fn wait(&mut self, node: &StandaloneNode) -> Result<(), Failure> {
+    async fn wait(
+        &mut self,
+        node_id: &str,
+        node: &mut StandaloneNode,
+        reload: Option<&crate::config::StreamReloadGuard>,
+    ) -> Result<(), Failure> {
+        let _ = (node_id, reload);
         let mut tick = tokio::time::interval(Duration::from_millis(250));
         tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         loop {
@@ -153,6 +164,45 @@ impl StopSignals {
                 biased;
                 signal = self.interrupt.recv() => return signal_received(signal),
                 signal = self.terminate.recv() => return signal_received(signal),
+                received = stream_signal(&mut self.reload) => {
+                    signal_received(received)?;
+                    #[cfg(all(target_arch = "x86_64", feature = "development-outbound-streams"))]
+                    if let Some(guard) = reload {
+                        let result = tokio::select! {
+                            biased;
+                            signal = self.interrupt.recv() => return signal_received(signal),
+                            signal = self.terminate.recv() => return signal_received(signal),
+                            result = node.reload_outbound_streams(guard) => result,
+                        };
+                        status::stream_control(node_id, result.as_ref(), node.outbound_stream_control_status().ok().as_ref())?;
+                    }
+                }
+                received = stream_signal(&mut self.publish_bindings) => {
+                    signal_received(received)?;
+                    #[cfg(all(target_arch = "x86_64", feature = "development-outbound-streams"))]
+                    if let Some(guard) = reload {
+                        let result = tokio::select! {
+                            biased;
+                            signal = self.interrupt.recv() => return signal_received(signal),
+                            signal = self.terminate.recv() => return signal_received(signal),
+                            result = node.publish_outbound_stream_bindings(guard) => result,
+                        };
+                        status::stream_control(node_id, result.as_ref(), node.outbound_stream_control_status().ok().as_ref())?;
+                    }
+                }
+                received = stream_signal(&mut self.drain_streams) => {
+                    signal_received(received)?;
+                    #[cfg(all(target_arch = "x86_64", feature = "development-outbound-streams"))]
+                    if let Some(guard) = reload {
+                        let result = tokio::select! {
+                            biased;
+                            signal = self.interrupt.recv() => return signal_received(signal),
+                            signal = self.terminate.recv() => return signal_received(signal),
+                            result = node.drain_outbound_streams(guard) => result,
+                        };
+                        status::stream_control(node_id, result.as_ref(), node.outbound_stream_control_status().ok().as_ref())?;
+                    }
+                }
                 _ = tick.tick() => {
                     if !node.is_running() {
                         return Err(Failure::new("server", PlatformErrorCode::Unavailable));
@@ -160,6 +210,13 @@ impl StopSignals {
                 }
             }
         }
+    }
+}
+
+async fn stream_signal(signal: &mut Option<Signal>) -> Option<()> {
+    match signal {
+        Some(signal) => signal.recv().await,
+        None => std::future::pending().await,
     }
 }
 

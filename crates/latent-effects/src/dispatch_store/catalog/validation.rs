@@ -26,19 +26,8 @@ impl DispatchCatalog {
     ) -> Result<latent_state::tenant::TenantCensusContribution, StoreError> {
         use latent_state::tenant::TenantCensusContribution;
         validate_row(key, bytes)?;
-        if key.family == Family::Maintenance
-            && key.key.starts_with(crate::recovery_close::RECEIPT_PREFIX)
-        {
-            let receipt = crate::recovery_close::CloseReceipt::validate_row(key, bytes)?;
-            crate::recovery_close::validate_receipt_links(view, &receipt)?;
-            return Ok(TenantCensusContribution::Usage {
-                tenant: latent_core::TenantId(receipt.plan.scope.tenant),
-                usage: latent_state::tenant::TenantUsage {
-                    metadata_rows: 1,
-                    metadata_bytes: latent_state::tenant::row_charge(key, bytes)?,
-                    ..latent_state::tenant::TenantUsage::default()
-                },
-            });
+        if crate::dispatch_store::effect_management::EffectManagementCatalog::owns_row(key) {
+            return crate::dispatch_store::effect_management::EffectManagementCatalog::tenant_census_contribution(view, key, bytes);
         }
         if *key == OwnerRecord::key()
             || (key.family == Family::Maintenance
@@ -118,12 +107,6 @@ impl DispatchCatalog {
         let key = effect_row_key(effect)?;
         let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
         let record = EffectRecord::decode(&bytes).map_err(storage_error)?;
-        // The V2 explicit close receipt is a separate retained recovery link.
-        // Automatic reclamation must not drop that operator decision or leave
-        // another selected effect without its shared decoder/receipt closure.
-        if record.recovery_close_digest().is_some() {
-            return Err(StoreError::UnsupportedFormat);
-        }
         if record.disposition() == Disposition::Dispatching {
             return Err(StoreError::Capacity);
         }
@@ -166,6 +149,16 @@ impl DispatchCatalog {
                 value: None,
             },
         ];
+        let (management_rows, additional_charge) =
+            crate::dispatch_store::effect_management::EffectManagementCatalog::retained_rows(
+                view, effect,
+            )?;
+        for row in management_rows {
+            if row.value.is_some() {
+                reclaim.push(row.key.clone());
+            }
+            expectations.push(row);
+        }
         for item in history.rows {
             let key = item.key()?;
             reclaim.push(key.clone());
@@ -190,6 +183,7 @@ impl DispatchCatalog {
             expectations,
             due: due_key,
             reclaim,
+            additional_charge,
         })
     }
 
@@ -207,15 +201,6 @@ impl DispatchCatalog {
         walk(view, Family::Outbox, EFFECT_PREFIX, |key, bytes| {
             validate_effect(view, owner, key, bytes)
         })?;
-        walk(
-            view,
-            Family::Maintenance,
-            crate::recovery_close::RECEIPT_PREFIX,
-            |key, bytes| {
-                let receipt = crate::recovery_close::CloseReceipt::validate_row(key, bytes)?;
-                crate::recovery_close::validate_receipt_links(view, &receipt)
-            },
-        )?;
         walk(
             view,
             Family::PayloadReference,
@@ -273,11 +258,7 @@ impl DispatchCatalog {
     /// Describes the original retained owner epoch and clock floor through its
     /// closed decoder. These numbers grant no restart, restore or dispatch right.
     pub fn owner_checkpoint(view: &ReadView) -> Result<Option<(u64, u64)>, StoreError> {
-        view.get(&OwnerRecord::key())?
-            .as_deref()
-            .map(OwnerRecord::decode)
-            .transpose()
-            .map(|owner| owner.map(|owner| (owner.epoch, owner.clock_floor)))
+        Self::checkpoint(view)
     }
 }
 
@@ -293,7 +274,6 @@ fn validate_effect(
     crate::dispatch_store::effect_management::EffectManagementCatalog::validate_effect(
         view, &record,
     )?;
-    crate::recovery_close::validate_record_link(view, &record)?;
     let authority = record.authority().map_err(storage_error)?;
     if record.attempts() != 0
         && owner.is_none_or(|owner| {

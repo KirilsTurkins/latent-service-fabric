@@ -11,13 +11,11 @@ mod preparation_read_wait;
 mod prepared_activation;
 mod prepared_readiness;
 mod prepared_use;
-mod transaction_input;
 pub use preparation_inspection::PreparationInspection;
 pub use preparation_read_wait::PreparationReadWait;
 pub use prepared_activation::PreparedActivation;
 pub use prepared_readiness::PreparedReadiness;
 pub use prepared_use::PreparedUse;
-pub use transaction_input::CanonicalTransactionInput;
 
 use latent_activation::ActivationEnvelope;
 use latent_artifacts::{ArtifactRepository, CapsuleArtifact};
@@ -101,6 +99,14 @@ impl GuestInterruptionKind {
             BudgetDimension::CpuFuel => Some(Self::FuelExhausted),
             BudgetDimension::MemoryBytes => Some(Self::MemoryExhausted),
             BudgetDimension::WallTime => Some(Self::DeadlineExceeded),
+            BudgetDimension::ChildCalls
+            | BudgetDimension::OutboundRequests
+            | BudgetDimension::StateReadBytes
+            | BudgetDimension::StateWriteBytes
+            | BudgetDimension::BlobReadBytes
+            | BudgetDimension::BlobWriteBytes
+            | BudgetDimension::LogBytes
+            | BudgetDimension::EffectCount => None,
             _ => None,
         }
     }
@@ -252,11 +258,11 @@ pub trait ExecutionBackend: Send + Sync {
     /// A backend may retain this owned repository during bounded background work.
     /// The compatibility default wraps the original prepared owner intact; it
     /// cannot promise that an external backend defers instance reservations.
-    fn prepare_ready_from_repository(
-        &self,
+    fn prepare_ready_from_repository<'a>(
+        &'a self,
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
-    ) -> BoxFuture<'_, Result<PreparedReadiness, PlatformError>> {
+    ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
         Box::pin(async move {
             self.prepare_from_repository(repository.as_ref(), &key)
                 .await
@@ -276,28 +282,6 @@ pub trait ExecutionBackend: Send + Sync {
         _wait: &'a dyn PreparationReadWait,
     ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
         self.prepare_ready_from_repository(repository, key)
-    }
-
-    /// Canonicalizes parameters using this readiness owner's actual component
-    /// types before a durable command claim. Retains its original pin, deadline,
-    /// budget and cancellation; no cell, Store or guest may be created. Generic
-    /// JSON rewriting and the legacy backend fallback cannot certify this input.
-    fn canonicalize_transaction_input<'a>(
-        &'a self,
-        ready: PreparedReadiness,
-        _envelope: &'a ActivationEnvelope,
-        _budget: &'a latent_core::ActivationBudget,
-        _wait: &'a dyn PreparationReadWait,
-    ) -> BoxFuture<'a, Result<(PreparedReadiness, CanonicalTransactionInput), PlatformError>> {
-        Box::pin(async move {
-            drop(ready);
-            Err(PlatformError {
-                code: PlatformErrorCode::IncompatibleContract,
-                message: "prepared transaction parameter codec is unavailable".to_owned(),
-                retryable: false,
-                details: Vec::new(),
-            })
-        })
     }
 
     /// Converts the same readiness pin into activation ownership after a cell
@@ -381,7 +365,10 @@ pub trait ExecutionBackend: Send + Sync {
         })
     }
 
-    fn release(&self, prepared: PreparedComponent) -> BoxFuture<'_, Result<(), PlatformError>>;
+    fn release<'a>(
+        &'a self,
+        prepared: PreparedComponent,
+    ) -> BoxFuture<'a, Result<(), PlatformError>>;
 }
 
 fn owned_preparation_unsupported() -> PlatformError {

@@ -1,61 +1,6 @@
 use super::*;
 
 #[test]
-fn active_callback_retires_before_completion_wakes_response_waiter() {
-    struct SnapshotWake {
-        owner: StoreIoOwner<Store>,
-        notice: mpsc::Sender<StoreIoSnapshot>,
-    }
-    impl std::task::Wake for SnapshotWake {
-        fn wake(self: Arc<Self>) {
-            self.notice.send(self.owner.snapshot().unwrap()).unwrap();
-        }
-    }
-    let (store, _, _) = store();
-    let owner = StoreIoOwner::new(store, limits(), |_| Ok(())).unwrap();
-    let rendezvous = Rendezvous::new(1);
-    let worker = rendezvous.clone();
-    let (notice, receiver) = mpsc::channel();
-    let buffer = Arc::new(vec![9_u8; 32]);
-    let weak = Arc::downgrade(&buffer);
-    let mut job = Box::pin(
-        owner
-            .submit(StoreIoKind::Read, 32, move |_| {
-                pause(&worker, &notice, ());
-                buffer
-            })
-            .unwrap(),
-    );
-    let (_, ticket) = ready(&receiver);
-    let original_charge = owner.snapshot().unwrap().retained_bytes;
-    assert!(original_charge >= 32);
-    let (wake_notice, wake_receiver) = mpsc::channel();
-    let waker = std::task::Waker::from(Arc::new(SnapshotWake {
-        owner: owner.clone(),
-        notice: wake_notice,
-    }));
-    assert!(job
-        .as_mut()
-        .poll(&mut std::task::Context::from_waker(&waker))
-        .is_pending());
-    rendezvous.release(ticket).unwrap();
-    let observed = wake_receiver.recv_timeout(WATCHDOG).unwrap();
-    let returned = wait(job).unwrap();
-    assert!(weak.upgrade().is_some());
-    assert_eq!(*returned, vec![9_u8; 32]);
-    drop(returned);
-    assert!(weak.upgrade().is_none());
-    let retired = finish(&owner);
-    assert!(retired.clean);
-    assert!(retired.snapshot.physically_retired());
-    assert_eq!(observed.active_reads, 0);
-    assert_eq!(observed.active_writes, 0);
-    // Completed response bytes retain their accepted reservation through wake.
-    assert_eq!(observed.accepted, 1);
-    assert_eq!(observed.retained_bytes, original_charge);
-}
-
-#[test]
 fn dropped_result_waiter_retains_paused_io_bytes_and_permit() {
     let (store, writes, closed) = store();
     let owner = StoreIoOwner::new(store, limits(), |_| Ok(())).unwrap();

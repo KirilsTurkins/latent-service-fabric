@@ -6,12 +6,13 @@
 //! result-read authority. No default permissive runtime is supplied.
 
 mod lease;
+mod local_transaction;
 mod public_error;
 mod state_management;
+pub use local_transaction::{LocalTransactionRuntime, LocalTransactionServices};
 pub use state_management::{
-    StateMaintenanceClock, StateManagementAdmission, StateManagementBackend,
-    StateManagementBinding, StateManagementRecoveryAdmission, StateManagementRecoveryBinding,
-    StateManagementReservation, StateManagementServices,
+    StateManagementAdmission, StateManagementBackend, StateManagementBinding,
+    StateManagementRecoveryAdmission, StateManagementReservation, StateManagementServices,
 };
 #[cfg(test)]
 mod tests;
@@ -23,13 +24,7 @@ use crate::{
     },
 };
 use latent_core::{ActivationClock, BoxFuture, PlatformError, PlatformErrorCode};
-/// The maintained typed protocol used by embedding runtimes and listeners.
-pub use latent_rpc::phase4 as contract;
-/// Exact recovery routes without creating another path registry.
-pub use latent_rpc::phase4::is_recovery_rpc_path;
-/// Maintained application transaction messages for embedding runtimes.
-pub use latent_rpc::transaction::v1 as transaction;
-use latent_rpc::{control::v1 as c, transaction::v1 as t};
+use latent_rpc::{control::v1 as c, phase4 as contract, transaction::v1 as t};
 pub use lease::Phase4ResponseService;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
@@ -184,15 +179,25 @@ impl Phase4ServiceAdapter {
                 .max_encoding_message_size(output),
         )
     }
-    fn context<T>(
+    fn context<T: ArrivingCall>(
         &self,
         request: &mut Request<T>,
     ) -> Result<AuthenticatedInvocationContext, Status> {
-        take_context(
+        let context = take_context(
             request,
             &self.limits.auth,
             self.services.principals.as_ref(),
-        )
+        )?;
+        match request.get_ref().invocation() {
+            Some(invocation) => crate::invocation::pin_transaction_arrival(
+                request,
+                invocation,
+                context,
+                self.services.clock.as_ref(),
+                &self.limits.auth,
+            ),
+            None => Ok(context),
+        }
     }
     async fn execute(
         &self,
@@ -286,6 +291,41 @@ fn fence_error() -> PlatformError {
         details: Vec::new(),
     }
 }
+
+trait ArrivingCall {
+    fn invocation(&self) -> Option<&latent_rpc::invocation::v1::InvokeRequest> {
+        None
+    }
+}
+impl ArrivingCall for t::InvokeCommandRequest {
+    fn invocation(&self) -> Option<&latent_rpc::invocation::v1::InvokeRequest> {
+        self.invocation.as_ref()
+    }
+}
+impl ArrivingCall for t::QueryRequest {
+    fn invocation(&self) -> Option<&latent_rpc::invocation::v1::InvokeRequest> {
+        self.invocation.as_ref()
+    }
+}
+macro_rules! management_arrival {
+    ($($request:ty),+ $(,)?) => { $(impl ArrivingCall for $request {})+ };
+}
+management_arrival!(
+    c::InspectNamespaceRequest,
+    c::MutateNamespaceRequest,
+    c::SelectEntityRequest,
+    c::MutateStateRequest,
+    c::PlanEffectMutationRequest,
+    c::GetStateOperationReceiptRequest,
+    c::InspectDispatcherRequest,
+    c::ControlDispatcherRequest,
+    c::GetDispatcherOperationRequest,
+    t::LookupCommandRequest,
+    t::LookupCommitRequest,
+    t::GetEffectRequest,
+    t::ListEffectHistoryRequest,
+    t::CancelCommandRequest,
+);
 
 macro_rules! service {
     ($service:path; $(($name:ident,$request:ty,$response:ty,$variant:ident)),+ $(,)?) => {

@@ -101,7 +101,7 @@ pub(super) async fn publish(
         .unwrap();
     let declaration = TransactionBinding::decode(&serde_json::to_vec(&json!({
         "apiVersion":"latent.dev/v1","kind":"TransactionBinding","capsule":"a/echo","deployment":"deploy","binding":"binding","profile":latent_core::transaction_contract::PROFILE,"hostAbiDigest":latent_manifest::phase4_host_abi_digest(),"namespace":"orders","stateSchema":schema(),
-        "operations":[{"operation":"update","mode":"strict-command","inputFormat":"lsf-wit-values-v1","resultFormat":"lsf-wit-values-v1"},{"operation":"query","mode":"fresh-query","inputFormat":"lsf-wit-values-v1","resultFormat":"lsf-wit-values-v1"}]
+        "operations":[{"operation":"update","mode":"strict-command","inputFormat":"raw-v1","resultFormat":"result-v1"},{"operation":"query","mode":"fresh-query","inputFormat":"raw-v1","resultFormat":"result-v1"}]
     })).unwrap()).unwrap();
     (catalog, metadata, publication, deployment, declaration)
 }

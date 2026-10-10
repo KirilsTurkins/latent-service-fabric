@@ -33,7 +33,6 @@ mod admission;
 mod capacity;
 mod control;
 mod effect_management;
-mod initialization;
 mod ownership;
 mod pressure;
 mod recovery;
@@ -149,7 +148,6 @@ impl Fixture {
             .apply(AtomicBatch {
                 expectations: vec![],
                 mutations: vec![
-                    namespace_mutation(authority.scope()),
                     RowMutation {
                         key: effect_row_key(payload.effect()).unwrap(),
                         value: Some(record.encode().unwrap()),
@@ -319,15 +317,6 @@ impl DeferredEffectAdapter for Adapter {
         &self.profile
     }
 
-    fn with_current_dispatch(
-        &self,
-        _authority: &crate::authority::DurableEffectAuthority,
-        _deadline: std::time::Instant,
-        accept: &mut dyn FnMut() -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError>,
-    ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
-        accept()
-    }
-
     fn accept(
         &self,
         grant: DispatchGrant,
@@ -412,26 +401,5 @@ fn config() -> DispatcherConfig {
         scan_pages_per_tick: 2,
         poll_interval: Duration::from_millis(2),
         ..DispatcherConfig::default()
-    }
-}
-
-fn namespace_mutation(scope: &crate::authority::EffectScope) -> RowMutation {
-    use latent_state::namespace::{namespace_record_key, NamespaceQuota, NamespaceRecord};
-    let tenant = latent_core::TenantId(scope.tenant.clone());
-    let id = latent_core::StateNamespaceId(scope.namespace.clone());
-    let mut record = NamespaceRecord::create(
-        tenant.clone(),
-        id.clone(),
-        format!("sha256:{}", "1".repeat(64)),
-        NamespaceQuota::default(),
-    )
-    .unwrap();
-    record.version.incarnation = scope.incarnation;
-    RowMutation {
-        key: latent_state::embedded::RowKey {
-            family: latent_state::embedded::Family::Namespace,
-            key: namespace_record_key(&tenant, &id).unwrap(),
-        },
-        value: Some(record.encode().unwrap()),
     }
 }

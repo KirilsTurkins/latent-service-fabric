@@ -7,14 +7,16 @@ pub mod entity_lanes;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
 pub mod protected_store;
-/// Bounded offline recovery descriptions and durable paused admission guards.
+/// Original restored history remains paused until an authorized review.
 pub mod recovery;
 /// Logical disposition capacity charged in the same physical atomic store.
 pub mod reservation;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.
 pub mod session;
+/// Closed persisted node store identity; this metadata grants no state access.
+pub mod store_identity;
 pub mod store_io;
-/// Explicit reviewed tenant aggregates in the same atomic store; no authority.
+/// Explicit finite tenant quotas and coherent startup census; DTOs grant no access.
 pub mod tenant;
 
 use latent_core::{

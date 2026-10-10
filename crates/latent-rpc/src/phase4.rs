@@ -37,29 +37,6 @@ pub enum ValidationError {
     Association,
 }
 
-/// Exact maintained RPC paths that require reserved recovery admission. Path
-/// recognition carries no authentication, policy or namespace authority.
-#[must_use]
-pub fn is_recovery_rpc_path(path: &str) -> bool {
-    matches!(
-        path,
-        "/latent.control.v1.StateService/MutateNamespace"
-            | "/latent.control.v1.StateService/InspectNamespace"
-            | "/latent.control.v1.StateService/SelectEntity"
-            | "/latent.control.v1.StateService/MutateState"
-            | "/latent.control.v1.StateService/PlanEffectMutation"
-            | "/latent.control.v1.StateService/GetStateOperationReceipt"
-            | "/latent.control.v1.DispatcherService/InspectDispatcher"
-            | "/latent.control.v1.DispatcherService/ControlDispatcher"
-            | "/latent.control.v1.DispatcherService/GetDispatcherOperation"
-            | "/latent.transaction.v1.TransactionService/LookupCommand"
-            | "/latent.transaction.v1.TransactionService/LookupCommit"
-            | "/latent.transaction.v1.TransactionService/GetEffect"
-            | "/latent.transaction.v1.TransactionService/ListEffectHistory"
-            | "/latent.transaction.v1.TransactionService/CancelCommand"
-    )
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Request {
     InspectDispatcher(Box<control::InspectDispatcherRequest>),

@@ -10,6 +10,9 @@ use crate::dispatch::EffectRecord;
 use crate::dispatch_store::{effect_row_key, storage_error};
 
 const COUNTER_FORMAT: &[u8] = b"LEMC\x01";
+// One counter and each original slot/plan/receipt/reservation observation.
+// All 128 accepted slots fit the original 1024-row engine batch ceiling.
+const MAXIMUM_RETAINED_ROWS: usize = 1 + 4 * 128;
 
 pub(super) fn encode_counter(value: u32) -> Result<Vec<u8>, StoreError> {
     if !(1..=128).contains(&value) {
@@ -32,6 +35,107 @@ pub(super) fn decode_counter(bytes: &[u8]) -> Result<u32, StoreError> {
 }
 
 impl EffectManagementCatalog {
+    /// Actual original row ownership after the same closed plan/receipt/link
+    /// validators. The shared LCU2 ledger covers these optional metadata bytes.
+    pub fn tenant_census_contribution(
+        view: &ReadView,
+        key: &RowKey,
+        bytes: &[u8],
+    ) -> Result<latent_state::tenant::TenantCensusContribution, StoreError> {
+        let effect = linked_effect(view, key, bytes)?;
+        let record_key = effect_row_key(&effect)?;
+        let record = EffectRecord::decode(&view.get(&record_key)?.ok_or(StoreError::Corrupt)?)
+            .map_err(storage_error)?;
+        let authority = record.authority().map_err(storage_error)?;
+        let scope = authority.scope();
+        let tenant = latent_core::TenantId(scope.tenant.clone());
+        let ledger_key = latent_state::reservation::namespace_ledger_key(
+            &tenant,
+            &latent_core::StateNamespaceId(scope.namespace.clone()),
+            scope.incarnation,
+        )?;
+        if !latent_state::reservation::NamespaceLedger::decode(
+            &view
+                .get_bounded(&ledger_key, latent_state::reservation::QUOTA_BYTES)?
+                .ok_or(StoreError::Corrupt)?,
+        )?
+        .is_accounted()
+        {
+            return Err(StoreError::UnsupportedFormat);
+        }
+        Ok(latent_state::tenant::TenantCensusContribution::Covered { tenant })
+    }
+
+    /// Finite, exact optional metadata closure. An unfinished plan remains a
+    /// protection even after its deadline; elapsed time proves no physical
+    /// management-owner retirement. Large closures refuse without mutation.
+    pub(crate) fn retained_rows(
+        view: &ReadView,
+        effect: &str,
+    ) -> Result<(Vec<latent_state::embedded::ExpectedRow>, u64), StoreError> {
+        use latent_state::embedded::ExpectedRow;
+        let identity = crate::effect_identity::parse(effect).map_err(storage_error)?;
+        let counter_key = codec::row(COUNTER_PREFIX, &identity);
+        let counter = view.get_bounded(&counter_key, 9)?;
+        let mut rows = vec![ExpectedRow {
+            key: counter_key.clone(),
+            value: counter.clone(),
+        }];
+        let Some(counter) = counter else {
+            return Ok((rows, 0));
+        };
+        validate_counter(view, &counter_key, &counter)?;
+        let mut total = super::accounting::charge(&counter_key, &counter)?;
+        let mut encoded = counter_key.key.len() + counter.len();
+        for sequence in 1..=decode_counter(&counter)? {
+            let slot_key = codec::slot(&identity, sequence);
+            let slot = view
+                .get_bounded(&slot_key, 32)?
+                .ok_or(StoreError::Corrupt)?;
+            let operation = slot
+                .as_slice()
+                .try_into()
+                .map_err(|_| StoreError::Corrupt)?;
+            let plan_key = codec::row(PLAN_PREFIX, &operation);
+            let plan = view
+                .get_bounded(&plan_key, super::MAXIMUM_PLAN_BYTES)?
+                .ok_or(StoreError::Corrupt)?;
+            validate_plan(view, &plan_key, &plan)?;
+            let receipt_key = codec::row(RECEIPT_PREFIX, &operation);
+            let receipt = view
+                .get_bounded(&receipt_key, super::MAXIMUM_RECEIPT_BYTES)?
+                .ok_or(StoreError::Capacity)?;
+            validate_receipt(view, &receipt_key, &receipt)?;
+            let reservation_key = codec::reservation(&operation)?;
+            if view.get_bounded(&reservation_key, 20)?.is_some() {
+                return Err(StoreError::Corrupt);
+            }
+            for (key, bytes) in [(slot_key, slot), (plan_key, plan), (receipt_key, receipt)] {
+                total = total
+                    .checked_add(super::accounting::charge(&key, &bytes)?)
+                    .ok_or(StoreError::Capacity)?;
+                encoded = encoded
+                    .checked_add(key.key.len() + bytes.len())
+                    .ok_or(StoreError::Capacity)?;
+                if rows.len() >= MAXIMUM_RETAINED_ROWS || encoded > 4 * 1024 * 1024 {
+                    return Err(StoreError::Capacity);
+                }
+                rows.push(ExpectedRow {
+                    key,
+                    value: Some(bytes),
+                });
+            }
+            if rows.len() >= MAXIMUM_RETAINED_ROWS {
+                return Err(StoreError::Capacity);
+            }
+            rows.push(ExpectedRow {
+                key: reservation_key,
+                value: None,
+            });
+        }
+        Ok((rows, total))
+    }
+
     #[must_use]
     pub fn owns_row(key: &RowKey) -> bool {
         key.family == Family::Maintenance
@@ -115,26 +219,6 @@ impl EffectManagementCatalog {
         })
     }
 
-    /// Read the actual latest management receipt after its durable target,
-    /// plan, reservation and dispatcher-stamp links have been verified.
-    pub fn receipt_for_effect(
-        view: &ReadView,
-        record: &EffectRecord,
-    ) -> Result<Option<EffectManagementReceipt>, StoreError> {
-        Self::validate_effect(view, record)?;
-        let Some(stamp) = record.management() else {
-            return Ok(None);
-        };
-        let operation =
-            crate::effect_identity::parse(stamp.operation_digest()).map_err(storage_error)?;
-        let key = codec::row(RECEIPT_PREFIX, &operation);
-        let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
-        validate_receipt(view, &key, &bytes)?;
-        EffectManagementReceipt::decode(&bytes)
-            .map(Some)
-            .map_err(codec::storage)
-    }
-
     pub(crate) fn validate_effect(
         view: &ReadView,
         record: &EffectRecord,
@@ -168,6 +252,61 @@ impl EffectManagementCatalog {
         }
         Ok(())
     }
+}
+
+fn linked_effect(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<String, StoreError> {
+    EffectManagementCatalog::validate_row(key, bytes)?;
+    let request = if key.key.starts_with(PLAN_PREFIX) {
+        validate_plan(view, key, bytes)?;
+        EffectManagementPlan::decode(bytes)
+            .map_err(codec::storage)?
+            .request
+    } else if key.key.starts_with(RECEIPT_PREFIX) {
+        validate_receipt(view, key, bytes)?;
+        EffectManagementReceipt::decode(bytes)
+            .map_err(codec::storage)?
+            .plan
+            .request
+    } else if key.key.starts_with(COUNTER_PREFIX) {
+        validate_counter(view, key, bytes)?;
+        return Ok(crate::effect_identity::render(&identity(
+            key,
+            COUNTER_PREFIX,
+        )?));
+    } else if key.key.starts_with(SLOT_PREFIX) {
+        let (effect, sequence) = slot_identity(key)?;
+        let operation = bytes.try_into().map_err(|_| StoreError::Corrupt)?;
+        let plan = load_plan(view, &operation)?;
+        if plan.sequence != sequence
+            || crate::effect_identity::parse(&plan.request.0.effect).map_err(storage_error)?
+                != effect
+        {
+            return Err(StoreError::Corrupt);
+        }
+        validate_plan(
+            view,
+            &codec::row(PLAN_PREFIX, &operation),
+            &plan.encode().map_err(codec::storage)?,
+        )?;
+        plan.request
+    } else {
+        let operation = identity(key, &reservation_prefix())?;
+        let plan = load_plan(view, &operation)?;
+        if LogicalReservation::decode(bytes)?.generation != u64::from(plan.sequence)
+            || view.get(&codec::row(RECEIPT_PREFIX, &operation))?.is_some()
+        {
+            return Err(StoreError::Corrupt);
+        }
+        validate_plan(
+            view,
+            &codec::row(PLAN_PREFIX, &operation),
+            &plan.encode().map_err(codec::storage)?,
+        )?;
+        plan.request
+    };
+    let record = load_effect(view, &request)?;
+    check_target(&record, &request).map_err(codec::storage)?;
+    Ok(request.input().effect.clone())
 }
 
 fn validate_plan(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {

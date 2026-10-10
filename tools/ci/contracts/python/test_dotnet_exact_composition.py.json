@@ -1,36 +1,24 @@
 {
-  "cases": [
-    "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution",
-    "ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement",
-    "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed",
-    "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough",
-    "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source",
-    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt"
-  ],
-  "guards": {
-    "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough": "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution": "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement": "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed": "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt": "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source": "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb"
+  "cases":["ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution","ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement","ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed","ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough","ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source","ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt"],
+  "guards":{
+    "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution":
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
+    "ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement":
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
+    "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed":
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
+    "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough":
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
+    "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source":
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
+    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt":
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb"
   },
-  "kind": "python",
-  "module": "tools/tests/test_dotnet_exact_composition.py",
-  "reviewReason": "Preserve every parent test, inheritance, decorator and skip site. Review the additive actual observed-open fixture rows and versioned WIT directory; derive their fixture guard from the final source without changing execution predicates.",
-  "schemaVersion": "latent.ci.contracts.v2",
-  "guardDefinitions": {
-    "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc",
-        "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
-      ]
-    }
+  "kind":"python",
+  "module":"tools/tests/test_dotnet_exact_composition.py",
+  "reviewReason":"Retain both parent case sets and every execution, decorator and skip guard; review the merged helper/import setup identities. Incoming reviewed obligation: Add six exact-interface composition controls after the actual pinned WAC semver duplicate-argument failure; preserve all historical authoring and entropy cases. Store identical case-owned guards using the authenticated shared v2 representation; retain every original case and execution control.",
+  "schemaVersion":"latent.ci.contracts.v2",
+  "guardDefinitions":{
+    "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc","class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"],"skipSites":[]}
   }
 }

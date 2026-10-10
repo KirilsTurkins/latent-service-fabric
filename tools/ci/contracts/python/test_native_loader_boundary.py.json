@@ -1,50 +1,38 @@
 {
-  "schemaVersion": "latent.ci.contracts.v2",
-  "kind": "python",
-  "reviewReason": "Reconcile reviewed development and Java transaction source; preserve every original test, skip, baseline, profile, cache-freshness and retained-artifact obligation. Only exact source definitions and reviewed merged fixture setup change. Dependency consolidation: only active Wasmtime 48.0.4 to 48.0.5 fixture literals change. Complete Python ASTs normalize exactly to prior source; every original case, decorator, skip, setup/teardown and finite guard remains.",
-  "module": "tools/tests/test_native_loader_boundary.py",
-  "cases": [
-    "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators",
-    "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function",
-    "NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned",
-    "NativeLoaderBoundaryTests.test_engine_update_requires_review",
-    "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof",
-    "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe",
-    "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled",
-    "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact",
-    "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints",
-    "NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure",
-    "NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family",
-    "NativeLoaderBoundaryTests.test_reviewed_boundary_passes",
-    "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail"
-  ],
-  "guards": {
-    "NativeLoaderBoundaryTests.test_reviewed_boundary_passes": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_engine_update_requires_review": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
-    "NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure": "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59"
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Preserve every original case, base, decorator and skip site. Reviewed fixture setup adds explicit Java schema/diagnostic inputs or substitutes only the current Wasmtime 48.0.5 baseline; execution predicates, deadlines and bounds stay intact.",
+  "module":"tools/tests/test_native_loader_boundary.py",
+  "cases":["NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators","NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function","NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned","NativeLoaderBoundaryTests.test_engine_update_requires_review","NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof","NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe","NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled","NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact","NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints","NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure","NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family","NativeLoaderBoundaryTests.test_reviewed_boundary_passes","NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail"],
+  "guards":{
+    "NativeLoaderBoundaryTests.test_reviewed_boundary_passes":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_engine_update_requires_review":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59",
+    "NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure":
+      "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59"
   },
-  "guardDefinitions": {
-    "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
-        "class:setup-sha256:38e37c620bab484cc896fec79a359e1fe064f95eff9cc88f18f0de37bee74701"
-      ]
-    }
+  "guardDefinitions":{
+    "577ec6bdf3e9a7543e30222f5003843d17b8da7a36ad45248f336436f68aef59":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0","class:setup-sha256:38e37c620bab484cc896fec79a359e1fe064f95eff9cc88f18f0de37bee74701"]}
   }
 }

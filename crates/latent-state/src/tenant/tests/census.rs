@@ -1,6 +1,74 @@
 use super::{domain, *};
 use std::time::{Duration, Instant};
 
+#[test]
+fn installed_store_identity_is_global_metadata_and_census_never_advances_tenant_counters() {
+    let mut fixture = Fixture::new();
+    let identity = crate::store_identity::StoreIdentity::new("native-root-A".into()).unwrap();
+    let view = fixture.store().snapshot().unwrap();
+    let initialization = identity.prepare_initialization(&view).unwrap().unwrap();
+    drop(view);
+    fixture.store().apply(initialization).unwrap();
+    let quotas = [quota("alpha")];
+    fixture.install(&quotas);
+    let key = quota_key(&quotas[0].tenant).unwrap();
+    let original = fixture.store().snapshot().unwrap().get(&key).unwrap();
+    let first = verify(&fixture.store().snapshot().unwrap(), &quotas).unwrap();
+    assert_eq!(first.global_rows, 2);
+    assert_eq!(
+        verify(&fixture.store().snapshot().unwrap(), &quotas).unwrap(),
+        first
+    );
+    assert_eq!(
+        fixture.store().snapshot().unwrap().get(&key).unwrap(),
+        original
+    );
+    fixture.reopen();
+    assert_eq!(
+        verify(&fixture.store().snapshot().unwrap(), &quotas).unwrap(),
+        first
+    );
+    assert_eq!(
+        fixture.store().snapshot().unwrap().get(&key).unwrap(),
+        original
+    );
+}
+
+#[test]
+fn global_identity_projection_rejects_malformed_or_unrecognized_rows_without_counter_repair() {
+    let fixture = Fixture::new();
+    let quotas = [quota("alpha")];
+    fixture.install(&quotas);
+    let view = fixture.store().snapshot().unwrap();
+    let key = crate::store_identity::StoreIdentity::row_key();
+    assert!(matches!(
+        census_contribution(&view, &key, b"LSI\0\x01"),
+        Err(StoreError::Corrupt)
+    ));
+    assert!(matches!(
+        census_contribution(&view, &key, b"LSI\0\x02"),
+        Err(StoreError::UnsupportedFormat)
+    ));
+    let mut foreign = key;
+    foreign.key.push(1);
+    let identity = crate::store_identity::StoreIdentity::new("native-root-A".into()).unwrap();
+    assert!(matches!(
+        census_contribution(&view, &foreign, &identity.encode()),
+        Err(StoreError::UnsupportedFormat)
+    ));
+    let original = view.get(&quota_key(&quotas[0].tenant).unwrap()).unwrap();
+    drop(view);
+    assert_eq!(
+        fixture
+            .store()
+            .snapshot()
+            .unwrap()
+            .get(&quota_key(&quotas[0].tenant).unwrap())
+            .unwrap(),
+        original
+    );
+}
+
 pub(crate) fn verify(
     view: &ReadView,
     quotas: &[TenantQuota],

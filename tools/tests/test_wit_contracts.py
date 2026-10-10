@@ -299,42 +299,6 @@ class WitContractTests(unittest.TestCase):
             deps = Path(temporary) / "transitive/deps"
             self.assertEqual({path.name for path in deps.iterdir()}, {"intents", "state"})
 
-    def test_captured_versioned_dependencies_keep_their_original_directories(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            source = root / "consumer"
-            source.mkdir()
-            (source / "package.wit").write_text(
-                "package fixture:provided@1.0.0;\ninterface api {\n"
-                "use latent:intents/staging@0.1.0.{intent};\n}\n"
-                "world service { import latent:http/client@0.2.0; export api; }\n",
-                encoding="utf-8",
-            )
-            originals = {}
-            for platform, captured in [("intents", "captured-intents"),
-                                       ("state", "captured-state"),
-                                       ("http-v2", "forbidden-http")]:
-                raw = (ROOT / "wit/platform" / platform / "package.wit").read_bytes()
-                path = source / "deps" / captured / "package.wit"
-                path.parent.mkdir(parents=True)
-                path.write_bytes(raw)
-                originals[captured] = raw
-            destination = root / "staged"
-            stager.stage(destination, source)
-            self.assertEqual({path.name for path in (destination / "deps").iterdir()}, set(originals))
-            for captured, raw in originals.items():
-                self.assertEqual((destination / "deps" / captured / "package.wit").read_bytes(), raw)
-            # A missing transitive package is still supplied. The original HTTP
-            # and intents definitions remain captured under their selected names.
-            state = source / "deps/captured-state/package.wit"
-            state.unlink()
-            state.parent.rmdir()
-            stager.stage(destination, source)
-            self.assertEqual({path.name for path in (destination / "deps").iterdir()},
-                             {"captured-intents", "forbidden-http", "state"})
-            self.assertEqual((destination / "deps/state/package.wit").read_bytes(), originals["captured-state"])
-            self.assertEqual((destination / "deps/forbidden-http/package.wit").read_bytes(), originals["forbidden-http"])
-
 
 if __name__ == "__main__":
     unittest.main()

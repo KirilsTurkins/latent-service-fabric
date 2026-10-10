@@ -25,6 +25,27 @@ pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     validate_local(key, bytes).map_err(storage_error)
 }
 
+/// Codec-owned metadata from a completely validated local durable row. Formats
+/// evolve independently; this projection neither reads linked business data
+/// nor grants result access, maintenance, recovery or fresh execution.
+pub fn durable_row_format(key: &RowKey, bytes: &[u8]) -> Result<(&'static str, u32), AtomicError> {
+    validate_local(key, bytes)?;
+    match key.family {
+        Family::Command if super::RetiredCommand::is_present(bytes) => {
+            Ok(("latent.command-retired.v1", 1))
+        }
+        Family::Command | Family::Attempt => Ok(CommandRecord::decode(bytes)?.durable_format()),
+        Family::Result if bytes.starts_with(b"LCP\0") => Ok(("latent.result-pending.v1", 1)),
+        Family::Result if bytes.starts_with(b"LCE\0") => Ok(("latent.result-expired.v1", 1)),
+        Family::Result => Ok(DurableResult::decode(bytes)?.durable_format()),
+        Family::Inbox => Ok(("latent.inbox.v1", 1)),
+        Family::Maintenance if key.key.starts_with(USAGE) => {
+            Ok(latent_state::reservation::NamespaceLedger::decode(bytes)?.durable_format())
+        }
+        _ => Err(AtomicError::UnsupportedFormat),
+    }
+}
+
 fn validate_local(key: &RowKey, bytes: &[u8]) -> Result<(), AtomicError> {
     match key.family {
         Family::Command if key.key.starts_with(COMMAND) => {
@@ -113,7 +134,8 @@ fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), At
         }
         Family::Attempt => {
             let attempt = CommandRecord::decode(bytes)?;
-            let current = CommandRecord::decode(&required(view, &command_row_key(attempt.id))?)?;
+            let current_bytes = required(view, &command_row_key(attempt.id))?;
+            let current = CommandRecord::decode(&current_bytes)?;
             if current.attempt < attempt.attempt
                 || !same_original(&attempt, &current)
                 || (current.attempt == attempt.attempt && current != attempt)
@@ -121,7 +143,13 @@ fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), At
             {
                 return Err(AtomicError::Corrupt);
             }
-            validate_disposition(view, &attempt)?;
+            if current.attempt > attempt.attempt {
+                // A historical abort may coexist with a newer Pending owner.
+                // Verify that owner's actual linked rows before accepting its
+                // command-wide reservation on behalf of the older attempt.
+                validate_command(view, &current_bytes)?;
+            }
+            validate_disposition(view, &attempt, &current)?;
         }
         Family::Result => {
             let (id, generation) = identity_attempt(key, RESULT)?;
@@ -210,7 +238,7 @@ fn validate_command(view: &ReadView, bytes: &[u8]) -> Result<(), AtomicError> {
             return Err(AtomicError::Corrupt);
         }
     }
-    validate_disposition(view, &command)
+    validate_disposition(view, &command, &command)
 }
 
 fn same_original(one: &CommandRecord, two: &CommandRecord) -> bool {
@@ -227,18 +255,24 @@ fn same_original(one: &CommandRecord, two: &CommandRecord) -> bool {
         && one.inbox == two.inbox
 }
 
-fn validate_disposition(view: &ReadView, record: &CommandRecord) -> Result<(), AtomicError> {
+fn validate_disposition(
+    view: &ReadView,
+    record: &CommandRecord,
+    current: &CommandRecord,
+) -> Result<(), AtomicError> {
     verify_result(
         &required(view, &result_row_key(record.id, record.attempt))?,
         record,
     )?;
     let reservation = view.get(&reservation_key(&record.id.0)?)?;
-    if record.outcome == Outcome::Pending {
+    // This row is command-wide: after an explicitly proven abort, its owner
+    // can be a newer Pending generation rather than this historical record.
+    if current.outcome == Outcome::Pending {
         let bytes = reservation.as_deref().ok_or(AtomicError::Corrupt)?;
         let reservation = LogicalReservation::decode(bytes)?;
-        if bytes != reservation.encode_for(record.accounted)?
-            || reservation.generation != record.attempt
-            || reservation.bytes != record.result_policy.reservation_for(record.accounted)?
+        if bytes != reservation.encode_for(current.accounted)?
+            || reservation.generation != current.attempt
+            || reservation.bytes != current.result_policy.reservation_for(current.accounted)?
         {
             return Err(AtomicError::Corrupt);
         }
@@ -254,7 +288,6 @@ fn validate_disposition(view: &ReadView, record: &CommandRecord) -> Result<(), A
             .map_or(Ok(super::retention::AUDIT_RESERVED_BYTES), |audit| {
                 audit.reservation()
             })?;
-        let current = CommandRecord::decode(&required(view, &command_row_key(record.id))?)?;
         if current.attempt == record.attempt && usage.reserved < reserved {
             return Err(AtomicError::Corrupt);
         }

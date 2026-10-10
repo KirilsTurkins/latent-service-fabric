@@ -6,6 +6,7 @@ use crate::{
 };
 use clap::Parser;
 use std::time::Duration;
+mod lookup;
 mod static_targets;
 
 fn manifest() -> Value {

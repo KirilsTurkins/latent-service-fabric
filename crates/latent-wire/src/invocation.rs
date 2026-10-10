@@ -12,7 +12,6 @@ mod service;
 mod trace;
 mod transaction;
 mod validation;
-pub use transaction::{transaction_activation_request, transaction_invocation_response};
 
 use latent_activation::{ActivationOutcome, ActivationStatus, TraceContext};
 use latent_core::{
@@ -47,6 +46,9 @@ pub use proto::invocation_service_client::InvocationServiceClient;
 pub use proto::invocation_service_server::{InvocationService, InvocationServiceServer};
 pub use service::{InvocationServiceAdapter, InvocationServiceServices};
 pub use trace::{InvocationTraceSource, SystemInvocationTraceSource};
+pub(crate) use transaction::{
+    pin_transaction_arrival, transaction_invocation_response, transaction_request,
+};
 
 /// Missing IDs remain absent until the activation manager accepts the request.
 #[derive(Debug, Clone, PartialEq, Eq)]

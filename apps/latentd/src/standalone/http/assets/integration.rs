@@ -104,7 +104,7 @@ impl Harness {
                     Arc::new(
                         latent_manifest::RuntimeCompatibilityProfile::new(
                             "wasmtime",
-                            "48.0.5",
+                            "48.0.4",
                             "x86_64-unknown-linux-gnu",
                             &["x86_64.sse2"],
                             65_536,
@@ -127,7 +127,6 @@ impl Harness {
                 cleanup: node.node.cleanup.as_ref().unwrap().handle(),
                 clock: node.node.clock.clone(),
                 budget: settings.admission.budget_ceiling.clone(),
-                state: node.node.state_runtime(),
             },
         )
         .unwrap();

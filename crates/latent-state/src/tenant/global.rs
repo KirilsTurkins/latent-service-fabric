@@ -10,12 +10,16 @@ pub const INSTALLED_GLOBAL_ALLOWANCE: GlobalMetadataAllowance = GlobalMetadataAl
 pub(super) const CONTROL_RECEIPT_PREFIX: &[u8] = b"dispatch-control-receipt-v1\0";
 const OWNER: &[u8] = b"dispatch-owner-v1\0";
 const CONTROL: &[u8] = b"dispatch-control-v1\0";
-const SINGLETONS: [(&[u8], usize); 5] = [
+const SINGLETONS: [(&[u8], usize); 6] = [
     (super::GUARD_PREFIX, super::GUARD_BYTES),
     (crate::recovery::GUARD_KEY, crate::recovery::GUARD_BYTES),
     (b"result-retention-v1\0", 2048),
     (OWNER, 21),
     (CONTROL, 4096),
+    (
+        crate::store_identity::KEY,
+        crate::store_identity::MAXIMUM_ENCODED_BYTES,
+    ),
 ];
 
 /// Called by the original global-control producer while its native view is
@@ -148,7 +152,7 @@ fn validate_capacity(
         rows = rows
             .checked_add(page.rows.len())
             .ok_or(StoreError::Capacity)?;
-        if rows + 5 + 1 > maximum {
+        if rows + SINGLETONS.len() + 1 > maximum {
             return Err(StoreError::Capacity);
         }
         for (key, value) in &page.rows {

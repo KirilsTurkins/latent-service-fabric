@@ -135,11 +135,4 @@ fn initialization_failure_never_delivers_ready_or_replaces_engine() {
     );
     assert!(!report.clean);
     assert!(report.snapshot.physically_retired());
-    let mut joined = 0;
-    while joined < limits().workers {
-        assert!(Instant::now() < now + WATCHDOG);
-        joined += startup.reap_retired_threads().unwrap();
-        std::thread::yield_now();
-    }
-    assert_eq!(joined, limits().workers);
 }

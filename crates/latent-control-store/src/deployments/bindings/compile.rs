@@ -9,6 +9,7 @@ use latent_capabilities::broker::{
     CapabilityBindingSpec, InvocationBindingTarget, LOCAL_SERVICE_INVOCATION_PROFILE,
     SERVICE_INVOCATION_CAPABILITY,
 };
+use latent_capabilities::namespace::{INTENT_CONTRACT, STATE_CONTRACT};
 use latent_core::{ContractId, FunctionId, Metadata, PlatformError, PlatformErrorCode};
 use latent_manifest::BindingMode;
 use latent_packaging::{PackageBundle, PackageComparisonLimits};
@@ -324,7 +325,10 @@ async fn bundle(
             configuration,
             layers,
         },
-        latent_packaging::PackagingLimits::default(),
+        latent_packaging::PackagingLimits {
+            manifest_profile: owner.manifest_profile,
+            ..Default::default()
+        },
     )?;
     if bundle.layout().digest() != &package
         || bundle
@@ -454,12 +458,12 @@ async fn plan<'a>(
     let mut local_targets = Vec::new();
     let mut invocation_targets = Vec::new();
     for interface in surface.capability_imports() {
-        if surface.activation_scoped_import(interface) {
-            // Recheck exact pinned ABI shapes, but create no provider binding
-            // or synthetic grant. The retained publication remains in the plan;
-            // namespace, caller and state/intents purpose authorization attach
-            // to the original activation through transaction admission.
-            latent_packaging::compile_host_binding(consumer, interface, comparison)?;
+        // The selected profile and checked package surface identify native
+        // transaction imports. Their runtime owner admits the namespace; an
+        // ordinary binding plan neither supplies nor authorizes that owner.
+        if owner.manifest_profile.transactional()
+            && matches!(interface, STATE_CONTRACT | INTENT_CONTRACT)
+        {
             continue;
         }
         let d = definition(record, definitions, interface)?;

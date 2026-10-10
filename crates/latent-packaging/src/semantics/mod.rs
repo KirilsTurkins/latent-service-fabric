@@ -25,12 +25,8 @@ pub use compatibility::{
 };
 use latent_artifacts::package::{artifact_blob_digest, WitLock};
 use latent_contracts::ContractDescriptor;
-use latent_core::{
-    ArtifactBlobDigest, HostAbiProfile, PlatformError, PlatformErrorCode, PHASE3_HOST_ABI_CURRENT,
-};
-use latent_manifest::{
-    CapsuleManifest, ManifestValidator, Phase1ManifestValidator, Phase4TransactionManifestValidator,
-};
+use latent_core::{ArtifactBlobDigest, PlatformError, PlatformErrorCode};
+use latent_manifest::{CapsuleManifest, ManifestValidationProfile, ManifestValidator};
 pub use limits::SemanticLimits;
 use std::collections::{BTreeMap, BTreeSet};
 use wit_parser::decoding::DecodedWasm;
@@ -56,7 +52,6 @@ pub struct CheckedSurface {
     exports: Box<[Box<str>]>,
     source_packages: Box<[(Box<str>, ArtifactBlobDigest)]>,
     counts: SurfaceCounts,
-    host_profile: HostAbiProfile,
 }
 
 impl CheckedSurface {
@@ -77,27 +72,12 @@ impl CheckedSurface {
     /// Checked source imports that require capability/provider bindings. All
     /// other imports were validated as resource-free value definitions; they
     /// remain in `imports()` and grant no host or provider authority.
+    #[must_use]
     pub fn capability_imports(&self) -> impl Iterator<Item = &str> {
         self.imports
             .iter()
             .map(AsRef::as_ref)
-            .filter(|name| self.host_profile.interface(name).is_some())
-    }
-    /// Exact structurally checked ABI; this installs no host or caller authority.
-    #[must_use]
-    pub fn host_profile(&self) -> HostAbiProfile {
-        self.host_profile
-    }
-    /// These two Phase 4 hosts attach to the activation's admitted transaction.
-    /// They cannot be installed or granted through a provider binding.
-    #[must_use]
-    pub fn activation_scoped_import(&self, interface: &str) -> bool {
-        self.host_profile == latent_core::PHASE4_HOST_ABI_V1
-            && self.imports.iter().any(|name| name.as_ref() == interface)
-            && matches!(
-                interface,
-                "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
-            )
+            .filter(|name| host::recognizes(name))
     }
     #[must_use]
     pub fn exports(&self) -> &[Box<str>] {
@@ -126,37 +106,34 @@ pub fn validate_capsule(
     sources: &BTreeMap<String, &[u8]>,
     limits: SemanticLimits,
 ) -> Result<CheckedSurface, PlatformError> {
-    validate_capsule_for_profile(
+    validate_capsule_with_profile(
         component,
         manifest,
         contracts,
         lock,
         sources,
         limits,
-        PHASE3_HOST_ABI_CURRENT,
+        ManifestValidationProfile::default(),
     )
 }
 
-pub(crate) fn validate_capsule_for_profile(
+/// Checks the same component/source/descriptor bytes with an explicitly selected
+/// host compatibility profile. Package assets and guest exports cannot select it.
+pub fn validate_capsule_with_profile(
     component: &[u8],
     manifest: &CapsuleManifest,
     contracts: &[ContractDescriptor],
     lock: &WitLock,
     sources: &BTreeMap<String, &[u8]>,
     limits: SemanticLimits,
-    host_profile: HostAbiProfile,
+    profile: ManifestValidationProfile,
 ) -> Result<CheckedSurface, PlatformError> {
     limits.validate()?;
     owned::manifest(manifest, limits)?;
     if manifest.world.0 != lock.world {
         return Err(incompatible("capsule-wit-world-mismatch"));
     }
-    let validator: &dyn ManifestValidator = if host_profile == latent_core::PHASE4_HOST_ABI_V1 {
-        &Phase4TransactionManifestValidator
-    } else {
-        &Phase1ManifestValidator
-    };
-    validator
+    profile
         .validate_capsule(manifest)
         .map_err(|_| invalid("invalid-capsule-manifest"))?;
     if let Some(renderer) = &manifest.runtime_requirements.renderer {
@@ -185,10 +162,9 @@ pub(crate) fn validate_capsule_for_profile(
     };
     arena::resolved(&actual, limits)?;
     let compiled = compare::surface(&actual, actual_world, limits)?;
-    compare_manifest(manifest, &declared, host_profile)?;
-    let type_nodes =
-        compare::worlds_for_profile(&source, &declared, &actual, &compiled, limits, host_profile)?;
-    host::validate_for_profile(&source, &declared.imports, limits, host_profile)?;
+    compare_manifest(manifest, &declared)?;
+    let type_nodes = compare::worlds(&source, &declared, &actual, &compiled, limits)?;
+    host::validate(&source, &declared.imports, limits)?;
     projection::validate(&source, world, contracts, limits)?;
     let functions = declared
         .exports
@@ -233,14 +209,12 @@ pub(crate) fn validate_capsule_for_profile(
             .map(|entry| (entry.id.clone().into_boxed_str(), entry.digest.clone()))
             .collect(),
         counts,
-        host_profile,
     })
 }
 
 fn compare_manifest(
     manifest: &CapsuleManifest,
     declared: &compare::WorldSurface,
-    host_profile: HostAbiProfile,
 ) -> Result<(), PlatformError> {
     let exports: BTreeSet<_> = manifest
         .exports
@@ -255,7 +229,7 @@ fn compare_manifest(
         return Err(incompatible("capsule-export-set-mismatch"));
     }
     for import in &manifest.imports {
-        if host_profile.interface(&import.contract.0).is_none() {
+        if !host::recognizes(&import.contract.0) {
             return Err(incompatible("unsupported-host-import"));
         }
         if !import.optional && !declared.imports.contains_key(&import.contract.0) {
@@ -263,7 +237,7 @@ fn compare_manifest(
         }
     }
     if declared.imports.keys().any(|name| {
-        host_profile.interface(name).is_some()
+        host::recognizes(name)
             && !manifest
                 .imports
                 .iter()

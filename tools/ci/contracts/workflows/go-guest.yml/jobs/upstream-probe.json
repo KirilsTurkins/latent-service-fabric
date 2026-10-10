@@ -5,7 +5,6 @@
   "definition": {
     "name": "Go runtime and complete capsule qualification",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 45,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -15,16 +14,16 @@
       },
       {
         "name": "Capture immutable qualification source inputs",
-        "shell": "bash",
-        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\"\n"
+        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\"\n",
+        "shell": "bash"
       },
       {
         "name": "Retain the exact reviewed command contract input",
         "uses": "actions/upload-artifact",
         "with": {
+          "if-no-files-found": "error",
           "name": "go-guest-command-contract-${{ github.sha }}",
           "path": "tools/ci/contracts/\n${{ runner.temp }}/go-guest-source.tar.gz\n${{ runner.temp }}/go-guest-source.sha\n",
-          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
@@ -45,15 +44,15 @@
         "name": "Restore compiled Rust dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -64,7 +63,7 @@
       },
       {
         "name": "Install the locked compiler and generator",
-        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-guest-tools/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/go-guest-tools/go.tar.gz\" -C \"$RUNNER_TEMP/go-guest-tools\"\npython3 tools/go_guest/runtime.py --prepare-compiler \"$RUNNER_TEMP/go-guest-tools/go\" --output \"$RUNNER_TEMP/go-guest-tools/go-async\"\necho \"$RUNNER_TEMP/go-guest-tools/go-async/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Retain pinned reproduction tools",
@@ -73,15 +72,15 @@
       {
         "uses": "actions/upload-artifact",
         "with": {
-          "name": "go-guest-tools-${{ github.sha }}",
-          "path": "${{ runner.temp }}/go-guest-tools/go.tbz\n${{ runner.temp }}/go-guest-tools/componentize-go\n${{ runner.temp }}/go-guest-tools/wasm-tools\n${{ runner.temp }}/go-guest-tools/tools.sha256\n",
           "if-no-files-found": "error",
+          "name": "go-guest-tools-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-guest-tools/go.tar.gz\n${{ runner.temp }}/go-guest-tools/componentize-go\n${{ runner.temp }}/go-guest-tools/wasm-tools\n${{ runner.temp }}/go-guest-tools/tools.sha256\n",
           "retention-days": 1
         }
       },
       {
         "name": "Generate and compile upstream and constrained LSF components",
-        "run": "python3 tools/go_guest/probe.py --output \"$RUNNER_TEMP/go-guest-probe\" --go \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go\""
+        "run": "python3 tools/go_guest/probe.py --output \"$RUNNER_TEMP/go-guest-probe\" --go \"$RUNNER_TEMP/go-guest-tools/go-async/bin/go\""
       },
       {
         "name": "Qualify proposed transaction shapes and explicit owners with the maintained Go compiler",
@@ -116,21 +115,22 @@
         "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
       {
-        "name": "Retain successful and failed upstream observations",
         "if": "always()",
+        "name": "Retain successful and failed upstream observations",
         "uses": "actions/upload-artifact",
         "with": {
+          "if-no-files-found": "warn",
           "name": "go-guest-upstream-${{ github.sha }}",
           "path": "${{ runner.temp }}/transaction-guests-go/**/report.json\n${{ runner.temp }}/transaction-guests-go/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-go/**/component.wasm\n${{ runner.temp }}/transaction-guests-go/**/component.wit\n${{ runner.temp }}/transaction-guests-go/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/logs/**\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-go/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/report.json\n${{ runner.temp }}/transaction-contract-go/source.tar.gz\n${{ runner.temp }}/transaction-contract-go/component.wit\n${{ runner.temp }}/transaction-contract-go/preparation.json\n${{ runner.temp }}/transaction-contract-go/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-go/logs/**\n${{ runner.temp }}/transaction-contract-go/compiler/*.log\n${{ runner.temp }}/transaction-contract-go/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-go/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-go/compiled/component.wit\n${{ runner.temp }}/transaction-contract-go/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-go/compiled/generated/**\n${{ runner.temp }}/transaction-contract-go/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/bindings/**\n${{ runner.temp }}/transaction-contract-go/component.wasm\n${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-dependencies/**\n${{ runner.temp }}/go-capsule-authoring/\n",
-          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "timeout-minutes": 45
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Review current Phase4 and Java source union while retaining every original test, skip, before/baseline, full-profile, cache-freshness, security and retained-artifact requirement; immutable source and merged fixture setup are explicit.",
+  "reviewReason": "Reviewed official Go 1.27.2 compiler with exact private scheduler source staging; all commands, original limits, checked digests, case selections and required artifacts remain",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

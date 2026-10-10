@@ -16,11 +16,11 @@ mod publication_access;
 mod publication_preparation;
 mod retained_package;
 mod root_durability;
+mod selected_transaction_asset;
 mod shared_content;
 pub use capacity::PublicationCapacitySnapshot;
 pub use shared_content::{PublicationContentReclamation, PublicationStorageSnapshot};
 mod sha256;
-mod transaction_profile;
 mod web;
 
 #[cfg(test)]
@@ -38,7 +38,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use latent_core::{BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest};
-use latent_manifest::{JsonManifestCodec, ManifestCodec};
+use latent_manifest::{
+    JsonManifestCodec, ManifestCodec, ManifestValidationProfile, ManifestValidator,
+};
 
 use crate::preparation::{repository_stamp, RepositoryEpoch};
 use crate::verification_statistics::{add, VerificationStatistics};
@@ -85,6 +87,8 @@ const DEFAULT_MAX_RECOVERY_DIRECTORIES: usize = 1_000_000;
 /// metadata and component reads are also bounded before allocation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DirectoryArtifactRepositoryConfig {
+    /// Trusted host compatibility selection; default publication stays stateless.
+    pub manifest_profile: ManifestValidationProfile,
     /// Conservative shared-file plus publication-link storage exposure ceiling.
     pub max_storage_bytes: u64,
     pub max_content_index_bytes: usize,
@@ -106,6 +110,7 @@ pub struct DirectoryArtifactRepositoryConfig {
 impl Default for DirectoryArtifactRepositoryConfig {
     fn default() -> Self {
         Self {
+            manifest_profile: ManifestValidationProfile::default(),
             max_storage_bytes: 4 * 1024 * 1024 * 1024,
             max_content_index_bytes: 64 * 1024 * 1024,
             max_content_blobs: 1_000_000,
@@ -171,6 +176,7 @@ pub struct DirectoryArtifactRepository {
     config: DirectoryArtifactRepositoryConfig,
     lifecycle_limits: crate::LifecycleLimits,
     codec: JsonManifestCodec,
+    validator: ManifestValidationProfile,
     index: RwLock<CatalogIndex>,
     pagination_fingerprint: RandomState,
     preparation_epoch: Arc<RepositoryEpoch>,
@@ -304,6 +310,7 @@ impl DirectoryArtifactRepository {
             config,
             lifecycle_limits,
             codec: JsonManifestCodec::default(),
+            validator: config.manifest_profile,
             index: RwLock::new(CatalogIndex::default()),
             pagination_fingerprint: RandomState::new(),
             preparation_epoch: Arc::new(RepositoryEpoch),
@@ -456,6 +463,16 @@ impl DirectoryArtifactRepository {
         retention: Retention,
         limits: ArtifactPreparationReadLimits,
     ) -> Result<VerifiedEntry, PlatformError> {
+        self.load_complete_entry_with_metadata_budget(path, retention, limits, None)
+    }
+
+    fn load_complete_entry_with_metadata_budget(
+        &self,
+        path: &Path,
+        retention: Retention,
+        limits: ArtifactPreparationReadLimits,
+        metadata_budget: Option<usize>,
+    ) -> Result<VerifiedEntry, PlatformError> {
         let completion = CompletionRecord::read(path)?;
         let admission = match (self.admission.as_ref(), completion.admission_digest()) {
             (Some(config), Some(digest)) => Some(admission_storage::StoredAdmission::read(
@@ -473,8 +490,14 @@ impl DirectoryArtifactRepository {
             "catalog metadata",
         )?;
         completion.verify_metadata(&metadata_bytes)?;
-        let (descriptor, contracts) =
-            decode_metadata(&metadata_bytes, limits.maximum_metadata_document_bytes)?;
+        let (descriptor, contracts) = match metadata_budget {
+            Some(budget) => metadata_codec::decode_control_metadata(
+                &metadata_bytes,
+                limits.maximum_metadata_document_bytes,
+                budget,
+            )?,
+            None => decode_metadata(&metadata_bytes, limits.maximum_metadata_document_bytes)?,
+        };
         drop(metadata_bytes);
         self.validate_descriptor_bounds(&descriptor)?;
         completion.verify_component_association(&descriptor)?;
@@ -489,23 +512,20 @@ impl DirectoryArtifactRepository {
             "capsule manifest",
         )?;
         completion.verify_manifest(&manifest_bytes)?;
+        if let Some(budget) = metadata_budget {
+            drop(contract_metadata::parse_control_document(
+                &manifest_bytes,
+                limits.maximum_manifest_document_bytes,
+                budget,
+            )?);
+        }
         let manifest = self
             .codec
             .decode_capsule(&manifest_bytes)
             .map_err(|_| corrupt("stored capsule manifest is invalid"))?;
-        let transaction_profile = match (&admission, &self.admission) {
-            (Some(stored), Some(config)) => {
-                stored.transaction_profile(path, &manifest, config.limits)?
-            }
-            _ => false,
-        };
-        transaction_profile::validate_capsule(&manifest, transaction_profile).map_err(|_| {
-            corrupt(if transaction_profile {
-                "stored capsule manifest violates its admitted transaction profile"
-            } else {
-                "stored capsule manifest violates Phase 1 rules"
-            })
-        })?;
+        self.validator
+            .validate_capsule(&manifest)
+            .map_err(|_| corrupt("stored capsule manifest violates Phase 1 rules"))?;
         let canonical = self
             .codec
             .encode_capsule(&manifest)
@@ -556,8 +576,7 @@ impl DirectoryArtifactRepository {
                 manifest,
                 contracts,
                 component.digest,
-            )
-            .with_transaction_execution_profile(transaction_profile),
+            ),
             component_bytes: component.bytes,
             completion,
             admission,
@@ -599,19 +618,17 @@ impl DirectoryArtifactRepository {
 
     fn prepare_publication(
         &self,
-        artifact: CapsuleArtifact,
-    ) -> Result<PreparedPublication, PlatformError> {
-        self.prepare_publication_with_transaction_profile(artifact, false)
-    }
-
-    fn prepare_publication_with_transaction_profile(
-        &self,
         mut artifact: CapsuleArtifact,
-        transaction_profile: bool,
     ) -> Result<PreparedPublication, PlatformError> {
         lifecycle::input::check(&artifact, self.config)?;
-        transaction_profile::validate_capsule(&artifact.manifest, transaction_profile)
-            .map_err(|_| transaction_profile::publication_error())?;
+        self.validator
+            .validate_capsule(&artifact.manifest)
+            .map_err(|_| {
+                error(
+                    PlatformErrorCode::InvalidArgument,
+                    "capsule manifest validation failed",
+                )
+            })?;
         let manifest_bytes = self.codec.encode_capsule(&artifact.manifest).map_err(|_| {
             error(
                 PlatformErrorCode::InvalidArgument,

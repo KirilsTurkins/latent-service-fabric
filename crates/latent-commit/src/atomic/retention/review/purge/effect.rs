@@ -25,7 +25,11 @@ pub(super) fn one(
     super::super::operation::verify_effect(&captured.record, &authority, *effect)?;
     usage.effect_bytes = usage
         .effect_bytes
-        .checked_sub(DispatchCatalog::retention_charge(&authority)?)
+        .checked_sub(
+            DispatchCatalog::retention_charge(&authority)?
+                .checked_add(closure.additional_charge)
+                .ok_or(AtomicError::Limit)?,
+        )
         .ok_or(AtomicError::Corrupt)?;
     usage.effects = usage.effects.checked_sub(1).ok_or(AtomicError::Corrupt)?;
     captured.namespace.pins.unresolved_effects = captured

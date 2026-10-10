@@ -24,9 +24,7 @@ pub use activation_manager::{
     ActivationHandle, ActivationObservationSnapshot, ActivationReceipt,
     ActivationTransportInterruption, InboundActivationReservation, LocalActivationDependencies,
     LocalActivationManager, LocalActivationManagerConfig, LocalActivationServices,
-    TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
-    TransactionAdmissionKind, TransactionCompletion, TransactionCompletionHook,
-    TransactionDisposition, TransactionExecution,
+    TransactionActivationAdmission, TransactionCommitControl,
 };
 pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,
@@ -65,9 +63,15 @@ pub struct NodeHeartbeat {
 }
 
 pub trait NodeRegistrar: Send + Sync {
-    fn register(&self, descriptor: NodeDescriptor) -> BoxFuture<'_, Result<(), PlatformError>>;
+    fn register<'a>(
+        &'a self,
+        descriptor: NodeDescriptor,
+    ) -> BoxFuture<'a, Result<(), PlatformError>>;
 
-    fn heartbeat(&self, heartbeat: NodeHeartbeat) -> BoxFuture<'_, Result<(), PlatformError>>;
+    fn heartbeat<'a>(
+        &'a self,
+        heartbeat: NodeHeartbeat,
+    ) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn deregister<'a>(&'a self, node: &'a NodeId) -> BoxFuture<'a, Result<(), PlatformError>>;
 }
@@ -75,7 +79,10 @@ pub trait NodeRegistrar: Send + Sync {
 pub trait RouteWatcher: Send + Sync {
     fn current_generation(&self) -> RouteGeneration;
 
-    fn next(&self, after: RouteGeneration) -> BoxFuture<'_, Result<RouteSnapshot, PlatformError>>;
+    fn next<'a>(
+        &'a self,
+        after: RouteGeneration,
+    ) -> BoxFuture<'a, Result<RouteSnapshot, PlatformError>>;
 }
 
 pub trait NodeDirectory: Send + Sync {
@@ -84,5 +91,5 @@ pub trait NodeDirectory: Send + Sync {
         node: &'a NodeId,
     ) -> BoxFuture<'a, Result<Option<NodeDescriptor>, PlatformError>>;
 
-    fn list(&self) -> BoxFuture<'_, Result<Vec<NodeDescriptor>, PlatformError>>;
+    fn list<'a>(&'a self) -> BoxFuture<'a, Result<Vec<NodeDescriptor>, PlatformError>>;
 }

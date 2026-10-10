@@ -15,10 +15,9 @@ mod lifecycle;
 mod model;
 mod pool;
 mod target;
-pub mod transaction;
 
 pub use context::TrustedContext;
-pub use delivery::{Delivered, Delivery, DeliveryCause, DeliveryFence, Outcome};
+pub use delivery::{Delivered, Delivery, DeliveryCause, Outcome};
 pub use lifecycle::{Collector, Invocation, Request};
 pub use model::{HeaderView, HttpVersion, Method, RawHead, Scheme};
 pub use pool::{Cancellation, HttpPool, PoolSnapshot};
@@ -56,7 +55,6 @@ pub enum HttpError {
     InvalidFraming,
     BodyTooLarge,
     InvalidContext,
-    Forbidden,
     InvalidResponse,
     Disconnected,
     DeadlineExceeded,
@@ -74,7 +72,6 @@ impl HttpError {
             Self::HeadersTooLarge => Some(431),
             Self::BodyTooLarge => Some(413),
             Self::InvalidResponse => Some(502),
-            Self::Forbidden => Some(403),
             Self::InvalidLimits | Self::InvalidContext => Some(500),
             Self::Disconnected | Self::DeadlineExceeded | Self::IncompleteDelivery => None,
             Self::InvalidTarget | Self::InvalidHeaders | Self::InvalidFraming => Some(400),

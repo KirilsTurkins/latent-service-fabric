@@ -85,20 +85,8 @@ pub(super) fn inspect(
             effective_deadline_unix_millis: node.effective_deadline_unix_millis,
             target_service: node.target_service.0,
             received_at_unix_millis: node.received_at_unix_millis,
-            transaction_staging: node.transaction_staging.map(|value| {
-                proto::TransactionStagingWitness {
-                    schema_version: 1,
-                    activation_serial: value.activation_serial,
-                    command_id: value.command_id,
-                    attempt_id: value.attempt_id,
-                    transaction_id: value.transaction_id,
-                    publication_id: value.publication_id,
-                    staged_mutations: value.staged_mutations,
-                    captured_intents: value.captured_intents,
-                    state_write_bytes: value.state_write_bytes,
-                    observed_at_unix_millis: value.observed_at_unix_millis,
-                }
-            }),
+            // This node variant does not install the captured-intent observer.
+            transaction_staging: None,
         })
         .collect();
     adapter.response(proto::InspectActivationTreeResponse {

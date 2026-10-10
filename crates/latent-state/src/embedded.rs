@@ -14,8 +14,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub const STORE_FORMAT: &str = "latent.transaction-store.v2";
-const FORMAT: &[u8] = STORE_FORMAT.as_bytes();
+pub const STORE_FORMAT: &str = "latent.transaction-store.v1";
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
 static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
@@ -160,9 +159,6 @@ pub struct EmbeddedStore {
     reclamation: AtomicBool,
 }
 impl EmbeddedStore {
-    pub(crate) fn limits(&self) -> StoreLimits {
-        self.limits
-    }
     /// Must run on the node's bounded physical I/O owner. Never truncate or reset
     /// an existing file on any error. redb owns the descriptor and exclusive lock.
     pub fn open_file(file: File, limits: StoreLimits) -> Result<Self, StoreError> {
@@ -201,7 +197,7 @@ impl EmbeddedStore {
         was_empty: bool,
         file_status: Option<StoreFileStatus>,
     ) -> Result<Self, StoreError> {
-        Self::open_database_with_status_checkpoint(db, limits, was_empty, file_status, |_| {})
+        Self::open_database_with_status_and_checkpoint(db, limits, was_empty, file_status, |_| {})
     }
 
     #[cfg(test)]
@@ -211,10 +207,10 @@ impl EmbeddedStore {
         was_empty: bool,
         checkpoint: impl FnMut(format::Checkpoint),
     ) -> Result<Self, StoreError> {
-        Self::open_database_with_status_checkpoint(db, limits, was_empty, None, checkpoint)
+        Self::open_database_with_status_and_checkpoint(db, limits, was_empty, None, checkpoint)
     }
 
-    fn open_database_with_status_checkpoint(
+    fn open_database_with_status_and_checkpoint(
         db: Database,
         limits: StoreLimits,
         was_empty: bool,
@@ -234,8 +230,8 @@ impl EmbeddedStore {
             quarantined: AtomicBool::new(false),
             reclamation: AtomicBool::new(false),
         };
-        // Validate the original row framing and configured limits before any
-        // metadata promotion. No business row is transformed or recopied.
+        // Original row limits, reservation coverage and selected page layout
+        // must pass before metadata-only promotion on this same private engine.
         store.verify()?;
         {
             let database = store.database()?;
@@ -244,6 +240,7 @@ impl EmbeddedStore {
         store.verify()?;
         Ok(store)
     }
+
     fn verify(&self) -> Result<(), StoreError> {
         let database = self.database()?;
         format::inspect(&database)?;
@@ -582,7 +579,7 @@ impl ReadView {
     }
 
     pub fn get(&self, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
-        self.get_bounded(key, self.limits.maximum_value_bytes)
+        self.get_at_age(key, self.opened.elapsed())
     }
 
     /// Refuse a hostile oversized value before copying it into the caller's
@@ -592,10 +589,25 @@ impl ReadView {
         key: &RowKey,
         maximum_bytes: usize,
     ) -> Result<Option<Vec<u8>>, StoreError> {
+        self.get_bounded_at_age(key, maximum_bytes, self.opened.elapsed())
+    }
+
+    // The public entry always samples the original monotonic lifetime. Engine
+    // tests can exercise the same boundary without timing a native disk flush.
+    fn get_at_age(&self, key: &RowKey, age: Duration) -> Result<Option<Vec<u8>>, StoreError> {
+        self.get_bounded_at_age(key, self.limits.maximum_value_bytes, age)
+    }
+
+    fn get_bounded_at_age(
+        &self,
+        key: &RowKey,
+        maximum_bytes: usize,
+        age: Duration,
+    ) -> Result<Option<Vec<u8>>, StoreError> {
         if maximum_bytes == 0 || maximum_bytes > self.limits.maximum_value_bytes {
             return Err(StoreError::Invalid);
         }
-        if self.opened.elapsed() > self.limits.maximum_view_age {
+        if age > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);
         }
         let key = key.encoded(self.limits)?;

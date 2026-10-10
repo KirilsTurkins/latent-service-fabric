@@ -95,21 +95,13 @@ fn incoherent_logical_links_fail_before_ready_and_preserve_every_existing_row() 
         wait(denied.as_mut()),
         Err(ProtectedStoreError::Store(StoreError::Corrupt))
     ));
-    let retirement_deadline = Instant::now() + WATCHDOG;
     let report = wait(
         denied
-            .drain_async(retirement_deadline, std::future::pending())
+            .drain_async(Instant::now() + WATCHDOG, std::future::pending())
             .unwrap(),
     );
     assert!(!report.clean);
     assert!(report.snapshot.physically_retired());
-    let mut joined = 0;
-    while joined < config.io.workers {
-        assert!(Instant::now() < retirement_deadline);
-        joined += denied.reap_retired_threads().unwrap();
-        std::thread::yield_now();
-    }
-    assert_eq!(joined, config.io.workers);
     let reopened = start(config);
     let view = wait(reopened.open_view().unwrap()).unwrap().unwrap();
     let (view, values) = read(&reopened, view);

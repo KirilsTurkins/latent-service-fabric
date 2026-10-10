@@ -74,12 +74,21 @@ async fn failed_http_bind_retires_started_rpc_and_catalog_owners() {
 #[tokio::test]
 async fn tls_configuration_refuses_readable_or_symlinked_private_keys() {
     use std::os::unix::fs::{symlink, PermissionsExt};
-    let root = TempDir::new().unwrap();
+    // A private TMPDIR ancestor legitimately protects a readable key. Put the
+    // refusal fixture on the actual traversable Linux path used by the
+    // protected-file tests, then control this directory's search permissions.
+    let root = TempDir::new_in("/tmp").unwrap();
     let (certificate, key) = super::network::tls_files(&root);
     let mut value = config(&root);
     value["httpIngress"]["transport"] =
         json!({"mode":"tls", "certificateFile":certificate, "privateKeyFile":key});
     std::fs::set_permissions(&key, std::fs::Permissions::from_mode(0o644)).unwrap();
+    std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    serde_json::from_value::<NodeConfig>(value.clone())
+        .unwrap()
+        .derive()
+        .unwrap();
+    std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o755)).unwrap();
     assert!(serde_json::from_value::<NodeConfig>(value.clone())
         .unwrap()
         .derive()

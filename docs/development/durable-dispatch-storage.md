@@ -309,22 +309,25 @@ Linux checks passed all 122 effects and 128 state cases. Ordinary attempt
 capacity and the reserved management provider-worker partition coexist in the
 same dispatcher; this union preserves both sets of required schedules.
 
-
 This port composes the actual dispatcher worker and protected engine. Ordinary
 Standalone/verified-guest installation and authenticated management qualification
 remain recorded by their owning integration tickets; this focused capacity
 change does not close all of #391 or the durable quota/retention work in #397.
 
-## Historical first-storage milestone
+## Recovery admission compatibility
 
-The following retained first-storage milestone records its original scope.
+Recovery capacity is configured in `StoreIoLimits.recovery` before the physical
+owner starts. `install_recovery_capacity` validates that same immutable partition;
+it rejects an unconfigured owner or any different limits and creates no worker,
+queue, reservation or replacement owner. `submit_recovery` maps the original read
+or write class into `RecoveryRead` or `RecoveryWrite` on the same fixed workers,
+physical writer and retained-resource ledger. `recovery_snapshot` projects their
+bounded counters. These compatibility methods supply no result or mutation
+authority and cannot turn a late capacity description into resource admission.
 
-The focused initial tests prove canonical identity/tamper rejection, bounded
-malformed decoding, due ordering, and actual atomic snapshot/reopen behavior.
-This first dispatcher storage milestone provides the envelope integration port;
-fixed workers, durable claim/retry/history handling and standalone node lifecycle
-remain the ongoing #391 implementation.
-
-Measured on 2026-10-01: all 28 effect tests passed on Windows and the pinned
-Linux Rust 1.97.1 image, with strict all-target/all-feature Clippy on both hosts.
-The exact Linux test discovery is registered in the existing workspace suite.
+The merged source retains the five compatibility recovery schedules and all six
+prior dedicated-partition schedules, alongside the real-engine pressure tests.
+Their fixed-worker, queue, accepted-owner and byte ceilings remain unchanged.
+All 245 state library cases pass on pinned Rust 1.97.1 Linux after reconciliation;
+the [current handoff](phase4-handoffs/2026-10-10/pr796-reconciliation.md) records
+the complete scope. Earlier campaigns qualify their recorded source revisions.

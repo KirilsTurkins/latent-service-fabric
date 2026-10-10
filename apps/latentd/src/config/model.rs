@@ -10,6 +10,8 @@ use super::MIB;
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct NodeConfig {
+    #[serde(skip)]
+    pub(crate) stream_reload_binding: Option<[u8; 32]>,
     pub format_version: u32,
     #[serde(default)]
     pub security_profile: super::ExecutionIsolationProfile,
@@ -53,10 +55,10 @@ pub struct NodeConfig {
     pub rollouts: Option<super::RolloutConfig>,
     #[serde(default, deserialize_with = "super::capability_policies::present")]
     pub capability_policies: Option<super::CapabilityPolicyConfig>,
-    #[serde(default, deserialize_with = "super::state::present")]
-    pub state: Option<super::StateConfig>,
     #[serde(default, deserialize_with = "super::providers::present")]
     pub providers: Option<super::ConfiguredProviders>,
+    #[serde(default, deserialize_with = "super::state::present")]
+    pub state: Option<super::StateConfig>,
     #[serde(default, deserialize_with = "super::http::present")]
     pub http_ingress: Option<super::HttpIngressConfig>,
     #[serde(default)]

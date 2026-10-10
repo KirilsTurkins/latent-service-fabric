@@ -4,7 +4,8 @@ use super::{
 };
 use latent_core::{ArtifactBlobDigest, DeploymentId};
 use latent_manifest::{
-    __serde_json as json, validate_deployment_document, JsonManifestCodec, ManifestCodec,
+    __serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidationProfile,
+    ManifestValidator,
 };
 pub(crate) fn token(value: &str, maximum: usize) -> Result<()> {
     if value.is_empty()
@@ -65,6 +66,9 @@ impl DeploymentOperationRequest {
             })
     }
     pub fn validate(&self) -> Result<()> {
+        self.validate_with_profile(ManifestValidationProfile::default())
+    }
+    pub fn validate_with_profile(&self, profile: ManifestValidationProfile) -> Result<()> {
         if self.retained_bytes() > MAX_REQUEST_BYTES {
             return Err(capacity());
         }
@@ -81,7 +85,9 @@ impl DeploymentOperationRequest {
                         "deployment-scope-conflict",
                     ));
                 }
-                validate_deployment_document(manifest).map_err(|_| invalid())?;
+                profile
+                    .validate_deployment(manifest)
+                    .map_err(|_| invalid())?;
             }
             Self::Delete {
                 expected_generation: 0,
@@ -92,11 +98,21 @@ impl DeploymentOperationRequest {
         Ok(())
     }
     pub fn request_digest(&self) -> Result<ArtifactBlobDigest> {
-        self.validate()?;
-        self.clone().normalize()?.normalized_digest()
+        self.request_digest_with_profile(ManifestValidationProfile::default())
     }
-    pub(crate) fn normalize(mut self) -> Result<Self> {
-        self.validate()?;
+    pub fn request_digest_with_profile(
+        &self,
+        profile: ManifestValidationProfile,
+    ) -> Result<ArtifactBlobDigest> {
+        self.clone()
+            .normalize_with_profile(profile)?
+            .normalized_digest()
+    }
+    pub(crate) fn normalize_with_profile(
+        mut self,
+        profile: ManifestValidationProfile,
+    ) -> Result<Self> {
+        self.validate_with_profile(profile)?;
         match &mut self {
             Self::Apply {
                 context, manifest, ..

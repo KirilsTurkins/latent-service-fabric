@@ -10,7 +10,7 @@ use latent_state::{
 };
 use std::time::{Duration, Instant};
 
-fn census(store: &EmbeddedStore) -> Result<TenantCensusReport, StoreError> {
+pub(super) fn census(store: &EmbeddedStore) -> Result<TenantCensusReport, StoreError> {
     let view = store.snapshot()?;
     let quota = accounted::usage(store).quota;
     let mut census = TenantCensus::capture(

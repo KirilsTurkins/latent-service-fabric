@@ -17,16 +17,12 @@ use latent_core::{
 };
 use latent_effects::{
     authority::{
-        AuthorityError, DispatchCeiling, DispatchGrant, DispatchProfile, DurableEffectAuthority,
-        EffectAuthorityOwner, EffectRule, EffectScope, EffectTime,
+        DispatchCeiling, DurableEffectAuthority, EffectAuthorityOwner, EffectRule, EffectScope,
+        EffectTime,
     },
-    dispatch::{AttemptIdentity, Disposition, EffectRecord, RetryProof},
+    dispatch::{Disposition, EffectRecord},
     dispatch_store::{effect_row_key, DispatchCatalog},
-    payload::PayloadRecord,
-    runtime::{
-        AdapterOutcome, DeferredEffectAdapter, DispatcherConfig, DispatcherOwner, EffectTimeSource,
-        ProviderReconciliationRequest,
-    },
+    runtime::{DeferredEffectAdapter, DispatcherConfig, DispatcherOwner, EffectTimeSource},
 };
 use latent_nats::{
     deferred::{JetStreamEffectAdapter, JetStreamQualification},
@@ -386,50 +382,6 @@ pub struct Fixture {
     _policies: Arc<PolicyStore>,
 }
 
-/// This native broker campaign installs its actual current effect rule directly.
-/// The dispatcher acceptance callback retains that rule's fence and the original
-/// native capacity/deadline. This test-only wrapper supplies the corresponding
-/// conformance hook; it is not an installed PolicyStore dispatch grant. The raw
-/// production adapter and generic missing-authority default remain fail-closed.
-struct NativeConformanceAdapter(Arc<JetStreamEffectAdapter>);
-
-impl DeferredEffectAdapter for NativeConformanceAdapter {
-    fn profile(&self) -> &DispatchProfile {
-        self.0.profile()
-    }
-
-    fn with_current_dispatch(
-        &self,
-        _authority: &DurableEffectAuthority,
-        _deadline: Instant,
-        accept: &mut dyn FnMut() -> Result<
-            latent_core::BoxFuture<'static, AdapterOutcome>,
-            AuthorityError,
-        >,
-    ) -> Result<latent_core::BoxFuture<'static, AdapterOutcome>, AuthorityError> {
-        // One callback admits one operation under the real current rule. No
-        // provider future is polled before the durable send marker is written.
-        accept()
-    }
-
-    fn accept(
-        &self,
-        grant: DispatchGrant,
-        payload: PayloadRecord,
-        attempt: AttemptIdentity,
-    ) -> Result<latent_core::BoxFuture<'static, AdapterOutcome>, AuthorityError> {
-        self.0.accept(grant, payload, attempt)
-    }
-
-    fn qualify_redrive(
-        &self,
-        request: &ProviderReconciliationRequest,
-        time: EffectTime,
-    ) -> Result<RetryProof, AuthorityError> {
-        self.0.qualify_redrive(request, time)
-    }
-}
-
 impl Fixture {
     pub async fn new(config: NatsConfig, qualification: JetStreamQualification) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
@@ -520,8 +472,7 @@ impl Fixture {
                 },
                 self.store.clone(),
                 self.authority.clone(),
-                vec![Arc::new(NativeConformanceAdapter(self.adapter.clone()))
-                    as Arc<dyn DeferredEffectAdapter>],
+                vec![self.adapter.clone() as Arc<dyn DeferredEffectAdapter>],
                 self.clock.clone(),
                 checkpoint,
             )

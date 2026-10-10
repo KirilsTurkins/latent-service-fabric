@@ -24,7 +24,9 @@ pub use retention::{
     PreparedFloorRelease, ResultMaintenanceOwner, RetentionAction, RetentionProgress,
     RetentionRequest, RetiredCommand,
 };
-pub use validation::{validate_linked_row, validate_row, validate_view, validate_view_observed};
+pub use validation::{
+    durable_row_format, validate_linked_row, validate_row, validate_view, validate_view_observed,
+};
 pub use writer::{
     inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
     PreparedAdmission, PreparedDisposition, RetryRequest, StagedIntent,

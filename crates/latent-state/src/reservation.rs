@@ -4,6 +4,8 @@
 //! trusted host coordinator installs/releases a reservation with its command CAS.
 
 use crate::embedded::{Family, RowKey, StoreError};
+mod ledger;
+pub use ledger::{namespace_ledger_key, NamespaceLedger};
 
 pub const KEY_PREFIX: &[u8] = b"logical-reservation-v1\0";
 const MAGIC: &[u8] = b"LSR\x01";
@@ -87,9 +89,7 @@ pub(crate) fn reserved_bytes(physical_key: &[u8], value: &[u8]) -> Result<usize,
     }
     let key = &physical_key[1..];
     if key.starts_with(QUOTA_PREFIX) && value.starts_with(QUOTA_MAGIC) {
-        if value.len() != QUOTA_BYTES {
-            return Err(StoreError::Corrupt);
-        }
+        NamespaceLedger::decode(value)?;
         let amount = u64::from_le_bytes(value[45..53].try_into().map_err(|_| StoreError::Corrupt)?);
         if amount > MAXIMUM_BYTES {
             return Err(StoreError::Capacity);

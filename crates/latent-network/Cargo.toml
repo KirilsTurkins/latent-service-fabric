@@ -15,4 +15,5 @@ getrandom = "=0.4.3"
 hickory-proto = "=0.26.3"
 ipnet = { version = "=2.12.2", features = ["serde"] }
 serde.workspace = true
+socket2 = "=0.6.5"
 tokio = { workspace = true, features = ["net", "io-util"] }

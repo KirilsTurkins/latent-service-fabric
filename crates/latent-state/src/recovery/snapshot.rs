@@ -15,11 +15,11 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
     fmt::Write as _,
-    io::{Read, Write},
+    io::{Read, Seek, SeekFrom, Write},
     time::{Duration, Instant},
 };
 
-const MAGIC: &[u8] = b"latent-offline-snapshot\0\x01";
+const MAGIC: &[u8] = b"latent-offline-snapshot\0\x02";
 const ENGINE: &str = crate::embedded::STORE_FORMAT;
 pub const SNAPSHOT_ROWS: u64 = 65_536;
 pub const SNAPSHOT_LOGICAL_BYTES: u64 = 128 * 1024 * 1024;
@@ -46,6 +46,7 @@ pub(super) const FAMILIES: [Family; 10] = [
 #[serde(deny_unknown_fields)]
 pub struct RequiredArtifact {
     /// Exact immutable source association, such as schema hash/publication ID.
+    #[serde(deserialize_with = "limits::identity")]
     pub identity: String,
     pub digest: [u8; 32],
 }
@@ -53,11 +54,18 @@ pub struct RequiredArtifact {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SnapshotMetadata {
+    /// Original operator/audit context. A full-unit snapshot captures every
+    /// namespace; this descriptive field is neither a row filter nor a grant.
+    #[serde(deserialize_with = "limits::identity")]
     pub tenant: String,
+    #[serde(deserialize_with = "limits::identity")]
     pub operation_id: String,
+    #[serde(deserialize_with = "limits::identity")]
     pub operator_id: String,
     pub runtime_digest: [u8; 32],
+    #[serde(deserialize_with = "limits::formats")]
     pub decoder_formats: Vec<RetainedFormat>,
+    #[serde(deserialize_with = "limits::artifacts")]
     pub required_artifacts: Vec<RequiredArtifact>,
 }
 
@@ -89,7 +97,9 @@ impl SnapshotMetadata {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct NamespaceSnapshot {
+    #[serde(deserialize_with = "limits::record")]
     pub record: Vec<u8>,
+    #[serde(deserialize_with = "limits::record")]
     pub history: Vec<u8>,
 }
 
@@ -119,13 +129,20 @@ struct InventoryEntry {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SnapshotManifest {
+    #[serde(deserialize_with = "limits::identity")]
     format: String,
+    #[serde(deserialize_with = "limits::identity")]
     engine: String,
+    /// Observed exact bytes, never permission to replace a destination owner.
+    #[serde(deserialize_with = "limits::record")]
+    pub source_store_identity: Vec<u8>,
     pub metadata: SnapshotMetadata,
+    #[serde(deserialize_with = "limits::namespaces")]
     pub namespaces: Vec<NamespaceSnapshot>,
     pub rows: u64,
     pub logical_bytes: u64,
     pub rows_digest: [u8; 32],
+    #[serde(deserialize_with = "limits::inventory")]
     inventory: Vec<InventoryEntry>,
 }
 
@@ -148,8 +165,13 @@ impl SnapshotManifest {
 
     pub fn validate(&self) -> Result<(), StoreError> {
         self.metadata.validate()?;
-        if self.format != "latent.offline-snapshot.v1" || self.engine != ENGINE {
+        if self.format != "latent.offline-snapshot.v2" || self.engine != ENGINE {
             return Err(StoreError::UnsupportedFormat);
+        }
+        if crate::store_identity::StoreIdentity::decode(&self.source_store_identity)?.encode()
+            != self.source_store_identity
+        {
+            return Err(StoreError::Corrupt);
         }
         if self.namespaces.is_empty()
             || self.namespaces.len() > SNAPSHOT_NAMESPACES
@@ -163,9 +185,12 @@ impl SnapshotManifest {
         let mut identities = std::collections::BTreeSet::new();
         for namespace in &self.namespaces {
             let (record, _) = namespace.decode()?;
-            if record.tenant.0 != self.metadata.tenant
-                || record.status == NamespaceStatus::Active
-                || !identities.insert((record.id.0.clone(), record.version.incarnation))
+            if record.status == NamespaceStatus::Active
+                || !identities.insert((
+                    record.tenant.0.clone(),
+                    record.id.0.clone(),
+                    record.version.incarnation,
+                ))
             {
                 return Err(StoreError::Conflict);
             }
@@ -224,6 +249,30 @@ pub struct SnapshotClosure {
     pub required_artifacts: Vec<RequiredArtifact>,
 }
 
+/// Source-engine faults are separate from operator-file, review and deadline
+/// refusal. A failed output never quarantines a healthy source database.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SnapshotError {
+    Source(StoreError),
+    Review(StoreError),
+    Output,
+    Deadline,
+    Capacity,
+}
+
+impl SnapshotError {
+    fn source(error: StoreError) -> Self {
+        match error {
+            StoreError::SnapshotExpired => Self::Deadline,
+            StoreError::Capacity => Self::Capacity,
+            StoreError::Conflict | StoreError::Invalid | StoreError::UnsupportedFormat => {
+                Self::Review(error)
+            }
+            _ => Self::Source(error),
+        }
+    }
+}
+
 impl SnapshotClosure {
     pub fn require_declared(&self, metadata: &SnapshotMetadata) -> Result<(), StoreError> {
         if self.required_artifacts.len() > SNAPSHOT_ARTIFACTS {
@@ -246,27 +295,33 @@ impl SnapshotClosure {
 
 /// Export after physical quiescence. A linked-row validator and immutable
 /// artifact verifier are mandatory; app schema declarations are not decoders.
-pub fn export_snapshot(
+pub(crate) fn export_snapshot(
     store: &EmbeddedStore,
     metadata: SnapshotMetadata,
     output: &mut impl Write,
     deadline: Instant,
     validate: impl FnOnce(&ReadView) -> Result<SnapshotClosure, StoreError>,
     mut verify_artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError>,
-) -> Result<SnapshotReceipt, StoreError> {
-    metadata.validate()?;
-    validate_deadline(deadline)?;
+) -> Result<SnapshotReceipt, SnapshotError> {
+    metadata.validate().map_err(SnapshotError::Review)?;
+    validate_deadline(deadline).map_err(SnapshotError::source)?;
     if store.live_views() != 0 {
-        return Err(StoreError::Conflict);
+        return Err(SnapshotError::Review(StoreError::Conflict));
     }
-    let view = store.snapshot()?;
-    let namespaces = capture_namespaces(&view, &metadata.tenant)?;
-    let closure = validate(&view)?;
-    closure.require_declared(&metadata)?;
+    let view = store.snapshot().map_err(SnapshotError::source)?;
+    let source_store_identity = crate::store_identity::StoreIdentity::inspect(&view)
+        .map_err(SnapshotError::source)?
+        .ok_or(SnapshotError::Review(StoreError::UnsupportedFormat))?
+        .encode();
+    let namespaces = capture_namespaces(&view).map_err(SnapshotError::source)?;
+    let closure = validate(&view).map_err(SnapshotError::source)?;
+    closure
+        .require_declared(&metadata)
+        .map_err(SnapshotError::Review)?;
     let inventory = closure.inventory;
-    require_schema_artifacts(&metadata, &namespaces)?;
+    require_schema_artifacts(&metadata, &namespaces).map_err(SnapshotError::Review)?;
     for artifact in &metadata.required_artifacts {
-        verify_artifact(artifact)?;
+        verify_artifact(artifact).map_err(SnapshotError::Review)?;
     }
     let mut sink = SnapshotWriter {
         output,
@@ -275,15 +330,20 @@ pub fn export_snapshot(
         deadline,
     };
     sink.write(MAGIC)?;
-    let observed = visit_view(&view, deadline, |header, key, value| {
+    let observed = visit_view_checked(&view, deadline, |header, key, value| {
         for bytes in [&header[..], &key.key, value] {
             sink.write(bytes)?;
         }
         Ok(())
+    })
+    .map_err(|error| match error {
+        RowWalkError::Source(error) => SnapshotError::source(error),
+        RowWalkError::Visit(error) => error,
     })?;
     let manifest = SnapshotManifest {
-        format: "latent.offline-snapshot.v1".into(),
+        format: "latent.offline-snapshot.v2".into(),
         engine: ENGINE.into(),
+        source_store_identity,
         metadata,
         namespaces,
         rows: observed.rows,
@@ -298,17 +358,18 @@ pub fn export_snapshot(
             })
             .collect(),
     };
-    let encoded = manifest.encode()?;
+    let encoded = manifest.encode().map_err(SnapshotError::Review)?;
     sink.write(&[0])?;
     sink.write(
         &u32::try_from(encoded.len())
-            .map_err(|_| StoreError::Capacity)?
+            .map_err(|_| SnapshotError::Capacity)?
             .to_le_bytes(),
     )?;
     sink.write(&encoded)?;
     let manifest_digest: [u8; 32] = Sha256::digest(&encoded).into();
     sink.write(&manifest_digest)?;
-    sink.output.flush().map_err(|_| StoreError::Unavailable)?;
+    sink.output.flush().map_err(|_| SnapshotError::Output)?;
+    checkpoint(deadline).map_err(SnapshotError::source)?;
     Ok(SnapshotReceipt {
         snapshot_digest: sink.hash.finalize().into(),
         manifest_digest,
@@ -330,33 +391,52 @@ pub struct RowSummary {
 pub fn visit_view(
     view: &ReadView,
     deadline: Instant,
-    mut visit: impl FnMut(&[u8; 8], &RowKey, &[u8]) -> Result<(), StoreError>,
+    visit: impl FnMut(&[u8; 8], &RowKey, &[u8]) -> Result<(), StoreError>,
 ) -> Result<RowSummary, StoreError> {
-    validate_deadline(deadline)?;
+    visit_view_checked(view, deadline, visit).map_err(|error| match error {
+        RowWalkError::Source(error) | RowWalkError::Visit(error) => error,
+    })
+}
+
+enum RowWalkError<E> {
+    Source(StoreError),
+    Visit(E),
+}
+
+fn visit_view_checked<E>(
+    view: &ReadView,
+    deadline: Instant,
+    mut visit: impl FnMut(&[u8; 8], &RowKey, &[u8]) -> Result<(), E>,
+) -> Result<RowSummary, RowWalkError<E>> {
+    validate_deadline(deadline).map_err(RowWalkError::Source)?;
     let mut rows = 0u64;
     let mut logical_bytes = 0u64;
     let mut rows_hash = Sha256::new();
     for family in FAMILIES {
         let mut resume = None;
         loop {
-            checkpoint(deadline)?;
-            let page = view.scan_after(family, b"", resume.as_deref(), 128, PAGE_BYTES)?;
+            checkpoint(deadline).map_err(RowWalkError::Source)?;
+            let page = view
+                .scan_after(family, b"", resume.as_deref(), 128, PAGE_BYTES)
+                .map_err(RowWalkError::Source)?;
             for (key, value) in page.rows {
-                rows = rows.checked_add(1).ok_or(StoreError::Capacity)?;
+                rows = rows
+                    .checked_add(1)
+                    .ok_or(RowWalkError::Source(StoreError::Capacity))?;
                 logical_bytes = logical_bytes
                     .checked_add(
                         u64::try_from(key.key.len() + value.len() + 1)
-                            .map_err(|_| StoreError::Capacity)?,
+                            .map_err(|_| RowWalkError::Source(StoreError::Capacity))?,
                     )
-                    .ok_or(StoreError::Capacity)?;
+                    .ok_or(RowWalkError::Source(StoreError::Capacity))?;
                 if rows > SNAPSHOT_ROWS || logical_bytes > SNAPSHOT_LOGICAL_BYTES {
-                    return Err(StoreError::Capacity);
+                    return Err(RowWalkError::Source(StoreError::Capacity));
                 }
-                let header = row_header(&key, &value)?;
+                let header = row_header(&key, &value).map_err(RowWalkError::Source)?;
                 for bytes in [&header[..], &key.key, &value] {
                     rows_hash.update(bytes);
                 }
-                visit(&header, &key, &value)?;
+                visit(&header, &key, &value).map_err(RowWalkError::Visit)?;
             }
             match page.resume {
                 Some(next) => resume = Some(next),
@@ -375,11 +455,57 @@ pub fn visit_view(
 /// Installed row codecs validate every row; full cross-row/payload closure must
 /// additionally validate the staged view before recovery can become usable.
 pub fn inspect_snapshot(
-    input: &mut impl Read,
+    input: &mut (impl Read + Seek),
     deadline: Instant,
     mut validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
 ) -> Result<SnapshotReceipt, StoreError> {
+    input
+        .seek(SeekFrom::Start(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    let first = inspect_stream(input, deadline, &mut validate_row, None)?;
+    // The manifest follows the row stream. A second bounded pass compares its
+    // current history projections with the actual archived NSH rows, retaining
+    // only the finite namespace roster rather than all historical row bodies.
+    input
+        .seek(SeekFrom::Start(0))
+        .map_err(|_| StoreError::Unavailable)?;
+    let second = inspect_stream(input, deadline, &mut validate_row, Some(&first.manifest))?;
+    if first != second {
+        return Err(StoreError::Corrupt);
+    }
+    Ok(second)
+}
+
+fn inspect_stream(
+    input: &mut impl Read,
+    deadline: Instant,
+    validate_row: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+    expected: Option<&SnapshotManifest>,
+) -> Result<SnapshotReceipt, StoreError> {
     validate_deadline(deadline)?;
+    let mut histories = expected
+        .map(|manifest| {
+            manifest
+                .namespaces
+                .iter()
+                .map(|snapshot| {
+                    let (record, _) = snapshot.decode()?;
+                    let key = crate::namespace::history::history_key(
+                        &record.tenant,
+                        &record.id,
+                        record.version.incarnation,
+                    )
+                    .map_err(|_| StoreError::Corrupt)?;
+                    let legacy = NamespaceHistory::initial(&record)
+                        .encode()
+                        .map_err(|_| StoreError::Corrupt)?
+                        == snapshot.history;
+                    Ok((key, snapshot.history.as_slice(), false, legacy))
+                })
+                .collect::<Result<Vec<_>, StoreError>>()
+        })
+        .transpose()?
+        .unwrap_or_default();
     let mut reader = SnapshotReader {
         input,
         hash: Sha256::new(),
@@ -394,6 +520,7 @@ pub fn inspect_snapshot(
     let mut rows_hash = Sha256::new();
     let mut previous = None::<(Family, Vec<u8>)>;
     let mut namespaces = Vec::new();
+    let mut source_store_identity = None;
     loop {
         let tag = reader.read(1)?[0];
         if tag == 0 {
@@ -439,6 +566,20 @@ pub fn inspect_snapshot(
         }
         let value = reader.read(value_bytes)?;
         validate_row(&key, &value)?;
+        if let Some((_, expected_bytes, observed, _)) = histories
+            .iter_mut()
+            .find(|(expected_key, _, _, _)| *expected_key == key)
+        {
+            NamespaceHistory::validate_row(&key, &value).map_err(|_| StoreError::Corrupt)?;
+            if value != *expected_bytes {
+                return Err(StoreError::Corrupt);
+            }
+            *observed = true;
+        }
+        if key == crate::store_identity::StoreIdentity::row_key() {
+            crate::store_identity::StoreIdentity::validate_row(&key, &value)?;
+            source_store_identity = Some(value.clone());
+        }
         if family == Family::Namespace && key.key.starts_with(b"ns-v1\0") {
             if namespaces.len() == SNAPSHOT_NAMESPACES {
                 return Err(StoreError::Capacity);
@@ -452,11 +593,18 @@ pub fn inspect_snapshot(
         rows_hash.update(&value);
         previous = Some((family, key.key));
     }
+    if histories
+        .iter()
+        .any(|(_, _, observed, legacy)| !observed && !legacy)
+    {
+        return Err(StoreError::Corrupt);
+    }
     reader.finish(
         rows,
         logical_bytes,
         rows_hash.finalize().into(),
         &namespaces,
+        source_store_identity.as_deref(),
     )
 }
 
@@ -482,26 +630,12 @@ fn require_schema_artifacts(
     Ok(())
 }
 
-pub(super) fn capture_namespaces(
-    view: &ReadView,
-    tenant: &str,
-) -> Result<Vec<NamespaceSnapshot>, StoreError> {
-    capture_namespace_rows(view, tenant, true)
-}
-
-/// Administrative inventory on an exclusively owned, retired engine. Reading
-/// active metadata here does not open any business admission or dispatch port.
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub(super) fn capture_namespaces_for_review(
-    view: &ReadView,
-    tenant: &str,
-) -> Result<Vec<NamespaceSnapshot>, StoreError> {
-    capture_namespace_rows(view, tenant, false)
+pub(super) fn capture_namespaces(view: &ReadView) -> Result<Vec<NamespaceSnapshot>, StoreError> {
+    capture_namespace_rows(view, true)
 }
 
 fn capture_namespace_rows(
     view: &ReadView,
-    tenant: &str,
     require_quiesced: bool,
 ) -> Result<Vec<NamespaceSnapshot>, StoreError> {
     let page = view.scan_after(
@@ -518,9 +652,7 @@ fn capture_namespace_rows(
     for (key, bytes) in page.rows {
         NamespaceCatalog::validate_row(&key, &bytes).map_err(|_| StoreError::Corrupt)?;
         let record = NamespaceRecord::decode(&bytes).map_err(|_| StoreError::Corrupt)?;
-        if record.tenant.0 != tenant
-            || (require_quiesced && record.status == NamespaceStatus::Active)
-        {
+        if require_quiesced && record.status == NamespaceStatus::Active {
             return Err(StoreError::Conflict);
         }
         let (history, _) = NamespaceHistory::capture(view, &record)?;
@@ -587,6 +719,7 @@ impl<R: Read> SnapshotReader<'_, R> {
         logical_bytes: u64,
         rows_digest: [u8; 32],
         namespaces: &[Vec<u8>],
+        source_store_identity: Option<&[u8]>,
     ) -> Result<SnapshotReceipt, StoreError> {
         let manifest_bytes = usize::try_from(u32::from_le_bytes(
             self.read(4)?.try_into().map_err(|_| StoreError::Corrupt)?,
@@ -602,6 +735,7 @@ impl<R: Read> SnapshotReader<'_, R> {
             || manifest.rows != rows
             || manifest.logical_bytes != logical_bytes
             || manifest.rows_digest != rows_digest
+            || source_store_identity != Some(manifest.source_store_identity.as_slice())
             || namespaces.iter().ne(manifest
                 .namespaces
                 .iter()
@@ -649,18 +783,18 @@ impl<R: Read> SnapshotReader<'_, R> {
     }
 }
 impl<W: Write> SnapshotWriter<'_, W> {
-    fn write(&mut self, bytes: &[u8]) -> Result<(), StoreError> {
-        checkpoint(self.deadline)?;
+    fn write(&mut self, bytes: &[u8]) -> Result<(), SnapshotError> {
+        checkpoint(self.deadline).map_err(SnapshotError::source)?;
         let next = self
             .bytes
-            .checked_add(u64::try_from(bytes.len()).map_err(|_| StoreError::Capacity)?)
-            .ok_or(StoreError::Capacity)?;
+            .checked_add(u64::try_from(bytes.len()).map_err(|_| SnapshotError::Capacity)?)
+            .ok_or(SnapshotError::Capacity)?;
         if next > SNAPSHOT_FILE_BYTES {
-            return Err(StoreError::Capacity);
+            return Err(SnapshotError::Capacity);
         }
         self.output
             .write_all(bytes)
-            .map_err(|_| StoreError::Unavailable)?;
+            .map_err(|_| SnapshotError::Output)?;
         self.hash.update(bytes);
         self.bytes = next;
         Ok(())
@@ -669,3 +803,5 @@ impl<W: Write> SnapshotWriter<'_, W> {
 
 #[cfg(test)]
 pub(super) mod tests;
+
+mod limits;

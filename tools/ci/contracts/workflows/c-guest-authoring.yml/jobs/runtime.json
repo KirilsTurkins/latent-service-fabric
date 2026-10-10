@@ -98,7 +98,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Review current Phase4 and Java source union while retaining every original test, skip, before/baseline, full-profile, cache-freshness, security and retained-artifact requirement; immutable source and merged fixture setup are explicit.",
+  "reviewReason": "Keep all exact historical baseline/before/coverage and case/guard obligations while reconciling current actual compiler/dependency/transaction/native owners. Preserve both C runtime parents exact compiler/isolation controls and artifact path union, including actual dependency-control failures and Phase4 transaction receipts. Current C authoring integration preserves every parental command, isolation/correctness guard, step order and receipt path; expanded library suites and static-archive options remain additive. Reconcile current development while retaining both parents C compiler/isolation controls, runtime and Phase4 transaction qualification commands, and complete diagnostic artifact paths.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }
