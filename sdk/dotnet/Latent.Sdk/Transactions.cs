@@ -961,5 +961,5 @@ public sealed record SelectEntityResponse(
 public static class CurrentTransactionProfile
 {
     /// <summary>Returns the exact maintained wire and preparation profile.</summary>
-    public static TransactionProfile Create() => new("lsf-transaction-v1", "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35", "sha256:bdbee56b5dcf47e878cdb0af97239a6c15afa6b4e880512117b7c275aa79309f");
+    public static TransactionProfile Create() => new("lsf-transaction-v1", "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35", "sha256:635bbdbb5b3a1f91ed9d9bfe53f843a0c7cfb7bae389daad8c0f138531ea4c17");
 }

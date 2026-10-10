@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "latent.java-http.failed-canary-observation.v1",
+  "scope": "original failed canary drain attempt",
+  "originalHead": "dc2b25a5157c54478b1e8934476bfc6baac6a07d",
+  "actualSourceRevision": "c3dd95472f27c7dbe3e3598ea1180e342e8a0861",
+  "run": "36945826736",
+  "job": "110647617934",
+  "jobUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36945826736/job/110647617934",
+  "artifactId": "11207894260",
+  "artifactArchiveBytes": 25461374,
+  "artifactArchiveSha256": "5eac76b5d9b93daf571bf9cfaf99b3a5f0c8ac2fec5907b55103489bafb8f794",
+  "originalObservation": "java-http-composition/http/controls/java-canary-drain-promotion.json",
+  "failure": "java-canary-promotion-released-live-owners",
+  "originalParentActivation": "java-canary-drain",
+  "originalParentCpuGrant": "1000000000",
+  "actualChildCpuGrant": "497234909",
+  "actualChildTerminalState": "resource_exhausted",
+  "actualChildDiagnostic": {
+    "stage": 5,
+    "reason": 11,
+    "stageName": "DIAGNOSTIC_STAGE_EXECUTION",
+    "reasonName": "DIAGNOSTIC_REASON_GUEST_FUEL_EXHAUSTED",
+    "diagnosticIsTerminal": true
+  },
+  "beforePromotion": {
+    "activeCells": 2,
+    "activeQuotaReservations": 2
+  },
+  "afterPromotion": {
+    "activeCells": 0,
+    "activeQuotaReservations": 0,
+    "reservedCpuFuel": "0",
+    "reservedMemoryBytes": "0"
+  },
+  "originalJobPassed": false,
+  "canaryDrainQualified": false,
+  "fixtureRepairExecutionQualified": false,
+  "originalReceiptsPreserved": true
+}

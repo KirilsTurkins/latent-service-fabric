@@ -588,6 +588,38 @@ The audit descriptor adds state and dispatcher targets at fields 25 and 26,
 state resource class 11 and control actions 13 through 29; all prior audit rows
 remain exact.
 
+These definitions describe [transaction and recovery contracts](transactions.md).
+They do not establish that a host implements the profile or grant access from
+a namespace, command, effect or receipt identifier. WIT guest ABI versions and
+durable storage formats retain their separate compatibility boundaries.
+
+## Additive immutable target inspection
+
+Issue #716 adds the unary `NodeService.InspectHttpTarget` method, eight bounded
+inspection messages and three observation enums. The descriptor contract
+preserves every existing file, message, field number, enum value and RPC. The
+node descriptor additionally imports the existing release descriptor for exact
+publication identities.
+
+The authenticated tenant administrator receives coherent, stale or unavailable
+observations of the selected catalog and policy owners. Optional preparation
+inspects the same admitted readiness owner without materialization or guest and
+provider execution. The reply reports actual provider imports and validated
+structural type imports separately, and preserves numeric option presence and
+future enum values. See [target inspection](../reference/target-inspection.md).
+
+Engine configuration digests and internal sealed metadata fingerprints retain
+their separate meanings. Live grant checks are explicitly absent; an inspection
+does not grant execution or mutation authority. Public invocation and browser
+error projections retain their existing disclosure rules.
+The additive baseline also includes the three `DispatcherService` management
+methods and their typed request, response, generation, snapshot and operation
+receipt messages, together with the typed audit state and dispatcher targets.
+The 2026-10-03 regeneration used Buf 1.72.0 and retained all field names, numbers,
+types, nested messages, oneof membership, enum values and service signatures
+from both the earlier transaction source and current development. These are
+contract definitions; they do not qualify installed dispatch or transport
+execution.
 `PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
 reconciliation and termination require that complete original plan when calling
 `MutateState`. Receipt recovery preserves the original action, record version,

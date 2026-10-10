@@ -304,7 +304,7 @@ pub(super) fn open_selected(
         Arc::new(
             latent_manifest::RuntimeCompatibilityProfile::new(
                 "wasmtime",
-                "48.0.4",
+                "48.0.5",
                 "x86_64-unknown-linux-gnu",
                 &["x86_64.sse2"],
                 64 * 1024 * 1024,

@@ -63,7 +63,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         raise ValueError("build output must be outside source or beneath its target directory")
     repository = public_repository(repository)
     output = fresh(output)
-    commands, compiler, stage = None, None, "capture"
+    commands, compiler, stage, files = None, None, "capture", None
     started, start = int(time.time()), time.monotonic()
     try:
         observed = guest_dependency_inputs.capture_source(project_path, 'java')
@@ -139,7 +139,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
                 surface = read_json(derived / "surface.json")
                 stage = "compatibility"
-                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface, files=files)
                 additional_assets = []
                 if "httpClient" in project:
                     (output / "http-client-profile.json").write_bytes(java_http_client.profile(
@@ -211,5 +211,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": (compiler.records if compiler else []) + (commands.records if commands else [])})
-        guest_compatibility_build.failure_report(output, "java", stage)
+        guest_compatibility_build.failure_report(output, "java", stage, files=files)
         raise

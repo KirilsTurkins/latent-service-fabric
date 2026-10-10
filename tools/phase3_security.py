@@ -102,7 +102,7 @@ def check_engine(repo: Path) -> str:
     lock = tomllib.loads((repo / "Cargo.lock").read_text(encoding="utf-8"))
     tools = tomllib.loads((repo / "tools/toolchain.toml").read_text(encoding="utf-8"))
     versions = [package["version"] for package in lock["package"] if package["name"] == "wasmtime"]
-    require(versions == ["48.0.4"] and tools["rust"]["dependencies"]["wasmtime"] == "48.0.4",
+    require(versions == ["48.0.5"] and tools["rust"]["dependencies"]["wasmtime"] == "48.0.5",
             "unreviewed-engine-profile")
     return versions[0]
 
