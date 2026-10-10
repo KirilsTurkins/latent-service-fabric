@@ -1,0 +1,262 @@
+{
+  "artifacts": {
+    "generated/rpc.pb": {
+      "bytes": 48866,
+      "sha256": "4e5b31ec4b49eaf46dc57bdd4e0fc7aade3493a4c00cf7425a94a925a721aa43"
+    },
+    "liblatent.a": {
+      "bytes": 3254018,
+      "sha256": "7ace2e3217f0cfbc16c0ad7a9ef550b1c4bfabcefc6b8ecf9ebd1dd2d6bb7a35"
+    },
+    "libnghttp2.a": {
+      "bytes": 4583362,
+      "sha256": "0cc2b09dbbb48827b77720ae16aff05b9a3c9e67bc873920e8d701d5a59362c9"
+    },
+    "transaction-tests": {
+      "bytes": 4102320,
+      "sha256": "5106d57faa105310e1cec8a463e6b37d4ccf6ff8cc03cb2bf9cc0cd8672a13e8"
+    },
+    "transport-tests": {
+      "bytes": 4164480,
+      "sha256": "e82405be535019ad5b9ef00b67c61527bfdceb0b195ad9156573ffaa0fafded5"
+    }
+  },
+  "baseRevision": "52d73eb76041d7c7bb5f14566442ec111e7e398d",
+  "browserQualified": false,
+  "checks": {
+    "asan": true,
+    "callBytes": 18872,
+    "commonPeer": {
+      "closed": 188,
+      "connections": 188,
+      "methods": 8,
+      "requests": 225
+    },
+    "exitCode": 0,
+    "generationReproduced": true,
+    "leakDetection": true,
+    "maximumConfiguredTransactionBytes": 33554432,
+    "ownerBytes": 1032,
+    "peakTrackedTransactionBytes": 12673451,
+    "sharedWireVectors": 51,
+    "toolingTests": 3,
+    "transactionPeer": {
+      "closed": 4,
+      "connections": 4,
+      "invocationCounts": {
+        "abort": 1,
+        "aborted-status": 1,
+        "held": 1,
+        "lost": 1,
+        "paired": 1,
+        "reject": 1,
+        "substitution": 1
+      },
+      "methods": 15,
+      "requests": 36
+    },
+    "ubsan": true
+  },
+  "command": "python3 sdk/c/tools/validate.py --build-dir /build --sanitize",
+  "completeIssue401": false,
+  "environment": {
+    "cpus": 2,
+    "gcc": "12.2.0",
+    "glibc": [
+      "glibc",
+      "2.36"
+    ],
+    "image": "sha256:7cc3f5d034635d35c328591dbd993fb355816fc8124f6a6a9948f83cca74cbf0",
+    "memoryBytes": 1073741824,
+    "network": "none",
+    "pids": 128,
+    "python": "3.13.5"
+  },
+  "observedAt": "2026-10-01",
+  "productionNodeQualified": false,
+  "schemaVersion": "latent.phase4.c-client-source-evidence.v1",
+  "scope": "Fifteen-operation source codec and controlled authenticated HTTP/2 peer qualification",
+  "signedGuestQualified": false,
+  "workingTreeSourceHashes": {
+    "api/proto/latent/control/v1/capability.proto": {
+      "bytes": 3177,
+      "sha256": "edec0c1c0bd3413d8466024ed895f61fbc7c3efa08c756ec56d1e28669339109"
+    },
+    "api/proto/latent/control/v1/common.proto": {
+      "bytes": 1508,
+      "sha256": "9433f47d1ae62dd09bbfc55e8a43f411897a0ffc6dc51919adc0ff4df9564085"
+    },
+    "api/proto/latent/control/v1/dispatcher.proto": {
+      "bytes": 3914,
+      "sha256": "ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6"
+    },
+    "api/proto/latent/control/v1/policy.proto": {
+      "bytes": 3061,
+      "sha256": "a38e6a958e7e50ee9b43e725d55cb7080cc47f4eaed42a6d5889ae4e67564b94"
+    },
+    "api/proto/latent/control/v1/release.proto": {
+      "bytes": 14863,
+      "sha256": "320f945a9711ca5a55cf64c80ba87ad9c6d4c622a0d51cb8eefaa2d133801518"
+    },
+    "api/proto/latent/control/v1/state.proto": {
+      "bytes": 5477,
+      "sha256": "ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3"
+    },
+    "api/proto/latent/invocation/v1/invocation.proto": {
+      "bytes": 4886,
+      "sha256": "6f803e8aa8d126b98b2e9b2ae285f97a6387c4d3b677230f0383f6854bf927aa"
+    },
+    "api/proto/latent/transaction/v1/transaction.proto": {
+      "bytes": 8241,
+      "sha256": "bd84dd30f70d9281d3ef067b61eece0a56d65f6494d3e6fcb599b79cf0011db3"
+    },
+    "sdk/c/dependencies.lock.json": {
+      "bytes": 3139,
+      "sha256": "0a8dd5f411e104d4171c357cfb2f98e78f99436ef94457af70a0f1a79fb6256d"
+    },
+    "sdk/c/examples/common.c": {
+      "bytes": 12752,
+      "sha256": "b9da6c1490cc34ed35c2f805c1216a5c92f675eba1a16fdf0099ce84b1995804"
+    },
+    "sdk/c/examples/common.h": {
+      "bytes": 3643,
+      "sha256": "f8d68fa975429cb21042335ba297d654eee8084a7498d67cc70ebf6a59fe0bc7"
+    },
+    "sdk/c/examples/private_config.c": {
+      "bytes": 11947,
+      "sha256": "a9dcd9aa1c4d73018d0ce0c7e7ac9a32ae6d5e6cd7a01f8d40cdf8da4e67c16b"
+    },
+    "sdk/c/examples/provider_client.c": {
+      "bytes": 1151,
+      "sha256": "54261b047a27afea9d38bd0f25ab086ca9e64a63695fcc6e77467631a475fb3f"
+    },
+    "sdk/c/examples/provider_workflow.c": {
+      "bytes": 19545,
+      "sha256": "13c6188bc86750fc3edfb98faa46c056d5324e46a05ee7d1126e3206747d7911"
+    },
+    "sdk/c/include/latent/profile.h": {
+      "bytes": 21582,
+      "sha256": "c219413c0bd0636a04403976297eb81d87a3db8fc159865c481a35c35e8b0e59"
+    },
+    "sdk/c/include/latent/transaction.h": {
+      "bytes": 25533,
+      "sha256": "08ee3132489e249b3dfcb50c453893b12823295cfcad4e06264837f8f580628b"
+    },
+    "sdk/c/include/latent/transaction_client.h": {
+      "bytes": 5362,
+      "sha256": "407118f9fa83df8da3c459cd02afa3642854383d3858259ce61622bd51d38664"
+    },
+    "sdk/c/include/latent/transport.h": {
+      "bytes": 1992,
+      "sha256": "d1d30293b0e243fe177a91cdddac480c49f2947e9960491c662a3ef336e70bb3"
+    },
+    "sdk/c/include/latent/types.h": {
+      "bytes": 400,
+      "sha256": "333246c176035b22867df78366e08a16cc1a680999a64e33b2298c14b7711ea0"
+    },
+    "sdk/c/src/channel.c": {
+      "bytes": 19411,
+      "sha256": "2a29657a002d0e997e4a494aafee8dea212e79caaff6361e425c4e268cddeac3"
+    },
+    "sdk/c/src/codec.c": {
+      "bytes": 13878,
+      "sha256": "6293dd4edff4f47235ce55a290c3419cc520527981fe99fe1b2fe6dc3a5ae99c"
+    },
+    "sdk/c/src/internal.h": {
+      "bytes": 5751,
+      "sha256": "9d8089a97dff641c7fa5211433fcc10a48716d22df4015293042b515c7a631a6"
+    },
+    "sdk/c/src/owner.c": {
+      "bytes": 26462,
+      "sha256": "ba352e3aeb234b23aa3d44391af6105cc4ac81b52a457827ee9f648d8d97f614"
+    },
+    "sdk/c/src/transaction_validation.c": {
+      "bytes": 46731,
+      "sha256": "93b352a576239b4dd7652ba5d5529e9530931a31282d4f5e17a2a30688819ad6"
+    },
+    "sdk/c/src/transaction_wire.c": {
+      "bytes": 4904,
+      "sha256": "4d3851a6cc916da6e51eb14526e554f7437dccc445f1a7ec2924471ba163c952"
+    },
+    "sdk/c/src/validation.c": {
+      "bytes": 21131,
+      "sha256": "57928f44c017e4093f691424a5dfd66a43063b6121e9076ee4df8bda05fe3b95"
+    },
+    "sdk/c/src/wire.h": {
+      "bytes": 2319,
+      "sha256": "787f5cd54a3203f59e6afbdfeced9a3555f244f4744eb0e3c0b87b8555884583"
+    },
+    "sdk/c/tests/owner_bounds.c": {
+      "bytes": 379,
+      "sha256": "9136d6249d4ab08c02354a4dbb19dcff55512a5fdef1238514848c1a3d9af64e"
+    },
+    "sdk/c/tests/peer.py": {
+      "bytes": 16812,
+      "sha256": "5181ef18742b76b0dbc8fbf9a16e2503006ceab95a51e381687c5f8ff7ada9af"
+    },
+    "sdk/c/tests/private_config.c": {
+      "bytes": 3376,
+      "sha256": "ec42a9db911747267e468f3b32a393a45a80793c0632579f9b0103913f12182c"
+    },
+    "sdk/c/tests/profile_lifetime.h": {
+      "bytes": 18247,
+      "sha256": "47c378a30c3f62d9867d29dc536f195f2c1c4992ae64d59e276289c2a45da7b4"
+    },
+    "sdk/c/tests/profile_semantics.c": {
+      "bytes": 337,
+      "sha256": "2dffd659fe33ca9287a1260f3e14db8cd081b33460e2da89118fd53f1f8d9c12"
+    },
+    "sdk/c/tests/profile_vectors.h": {
+      "bytes": 154908,
+      "sha256": "8265be20f49dd0ad572c92e57018a7dd7bca67ed26fae455a21688b5ba50f277"
+    },
+    "sdk/c/tests/test_tools.py": {
+      "bytes": 2388,
+      "sha256": "30fe453c5435f560fbc79baedc04da192366fe290c99c4679424402db24adefb"
+    },
+    "sdk/c/tests/transaction_peer.py": {
+      "bytes": 16171,
+      "sha256": "c0b135c661ba403c64d465f1484ef43861ea15d418e7f1adc5ce05e6c181b93a"
+    },
+    "sdk/c/tests/transactions.c": {
+      "bytes": 23443,
+      "sha256": "0e686dfb8677f6f5057a817271cf74af42aea90c95ad8dac00fae4cbec0a3865"
+    },
+    "sdk/c/tests/transport.c": {
+      "bytes": 34546,
+      "sha256": "42f53f2434e634c5dc96eac7ce148ba40576eb3bd613ee40503676b877bf8d7a"
+    },
+    "sdk/c/tools/audit_dependencies.py": {
+      "bytes": 5401,
+      "sha256": "88c88133905e94194852f4c7332b19f6c0648da337f8516c9d10493e476a4ff1"
+    },
+    "sdk/c/tools/build.py": {
+      "bytes": 7557,
+      "sha256": "39759b10300b14c46bf699d025c1d158636cad2e6aa406a2812f0c2f63da44a6"
+    },
+    "sdk/c/tools/generate.py": {
+      "bytes": 9407,
+      "sha256": "4826ef5e4d864018daf41c8540f13def5195b359517241a784211c0a820852b8"
+    },
+    "sdk/c/tools/test.py": {
+      "bytes": 3397,
+      "sha256": "0061b8511fc0cb958ab0400b283c1c432a46131bd57b14b169ee520da49e9046"
+    },
+    "sdk/c/tools/validate.py": {
+      "bytes": 1274,
+      "sha256": "60d239e77fc42814896aeede9e765d0c988983fa8d3a801bd905e2e126377716"
+    },
+    "sdk/c/tools/wire_vectors.py": {
+      "bytes": 2476,
+      "sha256": "f35f193422dee83aa4192e705e1c926254b54046ebe1e91ccdbb117e6fccd306"
+    },
+    "sdk/profile/client-profile.json": {
+      "bytes": 4609,
+      "sha256": "8012b7e85471cf7a942f79dc4ffdc4501c6dd480165af9f1d48feadb79323558"
+    },
+    "sdk/profile/transaction-client-contract.json": {
+      "bytes": 57304,
+      "sha256": "f1f266e26a4b463112b86f60acc22f573c9ae7ea8d1f726d5b6ebf91f53aa677"
+    }
+  }
+}

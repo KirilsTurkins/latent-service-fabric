@@ -85,6 +85,8 @@ pub(super) fn inspect(
             effective_deadline_unix_millis: node.effective_deadline_unix_millis,
             target_service: node.target_service.0,
             received_at_unix_millis: node.received_at_unix_millis,
+            // This node variant does not install the captured-intent observer.
+            transaction_staging: None,
         })
         .collect();
     adapter.response(proto::InspectActivationTreeResponse {

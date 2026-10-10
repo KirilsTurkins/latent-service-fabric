@@ -1,0 +1,475 @@
+{
+  "authenticatedPackageQualified": false,
+  "authoritativeSourceMilestones": [
+    "d2205540d2f57038bcf26a9be30cb1f8a26c32d0",
+    "ec4415475167f527a00595cfe4d6b45886ddd961"
+  ],
+  "baseRevision": "6152f4c2d43645168afa76e2868c108b2f4377b9",
+  "browserQualified": false,
+  "checks": {
+    "buf": {
+      "actualDescriptorCompiled": true,
+      "priorDescriptorRowsPreserved": true,
+      "version": "1.72.0"
+    },
+    "c": {
+      "allocationFailurePositions": 160,
+      "artifacts": {
+        "generated/rpc.pb": {
+          "bytes": 51767,
+          "sha256": "36f6da6fe8d65683248e428dc38ee725d6593e0a128ace8b67b56d17af5ca7e6"
+        },
+        "liblatent.a": {
+          "bytes": 3355410,
+          "sha256": "75efa43247ab5c101c434173eca413910a01bf4559ee2541886a652b70327419"
+        },
+        "libnghttp2.a": {
+          "bytes": 4583362,
+          "sha256": "0cc2b09dbbb48827b77720ae16aff05b9a3c9e67bc873920e8d701d5a59362c9"
+        },
+        "transaction-tests": {
+          "bytes": 4180984,
+          "sha256": "cf818cc707e39955e27a6f133c425f7973cbb7ce35e1e27d484416a71e8a226d"
+        },
+        "transport-tests": {
+          "bytes": 4217624,
+          "sha256": "e6a4734d48fe22419cd7ec6ca463a6d1285dab944012c18fa2159ce475962684"
+        }
+      },
+      "asan": true,
+      "callBytes": 18920,
+      "configuredTransactionBytes": 33554432,
+      "gcc": "12.2.0",
+      "image": "sha256:7cc3f5d034635d35c328591dbd993fb355816fc8124f6a6a9948f83cca74cbf0",
+      "leakDetection": true,
+      "ownerBytes": 1032,
+      "peakTrackedTransactionBytes": 12673595,
+      "platform": "linux-x86_64",
+      "python": "3.13.5",
+      "sharedWireVectors": 51,
+      "toolingTests": 3,
+      "transactionConnections": 4,
+      "transactionConnectionsClosed": 4,
+      "transactionMethods": 16,
+      "transactionRequests": 42,
+      "ubsan": true
+    },
+    "dotnet": {
+      "nativeTransportChecks": 603,
+      "platform": "windows-x86_64",
+      "runtime": "8.0.31",
+      "sdk": "8.0.425",
+      "sharedWireVectors": 49,
+      "warnings": 0
+    },
+    "generators": {
+      "ciCoverageBaselineRunBlocks": 88,
+      "ciCoverageCurrentRunBlocks": 222,
+      "ciCoverageDelegatedOwners": 133,
+      "ciSuiteLinuxTests": 17,
+      "transactionContractCurrent": true,
+      "transactionModelAndContractTests": 15
+    },
+    "go": {
+      "cgoEnabled": true,
+      "generatedCodecReproduced": true,
+      "platform": "linux-x86_64",
+      "racePassed": true,
+      "version": "1.27.1",
+      "vetPassed": true
+    },
+    "java": {
+      "ambiguousOneofRejected": true,
+      "legacyTcpSuites": 11,
+      "nonPreviewCompiledClasses": 1082,
+      "platform": "windows-x86_64",
+      "productionLintWarningsAsErrorsPassed": true,
+      "sharedSemanticVectors": 67,
+      "sharedWireVectors": 50,
+      "transactionChecks": 120,
+      "transactionTcpSuites": 6,
+      "version": "25.0.4.1+1"
+    },
+    "rust": {
+      "platform": "windows-x86_64",
+      "rpcTests": 23,
+      "sdkLibraryTests": 16,
+      "strictClippyPassed": true,
+      "version": "1.97.1"
+    },
+    "typescript": {
+      "node": "24.19.0",
+      "platform": "windows-x86_64",
+      "sharedSemanticLifetimePassed": true,
+      "sharedSemanticVectors": 67,
+      "skipReason": "Linux-only descriptor credential subprocess on Windows; not counted as passed",
+      "transportPassed": 35,
+      "transportSkipped": 1,
+      "typescript": "7.0.2"
+    }
+  },
+  "completeIssue401": false,
+  "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "observedAt": "2026-10-01",
+  "operationCount": 16,
+  "outstanding": [
+    "Separate-process real node command/query/recovery for all six clients",
+    "Browser HTTP execution with real authenticated route authority",
+    "Signed packaged qualification and complete backup/migration management acceptance"
+  ],
+  "preparationProfileDigest": "sha256:6acd7a248633dd01c9cdcbf8a1ed33fc5e6aa1d2edb09b7d89e53fda594b5507",
+  "productionNodeQualified": false,
+  "schemaVersion": "latent.phase4.transaction-client-source-evidence.v1",
+  "scope": "Six concrete sixteen-operation facades, original effect-plan recovery and bounded controlled transport peers",
+  "signedGuestQualified": false,
+  "workingTreeSourceHashes": {
+    "api/proto/latent/control/v1/audit.proto": {
+      "normalizedLfBytes": 12630,
+      "normalizedLfSha256": "4e22133c96a9a28407334970cd326596131f06384516403aa3cad522f4b94918"
+    },
+    "api/proto/latent/control/v1/binding.proto": {
+      "normalizedLfBytes": 1608,
+      "normalizedLfSha256": "6125223ca43a03d8f5d14b146bcb8a5764c8560572c7dd8f1dc253813847dd5e"
+    },
+    "api/proto/latent/control/v1/capability.proto": {
+      "normalizedLfBytes": 3177,
+      "normalizedLfSha256": "edec0c1c0bd3413d8466024ed895f61fbc7c3efa08c756ec56d1e28669339109"
+    },
+    "api/proto/latent/control/v1/common.proto": {
+      "normalizedLfBytes": 1508,
+      "normalizedLfSha256": "9433f47d1ae62dd09bbfc55e8a43f411897a0ffc6dc51919adc0ff4df9564085"
+    },
+    "api/proto/latent/control/v1/contract.proto": {
+      "normalizedLfBytes": 1542,
+      "normalizedLfSha256": "40a521a388af3086d69f7f4948072c0c984d4614eb8da26a098ad490c61ee325"
+    },
+    "api/proto/latent/control/v1/deployment.proto": {
+      "normalizedLfBytes": 7098,
+      "normalizedLfSha256": "fb7ef31f30ac746f3314526929082ee55f3fd4432ad13e2caf614ba53d01ebd1"
+    },
+    "api/proto/latent/control/v1/dispatcher.proto": {
+      "normalizedLfBytes": 3914,
+      "normalizedLfSha256": "ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6"
+    },
+    "api/proto/latent/control/v1/node.proto": {
+      "normalizedLfBytes": 5324,
+      "normalizedLfSha256": "6360e653aa5178792b5c8b5143745fe5779564899c0dafac3fac2795a2f1d6b7"
+    },
+    "api/proto/latent/control/v1/policy.proto": {
+      "normalizedLfBytes": 3061,
+      "normalizedLfSha256": "a38e6a958e7e50ee9b43e725d55cb7080cc47f4eaed42a6d5889ae4e67564b94"
+    },
+    "api/proto/latent/control/v1/release.proto": {
+      "normalizedLfBytes": 14863,
+      "normalizedLfSha256": "320f945a9711ca5a55cf64c80ba87ad9c6d4c622a0d51cb8eefaa2d133801518"
+    },
+    "api/proto/latent/control/v1/rollout.proto": {
+      "normalizedLfBytes": 12409,
+      "normalizedLfSha256": "5113a477c56ddc57093024b1d39bf92a289dae992b0b09cc2f564ddf2a0cbcaf"
+    },
+    "api/proto/latent/control/v1/route.proto": {
+      "normalizedLfBytes": 1736,
+      "normalizedLfSha256": "c6949358fe958a0b8e03a520b12826ab149ad058b4198decc5ada3a4571e7636"
+    },
+    "api/proto/latent/control/v1/state.proto": {
+      "normalizedLfBytes": 8146,
+      "normalizedLfSha256": "f2f98d9974ef0afe014b30978eacee03310bb86f25d70cefb7e8591130e19901"
+    },
+    "api/proto/latent/control/v1/trigger.proto": {
+      "normalizedLfBytes": 4778,
+      "normalizedLfSha256": "86341c3bc88062c26092d25eb9595256dfea0150b6f7ecb9efe6ac517e032e23"
+    },
+    "api/proto/latent/invocation/v1/invocation.proto": {
+      "normalizedLfBytes": 4886,
+      "normalizedLfSha256": "6f803e8aa8d126b98b2e9b2ae285f97a6387c4d3b677230f0383f6854bf927aa"
+    },
+    "api/proto/latent/transaction/v1/transaction.proto": {
+      "normalizedLfBytes": 8509,
+      "normalizedLfSha256": "d6ec8c0bc77c032933a0d2bf01807f3bc91bed360197e371a739ecc90b8b4620"
+    },
+    "api/proto/phase1-descriptor-contract.json": {
+      "normalizedLfBytes": 226878,
+      "normalizedLfSha256": "4c770b954ac15536d0b39b24764800ca6046e23fdd6a1a3db6bcb751ceed2c5e"
+    },
+    "apps/latent/src/args/phase4.rs": {
+      "normalizedLfBytes": 10471,
+      "normalizedLfSha256": "d7618784bc28b6d8b17a692d64379911c14a68e6634a56249a482541f5dff7aa"
+    },
+    "apps/latent/src/management/phase4.rs": {
+      "normalizedLfBytes": 2702,
+      "normalizedLfSha256": "ba4adbf4230275adaf612f4053decc1299e3715c96bc0bfd0b26e41b365c3b81"
+    },
+    "apps/latent/src/management/phase4/execute.rs": {
+      "normalizedLfBytes": 6692,
+      "normalizedLfSha256": "e73eac452b3029af1bd3aa4b431f493d00f953fe7e5d2154905948fcd6c03b47"
+    },
+    "apps/latent/src/management/phase4/prepare.rs": {
+      "normalizedLfBytes": 8117,
+      "normalizedLfSha256": "a1b6eb3a47ab0957d58b7f77cce10079936f08879f2b8030ceda1baf4dd4c3a4"
+    },
+    "apps/latent/src/management/phase4/prepare/dispatcher.rs": {
+      "normalizedLfBytes": 1557,
+      "normalizedLfSha256": "ab091db8565a3680ce37b832f50b486e9ee072b4725b7507e95164f3f70815fb"
+    },
+    "apps/latent/src/management/phase4/prepare/effect_management.rs": {
+      "normalizedLfBytes": 2757,
+      "normalizedLfSha256": "cb7828a603ba9f481f167606ea46fdba9032f3fb9e50de7b731eb5b0ca22e0b3"
+    },
+    "apps/latent/src/management/phase4/projection.rs": {
+      "normalizedLfBytes": 13189,
+      "normalizedLfSha256": "911cddd956828fa82ae1438aaad9ec61f50c0f02a34183106342c00b8e1c44cc"
+    },
+    "apps/latent/src/management/phase4/projection/dispatcher.rs": {
+      "normalizedLfBytes": 2357,
+      "normalizedLfSha256": "8b4ad696e66da6d49c777f4c887c884a243b71aad07eb7a23149fb452a56528d"
+    },
+    "apps/latent/src/management/phase4/projection/effect_management.rs": {
+      "normalizedLfBytes": 2378,
+      "normalizedLfSha256": "9f23e056264c7aa30c714b53773ca3f1584128dea2d5c2fb5bf9ab5032290d59"
+    },
+    "apps/latent/src/management/phase4/tests.rs": {
+      "normalizedLfBytes": 9164,
+      "normalizedLfSha256": "3940f97a9095bf3031bc1d1f0a7dac9be05baa457c9a6a6e2a77543ea49ff75f"
+    },
+    "apps/latent/src/management/phase4/tests/dispatcher.rs": {
+      "normalizedLfBytes": 2853,
+      "normalizedLfSha256": "2a52550adda7f786ef5e4160e4bac776013438e6f4e2a0916eab94c2e3f2cf48"
+    },
+    "apps/latent/src/management/phase4/tests/effect_management.rs": {
+      "normalizedLfBytes": 6484,
+      "normalizedLfSha256": "fd361d368bb3ca97d56062c0aba253cb85ecda33fe3872e2ef4849a85839f780"
+    },
+    "crates/latent-rpc/src/phase4.rs": {
+      "normalizedLfBytes": 9492,
+      "normalizedLfSha256": "61d773fd25352cbf5bb4d3e8918659e6c3e5e6ebad25fe84a7e1a1ee223dd29d"
+    },
+    "crates/latent-rpc/src/phase4/effect_management.rs": {
+      "normalizedLfBytes": 9193,
+      "normalizedLfSha256": "830b4f80503e774154a873f6dc1203430be57c228649b55efbe1fc0176322702"
+    },
+    "crates/latent-rpc/src/phase4/effect_management/tests.rs": {
+      "normalizedLfBytes": 8281,
+      "normalizedLfSha256": "265ecc71b84d2ece485e4c37579ce1e3e322cbefb6104975ca08d2ec73c62bcc"
+    },
+    "crates/latent-rpc/src/phase4/request.rs": {
+      "normalizedLfBytes": 14253,
+      "normalizedLfSha256": "1d8da81ef02f2b18503f05d239f9b0336d4d9de2f72904a5810e727699a5951a"
+    },
+    "crates/latent-rpc/src/phase4/response.rs": {
+      "normalizedLfBytes": 30720,
+      "normalizedLfSha256": "74860dbbbdd08df27e69b20ec32a4bc277a0b9e4a9981915c8dcc8c68904c816"
+    },
+    "crates/latent-rpc/src/phase4/tests.rs": {
+      "normalizedLfBytes": 12570,
+      "normalizedLfSha256": "8c0837ee7dadd56b4463ae2a741812053107fcb0e9c95df4af5b2065007de859"
+    },
+    "sdk/c/include/latent/transaction.h": {
+      "normalizedLfBytes": 29337,
+      "normalizedLfSha256": "6a2dd822b523bfe82af8e5f9adcc057fc8e64c9c094f2b5b189d547189ed99c5"
+    },
+    "sdk/c/include/latent/transaction_client.h": {
+      "normalizedLfBytes": 5556,
+      "normalizedLfSha256": "d482e067860d29ef185866ff99cc59755701e1e938f05412b6286071275b4cd6"
+    },
+    "sdk/c/src/transaction_effects.h": {
+      "normalizedLfBytes": 5945,
+      "normalizedLfSha256": "b8845426d673bd394d70f58e6aa582700b0c176cb8d73ad4206d9dbfe6a636e6"
+    },
+    "sdk/c/src/transaction_validation.c": {
+      "normalizedLfBytes": 49037,
+      "normalizedLfSha256": "60635443a7ff77dc48e722f093aaf1babe94ecdf83a0cbffe552ce1670500460"
+    },
+    "sdk/c/tests/transaction_peer.py": {
+      "normalizedLfBytes": 18082,
+      "normalizedLfSha256": "183bbd2cf4208eebc8ff6e5c9690705c375771de98de932f483fa3f3cff021a3"
+    },
+    "sdk/c/tests/transactions.c": {
+      "normalizedLfBytes": 27589,
+      "normalizedLfSha256": "d793722e7cc52fc0994048a98aba37bded588c0373e8769e9f98a4719461b007"
+    },
+    "sdk/c/tools/test.py": {
+      "normalizedLfBytes": 3397,
+      "normalizedLfSha256": "3d9963d53ba44719957ba4395e7db6eb3d3e9df15a33b1bff2f5d260ccc048b9"
+    },
+    "sdk/dotnet/Latent.Sdk.Transport.Tests/Program.cs": {
+      "normalizedLfBytes": 4001,
+      "normalizedLfSha256": "a1ada2dab46e153d978685b1ed70c2b07d960ae8147b159c0869b99aa7d6a62a"
+    },
+    "sdk/dotnet/Latent.Sdk.Transport.Tests/TransactionEffectTests.cs": {
+      "normalizedLfBytes": 7068,
+      "normalizedLfSha256": "a6b088fc46034b2abfc74c0ba1f435e3aa6cf3421c6677d77bcd69ec7e5d48da"
+    },
+    "sdk/dotnet/Latent.Sdk.Transport.Tests/TransactionTests.cs": {
+      "normalizedLfBytes": 34618,
+      "normalizedLfSha256": "1c7b380011789009861a3456f0fd556caa8c48e65fcaefbb478202f6307ea5d4"
+    },
+    "sdk/dotnet/Latent.Sdk.Transport/TransactionEffectRules.cs": {
+      "normalizedLfBytes": 6115,
+      "normalizedLfSha256": "c40c56a339742a2ed731cdb746e331db09173877054213519f8ef7362a6a5e58"
+    },
+    "sdk/dotnet/Latent.Sdk.Transport/TransactionOperations.cs": {
+      "normalizedLfBytes": 13092,
+      "normalizedLfSha256": "60e5c27d314782aa3a058a8c91feb60b145bd604c0fcadf93ee11f1ce136a870"
+    },
+    "sdk/dotnet/Latent.Sdk.Transport/TransactionRules.cs": {
+      "normalizedLfBytes": 39606,
+      "normalizedLfSha256": "1a1d9b569b4f5300c776f585e947508c9a7451f9eb4b02afa9116ba12b58bf91"
+    },
+    "sdk/dotnet/Latent.Sdk/TransactionClient.cs": {
+      "normalizedLfBytes": 10713,
+      "normalizedLfSha256": "f2c77cbb549b309429ca24391fa673a7fb5e5f36a2b78710895d3689f3715e97"
+    },
+    "sdk/dotnet/Latent.Sdk/Transactions.cs": {
+      "normalizedLfBytes": 56986,
+      "normalizedLfSha256": "a9381036b67cc911a955ce326e4ba300941bd5ee1ef6dad4043cf29883f512d6"
+    },
+    "sdk/go/transaction/client.go": {
+      "normalizedLfBytes": 4769,
+      "normalizedLfSha256": "c8eff0d2924157d659f8f069febf1601ba1cd82d8f4221f0afb8bd4ec4cea68b"
+    },
+    "sdk/go/transaction/models.go": {
+      "normalizedLfBytes": 16879,
+      "normalizedLfSha256": "a5f4d31ca6964471f97127f440ba564c44840424c105a943ba355c895896b78d"
+    },
+    "sdk/go/transport/effect_management.go": {
+      "normalizedLfBytes": 5830,
+      "normalizedLfSha256": "1ec6bbd5166d4a02e94d86361ab53e65bb2c3a17e3f9b2f09048c4602782a6d8"
+    },
+    "sdk/go/transport/effect_management_test.go": {
+      "normalizedLfBytes": 7885,
+      "normalizedLfSha256": "dd378e0dc47f4a641c43882a73020ebf6fedbe78db1d63e63abeefbf815346ff"
+    },
+    "sdk/go/transport/transaction_rules.go": {
+      "normalizedLfBytes": 44936,
+      "normalizedLfSha256": "e17c4ece6e0a1adc614d750db797af09b019506b3bf5916e5aefcebf102b3d9f"
+    },
+    "sdk/go/transport/transactions.go": {
+      "normalizedLfBytes": 12695,
+      "normalizedLfSha256": "2c05650a90b5f348d8566578b6a25fbddf5386b76e90383278ddf0aeeb3a35df"
+    },
+    "sdk/go/transport/transactions_test.go": {
+      "normalizedLfBytes": 32566,
+      "normalizedLfSha256": "17b4d8688cf18c8e6dad58212b9a4f39fc00e0239881966004e8b47e2ec73731"
+    },
+    "sdk/java-client/src/main/java/dev/latent/sdk/TransactionClient.java": {
+      "normalizedLfBytes": 7830,
+      "normalizedLfSha256": "946386a63789d4976735f059e52a968e430db46e08c3779ff2e4869eaba1dbad"
+    },
+    "sdk/java-client/src/main/java/dev/latent/sdk/Transactions.java": {
+      "normalizedLfBytes": 21941,
+      "normalizedLfSha256": "7fe654cba6d4aa062d5b4df7ccdd1e5ec1f0d371dae7a4b2fadf20739a792883"
+    },
+    "sdk/java-client/src/transport/java/dev/latent/sdk/transport/RpcClient.java": {
+      "normalizedLfBytes": 34436,
+      "normalizedLfSha256": "c8a423121d502655056bb661601206e8f37d3b960271162266aecd8689d414f9"
+    },
+    "sdk/java-client/src/transport/java/dev/latent/sdk/transport/TransactionContext.java": {
+      "normalizedLfBytes": 17989,
+      "normalizedLfSha256": "0f3376fda889b492ced309ddf4ac2f12af3d9c8c24a396c2afe83baaf90dd479"
+    },
+    "sdk/java-client/src/transport/java/dev/latent/sdk/transport/TransactionProtocol.java": {
+      "normalizedLfBytes": 43276,
+      "normalizedLfSha256": "5c96b019ba4c48d4ac0b035719db3f2758d4d4b87ab64af83c9b2ce210310f95"
+    },
+    "sdk/java-client/src/transport/java/dev/latent/sdk/transport/TransactionWire.java": {
+      "normalizedLfBytes": 66750,
+      "normalizedLfSha256": "99e373952f24f1a2ad3fde9e4cce730b3dce34d4a4802cacebb291459d2791e1"
+    },
+    "sdk/java-client/src/transportTest/java/dev/latent/sdk/transport/TransactionTransportTest.java": {
+      "normalizedLfBytes": 44399,
+      "normalizedLfSha256": "64b72404ba9c6738536bd4dfb007316164dbdd801e7d52adf10ade61c16e42c1"
+    },
+    "sdk/profile/transaction-client-contract.json": {
+      "normalizedLfBytes": 64982,
+      "normalizedLfSha256": "44f4382bd89ce1894dee9f36c1ec6a950941e1d709556e120f6af8eb2ade3378"
+    },
+    "sdk/profile/transaction-requirements-v1.json": {
+      "normalizedLfBytes": 9418,
+      "normalizedLfSha256": "6586bac1a5b0188a52ead30ccd5152707f73350c18f4ddfb459b45a0d5f1d869"
+    },
+    "sdk/rust/src/network.rs": {
+      "normalizedLfBytes": 6990,
+      "normalizedLfSha256": "7bf208ba3a323ba896295e2b65c77860b7e0137ff4ab8ba64effaf648da36c17"
+    },
+    "sdk/rust/src/network/ownership.rs": {
+      "normalizedLfBytes": 4620,
+      "normalizedLfSha256": "7e22e4a7805502973a484fafad3c7d0099365b02aa002d5bbea68f9aab3c28a0"
+    },
+    "sdk/rust/src/network/profile.rs": {
+      "normalizedLfBytes": 7070,
+      "normalizedLfSha256": "83dd48b254c431bb9a46140d2b3af428eddbd203d6cadcd0ebf926c2c8777fe1"
+    },
+    "sdk/rust/src/network/transaction.rs": {
+      "normalizedLfBytes": 12089,
+      "normalizedLfSha256": "a6a72eedfe08979cb3281a9a21f1d5914a2ba9d5901dde573e971ee7dbaf609f"
+    },
+    "sdk/rust/src/network/transaction/codec.rs": {
+      "normalizedLfBytes": 10306,
+      "normalizedLfSha256": "0360cb588752e80d2b4ff8f666e4299679dd1a6428783f423e6b653590fc592e"
+    },
+    "sdk/rust/src/network/transaction/conversions.rs": {
+      "normalizedLfBytes": 56192,
+      "normalizedLfSha256": "6d7c42d94a7234c7ec8a5f3efda335f044ab099dbda4234088163090c04739c4"
+    },
+    "sdk/rust/src/network/transaction/model_shapes.rs": {
+      "normalizedLfBytes": 20950,
+      "normalizedLfSha256": "34cbe278a7858a358276cd08a3128f406bc9b9c461f7454e65d0d899299f2076"
+    },
+    "sdk/rust/src/network/transaction/requests.rs": {
+      "normalizedLfBytes": 10680,
+      "normalizedLfSha256": "0fd6878ef6dade872e1083bff121f70e547a0d3c1b404c086b46035ae022e0b1"
+    },
+    "sdk/rust/src/network/transaction/responses.rs": {
+      "normalizedLfBytes": 9445,
+      "normalizedLfSha256": "1ceeab03f8b081e7dbb53369d1be3aff221a3bd6129c76156cb84012dd705f4c"
+    },
+    "sdk/rust/src/network/transaction/test_peer.rs": {
+      "normalizedLfBytes": 13807,
+      "normalizedLfSha256": "1f92591d63611365b53dab855deb9e2f12dd16ae523514463266b5843b50b1b3"
+    },
+    "sdk/rust/src/network/transaction/tests.rs": {
+      "normalizedLfBytes": 22913,
+      "normalizedLfSha256": "6718c6df539652e647c53f9f6c9ba29316bbaa2419b74130b97b5e0ed7487c5f"
+    },
+    "sdk/rust/src/network/transaction/wire_schemas.rs": {
+      "normalizedLfBytes": 56786,
+      "normalizedLfSha256": "1d82a3dd393ac5333407b8634ff23269d24f1a380cafba0bf0cce3ab1de4d3a2"
+    },
+    "sdk/rust/src/transaction/mod.rs": {
+      "normalizedLfBytes": 5136,
+      "normalizedLfSha256": "27defe18f11eaa40a0fd03abeceda7b91b8b7c1300654c1f1d9da9c0e0815ffd"
+    },
+    "sdk/rust/src/transaction/models.rs": {
+      "normalizedLfBytes": 20974,
+      "normalizedLfSha256": "a9a71f8b18c688474c396c82bd6318248f2774cdb63f67ba387f88a08832230d"
+    },
+    "sdk/typescript-client/src/node/index.ts": {
+      "normalizedLfBytes": 13925,
+      "normalizedLfSha256": "c296fd913ec761840c609fb5dc44f9f2cfe6762888a8840e6a0b1152a2bda9bd"
+    },
+    "sdk/typescript-client/src/node/protocol/schema.ts": {
+      "normalizedLfBytes": 3115,
+      "normalizedLfSha256": "a346e1c34d91fcf9de2238d10701fa94daf11277b9336e977f8df971158e4f5a"
+    },
+    "sdk/typescript-client/src/node/protocol/transaction-generated.ts": {
+      "normalizedLfBytes": 59076,
+      "normalizedLfSha256": "d2934da50ef8fb7eaafbf1cacbca7aa51d749f52d118586f783f22fbc823a034"
+    },
+    "sdk/typescript-client/src/node/transaction.ts": {
+      "normalizedLfBytes": 38608,
+      "normalizedLfSha256": "36fe528f72560fd1a3541bc7d6dc93c210b1dc732dcd8279059b6a504c7b6bdc"
+    },
+    "sdk/typescript-client/src/transaction-client.ts": {
+      "normalizedLfBytes": 4623,
+      "normalizedLfSha256": "aa0f352193dc5661a291947f9b8c98f96a1ac401cc4758679cc2e3870589246c"
+    },
+    "sdk/typescript-client/src/transactions.ts": {
+      "normalizedLfBytes": 16220,
+      "normalizedLfSha256": "ff8dce5c32a9c09d1641ec70037448f487b55e07ea97b77a08eb34b3af3312d7"
+    },
+    "sdk/typescript-client/tests/network/transaction.test.mjs": {
+      "normalizedLfBytes": 26243,
+      "normalizedLfSha256": "aefd9d5bbf8ea1e6101273f83a3ab260a4efb5ef1e7ea4e39476f21b7e005468"
+    }
+  }
+}

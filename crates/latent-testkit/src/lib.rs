@@ -15,6 +15,8 @@ pub mod harness;
 mod runtime_contract;
 
 pub use latent_core::test_support::{clocks, coordination, deterministic};
+/// Neutral process/resource owners available through both supported import paths.
+pub use latent_test_process as neutral_process;
 pub use latent_test_process::{process, resources};
 
 pub use async_runtime::AsyncTestRuntime;

@@ -4994,14 +4994,23 @@
         "network::tests::audit_uncertainty_does_not_turn_a_rejection_into_a_known_mutation_outcome",
         "network::tests::capacity_is_refunded_only_after_the_last_physical_body_owner_retires",
         "network::tests::configuration_is_explicit_bounded_redacted_and_does_not_start_io",
-        "network::tests::typed_platform_details_require_canonical_codes_and_never_enable_retries"
+        "network::tests::typed_platform_details_require_canonical_codes_and_never_enable_retries",
+        "network::transaction::tests::actual_unary_keeps_durable_rejection_through_later_audit_failure_and_never_resubmits",
+        "network::transaction::tests::dispatcher_uses_original_channel_and_keeps_receipt_through_independent_audit_failure",
+        "network::transaction::tests::effect_plan_transport_keeps_original_cas_historical_receipt_and_independent_facts",
+        "network::transaction::tests::full_width_generation_presence_and_qualified_pages_roundtrip",
+        "network::transaction::tests::local_deadline_keeps_original_identity_and_shutdown_retires",
+        "network::transaction::tests::model_collections_are_bounded_before_native_conversion",
+        "network::transaction::tests::original_preconditions_and_current_publication_are_retained_without_refresh",
+        "network::transaction::tests::predecode_rejects_duplicate_oneof_utf8_and_empty_record_expansion",
+        "network::transaction::tests::unknown_record_and_transport_abort_never_prove_an_explicit_attempt"
       ],
       "expectedIgnored": [],
       "id": "latent-sdk.lib.latent-sdk",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "sdk/rust/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 16,
       "mode": "libtest",
       "package": "latent-sdk",
       "platforms": [
@@ -5882,6 +5891,7 @@
       "expectedCases": [
         "clock_and_rendezvous_reexports_preserve_type_and_state_identity",
         "deterministic_module_and_root_reexports_remain_compatible",
+        "neutral_process_reexports_preserve_owner_types_alongside_the_sdk_harness",
         "process_and_resource_reexports_preserve_the_neutral_owner_types"
       ],
       "expectedIgnored": [],
@@ -5889,7 +5899,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-testkit/Cargo.toml",
-      "minimumCases": 3,
+      "minimumCases": 4,
       "mode": "libtest",
       "package": "latent-testkit",
       "platforms": [

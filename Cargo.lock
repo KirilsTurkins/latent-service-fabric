@@ -2061,6 +2061,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tonic",
+ "tonic-prost",
  "tower",
  "zeroize",
 ]

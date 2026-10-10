@@ -20,7 +20,7 @@ if __package__ in {None, ""}:
 from tools import dev_tool_distribution as distribution, dev_managed_distribution as managed, native_runtime_build, rust_capsule_project
 from tools import dev_go_distribution, dev_typescript_distribution
 from tools.build_observation import build_environment, resolve_tools
-from tools.build_process import run_bounded
+from tools.build_process import BuildProcessError, run_bounded_result
 from tools.dev_distribution import assemble, file_digest
 from tools.dev_guest_tools import ZIG_BYTES, ZIG_SHA256, ZIG_VERSION
 from tools.dev_workflow.common import GUEST_HOST_ABIS, HOST_ABI, PROTOCOL, encode, require
@@ -172,10 +172,12 @@ def main() -> int:
     logs = output / "logs"
     logs.mkdir()
     def run(name: str, *command, maximum=16 * 1024 * 1024):
-        result = run_bounded([str(item) for item in command], cwd=ROOT, env=environment,
-                             timeout_seconds=600, max_output_bytes=maximum)
+        result = run_bounded_result([str(item) for item in command], cwd=ROOT, env=environment,
+                                    timeout_seconds=600, max_output_bytes=maximum)
         (logs / (name + ".stdout")).write_bytes(result.stdout)
         (logs / (name + ".stderr")).write_bytes(result.stderr)
+        if result.returncode != 0:
+            raise BuildProcessError("command-exit")
         return result.stdout
     pins = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     tools, _ = resolve_tools(pins, ROOT, environment)

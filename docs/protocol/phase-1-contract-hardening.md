@@ -602,3 +602,14 @@ The golden matches the frozen sixteen-operation client descriptor and was
 reviewed against every prior named row using actual Buf output. The
 [transaction reference](transactions.md) describes the separate guest ABI,
 durable-format, authority and production qualification boundaries.
+
+## Captured transaction staging observation
+
+`TransactionStagingWitness` adds a host observation to privileged activation
+inspection. `ActivationTreeNode.transaction_staging` uses the previously unused
+optional field 15; existing field numbers and meanings remain unchanged. The
+witness records the captured activation, command, attempt, transaction and
+publication identities, mutation and intent counts, state bytes, and observation
+time. It appears only after the original host captures an intent and grants no
+persistence, cancellation, retry or cleanup authority. Older clients may ignore
+the added field; absence does not prove that no intent was captured.
